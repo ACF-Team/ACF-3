@@ -11,32 +11,15 @@ local Materials = {
 	})
 }
 
-local RenderDamage
-do
-	local EyePos = EyePos
-	local EyeAngles = EyeAngles
-	local cam_End3D = cam.End3D
-	local cam_Start3D = cam.Start3D
-	local render_SetBlend = render.SetBlend
-	local render_ModelMaterialOverride = render.ModelMaterialOverride
+local IsValid                      = IsValid
+local render_SetBlend              = render.SetBlend
+local render_ModelMaterialOverride = render.ModelMaterialOverride
 
-	RenderDamage = function(bDrawingDepth, _, isDraw3DSkybox)
-		if bDrawingDepth or isDraw3DSkybox then return end
-		cam_Start3D(EyePos(), EyeAngles())
+local function GetMaterial(Percent)
+	if Percent > 0.7 then return Materials[1] end
+	if Percent > 0.3 then return Materials[2] end
 
-		for Entity, EntityTable in pairs(Damaged) do
-			if IsValid(Entity) then
-				render_ModelMaterialOverride(EntityTable.ACF_Material)
-				render_SetBlend(EntityTable.ACF_BlendAmount)
-
-				Entity:DrawModel()
-			end
-		end
-
-		render_ModelMaterialOverride()
-		render_SetBlend(1)
-		cam_End3D()
-	end
+	return Materials[3]
 end
 
 local function Remove(Entity)
@@ -49,47 +32,60 @@ local function Remove(Entity)
 	end
 end
 
-local function Add(Entity)
-	if not next(Damaged) then
-		hook.Add("PostDrawOpaqueRenderables", "ACF_RenderDamage", RenderDamage)
-	end
+local function RenderDamage(bDrawingDepth, _, isDraw3DSkybox)
+	if bDrawingDepth or isDraw3DSkybox then return end
 
-	Damaged[Entity] = Entity:GetTable()
-
-	Entity:CallOnRemove("ACF_RenderDamage", function()
-		Remove(Entity)
-	end)
-end
-
-do
-	local IsValid = IsValid
-	local math_Clamp = math.Clamp
-
-	net.Receive("ACF_Damage", function()
-		local Entity  = Entity(net.ReadUInt(13))
-		local Percent = net.ReadUInt(7) / 100
-
-		if not IsValid(Entity) then return end
-
-		if Percent < 1 then
-			Entity.ACF_HealthPercent = Percent
-			Entity.ACF_BlendAmount = math_Clamp(1 - Percent, 0, 0.8)
-
-			if Percent > 0.7 then
-				Entity.ACF_Material = Materials[1]
-			elseif Percent > 0.3 then
-				Entity.ACF_Material = Materials[2]
-			else
-				Entity.ACF_Material = Materials[3]
-			end
-
-			Add(Entity)
+	for Entity, Data in pairs(Damaged) do
+		if IsValid(Entity) then
+			render_ModelMaterialOverride(Data.Material)
+			render_SetBlend(Data.Blend)
+			Entity:DrawModel()
 		else
 			Remove(Entity)
-
-			Entity.ACF_HealthPercent = nil
-			Entity.ACF_Material      = nil
-			Entity.ACF_BlendAmount   = nil
 		end
-	end)
+	end
+
+	render_ModelMaterialOverride()
+	render_SetBlend(1)
 end
+
+local function Add(Entity, Percent)
+	local Data = Damaged[Entity]
+
+	if not Data then -- First time this entity has been damaged; register it
+		if not next(Damaged) then -- First damaged entity overall; start rendering
+			hook.Add("PostDrawOpaqueRenderables", "ACF_RenderDamage", RenderDamage)
+		end
+
+		Data = {}
+		Damaged[Entity] = Data
+
+		Entity:CallOnRemove("ACF_RenderDamage", function()
+			Remove(Entity)
+		end)
+	end
+
+	-- Update render data (runs for both new and existing entities)
+	Data.Material = GetMaterial(Percent)
+	Data.Blend    = math.Clamp(1 - Percent, 0, 0.8)
+
+	Entity.ACF_HealthPercent = Percent
+end
+
+net.Receive("ACF_Damage", function()
+	local Count = net.ReadUInt(8)
+
+	for _ = 1, Count do
+		local Entity  = Entity(net.ReadUInt(13))
+		local Percent = net.ReadUInt(4) / 10
+
+		if not IsValid(Entity) then continue end
+
+		if Percent < 1 then
+			Add(Entity, Percent)
+		else
+			Remove(Entity)
+			Entity.ACF_HealthPercent = nil
+		end
+	end
+end)

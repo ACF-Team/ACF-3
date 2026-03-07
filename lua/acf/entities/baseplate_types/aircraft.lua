@@ -15,6 +15,9 @@ function Baseplate:PhysicsCollide(Data)
     local Contraption = self:GetContraption()
     if not Contraption then return end
 
+    -- Only explode when a player is in the contraption
+    if not next(Contraption.ACF_TrackPlayers) then return end
+
     if Data.HitEntity:GetContraption() == Contraption then return end
     if Data.Speed > 1000 then
         -- Timer simple to avoid "Changing collision rules within a callback is likely to cause crashes!"

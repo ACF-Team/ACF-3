@@ -2,51 +2,65 @@ local ACF     = ACF
 local Damage  = ACF.Damage
 local Objects = Damage.Objects
 local Effects = ACF.Utilities.Effects
-local Queue   = {}
+local Queue = {} -- Queue[Entity] = Step; always broadcast
+local QueueTime = 0.5 -- Seconds to buffer damage updates before sending
 
 util.AddNetworkString("ACF_Damage")
 
-local function SendQueue(Target)
-	for Entity, Percent in pairs(Queue) do
-		timer.Simple(0, function()
-			if not IsValid(Entity) then return end
+local function SendQueue()
+	local Batch = {}
 
-			net.Start("ACF_Damage")
-			net.WriteUInt(Entity:EntIndex(), 13)
-			net.WriteUInt(Percent * 100, 7)
-
-			if isentity(Target) and IsValid(Target) then
-				net.Send(Target)
-			else
-				net.Broadcast()
-			end
-		end)
-
-		Queue[Entity] = nil
+	-- Validate the entities in the queue still exist
+	for Entity, Step in pairs(Queue) do
+		if IsValid(Entity) then
+			Batch[#Batch + 1] = {Entity, Step}
+		end
 	end
+
+	table.Empty(Queue)
+
+	local Count = #Batch
+
+	if Count == 0 then return end -- Nothing to send - Anything that was in the queue became invalid
+
+	net.Start("ACF_Damage")
+	net.WriteUInt(Count, 8)
+
+	for i = 1, Count do
+		net.WriteUInt(Batch[i][1]:EntIndex(), 13)
+		net.WriteUInt(Batch[i][2], 4)
+	end
+
+	net.Broadcast()
 end
 
 --- Helper function used to efficiently network visual damage updates on props.
+--- Updates are quantized to 10% health steps to reduce network traffic (you can't really tell the difference with smaller steps anyway)
 --- @param Entity entity The entity to update damage on.
---- @param Target? entity The specific player to send the update to; leave this empty to send to all players.
---- @param NewHealth? number The entity's new amount of health.
---- @param MaxHealth? number The entity's maximum amount of health.
-function Damage.Network(Entity, Target, NewHealth, MaxHealth)
+--- @param NewHealth? number The entity's new health.
+--- @param MaxHealth? number The entity's maximum health.
+function Damage.Network(Entity, _, NewHealth, MaxHealth)
 	NewHealth = NewHealth or Entity.ACF.NewHealth or 0
 	MaxHealth = MaxHealth or Entity.ACF.MaxHealth or 0
 
-	local Value = math.Round(NewHealth / MaxHealth, 2)
+	local Value = NewHealth / MaxHealth
 
-	if Value == 0 then return end
-	if Value ~= Value then return end
+	if Value ~= Value then return end -- NaN guard
+	if Value == 0     then return end -- Fully destroyed; entity removal handles client cleanup
+
+	local Step = math.Round(Value * 10) -- Integer 0-10, snapped to nearest 10% boundary
+
+	if Step == 10 and not Entity.ACF.LastDamageStep then return end -- Never visually damaged; nothing changed, nothing to send
+
+	if Entity.ACF.LastDamageStep == Step then return end
+
+	Entity.ACF.LastDamageStep = Step
 
 	if not next(Queue) then
-		timer.Create("ACF_DamageQueue", 0, 1, function()
-			SendQueue(Target)
-		end)
+		timer.Create("ACF_DamageQueue", QueueTime, 1, SendQueue)
 	end
 
-	Queue[Entity] = Value
+	Queue[Entity] = Step
 end
 
 --- Returns the penetration of a blast.
@@ -283,11 +297,36 @@ function Damage.dealDamage(Entity, DmgResult, DmgInfo)
 end
 
 hook.Add("ACF_OnLoadPlayer", "ACF Render Damage", function(Player)
+	local Batch = {}
+
 	for _, Entity in ents.Iterator() do
 		local Data = Entity.ACF
 
-		if not Data or Data.Health == Data.MaxHealth then continue end
+		if not Data then continue end
 
-		Damage.Network(Entity, Player)
+		local MaxHealth = Data.MaxHealth
+		if not MaxHealth or MaxHealth == 0 then continue end
+
+		local Value = (Data.Health or 0) / MaxHealth
+		if Value <= 0 or Value ~= Value then continue end
+
+		local Step = math.Round(Value * 10)
+		if Step >= 10 then continue end
+
+		Batch[#Batch + 1] = {Entity, Step}
 	end
+
+	local Count = #Batch
+
+	if Count == 0 then return end
+
+	net.Start("ACF_Damage")
+	net.WriteUInt(Count, 8)
+
+	for i = 1, Count do
+		net.WriteUInt(Batch[i][1]:EntIndex(), 13)
+		net.WriteUInt(Batch[i][2], 4)
+	end
+
+	net.Send(Player)
 end)
