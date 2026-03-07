@@ -14,12 +14,12 @@ local Current = {Panels = {},     		-- Contains the panel objects
 					local ColorTable = {}
 
 					for I = 1, _MAXSOUNDS do
-						local colorRand = ColorRand()
-
+						local freq = 360 / _MAXSOUNDS
+						local color = HSVToColor(I * freq % 360, 1, 1)
 						-- Calculate luminance to determine text color (0.2126*R + 0.7152*G + 0.0722*B)
-						local luminance = (0.2126 * colorRand.r + 0.7152 * colorRand.g + 0.0722 * colorRand.b) / 255
+						local luminance = (0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b) / 255
 						local textColor = luminance > 0.5 and color_black or color_white
-						ColorTable[I] = {colorRand, textColor}
+						ColorTable[I] = {color, textColor}
 					end
 
 					return ColorTable
@@ -483,10 +483,16 @@ function ACF.CreateSoundMenu(Panel)
 				SoundPre:SetTall(Menu.ButtonHeight)
 
 				SoundPrePlay:SetIcon("icon16/sound.png")
+				SoundPrePlay:SetTooltip("Unimplemented!")
+				SoundPrePlay:SetEnabled(false)
 				SoundPrePlay.DoClick = function()
 					-- Do something here to play them sounds!
 				end
+
 				SoundPreStop:SetIcon("icon16/sound_mute.png")
+				SoundPreStop:SetTooltip("Unimplemented!")
+				SoundPreStop:SetEnabled(false)
+
 				-- Set the Play/Stop button positions here
 				SoundPre:InvalidateLayout(true)
 				SoundPre.PerformLayout = function()
