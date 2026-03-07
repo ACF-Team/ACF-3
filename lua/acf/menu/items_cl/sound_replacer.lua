@@ -167,16 +167,29 @@ function ACF.CreateSoundMenu(Panel)
 				return
 			end
 
-			-- Remove the panel in question
-			MPanel:Remove()
-			table.remove(Current.Panels, ID)
-			ListSlider:SetValue(math.max(ListSlider:GetValue() - 1, 1))
-
-			-- Set the label of the remaining panels up
-			for i = ID, Current.Count do
+			for i = ID, Current.Count + 1 do
 				if not Current.Panels[i] and IsValid(Current.Panels[i]) then continue end
-				Current.Panels[i]:SetLabel("Value " .. i)
-				Current.Panels[i]:SetBGColor(Current.Colors[i][1])
+				-- Remove the last panel and reset its values
+				if i == Current.Count then
+					SetClientData("RPM " .. i, 1000 * i) --DefaultRPM
+					SetClientData("Path " .. i, DefaultPath)
+					SetClientData("Pitch " .. i, DefaultPitch)
+					SetClientData("Volume " .. i, DefaultVolume)
+					SetClientData("Width " .. i, DefaultWidth)
+
+					SetClientData("ListSlider", GetClientNumber("ListSlider") - 1)
+					ListSlider:SetValue(GetClientData("ListSlider"))
+					table.remove(Current.Panels, i)
+					Current.Count = #Current.Panels
+					break
+				end
+				-- Move the datavars values one step back(or forward) to compensate
+				Current.Panels[i] = Current.Panels[i + 1]
+				SetClientData("RPM " .. i, GetClientNumber("RPM " .. i + 1))
+				SetClientData("Path " .. i, GetClientNumber("Path " .. i + 1))
+				SetClientData("Pitch " .. i, GetClientNumber("Pitch " .. i + 1))
+				SetClientData("Volume " .. i, GetClientNumber("Volume " .. i + 1))
+				SetClientData("Width " .. i, GetClientNumber("Width " .. i + 1))
 			end
 		end
 
@@ -496,7 +509,7 @@ function ACF.CreateSoundMenu(Panel)
 				ListSlider:SetValue(GetClientData("ListSlider"))
 				ListSlider:SetClientData("ListSlider", "OnValueChanged")
 				ListSlider:DefineSetter(function(Panel, _, _, Value)
-					local ValueAmount = math.Clamp(math.Round(tonumber(Value)), 1, _MAXSOUNDS)
+					local ValueAmount = math.Clamp(math.floor(tonumber(Value)), 1, _MAXSOUNDS)
 					if ValueAmount ~= LastValueAmount then
 						if ValueAmount > LastValueAmount then
 							for _ = LastValueAmount + 1, ValueAmount do
