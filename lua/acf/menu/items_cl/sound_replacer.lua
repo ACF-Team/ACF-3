@@ -50,7 +50,7 @@ function ACF.CreateSoundMenu(Panel)
 
 			-- The 1000 extra is so it can see til the graph X limit and not cutoff
 			Panel:PlotLimitFunction("Sound " .. I, 0, 16383 + 1000, Current.Colors[I][1], function(X)
-				return (fade(X, min - addCurveWidth, mid, max + addCurveWidth)) * volume
+				return (fade(X, min, mid, max)) * volume
 			end)
 		end
 	end
@@ -583,8 +583,8 @@ function ACF.CreateSoundMenu(Panel)
 
 	do -- SoundBank entity data reception and menu population
 		local function PopulateMenu(Count)
-			-- We set it to option 4 since that's where the values are located at 
-			OptionSelectionBox:ChooseOption(OptionSelectionBox:GetOptionText(4), 4)
+			-- We set it to option 2 since that's where the values are located at 
+			OptionSelectionBox:ChooseOption(OptionSelectionBox:GetOptionText(2), 2)
 
 			-- Wipe the clients values list
 			Menu:ClearTemporal(ListPanel)

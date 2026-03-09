@@ -226,9 +226,9 @@ local function DoPitchVolumeAtRPM(Origin, Throttle, RPM)
 		local addCurveWidth = soundTable.Width or 0
 		local enginePitch = soundTable.Pitch or 1
 		local min    = idx == 1 and 0 or SoundObjects[clamp(idx - 1 - addCurveWidth, 1, _MAXSOUNDS)].RPM
-		local mid    = RPM
+		local mid    = soundTable.RPM
 		local max    = idx == #SoundObjects and 1000000 or SoundObjects[clamp(idx + 1 + addCurveWidth, 1, _MAXSOUNDS)].RPM
-		local curve  = fade(RPM, min - addCurveWidth, mid, max + addCurveWidth)
+		local curve  = fade(RPM, min, mid, max)
 		local volume = curve * map(Throttle, 0, 100, _OFFVOLUME, _ONVOLUME) * (soundTable.Volume or 1)
 		local pitch  = (RPM / soundTable.RPM) * enginePitch
 
@@ -277,6 +277,8 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 	--- @param Origin table The entity to stop all the sounds from
 	function Sounds.DeleteMultipleAdjustableSounds(Origin, _)
 		if not IsValid(Origin) then return end
+		if not Origin.SoundObjects then return end
+
 		for idx, snd in ipairs(Origin.SoundObjects) do
 			snd.Sound:Stop()
 			Origin.SoundObjects[idx] = nil
