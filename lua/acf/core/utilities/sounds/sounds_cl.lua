@@ -133,6 +133,7 @@ do -- Processing adjustable sounds (for example, engine noises)
 	--- @return Sound CSoundPatch The sound object
 	function Sounds.CreateAdjustableSound(Origin, Path, Pitch, Volume)
 		if not IsValid(Origin) then return end
+		if not Sounds.IsValidSound(Path) then return end
 
 		local Sound = CreateSound(Origin, Path)
 		Origin.Sound = Sound
@@ -206,6 +207,8 @@ end
 -- https://i.imgur.com/KaFmaMf.png
 local function DoPitchVolumeAtRPM(Origin, Throttle, RPM)
 	local SoundObjects = Origin.SoundObjects
+	if not SoundObjects or table.IsEmpty(SoundObjects) then return end
+
 	local fade = Sounds.Fade -- idk if this is faster to do, but given this is a hot path, might as well be...
 	--SmoothRPM = SmoothRPM * (1 - 0.1) + RPM * 0.1
 	--SmoothThrottle = SmoothThrottle * (1 - 0.1) + Throttle * 10
@@ -224,7 +227,7 @@ local function DoPitchVolumeAtRPM(Origin, Throttle, RPM)
 		local enginePitch = soundTable.Pitch or 1
 		local min    = idx == 1 and 0 or SoundObjects[clamp(idx - 1 - addCurveWidth, 1, _MAXSOUNDS)].RPM
 		local mid    = RPM
-		local max    = idx == #SoundObjects and 16383 or SoundObjects[clamp(idx + 1 + addCurveWidth, 1, _MAXSOUNDS)].RPM
+		local max    = idx == #SoundObjects and 1000000 or SoundObjects[clamp(idx + 1 + addCurveWidth, 1, _MAXSOUNDS)].RPM
 		local curve  = fade(RPM, min - addCurveWidth, mid, max + addCurveWidth)
 		local volume = curve * map(Throttle, 0, 100, _OFFVOLUME, _ONVOLUME) * (soundTable.Volume or 1)
 		local pitch  = (RPM / soundTable.RPM) * enginePitch
@@ -249,6 +252,10 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 				sndTable.Path,
 				sndTable.Pitch or 100, 0 -- Create the sound deafened
 			)
+			if not Sound then
+				print("Failed to create sound for entity " .. tostring(Origin) .. ". Sound path does not exist!")
+				continue
+			end
 			sndTable.Sound = Sound
 			SoundCount = SoundCount + 1
 

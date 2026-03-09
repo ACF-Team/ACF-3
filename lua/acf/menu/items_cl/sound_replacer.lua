@@ -30,6 +30,7 @@ local Current = {Panels = {},     		-- Contains the panel objects
 function ACF.CreateSoundMenu(Panel)
 	local AddValue, ListSlider, ListPanel, SoundGraph -- Glocals
 	-- The graphing function, this is a mirror of the function found in sounds_cl.lua and is redundant
+	-- The plotting function is wrong, its plotting as if it was a function of pitch when the fade is calculated for volume instead
 	-- TODO(TMF): This should be a single function pulled from ACF.Sounds object
 	local function UpdateGraph(Panel)
 		local Count = Current.Count
@@ -42,15 +43,14 @@ function ACF.CreateSoundMenu(Panel)
 
 		for I = 1, Count do
 			local addCurveWidth = GetClientNumber("Width " .. I, 0)
-			local pitch = GetClientNumber("Pitch " .. I, 0)
-			--local volume = Current.Panels[I].Volume * 100 -- Idk if we want to plot volume as a function
+			local volume = GetClientNumber("Volume " .. I, 0) * 100
 			local min = I == 1 and 0 or GetClientNumber("RPM " .. clamp(I - 1 - addCurveWidth, 1, _MAXSOUNDS))
 			local mid = GetClientNumber("RPM " .. I, 0)
-			-- TODO(TMF): The max value below is hardcoded, this should be a global!
-			local max = I == Count and 16383 or GetClientNumber("RPM " .. clamp(I + 1 + addCurveWidth, 1, _MAXSOUNDS))
+			local max = I == Count and 1000000 or GetClientNumber("RPM " .. clamp(I + 1 + addCurveWidth, 1, _MAXSOUNDS))
 
-			Panel:PlotLimitFunction("Sound " .. I, 0, 16383, Current.Colors[I][1], function(X)
-				return (fade(X, min - addCurveWidth, mid, max + addCurveWidth)) * pitch
+			-- The 1000 extra is so it can see til the graph X limit and not cutoff
+			Panel:PlotLimitFunction("Sound " .. I, 0, 16383 + 1000, Current.Colors[I][1], function(X)
+				return (fade(X, min - addCurveWidth, mid, max + addCurveWidth)) * volume
 			end)
 		end
 	end
@@ -261,9 +261,9 @@ function ACF.CreateSoundMenu(Panel)
 	OptionSelectionBox:Dock(TOP)
 	OptionSelectionBox:SetTall(Menu.ButtonHeight)
 	OptionSelectionBox:AddChoice("Generic - One sound. ", 1)
-	OptionSelectionBox:AddChoice("Weapons - Start/Loop/Stop. ", 2)
-	OptionSelectionBox:AddChoice("Engines - Simple interpolated. ", 3)
-	OptionSelectionBox:AddChoice("Engines - Custom interpolated. ", 4)
+	--OptionSelectionBox:AddChoice("Weapons - Start/Loop/Stop. ", 2)
+	--OptionSelectionBox:AddChoice("Engines - Simple interpolated. ", 3)
+	OptionSelectionBox:AddChoice("Engines - Multiple interpolated. ", 4)
 	OptionSelectionBox.OnSelect = function(_, Index, _)
 		Menu:StartTemporal(Panel)
 		Menu:ClearTemporal(Panel)
@@ -278,7 +278,7 @@ function ACF.CreateSoundMenu(Panel)
 			-- I explictly gave these their numeric keys so its easier to infer which panel we're working with
 			-- First panel, Generic - One sound. Old menu with text entry for a single sound
 			[1] = function ()
-				self:AddLabel("This is the first panel, I don't know what to add here yet but you can imagine its gonna be something good, so stay tuned!")
+				self:AddLabel("Play a single sound for all the supported ACF entities, including engines.")
 
 				local SoundNameText = self:AddPanel("DTextEntry")
 					SoundNameText:SetText("")
@@ -339,7 +339,7 @@ function ACF.CreateSoundMenu(Panel)
 			end,
 			-- Second panel, Weapons - Start/Loop/Stop. New menu with three text entries labeled as "Start", "Loop", "End" respectively, to put the sound paths
 			-- Layout is similar to the first option
-			[2] = function()
+			--[[[2] = function()
 				self:AddLabel("This is the second panel, I don't know what to add here yet but you can imagine its gonna be something nice, so stay tuned!")
 
 			end,
@@ -348,11 +348,21 @@ function ACF.CreateSoundMenu(Panel)
 			[3] = function()
 				self:AddLabel("This is the third panel, I don't know what to add here yet but you can imagine its gonna be something fantastic, so stay tuned!")
 
-			end,
+			end,]]--
 			-- Fourth panel, Engines - Custom interpolated. New menu with a button to add up to 16 sound paths, with configurable pitch, volume and width for each sound
 			-- Has a graph at the top of the list to better visualise how they play at a determined engine RPM
-			[4] = function()
-				self:AddLabel("This is the fourth panel, I don't know what to add here yet but you can imagine its gonna be something mindblowing, so stay tuned!")
+			[2] = function()
+				self:AddLabel("Play multiple interpolated sounds exclusively for ACF engines.")
+				-- Contact panel
+				local Contact = self:AddCollapsible("Contact", true, "icon16/bug_link.png")
+				local Help = self:AddHelp("This panel is a Work In Progress. Expect bugs to arise and things to not work! \n \
+										If you have any errors to report and/or suggestions to make, please contact us on our official discord server.")
+				local ContactBtn = self:AddButton("Discord link")
+				function ContactBtn:DoClick() gui.OpenURL("https://discord.gg/jf4cwarPUG") end
+
+				Help:SetParent(Contact)
+				ContactBtn:SetParent(Contact)
+
 				-- Reset them panels
 				Current.Panels = nil
 				Current.Panels = {}
@@ -361,7 +371,7 @@ function ACF.CreateSoundMenu(Panel)
 				-- The top group where the graph lies
 				local GraphGroup = self:AddCollapsible("Graph", nil, "icon16/chart_curve_edit.png")
 				local GraphPanel = self:AddPanel("DPanel")
-				local LabelTop = self:AddLabel("This graph shows how your engine sound/s will be heard in function of RPM.\
+				local LabelTop = self:AddLabel("This graph shows how your engine sound/s will be heard as a function of RPM.\
 												Beware this panel can be resource intensive if you add too many sounds!")
 				local RefreshBtn = self:AddPanel("DImageButton")
 				SoundGraph = self:AddGraph() -- A Glocal so other functions can call this
@@ -410,9 +420,9 @@ function ACF.CreateSoundMenu(Panel)
 				SoundGraph:Dock(TOP)
 				SoundGraph:SetTall(192)
 				SoundGraph:SetXLabel("RPM")
-				SoundGraph:SetYLabel("Pitch")
-				SoundGraph:SetYRange(0, 255)
-				SoundGraph:SetFidelity(10)
+				SoundGraph:SetYLabel("Volume")
+				SoundGraph:SetYRange(0, 200)
+				SoundGraph:SetFidelity(1)
 				SoundGraph:SetXSpacing(1000)
 				SoundGraph:SetYSpacing(100)
 
