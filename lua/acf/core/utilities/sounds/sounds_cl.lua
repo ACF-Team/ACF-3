@@ -291,7 +291,6 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 	net.Receive("ACF_Sounds_AdjustableCreate_Multi", function()
 		--print("Received " .. len .. " bits from \"ACF_Sounds_AdjustableCreate_Multi\" for sound creation!") -- Debug print
 		local Origin = net.ReadEntity()
-		if not IsValid(Origin) then return end
 
 		local SoundTable = {}
 		local Count = net.ReadUInt(4)
@@ -314,6 +313,8 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 									    Sound  = nil }) -- Fuck it we ball
 			I = I + 1
 		end
+
+		if not IsValid(Origin) then return end
 		Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable)
 	end)
 
@@ -321,9 +322,9 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 	net.Receive("ACF_Sounds_Adjustable_Multi", function()
 		--print("Received " .. len .. " bits from \"ACF_Sounds_Adjustable_Multi\" for sound updates!") -- Debug print
 		local Origin = net.ReadEntity()
-		if not IsValid(Origin) then return end
-
 		local ShouldStop = net.ReadBool()
+
+		if not IsValid(Origin) then return end
 
 		-- Do we really need to remove every existing sound when the engine just turns off?
 		if ShouldStop then
