@@ -237,8 +237,6 @@ local function DoPitchVolumeAtRPM(Origin, Throttle, RPM)
 end
 
 do -- Multiple Engine Sounds(ex. Interpolated sounds)
-	local IsValid = IsValid -- Should this stay as local to each scope?
-
 	--- Creates many sounds from a table, and stores their entries in the Origin's entity.
 	--- Reuses existing methods to create and update sounds.
 	--- @param Origin table The entity to play the sounds from
@@ -273,6 +271,7 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 		end)
 	end
 
+	local IsValid = IsValid
 	--- Stops all the existing sounds from the entity
 	--- @param Origin table The entity to stop all the sounds from
 	function Sounds.DeleteMultipleAdjustableSounds(Origin, _)
