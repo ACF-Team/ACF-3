@@ -150,9 +150,9 @@ if CLIENT then
 						DrawArm(Wheel, Baseplate, Vector(ArmX, ArmY * Mirror, ArmZ), orange)
 						DrawArm(Wheel, Baseplate, Vector(-ArmX, ArmY * Mirror, ArmZ), orange)
 					elseif ArmType == 3 then
-						DrawArm(Wheel, Baseplate, Vector(ArmX, ArmY * Mirror, ArmZ), orange)
-						DrawArm(Wheel, Baseplate, Vector(ArmX, -ArmY * Mirror, ArmZ), orange)
-						DrawArm(Wheel, Baseplate, Vector(-ArmX, 0, ArmZ), orange)
+						DrawArm(Wheel, Baseplate, Vector(-ArmX * math.cos(0), -ArmX * math.sin(0), ArmZ), orange)
+						DrawArm(Wheel, Baseplate, Vector(-ArmX * math.cos(2 * math.pi / 3), -ArmX * math.sin(2 * math.pi / 3), ArmZ), orange)
+						DrawArm(Wheel, Baseplate, Vector(-ArmX * math.cos(4 * math.pi / 3), -ArmX * math.sin(4 * math.pi / 3), ArmZ), orange)
 					end
 				end
 			end
@@ -341,10 +341,10 @@ elseif SERVER then -- Serverside-only stuff
 	end
 
 	-- A specific type of suspension arm arrangement
-	local function ArmFork(Wheel, Baseplate, X, Y, Z)
-		Arm(Wheel, Baseplate, Vector(X, Y, Z))
-		Arm(Wheel, Baseplate, Vector(X, -Y, Z))
-		Arm(Wheel, Baseplate, Vector(-X, 0, Z))
+	local function ArmFork(Wheel, Baseplate, X, _, Z)
+		Arm(Wheel, Baseplate, Vector(-X * math.cos(0), -X * math.sin(0), Z))
+		Arm(Wheel, Baseplate, Vector(-X * math.cos(2 * math.pi / 3), -X * math.sin(2 * math.pi / 3), Z))
+		Arm(Wheel, Baseplate, Vector(-X * math.cos(4 * math.pi / 3), -X * math.sin(4 * math.pi / 3), Z))
 	end
 
 	-- A specific type of suspension arm arrangement

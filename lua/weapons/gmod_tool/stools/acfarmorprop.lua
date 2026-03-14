@@ -595,13 +595,14 @@ do -- Armor readout
 			local ParentTotal = Total - PhysTotal
 			local Player = self:GetOwner()
 			local BaseplateName, BaseplateType, AmmoTypes, MaxNominal = Contraption.GetMiscInfo(Trace.Entity)
+			local AmmoList = next(AmmoTypes) and table.concat(AmmoTypes, ", ") or "N/A"
 
 			Messages.SendChat(Player, nil, Text1:format(Name))
 			Messages.SendChat(Player, nil, Text2:format(math.Round(Total, 2), math.Round(PhysTotal, 2), PhysRatio, math.Round(ParentTotal, 2)))
 			Messages.SendChat(Player, nil, Text3:format(HorsePower, math.Round(Power), math.Round(Fuel)))
 			Messages.SendChat(Player, nil, Text4:format(PhysNum + ParNum + OtherNum, PhysNum, ParNum, OtherNum, ConNum))
 			Messages.SendChat(Player, nil, Text5:format(BaseplateName, BaseplateType))
-			Messages.SendChat(Player, nil, Text6:format(math.Round(Cost, 2), table.concat(AmmoTypes, ", "), math.Round(MaxNominal, 2)))
+			Messages.SendChat(Player, nil, Text6:format(math.Round(Cost, 2), AmmoList, math.Round(MaxNominal, 2)))
 		end
 
 		return true
