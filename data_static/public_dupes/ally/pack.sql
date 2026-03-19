@@ -1,0 +1,17 @@
+-- Insert pack
+INSERT INTO PackData (packid, packname, author, contact)
+VALUES ('ally', 'Ally', 'Ally', 'Ally');
+
+-- Insert dupes using the string packid
+INSERT INTO DupeData (path, name, cost, weight, type, mobility, packid, description) VALUES
+('ex-2_mrv', 'EX-2 Medium Recon Vehicle', 4461.99, 55856.27, 'MBT', 'Tracked', 'ally', '
+140mm Cannon [M1]
+20mm Machine Gun [M2]
+40mm Grenade Launcher [M2]
+60mm Smoke Launchers [Hold Shift]
+Ballistics Computer [M3]
+Automatic Braking [Passive]
+RWR [Passive, shows up on HUD]
+LWR [Passive, makes a beeping sound]
+MWR [Passive, makes a beeping sound]
+81mm Smoke Launchers [Passive, fires on LWR/MWR]')

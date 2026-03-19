@@ -82,6 +82,7 @@ do -- Menu population functions
 	end
 
 	ACF.AddMenuOption(1, "#acf.menu.about", "information")
+	ACF.AddMenuOption(2, "#acf.menu.dupe", "arrow_down")
 	ACF.AddMenuOption(101, "#acf.menu.settings", "wrench")
 	ACF.AddMenuOption(102, "#acf.menu.permissions", "gun")
 	ACF.AddMenuOption(201, "#acf.menu.entities", "brick")
