@@ -47,3 +47,9 @@ function Baseplate:OnLoaded()
 		end
 	end
 end
+
+function Baseplate:PhysicsCollide(Data)
+	if not self:ACF_GetUserVar("ExplodeOnCollisions") then return end
+
+	Types.BP_PhysicsCollideExplosion(self, Data)
+end

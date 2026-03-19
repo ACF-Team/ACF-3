@@ -12,13 +12,15 @@ local function CreateMenu(Menu)
 	Menu:AddTitle("#acf.menu.baseplates.settings")
 	Menu:AddLabel("#acf.menu.baseplates.desc")
 
-					    	Menu:AddSimpleClassUserVar(VerificationCtx, "",                                     "BaseplateType", "Name", "Icon")
-	local SizeX           = Menu:AddNumberUserVar(     VerificationCtx, "#acf.menu.baseplates.plate_width",     "Width")
-	local SizeY           = Menu:AddNumberUserVar(     VerificationCtx, "#acf.menu.baseplates.plate_length",    "Length")
-	local SizeZ			  = Menu:AddNumberUserVar(     VerificationCtx, "#acf.menu.baseplates.plate_thickness", "Thickness")
-						    Menu:AddBooleanUserVar(    VerificationCtx, "#acf.menu.baseplates.disable_alt_e",   "DisableAltE")
-	local GForceTicks     = Menu:AddNumberUserVar(     VerificationCtx, "#acf.menu.baseplates.gforce_ticks",    "GForceTicks")
-	local GForceTicksInfo = Menu:AddHelp("#acf.menu.baseplates.gforce_ticks_info")
+					    	   Menu:AddSimpleClassUserVar(VerificationCtx, "",                                           "BaseplateType", "Name", "Icon")
+	local SizeX              = Menu:AddNumberUserVar(     VerificationCtx, "#acf.menu.baseplates.plate_width",           "Width")
+	local SizeY              = Menu:AddNumberUserVar(     VerificationCtx, "#acf.menu.baseplates.plate_length",          "Length")
+	local SizeZ		   	     = Menu:AddNumberUserVar(     VerificationCtx, "#acf.menu.baseplates.plate_thickness",       "Thickness")
+						       Menu:AddBooleanUserVar(    VerificationCtx, "#acf.menu.baseplates.disable_alt_e",         "DisableAltE")
+	local ExplodeCollide     = Menu:AddBooleanUserVar(    VerificationCtx, "#acf.menu.baseplates.explode_on_collisions", "ExplodeOnCollisions")
+	local ExplodeCollideInfo = Menu:AddHelp("#acf.menu.baseplates.explode_on_collisions_info")
+	local GForceTicks        = Menu:AddNumberUserVar(     VerificationCtx, "#acf.menu.baseplates.gforce_ticks",   		  "GForceTicks")
+	local GForceTicksInfo    = Menu:AddHelp("#acf.menu.baseplates.gforce_ticks_info")
 
 	local BaseplateBase     = Menu:AddCollapsible("#acf.menu.baseplates.baseplate_info", nil, "icon16/shape_square_edit.png")
 	local BaseplateName     = BaseplateBase:AddTitle()
@@ -35,6 +37,15 @@ local function CreateMenu(Menu)
 
 	BaseplateName.ACF_OnUpdate = function(self, KeyChanged, _, Value) if KeyChanged == "BaseplateType" then self:SetText(Value.Name) end end
 	BaseplateDesc.ACF_OnUpdate = function(self, KeyChanged, _, Value) if KeyChanged == "BaseplateType" then self:SetText(Value.Description) end end
+
+	ExplodeCollide.ACF_OnUpdate   = function(self, KeyChanged, _, Value)
+		if KeyChanged == "BaseplateType" then
+			self:SetVisible(Value == BaseplateTypes.Get("Recreational"))
+			self:GetParent():InvalidateLayout()
+		end
+	end
+	ExplodeCollideInfo.ACF_OnUpdate = ExplodeCollide.ACF_OnUpdate
+
 	GForceTicks.ACF_OnUpdate   = function(self, KeyChanged, _, Value)
 		if KeyChanged == "BaseplateType" then
 			self:SetVisible(Value == BaseplateTypes.Get("Aircraft"))
