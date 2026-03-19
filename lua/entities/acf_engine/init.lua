@@ -116,31 +116,25 @@ local IsValid      = IsValid
 local Clamp        = math.Clamp
 local Round        = math.Round
 local Remap        = math.Remap
-local max          = math.max
-local min          = math.min
+local Max          = math.max
+local Min          = math.min
 local TimerCreate  = timer.Create
 local TimerRemove  = timer.Remove
 local TickInterval = engine.TickInterval
 
 -- Count all the existing sounds in a SoundBank
 local function GetSoundCount(Engine)
-	if not Engine.SoundBank then return 1 end
+	if not Engine.SoundBanks then return 1 end
 
 	local SoundCount = 0
-	for _ in pairs(Engine.SoundBank) do
-		SoundCount = SoundCount + 1
+	local SoundBankCount = 0
+	for _, Bank in ipairs(Engine.SoundBanks) do
+		for _ in ipairs(Bank.Sounds) do
+			SoundCount = SoundCount + 1
+		end
+		SoundBankCount = SoundBankCount + 1
 	end
-	return math.max(SoundCount, 1)
-end
-
-local function GetPitchVolume(Engine)
-	local RPM = Engine.FlyRPM
-	local Pitch = Clamp(20 + (RPM * Engine.SoundPitch) * 0.02, 1, 255)
-	-- Rev limiter code disabled because it has issues with the volume delta time, but it's still here if we need it
-	local Throttle = Engine.Throttle -- Engine.RevLimited and 0 or Engine.Throttle
-	local Volume = 0.25 + (0.1 + 0.9 * ((RPM / Engine.LimitRPM) ^ 1.5)) * Throttle * 0.666
-
-	return Pitch, Volume * Engine.SoundVolume
+	return Max(SoundCount, 1), Max(SoundBankCount, 1)
 end
 
 local function GetNextFuelTank(Engine)
@@ -262,7 +256,8 @@ do -- Spawn and Update functions
 
 	local Inputs = {
 		"Active (If set to a non-zero value, it'll attempt to start the engine.)",
-		"Throttle (On a range from 0 to 100, defines how much power will be given to the engine.)"
+		"Throttle (On a range from 0 to 100, defines how much power will be given to the engine.)",
+		"Exhaust (The entity meant to play exhaust sounds from.) [ENTITY]",
 	}
 	local Outputs = {
 		"RPM (Current rotations per minute of the engine.)",
@@ -314,39 +309,41 @@ do -- Spawn and Update functions
 			Entity[V] = Data[V]
 		end
 
-		Entity.Name             = Engine.Name
-		Entity.ShortName        = Engine.ID
-		Entity.EntType          = Class.Name
-		Entity.ClassData        = Class
-		Entity.DefaultSound     = Engine.Sound
-		Entity.DefaultSoundBank = Engine.SoundBank
-		Entity.SoundBank 		= Engine.SoundBank
-		Entity.SoundCount       = GetSoundCount(Engine)
-		Entity.SoundPitch       = Engine.Pitch or 1
-		Entity.SoundVolume      = Engine.SoundVolume or 1
-		Entity.TorqueCurve      = Engine.TorqueCurve
-		Entity.PeakTorque       = Engine.Torque
-		Entity.PeakPower		= Engine.PeakPower
-		Entity.PeakPowerRPM		= Engine.PeakPowerRPM
-		Entity.PeakTorqueHeld   = Engine.Torque
-		Entity.IdleRPM          = Engine.RPM.Idle
-		Entity.PeakMinRPM       = Engine.RPM.PeakMin
-		Entity.PeakMaxRPM       = Engine.RPM.PeakMax
-		Entity.LimitRPM         = Engine.RPM.Limit
-		Entity.RevLimited       = false
-		Entity.FlywheelOverride = Engine.RPM.Override
-		Entity.FlywheelMass     = Engine.FlywheelMass
-		Entity.Inertia          = Engine.FlywheelMass * math.pi ^ 2
-		Entity.IsElectric       = Engine.IsElectric
-		Entity.IsTrans          = Engine.IsTrans -- driveshaft outputs to the side
-		Entity.FuelTypes        = Engine.Fuel or { Petrol = true }
-		Entity.FuelType         = next(Engine.Fuel)
-		Entity.EngineType       = Type.ID
-		Entity.Efficiency       = Type.Efficiency
-		Entity.TorqueScale      = Type.TorqueScale
-		Entity.HealthMult       = Type.HealthMult
-		Entity.HitBoxes         = ACF.GetHitboxes(Engine.Model)
-		Entity.Out              = ACF.LocalPlane(Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaft")).Pos), Engine.IsTrans and Vector(0, 1, 0) or Vector(1, 0, 0))
+		Entity.Name              = Engine.Name
+		Entity.ShortName         = Engine.ID
+		Entity.EntType           = Class.Name
+		Entity.ClassData         = Class
+		Entity.Exhaust 			 = Engine.Exhaust or Entity
+		Entity.DefaultSoundBanks = Engine.SoundBanks or {}
+		Entity.SoundBanks 		 = Engine.SoundBanks or {}
+		Entity.SoundCount,
+		Entity.SoundBankCount    = GetSoundCount(Engine)
+		Entity.DefaultSound      = Engine.Sound
+		Entity.SoundPitch        = Engine.Pitch or 1
+		Entity.SoundVolume       = Engine.SoundVolume or 1
+		Entity.TorqueCurve       = Engine.TorqueCurve
+		Entity.PeakTorque        = Engine.Torque
+		Entity.PeakPower		 = Engine.PeakPower
+		Entity.PeakPowerRPM		 = Engine.PeakPowerRPM
+		Entity.PeakTorqueHeld    = Engine.Torque
+		Entity.IdleRPM           = Engine.RPM.Idle
+		Entity.PeakMinRPM        = Engine.RPM.PeakMin
+		Entity.PeakMaxRPM        = Engine.RPM.PeakMax
+		Entity.LimitRPM          = Engine.RPM.Limit
+		Entity.RevLimited        = false
+		Entity.FlywheelOverride  = Engine.RPM.Override
+		Entity.FlywheelMass      = Engine.FlywheelMass
+		Entity.Inertia           = Engine.FlywheelMass * math.pi ^ 2
+		Entity.IsElectric        = Engine.IsElectric
+		Entity.IsTrans           = Engine.IsTrans -- driveshaft outputs to the side
+		Entity.FuelTypes         = Engine.Fuel or { Petrol = true }
+		Entity.FuelType          = next(Engine.Fuel)
+		Entity.EngineType        = Type.ID
+		Entity.Efficiency        = Type.Efficiency
+		Entity.TorqueScale       = Type.TorqueScale
+		Entity.HealthMult        = Type.HealthMult
+		Entity.HitBoxes          = ACF.GetHitboxes(Engine.Model)
+		Entity.Out               = ACF.LocalPlane(Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaft")).Pos), Engine.IsTrans and Vector(0, 1, 0) or Vector(1, 0, 0))
 
 		if Engine.IsTrans then
 			Entity.Out = ACF.LocalPlane(vector_origin, Vector(0, 1, 0))
@@ -405,8 +402,10 @@ do -- Spawn and Update functions
 		Entity.Throttle       = 0
 		Entity.FlyRPM         = 0
 		Entity.SoundPath      = Engine.Sound
-		Entity.SoundBank      = Engine.SoundBank
+		Entity.SoundBanks     = Engine.SoundBanks
+		Entity.SoundBankCount = 0
 		Entity.SoundCount     = 0
+		Entity.Exhaust 		  = Entity
 		Entity.LastPitch      = 0
 		Entity.LastTorque     = 0
 		Entity.LastFuelUsage  = 0
@@ -586,6 +585,9 @@ function ENT:ACF_UpdateOverlayState(State)
 	State:AddEngineTorque("Torque", self.PeakTorque)
 	State:AddKeyValue("Powerband", ("%s - %s RPM"):format(self.PeakMinRPM, self.PeakMaxRPM))
 	State:AddKeyValue("Redline", ("%s RPM"):format(self.LimitRPM))
+	-- Sounds, in case you want to see em...
+	State:AddKeyValue("SoundBanks", self.SoundBankCount)
+	State:AddKeyValue("Total Sounds", self.SoundCount)
 end
 
 ACF.AddInputAction("acf_engine", "Throttle", function(Entity, Value)
@@ -596,10 +598,17 @@ ACF.AddInputAction("acf_engine", "Active", function(Entity, Value)
 	SetActive(Entity, tobool(Value), Entity:GetTable())
 end)
 
+-- Non-directional for now...
+ACF.AddInputAction("acf_engine", "Exhaust", function(Entity)
+	Entity.Exhaust = Entity
+end)
+
 function ENT:ACF_Activate(Recalc)
 	local PhysObj = self.ACF.PhysObj
 	local Mass    = PhysObj:GetMass()
 	local Area    = PhysObj:GetSurfaceArea() * ACF.InchToCmSq
+	-- Fucking ArmoUr :face_vomiting: :face_vomiting: :face_vomiting: :face_vomiting: :face_vomiting:
+	-- TODO: Replace this variable name with the correct word and fix the comment right below since its wrong lol
 	local Armour  = Mass * 1000 / Area / 0.78 * ACF.ArmorMod -- Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
 	local Health  = Area / ACF.Threshold
 	local Percent = 1
@@ -628,67 +637,49 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	return HitRes
 end
 
+-- The function to either create or update on the client the sounds of an engine by networking the necesary data.
+-- Checks only if there was one soundbank with one sound and the latter is an empty path, so it becomes muted and saves on networking.
+-- Otherwise it networks the creation, updatin and playing of sounds on the client by interpolating them based on their defined RPM.
+-- TODO(TMF): Add a mechanism to create sounds only when its needed to do so, not just everytime the engine turns on and off, as this will allow to save on one tick network lag.
 function ENT:UpdateSoundBank(SelfTbl)
 	SelfTbl = SelfTbl or self:GetTable()
 
-	local SoundBank  = SelfTbl.SoundBank
-	local SoundCount = GetSoundCount(self)
+	local SoundBanks = SelfTbl.SoundBanks
+	local SoundCount, SoundBankCount = GetSoundCount(self)
 
+	-- Exit early if only one soundbank was found and has an empty soundpath
+	if SoundCount == 1 and SoundBankCount == 1 and SoundBanks[1].Sounds[1].Path == "" then return end
+
+	-- SoundTable was supposedly created on the client, time to update that
 	if SelfTbl.Sound then
 		local Throttle = Round(SelfTbl.Throttle, 2) * 100
 		local RPM = Round(SelfTbl.FlyRPM)
 
 		Sounds.SendMultipleAdjustableSounds(self, false, Throttle, RPM)
 	else
-		if table.IsEmpty(SoundBank) then
-			SelfTbl.SoundBank = SelfTbl.DefaultSoundBank or {}
-		else
-			Sounds.CreateMultipleAdjustableSounds(self, SoundBank, SoundCount)
-			SelfTbl.Sound = true
+		-- Populate a placeholder SoundTable if none is found for the engine
+		if table.IsEmpty(SoundBanks) then
+			local Idle = SelfTbl.IdleRPM
+			local Redline = SelfTbl.LimitRPM
+			SelfTbl.SoundBanks = SelfTbl.DefaultSoundBanks or
+			{Sounds = {
+				RPM = (Idle + Redline) / 2,
+				Path = SelfTbl.SoundPath,
+				}
+			}
 		end
-
-		SelfTbl.SoundCount = GetSoundCount(self)
-	end
-end
-
-function ENT:UpdateSound(SelfTbl)
-	SelfTbl = SelfTbl or self:GetTable()
-
-	local Path      = SelfTbl.SoundPath
-	local LastSound = SelfTbl.LastSound
-
-	if Path ~= LastSound and LastSound ~= nil then
-		self:DestroyAllSounds()
-
-		SelfTbl.LastSound = Path
-	end
-
-	if Path == "" then return end
-	if not SelfTbl.Active then return end
-
-	local Pitch, Volume = GetPitchVolume(SelfTbl)
-
-	if math.abs(Pitch - SelfTbl.LastPitch) < 1 then return end -- Don't bother updating if the pitch difference is too small to notice
-
-	SelfTbl.LastPitch = Pitch
-
-	if SelfTbl.Sound then
-		Sounds.SendAdjustableSound(self, false, Pitch, Volume)
-	else
-		Sounds.CreateAdjustableSound(self, Path, Pitch, Volume)
+		-- The sounds are able to be created
+		Sounds.CreateMultipleAdjustableSounds(self, SoundBanks, SoundBankCount, SoundCount)
+		SelfTbl.SoundCount, SelfTbl.SoundBankCount = GetSoundCount(self) -- Update these in case the SoundTable has changed 
 		SelfTbl.Sound = true
 	end
 end
 
+-- TODO(TMF): Add a mechanism to delete sounds only when its needed to do so, not just everytime the engine turns on and off.
 function ENT:DestroyAllSounds()
-	if self.SoundCount > 1 then
-		Sounds.SendMultipleAdjustableSounds(self, true, _, _)
-	else
-		Sounds.SendAdjustableSound(self, true, _, _)
-	end
+	Sounds.SendMultipleAdjustableSounds(self, true, _, _)
 
-	self.LastSound  = nil
-	self.LastPitch  = 0
+	-- Just here as a check if a sound was created or not
 	self.Sound      = nil
 end
 
@@ -853,7 +844,7 @@ function ENT:CalcRPM(SelfTbl)
 	local PeakRPM    = IsElectric and SelfTbl.FlywheelOverride or SelfTbl.PeakMaxRPM
 	local Inertia    = SelfTbl.Inertia
 	local PeakTorque = SelfTbl.PeakTorque
-	local Drag       = PeakTorque * (max(FlyRPM - IdleRPM, 0) / PeakRPM) * (1 - Throttle) / Inertia
+	local Drag       = PeakTorque * (Max(FlyRPM - IdleRPM, 0) / PeakRPM) * (1 - Throttle) / Inertia
 
 	local Torque = 0
 
@@ -865,14 +856,14 @@ function ENT:CalcRPM(SelfTbl)
 	SelfTbl.Torque = Torque
 
 	-- Let's accelerate the flywheel based on that torque
-	FlyRPM = min(max(FlyRPM + Torque / Inertia - Drag, 0), LimitRPM)
+	FlyRPM = Min(Max(FlyRPM + Torque / Inertia - Drag, 0), LimitRPM)
 
 	-- The gearboxes don't think on their own, it's the engine that calls them, to ensure consistent execution order
 	local Boxes      = 0
 	local TotalReqTq = 0
 
 	-- This is the presently available torque from the engine
-	local TorqueDiff = max(FlyRPM - IdleRPM, 0) * Inertia
+	local TorqueDiff = Max(FlyRPM - IdleRPM, 0) * Inertia
 
 	-- The resulting torque output would be 0 when there's no throttle anyways, so we'll just skip the calculations entirely
 	if Throttle ~= 0 then
@@ -888,7 +879,7 @@ function ENT:CalcRPM(SelfTbl)
 		end
 
 		-- Calculate the ratio of total requested torque versus what's available
-		local AvailRatio = min(TorqueDiff / TotalReqTq / Boxes, 1)
+		local AvailRatio = Min(TorqueDiff / TotalReqTq / Boxes, 1)
 
 		local MassRatio = SelfTbl.MassRatio
 
@@ -899,17 +890,11 @@ function ENT:CalcRPM(SelfTbl)
 		end
 	end
 
-	SelfTbl.FlyRPM = FlyRPM - min(TorqueDiff, TotalReqTq) / Inertia
+	SelfTbl.FlyRPM = FlyRPM - Min(TorqueDiff, TotalReqTq) / Inertia
 	SelfTbl.LastThink = ClockTime
 
-	if self.SoundCount > 1 then
-		self:UpdateSoundBank(SelfTbl)
-	else
-		self:UpdateSound(SelfTbl)
-	end
-
+	self:UpdateSoundBank(SelfTbl)
 	self:UpdateOutputs(SelfTbl)
-
 end
 
 function ENT:PreEntityCopy()
@@ -985,7 +970,7 @@ end
 function ENT:GetCost()
 	local selftbl = self:GetTable()
 
-	return math.max(5, (selftbl.PeakTorque / 160) + (selftbl.PeakPower / 80))
+	return Max(5, (selftbl.PeakTorque / 160) + (selftbl.PeakPower / 80))
 end
 
 function ENT:OnRemove()

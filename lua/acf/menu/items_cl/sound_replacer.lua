@@ -30,7 +30,6 @@ local Current = {Panels = {},     		-- Contains the panel objects
 function ACF.CreateSoundMenu(Panel)
 	local AddValue, ListSlider, ListPanel, SoundGraph -- Glocals
 	-- The graphing function, this is a mirror of the function found in sounds_cl.lua and is redundant
-	-- The plotting function is wrong, its plotting as if it was a function of pitch when the fade is calculated for volume instead
 	-- TODO(TMF): This should be a single function pulled from ACF.Sounds object
 	local function UpdateGraph(Panel)
 		local Count = Current.Count

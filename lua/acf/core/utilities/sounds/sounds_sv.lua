@@ -91,35 +91,46 @@ function Sounds.SendAdjustableSound(Origin, ShouldStop, Pitch, Volume)
 	end
 end
 
-	--- Creates a sound table to be broadcasted to all players within PAS.
-	--- This allows us to then create multiple sounds attached to a single entity, and be played fully clientside.
-	--- For creating 13 sounds, the data being sent can ballon up to 1.537kb's of data at once.
+	--- Creates multiple, interpolated sounds to be broadcasted to all players within PAS.
+	--- This allows us to then create multiple sounds attached to a single entity(the engine) or its extension(the exhaust), and be played fully clientside.
+	--- An entity can have multiple soundbanks but only one soundbank can be played at an entity.
 	--- @param Origin table The entity to play the sound from
 	--- @param SoundTable table The table whose keys are arbitrary RPM's and values containing a table with a sound path, pitch and volume, to be played at a defined RPM(Its keys).
-function Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable, SoundCount)
+	--- @param SoundBankCount int The amount of soundbanks the client has to deal with
+	--- @param SoundCount int The amount of sounds to be played by the client
+function Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable, SoundBankCount, SoundCount)
 	if not IsValid(Origin) then return end
 	if not istable(SoundTable) then return end
 
+	local Exhaust = Origin.Exhaust
 	-- Separate our table in chunks to be sent instead of all at once
 	-- This saves about 40% in data size vs. sending the whole table
 	net.Start("ACF_Sounds_AdjustableCreate_Multi")
 		net.WriteEntity(Origin)
+		net.WriteEntity(Exhaust)
+		net.WriteUInt(SoundBankCount, 2)
 		net.WriteUInt(SoundCount, 4)
 
-		for _, v in ipairs(SoundTable) do
-			local rpm = v.RPM
-			local stringPath = v.Path
-			local pitch = v.Pitch
-			local volume = v.Volume
-			local width = v.Width
+		for _, Bank in ipairs(SoundTable) do
+			net.WriteBool(Bank.PlaysAtExhaust)
+			net.WriteUInt(Bank.OffThrottle or 0.25)
+			net.WriteUInt(Bank.OnThrottle or 1)
 
-			net.WriteUInt(rpm, 14)
-			net.WriteString(stringPath)
-			net.WriteUInt(pitch, 8)
+			for _, V in ipairs(Bank.Sounds) do
+				local RPM = V.RPM
+				local StringPath = V.Path
+				local Pitch = V.Pitch
+				local Volume = V.Volume
+				local Width = V.Width
 
-			volume = volume * 100 -- Sending the approximate volume as an int to reduce message size
-			net.WriteUInt(volume, 8)
-			net.WriteUInt(width, 4)
+				net.WriteUInt(RPM, 14)
+				net.WriteString(StringPath)
+				net.WriteUInt(Pitch, 8)
+
+				Volume = Volume * 100 -- Sending the approximate volume as an int to reduce message size
+				net.WriteUInt(Volume, 8)
+				net.WriteUInt(Width, 4)
+			end
 		end
 	net.SendPAS(Origin:GetPos())
 end
