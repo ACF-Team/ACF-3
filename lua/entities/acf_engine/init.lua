@@ -126,15 +126,15 @@ local TickInterval = engine.TickInterval
 local function GetSoundCount(Engine)
 	if not Engine.SoundBanks then return 1 end
 
-	local SoundCount = 0
 	local SoundBankCount = 0
-	for _, Bank in ipairs(Engine.SoundBanks) do
-		for _ in ipairs(Bank.Sounds) do
-			SoundCount = SoundCount + 1
-		end
-		SoundBankCount = SoundBankCount + 1
+	local TotalSounds = 0
+
+	for _, V in ipairs(Engine.SoundBanks) do
+		TotalSounds = TotalSounds + #V.Sounds
 	end
-	return Max(SoundCount, 1), Max(SoundBankCount, 1)
+
+	SoundBankCount = #Engine.SoundBanks
+	return SoundBankCount, TotalSounds
 end
 
 local function GetNextFuelTank(Engine)
@@ -201,12 +201,7 @@ local function SetActive(Entity, Value, EntTbl)
 		EntTbl.Torque    = EntTbl.PeakTorque
 		EntTbl.FlyRPM    = EntTbl.IdleRPM * 1.5
 
-		if Entity.SoundCount > 1 then
-			Entity:UpdateSoundBank(EntTbl)
-		else
-			Entity:UpdateSound(EntTbl)
-		end
-
+		Entity:UpdateSoundBank(EntTbl)
 		Entity:NextThink(Clock.CurTime + TickInterval())
 
 		TimerCreate("ACF Engine Clock " .. Entity:EntIndex(), 3, 0, function()
@@ -316,8 +311,8 @@ do -- Spawn and Update functions
 		Entity.Exhaust 			 = Engine.Exhaust or Entity
 		Entity.DefaultSoundBanks = Engine.SoundBanks or {}
 		Entity.SoundBanks 		 = Engine.SoundBanks or {}
-		Entity.SoundCount,
-		Entity.SoundBankCount    = GetSoundCount(Engine)
+		Entity.SoundBankCount,
+		Entity.SoundCount	     = GetSoundCount(Engine)
 		Entity.DefaultSound      = Engine.Sound
 		Entity.SoundPitch        = Engine.Pitch or 1
 		Entity.SoundVolume       = Engine.SoundVolume or 1
@@ -599,8 +594,8 @@ ACF.AddInputAction("acf_engine", "Active", function(Entity, Value)
 end)
 
 -- Non-directional for now...
-ACF.AddInputAction("acf_engine", "Exhaust", function(Entity)
-	Entity.Exhaust = Entity
+ACF.AddInputAction("acf_engine", "Exhaust", function(Entity, Value)
+	Entity.Exhaust = Value
 end)
 
 function ENT:ACF_Activate(Recalc)
@@ -608,7 +603,8 @@ function ENT:ACF_Activate(Recalc)
 	local Mass    = PhysObj:GetMass()
 	local Area    = PhysObj:GetSurfaceArea() * ACF.InchToCmSq
 	-- Fucking ArmoUr :face_vomiting: :face_vomiting: :face_vomiting: :face_vomiting: :face_vomiting:
-	-- TODO: Replace this variable name with the correct word and fix the comment right below since its wrong lol
+	-- Britons gave us americans the english language so we can sanitize it and have it sound more or less understandable and be more legible!
+	-- TODO: Replace this variable name and all instances of it with the correct word and fix the comment since its wrong lol
 	local Armour  = Mass * 1000 / Area / 0.78 * ACF.ArmorMod -- Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
 	local Health  = Area / ACF.Threshold
 	local Percent = 1
@@ -637,6 +633,10 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	return HitRes
 end
 
+function ENT:UpdateSound()
+
+end
+
 -- The function to either create or update on the client the sounds of an engine by networking the necesary data.
 -- Checks only if there was one soundbank with one sound and the latter is an empty path, so it becomes muted and saves on networking.
 -- Otherwise it networks the creation, updatin and playing of sounds on the client by interpolating them based on their defined RPM.
@@ -645,10 +645,10 @@ function ENT:UpdateSoundBank(SelfTbl)
 	SelfTbl = SelfTbl or self:GetTable()
 
 	local SoundBanks = SelfTbl.SoundBanks
-	local SoundCount, SoundBankCount = GetSoundCount(self)
+	local SoundBankCount, SoundCount = GetSoundCount(self)
 
 	-- Exit early if only one soundbank was found and has an empty soundpath
-	if SoundCount == 1 and SoundBankCount == 1 and SoundBanks[1].Sounds[1].Path == "" then return end
+	if SoundBankCount == 1 and SoundCount == 1 and SoundBanks[1].Sounds[1].Path == "" then return end
 
 	-- SoundTable was supposedly created on the client, time to update that
 	if SelfTbl.Sound then
@@ -670,7 +670,7 @@ function ENT:UpdateSoundBank(SelfTbl)
 		end
 		-- The sounds are able to be created
 		Sounds.CreateMultipleAdjustableSounds(self, SoundBanks, SoundBankCount, SoundCount)
-		SelfTbl.SoundCount, SelfTbl.SoundBankCount = GetSoundCount(self) -- Update these in case the SoundTable has changed 
+		SelfTbl.SoundBankCount, SelfTbl.SoundCount = GetSoundCount(self) -- Update these in case the SoundTable has changed 
 		SelfTbl.Sound = true
 	end
 end
@@ -680,7 +680,7 @@ function ENT:DestroyAllSounds()
 	Sounds.SendMultipleAdjustableSounds(self, true, _, _)
 
 	-- Just here as a check if a sound was created or not
-	self.Sound      = nil
+	self.Sound = nil
 end
 
 function ENT:ACF_IsLegal()

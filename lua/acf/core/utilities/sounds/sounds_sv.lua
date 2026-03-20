@@ -102,19 +102,21 @@ function Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable, SoundBankCoun
 	if not IsValid(Origin) then return end
 	if not istable(SoundTable) then return end
 
-	local Exhaust = Origin.Exhaust
 	-- Separate our table in chunks to be sent instead of all at once
 	-- This saves about 40% in data size vs. sending the whole table
 	net.Start("ACF_Sounds_AdjustableCreate_Multi")
 		net.WriteEntity(Origin)
-		net.WriteEntity(Exhaust)
+		net.WriteEntity(Origin.Exhaust)
 		net.WriteUInt(SoundBankCount, 2)
 		net.WriteUInt(SoundCount, 4)
 
 		for _, Bank in ipairs(SoundTable) do
 			net.WriteBool(Bank.PlaysAtExhaust)
-			net.WriteUInt(Bank.OffThrottle or 0.25)
-			net.WriteUInt(Bank.OnThrottle or 1)
+
+			local OffThrottle = (Bank.OffThrottle or 0.25) * 100 -- Sending the approximate value as an int to reduce message size
+			local OnThrottle = (Bank.OnThrottle or 1) * 100
+			net.WriteUInt(OffThrottle, 8)
+			net.WriteUInt(OnThrottle, 8)
 
 			for _, V in ipairs(Bank.Sounds) do
 				local RPM = V.RPM
