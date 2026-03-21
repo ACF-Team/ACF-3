@@ -17,7 +17,7 @@ local function SendQueue()
 		end
 	end
 
-	table.Empty(Queue)
+	Queue = {}
 
 	local Count = #Batch
 

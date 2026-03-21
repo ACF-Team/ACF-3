@@ -1,14 +1,11 @@
-DROP TABLE IF EXISTS DupeData;
-DROP TABLE IF EXISTS PackData;
-
-CREATE TABLE PackData (
+CREATE TEMP TABLE PackData (
     packid TEXT PRIMARY KEY,
     packname TEXT NOT NULL,
     author TEXT,
     contact TEXT
 );
 
-CREATE TABLE DupeData (
+CREATE TEMP TABLE DupeData (
     dupeid INTEGER PRIMARY KEY AUTOINCREMENT,
     path TEXT NOT NULL,
     name TEXT,

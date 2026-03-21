@@ -128,6 +128,11 @@ do
 		end
 		table.sort(ForwardGears, function(A, B) return MainGearbox.Gears[A] < MainGearbox.Gears[B] end)
 		table.sort(ReverseGears, function(A, B) return MainGearbox.Gears[A] > MainGearbox.Gears[B] end)
+		if not MainGearbox.GearboxLegacyRatio then
+			ForwardGears = table.Reverse(ForwardGears)
+			ReverseGears = table.Reverse(ReverseGears)
+		end
+
 		self.ForwardGears, self.ReverseGears = ForwardGears, ReverseGears
 		if MainGearbox.Automatic then self.ForwardGears = {1} self.ReverseGears = {2} end
 
@@ -172,6 +177,13 @@ do
 		for Wheel in pairs(self.Wheels) do self.SteerAngles[Wheel] = 0 end
 
 		-- if self.Gearbox.DoubleDiff then self.CanNeutral = true end
+
+		-- Set default shift RPMs to one of the engine's powerbands
+		local Engine = next(self.Engines)
+		if not MainGearbox.Automatic and IsValid(Engine) then
+			if self:GetShiftMinRPM() == 0 then self:SetShiftMinRPM(Engine.PeakMinRPM + 100) end
+			if self:GetShiftMaxRPM() == 0 then self:SetShiftMaxRPM(Engine.PeakMaxRPM - 100) end
+		end
 
 		self.LastInputs = {}
 		self.LastGear = 0
