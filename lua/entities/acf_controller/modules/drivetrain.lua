@@ -178,6 +178,11 @@ do
 
 		-- if self.Gearbox.DoubleDiff then self.CanNeutral = true end
 
+		-- Set default shift RPMs to one of the engine's powerbands
+		local Engine = next(self.Engines)
+		if self:GetShiftMinRPM() == 0 then self:SetShiftMinRPM(Engine.PeakMinRPM + 100) end
+		if self:GetShiftMaxRPM() == 0 then self:SetShiftMaxRPM(Engine.PeakMaxRPM - 100) end
+
 		self.LastInputs = {}
 		self.LastGear = 0
 		self.LastTrueGear = 0
