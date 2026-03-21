@@ -180,8 +180,10 @@ do
 
 		-- Set default shift RPMs to one of the engine's powerbands
 		local Engine = next(self.Engines)
-		if not MainGearbox.Automatic and self:GetShiftMinRPM() == 0 then self:SetShiftMinRPM(Engine.PeakMinRPM + 100) end
-		if not MainGearbox.Automatic and self:GetShiftMaxRPM() == 0 then self:SetShiftMaxRPM(Engine.PeakMaxRPM - 100) end
+		if not MainGearbox.Automatic and IsValid(Engine) then
+			if self:GetShiftMinRPM() == 0 then self:SetShiftMinRPM(Engine.PeakMinRPM + 100) end
+			if self:GetShiftMaxRPM() == 0 then self:SetShiftMaxRPM(Engine.PeakMaxRPM - 100) end
+		end
 
 		self.LastInputs = {}
 		self.LastGear = 0
