@@ -128,6 +128,11 @@ do
 		end
 		table.sort(ForwardGears, function(A, B) return MainGearbox.Gears[A] < MainGearbox.Gears[B] end)
 		table.sort(ReverseGears, function(A, B) return MainGearbox.Gears[A] > MainGearbox.Gears[B] end)
+		if not MainGearbox.GearboxLegacyRatio then
+			ForwardGears = table.Reverse(ForwardGears)
+			ReverseGears = table.Reverse(ReverseGears)
+		end
+
 		self.ForwardGears, self.ReverseGears = ForwardGears, ReverseGears
 		if MainGearbox.Automatic then self.ForwardGears = {1} self.ReverseGears = {2} end
 
