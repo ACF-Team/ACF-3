@@ -1,6 +1,6 @@
 local Sounds = ACF.Utilities.Sounds
 local _MAXSOUNDS = 16 -- Maximum amount of sounds we're willing to send and have. TODO(TMF): Make this a global!
-local _HUGE = math.huge
+local _HUGE = 1000000 --math.huge returns nan for the Fade function
 local Map = math.Remap
 local Clamp = math.Clamp
 
@@ -212,7 +212,6 @@ local function DoPitchVolumeAtRPM(Origin, Throttle, RPM)
 	if not SoundObjects or table.IsEmpty(SoundObjects) then return end
 	--SmoothRPM = SmoothRPM * (1 - 0.1) + RPM 
 	--SmoothThrottle = SmoothThrottle * (1 - 0.1) + Throttle
-
 
 	-- TODO(TMF): Potentially add some mechanism here to check for any differences and only update those
 	for _, SoundBank in ipairs(SoundObjects) do

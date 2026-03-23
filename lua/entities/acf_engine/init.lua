@@ -581,8 +581,17 @@ function ENT:ACF_UpdateOverlayState(State)
 	State:AddKeyValue("Powerband", ("%s - %s RPM"):format(self.PeakMinRPM, self.PeakMaxRPM))
 	State:AddKeyValue("Redline", ("%s RPM"):format(self.LimitRPM))
 	-- Sounds, in case you want to see em...
-	State:AddKeyValue("SoundBanks", self.SoundBankCount)
-	State:AddKeyValue("Total Sounds", self.SoundCount)
+	local SoundBankCount, TotalSoundsCount = GetSoundCount(self)
+	if SoundBankCount == 0 then
+		State:AddWarning("No soundbanks were detected!")
+	else
+		State:AddKeyValue("SoundBanks", self.SoundBankCount)
+	end
+	if TotalSoundsCount == 0 then
+		State:AddWarning("This engine is muted!")
+	else
+		State:AddKeyValue("Total Sounds", self.SoundCount)
+	end
 end
 
 ACF.AddInputAction("acf_engine", "Throttle", function(Entity, Value)
@@ -633,8 +642,12 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	return HitRes
 end
 
-function ENT:UpdateSound()
+-- Somehow this function is still being called somewhere upon this entity's creation 
+-- Instead we simply redirect its data to the proper function call, even though this might be wasteful...
+function ENT:UpdateSound(SelfTbl)
+	SelfTbl = SelfTbl or self:GetTable()
 
+	self:UpdateSoundBank(SelfTbl)
 end
 
 -- The function to either create or update on the client the sounds of an engine by networking the necesary data.
@@ -661,16 +674,21 @@ function ENT:UpdateSoundBank(SelfTbl)
 		if table.IsEmpty(SoundBanks) then
 			local Idle = SelfTbl.IdleRPM
 			local Redline = SelfTbl.LimitRPM
-			SelfTbl.SoundBanks = SelfTbl.DefaultSoundBanks or
-			{Sounds = {
-				RPM = (Idle + Redline) / 2,
-				Path = SelfTbl.SoundPath,
-				}
-			}
+			SoundBanks = {{	Sounds = {{
+							RPM = (Idle + Redline) / 2,
+							Path = SelfTbl.SoundPath,
+							Pitch = 100,
+							Volume = 1}
+						  }
+						 }}
+			SelfTbl.SoundBanks = SoundBanks
+			return
 		end
 		-- The sounds are able to be created
+		SoundBankCount, SoundCount = GetSoundCount(self) -- Update these in case the SoundTable has changed 
+		SelfTbl.SoundBankCount, SelfTbl.SoundCount = SoundBankCount, SoundCount
+
 		Sounds.CreateMultipleAdjustableSounds(self, SoundBanks, SoundBankCount, SoundCount)
-		SelfTbl.SoundBankCount, SelfTbl.SoundCount = GetSoundCount(self) -- Update these in case the SoundTable has changed 
 		SelfTbl.Sound = true
 	end
 end

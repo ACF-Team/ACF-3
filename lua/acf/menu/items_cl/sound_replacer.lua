@@ -43,7 +43,7 @@ function ACF.CreateSoundMenu(Panel)
 		for I = 1, Count do
 			local addCurveWidth = GetClientNumber("Width " .. I, 0)
 			local volume = GetClientNumber("Volume " .. I, 0) * 100
-			local min = I == 1 and 0 or GetClientNumber("RPM " .. clamp(I - 1 - addCurveWidth, 1, _MAXSOUNDS))
+			local min = I == 1 and -1000000 or GetClientNumber("RPM " .. clamp(I - 1 - addCurveWidth, 1, _MAXSOUNDS))
 			local mid = GetClientNumber("RPM " .. I, 0)
 			local max = I == Count and 1000000 or GetClientNumber("RPM " .. clamp(I + 1 + addCurveWidth, 1, _MAXSOUNDS))
 

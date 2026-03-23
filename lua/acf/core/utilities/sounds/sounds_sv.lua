@@ -111,7 +111,7 @@ function Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable, SoundBankCoun
 		net.WriteUInt(SoundCount, 4)
 
 		for _, Bank in ipairs(SoundTable) do
-			net.WriteBool(Bank.PlaysAtExhaust)
+			net.WriteBool(Bank.PlaysAtExhaust or false)
 
 			local OffThrottle = (Bank.OffThrottle or 0.25) * 100 -- Sending the approximate value as an int to reduce message size
 			local OnThrottle = (Bank.OnThrottle or 1) * 100
@@ -131,7 +131,7 @@ function Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable, SoundBankCoun
 
 				Volume = Volume * 100 -- Sending the approximate volume as an int to reduce message size
 				net.WriteUInt(Volume, 8)
-				net.WriteUInt(Width, 4)
+				net.WriteUInt(Width or 0, 4)
 			end
 		end
 	net.SendPAS(Origin:GetPos())
