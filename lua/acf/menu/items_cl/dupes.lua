@@ -60,10 +60,12 @@ local function CreateMenu(Menu)
 			if PackData then sql.Query(PackData) end
 		end
 
+		local Scale = ScrH() / 1080 -- It was designed in 1920x1080
+
 		-- Main Window (Still a Frame, but we'll use ACF_Panel for the guts)
 		local DupeFrame = vgui.Create("DFrame")
 		DupeFrame:SetTitle("ACF Community Dupe Browser")
-		DupeFrame:SetSize(1215, 840)
+		DupeFrame:SetSize(1215 * Scale, 840 * Scale)
 		DupeFrame:Center()
 		DupeFrame:MakePopup()
 		DupeFrame:SetSizable(true)
@@ -71,7 +73,7 @@ local function CreateMenu(Menu)
 		-- Right Panel: Info (Using ACF_Panel wrapper)
 		local InfoPanel = vgui.Create("ACF_Panel", DupeFrame)
 		InfoPanel:Dock(RIGHT)
-		InfoPanel:SetWide(200)
+		InfoPanel:SetWide(200 * Scale)
 
 		-- File Info Section
 		local FileInfoContent, _ = InfoPanel:AddCollapsible("Dupe Information (File)", true)
@@ -142,7 +144,7 @@ local function CreateMenu(Menu)
 		-- Left Panel: Filters
 		local FilterPanel = vgui.Create("ACF_Panel", DupeFrame)
 		FilterPanel:Dock(LEFT)
-		FilterPanel:SetWide(200)
+		FilterPanel:SetWide(200 * Scale)
 
 		local FilterContent, _ = FilterPanel:AddCollapsible("Dupe Filters", true)
 
@@ -201,7 +203,7 @@ local function CreateMenu(Menu)
 			for _, dupe in ipairs(dupes) do
 				local FilePath = ImagePath .. "/" .. dupe.packid .. "/" .. dupe.path
 				local Icon = vgui.Create("DImageButton")
-				Icon:SetSize(256, 256)
+				Icon:SetSize(256 * Scale, 256 * Scale)
 				Icon:SetMaterial(Material(FilePath .. ".jpg"))
 				Icon:SetTooltip(dupe.name)
 				Icon.Data = dupe
