@@ -377,8 +377,10 @@ do
 
 	local function VerifyData(Data)
 		-- Default crew is a sitting commander that can replace others and be replaced
-		if Data.CrewTypeID == nil then Data.CrewTypeID = "Commander" end
-		if Data.CrewModelID == nil then Data.CrewModelID = "Sitting" end
+		-- The Id field is used by ACE to store their own crew type
+		if Data.CrewTypeID == nil then Data.CrewTypeID = Data.Id or "Commander" end
+		-- The ModelType field is used by ACE to store their own crew model
+		if Data.CrewModelID == nil then Data.CrewModelID = Data.ModelType or "Sitting" end
 		if Data.ReplaceOthers == nil then Data.ReplaceOthers = true end
 		if Data.ReplaceSelf == nil then Data.ReplaceSelf = true end
 		if Data.UseAnimation == nil then Data.UseAnimation = false end
