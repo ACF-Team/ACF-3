@@ -56,6 +56,7 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "Float", "ShiftTime", { KeyName = "shifttime", Edit = { type = "Int", order = 80, category = "Shifting Settings", min = 100, max = 3000, tooltip = "Delay between gear shifts"  } } )
 	self:NetworkVar( "Int", "ShiftMinRPM", { KeyName = "shiftminrpm", Edit = { type = "Int", order = 81, category = "Shifting Settings", min = 0, max = 10000, tooltip = "Shifts gear down at this RPM"  } } )
 	self:NetworkVar( "Int", "ShiftMaxRPM", { KeyName = "shiftmaxrpm", Edit = { type = "Int", order = 82, category = "Shifting Settings", min = 0, max = 10000, tooltip = "Shifts gear up at this RPM"  } } )
+	self:NetworkVar( "Bool", "DisableAutoShifter", { KeyName = "disableautoshifter", Edit = { type = "Bool", order = 83, category = "Shifting Settings", tooltip = "Disables automatic shifting"  } } )
 
 	self:NetworkVar( "Float", "SteerPercent1", { KeyName = "steerpercent1", Edit = { type = "Float", order = 90, category = "Car Steering Settings", min = -1, max = 1, tooltip = "Percent of brake strength used to steer 1st wheel pair" } } )
 	self:NetworkVar( "Float", "SteerPercent2", { KeyName = "steerpercent2", Edit = { type = "Float", order = 91, category = "Car Steering Settings", min = -1, max = 1, tooltip = "Percent of brake strength used to steer 2nd wheel pair" } } )
