@@ -451,6 +451,10 @@ do -- Spawn and Update functions
 	Entities.Register("acf_missileradar", ACF.MakeRadar, "Radar") -- Backwards compatibility
 	Entities.Register("acf_radar", ACF.MakeRadar, "Radar")
 
+	-- Compatibility with ACE radar entities
+	Entities.Register("ace_trackingradar", ACF.MakeRadar, "Radar")
+	Entities.Register("ace_searchradar", ACF.MakeRadar, "Radar")
+
 	ACF.RegisterLinkSource("acf_radar", "Weapons")
 
 	------------------- Updating ---------------------
