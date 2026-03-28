@@ -8,34 +8,6 @@ resource.AddFile("resource/fonts/16segments-basic.ttf")
 resource.AddFile("resource/fonts/conduit.ttf")
 resource.AddFile("resource/fonts/prototype.ttf")
 
-do -- Networked notifications
-	local Messages = ACF.Utilities.Messages
-
-	util.AddNetworkString("ACF_Notify")
-	util.AddNetworkString("ACF_NameAndShame")
-
-	function ACF.Shame(Entity, Message)
-		if not ACF.NameAndShame then return end
-		local Owner = Entity:CPPIGetOwner()
-
-		if not IsValid(Owner) then return end
-
-		local ShameMsg = Owner:GetName() .. " had " .. tostring(Entity) .. " disabled for " .. Message
-		Messages.PrintLog("Error", ShameMsg)
-
-		net.Start("ACF_NameAndShame")
-			net.WriteString(ShameMsg)
-		net.Broadcast()
-	end
-
-	function ACF.SendNotify(Player, Success, Message)
-		net.Start("ACF_Notify")
-			net.WriteBool(Success or false)
-			net.WriteString(Message or "")
-		net.Send(Player)
-	end
-end
-
 do -- HTTP Request
 	local NoRequest = true
 	local http      = http
