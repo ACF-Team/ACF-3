@@ -329,7 +329,7 @@ do
             self.Image:SetPos(6, 6)
             self.Image:SetSize(20, 20)
 
-            self.Label:SetPos(24 + 8, 4)
+            self.Label:SetPos(24 + 8, 6)
             self.Label:SetSize(LW, LH)
             self.Desc:SetPos(8, 8 + LH)
             self.Desc:SetSize(DW, DH)
