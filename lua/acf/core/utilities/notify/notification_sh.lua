@@ -242,10 +242,38 @@ do
                 DHTML_Paint(self, W, H)
             end
 
-            function Panel:Paint()
+            function Panel:Paint(W, H)
                 Derma_DrawBackgroundBlur(self, startTime)
                 BackColor.a = math.ease.InCubic(math.Clamp(SysTime() - startTime - 0.6, 0, 1)) * 255
                 Back:SetColor(BackColor)
+
+                local Size = ScrH() * 0.05
+                local CenterX, CenterY = W / 2, H / 2
+                local Radius = Size / 2
+                local Spokes = 12
+                local Time = SysTime()
+                for I = 0, Spokes - 1 do
+                    local Angle = math.rad((I / Spokes) * 360 - 90)
+                    local Frac = 1 - (((I / Spokes) + Time * 1.5) % 1)
+                    local Alpha = Frac * 100
+                    local Thick = Size * 0.02
+                    local InnerRadius = Radius * 0.4
+                    local OuterRadius = Radius * 0.85
+                    local X1 = CenterX + math.cos(Angle) * InnerRadius
+                    local Y1 = CenterY + math.sin(Angle) * InnerRadius
+                    local X2 = CenterX + math.cos(Angle) * OuterRadius
+                    local Y2 = CenterY + math.sin(Angle) * OuterRadius
+                    surface.SetDrawColor(255, 255, 255, Alpha)
+                    surface.DrawLine(X1, Y1, X2, Y2)
+                    for T = -Thick / 2, Thick / 2 do
+                        local Offset = math.abs(Angle) < math.rad(45) or math.abs(Angle - math.pi) < math.rad(45)
+                        if Offset then
+                            surface.DrawLine(X1, Y1 + T, X2, Y2 + T)
+                        else
+                            surface.DrawLine(X1 + T, Y1, X2 + T, Y2)
+                        end
+                    end
+                end
             end
         end
     end
