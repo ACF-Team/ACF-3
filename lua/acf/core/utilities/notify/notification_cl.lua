@@ -366,9 +366,9 @@ do
 
         local HasButtons = self.Buttons ~= nil and #self.Buttons ~= 0
 
-        tall = tall + 48
+        tall = tall + 32
         if HasButtons then
-            tall = tall + 16
+            tall = tall + 32
         end
         self:SetSize(wide, tall)
         self.DesiredWidth = wide
