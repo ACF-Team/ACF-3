@@ -202,9 +202,51 @@ do
 
     do
         local OpenPonder = Notify.RegisterAction("OpenPonder")
-        function OpenPonder.DoClickCL(Context, UUID)
+        function OpenPonder.DoClickCL(_, UUID)
             if not Ponder then return Context:DoButtonError("Ponder is not installed.") end -- This shouldn't even show up in the future
             Ponder.Open(UUID)
+        end
+    end
+
+    do
+        local OpenWiki = Notify.RegisterAction("OpenWiki")
+
+        function OpenWiki.DoClickCL(_, URL)
+            URL = "https://lengthenedgradient.github.io/Wiki/docs/" .. URL
+            local Panel = vgui.Create("DPanel")
+            local startTime = SysTime()
+
+            Panel:SetSize(ScrW() * 0.85, ScrH() * 0.85)
+            Panel:Center()
+            Panel:MakePopup()
+
+            local BackColor = color_white:Copy()
+            BackColor.a = 0
+            local Back = Panel:Add("DButton")
+            Back:Dock(TOP)
+            Back:SetPaintBackground(false)
+            Back:SetColor(BackColor)
+            Back:SetText("Exit")
+            Back:SetFont("ACF_Title")
+            function Back:DoClick()
+                Panel:Remove()
+            end
+
+            local HTML = Panel:Add("DHTML")
+            HTML:Dock(FILL)
+            HTML:OpenURL(URL)
+            HTML:DockMargin(16, 16, 16, 16)
+
+            local DHTML_Paint = HTML.Paint
+            function HTML:Paint(W, H)
+                DHTML_Paint(self, W, H)
+            end
+
+            function Panel:Paint()
+                Derma_DrawBackgroundBlur(self, startTime)
+                BackColor.a = math.ease.InCubic(math.Clamp(SysTime() - startTime - 0.6, 0, 1)) * 255
+                Back:SetColor(BackColor)
+            end
         end
     end
 end
