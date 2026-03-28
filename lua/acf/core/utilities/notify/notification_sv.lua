@@ -27,6 +27,7 @@ do -- Backwards compatibility with the old notification system.
 end
 
 -- Example on how this could work from the serverside
+--[[
 local Notify = ACF.Utilities.Notify
 local function DisableEntity(Ent)
     Notify.Start()
@@ -42,3 +43,4 @@ local function DisableEntity(Ent)
     Notify.Transmit()
 end
 DisableEntity(Entity(87))
+]]

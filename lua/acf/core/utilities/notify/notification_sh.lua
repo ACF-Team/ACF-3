@@ -82,6 +82,15 @@ end
 
 -- Recipient filter features.
 if SERVER then
+    function Notify.AddTargetEntityOwner()
+        local Ent = Entity(CurrentNotification.TargetEntity)
+        if not IsValid(Ent) then return end
+
+        local Owner = Ent:CPPIGetOwner()
+        if not IsValid(Owner) then return end
+
+        CurrentNotification.Filter:AddPlayer(Owner)
+    end
     function Notify.AddAllPlayers(...) CurrentNotification.Filter:AddAllPlayers(...) end
     function Notify.AddPAS(...) CurrentNotification.Filter:AddPAS(...) end
     function Notify.AddPlayer(...) CurrentNotification.Filter:AddPlayer(...) end
@@ -96,6 +105,7 @@ if SERVER then
     function Notify.RemoveRecipientsByTeam(...) CurrentNotification.Filter:RemoveRecipientsByTeam(...) end
     function Notify.RemoveRecipientsNotOnTeam(...) CurrentNotification.Filter:RemoveRecipientsNotOnTeam(...) end
 else -- Nulled out functions for clientside.
+    function Notify.AddTargetEntityOwner() end
     function Notify.AddAllPlayers() end
     function Notify.AddPAS() end
     function Notify.AddPlayer() end
