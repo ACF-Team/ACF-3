@@ -35,12 +35,19 @@ local function DisableEntity(Ent)
     Notify.WithSilkIcon("error")
     Notify.WithTargetEntity(Ent)
     Notify.WithDescription("The entity is invisible to projectiles.")
-    Notify.AddButton("Look at the problematic entity", Ent)
+
+    Notify.AddButton("Look at Entity", Ent)
         :WithAction("LookAtEntity", Ent)
         :WithPulse()
+
+    Notify.AddButton("Ponder About...", Ent)
+        :WithAction("OpenPonder", "acf.tankbasics.armor")
+
+    Notify.AddButton("Wiki Article", Ent)
+        :WithAction("OpenWiki", "getting_started/first_tank/baseplate_aio.html#all-in-one-aio-controllers")
 
     Notify.AddPlayer(player.GetAll()[1])
     Notify.Transmit()
 end
-DisableEntity(Entity(87))
+DisableEntity(Entity(88))
 ]]
