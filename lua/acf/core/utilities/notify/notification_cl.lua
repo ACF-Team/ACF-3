@@ -85,7 +85,7 @@ do
     local TempEntityBufferSustained = {}
     local HaloColor = Color(210, 222, 255)
     hook.Add("PreDrawHalos", "ACF_DrawNotificationHolos", function()
-        if #Entities == 0 and #HoveredEntities == 0 then return end
+        if #Entities == 0 and not next(HoveredEntities) then return end
 
         local DeltaTime = RealFrameTime()
         local Time      = SysTime()
@@ -377,6 +377,9 @@ do
     end
 
     function PANEL:SetData(Data)
+        self.DataReference = Data
+        self.TargetEntity = Entity(Data.TargetEntity)
+
         for _, Btn in ipairs(self.Buttons) do Btn:Remove() end
         self.Buttons = {}
 
@@ -424,9 +427,14 @@ do
             RecursiveHoverCheckElement = RecursiveHoverCheckElement:GetParent()
         end
 
+        local TargetEntity = self.TargetEntity
         if RecursiveHoverCheck then
             self.StartTime = self.StartTime + RealFrameTime()
+            if IsValid(TargetEntity) then Notify.StartEntityPulse(TargetEntity) end
+        else
+            if IsValid(TargetEntity) then Notify.StopEntityPulse(TargetEntity) end
         end
+        self.RecursivelyHovered = RecursiveHoverCheck
     end
 
     function PANEL:Paint( w, h )
