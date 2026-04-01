@@ -307,10 +307,10 @@ do
 		local ShouldNeutral = self.CanNeutral and not self:GetForceCarSteering()
 		local TrueGear = 0
 		if S and not ShouldNeutral then
-			Gear = math.Clamp(Gear, 0, #self.ReverseGears)
+			Gear = math.Clamp(Gear, 1, #self.ReverseGears)
 			TrueGear = self.ReverseGears[Gear] or 0
 		else
-			Gear = math.Clamp(Gear, 0, #self.ForwardGears)
+			Gear = math.Clamp(Gear, 1, #self.ForwardGears)
 			TrueGear = self.ForwardGears[Gear] or 0
 		end
 
