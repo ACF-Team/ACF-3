@@ -580,6 +580,30 @@ function PANEL:AddPonderAddonCategory(AddonID, CategoryID)
 	return Button
 end
 
+function PANEL:AddWikiLink(Name, RelativeURL, NotDHTML)
+	local Text = language.GetPhrase("See Wiki Page For %s")
+
+	local Button = self:AddButton(Text:format(Name))
+
+	local URL = "https://acf-team.github.io/Wiki/" .. RelativeURL
+	function Button:DoClick()
+		if NotDHTML then
+			gui.OpenURL( URL )
+		else
+			local frame = vgui.Create("DFrame")
+			frame:SetSize(ScrW() * 0.75, ScrH() * 0.75)
+			frame:SetTitle("HTML Example!")
+			frame:Center()
+			frame:MakePopup()
+			local html = vgui.Create("DHTML", frame)
+			html:Dock(FILL)
+			html:OpenURL(URL)
+		end
+	end
+
+	return Button
+end
+
 function PANEL:AddGraph()
 	local Base = self:AddPanel("Panel")
 	Base:DockMargin(0, 5, 0, 5)

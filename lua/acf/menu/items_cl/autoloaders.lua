@@ -3,7 +3,8 @@ local Components = ACF.Classes.Components
 
 Components.Register("AL", {
 	Name   = "Autoloader",
-	Entity = "acf_autoloader"
+	Entity = "acf_autoloader",
+	TutorialURL = "docs/acf_tutorials/autoloaders.html",
 })
 
 -- Converts shell scale to model scale

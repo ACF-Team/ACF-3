@@ -19,6 +19,8 @@ local function CreateMenu(Menu)
 
 	Menu:AddTitle("#acf.menu.gearboxes.settings")
 	-- TODO: Remove this warning a few months after the scalable gearboxes update is added
+	Menu:AddWikiLink("Gearboxes", "docs/acf_tutorials/gearboxes.html")
+
 	Menu:AddLabel("#acf.menu.gearboxes.temp_gear_ratio_warning1")
 	Menu:AddLabel("#acf.menu.gearboxes.temp_gear_ratio_warning2")
 	Menu:AddLabel("#acf.menu.gearboxes.temp_gear_ratio_warning3")
