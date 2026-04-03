@@ -21,18 +21,7 @@ function ENT:ACF_PostUpdateEntityData(ClientData)
 	if ArmorType and ArmorType.OnInitialize then
 		ArmorType.OnInitialize(self)
 	end
-end
 
-function ENT:ACF_PreSpawn()
-	self:SetScaledModel("models/holograms/cube.mdl")
-	self:SetMaterial("hunter/myplastic")
-end
-
-function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
-	print("test")
-end
-
-function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 	local ArmorType = self:ACF_GetUserVar("ArmorType")
 	local Density = ArmorType.Density or 7.84e-3 -- Fallback to RHA if nil
 
@@ -51,9 +40,17 @@ function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 	-- Mass = VolumeCM3 * Density 
 
 	ACF.Contraption.SetMass(self, Mass)
-	duplicator.StoreEntityModifier(self, "mass", { Mass = Mass })
 
 	print("Spawned " .. ArmorType.Name .. " Armor. Mass: " .. math.Round(Mass, 2) .. "kg")
+end
+
+function ENT:ACF_PreSpawn()
+	self:SetScaledModel("models/holograms/cube.mdl")
+	self:SetMaterial("hunter/myplastic")
+end
+
+function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
+	print("test")
 end
 
 function ENT:ACF_PostMenuSpawn()
