@@ -4,6 +4,7 @@ ENT.PrintName     = "ACF Procedural Armor"
 ENT.WireDebugName = "ACF Proc Armor"
 ENT.PluralName    = "ACF Procedural Armor"
 ENT.IsACFProcArmor = true
+ENT.IsACFEntity = true
 ENT.ACF_Limit     = 16
 
 -- User variables

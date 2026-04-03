@@ -323,6 +323,7 @@ do -- ASSUMING DIRECT CONTROL
 
 			-- Convenience functions that will set the Mass/Model variables in the ACF table for the entity
 			function Contraption.SetMass(Entity, Mass)
+				print("Setting mass of " .. tostring(Entity) .. " to " .. tostring(Mass))
 				Entity.ACF.Mass	=	 Mass
 
 				if Entity.ACF_OnMassChange then

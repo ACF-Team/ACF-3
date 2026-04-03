@@ -14,14 +14,6 @@ end
 
 function ENT:ACF_PostUpdateEntityData(ClientData)
 	-- This handles the physical scaling of the entity
-	self:SetSize(ClientData.ProcSize)
-
-	-- If your ArmorType has a specific initialization hook, call it here
-	local ArmorType = self:ACF_GetUserVar("ArmorType")
-	if ArmorType and ArmorType.OnInitialize then
-		ArmorType.OnInitialize(self)
-	end
-
 	local ArmorType = self:ACF_GetUserVar("ArmorType")
 	local Density = ArmorType.Density or 7.84e-3 -- Fallback to RHA if nil
 
@@ -39,9 +31,10 @@ function ENT:ACF_PostUpdateEntityData(ClientData)
 	-- Note: Since your density is 7.84e-3, if that's kg/cm³, just multiply:
 	-- Mass = VolumeCM3 * Density 
 
+	self:SetSize(ClientData.ProcSize)
 	ACF.Contraption.SetMass(self, Mass)
 
-	print("Spawned " .. ArmorType.Name .. " Armor. Mass: " .. math.Round(Mass, 2) .. "kg")
+	print("Updated " .. ArmorType.Name .. " Armor. Mass: " .. math.Round(Mass, 2) .. "kg")
 end
 
 function ENT:ACF_PreSpawn()
