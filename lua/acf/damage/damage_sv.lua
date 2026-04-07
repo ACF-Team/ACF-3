@@ -124,6 +124,7 @@ function Damage.DoSquishyFlingKill(Entity, Damage, HitPos, Attacker, Inflictor, 
 		SourceDamage:SetDamage(Damage)
 		SourceDamage:SetDamageForce(Direction * ForceMult)
 		SourceDamage:SetDamageType(Explosive and DMG_BLAST or DMG_BULLET)
+		SourceDamage:SetDamagePosition(HitPos)
 
 		Entity:TakeDamageInfo(SourceDamage)
 
