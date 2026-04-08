@@ -333,6 +333,7 @@ do
     end
 
     local function ApplySizing(wide, tall, Label)
+        if not Label:IsVisible() then return wide, tall end
         surface.SetFont(Label:GetFont())
         local tw, th = surface.GetTextSize(Label:GetText())
         wide = math.max(wide, tw + 32)
@@ -403,7 +404,12 @@ do
         self.Buttons = {}
 
         self.Label:SetText(string.format(unpack(Data.Title)))
-        self.Desc:SetText(string.format(unpack(Data.Description)))
+        local DescriptionText = string.format(unpack(Data.Description))
+        if DescriptionText and #DescriptionText > 0 then
+            self.Desc:SetText(DescriptionText)
+        else
+            self.Desc:SetVisible(false)
+        end
 
         if Data.Icon then
             local T = type(Data.Icon)

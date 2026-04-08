@@ -27,7 +27,7 @@ end
 
 function Notify.Start()
     CurrentNotification.Title           = {"Title"}
-    CurrentNotification.Text            = {"Text"}
+    CurrentNotification.Text            = {""}
     CurrentNotification.Duration        = 8
     CurrentNotification.Icon            = "icon16/lightbulb.png"
     CurrentNotification.Sound           = ""
