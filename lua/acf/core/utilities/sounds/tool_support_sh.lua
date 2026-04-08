@@ -31,41 +31,21 @@ Sounds.acf_gun = {
 }
 
 Sounds.acf_engine = {
-	GetSound = function(Ent)
+	GetSoundBanks = function(Ent)
+		print("Reached GetSoundBanks!")
 		return {
-			Sound  = Ent.SoundPath,
-			Pitch  = Ent.SoundPitch,
-			Volume = Ent.SoundVolume
+			SoundBanks = Ent.SoundBanks
 		}
 	end,
-	SetSound = function(Ent, SoundData)
-		local Sound = SoundData.Sound:Trim():lower()
-
-		Ent.SoundPath   = Sound
-		Ent.SoundPitch  = SoundData.Pitch
-		Ent.SoundVolume = SoundData.Volume
-
-		Ent:UpdateSound()
-	end,
-	ResetSound = function(Ent)
-		Ent.SoundPath   = Ent.DefaultSound
-		Ent.SoundPitch  = 1
-		Ent.SoundVolume = 1
-
-		Ent:UpdateSound()
-	end,
-	GetSoundBank = function(Ent)
-		return {
-			SoundBank = Ent.SoundBank
-		}
-	end,
-	SetSoundBank = function(Ent, SoundBankData)
-		Ent.SoundBank = SoundBankData
+	SetSoundBanks = function(Ent, SoundBankData)
+		print("Reached SetSoundBanks!")
+		Ent.SoundBanks = SoundBankData
 
 		Ent:UpdateSoundBank()
 	end,
-	ResetSoundBank = function(Ent)
-		Ent.SoundBank = {}
+	ResetSoundBanks = function(Ent)
+		print("Reached ResetSoundBanks!")
+		Ent.SoundBanks = {}
 
 		Ent:UpdateSoundBank()
 	end
