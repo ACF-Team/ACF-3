@@ -1,7 +1,6 @@
 util.AddNetworkString("ACF_Notify")
 
-do -- Backwards compatibility with the old notification system. We should get rid of this once Missiles uses the new stuff.
-    util.AddNetworkString("ACF_LegacyNotify")
+do -- Backwards compatibility with the old notification system.
     util.AddNetworkString("ACF_NameAndShame")
 
     function ACF.Shame(Entity, Message)
@@ -16,12 +15,5 @@ do -- Backwards compatibility with the old notification system. We should get ri
         net.Start("ACF_NameAndShame")
             net.WriteString(ShameMsg)
         net.Broadcast()
-    end
-
-    function ACF.SendNotify(Player, Success, Message)
-        net.Start("ACF_LegacyNotify")
-            net.WriteBool(Success or false)
-            net.WriteString(Message or "")
-        net.Send(Player)
     end
 end
