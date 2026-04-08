@@ -290,4 +290,44 @@ do
         Notify.AddButton("Wiki Article...")
             :WithAction("OpenWiki", WikiArticle)
     end
+
+    function Notify.NotifyDisabledEntity(Ent, Reason, Ponder, WikiArticle)
+        if not IsValid(Ent) then return end
+
+        Notify.Start()
+        Notify.WithTitle("An ACF entity has been disabled.")
+        Notify.WithSilkIcon("error")
+        Notify.WithTargetEntity(Ent)
+        Notify.WithDescription(Reason)
+
+        Notify.AddButton("Look at Entity")
+            :WithAction("LookAtEntity", Ent)
+            :WithPulse()
+
+        if Ponder then Notify.AddPonderButton(Ponder) end
+        if WikiArticle then Notify.AddWikiArticleButton(WikiArticle) end
+
+        Notify.AddPlayer(Ent:CPPIGetOwner())
+        Notify.Transmit()
+    end
+
+    function Notify.NotifyWarning(Warning, Description, Ent)
+        Notify.Start()
+        Notify.WithTitle(Warning)
+        Notify.WithSilkIcon("error")
+        if Description then Notify.WithDescription(Description) end
+
+        if IsValid(Ent) then
+            Notify.WithTargetEntity(Ent)
+            Notify.AddButton("Look at Entity")
+                :WithAction("LookAtEntity", Ent)
+                :WithPulse()
+        end
+
+        if Ponder then Notify.AddPonderButton(Ponder) end
+        if WikiArticle then Notify.AddWikiArticleButton(WikiArticle) end
+
+        Notify.AddPlayer(Ent:CPPIGetOwner())
+        Notify.Transmit()
+    end
 end
