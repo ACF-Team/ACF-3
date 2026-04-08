@@ -37,6 +37,7 @@ local ValidSeatModels = {
 }
 
 ACF.ValidSeatModels = ValidSeatModels
+local Notify = ACF.Utilities.Notify
 
 hook.Add("OnEntityCreated", "ACF_SeatLegality", function(Entity)
     timer.Simple(0, function()
@@ -94,7 +95,7 @@ hook.Add("CanPlayerEnterVehicle", "ACF_SeatLegality", function(Player, Entity)
 
     Reason = Reason or "Reason not found."
 
-    ACF.SendNotify(Player, false, "[ACF] Seat is not legal and is currently disabled. (" .. Reason .. ")")
+    Notify.EntityWarningToPlayer(Entity, Player, "Seat is not legal and is currently disabled.", Reason)
 
     return false
 end)

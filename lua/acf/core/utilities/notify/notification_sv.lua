@@ -1,6 +1,6 @@
 util.AddNetworkString("ACF_Notify")
 
-do -- Backwards compatibility with the old notification system.
+do -- Backwards compatibility with the old notification system. We should get rid of this once Missiles uses the new stuff.
     util.AddNetworkString("ACF_LegacyNotify")
     util.AddNetworkString("ACF_NameAndShame")
 

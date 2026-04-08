@@ -30,6 +30,7 @@ function Notify.Start()
     CurrentNotification.Text            = {"Text"}
     CurrentNotification.Duration        = 8
     CurrentNotification.Icon            = "icon16/lightbulb.png"
+    CurrentNotification.Sound           = ""
     CurrentNotification.Buttons         = {}
     CurrentNotification.TargetEntity    = 0
     CurrentNotification.TargetPhysObj   = -1
@@ -39,11 +40,13 @@ function Notify.Start()
     end
 end
 
-function Notify.WithTitle(Title, ...) CurrentNotification.Title = {Title, ...} end
-function Notify.WithDescription(Text, ...) CurrentNotification.Text = {Text, ...} end
-function Notify.Duration(Duration) CurrentNotification.Duration = Duration end
-function Notify.WithIcon(Icon) CurrentNotification.Icon = Icon end
-function Notify.WithSilkIcon(Icon) Notify.WithIcon("icon16/" .. Icon .. ".png") end
+function Notify.WithTitle(Title, ...) CurrentNotification.Title = {Title or "", ...} end
+function Notify.WithDescription(Text, ...) CurrentNotification.Text = {Text or "", ...} end
+function Notify.Duration(Duration) CurrentNotification.Duration = Duration or 0 end
+function Notify.WithIcon(Icon) CurrentNotification.Icon = Icon or "" end
+function Notify.WithSound(Sound) CurrentNotification.Sound = Sound or "" end
+function Notify.WithErrorSound() CurrentNotification.Sound = "buttons/button10.wav" end
+function Notify.WithSilkIcon(Icon) if Icon then Notify.WithIcon("icon16/" .. Icon .. ".png") end end
 function Notify.WithTargetEntity(Entity) CurrentNotification.TargetEntity = IsValid(Entity) and Entity:EntIndex() or 0 end
 function Notify.WithTargetPhysObj(PhysObj)
     if not IsValid(PhysObj) then
@@ -130,6 +133,7 @@ function Notify.Transmit()
         Notify.Net_WriteFormattedText(CurrentNotification.Text)
         net.WriteFloat(CurrentNotification.Duration)
         net.WriteString(CurrentNotification.Icon)
+        net.WriteString(CurrentNotification.Sound)
         net.WriteUInt(CurrentNotification.TargetEntity, MAX_EDICT_BITS)
         net.WriteInt(CurrentNotification.TargetPhysObj, 10)
         net.WriteUInt(#CurrentNotification.Buttons, MAX_BUTTON_BITS)
@@ -290,15 +294,21 @@ do
         Notify.AddButton("Wiki Article...")
             :WithAction("OpenWiki", WikiArticle)
     end
+end
 
-    function Notify.NotifyDisabledEntity(Ent, Reason, Ponder, WikiArticle)
+do
+    --
+    -- Disabled warnings
+    --
+    function Notify.EntityDisabledToPlayer(Ent, Player, Reason, Ponder, WikiArticle)
         if not IsValid(Ent) then return end
 
         Notify.Start()
         Notify.WithTitle("An ACF entity has been disabled.")
-        Notify.WithSilkIcon("error")
+        Notify.WithSilkIcon("exclamation")
         Notify.WithTargetEntity(Ent)
         Notify.WithDescription(Reason)
+        Notify.WithErrorSound()
 
         Notify.AddButton("Look at Entity")
             :WithAction("LookAtEntity", Ent)
@@ -307,27 +317,104 @@ do
         if Ponder then Notify.AddPonderButton(Ponder) end
         if WikiArticle then Notify.AddWikiArticleButton(WikiArticle) end
 
-        Notify.AddPlayer(Ent:CPPIGetOwner())
+        Notify.AddPlayer(Player)
         Notify.Transmit()
+        return true
     end
 
-    function Notify.NotifyWarning(Warning, Description, Ent)
-        Notify.Start()
-        Notify.WithTitle(Warning)
-        Notify.WithSilkIcon("error")
-        if Description then Notify.WithDescription(Description) end
+    --
+    -- Warnings will play sounds
+    --
+    function Notify.WarningToPlayer(Player, Title, Description, Ponder, WikiArticle)
+        if not IsValid(Player) then return end
 
-        if IsValid(Ent) then
-            Notify.WithTargetEntity(Ent)
-            Notify.AddButton("Look at Entity")
-                :WithAction("LookAtEntity", Ent)
-                :WithPulse()
-        end
+        Notify.Start()
+        Notify.WithTitle(Title)
+        Notify.WithSilkIcon("error")
+        Notify.WithErrorSound()
+        if Description then Notify.WithDescription(Description) end
 
         if Ponder then Notify.AddPonderButton(Ponder) end
         if WikiArticle then Notify.AddWikiArticleButton(WikiArticle) end
 
-        Notify.AddPlayer(Ent:CPPIGetOwner())
+        Notify.AddPlayer(Player)
         Notify.Transmit()
+
+        return true
+    end
+
+    function Notify.EntityWarningToPlayer(Ent, Player, Title, Description, Ponder, WikiArticle)
+        if not IsValid(Ent) then return end
+        if not IsValid(Player) then return end
+
+        Notify.Start()
+        Notify.WithTitle(Title)
+        Notify.WithSilkIcon("error")
+        Notify.WithErrorSound()
+        if Description then Notify.WithDescription(Description) end
+
+        Notify.WithTargetEntity(Ent)
+        Notify.AddButton("Look at Entity")
+            :WithAction("LookAtEntity", Ent)
+            :WithPulse()
+
+        if Ponder then Notify.AddPonderButton(Ponder) end
+        if WikiArticle then Notify.AddWikiArticleButton(WikiArticle) end
+
+        Notify.AddPlayer(Player)
+        Notify.Transmit()
+
+        return true
+    end
+
+    function Notify.EntityWarning(Ent, Title, Description, Ponder, WikiArticle)
+        if not IsValid(Ent) then return end
+        return Notify.EntityWarningToPlayer(Ent, Ent:CPPIGetOwner(), Title, Description, Ponder, WikiArticle)
+    end
+
+    --
+    -- Notices won't play sounds.
+    --
+    function Notify.NoticeToPlayer(Player, Title, Description, Ponder, WikiArticle)
+        if not IsValid(Player) then return end
+
+        Notify.Start()
+        Notify.WithTitle(Title)
+        if Description then Notify.WithDescription(Description) end
+
+        if Ponder then Notify.AddPonderButton(Ponder) end
+        if WikiArticle then Notify.AddWikiArticleButton(WikiArticle) end
+
+        Notify.AddPlayer(Player)
+        Notify.Transmit()
+
+        return true
+    end
+
+    function Notify.EntityNoticeToPlayer(Ent, Player, Title, Description, Ponder, WikiArticle)
+        if not IsValid(Ent) then return end
+        if not IsValid(Player) then return end
+
+        Notify.Start()
+        Notify.WithTitle(Title)
+        if Description then Notify.WithDescription(Description) end
+
+        Notify.WithTargetEntity(Ent)
+        Notify.AddButton("Look at Entity")
+            :WithAction("LookAtEntity", Ent)
+            :WithPulse()
+
+        if Ponder then Notify.AddPonderButton(Ponder) end
+        if WikiArticle then Notify.AddWikiArticleButton(WikiArticle) end
+
+        Notify.AddPlayer(Player)
+        Notify.Transmit()
+
+        return true
+    end
+
+    function Notify.EntityNotice(Ent, Title, Description, Ponder, WikiArticle)
+        if not IsValid(Ent) then return end
+        return Notify.EntityNoticeToPlayer(Ent, Ent:CPPIGetOwner(), Title, Description, Ponder, WikiArticle)
     end
 end

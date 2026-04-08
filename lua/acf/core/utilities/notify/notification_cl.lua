@@ -6,6 +6,18 @@ local MAX_BUTTON_BITS = 4
 -- This sucks but there's no better way to do it right now.
 local _, Notices = debug.getupvalue(notification.Kill, 1)
 
+local LastNotificationSoundTimes = {}
+
+local function SetLastNotificationSoundTime(Sound)
+    LastNotificationSoundTimes[Sound] = RealTime()
+end
+
+local function GetTimeSinceLastNotificationSoundPlayed(Sound)
+    local LastTime = LastNotificationSoundTimes[Sound]
+    if not LastTime then return 10000000 end
+    return RealTime() - LastTime
+end
+
 function Notify.Display(Data)
     local Parent = nil
     if GetOverlayPanel then Parent = GetOverlayPanel() end
@@ -21,6 +33,11 @@ function Notify.Display(Data)
     Panel:SetAlpha(255)
     Panel:SetPos(Panel.fx, Panel.fy)
 
+    if Data.Sound ~= nil and #Data.Sound > 0 and GetTimeSinceLastNotificationSoundPlayed(Data.Sound) >= 0.2 then
+        surface.PlaySound(Data.Sound)
+        SetLastNotificationSoundTime(Data.Sound)
+    end
+
     table.insert(Notices, Panel)
 end
 
@@ -30,6 +47,7 @@ do -- Receiving new notifications
         local Description = Notify.Net_ReadFormattedText()
         local Duration = net.ReadFloat()
         local Icon = net.ReadString()
+        local Sound = net.ReadString()
         local TargetEntityIdx = net.ReadUInt(MAX_EDICT_BITS)
         local TargetPhysObjIdx = net.ReadInt(10)
         local ButtonCount = net.ReadUInt(MAX_BUTTON_BITS)
@@ -54,6 +72,7 @@ do -- Receiving new notifications
             Description = Description,
             Duration = Duration,
             Icon = Icon,
+            Sound = Sound,
             Buttons = Buttons,
             TargetEntity = TargetEntityIdx,
             TargetPhysObj = TargetPhysObjIdx,

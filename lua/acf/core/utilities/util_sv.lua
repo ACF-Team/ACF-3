@@ -1,4 +1,5 @@
 local ACF = ACF
+local Notify = ACF.Utilities.Notify
 
 -- 16 Segments font created by ThorType
 -- Huge thanks to LiddulBOFH to help me get it working
@@ -505,7 +506,7 @@ do -- Entity linking
 			function()
 				local Status, Message = ACF.PerformClassLinkCheck(Source, Target)
 				if not Status then
-					ACF.SendNotify(Source:CPPIGetOwner(), false, Message or "A link has been automatically removed.")
+					Notify.EntityWarning(Source, Source:CPPIGetOwner(), "A link has been automatically removed.", Message or "No additional info was provided")
 				end
 			end,
 			function() return IsValid(Source) and IsValid(Target) end,
@@ -996,7 +997,7 @@ do
 		if IsValid(Baseplate) then
 			local Type = Baseplate:ACF_GetUserVar("BaseplateType")
 			if Type ~= AllowedType then
-				ACF.SendNotify(Entity:CPPIGetOwner(), false, string.format("%s was removed due to being on an invalid baseplate (got %s, expected %s)", Entity, Type, AllowedType))
+				Notify.WarningToPlayer(Entity:CPPIGetOwner(), string.format("%s was removed due to being on an invalid baseplate type", Entity), string.Format("Got %s, expected %s", Type, AllowedType))
 				Entity:Remove()
 				return
 			end
