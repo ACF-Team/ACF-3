@@ -692,7 +692,7 @@ function ENT:UpdateSoundBank(SelfTbl)
 		SoundBankCount, SoundCount = GetSoundCount(self) -- Update these in case the SoundTable has changed 
 		SelfTbl.SoundBankCount, SelfTbl.SoundCount = SoundBankCount, SoundCount
 
-		Sounds.CreateMultipleAdjustableSounds(self, SoundBanks, SoundBankCount, SoundCount)
+		Sounds.CreateMultipleAdjustableSounds(self, SoundBanks)
 		SelfTbl.Sound = true
 	end
 end

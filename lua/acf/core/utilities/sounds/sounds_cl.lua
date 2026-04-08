@@ -303,9 +303,7 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 		print("Received " .. len .. " bits from \"ACF_Sounds_AdjustableCreate_Multi\" for sound creation!") -- Debug print
 		local Origin = net.ReadEntity()
 		local Exhaust = net.ReadEntity()
-
 		local SoundBankCount = net.ReadUInt(2)
-		local SoundCount = net.ReadUInt(4)
 
 		local SoundTable = {}
 
@@ -313,7 +311,9 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 			local PlaysAtExhaust = net.ReadBool()
 			local OffThrottle = net.ReadUInt(8)
 			local OnThrottle = net.ReadUInt(8)
+			local SoundCount = net.ReadUInt(4)
 
+			if not IsValid(Exhaust) then Exhaust = Origin end
 			local PlayAtEntity = PlaysAtExhaust and Exhaust or Origin
 
 			OffThrottle = OffThrottle * 0.01 -- Reduce the received values down to a float
@@ -341,7 +341,6 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 														Sound  = nil }) -- Fuck it we ball
 			end
 		end
-
 		if not IsValid(Origin) then return end
 		Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable)
 	end)

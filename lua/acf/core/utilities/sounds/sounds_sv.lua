@@ -96,9 +96,7 @@ end
 	--- An entity can have multiple soundbanks but only one soundbank can be played at an entity.
 	--- @param Origin table The entity to play the sound from
 	--- @param SoundTable table The table whose keys are arbitrary RPM's and values containing a table with a sound path, pitch and volume, to be played at a defined RPM(Its keys).
-	--- @param SoundBankCount int The amount of soundbanks the client has to deal with
-	--- @param SoundCount int The amount of sounds to be played by the client
-function Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable, SoundBankCount, SoundCount)
+function Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable)
 	if not IsValid(Origin) then return end
 	if not istable(SoundTable) then return end
 
@@ -107,16 +105,20 @@ function Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable, SoundBankCoun
 	net.Start("ACF_Sounds_AdjustableCreate_Multi")
 		net.WriteEntity(Origin)
 		net.WriteEntity(Origin.Exhaust)
+
+		local SoundBankCount = #Origin.SoundBanks
 		net.WriteUInt(SoundBankCount, 2)
-		net.WriteUInt(SoundCount, 4)
 
 		for _, Bank in ipairs(SoundTable) do
 			net.WriteBool(Bank.PlaysAtExhaust or false)
 
 			local OffThrottle = (Bank.OffThrottle or 0.25) * 100 -- Sending the approximate value as an int to reduce message size
 			local OnThrottle = (Bank.OnThrottle or 1) * 100
+			local SoundCount = #Bank.Sounds
+
 			net.WriteUInt(OffThrottle, 8)
 			net.WriteUInt(OnThrottle, 8)
+			net.WriteUInt(SoundCount, 4)
 
 			for _, V in ipairs(Bank.Sounds) do
 				local RPM = V.RPM

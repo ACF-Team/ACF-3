@@ -104,6 +104,7 @@ local function SetSoundData(Ply, Entity, Support)
 	if not Class then return end
 
 	if Class == "acf_engine" then
+		-- This gets called everytime you spawn a entity, and also if you try to set with one sound, which will be wrong for engines, so lets ignore that
 		if not Support.GetSoundBanks or not Support.SetSoundBanks or not Support.ResetSoundBanks then return end
 		-- Simple call just to get the client's sound menu data 
 		DoSoundBankData(Ply, Entity, _, true)

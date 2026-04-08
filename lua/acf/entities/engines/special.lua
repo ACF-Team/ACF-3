@@ -98,7 +98,8 @@ do -- Special I4 Engines
 								{RPM = 6350, Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_06350.wav", Pitch = 100, Volume = 1, Width = 0},
 								{RPM = 6833, Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_06833.wav", Pitch = 100, Volume = 1, Width = 0}
 							}
-						}},
+						}
+					},
 		Fuel		 = { Petrol = true },
 		Type		 = "GenericPetrol",
 		Mass		 = 138,
@@ -108,6 +109,56 @@ do -- Special I4 Engines
 		RPM = {
 			Idle	= 700,
 			Limit	= 7500,
+		},
+		Preview = {
+			FOV = 120,
+		},
+	})
+	-- Test engine, remove before PR!
+	Engines.RegisterItem("2.5L-TEST", "SP", {
+		Name 		 = "2.5L Audi Test Engine",
+		Description  = "Audi test engine, 2 soundbanks",
+		Model 		 = "models/engines/inline4s.mdl",
+		Sound		 = "acf_base/engines/i4_special.wav",
+		SoundBanks   = {
+						{
+							PlaysAtExhaust = false,
+							OffThrottle = 0.25,
+							OnThrottle = 1,
+							Sounds = {
+								{RPM = 1301, Path = "acf_forza6apex/audi/audir15/engine_01301.wav", Pitch = 100, Volume = 1, Width = 0},
+								{RPM = 2276, Path = "acf_forza6apex/audi/audir15/engine_02276.wav", Pitch = 100, Volume = 1, Width = 0},
+								{RPM = 2518, Path = "acf_forza6apex/audi/audir15/engine_02518.wav", Pitch = 100, Volume = 1, Width = 0},
+								{RPM = 3001, Path = "acf_forza6apex/audi/audir15/engine_03001.wav", Pitch = 100, Volume = 1, Width = 0},
+								{RPM = 3507, Path = "acf_forza6apex/audi/audir15/engine_03507.wav", Pitch = 100, Volume = 1, Width = 0},
+								{RPM = 3999, Path = "acf_forza6apex/audi/audir15/engine_03999.wav", Pitch = 100, Volume = 1, Width = 0},
+								{RPM = 4500, Path = "acf_forza6apex/audi/audir15/engine_04500.wav", Pitch = 100, Volume = 1, Width = 0},
+								{RPM = 5001, Path = "acf_forza6apex/audi/audir15/engine_05001.wav", Pitch = 100, Volume = 1, Width = 0}
+							}
+						},
+						{
+							PlaysAtExhaust = true,
+							OffThrottle = 0.5,
+							OnThrottle = 1,
+							Sounds = {
+								{RPM = 1301, Path = "acf_forza6apex/audi/audir15/exhaust_01301.wav", Pitch = 100, Volume = 1, Width = 0},
+								{RPM = 2518, Path = "acf_forza6apex/audi/audir15/exhaust_02518.wav", Pitch = 100, Volume = 1, Width = 0},
+								{RPM = 3001, Path = "acf_forza6apex/audi/audir15/exhaust_03001.wav", Pitch = 100, Volume = 1, Width = 0},
+								{RPM = 3507, Path = "acf_forza6apex/audi/audir15/exhaust_03507.wav", Pitch = 100, Volume = 1, Width = 0},
+								{RPM = 4500, Path = "acf_forza6apex/audi/audir15/exhaust_04500.wav", Pitch = 100, Volume = 1, Width = 0},
+								{RPM = 5001, Path = "acf_forza6apex/audi/audir15/exhaust_05001.wav", Pitch = 100, Volume = 1, Width = 0}
+							}
+						}
+					},
+		Fuel		 = { Diesel = true },
+		Type		 = "GenericDiesel",
+		Mass		 = 210,
+		Torque		 = 250,
+		FlywheelMass = 0.12,
+		Pitch		 = 1,
+		RPM = {
+			Idle	= 600,
+			Limit	= 6000,
 		},
 		Preview = {
 			FOV = 120,
