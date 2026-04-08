@@ -32,19 +32,16 @@ Sounds.acf_gun = {
 
 Sounds.acf_engine = {
 	GetSoundBanks = function(Ent)
-		print("Reached GetSoundBanks!")
 		return {
 			SoundBanks = Ent.SoundBanks
 		}
 	end,
 	SetSoundBanks = function(Ent, SoundBankData)
-		print("Reached SetSoundBanks!")
 		Ent.SoundBanks = SoundBankData
 
 		Ent:UpdateSoundBank()
 	end,
 	ResetSoundBanks = function(Ent)
-		print("Reached ResetSoundBanks!")
 		Ent.SoundBanks = {}
 
 		Ent:UpdateSoundBank()

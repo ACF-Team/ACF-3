@@ -672,16 +672,20 @@ function ENT:UpdateSoundBank(SelfTbl)
 	else
 		-- Populate a placeholder SoundTable if none is found for the engine
 		if table.IsEmpty(SoundBanks) then
-			local Idle = SelfTbl.IdleRPM
-			local Redline = SelfTbl.LimitRPM
-			SoundBanks = {{	Sounds = {{
-							RPM = (Idle + Redline) / 2,
-							Path = SelfTbl.SoundPath,
-							Pitch = 100,
-							Volume = 1}
-						  }
-						 }}
-			SelfTbl.SoundBanks = SoundBanks
+			if table.IsEmpty(SelfTbl.DefaultSoundBanks) then
+				local Idle = SelfTbl.IdleRPM
+				local Redline = SelfTbl.LimitRPM
+				SoundBanks = {{	Sounds = {{
+								RPM = (Idle + Redline) / 2,
+								Path = SelfTbl.SoundPath,
+								Pitch = 100,
+								Volume = 1}
+							}
+							}}
+				SelfTbl.SoundBanks = SoundBanks
+			else
+				SelfTbl.SoundBanks = SelfTbl.DefaultSoundBanks
+			end
 			return
 		end
 		-- The sounds are able to be created

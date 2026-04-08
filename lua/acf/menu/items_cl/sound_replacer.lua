@@ -633,7 +633,6 @@ function ACF.CreateSoundMenu(Panel)
 				SoundBankSlider:SetClientData("SoundBankSlider", "OnValueChanged")
 				SoundBankSlider:DefineSetter(function(Panel, _, _, Value)
 					local ValueAmount = math.Clamp(math.floor(tonumber(Value)), 1, _MAXSOUNDBANKPANELS)
-					print(ValueAmount, LastSoundBankValue)
 					if ValueAmount ~= LastSoundBankValue then
 						if ValueAmount > LastSoundBankValue then
 							for _ = LastSoundBankValue + 1, ValueAmount do
@@ -642,7 +641,6 @@ function ACF.CreateSoundMenu(Panel)
 							end
 						elseif ValueAmount < LastSoundBankValue then
 							for I = ValueAmount + 1, LastSoundBankValue do
-								--PrintTable(Current.Panels.SoundBankPanels)
 								if IsValid(Current.Panels.SoundBankPanels[I][1]) then
 									Current.Count.OfSoundPanels = Current.Count.OfSoundPanels - #Current.Panels.SoundBankPanels[I].Values
 									Current.Count.OfSoundBankPanels = Current.Count.OfSoundBankPanels - 1
@@ -700,7 +698,6 @@ function ACF.CreateSoundMenu(Panel)
 
 		-- Receives data to populate the menu or to send back to server the client's datavars
 		net.Receive("ACF_SoundMenu_Get_Multi", function()
-			local Origin = net.ReadEntity()
 			local Feedback = net.ReadBool()
 
 			if not Feedback then -- Get the data from the entity and populate menu
@@ -736,13 +733,12 @@ function ACF.CreateSoundMenu(Panel)
 			else -- Gets any datavars and networks them back to the server
 				net.Start("ACF_SoundMenu_Set_Multi")
 					local BankCount = GetClientData("SoundBankSlider", 1)
-					print("BankCount: " .. BankCount)
 					net.WriteUInt(BankCount, 3)
 
 					for I = 1, BankCount do
-						local PlaysAtExhaust = GetClientData("PlayAtExhaust " .. I)
-						local OffThrottle = GetClientData("OffThrottle " .. I) * 100
-						local OnThrottle = GetClientData("OnThrottle " .. I) * 100
+						local PlaysAtExhaust = GetClientData("PlayAtExhaust " .. I, false)
+						local OffThrottle = GetClientData("OffThrottle " .. I, 0.25) * 100
+						local OnThrottle = GetClientData("OnThrottle " .. I, 1) * 100
 
 						net.WriteBool(PlaysAtExhaust)
 						net.WriteUInt(OffThrottle, 8) -- Sending the approximate volume as an int to reduce message size

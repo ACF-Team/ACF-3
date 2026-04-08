@@ -30,10 +30,8 @@ end
 	--- @param Entity entity The entity, which has to be an engine(for now)
 	--- @param Data table? The soundbank table to set soundbank Data to the Entity or not
 	--- @param Loopback bool? False to just populate a client menu and its datavars or True to GET the datavars from client and send them back 
-local function DoSoundBankData(Ply, Entity, Data, Loopback)
+local function DoSoundBankData(Ply, _, Data, Loopback)
 	net.Start("ACF_SoundMenu_Get_Multi")
-		net.WriteEntity(Entity)
-
 		if not Loopback then
 			net.WriteBool(false)
 			-- Send the data to populate the client's menu
@@ -41,8 +39,6 @@ local function DoSoundBankData(Ply, Entity, Data, Loopback)
 			local SoundBankCount = #SoundBanks.SoundBanks
 
 			net.WriteUInt(SoundBankCount, 3)
-
-			PrintTable(SoundBanks.SoundBanks)
 
 			for _, Bank in ipairs(SoundBanks.SoundBanks) do
 				net.WriteBool(Bank.PlaysAtExhaust or false)
@@ -108,18 +104,15 @@ local function SetSoundData(Ply, Entity, Support)
 	if not Class then return end
 
 	if Class == "acf_engine" then
+		if not Support.GetSoundBanks or not Support.SetSoundBanks or not Support.ResetSoundBanks then return end
 		-- Simple call just to get the client's sound menu data 
 		DoSoundBankData(Ply, Entity, _, true)
-		print("Reached here DoSoundBankData")
 		do -- Receives any datavars from the client, which matches what's seen regarding any values on the menu, and sets the soundbank
-			net.Receive("ACF_SoundMenu_Set_Multi", function (_, ply)
-				print("Received netstring ACF_SoundMenu_Set_Multi from " .. ply:GetName())
+			net.Receive("ACF_SoundMenu_Set_Multi", function ()
 				local SoundTable = {}
 				local BankCount = net.ReadUInt(3)
 
 				local IsValidEntity = IsValid(Entity)
-
-				print(Entity, IsValidEntity)
 
 				for I = 1, BankCount do
 					local PlayAtExhaust = net.ReadBool()
@@ -156,7 +149,6 @@ local function SetSoundData(Ply, Entity, Support)
 						end
 					end
 				end
-				PrintTable(SoundTable)
 				if not IsValidEntity then return end
 				Support.SetSoundBanks(Entity, SoundTable)
 
@@ -179,6 +171,7 @@ local function SetSoundData(Ply, Entity, Support)
 end
 
 duplicator.RegisterEntityModifier("acf_replacesound", SetSoundData)
+duplicator.RegisterEntityModifier("acf_replacesoundbank", SetSoundData)
 
 -- An improved IsValid function, just to check if an entity is ACF class and if it has support from this tool
 local function IsReallyValid(trace, ply)
@@ -245,10 +238,10 @@ function TOOL:Reload(Trace)
 	local Class = Trace.Entity:GetClass()
 
 	if Class == "acf_engine" then
-		if not trace.Entity.SoundBank then return true end
-		support.ResetSoundBank(trace.Entity)
+		if not Trace.Entity.SoundBanks then return true end
+		Support.ResetSoundBanks(Trace.Entity)
 	else
-		support.ResetSound(trace.Entity)
+		Support.ResetSound(Trace.Entity)
 	end
 
 	return true
