@@ -278,3 +278,16 @@ do
         end
     end
 end
+
+-- Some useful helper functions
+do
+    function Notify.AddPonderButton(Ponder)
+        Notify.AddButton("Ponder About...")
+            :WithAction("OpenPonder", Ponder)
+    end
+
+    function Notify.AddWikiArticleButton(WikiArticle)
+        Notify.AddButton("Wiki Article...")
+            :WithAction("OpenWiki", WikiArticle)
+    end
+end
