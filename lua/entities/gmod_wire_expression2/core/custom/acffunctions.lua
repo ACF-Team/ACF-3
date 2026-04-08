@@ -389,7 +389,7 @@ e2function number entity:acfUnlinkFrom(entity Target, number Notify)
 
 	if not this.Unlink then
 		if Notify ~= 0 then
-			Notify.EntityWarningToPlayer(Target, self.player, 0, "This entity is not linkable.")
+			Notify.EntityWarningToPlayer(Target, self.player, "This entity is not linkable.")
 		end
 
 		return 0

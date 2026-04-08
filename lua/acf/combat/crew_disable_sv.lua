@@ -12,13 +12,7 @@ hook.Add("CanPlayerEnterVehicle", "ACF_CanPlayerEnterVehicle_BlockEnterVehicleOn
 
     if Contraption.ACF_AllCrewKilled then
         if (Now - (Contraption.ACF_LastNotifyDeathTime or 0)) > 1 then
-            Notify.Start()
-            Notify.WithTitle("This contraption is no longer usable.")
-            Notify.WithSilkIcon("error")
-            Notify.WithTargetEntity(Contraption.ACF_Baseplate)
-            Notify.WithDescription("All crew members have been killed.")
-            Notify.AddPlayer(Player)
-            Notify.Transmit()
+            Notify.EntityWarningToPlayer(Contraption.ACF_Baseplate, Player, "This contraption is no longer usable.", "All crew members have been killed.")
             Contraption.ACF_LastNotifyDeathTime = Now
         end
 
