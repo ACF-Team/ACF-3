@@ -11,6 +11,7 @@ local Mobility    = ACF.Mobility
 local MobilityObj = Mobility.Objects
 local Utilities   = ACF.Utilities
 local Clock       = Utilities.Clock
+local Notify      = Utilities.Notify
 local Clamp       = math.Clamp
 local abs         = math.abs
 local min         = math.min
@@ -234,13 +235,13 @@ do -- Spawn and Update functions -----------------------
 			-- make sure it is not stretched too far
 			if OutPos:Distance(InPos) > Link.RopeLen * 1.5 then
 				Entity:Unlink(Ent)
-				ACF.SendNotify(Ent:CPPIGetOwner(), false, "Gearbox -> " .. NiceName .. " connection broken; excessive distance!")
+				Notify.EntityWarning(Ent, "Gearbox to " .. NiceName .. " connection broken", "Excessive distance!")
 				continue
 			end
 
 			if ACF.IsDriveshaftAngleExcessive(Ent, Ent.In, Link) then
 				Entity:Unlink(Ent)
-				ACF.SendNotify(Ent:CPPIGetOwner(), false, "Gearbox -> " .. NiceName .. " connection broken; excessive driveshaft angle!")
+				Notify.EntityWarning(Ent, "Gearbox to " .. NiceName .. " connection broken", "Excessive driveshaft angle!")
 				continue
 			end
 
@@ -254,7 +255,7 @@ do -- Spawn and Update functions -----------------------
 				local Stress = math.max(WheelPhys:GetStress())
 				if Stress > 15 then
 					Entity:Unlink(Ent)
-					ACF.SendNotify(Ent:CPPIGetOwner(), false, "Gearbox -> " .. NiceName .. " connection broken; excessive stress on connected + on an aircraft contraption!")
+					Notify.EntityWarning(Ent, "Gearbox to " .. NiceName .. " connection broken", "Excess stress on linked props!\n(aircraft baseplates cannot have wheel-like gearbox connections)")
 					continue
 				end
 			end

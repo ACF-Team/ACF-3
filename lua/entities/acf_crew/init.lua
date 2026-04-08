@@ -35,6 +35,7 @@ include("shared.lua")
 local ACF = ACF
 local HookRun     = hook.Run
 local Utilities   = ACF.Utilities
+local Notify      = Utilities.Notify
 local WireIO      = Utilities.WireIO
 
 local Contraption = ACF.Contraption
@@ -141,7 +142,7 @@ end
 function ENT:CFW_PreParentedTo(OldParent, _)
 	-- Force unlinks if OldParent is valid
 	if IsValid(OldParent) and not self:IsMarkedForDeletion() then
-		ACF.SendNotify(self:CPPIGetOwner(), false, "Crew parent has changed from a previously valid parent. All links removed, please relink.")
+		Notify.EntityWarning(self, "Crew parent has changed", "This crew member was reparented. All links have been removed, please relink.")
 		if next(self.Targets) then
 			for Target in pairs(self.Targets) do
 				self:Unlink(Target)
@@ -180,7 +181,7 @@ local function EnforceLimits(crew)
 		local Count = Crews and table.Count(Crews) or 0
 
 		if Count > Limit.Amount then
-			ACF.SendNotify(crew:GetOwner(), false, "You have reached the " .. CrewType.Name .. " limit for this Contraption.")
+			Notify.WarningToPlayer(crew:CPPIGetOwner(), "You have reached the " .. CrewType.Name .. " limit for this Contraption.")
 			crew:Remove()
 		end
 	end
@@ -303,7 +304,7 @@ do -- Random timer stuff
 					Reasons = table.concat(Reasons, ", and ")
 					Reasons = string.upper(Reasons[1]) .. string.sub(Reasons, 2)
 
-					ACF.SendNotify(self:CPPIGetOwner(), false, "Crew #" .. self:EntIndex() .. " unlinked. " .. Reasons)
+					Notify.EntityWarning(self, "Crew member unlinked. ", Reasons)
 				end
 			end
 		end
@@ -577,7 +578,7 @@ do
 
 		-- Unlink crews if their type changes
 		if self.CrewTypeID ~= Data.CrewTypeID then
-			ACF.SendNotify(self:GetOwner(), false, "Crew updated with different occupation. All links removed, please relink.")
+			Notify.EntityWarning(self, "Crew occupation has changed", "This crew member's occupation was changed. All links have been removed, please relink.")
 			if next(self.Targets) then
 				for Target in pairs(self.Targets) do
 					self:Unlink(Target)
@@ -1026,7 +1027,7 @@ do
 			for _, EntID in pairs(EntMods.CrewTargets) do
 				local ActualEnt = CreatedEntities[EntID]
 				local result, err = self:Link(ActualEnt)
-				if not result then ACF.SendNotify(Ent:CPPIGetOwner(), false, "ACF Crew:PostEntityPaste failure: " .. err) end
+				if not result then Notify.EntityWarning(Ent, "ACF Crew:PostEntityPaste failure", err) end
 			end
 
 			self.RemainingLinks = RLs

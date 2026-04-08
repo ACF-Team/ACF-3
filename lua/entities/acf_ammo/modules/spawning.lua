@@ -2,6 +2,7 @@ local ACF          = ACF
 local Classes      = ACF.Classes
 local Utilities    = ACF.Utilities
 local WireIO       = Utilities.WireIO
+local Notify       = Utilities.Notify
 local WireLib      = WireLib
 local Entities     = Classes.Entities
 local AmmoTypes    = Classes.AmmoTypes
@@ -365,7 +366,7 @@ do -- Spawn/Update/Remove
 			end
 
 			if Unloaded then
-				ACF.SendNotify(Entity.Owner, false, "Crate updated while weapons were loaded with its ammo. Weapons unloaded.")
+				Notify.EntityWarning(Entity, "Weapons unloaded.", "Crate updated while weapons were loaded with its ammo")
 			end
 		end
 
