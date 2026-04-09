@@ -1,4 +1,4 @@
-DEFINE_BASECLASS("acf_base_scaleable")
+DEFINE_BASECLASS("acf_base_scalable")
 ACF.SetupENT(ENT)
 
 ENT.PrintName      = "ACF baseplate"
