@@ -259,7 +259,7 @@ function ACF.Activate(Entity, Recalc)
 	if not IsValid(PhysObj) then return end
 	if not EntTbl.ACF then EntTbl.ACF = {} end
 
-	ModelData.Populate(Entity:GetModel())
+	ModelData.GetModelData(Entity:GetModel())
 
 	EntTbl.ACF.Type    = ACF.GetEntityType(Entity)
 	EntTbl.ACF.PhysObj = PhysObj

@@ -1,17 +1,12 @@
+--- Note: Mesh refers to https://wiki.facepunch.com/gmod/Structures/MeshVertex
 local ACF       = ACF
+ACF.ModelData = ACF.ModelData or {}
 local ModelData = ACF.ModelData
-local isnumber  = isnumber
-local isvector  = isvector
 local isstring  = isstring
 local IsUseless = IsUselessModel
 
-local function IsValidScale(Scale)
-	if not Scale then return false end
-
-	return isnumber(Scale) or isvector(Scale)
-end
-
-local function CopyMesh(Mesh, Scale)
+--- Returns a scaled copy of a mesh
+local function CopyScaledMesh(Mesh, Scale)
 	local Result = {}
 
 	for I, Hull in ipairs(Mesh) do
@@ -27,17 +22,8 @@ local function CopyMesh(Mesh, Scale)
 	return Result
 end
 
-local function GetVolume(Mesh)
-	local Entity = ModelData.Entity
-
-	Entity:PhysicsInitMultiConvex(Mesh)
-
-	local PhysObj = Entity:GetPhysicsObject()
-
-	return PhysObj:GetVolume()
-end
-
-function ModelData.SanitizeMesh(PhysObj)
+--- Returns the mesh of a physics object in the format PhysicsInitMultiConvex expects
+function ModelData.GetMultiConvex(PhysObj)
 	local Mesh = PhysObj:GetMeshConvexes()
 
 	for I, Hull in ipairs(Mesh) do
@@ -49,8 +35,17 @@ function ModelData.SanitizeMesh(PhysObj)
 	return Mesh
 end
 
+--- TODO: SHOULD WE DO THIS?
+--- Returns a nice scale vector from a number or vector, or nil if the input is invalid
+function ModelData.GetNiceScale(Scale)
+	if not Scale then return end
+	if isnumber(Scale) then return Vector(Scale, Scale, Scale)
+	elseif isvector(Scale) then return Scale end
+end
+
 -------------------------------------------------------------------
 
+--- Returns the path of a model, or nil if the model is invalid
 function ModelData.GetModelPath(Model)
 	if not isstring(Model) then return end
 	if IsUseless(Model) then return end
@@ -58,54 +53,46 @@ function ModelData.GetModelPath(Model)
 	return Model:Trim():lower()
 end
 
+--- Returns the mesh of a model after scaling
 function ModelData.GetModelMesh(Model, Scale)
 	local Data = ModelData.GetModelData(Model)
 
+	Scale = ModelData.GetNiceScale(Scale)
 	if not Data then return end
-	if not IsValidScale(Scale) then Scale = 1 end
+	if not Scale then return Data.Mesh end
 
-	return CopyMesh(Data.Mesh, Scale)
+	return CopyScaledMesh(Data.Mesh, Scale)
 end
 
+--- Returns the volume of a model after scaling
 function ModelData.GetModelVolume(Model, Scale)
 	local Data = ModelData.GetModelData(Model)
 
+	Scale = ModelData.GetNiceScale(Scale)
 	if not Data then return end
-	if not IsValidScale(Scale) then
-		return Data.Volume
-	end
+	if not Scale then return Data.Volume end
 
-	local Mesh = CopyMesh(Data.Mesh, Scale)
-
-	return GetVolume(Mesh)
+	return Data.Volume * math.abs(Scale.x * Scale.y * Scale.z)
 end
 
+--- Returns the center of a model after scaling
 function ModelData.GetModelCenter(Model, Scale)
 	local Data = ModelData.GetModelData(Model)
 
+	Scale = ModelData.GetNiceScale(Scale)
 	if not Data then return end
-	if not IsValidScale(Scale) then Scale = 1 end
+	if not Scale then return Data.Center end
 
 	return Data.Center * Scale
 end
 
+--- Returns the size of a model after scaling
 function ModelData.GetModelSize(Model, Scale)
 	local Data = ModelData.GetModelData(Model)
 
+	Scale = ModelData.GetNiceScale(Scale)
 	if not Data then return end
-	if not IsValidScale(Scale) then Scale = 1 end
+	if not Scale then return Data.Size end
 
 	return Data.Size * Scale
-end
-
-function ModelData.GetEntityScale(Entity)
-	if Entity.IsScalable and Entity.GetScale then
-		local Scale = Entity:GetScale()
-
-		if IsValidScale(Scale) then
-			return Scale
-		end
-	end
-
-	return Entity:GetModelScale()
 end

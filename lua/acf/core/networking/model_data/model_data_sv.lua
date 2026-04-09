@@ -1,139 +1,89 @@
+-- TODO: Does making a pointer on server and client separately work? it would save networking.
 local ACF       = ACF
+ACF.ModelData = ACF.ModelData or {}
 local ModelData = ACF.ModelData
+ModelData.Models = ModelData.Models or {}
 local Models    = ModelData.Models
+local util = util
 
-util.AddNetworkString "ACF_ModelData_Entity"
+--- Returns the pointer entity, creating it if it doesn't exist
+local function EnsurePointerEntity()
+	if IsValid(ModelData.Entity) then return ModelData.Entity end
 
-local function SendPointerEntity(To)
-	net.Start("ACF_ModelData_Entity")
-	net.WriteUInt(ModelData.Entity:EntIndex(), MAX_EDICT_BITS)
-	if To then net.Send(To) else net.Broadcast() end
-end
+	-- Something BAD happened if this fails
+	local Entity = ents.Create("base_entity")
+	if not IsValid(Entity) then return error("[ACF] Failed to create ModelData entity serverside!") end
 
-do -- Pointer entity creation
-	local function Create()
-		if IsValid(ModelData.Entity) then return end -- No need to create it if it already exists
+	Entity:SetModel("models/props_junk/popcan01a.mdl")
+	Entity:PhysicsInit(SOLID_VPHYSICS)
+	Entity:SetMoveType(MOVETYPE_NONE)
+	Entity:SetCollisionGroup(COLLISION_GROUP_WORLD)
+	Entity:SetNotSolid(true)
+	Entity:SetNoDraw(true)
+	Entity:Spawn()
 
-		local Entity = ents.Create("base_entity")
-
-		if not IsValid(Entity) then return error("[ACF] Failed to create ModelData entity serverside!") end
-
-		function Entity:UpdateTransmitState()
-			return TRANSMIT_ALWAYS
-		end
-
-		Entity:SetModel("models/props_junk/popcan01a.mdl")
-		Entity:PhysicsInit(SOLID_VPHYSICS)
-		Entity:SetMoveType(MOVETYPE_NONE)
-		Entity:SetCollisionGroup(COLLISION_GROUP_WORLD)
-		Entity:SetNotSolid(true)
-		Entity:SetNoDraw(true)
-		Entity:Spawn()
-
-		Entity:AddEFlags(EFL_FORCE_CHECK_TRANSMIT)
-		Entity:CallOnRemove("ACF_ModelData", function()
-			hook.Add("Think", "ACF_ModelData_Entity", function()
-				Create()
-
-				hook.Remove("Think", "ACF_ModelData_Entity")
-			end)
+	-- When the entity is removed, recreate it as soon as possible
+	Entity:CallOnRemove("ACF_ModelData", function()
+		hook.Add("Think", "ACF_ModelData_Entity", function()
+			EnsurePointerEntity()
+			hook.Remove("Think", "ACF_ModelData_Entity")
 		end)
-
-		ModelData.Entity = Entity
-		SendPointerEntity()
-	end
-	ModelData.Create	= Create
-
-	hook.Add("InitPostEntity", "ACF_ModelData", function()
-		Create()
-
-		hook.Remove("InitPostEntity", "ACF_ModelData")
 	end)
 
-	hook.Add("ACF_OnLoadPlayer", "ACF_ModelData", function(Player)
-		if IsValid(ModelData.Entity) then SendPointerEntity(Player) else Create() end
-	end)
-
-	hook.Add("ShutDown", "ACF_ModelData", function()
-		local Entity = ModelData.Entity
-
-		if not IsValid(Entity) then return end
-
-		Entity:RemoveCallOnRemove("ACF_ModelData")
-	end)
+	ModelData.Entity = Entity
+	return ModelData.Entity
 end
 
-do -- Model data getter method
-	local util = util
+ModelData.EnsurePointerEntity = EnsurePointerEntity
 
-	local function CreatePhysObj(Model)
-		util.PrecacheModel(Model)
+-- After all the entities are initialized
+hook.Add("InitPostEntity", "ACF_ModelData", function()
+	EnsurePointerEntity()
+	hook.Remove("InitPostEntity", "ACF_ModelData")
+end)
 
-		local Ent = ModelData.Entity
+-- When a player spawns in
+hook.Add("ACF_OnLoadPlayer", "ACF_ModelData", function(_)
+	EnsurePointerEntity()
+end)
 
-		if not IsValid(Ent) then
-			ACF.DumpStack("Somehow, the precache entity is no longer valid.")
+-- Prevent recreating the entity when the server is shutting down
+hook.Add("ShutDown", "ACF_ModelData", function()
+	local Entity = ModelData.Entity
+	if not IsValid(Entity) then return end
+	Entity:RemoveCallOnRemove("ACF_ModelData")
+end)
 
-			ModelData.Create()
-			Ent = ModelData.Entity
-		end
+-------------------------------------------------------------------
 
-		Ent:SetModel(Model)
-		Ent:PhysicsInit(SOLID_VPHYSICS)
+--- Returns mesh and physics data about a model
+--- Internally handles caching and creating a pointer entity to get the physics data of the model
+function ModelData.GetModelData(Model)
+	local Path = ModelData.GetModelPath(Model) -- Verify model exists
+	if not Path then return end
 
-		return Ent:GetPhysicsObject()
-	end
+	local Data = Models[Path] -- See if we cached it before
+	if Data then return Data end
 
-	-------------------------------------------------------------------
+	util.PrecacheModel(Model) -- Cache the model itself
 
-	-- Basically the same as below, just doesn't return anything, to be used to pre-load as a contraption spawns in
-	function ModelData.Populate(Model)
-		local Path = ModelData.GetModelPath(Model)
+	-- Reinitialize the pointer entity with a new model
+	local Ent = EnsurePointerEntity()
+	Ent:SetModel(Model)
+	Ent:PhysicsInit(SOLID_VPHYSICS)
+	local PhysObj = Ent:GetPhysicsObject()
+	if not IsValid(PhysObj) then return end
 
-		if not Path then return end
-		if Models[Path] then return end
+	-- Save properties of the physics object
+	local Min, Max = PhysObj:GetAABB()
+	Data = {
+		Mesh   = ModelData.GetMultiConvex(PhysObj),
+		Volume = PhysObj:GetVolume(),
+		Center = (Min + Max) * 0.5,
+		Size   = Max - Min,
+	}
 
-		local PhysObj = CreatePhysObj(Path)
-		if not IsValid(PhysObj) then return end
+	Models[Path] = Data -- Cache the data for future use
 
-		local Min, Max = PhysObj:GetAABB()
-
-		local Data = {
-			Mesh   = ModelData.SanitizeMesh(PhysObj),
-			Volume = PhysObj:GetVolume(),
-			Center = (Min + Max) * 0.5,
-			Size   = Max - Min,
-		}
-
-		Models[Path] = Data
-	end
-
-	-------------------------------------------------------------------
-
-	function ModelData.GetModelData(Model)
-		local Path = ModelData.GetModelPath(Model)
-
-		if not Path then return end
-
-		local Data = Models[Path]
-
-		if Data then return Data end
-
-		local PhysObj = CreatePhysObj(Path)
-
-		if not IsValid(PhysObj) then return end
-
-		local Min, Max = PhysObj:GetAABB()
-
-		Data = {
-			Mesh   = ModelData.SanitizeMesh(PhysObj),
-			Volume = PhysObj:GetVolume(),
-			Center = (Min + Max) * 0.5,
-			Size   = Max - Min,
-		}
-
-		Models[Path] = Data
-
-		return Data
-	end
+	return Data
 end

@@ -1,74 +1,41 @@
 local ACF       = ACF
+ACF.ModelData = ACF.ModelData or {}
 local ModelData = ACF.ModelData
+ModelData.Models = ModelData.Models or {}
 local Models    = ModelData.Models
 
+--- Returns mesh and physics data about a model
+--- Internally handles caching and creating a pointer entity to get the physics data of the model
 function ModelData.GetModelData(Model)
-	local Path = ModelData.GetModelPath(Model)
+	local Path = ModelData.GetModelPath(Model) -- Verify model exists
 	if not Path then return end
 
-	local Data = Models[Path]
+	local Data = Models[Path] -- See if we cached it before
 	if Data then return Data end
 
+	-- Create a temporary entity to get the physics data of the model
 	local EntTest = ents.CreateClientProp(Model)
 	EntTest:SetPos(Vector(0, 0, 0))
 	EntTest:Spawn()
 
+	-- Remove the entity if the physics object is invalid
 	local PhysObj = EntTest:GetPhysicsObject()
-
 	if not IsValid(PhysObj) then
 		timer.Simple(0, function() if IsValid(EntTest) then EntTest:Remove() end end)
-
 		return
 	end
 
+	-- Save properties of the physics object
 	local Min, Max = PhysObj:GetAABB()
 	Data = {
-		Mesh   = ModelData.SanitizeMesh(PhysObj),
+		Mesh   = ModelData.GetMultiConvex(PhysObj),
 		Volume = PhysObj:GetVolume(),
 		Center = (Min + Max) * 0.5,
 		Size   = Max - Min
 	}
 	timer.Simple(0, function() if IsValid(EntTest) then EntTest:Remove() end end)
-	Models[Path] = Data
 
-	-- backwards compat
-	hook.Run("ACF_OnReceiveModelData", Path, Data)
+	Models[Path] = Data -- Cache the data for future use
 
 	return Data
 end
-
-hook.Add("ACF_OnLoadAddon", "ACF_ModelData", function()
-	local CheckEntity
-
-	local function UpdateEntity(Entity)
-		ModelData.Entity = Entity
-
-		Entity:CallOnRemove("ACF_ModelData", function()
-			hook.Add("OnEntityCreated", "ACF_ModelData", CheckEntity)
-		end)
-
-		hook.Remove("OnEntityCreated", "ACF_ModelData")
-	end
-
-	CheckEntity = function(Entity)
-		if Entity:EntIndex() ~= ModelData.EntIndex then return end
-
-		UpdateEntity(Entity)
-	end
-
-	net.Receive("ACF_ModelData_Entity", function()
-		local Index    = net.ReadUInt(MAX_EDICT_BITS)
-		local ModelEnt = Entity(Index)
-		ModelData.EntIndex = Index
-
-		if not IsValid(ModelEnt) then
-			hook.Add("OnEntityCreated", "ACF_ModelData", CheckEntity)
-
-			return
-		end
-
-		UpdateEntity(ModelEnt)
-	end)
-
-	hook.Remove("ACF_OnLoadAddon", "ACF_ModelData")
-end)
