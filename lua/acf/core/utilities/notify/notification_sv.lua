@@ -1,4 +1,5 @@
 util.AddNetworkString("ACF_Notify")
+local Messages = ACF.Utilities.Messages
 
 do -- Backwards compatibility with the old notification system.
     util.AddNetworkString("ACF_NameAndShame")
