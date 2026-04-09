@@ -1,390 +1,152 @@
-local hook = hook
-local ACF  = ACF
 
-ACF.MenuOptions = ACF.MenuOptions or {}
-ACF.MenuLookup  = ACF.MenuLookup or {}
-ACF.MenuCount   = ACF.MenuCount or 0
+--- Initializes an ACF menu base panel on the provided panel.
+--- @param Panel any The panel to add the base panel to
+--- @param Command string The command to run to reload the menu
+--- @param CreateMenu string The name of the function to call to create the menu (on the ACF table)
+function ACF.InitMenuReloadableBase(Panel, Command, CreateMenu)
+	local BasePanel = vgui.Create("ACF_Panel", Panel)
 
-local Options = ACF.MenuOptions
-local Lookup  = ACF.MenuLookup
+	-- Contains the reload button
+	BasePanel:AddMenuReload(Command)
 
-do -- Menu population functions
-	local function DefaultAction(Menu)
-		Menu:AddTitle("#acf.menu.default_action_title")
-		Menu:AddLabel("#acf.menu.default_action_desc")
-	end
+	-- Actual menu exists inside this panel
+	local MenuPanel = BasePanel:AddPanel("ACF_Panel")
 
-	function ACF.AddMenuOption(Index, Name, Icon, Enabled)
-		if not Index then return end
-		if not Name then return end
-		if not isfunction(Enabled) then Enabled = nil end
+	-- Add the console command to reload the menu
+	concommand.Add(Command, function()
+		MenuPanel:ClearChildren()
+		ACF[CreateMenu](MenuPanel)
+	end)
 
-		if not Lookup[Name] then
-			local Count = ACF.MenuCount + 1
+	-- Create the menu for the first time
+	ACF[CreateMenu](MenuPanel)
 
-			Options[Count] = {
-				Icon = "icon16/" .. (Icon or "plugin") .. ".png",
-				IsEnabled = Enabled,
-				Index = Index,
-				Name = Name,
-				Lookup = {},
-				List = {},
-				Count = 0,
-			}
-
-			Lookup[Name] = Options[Count]
-
-			ACF.MenuCount = Count
-		else
-			local Option = Lookup[Name]
-
-			Option.Icon = "icon16/" .. (Icon or "plugin") .. ".png"
-			Option.IsEnabled = Enabled
-			Option.Index = Index
-		end
-	end
-
-	function ACF.GetMenuItem(Option, Name)
-		return Lookup[Option].Lookup[Name]
-	end
-
-	function ACF.AddMenuItem(Index, Option, Name, Icon, Action, Enabled)
-		if not Index then return end
-		if not Option then return end
-		if not Name then return end
-		if not Lookup[Option] then return end
-		if not isfunction(Enabled) then Enabled = nil end
-
-		local Items = Lookup[Option]
-		local Item = Items.Lookup[Name]
-
-		if not Item then
-			Items.Count = Items.Count + 1
-
-			Items.List[Items.Count] = {
-				Icon = "icon16/" .. (Icon or "plugin") .. ".png",
-				Action = Action or DefaultAction,
-				IsEnabled = Enabled,
-				Option = Option,
-				Index = Index,
-				Name = Name,
-			}
-
-			Items.Lookup[Name] = Items.List[Items.Count]
-		else
-			Item.Icon = "icon16/" .. (Icon or "plugin") .. ".png"
-			Item.Action = Action or DefaultAction
-			Item.IsEnabled = Enabled
-			Item.Option = Option
-			Item.Index = Index
-			Item.Name = Name
-		end
-	end
-
-	ACF.AddMenuOption(1, "#acf.menu.about", "information")
-	ACF.AddMenuOption(2, "#acf.menu.dupe", "arrow_down")
-	ACF.AddMenuOption(101, "#acf.menu.settings", "wrench")
-	ACF.AddMenuOption(102, "#acf.menu.permissions", "gun")
-	ACF.AddMenuOption(201, "#acf.menu.entities", "brick")
-	ACF.AddMenuOption(9999, "#acf.menu.fun", "bricks")
-	ACF.AddMenuOption(100000, "#acf.menu.scanner", "magnifier")
+	return BasePanel
 end
 
-
-do -- ACF Menu context panel
-	local function GetSortedList(List)
-		local Result = {}
-
-		for K, V in ipairs(List) do
-			Result[K] = V
-		end
-
-		table.SortByMember(Result, "Index", true)
-
-		return Result
-	end
-
-	local function AllowOption(Option)
-		if Option.IsEnabled and not Option:IsEnabled() then return false end
-
-		local Allow = hook.Run("ACF_OnEnableMenuOption", Option.Name)
-
-		return Allow
-	end
-
-	local function AllowItem(Item)
-		if Item.IsEnabled and not Item:IsEnabled() then return false end
-
-		local Allow = hook.Run("ACF_OnEnableMenuItem", Item.Option, Item.Name)
-
-		return Allow
-	end
-
-	local function UpdateTree(Tree, Old, New)
-		local OldParent = Old and Old.Parent
-		local NewParent = New.Parent
-
-		if OldParent == NewParent then return end
-
-		if OldParent then
-			OldParent.AllowExpand = true
-			OldParent:SetExpanded(false)
-		end
-
-		NewParent.AllowExpand = true
-		NewParent:SetExpanded(true)
-
-		Tree:SetHeight(Tree:GetLineHeight() * (Tree.BaseHeight + NewParent.Count))
-	end
-
-	local function FixStupidNodeCutoffTextIssue(Node)
-		function Node:AnimSlide( anim, delta, data )
-			if not IsValid(self.ChildNodes) then anim:Stop() return end
-
-			if anim.Started then
-				data.To = self:GetTall()
-				data.Visible = self.ChildNodes:IsVisible()
-			end
-
-			if anim.Finished then
-				self:InvalidateLayout()
-				self.ChildNodes:SetVisible( data.Visible )
-				self:SetTall( data.To )
-				self:GetParentNode():ChildExpanded()
-				return
-			end
-			self:SetTall(Lerp(math.ease.InOutSine(delta), data.From, data.To))
-
-			-- These fix the label overflow
-			self.ChildNodes:SetVisible(true)
-			self.ChildNodes:SetWide(20000)
-			self.Label:SetWide(20000)
-
-			self:GetParentNode():ChildExpanded()
-		end
-
-		function Node:PerformLayout()
-			if self:IsRootNode() then
-				return self:PerformRootNodeLayout()
-			end
-
-			if self.animSlide:Active() then return end
-
-			local LineHeight = self:GetLineHeight()
-
-			self.Expander:SetPos(-11, 0)
-			self.Expander:SetSize(15, 15)
-			self.Expander:SetVisible(false)
-
-			self.Label:StretchToParent(0, nil, 0, nil)
-			self.Label:SetTall(LineHeight)
-
-			self.Icon:SetVisible(true)
-			self.Icon:SetPos(self.Expander.x + self.Expander:GetWide() + 4, (LineHeight - self.Icon:GetTall()) * 0.5)
-			self.Label:SetTextInset(self.Icon.x + self.Icon:GetWide() + 4, 0)
-
-			if not IsValid(self.ChildNodes) or not self.ChildNodes:IsVisible() then
-				self:SetTall(LineHeight)
-				return
-			end
-
-			self.ChildNodes:SizeToContents()
-			self:SetTall(LineHeight + self.ChildNodes:GetTall())
-
-			self.ChildNodes:StretchToParent(7, LineHeight, 0, 0)
-
-			self:DoChildrenOrder()
-		end
-
-		Node:SetHideExpander(true)
-		Node.animSlide = Derma_Anim("Anim", Node, Node.AnimSlide)
-	end
-
-	local function PopulateTree(Tree)
-		local OptionList = GetSortedList(Options)
-		local First
-
-		Tree.BaseHeight = 0.5
-		Tree.VBar:SetSize(0, 0)
-		Tree:SetLineHeight(19)
-
-		for _, Option in ipairs(OptionList) do
-			if not AllowOption(Option) then continue end
-
-			local Parent = Tree:AddNode(Option.Name, Option.Icon)
-			local SetExpanded = Parent.SetExpanded
-
-			FixStupidNodeCutoffTextIssue(Parent)
-
-			Parent.Action = Option.Action
-			Parent.Master = true
-			Parent.Count = 0
-
-			function Parent:SetExpanded(Bool)
-				if not self.AllowExpand then return end
-
-				SetExpanded(self, Bool)
-
-				self.AllowExpand = nil
-			end
-
-			Tree.BaseHeight = Tree.BaseHeight + 1
-
-			local ItemList = GetSortedList(Option.List)
-			for _, Item in ipairs(ItemList) do
-				if not AllowItem(Item) then continue end
-
-				local Child = Parent:AddNode(Item.Name, Item.Icon)
-				Child.Action = Item.Action
-				Child.Parent = Parent
-
-				Parent.Count = Parent.Count + 1
-
-				function Child.Label:Paint(w, h)
-					local Skin = self:GetSkin()
-					surface.SetAlphaMultiplier(math.Remap(math.sin(CurTime() * 7), -1, 1, 0.6, 1))
-					Skin:PaintTreeNodeButton(self, w, h)
-					surface.SetAlphaMultiplier(1)
-				end
-
-				if not Parent.Selected then
-					Parent.Selected = Child
-
-					if not First then
-						First = Child
-					end
-				end
-			end
-		end
-
-		Tree:SetSelectedItem(First)
-	end
-
-	local function SetupMenuTree(Menu, Tree)
-		function Tree:OnNodeSelected(Node)
-			if self.Selected == Node then return end
-
-			if Node.Master then
-				self:SetSelectedItem(Node.Selected)
-				return
-			end
-
-			UpdateTree(self, self.Selected, Node)
-
-			Node.Parent.Selected = Node
-			self.Selected = Node
-
-			ACF.SetToolMode("acf_menu", "Main", "Idle")
-			ACF.SetClientData("Destiny")
-
-			Menu:ClearPostBuildFns()
-			Menu:ClearTemporal()
-			Menu:StartTemporal()
-
-			-- Fixes menu errors just killing everything
-			xpcall(function() Node.Action(Menu) end, function(err) ErrorNoHaltWithStack(err) end)
-
-			Menu:EndTemporal()
-			Menu:ExecutePostBuildFns()
-		end
-
-		PopulateTree(Tree)
-	end
-
-	--- Generates the menu used in the main menu tool.
-	--- @param Panel panel The base panel to build the menu off of.
-	function ACF.CreateSpawnMenu(Panel)
-		local Menu = ACF.InitMenuBase(Panel, "SpawnMenu", "acf_reload_spawn_menu")
-		local Tree = Menu:AddPanel("DTree")
-		SetupMenuTree(Menu, Tree)
-	end
-
-	ACF.SetupMenuTree = SetupMenuTree
-end
-
-do -- Client and server settings
-	ACF.SettingsPanels = ACF.SettingsPanels or {
-		Client = {},
-		Server = {},
+ACF.MainMenuLookup = ACF.MainMenuLookup or {}
+--- Adds a menu item to the main menu lookup.
+function ACF.AddMenuItem(Order, Name, Icon, Action, Parent, Select)
+	ACF.MainMenuLookup[Name] = {
+		Order = Order,
+		Name = Name,
+		Icon = Icon,
+		Action = Action,
+		Parent = Parent,
+		Children = {},
+		Select = Select,
 	}
+end
 
-	local Settings = ACF.SettingsPanels
+--- Creates the main menu for ACF given an existing ACF_Panel
+function ACF.CreateMainMenu(Menu)
+	-- Add test elements
+	local Tree = Menu:AddPanel("DTree")
+	Tree:SetSize(300, 400)
 
-	--- Generates the following functions:
-	-- ACF.AddClientSettings(Index, Name, Function)
-	-- ACF.RemoveClientSettings(Name)
-	-- ACF.GenerateClientSettings(MenuPanel)
-	-- ACF.AddServerSettings(Index, Name, Function)
-	-- ACF.RemoveServerSettings(Name)
-	-- ACF.GenerateServerSettings(MenuPanel)
+	local Clearable = Menu:AddPanel("ACF_Panel")
 
-	--- Uses the following hooks:
-	-- ACF_PreLoadServerSettings
-	-- ACF_OnLoadServerSettings
-	-- ACF_PostLoadServerSettings
-	-- ACF_PreLoadClientSettings
-	-- ACF_OnLoadClientSettings
-	-- ACF_PostLoadClientSettings
+	-- Build a forest from the flat lookup table (to deal with hot loading)
+	local Lookup = table.Copy(ACF.MainMenuLookup)
+	for _, node in pairs(Lookup) do
+		if Lookup[node.Parent] then
+			table.insert(Lookup[node.Parent].Children, node)
+			table.sort(Lookup[node.Parent].Children, function(a, b) return a.Order < b.Order end)
+		end
+	end
 
-	for Realm, Destiny in pairs(Settings) do
-		local PreHook  = "ACF_PreLoad" .. Realm .. "Settings"
-		local OnHook   = "ACF_OnLoad" .. Realm .. "Settings"
-		local PostHook = "ACF_PostLoad" .. Realm .. "Settings"
-		local Message  = "No %sside settings have been registered."
+	local function DefaultAction(Panel)
+		Panel:AddLabel("This menu has not been implemented yet.")
+	end
 
-		local function CreateSection(Menu, Name, Data)
-			local Result = hook.Run(PreHook, Name)
+	local function ExpandRecurseSmooth(Node, Expand)
+		Node:SetExpanded(Expand)
+		for _, Child in pairs(Node:GetChildNodes()) do
+			ExpandRecurseSmooth(Child, Expand)
+		end
+	end
 
-			if not Result then return end
+	-- Handles what happens when a node is selected
+	function Tree:UpdateTree(Old, New)
+		if Old == New then return end
 
-			local Base, Section = Menu:AddCollapsible(Name, false)
+		ExpandRecurseSmooth(New, true)
 
-			function Section:OnToggle(Bool)
-				if not Bool then return end
-				if self.Created then return end
-
-				local Result = hook.Run(OnHook, Name, Base)
-
-				if not Result then
-					Data.Create(Base)
-				end
-
-				hook.Run(PostHook, Name, Base)
-
-				self.Created = true
+		-- Collapse every other ancestor node
+		for _, Node in pairs(Tree.Children) do
+			if Node ~= New.Ancestor then
+				ExpandRecurseSmooth(Node, false)
 			end
 		end
 
-		ACF["Add" .. Realm .. "Settings"] = function(Index, Name, Function)
-			if not isnumber(Index) then return end
-			if not isstring(Name) then return end
-			if not isfunction(Function) then return end
+		local NodeData = New.NodeData or {}
 
-			Destiny[Name] = {
-				Create = Function,
-				Index = Index,
-			}
+		-- Clear the temporary menu panel and load the menu
+		Clearable:ClearChildren()
+		Clearable:AddTitle(NodeData.Name)
+
+		if NodeData.Action then NodeData.Action(Clearable)
+		else DefaultAction(Clearable) end
+
+		Clearable:InvalidateLayout(true)
+		Clearable:SizeToChildren(true, true)
+	end
+
+	function Tree:OnNodeSelected(Node)
+		if self.Selected == Node then return end
+
+		self:UpdateTree(self.Selected, Node)
+
+		self.Selected = Node
+	end
+
+	-- Recursive function to add nodes and their children
+	function AddNodeWithChildren(DTree, ParentNode, NodeData)
+		local Node = ParentNode:AddNode(NodeData.Name, NodeData.Icon)
+		Node.NodeData = NodeData
+
+		-- An ancestor is any node added directly to the tree
+		if ParentNode == DTree then
+			Node.Ancestor = Node
+			DTree.Children = DTree.Children or {}
+			table.insert(DTree.Children, Node)
 		end
 
-		ACF["Remove" .. Realm .. "Settings"] = function(Name)
-			if not isstring(Name) then return end
+		Node.Ancestor = Node.Ancestor or ParentNode.Ancestor
 
-			Destiny[Name] = nil
-		end
+		if NodeData.Select then DTree.ToSelect = Node end
 
-		ACF["Generate" .. Realm .. "Settings"] = function(Menu)
-			if not ispanel(Menu) then return end
-
-			if not next(Destiny) then
-				Menu:AddTitle("Nothing to see here.")
-				Menu:AddLabel(Message:format(Realm))
-
-				return
+		-- Recursively add children
+		if NodeData.Children then
+			for _, ChildData in ipairs(NodeData.Children) do
+				AddNodeWithChildren(DTree, Node, ChildData)
 			end
-
-			for Name, Data in SortedPairsByMemberValue(Destiny, "Index") do
-				CreateSection(Menu, Name, Data)
-			end
 		end
+		return Node
+	end
+
+	-- Add all top-level nodes
+	for _, NodeData in ipairs(Lookup.Base.Children) do
+		AddNodeWithChildren(Tree, Tree, NodeData):ExpandRecurse(true)
+	end
+
+	if Tree.ToSelect then Tree:SetSelectedItem(Tree.ToSelect) end
+
+	return Tree
+end
+
+--- Returns a function that creates a menu for the specified entity class
+--- Make sure a data var scope for the EntityClass has been created before calling this.
+function ACF.EntityMenuCallback(EntityClass)
+	local ClassData = baseclass.Get( EntityClass )
+	return function(MenuPanel)
+		ACF.SetDataVar("SpawnClass", "ToolGun", EntityClass)
+
+		MenuPanel:AddLabel(ClassData.ACF_Menu_Description or "No description available.")
+
+		local Base = MenuPanel:AddCollapsible("Settings")
+		Base:AddPresetsBar(EntityClass)
+		Base:AddModelPreview(ClassData.ACF_Menu_Model or "models/hunter/blocks/cube025x025x025.mdl")
+		ACF.CreatePanelsFromDataVars(Base, EntityClass)
 	end
 end

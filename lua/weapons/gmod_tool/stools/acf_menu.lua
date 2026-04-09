@@ -1,42 +1,87 @@
-ACF.LoadToolFunctions(TOOL)
-
-TOOL.Name = "#tool.acf_menu.menu_name"
+TOOL.Name = "ACF Menu"
+TOOL.Category = "Construction"
 
 if CLIENT then
-	-- "Hitbox" colors
-	local Sensitive      = Color(255, 0, 0, 50)
-	local NotSoSensitive = Color(255, 255, 0, 50)
+	language.Add("tool.ACF_menu.name", "Extendable Combat Framework")
+	language.Add("tool.ACF_menu.desc", "Main menu for the ACF addon")
 
-	function TOOL:DrawHUD()
-		local Trace = LocalPlayer():GetEyeTrace()
-		local Distance = Trace.StartPos:DistToSqr(Trace.HitPos)
-		local Entity = Trace.Entity
-
-		if not IsValid(Entity) then return end
-		if not Entity.DrawOverlay then return end
-		if Entity.CanDrawOverlay and not Entity:CanDrawOverlay() then return end
-
-		if Distance <= 65536 then
-			cam.Start3D()
-			render.SetColorMaterial()
-
-			Entity:DrawOverlay(Trace)
-
-			cam.End3D()
-		end
+	TOOL.BuildCPanel = function(Panel)
+		local BasePanel = ACF.InitMenuReloadableBase(Panel, "ACF_reload_main_menu", "CreateMainMenu")
+		Panel:AddItem(BasePanel)
 	end
+end
 
-	TOOL.BuildCPanel = ACF.CreateSpawnMenu
+function TOOL:LeftClick(Trace)
+	if CLIENT then return true end
+	if Trace.HitSky then return false end
 
-	hook.Add("ACF_OnDrawBoxes", "ACF Draw Hitboxes", function(Entity)
-		if not Entity.HitBoxes then return end
-		if not next(Entity.HitBoxes) then return end
+	local Player = self:GetOwner()
+	local SpawnClass = ACF.GetDataVar("SpawnClass", "ToolGun", Player)
+	local Entity = Trace.Entity
 
-		for _, Tab in pairs(Entity.HitBoxes) do
-			local Pos = Entity:LocalToWorld(Tab.Pos)
-			local Ang = Entity:LocalToWorldAngles(Tab.Angle)
+	if not Player:KeyDown(IN_SPEED) then -- Spawning/Updating
+		if not SpawnClass or SpawnClass == "" then return false end
 
-			render.DrawWireframeBox(Pos, Ang, Tab.Scale * -0.5, Tab.Scale * 0.5, Tab.Sensitive and Sensitive or NotSoSensitive)
+		local DataVarKVs = ACF.GetDataVars(SpawnClass, Player)
+		if DataVarKVs then DataVarKVs = DataVarKVs[SpawnClass] end -- Returned results are in the format {SpawnClass = {DataVarKVs}}
+
+		if IsValid(Entity) and Entity:GetClass() == SpawnClass then
+			ACF.UpdateEntityData(Entity, DataVarKVs)
+			return true
 		end
-	end)
+
+		local Position = Trace.HitPos + Trace.HitNormal * 128
+		local Angles   = Trace.HitNormal:Angle():Up():Angle()
+		local Success, Result = ACF.SpawnEntity(SpawnClass, Player, Position, Angles, DataVarKVs, false)
+
+		if Success then
+			local PhysObj = Result:GetPhysicsObject()
+
+			if Result.ACF_PostMenuSpawn then Result:ACF_PostMenuSpawn() end
+			ACF.DropToFloor(Result)
+
+			Result:SetSpawnEffect(true)
+
+			if IsValid(PhysObj) then
+				PhysObj:EnableMotion(false)
+			end
+		else
+			print(Player, "Error", "Couldn't create entity: " .. Result)
+		end
+		return Success
+	else -- Copying settings
+		if not IsValid(Entity) then return false end
+		if Entity:GetClass() ~= SpawnClass then return false end
+
+		local DataVarKVs = Entity.ACF_LiveData
+		ACF.SetDataVars({[SpawnClass] = DataVarKVs}, Player)
+	end
+end
+
+function TOOL:RightClick(_)
+	return true
+end
+
+function TOOL:Reload(_)
+	return true
+end
+
+function TOOL:Think()
+	-- print("thinking")
+end
+
+function TOOL:Deploy()
+	-- print("deploying")
+end
+
+function TOOL:Holster()
+	-- print("holstering")
+end
+
+function TOOL:DrawHud()
+	-- print("drawing hud")
+end
+
+function TOOL:DrawTOOLScreen(_, _)
+	-- print("drawing world")
 end

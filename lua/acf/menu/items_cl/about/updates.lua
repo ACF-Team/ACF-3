@@ -41,4 +41,4 @@ local function CreateMenu(Menu)
 	end
 end
 
-ACF.AddMenuItem(301, "#acf.menu.about", "#acf.menu.updates", "newspaper", CreateMenu)
+ACF.AddMenuItem(2, "Updates", "icon16/newspaper.png", CreateMenu, "About", true)

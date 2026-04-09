@@ -1,27 +1,28 @@
--- Variables that should be persisted between servers
+-- TODO: REPLACE WITH DATA VAR ANALOG ONCE MADE
+-- -- Variables that should be persisted between servers
 
--- Settings
-ACF.PersistClientData("Volume", 0.5)
-ACF.PersistClientData("AmmoSupplyColor", Color(255, 255, 0, 10))
-ACF.PersistClientData("FuelSupplyColor", Color(76, 201, 250, 10))
-ACF.PersistClientData("DualClutch", false)
+-- -- Settings
+-- ACF.PersistClientData("Volume", 0.5)
+-- ACF.PersistClientData("AmmoSupplyColor", Color(255, 255, 0, 10))
+-- ACF.PersistClientData("FuelSupplyColor", Color(76, 201, 250, 10))
+-- ACF.PersistClientData("DualClutch", false)
 
--- Crate projectile counts
-ACF.PersistClientData("CrateProjectilesX", 3)
-ACF.PersistClientData("CrateProjectilesY", 3)
-ACF.PersistClientData("CrateProjectilesZ", 3)
+-- -- Crate projectile counts
+-- ACF.PersistClientData("CrateProjectilesX", 3)
+-- ACF.PersistClientData("CrateProjectilesY", 3)
+-- ACF.PersistClientData("CrateProjectilesZ", 3)
 
--- Fuel tank size and shape
-ACF.PersistClientData("FuelSizeX", 24)
-ACF.PersistClientData("FuelSizeY", 24)
-ACF.PersistClientData("FuelSizeZ", 24)
-ACF.PersistClientData("FuelShape", "Box")
+-- -- Fuel tank size and shape
+-- ACF.PersistClientData("FuelSizeX", 24)
+-- ACF.PersistClientData("FuelSizeY", 24)
+-- ACF.PersistClientData("FuelSizeZ", 24)
+-- ACF.PersistClientData("FuelShape", "Box")
 
--- Supply crate size and shape
-ACF.PersistClientData("SupplySizeX", 24)
-ACF.PersistClientData("SupplySizeY", 24)
-ACF.PersistClientData("SupplySizeZ", 24)
-ACF.PersistClientData("SupplyShape", "Box")
+-- -- Supply crate size and shape
+-- ACF.PersistClientData("SupplySizeX", 24)
+-- ACF.PersistClientData("SupplySizeY", 24)
+-- ACF.PersistClientData("SupplySizeZ", 24)
+-- ACF.PersistClientData("SupplyShape", "Box")
 
--- Gearbox
-ACF.PersistClientData("GearboxLegacyRatio", false)
+-- -- Gearbox
+-- ACF.PersistClientData("GearboxLegacyRatio", false)
