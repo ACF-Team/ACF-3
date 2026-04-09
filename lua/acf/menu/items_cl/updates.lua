@@ -1,44 +1,93 @@
-local function DrawGitCommit(Menu, Commit)
-	local Base = Menu:AddCollapsible("Latest Commit", false)
-	Base:AddLabel(Commit.title)
-	Base:AddLabel("Message: " .. Commit.body)
-	Base:AddLabel("Author: " .. Commit.author)
-	Base:AddLabel("Date: " .. os.date("%Y-%m-%d %H:%M:%S", Commit.date))
-	local Button = Base:AddButton("View on GitHub")
-	function Button:DoClickInternal()
-		gui.OpenURL(Commit.url)
+local ACF = ACF
+local Repositories = ACF.Repositories
+local MenuBase
+
+local function LoadCommit(Base, Commit)
+	local Date = Commit.Date
+	local DefaultText = language.GetPhrase("acf.menu.updates.unknown")
+
+	Base:AddTitle(Commit.Title or "#acf.menu.updates.commit_title_default")
+	Base:AddLabel(language.GetPhrase("acf.menu.updates.commit_author"):format(Commit.Author or DefaultText))
+	Base:AddLabel(language.GetPhrase("acf.menu.updates.commit_date"):format(Date and os.date("%D", Date) or DefaultText))
+	Base:AddLabel(language.GetPhrase("acf.menu.updates.commit_time"):format(Date and os.date("%T", Date) or DefaultText))
+	Base:AddLabel(Commit.Body or "#acf.menu.updates.commit_message_default")
+
+	local View = Base:AddButton("#acf.menu.updates.commit_view")
+	function View:DoClickInternal()
+		gui.OpenURL(Commit.Link)
 	end
 end
 
-local function DrawGitStatus(Menu, Name, Version, MostRecentCommit, _)
-	local Base = Menu:AddCollapsible("[" .. Name .. "] - " .. Version.realm .. "", true, Version.realm == "Server" and "icon16/Server.png" or "icon16/computer.png")
-	local Status = Base:AddLabel("")
-	Status:SetText("Status: Unknown (Github API call failed)")
-	Status:SetTextColor(Color(255, 255, 100))
+local function AddStatus(RepoName, Repository, RealmName, Branches)
+	local Data        = Repository[RealmName]
+	local Branch      = Branches[Data.Head] or Branches.master
+	local IconSuffix  = Data.Status ~= "Up to date" and "_error.png" or ".png"
+	local Icon        = RealmName == "Server" and "icon16/server" .. IconSuffix or "icon16/computer" .. IconSuffix
+	local Base        = MenuBase:AddCollapsible(language.GetPhrase("acf.menu.updates.realm_status"):format(RepoName, RealmName), nil, Icon)
+	local DefaultText = language.GetPhrase("acf.menu.updates.unknown")
 
-	Base:AddLabel("Branch: " .. Version.head)
-	Base:AddLabel("Commit: " .. Version.code)
+	Base:SetTooltip(language.GetPhrase("acf.menu.updates.realm_tooltip"):format(RealmName))
 
-	Base:SetTooltip("Click to copy version info to clipboard")
-	function Base:OnMousePressed(Enum)
-		if Enum ~= MOUSE_LEFT then return end
-		SetClipboardText(Version.code)
+	function Base:OnMousePressed(Code)
+		if Code ~= MOUSE_LEFT then return end
+
+		SetClipboardText(Data.Code or DefaultText)
 	end
 
-	if MostRecentCommit then
-		local Outdated = Version.date < MostRecentCommit.date
-		Status:SetText("Status: " .. (Outdated and "Outdated" or "Up to Date"))
-		Status:SetTextColor(Outdated and Color(255, 100, 100) or Color(100, 255, 100))
-		DrawGitCommit(Base, MostRecentCommit)
+	Base:AddTitle(language.GetPhrase("acf.menu.updates.current_status"):format(Data.Status or DefaultText))
+	Base:AddLabel(language.GetPhrase("acf.menu.updates.current_version"):format(Data.Code or DefaultText))
+
+	if Branch and Data.Status ~= "Up to date" then
+		Base:AddLabel(language.GetPhrase("acf.menu.updates.latest_version"):format(Branch.Code))
 	end
+
+	Base:AddLabel(language.GetPhrase("acf.menu.updates.current_branch"):format(Data.Head or DefaultText))
+
+	if Branch then
+		local Commit, Header = Base:AddCollapsible("#acf.menu.updates.latest_commit", false)
+
+		function Header:OnToggle(Expanded)
+			if not Expanded then return end
+			if self.Loaded then return end
+
+			LoadCommit(Commit, Branch)
+
+			self.Loaded = true
+		end
+	else
+		Base:AddTitle("#acf.menu.updates.invalid_branch")
+	end
+
+	MenuBase:AddLabel("") -- Empty space
+end
+
+local function UpdateMenu()
+	if not IsValid(MenuBase) then return end
+	if not next(Repositories) then return end
+
+	MenuBase:ClearTemporal()
+	MenuBase:StartTemporal()
+
+	for RepoName, Repository in SortedPairs(Repositories) do
+		if not Repository then continue end
+
+		local Branches = Repository.Branches
+
+		AddStatus(RepoName, Repository, "Server", Branches)
+		AddStatus(RepoName, Repository, "Client", Branches)
+	end
+
+	MenuBase:EndTemporal()
 end
 
 local function CreateMenu(Menu)
-	for ExtensionName, ClientExtension in pairs(ACF.Extensions) do
-		ServerExtension = ACF.ServerExtensions[ExtensionName]
-		DrawGitStatus(Menu, ExtensionName, ClientExtension.Version, ClientExtension.Commit, ClientExtension.Retrieved)
-		DrawGitStatus(Menu, ExtensionName, ServerExtension.Version, ServerExtension.Commit, ServerExtension.Retrieved)
-	end
+	Menu:AddTitle("#acf.menu.updates.version_status")
+
+	MenuBase = Menu:AddPanel("ACF_Panel")
+
+	UpdateMenu()
 end
 
 ACF.AddMenuItem(301, "#acf.menu.about", "#acf.menu.updates", "newspaper", CreateMenu)
+
+hook.Add("ACF_OnFetchRepository", "ACF Updates Menu", UpdateMenu)
