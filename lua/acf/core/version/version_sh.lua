@@ -150,10 +150,10 @@ local function FetchCommit(url, callback)
 		method = "GET",
 		success = function(_, body)
 			local data = util.JSONToTable(body)
-			if not data then print("Failed to fetch commit information") return end
+			if not data then print("[ACF] Failed to fetch commit information") return end
 
 			local raw = data[1] or data
-			if not raw or not raw.commit then print("Failed to fetch commit information") return end
+			if not raw or not raw.commit then print("[ACF] Failed to fetch commit information") return end
 
 			local Title, Body = GitTitleBody(raw.commit.message)
 
@@ -167,7 +167,7 @@ local function FetchCommit(url, callback)
 			})
 		end,
 		failed = function(err)
-			print("HTTP failed:", err)
+			print("[ACF] Commit HTTP failed:", err)
 		end
 	})
 end
@@ -186,7 +186,7 @@ end
 
 ACF.Extensions = ACF.Extensions or {}
 function ACF.AddRepository(_, Name)
-	print("Checking version for repository:", Name)
+	-- print("Checking version for repository:", Name)
 	local Version = ACF.CheckLocalVersion()
 	ACF.Extensions[Name] = ACF.Extensions[Name] or {}
 	ACF.Extensions[Name].Version = Version -- Version info for this repository
@@ -197,3 +197,19 @@ function ACF.AddRepository(_, Name)
 end
 
 ACF.AddRepository("ACF-Team", "ACF-3")
+
+-- Realm specific stuff (so small it probably doesn't need to be in separate files)
+if SERVER then
+	-- Retrieve most recent commit and current server commit and network to all clients
+	util.AddNetworkString("ACF_VersionInfo")
+	hook.Add("ACF_OnLoadPlayer", "ACF_SendVersionInfo", function(ply)
+		net.Start("ACF_VersionInfo")
+		net.WriteString(util.TableToJSON(ACF.Extensions or {}))
+		net.Send(ply)
+	end)
+elseif CLIENT then
+	-- Receive version info from server
+	net.Receive("ACF_VersionInfo", function()
+		ACF.ServerExtensions = util.JSONToTable(net.ReadString())
+	end)
+end
