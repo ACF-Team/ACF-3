@@ -17,7 +17,7 @@ Call Order:
 Notable variables:
 	ACF_LiveData: The current live data of the entity, updated whenever the entity is spawned or updated. Initialized by the toolgun on spawn, or by the duplicator when pasting.
 		Certain datavar types like linked entities will have unsafe/garbage data until PostEntityPaste is called. Do not use them before then.	
-	ACF_DupeData: A copy of the live data at the time of duplication. PostEntityPaste updates it immediately before copying. It's really just for flushing data, don't use it.
+	ACF_UserData: A copy of the live data at the time of duplication. PostEntityPaste updates it immediately before copying. It's really just for flushing data, don't use it.
 ]]--
 
 ACF.EntityTables = ACF.EntityTables or {}
@@ -113,12 +113,12 @@ function ACF.AutoRegister(ENT)
 	end)
 
 	HijackBefore("PreEntityCopy", function(self)
-		self.ACF_DupeData = table.Copy(self.ACF_LiveData)
+		self.ACF_UserData = table.Copy(self.ACF_LiveData)
 		for _, DataVarName in ipairs(ACF.DataVarScopesOrdered[Class] or empty_table) do
 			local DataVar = ACF.DataVarsByScopeAndName[Class] and ACF.DataVarsByScopeAndName[Class][DataVarName]
 			if DataVar and DataVar.Type.PreCopy then
-				local ToDupe = DataVar.Type.PreCopy(self, DataVar, self.ACF_DupeData[DataVarName])
-				self.ACF_DupeData[DataVarName] = ToDupe
+				local ToDupe = DataVar.Type.PreCopy(self, DataVar, self.ACF_UserData[DataVarName])
+				self.ACF_UserData[DataVarName] = ToDupe
 			end
 		end
 	end)
@@ -173,5 +173,5 @@ function ACF.AutoRegister(ENT)
 		return Entity
 	end
 
-	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_DupeData")
+	duplicator.RegisterEntityClass(Class, SpawnFunction, "Pos", "Angle", "ACF_UserData")
 end
