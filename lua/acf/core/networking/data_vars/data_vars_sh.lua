@@ -318,5 +318,5 @@ do -- Defining default data variables and types
 	ACF.DefineDataVar("ClientEffectMultiplier", "ClientSettings", "Float", 1.0, {Min = 0, Max = 1.0})
 	ACF.DefineDataVar("ClientSoundMultiplier", "ClientSettings", "Float", 1.0, {Min = 0, Max = 1.0})
 
-	ACF.DefineDataVar("SpawnClass", "ToolGun", "String", "ACF_testent")
+	ACF.DefineDataVar("SpawnClass", "ToolGun", "String", "acf_baseplate")
 end

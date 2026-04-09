@@ -1,28 +1,18 @@
-DEFINE_BASECLASS "acf_base_scalable"
+DEFINE_BASECLASS("acf_base_scaleable")
+ACF.SetupENT(ENT)
 
-ENT.PrintName      = "ACF Baseplate"
-ENT.WireDebugName  = "ACF Baseplate"
-ENT.PluralName     = "ACF Baseplates"
-ENT.IsACFBaseplate = true
-ENT.ACF_Limit      = 2
-ENT.ACF_PreventArmoring = false
+ENT.PrintName      = "ACF baseplate"
+ENT.WireDebugName  = "ACF baseplate"
 
--- Maps user var name to its type, whether it is client data and type specific arguments (all support defaults?)
-ENT.ACF_UserVars = {
-    ["BaseplateType"]       = {Type = "SimpleClass",  ClassName = "BaseplateTypes", Default = "GroundVehicle"},
-    ["Width"]               = {Type = "Number",       Min = 36,  Max = 120, Default = 36, Decimals = 2},
-    ["Length"]              = {Type = "Number",       Min = 36,  Max = 480, Default = 36, Decimals = 2},
-    ["Thickness"]           = {Type = "Number",       Min = 0.5, Max = 3,   Default = 3,  Decimals = 2},
-    ["DisableAltE"]         = {Type = "Boolean",      Default = false},
-    ["ExplodeOnCollisions"] = {Type = "Boolean",      Default = false},
-    ["Seat"]                = {Type = "LinkedEntity", Classes = {prop_vehicle_prisoner_pod = true}},
-    ["AlreadyHasSeat"]      = {Type = "Boolean",      Default = false, IsClientData = false},
-    ["GForceTicks"]         = {Type = "Number",       Min = 1,   Max = 7,   Default = 1,  Decimals = 0},
-}
+ENT.ACF_Menu_Model = "models/hunter/blocks/cube075x075x075.mdl"
+ENT.ACF_Menu_Description = "Base of all ACF contraptions. Build your vehicle off of this."
+ENT.ACF_Limit = 2
 
-ENT.ACF_WireOutputs = {
-    "Entity (The entity itself) [ENTITY]",
-    "Vehicles (Seat for this entity, compatible with wire) [ARRAY]",
-}
+ACF.DefineDataVar("Type", ENT.ACF_Class, "EnumeratedString", "Ground", {Choices = {"Aircraft", "Ground", "Recreational"}})
+ACF.DefineDataVar("Size", ENT.ACF_Class, "Vector", Vector(144, 72, 1.5), {Min = Vector(36, 36, 0.5), Max = Vector(480, 120, 3)})
+ACF.DefineDataVar("DisableAltE", ENT.ACF_Class, "Bool", false, {})
+ACF.DefineDataVar("LuaSeat", ENT.ACF_Class, "StoredEntity", nil, {Hidden = true})
 
-cleanup.Register("acf_baseplate")
+MsgC(SERVER and Color(255, 0, 255) or Color(0, 255, 255), "[ACF] Loaded baseplate entity: " .. ENT.ACF_Class .. "\n")
+
+print(ACF.GetDataVar("Type", ENT.ACF_Class))

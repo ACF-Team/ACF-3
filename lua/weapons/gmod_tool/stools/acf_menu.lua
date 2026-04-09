@@ -2,11 +2,11 @@ TOOL.Name = "ACF Menu"
 TOOL.Category = "Construction"
 
 if CLIENT then
-	language.Add("tool.ACF_menu.name", "Extendable Combat Framework")
-	language.Add("tool.ACF_menu.desc", "Main menu for the ACF addon")
+	language.Add("tool.acf_menu.name", "Extendable Combat Framework")
+	language.Add("tool.acf_menu.desc", "Main menu for the ACF addon")
 
 	TOOL.BuildCPanel = function(Panel)
-		local BasePanel = ACF.InitMenuReloadableBase(Panel, "ACF_reload_main_menu", "CreateMainMenu")
+		local BasePanel = ACF.InitMenuReloadableBase(Panel, "acf_reload_main_menu", "CreateMainMenu")
 		Panel:AddItem(BasePanel)
 	end
 end

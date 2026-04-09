@@ -86,7 +86,7 @@ local function HijackBefore(MethodName, DetourFunc)
 	end
 end
 
-function ACF.AutoRegister(ENT, Class)
+function ACF.AutoRegister(ENT)
 	if CLIENT then return end -- TODO: Maybe this is wrong?
 
 	local Class = ENT.ACF_Class
