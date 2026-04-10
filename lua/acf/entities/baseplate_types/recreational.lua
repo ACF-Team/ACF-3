@@ -1,13 +1,9 @@
-local Notify    = ACF.Utilities.Notify
-local Types     = ACF.Classes.BaseplateTypes
-local Baseplate = Types.Register("Recreational")
-local EmptyTable = {}
+ACF.Class("ACF.Baseplates.RecreationalBaseplate", "ACF.Baseplates.BaseplateType", function()
+	CLASS.Name		    = "Recreational"
+	CLASS.Icon          = "icon16/car_add.png"
+	CLASS.Description   = "A baseplate designed for non combat use (e.g. cars).\nWeapons and ammo will be removed. Fuel consumption rate set to 1."
 
-function Baseplate:OnLoaded()
-	self.Name		 = "Recreational"
-	self.Icon        = "icon16/car_add.png"
-	self.Description = "A baseplate designed for non combat use (e.g. cars).\nWeapons and ammo will be removed. Fuel consumption rate set to 1."
-	self.EnforceLooped = function(Baseplate)
+	function CLASS:EnforceLooped(Baseplate)
 		local Contraption = Baseplate:GetContraption()
 		if not Contraption then return end
 
@@ -47,10 +43,10 @@ function Baseplate:OnLoaded()
 			end
 		end
 	end
-end
 
-function Baseplate:PhysicsCollide(Data)
-	if not self:ACF_GetUserVar("ExplodeOnCollisions") then return end
+	function CLASS:PhysicsCollide(Entity, Data)
+		if not Entity:ACF_GetUserVar("ExplodeOnCollisions") then return end
 
-	Types.BP_PhysicsCollideExplosion(self, Data)
-end
+		self:PhysicsCollideExplosion(Entity, Data)
+	end
+end)
