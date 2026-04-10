@@ -16,137 +16,183 @@
 local Classes = {} --- A mapping from a class' ID to its table
 local Queued = {} -- A mapping from a class' ID to a (mapping from its children's IDs to their tables)
 
---- Initializes a class by adding its metatable and running callbacks/hooks.
---- Recursively initializes children waiting on this class
---- This is called when a class and its parent are both initialized
---- @param ID string The ID of the class
---- @param NewClass table The class table of the class
---- @param BaseClass table The class table of the base class
-local function InitializeClass(FullyQualifiedName, NewClass, BaseClass)
-    local TypeName = string.format("Type (%s)", FullyQualifiedName)
+do
+    --- Initializes a class by adding its metatable and running callbacks/hooks.
+    --- Recursively initializes children waiting on this class
+    --- This is called when a class and its parent are both initialized
+    --- @param ID string The ID of the class
+    --- @param NewClass table The class table of the class
+    --- @param BaseClass table The class table of the base class
+    local function InitializeClass(FullyQualifiedName, NewClass, BaseClass)
+        local TypeName = string.format("Type (%s)", FullyQualifiedName)
 
-    local ClassMeta = {
-        __index = BaseClass, -- If I don't have it, check my super (inheritance)
-        __tostring = function() return TypeName end,
+        local ClassMeta = {
+            __index = BaseClass, -- If I don't have it, check my super (inheritance)
+            __tostring = function() return TypeName end,
 
-        -- Instantiation
-        __call = function(self, ...)
-            local Instance    = {}
-            local Address     = tostring(Instance):sub(8)
-            local Stringified = string.format("%s: %s", FullyQualifiedName, Address)
-            setmetatable(Instance, {
-                __index = self, -- Instances should use their class' static methods/variables if they dont have them set
-                __tostring = function() return Stringified end, -- Avoid ambiguity/shadowing of self and the instance
-            })
-            if self.new then self.new(Instance, ...) end -- Constructor if applicable
-            return Instance
+            -- Instantiation
+            __call = function(self, ...)
+                local Instance    = {}
+                local Address     = tostring(Instance):sub(8)
+                local Stringified = string.format("%s: %s", FullyQualifiedName, Address)
+                setmetatable(Instance, {
+                    __index = self, -- Instances should use their class' static methods/variables if they dont have them set
+                    __tostring = function(self) return self.ToString and self:ToString() or Stringified end, -- Avoid ambiguity/shadowing of self and the instance
+                })
+                if self.new then self.new(Instance, ...) end -- Constructor if applicable
+                return Instance
+            end
+        }
+        setmetatable(NewClass, ClassMeta)
+
+        -- Index and Initialize ourselves
+        Classes[FullyQualifiedName] = NewClass
+        if BaseClass then BaseClass.Children[FullyQualifiedName] = NewClass end -- Register ourselves as a child of our parent
+        NewClass.Parent = BaseClass
+
+        -- We should define GetType before calling the initializer
+        local function GetType() return NewClass end
+        NewClass.GetType = GetType
+
+        if NewClass.OnInit then
+            local Environment = {}
+            Environment.CLASS = NewClass
+            Environment.base  = BaseClass
+            setmetatable(Environment, {__index = _G})
+            setfenv(NewClass.OnInit, Environment)
+
+            NewClass.OnInit()
         end
-    }
-    setmetatable(NewClass, ClassMeta)
+        -- Just in case GetType is no longer the same function...
+        if NewClass.GetType ~= GetType then error("Class defined 'GetType' method, which is reserved") end
 
-    -- Index and Initialize ourselves
-    Classes[FullyQualifiedName] = NewClass
-    if BaseClass then BaseClass.Children[FullyQualifiedName] = NewClass end -- Register ourselves as a child of our parent
-    NewClass.Parent = BaseClass
-
-    if NewClass.OnInit then
-        local Environment = {}
-        Environment.CLASS = NewClass
-        Environment.base  = BaseClass
-        setmetatable(Environment, {__index = _G})
-        setfenv(NewClass.OnInit, Environment)
-
-        NewClass.OnInit()
-    end
-
-    -- Initialize children waiting on us, the parent, to initialize
-    if Queued[FullyQualifiedName] then
-        for WaitingID, WaitingClass in pairs(Queued[FullyQualifiedName]) do
-            InitializeClass(WaitingID, WaitingClass, NewClass)
-            NewClass.Children[WaitingID] = WaitingClass
-        end
-        Queued[FullyQualifiedName] = nil
-    end
-end
-
---- Defines and returns a class' table, which you can define methods on.
---- @param ID string The ID of the class
---- @param BaseID string? The ID of the parent class
---- @param OnInit function? Ran when both the class and its parent are initialized. New and base class tables are passed as args.
---- @return NewClass table The table of the new class
-local function DefineClass(ID, ...)
-    local BaseID, OnInit
-    local Args = select('#', ...)
-    for I = 1, Args do
-        local Arg = select(I, ...)
-        local ArgType = type(Arg)
-        if ArgType == "string" then -- todo: future strings after baseid would be interfaces if those are implemented
-            BaseID = Arg
-        elseif ArgType == "function" then
-            OnInit = Arg
-            break
+        -- Initialize children waiting on us, the parent, to initialize
+        if Queued[FullyQualifiedName] then
+            for WaitingID, WaitingClass in pairs(Queued[FullyQualifiedName]) do
+                InitializeClass(WaitingID, WaitingClass, NewClass)
+                NewClass.Children[WaitingID] = WaitingClass
+            end
+            Queued[FullyQualifiedName] = nil
         end
     end
 
-    local BaseClass = Classes[BaseID]
-    local NewClass = {
-        ID = ID,
-        Parent = nil,
-        Children = {},
-        OnInit = OnInit
-    }
+    --- Defines and returns a class' table, which you can define methods on.
+    --- @param ID string The ID of the class
+    --- @param BaseID string? The ID of the parent class
+    --- @param OnInit function? Ran when both the class and its parent are initialized. New and base class tables are passed as args.
+    --- @return NewClass table The table of the new class
+    local function DefineClass(ID, ...)
+        local BaseID, OnInit
+        local Args = select('#', ...)
+        for I = 1, Args do
+            local Arg = select(I, ...)
+            local ArgType = type(Arg)
+            if ArgType == "string" then -- todo: future strings after baseid would be interfaces if those are implemented
+                BaseID = Arg
+            elseif ArgType == "function" then
+                OnInit = Arg
+                break
+            end
+        end
 
-    -- If we have a parent and they don't exist
-    if BaseID and not BaseClass then
-        Queued[BaseID] = Queued[BaseID] or {}
-        Queued[BaseID][ID] = NewClass
+        local BaseClass = Classes[BaseID]
+        local NewClass = Classes[ID] or {
+            ID = ID,
+            Parent = nil,
+            Children = {}
+        } -- This should allow for hot-reloading?
+        NewClass.OnInit = OnInit
+
+        -- If we have a parent and they don't exist
+        if BaseID and not BaseClass then
+            Queued[BaseID] = Queued[BaseID] or {}
+            Queued[BaseID][ID] = NewClass
+            return NewClass
+        end
+
+        -- Otherwise initialize
+        InitializeClass(ID, NewClass, BaseClass)
         return NewClass
     end
 
-    -- Otherwise initialize
-    InitializeClass(ID, NewClass, BaseClass)
-    return NewClass
+    ACF.Class = DefineClass
 end
 
-ACF.Class = DefineClass
+-- Reflection library. This allows for more extended runtime type analysis.
+-- This library isn't complete yet
+do
+    ACF.Reflection = {}
 
+    -- NOTE: When I specify a name, I will say "ClassName".
+    -- When I specify a class object, I will say "ClassType"
+    -- When I specify a class instance, I will say "ClassInstance"
+    function ACF.Reflection.GetTypeByName(ClassName)
+        return Classes[ClassName]
+    end
+
+    -- This checks if ClassA can be basically "down-casted" down to ClassB by going down its parent tree.
+    function ACF.Reflection.IsAssignableTo(ClassTypeA, ClassTypeB)
+        local C = ClassTypeA
+
+        while C ~= nil do
+            C = C.Parent
+            if C == ClassTypeB then
+                return true
+            end
+        end
+
+        return false
+    end
+
+    function ACF.Reflection.IsAssignableFrom(ClassTypeA, ClassTypeB)
+        return ACF.Reflection.IsAssignableTo(ClassTypeB, ClassTypeA)
+    end
+end
+
+-- Testing code
 --[[
-local Snake = DefineClass("Snake", "Reptile")
-local Frog = DefineClass("Frog", "Reptile")
-local Reptile = DefineClass("Reptile", "Animal")
+do
+    local Snake = DefineClass("Snake", "Reptile")
+    local Frog = DefineClass("Frog", "Reptile")
+    local Reptile = DefineClass("Reptile", "Animal")
 
-local Chihuahua = DefineClass("Chihuahua", "Dog", function()
-    function CLASS:MakeNoise()
-        for i = 1, 5 do base.MakeNoise(self) end
-    end
-end)
+    local Chihuahua = DefineClass("Chihuahua", "Dog", function()
+        function CLASS:MakeNoise()
+            for i = 1, 5 do base.MakeNoise(self) end
+        end
+    end)
 
-local Dog = DefineClass("Dog", "ACF.Mammal", function()
-    function CLASS:MakeNoise()
-        print("Woof")
-    end
-end)
+    local Dog = DefineClass("Dog", "ACF.Mammal", function()
+        function CLASS:MakeNoise()
+            print("Woof")
+        end
+    end)
 
-local Cat = DefineClass("Cat", "ACF.Mammal")
-local Mammal = DefineClass("ACF.Mammal", "Animal", function()
-    CLASS.Test = 3
-    function CLASS:new()
-        print(self.Test)
-    end
+    local Cat = DefineClass("Cat", "ACF.Mammal")
+    local Mammal = DefineClass("ACF.Mammal", "Animal", function()
+        CLASS.Test = 3
+        function CLASS:new()
+            print(self.Test)
+        end
 
-    function CLASS:MakeNoise()
-        print("Roar")
-    end
-end)
+        function CLASS:MakeNoise()
+            print("Roar")
+        end
+    end)
 
-local Animal = DefineClass("Animal", function()
-    function CLASS:MakeNoise()
-        print("Animal Noise")
-    end
-end)
+    local Animal = DefineClass("Animal", function()
+        function CLASS:MakeNoise()
+            print("Animal Noise")
+        end
+    end)
 
-local MyDog = Chihuahua()
-MyDog:MakeNoise()
-print(Dog)
-print(MyDog)
+    local MyDog = Chihuahua()
+    MyDog:MakeNoise()
+    print(Dog)
+    print(MyDog)
+
+    local T = MyDog:GetType()
+    print(T)
+    print(T == Chihuahua)
+end
 ]]
