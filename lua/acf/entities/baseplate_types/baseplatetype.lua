@@ -3,7 +3,7 @@ local LastBaseplateExplosions = {}
 local TIME_BETWEEN_HE_EXPLOSIONS_PER_PLAYER = 10
 
 ACF.Class("ACF.Baseplates.BaseplateType", function()
-    function CLASS.PhysicsCollideExplosion(Entity, Data)
+    function CLASS:PhysicsCollideExplosion(Entity, Data)
         local Contraption = Entity:GetContraption()
         if not Contraption then return end
 
