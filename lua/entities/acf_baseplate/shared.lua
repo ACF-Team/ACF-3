@@ -8,7 +8,7 @@ ENT.ACF_Menu_Model = "models/hunter/blocks/cube075x075x075.mdl"
 ENT.ACF_Menu_Description = "Base of all ACF contraptions. Build your vehicle off of this."
 ENT.ACF_Limit = 2
 
-ACF.DefineEntVar("Type",         "EnumeratedString",     "ACF.Baseplates.GroundVehicleBaseplate", {MustBeAssignableTo = "ACF.Baseplates.BaseplateType"})
+ACF.DefineEntVar("Type",         "Class",                "ACF.Baseplates.GroundVehicleBaseplate", {MustBeAssignableTo = "ACF.Baseplates.BaseplateType"})
 ACF.DefineEntVar("Size",         "Vector",               Vector(144, 72, 1.5),                    {Min = Vector(36, 36, 0.5), Max = Vector(480, 120, 3)})
 ACF.DefineEntVar("DisableAltE",  "Bool",                 false,                                   {})
 ACF.DefineEntVar("LuaSeat",      "StoredEntity",         nil,                                     {Hidden = true})
