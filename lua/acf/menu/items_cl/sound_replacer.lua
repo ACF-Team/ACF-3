@@ -36,7 +36,7 @@ function ACF.CreateSoundMenu(Panel)
 		local SoundGraph 			   -- Glocal
 		local _MAXSOUNDS 	      = 16 -- Maximum amount of sounds we're willing to send and have. TODO(TMF): Make this a global!
 		local _MAXSOUNDBANKPANELS = 4  -- Maximum amount of soundbanks we're willing to have. Again this should be a global!
-		local Current = {
+		local Current = {					 -- Local table used to store objects and other miscellaneous stuff
 			Panels = {SoundBankPanels = {}}, -- Contains the panel objects
 			Count  = {OfSoundBankPanels = 0, -- Keeps total count of them
 					  OfSoundPanels = 0},
@@ -72,7 +72,13 @@ function ACF.CreateSoundMenu(Panel)
 		-- The graphing function, this is a mirror of the function found in sounds_cl.lua and is redundant
 		-- TODO(TMF): This should be a single function pulled from ACF.Sounds object
 		local function UpdateGraph()
-			local Count = Current.Count.OfSoundPanels
+			local Bank = GetClientData("SoundBankPlotIndex")
+			if not Bank or not isnumber(Bank) then return end -- Kinda pointless isnumber check, but just in case...
+
+			local Panel = Current.Panels.SoundBankPanels[Bank]
+			if not Panel then return end
+
+			local Count = #Panel.Values
 			if not Count then return end
 
 			local Clamp = math.Clamp
@@ -81,11 +87,11 @@ function ACF.CreateSoundMenu(Panel)
 			SoundGraph:Clear()
 
 			for I = 1, Count do
-				local AddCurveWidth = GetClientNumber("Width " .. I, 0)
-				local Volume = GetClientNumber("Volume " .. I, 0) * 100
-				local Min = I == 1 and -1000000 or GetClientNumber("RPM " .. Clamp(I - 1 - AddCurveWidth, 1, _MAXSOUNDS))
-				local Mid = GetClientNumber("RPM " .. I, 0)
-				local Max = I == Count and 1000000 or GetClientNumber("RPM " .. Clamp(I + 1 + AddCurveWidth, 1, _MAXSOUNDS))
+				local AddCurveWidth = GetClientNumber("Width@SB" .. Bank .. "-" .. I, 0)
+				local Volume = GetClientNumber("Volume@SB" .. Bank .. "-" .. I, 0) * 100
+				local Min = I == 1 and -1000000 or GetClientNumber("RPM@SB" .. Bank .. "-" .. Clamp(I - 1 - AddCurveWidth, 1, _MAXSOUNDS))
+				local Mid = GetClientNumber("RPM@SB" .. Bank .. "-" .. I, 0)
+				local Max = I == Count and 1000000 or GetClientNumber("RPM@SB" .. Bank .. "-" .. Clamp(I + 1 + AddCurveWidth, 1, _MAXSOUNDS))
 
 				-- The 1000 extra is so it can see til the graph X limit and not cutoff
 				SoundGraph:PlotLimitFunction("Sound " .. I, 0, 16383 + 1000, Current.Colors[I][1], function(X) -- TODO: Localize me!
@@ -98,7 +104,7 @@ function ACF.CreateSoundMenu(Panel)
 			Current.Panels.SoundBankPanels[SBPanelID].Values = Current.Panels.SoundBankPanels[SBPanelID].Values or {}
 			local VPPanel   = Current.Panels.SoundBankPanels[SBPanelID].Values -- Just here for verbosity sake
 			local PanelID   = #VPPanel == 0 and 1 or #VPPanel + 1 -- Ensure it always begins from 1 and increments from there on for every soundbank panel
-			local SoundID   = Current.Count.OfSoundPanels -- Keep count of how many sound panels there are
+			--local SoundID   = Current.Count.OfSoundPanels -- Keep count of how many sound panels there are
 			local BGColor   = Current.Colors[PanelID][1] or color_white
 			local TextColor = Current.Colors[PanelID][2]
 
@@ -149,12 +155,12 @@ function ACF.CreateSoundMenu(Panel)
 			RPMWang:SetWide(48) -- Equivalent to 00000 + up/down buttons at font size = 16 + padding
 			RPMWang:DockMargin(-30, 0, 0, 0)
 			RPMWang:Dock(LEFT)
-			RPMWang:SetValue(GetClientNumber("RPM " .. SoundID, DefaultRPM))
-			RPMWang:SetClientData("RPM " .. SoundID, "OnValueChanged")
+			RPMWang:SetValue(GetClientNumber("RPM@SB" .. SBPanelID .. "-" .. PanelID, DefaultRPM))
+			RPMWang:SetClientData("RPM@SB" .. SBPanelID .. "-" .. PanelID, "OnValueChanged")
 			RPMWang:DefineSetter(function(Panel, _, _, Value)
 				-- TODO(TMF): The max value below is hardcoded, this should be a global!
-				local Min = PanelID == 1 and 0 or GetClientNumber("RPM " .. SoundID - 1)
-				local Max = PanelID == #VPPanel and 16383 or GetClientNumber("RPM " .. SoundID + 1)
+				local Min = PanelID == 1 and 0 or GetClientNumber("RPM@SB" .. SBPanelID .. "-" .. (PanelID - 1))
+				local Max = PanelID == #VPPanel and 16383 or GetClientNumber("RPM@SB" .. SBPanelID .. "-" .. (PanelID + 1))
 
 				Panel:SetMinMax(Min, Max) -- YEA, I MINMAX MY NUMBERS, SO What!?
 				Panel:SetValue(Value)
@@ -168,8 +174,8 @@ function ACF.CreateSoundMenu(Panel)
 			PathText:Dock(FILL)
 			PathText:DockMargin(-25, 0, 0, 0)
 			PathText:SetTall(Menu.ButtonHeight)
-			PathText:SetValue(GetClientString("Path " .. SoundID, DefaultPath))
-			PathText:SetClientData("Path " .. SoundID, "OnValueChange")
+			PathText:SetValue(GetClientString("Path@SB" .. SBPanelID .. "-" .. PanelID, DefaultPath))
+			PathText:SetClientData("Path@SB" .. SBPanelID .. "-" .. PanelID, "OnValueChange")
 			PathText:DefineSetter(function(Panel, _, _, Value)
 				local IsValid = Sounds.IsValidSound
 
@@ -198,11 +204,11 @@ function ACF.CreateSoundMenu(Panel)
 			ClearButton:SetStretchToFit(false)
 			ClearButton:SetSize(16, 16)
 			ClearButton.DoClick = function()
-				SetClientData("RPM " .. SoundID, DefaultRPM)
-				SetClientData("Path " .. SoundID, DefaultPath)
-				SetClientData("Pitch " .. SoundID, DefaultPitch)
-				SetClientData("Volume " .. SoundID, DefaultVolume)
-				SetClientData("Width " .. SoundID, DefaultWidth)
+				SetClientData("RPM@SB" .. SBPanelID .. "-" .. PanelID, DefaultRPM)
+				SetClientData("Path@SB" .. SBPanelID .. "-" .. PanelID, DefaultPath)
+				SetClientData("Pitch@SB" .. SBPanelID .. "-" .. PanelID, DefaultPitch)
+				SetClientData("Volume@SB" .. SBPanelID .. "-" .. PanelID, DefaultVolume)
+				SetClientData("Width@SB" .. SBPanelID .. "-" .. PanelID, DefaultWidth)
 			end
 
 			SearchButton:SetParent(TopDiv)
@@ -226,8 +232,8 @@ function ACF.CreateSoundMenu(Panel)
 			PitchWang:SetWide(40) -- Equivalent to 000 + up/down buttons at font size = 16 + padding
 			PitchWang:DockMargin(-30, 0, 4, 0)
 			PitchWang:Dock(LEFT)
-			PitchWang:SetValue(GetClientNumber("Pitch " .. SoundID, DefaultPitch))
-			PitchWang:SetClientData("Pitch " .. SoundID, "OnValueChanged")
+			PitchWang:SetValue(GetClientNumber("Pitch@SB" .. SBPanelID .. "-" .. PanelID, DefaultPitch))
+			PitchWang:SetClientData("Pitch@SB" .. SBPanelID .. "-" .. PanelID, "OnValueChanged")
 			PitchWang:DefineSetter(function(Panel, _, _, Value)
 				Panel:SetClientData(Value)
 			end)
@@ -240,8 +246,8 @@ function ACF.CreateSoundMenu(Panel)
 			VolumeWang:SetWide(40) -- Equivalent to 0.00 + up/down buttons at font size = 16 + padding
 			VolumeWang:DockMargin(-16, 0, 4, 0)
 			VolumeWang:Dock(LEFT)
-			VolumeWang:SetValue(GetClientNumber("Volume " .. SoundID, DefaultVolume))
-			VolumeWang:SetClientData("Volume " .. SoundID, "OnValueChanged")
+			VolumeWang:SetValue(GetClientNumber("Volume@SB" .. SBPanelID .. "-" .. PanelID, DefaultVolume))
+			VolumeWang:SetClientData("Volume@SB" .. SBPanelID .. "-" .. PanelID, "OnValueChanged")
 			VolumeWang:DefineSetter(function(Panel, _, _, Value)
 				Panel:SetClientData(Value)
 			end)
@@ -254,8 +260,8 @@ function ACF.CreateSoundMenu(Panel)
 			WidthWang:SetWide(32) -- Equivalent to 00 + up/down buttons at font size = 16 + padding
 			WidthWang:DockMargin(-24, 0, 4, 0)
 			WidthWang:Dock(LEFT)
-			WidthWang:SetValue(GetClientNumber("Width " .. SoundID, DefaultWidth))
-			WidthWang:SetClientData("Width " .. SoundID, "OnValueChanged")
+			WidthWang:SetValue(GetClientNumber("Width@SB" .. SBPanelID .. "-" .. PanelID, DefaultWidth))
+			WidthWang:SetClientData("Width@SB" .. SBPanelID .. "-" .. PanelID, "OnValueChanged")
 			WidthWang:DefineSetter(function(Panel, _, _, Value)
 				Panel:SetClientData(Value)
 			end)
@@ -292,8 +298,9 @@ function ACF.CreateSoundMenu(Panel)
 				if ID == 1 then
 					Panel:SetValue(false)
 					Panel:SetEnabled(false)
+				else
+					Panel:SetValue(Value)
 				end
-				Panel:SetValue(Value)
 			end)
 
 			OffThrottle:SetParent(MPanel)
@@ -473,6 +480,7 @@ function ACF.CreateSoundMenu(Panel)
 												Beware this panel can be resource intensive if you add too many sounds!") -- TODO: Localize me!
 				local RefreshBtn = self:AddPanel("DImageButton")
 				SoundGraph = self:AddGraph() -- A Glocal so other functions can call this
+				local BankSlider = self:AddComboBox()
 				local PanelBottom = self:AddPanel("ACF_Panel")
 				local IdleLabel = self:AddLabel("Idle:")
 				local IdleWang = self:AddPanel("DNumberWang", 0, 2000)
@@ -501,7 +509,7 @@ function ACF.CreateSoundMenu(Panel)
 				GraphPanel:SetParent(GraphGroup)
 				GraphPanel:DockPadding(4, 4, 4, 8)
 				GraphPanel:Dock(TOP)
-				GraphPanel:SetTall(436) -- Why can't this grow dynamically 
+				GraphPanel:SetTall(466) -- Why can't this grow dynamically 
 
 				LabelTop:SetParent(GraphPanel)
 				LabelTop:Dock(TOP)
@@ -527,6 +535,21 @@ function ACF.CreateSoundMenu(Panel)
 				SoundGraph:SetFidelity(1)
 				SoundGraph:SetXSpacing(1000)
 				SoundGraph:SetYSpacing(100)
+
+				BankSlider:SetParent(GraphPanel)
+				BankSlider:SetTall(Menu.ButtonHeight)
+				BankSlider:SetValue("Select a Sound Bank to plot")
+				-- TODO(TMF): This should be shown dynamically, but this should suffice for now...
+				BankSlider:AddChoice("Plot Sound Bank 1", 1)
+				BankSlider:AddChoice("Plot Sound Bank 2", 2)
+				BankSlider:AddChoice("Plot Sound Bank 3", 3)
+				BankSlider:AddChoice("Plot Sound Bank 4", 4)
+				BankSlider:SetClientData("SoundBankPlotIndex", "OnSelect")
+				BankSlider:DefineSetter(function(Panel, _, _, Value)
+					Panel:SetValue(Value)
+					Panel:SetText(Panel:GetOptionText(Value))
+					UpdateGraph()
+				end)
 
 				PanelBottom:SetParent(GraphPanel)
 				PanelBottom:Dock(TOP)
@@ -705,29 +728,29 @@ function ACF.CreateSoundMenu(Panel)
 
 				SetClientData("SoundBankSlider", SoundBankCount)
 
-				for I = 1, SoundBankCount do
+				for SB = 1, SoundBankCount do
 					local PlayAtExhaust = net.ReadBool()
 					local OffThrottle = net.ReadUInt(8)
 					local OnThrottle = net.ReadUInt(8)
 					local SoundCount = net.ReadUInt(4)
 
-					SetClientData("PlayAtExhaust " .. I, PlayAtExhaust)
-					SetClientData("OffThrottle " .. I, OffThrottle * 0.01) -- Reduce the received value down to a float
-					SetClientData("OnThrottle " .. I, OnThrottle * 0.01)   -- Same here
-					SetClientData("SoundsAtSoundBank " .. I, SoundCount)
+					SetClientData("PlayAtExhaust " .. SB, PlayAtExhaust)
+					SetClientData("OffThrottle " .. SB, OffThrottle * 0.01) -- Reduce the received value down to a float
+					SetClientData("OnThrottle " .. SB, OnThrottle * 0.01)   -- Same here
+					SetClientData("SoundsAtSoundBank " .. SB, SoundCount)
 
-					for I = 1, SoundCount do
+					for S = 1, SoundCount do
 						local RPM 	 = net.ReadUInt(14)
 						local Path   = net.ReadString()
 						local Pitch  = net.ReadUInt(8)
 						local Volume = net.ReadUInt(8)
 						local Width  = net.ReadUInt(4)
 
-						SetClientData("RPM " .. I, RPM)
-						SetClientData("Path " .. I, Path)
-						SetClientData("Pitch " .. I, Pitch)
-						SetClientData("Volume " .. I, Volume * 0.01) -- Again, same here
-						SetClientData("Width " .. I, Width)
+						SetClientData("RPM@SB" .. SB .. "-" .. S, RPM)
+						SetClientData("Path@SB" .. SB .. "-" .. S, Path)
+						SetClientData("Pitch@SB" .. SB .. "-" .. S, Pitch)
+						SetClientData("Volume@SB" .. SB .. "-" .. S, Volume * 0.01) -- Again, same here
+						SetClientData("Width@SB" .. SB .. "-" .. S, Width)
 					end
 				end
 			else -- Gets any datavars and networks them back to the server
@@ -735,24 +758,24 @@ function ACF.CreateSoundMenu(Panel)
 					local BankCount = GetClientData("SoundBankSlider", 1)
 					net.WriteUInt(BankCount, 3)
 
-					for I = 1, BankCount do
-						local PlaysAtExhaust = GetClientData("PlayAtExhaust " .. I, false)
-						local OffThrottle = GetClientData("OffThrottle " .. I, 0.25) * 100
-						local OnThrottle = GetClientData("OnThrottle " .. I, 1) * 100
+					for SB = 1, BankCount do
+						local PlaysAtExhaust = GetClientData("PlayAtExhaust " .. SB, false)
+						local OffThrottle = GetClientData("OffThrottle " .. SB, 0.25) * 100
+						local OnThrottle = GetClientData("OnThrottle " .. SB, 1) * 100
 
 						net.WriteBool(PlaysAtExhaust)
 						net.WriteUInt(OffThrottle, 8) -- Sending the approximate volume as an int to reduce message size
 						net.WriteUInt(OnThrottle, 8)  -- Same here
 
-						local SoundCount = GetClientData("SoundsAtSoundBank " .. I)
+						local SoundCount = GetClientData("SoundsAtSoundBank " .. SB)
 						net.WriteUInt(SoundCount, 4)
 
 						for S = 1, SoundCount do
-							net.WriteUInt(GetClientNumber("RPM " .. S), 14)
-							net.WriteString(GetClientString("Path " .. S))
-							net.WriteUInt(GetClientNumber("Pitch " .. S), 8)
-							net.WriteUInt(GetClientNumber("Volume " .. S) * 100, 8) -- Again, same here
-							net.WriteUInt(GetClientNumber("Width " .. S), 4)
+							net.WriteUInt(GetClientNumber("RPM@SB" .. SB .. "-" .. S), 14)
+							net.WriteString(GetClientString("Path@SB" .. SB .. "-" .. S))
+							net.WriteUInt(GetClientNumber("Pitch@SB" .. SB .. "-" .. S), 8)
+							net.WriteUInt(GetClientNumber("Volume@SB" .. SB .. "-" .. S) * 100, 8) -- Again, same here
+							net.WriteUInt(GetClientNumber("Width@SB" .. SB .. "-" .. S), 4)
 						end
 					end
 				-- We're making the supposition here that the values being sent are already sorted
