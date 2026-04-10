@@ -48,6 +48,12 @@ do -- Macros for defining data variables and their types
 
 		return DataVar
 	end
+
+	-- Assumes ENT exists, with ENT.ACF_Class available. This is just a macro so you dont have to
+	-- repeatedly type/copypaste the ACF_Class
+	function ACF.DefineEntVar(Name, Type, Default, Options)
+		return ACF.DefineDataVar(Name, ENT.ACF_Class, Type, Default, Options)
+	end
 end
 
 do -- Managing data variable synchronization and networking
