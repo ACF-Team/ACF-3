@@ -7,7 +7,12 @@ function ENT:ACF_UpdateOverlayState(State)
 	if BaseplateType.ID == "Aircraft" then
 		State:AddNumber("G-Force Ticks", self:ACF_GetUserVar("GForceTicks"))
 	end
+
 	if self:ACF_GetUserVar("DisableAltE") then
 		State:AddLabel("Alt + E Entry Disabled")
+	end
+
+	if BaseplateType.ID == "Recreational" then
+		State:AddKeyValue("Recreational Explosions", self:ACF_GetUserVar("ExplodeOnCollisions") and "Enabled" or "Disabled")
 	end
 end

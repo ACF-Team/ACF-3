@@ -66,8 +66,8 @@ do -- Scalable Gearboxes
 	})
 end
 
-do -- Pre-Scalable 4/6/8-Speed Manual Gearboxes
-	local OldGearValues = {4, 6, 8}
+do -- Pre-Scalable 4/6/8-Speed Manual Gearboxes + ACE 9-Speed Manual Gearboxes
+	local OldGearValues = {4, 6, 8, 9}
 
 	for _, Gear in ipairs(OldGearValues) do
 		local OldCategory = tostring(Gear .. "-Speed")

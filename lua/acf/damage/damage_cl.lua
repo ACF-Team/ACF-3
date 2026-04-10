@@ -77,15 +77,15 @@ net.Receive("ACF_Damage", function()
 
 	for _ = 1, Count do
 		local Entity  = Entity(net.ReadUInt(13))
-		local Percent = net.ReadUInt(4) / 10
+		local Percent = net.ReadUInt(4) * 0.1
 
-		if not IsValid(Entity) then continue end
-
-		if Percent < 1 then
-			Add(Entity, Percent)
-		else
-			Remove(Entity)
-			Entity.ACF_HealthPercent = nil
+		if IsValid(Entity) then
+			if Percent < 1 then
+				Add(Entity, Percent)
+			else
+				Remove(Entity)
+				Entity.ACF_HealthPercent = nil
+			end
 		end
 	end
 end)

@@ -327,3 +327,8 @@ CrewTypes.Register("Pilot", {
 	end,
 	EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, "Aircraft") end
 })
+
+-- Compatibility with ACE crew types
+CrewTypes.AddAlias("Driver", "Crewseat_Driver")
+CrewTypes.AddAlias("Gunner", "Crewseat_Gunner")
+CrewTypes.AddAlias("Loader", "Crewseat_Loader")

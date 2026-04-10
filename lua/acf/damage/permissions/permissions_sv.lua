@@ -3,6 +3,8 @@ local ACF = ACF
 ACF.Permissions = ACF.Permissions or {}
 local Permissions = ACF.Permissions
 local Messages = ACF.Utilities.Messages
+local Notify   = ACF.Utilities.Notify
+
 --TODO: make player-customizable
 Permissions.Safezones = false
 Permissions.Player = Permissions.Player or {}
@@ -594,12 +596,12 @@ net.Receive("ACF_dmgfriends", function(_, Ply)
 			local Note = Check and "given you" or "removed your"
 			local PlyNick = string.Trim(string.format("%q", Ply:Nick()), "\"") -- Ensuring that the name is Lua safe
 
-			ACF.SendNotify(Target, true, PlyNick .. " has " .. Note .. " permission to damage their objects with ACF!")
+			Notify.NoticeToPlayer(Target, PlyNick .. " has " .. Note .. " permission to damage their objects with ACF!")
 		end
 	end
 
 	local FeedbackMessage = Success and "Successfully updated your ACF damage permissions!" or "Failed to update your ACF damage permissions."
-	ACF.SendNotify(Ply, Success, FeedbackMessage)
+	Notify.NoticeToPlayer(Ply, FeedbackMessage)
 end)
 
 function Permissions.RefreshPlyDPFriends(ply)

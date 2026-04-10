@@ -3,6 +3,7 @@
 -- A lot of this code has been optimized/profiled, but there's more work to do in that department...
 
 local ACF = ACF
+local Notify = ACF.Utilities.Notify
 
 if ACF.Scanning and ACF.Scanning.ClearPanels and CLIENT then
     ACF.Scanning.ClearPanels()
@@ -238,7 +239,7 @@ if SERVER then
                         msg = "ACF damage is currently blocked due to recent use of the contraption scanner. Please try again in " .. math.Round(scanner_damageCooldown - (now - started), 2) .. " seconds."
                     end
 
-                    ACF.SendNotify(owner, false, msg)
+                    Notify.WarningToPlayer(owner, msg)
                 end
                 scanner_acfDamage_notifiedThisTick[owner] = true
                 return false

@@ -30,6 +30,7 @@ local FuelTypes         = Classes.FuelTypes
 local Gearboxes         = Classes.Gearboxes
 local Weapons           = Classes.Weapons
 local Clock             = ACF.Utilities.Clock
+local Notify            = ACF.Utilities.Notify
 local CheckLuaType      = SF.CheckLuaType
 local CheckPerms        = SF.Permissions.check
 local RegisterPrivilege = SF.Permissions.registerPrivilege
@@ -1017,7 +1018,7 @@ if SERVER then
 	function ents_methods:acfLinkTo(target, notify)
 		if not ACF.AllowDynamicLinking then
 			if notify then
-				ACF.SendNotify(instance.player, false, "Dynamic linking has been disabled on this server.")
+				Notify.EntityWarningToPlayer(unwrap(target), instance.player, "Dynamic linking has been disabled on this server.")
 			end
 
 			return false, "Dynamic linking has been disabled on this server."
@@ -1042,7 +1043,11 @@ if SERVER then
 		local Success, Message = This:Link(Target, true)
 
 		if notify then
-			ACF.SendNotify(instance.player, Success, Message)
+			if Success then
+				Notify.EntityNoticeToPlayer(Target, instance.player, Message)
+			else
+				Notify.EntityWarningToPlayer(Target, instance.player, Message)
+			end
 		end
 
 		return Success, Message
@@ -1071,7 +1076,11 @@ if SERVER then
 		local Success, Message = This:Unlink(Target)
 
 		if notify then
-			ACF.SendNotify(instance.player, Success, Message)
+			if Success then
+				Notify.EntityNoticeToPlayer(Target, instance.player, Message)
+			else
+				Notify.EntityWarningToPlayer(Target, instance.player, Message)
+			end
 		end
 
 		return Success, Message

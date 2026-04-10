@@ -128,6 +128,11 @@ do
 		end
 		table.sort(ForwardGears, function(A, B) return MainGearbox.Gears[A] < MainGearbox.Gears[B] end)
 		table.sort(ReverseGears, function(A, B) return MainGearbox.Gears[A] > MainGearbox.Gears[B] end)
+		if not MainGearbox.GearboxLegacyRatio then
+			ForwardGears = table.Reverse(ForwardGears)
+			ReverseGears = table.Reverse(ReverseGears)
+		end
+
 		self.ForwardGears, self.ReverseGears = ForwardGears, ReverseGears
 		if MainGearbox.Automatic then self.ForwardGears = {1} self.ReverseGears = {2} end
 
@@ -173,6 +178,13 @@ do
 
 		-- if self.Gearbox.DoubleDiff then self.CanNeutral = true end
 
+		-- Set default shift RPMs to one of the engine's powerbands
+		local Engine = next(self.Engines)
+		if not MainGearbox.Automatic and IsValid(Engine) then
+			if self:GetShiftMinRPM() == 0 then self:SetShiftMinRPM(Engine.PeakMinRPM + 100) end
+			if self:GetShiftMaxRPM() == 0 then self:SetShiftMaxRPM(Engine.PeakMaxRPM - 100) end
+		end
+
 		self.LastInputs = {}
 		self.LastGear = 0
 		self.LastTrueGear = 0
@@ -190,6 +202,7 @@ do
 		RecacheBindOutput(self, SelfTbl, "Speed", Speed)
 
 		if not IsValid(SelfTbl.Gearbox) then return end
+		if self:GetDisableMobility() then return end
 
 		local W, A, S, D = GetKeyState(SelfTbl, IN_FORWARD), GetKeyState(SelfTbl, IN_MOVELEFT), GetKeyState(SelfTbl, IN_BACK), GetKeyState(SelfTbl, IN_MOVERIGHT)
 		local IsBraking = GetKeyState(SelfTbl, IN_JUMP)
@@ -217,6 +230,7 @@ do
 
 		if IsBraking or (self:GetBrakeEngagement() == 1 and not IsMoving) then -- Braking
 			SetLeft(SelfTbl, "Brake", BrakeStrength) SetRight(SelfTbl, "Brake", BrakeStrength)
+			SetLeft(SelfTbl, "Brake", BrakeStrength, true) SetRight(SelfTbl, "Brake", BrakeStrength, true) -- Differentials HAVE TO BE DIFFERENT
 			SetLeft(SelfTbl, "Clutch", CLUTCH_BLOCK) SetRight(SelfTbl, "Clutch", CLUTCH_BLOCK)
 			SetLatches(SelfTbl, true)
 			return
@@ -243,6 +257,7 @@ do
 		else
 			-- Car steering
 			SetLeft(SelfTbl, "Brake", 0) SetRight(SelfTbl, "Brake", 0)
+			SetLeft(SelfTbl, "Brake", 0, true) SetRight(SelfTbl, "Brake", 0, true)
 			SetLeft(SelfTbl, "Clutch", CLUTCH_FLOW) SetRight(SelfTbl, "Clutch", CLUTCH_FLOW)
 			SetLatches(SelfTbl, false) -- Revert braking if not braking
 
@@ -284,6 +299,7 @@ do
 
 		local MinRPM, MaxRPM = self:GetShiftMinRPM(), self:GetShiftMaxRPM()
 		if MinRPM == MaxRPM then return end -- Probably not set by the user
+		if self:GetDisableAutoShifter() then return end
 		if RPM > MinRPM then Gear = Gear + 1
 		elseif RPM < MaxRPM then Gear = Gear - 1 end
 
@@ -291,10 +307,10 @@ do
 		local ShouldNeutral = self.CanNeutral and not self:GetForceCarSteering()
 		local TrueGear = 0
 		if S and not ShouldNeutral then
-			Gear = math.Clamp(Gear, 0, #self.ReverseGears)
+			Gear = math.Clamp(Gear, 1, #self.ReverseGears)
 			TrueGear = self.ReverseGears[Gear] or 0
 		else
-			Gear = math.Clamp(Gear, 0, #self.ForwardGears)
+			Gear = math.Clamp(Gear, 1, #self.ForwardGears)
 			TrueGear = self.ForwardGears[Gear] or 0
 		end
 

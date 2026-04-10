@@ -5,6 +5,7 @@ Notes:
 --]]
 
 local ACF = ACF
+local Notify = ACF.Utilities.Notify
 local IsValid = IsValid
 
 TOOL.Category	 = (ACF.CustomToolCategory and ACF.CustomToolCategory:GetBool()) and "ACF" or "Construction"
@@ -215,7 +216,7 @@ elseif SERVER then -- Serverside-only stuff
 		else
 			-- Select a wheel for the plate
 			if #self.Selections.Plates == 0 then
-				ACF.SendNotify(Player, false, "You need to select a baseplate first.")
+				Notify.WarningToPlayer(Player, "You need to select a baseplate first.")
 				return
 			end
 
@@ -409,11 +410,12 @@ elseif SERVER then -- Serverside-only stuff
 		local ControlPlate = Selections.ControlPlate
 
 		-- Cover edge cases
-		if not IsValid(Baseplate) then ACF.SendNotify(Player, false, "Drivetrain could not be created: Baseplate missing.") return end
-		if IsValid(Baseplate:GetParent()) then ACF.SendNotify(Player, false, "Drivetrain could not be created: Cannot use a parented entity as a baseplate.") return end
-		if SpringType == 2 and not IsValid(ControlPlate) then ACF.SendNotify(Player, false, "Drivetrain could not be created: Control plate missing.") return end
+		if not IsValid(Baseplate) then Notify.WarningToPlayer(Player, "Drivetrain could not be created", "Baseplate missing.") return end
+		if IsValid(Baseplate:GetParent()) then Notify.EntityWarningToPlayer(Baseplate, Player, "Drivetrain could not be created", "Cannot use a parented entity as a baseplate.") return end
+		if SpringType == 2 and not IsValid(ControlPlate) then Notify.WarningToPlayer(Player, "Drivetrain could not be created", "Control plate missing.") return end
 		for Wheel, _ in pairs(Selections.Wheels or EmptyTable) do
-			if IsValid(Wheel:GetParent()) then ACF.SendNotify(Player, false, "Drivetrain could not be created: Cannot use a parented entity as a wheel.") end
+			-- MARCH: Shouldn't this return if this is the case...? Going to add it now in new-notifications to not miss it, but let me know if this was intentional
+			if IsValid(Wheel:GetParent()) then Notify.EntityWarningToPlayer(Wheel, Player, "Drivetrain could not be created", "Cannot use a parented entity as a wheel.") return end
 		end
 
 		-- Handle makespherical / disable collisions BEFORE making the constraints
@@ -469,7 +471,7 @@ elseif SERVER then -- Serverside-only stuff
 				else
 					local Deviation = math.deg(math.acos(Plate:GetForward():Dot(Vector(0, 1, 0))))
 					if Deviation > 0.05 then
-						ACF.SendNotify(Player, false, "Drivetrain could not be created: Plate [" .. tostring(Plate) .. "] must be facing north. Deviation [" .. tostring(math.Round(Deviation, 2)) .. "].")
+						Notify.EntityWarningToPlayer(Plate, Player, "Drivetrain could not be created", "Plate [" .. tostring(Plate) .. "] must be facing north\nDeviation [" .. tostring(math.Round(Deviation, 2)) .. "].")
 						return
 					end
 					HullSocket(Wheel, Plate) -- Restrict rotation to baseplate or steer plate
@@ -489,7 +491,7 @@ elseif SERVER then -- Serverside-only stuff
 			end
 		end
 
-		ACF.SendNotify(Player, true, "Drivetrain successfully created.")
+		Notify.NoticeToPlayer(Player, "Drivetrain successfully created.")
 	end
 
 	function TOOL:ClearSuspension()
@@ -505,6 +507,6 @@ elseif SERVER then -- Serverside-only stuff
 			if IsValid(v) and checkOwner(Player, v) then constraint.RemoveAll(v) end
 		end
 
-		ACF.SendNotify(Player, true, "Cleared all constraints in drivetrain")
+		Notify.NoticeToPlayer(Player, "Cleared all constraints in drivetrain")
 	end
 end
