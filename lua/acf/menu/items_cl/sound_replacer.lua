@@ -40,8 +40,8 @@ function ACF.CreateSoundMenu(Panel)
 			Panels = {SoundBankPanels = {}}, -- Contains the panel objects
 			Count  = {OfSoundBankPanels = 0, -- Keeps total count of them
 					  OfSoundPanels = 0},
-			Graph  = {Idle      = 0,         -- Datavars wouldn't persist correctly so here is this...
-					  Redline   = 1,
+			Graph  = {Idle      = 0,         -- Graph that contains the values to be set for the SoundGraph panel
+					  Redline   = 1,		 -- Datavars wouldn't initialize correctly so here is this...
 					  RPMSlider = 2},
 			Colors = (function() 			 -- IIFE that returns a table with optionally randomized colors and if the text should be dark or light colored
 				local ColorTable = {}
@@ -99,7 +99,11 @@ function ACF.CreateSoundMenu(Panel)
 				end)
 			end
 		end
-		-- The function that adds the panels to the corresponding soundbank panels
+		-- The function that adds the panels to the corresponding SoundBank panels 
+		-- NOTE: For every DataVar defined here, they get formatted as follows:
+		-- [VALUE]@SB[SoundBankPanelID]-[SoundPanelID]; e.g:
+		-- RPM@SB1-1: DataVar with the RPM value of the first Soundpanel that's within the first SoundBank panel; 
+		-- Volume@SB2-3: DataVar with the Volume value of the third Soundpanel that's within the second SoundBank panel.
 		local AddValuePanel = function(SBPanelID)
 			Current.Panels.SoundBankPanels[SBPanelID].Values = Current.Panels.SoundBankPanels[SBPanelID].Values or {}
 			local VPPanel   = Current.Panels.SoundBankPanels[SBPanelID].Values -- Just here for verbosity sake
@@ -374,7 +378,7 @@ function ACF.CreateSoundMenu(Panel)
 			return MPanel
 		end
 		--============================================================================================================--
-		-- ACTUAL SUBMENUS																							  --
+		-- MAIN SUBMENUS																							  --
 		-- I explictly gave these their numeric keys so its easier to infer which submenu we're working with   		  --																		          --
 		--============================================================================================================--
 		local Case = {
@@ -538,12 +542,12 @@ function ACF.CreateSoundMenu(Panel)
 
 				BankSlider:SetParent(GraphPanel)
 				BankSlider:SetTall(Menu.ButtonHeight)
-				BankSlider:SetValue("Select a Sound Bank to plot")
+				BankSlider:SetValue("Select a Sound Bank to plot") -- TODO: Localize me!
 				-- TODO(TMF): This should be shown dynamically, but this should suffice for now...
-				BankSlider:AddChoice("Plot Sound Bank 1", 1)
-				BankSlider:AddChoice("Plot Sound Bank 2", 2)
-				BankSlider:AddChoice("Plot Sound Bank 3", 3)
-				BankSlider:AddChoice("Plot Sound Bank 4", 4)
+				BankSlider:AddChoice("Plot Sound Bank 1", 1) -- TODO: Localize me!
+				BankSlider:AddChoice("Plot Sound Bank 2", 2) -- TODO: Localize me!
+				BankSlider:AddChoice("Plot Sound Bank 3", 3) -- TODO: Localize me!
+				BankSlider:AddChoice("Plot Sound Bank 4", 4) -- TODO: Localize me!
 				BankSlider:SetClientData("SoundBankPlotIndex", "OnSelect")
 				BankSlider:DefineSetter(function(Panel, _, _, Value)
 					Panel:SetValue(Value)
@@ -699,7 +703,7 @@ function ACF.CreateSoundMenu(Panel)
 				local OptionColorCheckbox = self:AddCheckBox("Randomize colors of sound lines and panels") -- TODO: Localize me!
 				OptionColorCheckbox:SetParent(OptionGroup)
 				OptionColorCheckbox:Dock(TOP)
-				OptionColorCheckbox:SetValue(GetClientData("GetRandomColors", false))
+				OptionColorCheckbox:SetValue(GetClientData("GetRandomColors", false)) -- WHAT: This value is initially set to false, yet somehow later on it toggles itself back to true??!
 				OptionColorCheckbox:SetClientData("GetRandomColors", "OnChange")
 				OptionColorCheckbox:DefineSetter(function(Panel, _, _, Value)
 					Panel:SetValue(Value)

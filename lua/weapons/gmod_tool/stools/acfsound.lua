@@ -21,20 +21,19 @@ if SERVER then
 end
 
 --===============================================================================================--
--- Local Funcs
+-- LOCAL FUNCS
 --===============================================================================================--
 	--- This function acts like a getter/setter where we network an entity soundbank data back and forth between the client and the server 
 	--- This allows the client to populate a menu with the data received from the server's entity(engine) or...
 	--- Sends any datavars that the client has back to the server to update an entity's soundbank table with the datavars that the client had, if any.
 	--- @param Player player The player who clicked on the Entity
-	--- @param Entity entity The entity, which has to be an engine(for now)
 	--- @param Data table? The soundbank table to set soundbank Data to the Entity or not
 	--- @param Loopback bool? False to just populate a client menu and its datavars or True to GET the datavars from client and send them back 
-local function DoSoundBankData(Ply, _, Data, Loopback)
+local function DoSoundBankData(Ply, Data, Loopback)
 	net.Start("ACF_SoundMenu_Get_Multi")
 		if not Loopback then
 			net.WriteBool(false)
-			-- Send the data to populate the client's menu
+			-- The Getter: Send the data to populate the client's menu
 			local SoundBanks = Data
 			local SoundBankCount = #SoundBanks.SoundBanks
 
@@ -54,7 +53,8 @@ local function DoSoundBankData(Ply, _, Data, Loopback)
 					net.WriteUInt(Sound.Width or 0, 4)
 				end
 			end
-		else -- Otherwise we get from the client's data vars to create and replace the entity's soundbank
+		else -- The Setter: Otherwise we get from the client's data vars to create and replace the entity's soundbank
+			 -- The reading of networked values sent by the client is not handled by this function but by SetSoundData
 			net.WriteBool(true)
 		end
 	net.Send(Ply)
@@ -78,7 +78,7 @@ local function GetSoundData(Ply, Trace, Support)
 		-- Send the found soundbank table from the entity to the client for sound menu population
 		if SoundTable then
 			SetSoundMenu(Ply, 2) -- The ID number must match what the sound replacer menu has for its menu choices
-			DoSoundBankData(Ply, Entity, SoundTable, false)
+			DoSoundBankData(Ply, SoundTable, false)
 		end
 	else
 		local SoundData = Support.GetSound(Entity)
@@ -97,6 +97,7 @@ local function GetSoundData(Ply, Trace, Support)
 	end
 end
 
+-- A function to set the sound data of an ACF entity that has support from this tool 
 local function SetSoundData(Ply, Entity, Support)
 	if not IsValid(Entity) then return end
 
@@ -107,7 +108,7 @@ local function SetSoundData(Ply, Entity, Support)
 		-- This gets called everytime you spawn a entity, and also if you try to set with one sound, which will be wrong for engines, so lets ignore that
 		if not Support.GetSoundBanks or not Support.SetSoundBanks or not Support.ResetSoundBanks then return end
 		-- Simple call just to get the client's sound menu data 
-		DoSoundBankData(Ply, Entity, _, true)
+		DoSoundBankData(Ply, _, true)
 		do -- Receives any datavars from the client, which matches what's seen regarding any values on the menu, and sets the soundbank
 			local SoundTable = {}
 			net.Receive("ACF_SoundMenu_Set_Multi", function ()
@@ -203,7 +204,7 @@ local function CheckSupport(Ply, Trace)
 end
 
 --===============================================================================================--
--- Main Tool functions
+-- MAIN TOOL FUNCS
 --===============================================================================================--
 function TOOL:LeftClick(Trace)
 	local Owner = self:GetOwner()
