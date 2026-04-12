@@ -101,7 +101,7 @@ function ACF.DisableEntity(Entity, Reason, Message, Timeout)
 					Notify.EntityDisabledToPlayer(Entity, Owner, Name .. " has been disabled", Message)
 				end)
 			else
-				ACF.EntityDisabledToPlayer(Entity, Owner, Name .. " has been disabled", Message)
+				Notify.EntityDisabledToPlayer(Entity, Owner, Name .. " has been disabled", Message)
 			end
 		end
 		-- Send the entity to the client
