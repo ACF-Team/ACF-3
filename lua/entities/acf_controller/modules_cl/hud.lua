@@ -204,7 +204,7 @@ return function(State)
             if HudType == 1 then
                 DrawRect( x - 120 * Scale, y - thick / 2, 240 * Scale, thick )
                 DrawRect( x - thick / 2, y - 60 * Scale, thick, 120 * Scale )
-                
+
                 DrawRect( x - 170 * Scale, y - thick / 2, 40 * Scale, thick )
                 DrawRect( x + 130 * Scale, y - thick / 2, 40 * Scale, thick )
 
@@ -284,7 +284,7 @@ return function(State)
 
             local ax, ay = x + 360 * Scale, y - 246 * Scale
             DrawPictograph(CrewMaterial, State.MyController:GetNWInt("AHS_Crew"), Font, ax, ay, Scale, white, Col, shade)
-        
+
             local LoadedAmmoType = State.MyController:GetNWString("AHS_Primary_AT", "")
             for Index, AmmoType in pairs(State.MyController.TypesSorted or {}) do
                 local Material = State.MyController.MaterialsByType[AmmoType] or ""
