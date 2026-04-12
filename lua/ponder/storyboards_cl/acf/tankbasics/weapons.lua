@@ -44,7 +44,7 @@ Chapter:AddInstruction("ACF.ScrollToMenuPanel", {Name = "MainMenuCPanel", Scroll
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "The primary way to destroy other vehicles is through the use of weapons. Here we will look at guns."}))
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "For this example, use a 125mm Cannon."}))
-Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", ComboBoxName = "WeaponClassList", OptionID = 3}):DelayByLength()
+Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", ComboBoxName = "WeaponClassList", OptionID = 2}):DelayByLength()
 Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", ComboBoxName = "WeaponBreechIndex", OptionID = 1})
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.caliber", Value = 125}):DelayByLength()
 
