@@ -45,7 +45,7 @@ function ACF.CreateSoundMenu(Panel)
 					  RPMSlider = 2},
 			Colors = (function() 			 -- IIFE that returns a table with optionally randomized colors and if the text should be dark or light colored
 				local ColorTable = {}
-				local IsRandomColor = GetClientData("GetRandomColors", false)
+				local IsRandomColor = GetClientData("GetRandomColors")
 
 				for I = 1, _MAXSOUNDS do
 					local Col
@@ -99,6 +99,7 @@ function ACF.CreateSoundMenu(Panel)
 				end)
 			end
 		end
+
 		-- The function that adds the panels to the corresponding SoundBank panels 
 		-- NOTE: For every DataVar defined here, they get formatted as follows:
 		-- [VALUE]@SB[SoundBankPanelID]-[SoundPanelID]; e.g:
@@ -108,7 +109,6 @@ function ACF.CreateSoundMenu(Panel)
 			Current.Panels.SoundBankPanels[SBPanelID].Values = Current.Panels.SoundBankPanels[SBPanelID].Values or {}
 			local VPPanel   = Current.Panels.SoundBankPanels[SBPanelID].Values -- Just here for verbosity sake
 			local PanelID   = #VPPanel == 0 and 1 or #VPPanel + 1 -- Ensure it always begins from 1 and increments from there on for every soundbank panel
-			--local SoundID   = Current.Count.OfSoundPanels -- Keep count of how many sound panels there are
 			local BGColor   = Current.Colors[PanelID][1] or color_white
 			local TextColor = Current.Colors[PanelID][2]
 
@@ -120,34 +120,32 @@ function ACF.CreateSoundMenu(Panel)
 			local DefaultWidth  = 0
 
 			-- VGUI panels
-			local _, MPanel = self:AddCollapsible()
-			local Base = self:AddPanel("DPanel")
-			_ = Base -- Override ACF's basic Base with this
-			local TopDiv = self:AddPanel("ACF_Panel") -- This is equivalent to a HTML Div, generic panel to parent other children to.
-			local BotDiv = self:AddPanel("ACF_Panel") -- Same as above.
+			local BaseMainPanel, MainPanel = self:AddCollapsible()
+			local BasePanel = BaseMainPanel:Add(self:AddPanel("DPanel"))
+			local TopDiv = BasePanel:Add(self:AddPanel("ACF_Panel")) -- This is equivalent to a HTML Div, generic panel to parent other children to.
+			local BotDiv = BasePanel:Add(self:AddPanel("ACF_Panel")) -- Same as above.
 			-- TODO(TMF): The max value below is hardcoded, this should be a global!
 			local RPMWang, RPMLabel = self:AddNumberWang("RPM:", 0, 16383, 0) -- TODO: Localize me!
 			local _, PathLabel, PathText = self:AddTextEntry("Path:") -- TODO: Localize me!
-			local ParseIcon = self:AddPanel("DImage")
-			local SearchButton = self:AddPanel("DImageButton")
-			local ClearButton = self:AddPanel("DImageButton")
+			local ParseIcon = PathText:Add(self:AddPanel("DImage"))
+			local SearchButton = TopDiv:Add(self:AddPanel("DImageButton"))
+			local ClearButton = TopDiv:Add(self:AddPanel("DImageButton"))
 			local PitchWang, PitchLabel = self:AddNumberWang("Pitch:", 0, 255, 0) -- TODO: Localize me!
 			local VolumeWang, VolumeLabel = self:AddNumberWang("Volume:", 0, 1, 2) -- TODO: Localize me!
 			local WidthWang, WidthLabel = self:AddNumberWang("Width:", 0, 15, 0) -- TODO: Localize me!
 
-			MPanel:DockMargin(0, 0, 0, 0)
-			MPanel:SetLabel("Value " .. PanelID) -- TODO: Localize me!
+			BaseMainPanel:DockMargin(0, 0, 0, 0)
+			BaseMainPanel:DockPadding(0, 0, 0, 0)
 
-			Base:SetParent(MPanel)
-			Base:SetTall(72)
-			Base:DockPadding(4, 6, 4, 0)
-			Base:DockMargin(0, 0, 0, 0)
-			Base:SetBackgroundColor(BGColor)
+			MainPanel:DockMargin(0, 2, 0, 2)
+			MainPanel:SetLabel("Value " .. PanelID) -- TODO: Localize me!
 
-			TopDiv:SetParent(Base)
+			--BasePanel:SetParent(MainPanel)
+			BasePanel:SetTall(72)
+			BasePanel:DockPadding(4, 8, 4, 0)
+			BasePanel:SetBackgroundColor(BGColor)
+
 			TopDiv:Dock(TOP)
-
-			BotDiv:SetParent(Base)
 			BotDiv:Dock(BOTTOM)
 
 			RPMLabel:SetParent(TopDiv)
@@ -191,16 +189,14 @@ function ACF.CreateSoundMenu(Panel)
 					ParseIcon:SetImage("icon16/cancel.png")
 				end
 
-				Panel:SetClientData(Value)
+				Panel:SetValue(Value)
 			end)
 
-			ParseIcon:SetParent(PathText)
 			ParseIcon:Dock(RIGHT)
 			ParseIcon:DockMargin(3, 3, 3, 3)
 			ParseIcon:SetImage("icon16/accept.png")
 			ParseIcon:SetSize(16, 16)
 
-			ClearButton:SetParent(TopDiv)
 			ClearButton:Dock(RIGHT)
 			ClearButton:DockMargin(3, 3, 3, 3)
 			ClearButton:SetImage("icon16/arrow_undo.png")
@@ -215,7 +211,6 @@ function ACF.CreateSoundMenu(Panel)
 				SetClientData("Width@SB" .. SBPanelID .. "-" .. PanelID, DefaultWidth)
 			end
 
-			SearchButton:SetParent(TopDiv)
 			SearchButton:Center()
 			SearchButton:Dock(RIGHT)
 			SearchButton:DockMargin(3, 3, 3, 3)
@@ -239,7 +234,7 @@ function ACF.CreateSoundMenu(Panel)
 			PitchWang:SetValue(GetClientNumber("Pitch@SB" .. SBPanelID .. "-" .. PanelID, DefaultPitch))
 			PitchWang:SetClientData("Pitch@SB" .. SBPanelID .. "-" .. PanelID, "OnValueChanged")
 			PitchWang:DefineSetter(function(Panel, _, _, Value)
-				Panel:SetClientData(Value)
+				Panel:SetValue(Value)
 			end)
 
 			VolumeLabel:SetParent(BotDiv)
@@ -253,7 +248,7 @@ function ACF.CreateSoundMenu(Panel)
 			VolumeWang:SetValue(GetClientNumber("Volume@SB" .. SBPanelID .. "-" .. PanelID, DefaultVolume))
 			VolumeWang:SetClientData("Volume@SB" .. SBPanelID .. "-" .. PanelID, "OnValueChanged")
 			VolumeWang:DefineSetter(function(Panel, _, _, Value)
-				Panel:SetClientData(Value)
+				Panel:SetValue(Value)
 			end)
 
 			WidthLabel:SetParent(BotDiv)
@@ -267,11 +262,11 @@ function ACF.CreateSoundMenu(Panel)
 			WidthWang:SetValue(GetClientNumber("Width@SB" .. SBPanelID .. "-" .. PanelID, DefaultWidth))
 			WidthWang:SetClientData("Width@SB" .. SBPanelID .. "-" .. PanelID, "OnValueChanged")
 			WidthWang:DefineSetter(function(Panel, _, _, Value)
-				Panel:SetClientData(Value)
+				Panel:SetValue(Value)
 			end)
 
-			table.insert(VPPanel, MPanel) -- Insert this panel to keep count of them panels
-			return MPanel
+			table.insert(VPPanel, MainPanel) -- Insert this panel to keep count of them panels
+			return MainPanel
 		end
 
 		-- The function that adds the soundbank panels
@@ -281,17 +276,17 @@ function ACF.CreateSoundMenu(Panel)
 			local ID = #SBPanel == 0 and 1 or #SBPanel + 1 -- Ensure it always begins from 1 and increments sequentially from there on
 
 			local _, MPanel = self:AddCollapsible()
-			local PlayAtExhaust = self:AddCheckBox("Play At Exhaust") -- TODO: Localize me!
-			local OffThrottle = self:AddSlider("OffThrottle", 0, 1, 2) -- TODO: Localize me!
-			local OnThrottle = self:AddSlider("OnThrottle", 0, 1, 2) -- TODO: Localize me!
-			local ValueSlider = self:AddSlider("Sounds", 0, 16, 0) -- TODO: Localize me!
-			local BotPanel = self:AddPanel("DListLayout")
+			local PlayAtExhaust = _:Add(self:AddCheckBox("Play At Exhaust")) -- TODO: Localize me!
+			local OffThrottle = _:Add(self:AddSlider("OffThrottle", 0, 1, 2)) -- TODO: Localize me!
+			local OnThrottle = _:Add(self:AddSlider("OnThrottle", 0, 1, 2)) -- TODO: Localize me!
+			local ValueSlider = _:Add(self:AddSlider("Sounds", 0, 16, 0)) -- TODO: Localize me!
+			local BotPanel = _:Add(self:AddPanel("DListLayout"))
 
 			MPanel:SetLabel("Sound Bank " .. ID) -- TODO: Localize me!
 			MPanel:Dock(TOP)
 			MPanel:DockMargin(0, 0, 0, 8)
 
-			PlayAtExhaust:SetParent(MPanel)
+			--PlayAtExhaust:SetParent(MPanel)
 			PlayAtExhaust:Dock(TOP)
 			PlayAtExhaust:DockMargin(0, 8, 8, 0)
 			PlayAtExhaust:SetValue(ID == 1 and false or GetClientData("PlayAtExhaust " .. ID))
@@ -307,7 +302,7 @@ function ACF.CreateSoundMenu(Panel)
 				end
 			end)
 
-			OffThrottle:SetParent(MPanel)
+			--OffThrottle:SetParent(MPanel)
 			OffThrottle:Dock(TOP)
 			OffThrottle:DockMargin(0, 8, 8, 0)
 			OffThrottle:SetMinMax(0, 1)
@@ -317,7 +312,7 @@ function ACF.CreateSoundMenu(Panel)
 				Panel:SetValue(Value)
 			end)
 
-			OnThrottle:SetParent(MPanel)
+			--OnThrottle:SetParent(MPanel)
 			OnThrottle:Dock(TOP)
 			OnThrottle:DockMargin(0, 8, 8, 0)
 			OnThrottle:SetMinMax(0, 1)
@@ -329,7 +324,7 @@ function ACF.CreateSoundMenu(Panel)
 
 			local LastValueAmount  = 0
 			local Min = ID == 1 and 1 or 0 -- Dumb hack
-			ValueSlider:SetParent(MPanel)
+			ValueSlider:DockMargin(0, 8, 8, 0)
 			ValueSlider:SetValue(GetClientNumber("SoundsAtSoundBank " .. ID), Min)
 			ValueSlider:SetClientData("SoundsAtSoundBank " .. ID, "OnValueChanged")
 			ValueSlider:DefineSetter(function(Panel, _, _, Value)
@@ -362,7 +357,7 @@ function ACF.CreateSoundMenu(Panel)
 				end]]--
 			end)
 
-			BotPanel:SetParent(MPanel)
+			--BotPanel:SetParent(MPanel)
 			BotPanel:Dock(TOP)
 			-- Update the count on events
 			BotPanel.OnChildAdded = function()
@@ -479,23 +474,21 @@ function ACF.CreateSoundMenu(Panel)
 				-- The menu is divided in two groups
 				-- The top group where the graph lies
 				local GraphGroup = self:AddCollapsible("Graph", nil, "icon16/chart_curve_edit.png") -- TODO: Localize me!
-				local GraphPanel = self:AddPanel("DPanel")
-				local LabelTop = self:AddLabel("This graph shows how your engine sound/s will be heard as a function of RPM.\
-												Beware this panel can be resource intensive if you add too many sounds!") -- TODO: Localize me!
-				local RefreshBtn = self:AddPanel("DImageButton")
-				SoundGraph = self:AddGraph() -- A Glocal so other functions can call this
-				local BankSlider = self:AddComboBox()
-				local PanelBottom = self:AddPanel("ACF_Panel")
-				local IdleLabel = self:AddLabel("Idle:")
-				local IdleWang = self:AddPanel("DNumberWang", 0, 2000)
-				local RedlineLabel = self:AddLabel("Redline:")
+				local GraphPanel = GraphGroup:Add(self:AddPanel("DPanel"))
+				local LabelTop = GraphPanel:Add(self:AddLabel("This graph shows how your engine sound/s will be heard as a function of RPM.\
+												Beware this panel can be resource intensive if you add too many sounds!")) -- TODO: Localize me!
+				local RefreshBtn = LabelTop:Add(self:AddPanel("DImageButton"))
+				SoundGraph = GraphPanel:Add(self:AddGraph()) -- A Glocal so other functions can call this
+				local BankSlider = GraphPanel:Add(self:AddComboBox())
+				local PanelBottom = GraphPanel:Add(self:AddPanel("ACF_Panel"))
+				local IdleWang, IdleLabel = self:AddNumberWang("Idle:", 0, 2000, 0)
 				-- TODO(TMF): The max values below are hardcoded, this should be a global!
-				local RedlineWang = self:AddPanel("DNumberWang", 0, 16383)
-				local RPMSlider = self:AddSlider("RPM", 0, 16383)
-				local SoundPre = self:AddPanel("ACF_Panel")
+				local RedlineWang, RedlineLabel = self:AddNumberWang("Redline:", 0, 16383, 0)
+				local RPMSlider = GraphPanel:Add(self:AddSlider("RPM", 0, 16383))
+				local VolumeSlider = GraphPanel:Add(self:AddSlider("#tool.acfsound.volume", 0.1, 1, 2))
+				local SoundPre = GraphPanel:Add(self:AddPanel("ACF_Panel"))
 				local SoundPrePlay = SoundPre:AddButton("#tool.acfsound.play")
 				local SoundPreStop = SoundPre:AddButton("#tool.acfsound.stop", "play", "common/null.wav") -- Playing a silent sound will mute the preview but not the sound emitters
-				local VolumeSlider = self:AddSlider("#tool.acfsound.volume", 0.1, 1, 2)
 
 				-- Set defaults
 				local DefaultIdle = GetClientData("Idle") or 800
@@ -510,16 +503,13 @@ function ACF.CreateSoundMenu(Panel)
 				-- The properties
 				GraphGroup:DockMargin(0, 0, 0, 0)
 
-				GraphPanel:SetParent(GraphGroup)
-				GraphPanel:DockPadding(4, 4, 4, 8)
+				GraphPanel:DockPadding(4, 4, 4, 0)
 				GraphPanel:Dock(TOP)
 				GraphPanel:SetTall(466) -- Why can't this grow dynamically 
 
-				LabelTop:SetParent(GraphPanel)
 				LabelTop:Dock(TOP)
 				LabelTop:DockMargin(0, 2, 0, 2)
 
-				RefreshBtn:SetParent(LabelTop)
 				RefreshBtn:Dock(RIGHT)
 				RefreshBtn:SetImage("icon16/arrow_refresh_small.png")
 				RefreshBtn:SetTooltip("Refresh this graph.") -- TODO: Localize me!
@@ -529,7 +519,6 @@ function ACF.CreateSoundMenu(Panel)
 					UpdateGraph()
 				end
 
-				SoundGraph:SetParent(GraphPanel)
 				SoundGraph:Dock(TOP)
 				SoundGraph:SetTall(192)
 				SoundGraph:SetXLabel("RPM") -- TODO: Localize me!
@@ -540,25 +529,16 @@ function ACF.CreateSoundMenu(Panel)
 				SoundGraph:SetXSpacing(1000)
 				SoundGraph:SetYSpacing(100)
 
-				BankSlider:SetParent(GraphPanel)
 				BankSlider:SetTall(Menu.ButtonHeight)
-				BankSlider:SetValue("Select a Sound Bank to plot") -- TODO: Localize me!
-				-- TODO(TMF): This should be shown dynamically, but this should suffice for now...
-				BankSlider:AddChoice("Plot Sound Bank 1", 1) -- TODO: Localize me!
-				BankSlider:AddChoice("Plot Sound Bank 2", 2) -- TODO: Localize me!
-				BankSlider:AddChoice("Plot Sound Bank 3", 3) -- TODO: Localize me!
-				BankSlider:AddChoice("Plot Sound Bank 4", 4) -- TODO: Localize me!
+				BankSlider:SetValue("Select a Sound Bank to plot")
 				BankSlider:SetClientData("SoundBankPlotIndex", "OnSelect")
 				BankSlider:DefineSetter(function(Panel, _, _, Value)
 					Panel:SetValue(Value)
-					Panel:SetText(Panel:GetOptionText(Value))
+					Panel:SetText(Panel:GetOptionText(Value) or "Select a Sound Bank to plot") -- TODO: Localize me!
 					UpdateGraph()
 				end)
 
-				PanelBottom:SetParent(GraphPanel)
 				PanelBottom:Dock(TOP)
-				PanelBottom:DockPadding(0, 4, 4, -4)
-				PanelBottom:SetTall(34)
 
 				IdleLabel:SetParent(PanelBottom)
 				IdleLabel:Dock(LEFT)
@@ -578,10 +558,11 @@ function ACF.CreateSoundMenu(Panel)
 
 				RedlineLabel:SetParent(PanelBottom)
 				RedlineLabel:Dock(LEFT)
-				RedlineLabel:DockMargin(8, 4, 0, 0) -- Fucking retarded
+				RedlineLabel:DockMargin(8, 4, 0, 0)
 
 				RedlineWang:SetParent(PanelBottom)
 				RedlineWang:Dock(LEFT)
+				RedlineWang:SetWide(48)
 				RedlineWang:SetMinMax(GetClientNumber("Idle"), 16383)
 				RedlineWang:SetClientData("Redline", "OnValueChanged")
 				RedlineWang:SetValue(DefaultRedline)
@@ -595,7 +576,6 @@ function ACF.CreateSoundMenu(Panel)
 					return Value
 				end)
 
-				RPMSlider:SetParent(GraphPanel)
 				RPMSlider:Dock(TOP)
 				RPMSlider:SetWide(Menu.Wide)
 				RPMSlider:SetMinMax(GetClientNumber("Idle"), GetClientNumber("Redline"))
@@ -614,11 +594,8 @@ function ACF.CreateSoundMenu(Panel)
 					return Value
 				end)
 
-				VolumeSlider:SetConVar("acfsound_volume")
-				VolumeSlider:SetParent(GraphPanel)
 				VolumeSlider:Dock(TOP)
 
-				SoundPre:SetParent(GraphPanel)
 				SoundPre:SetWide(Menu.Wide)
 				SoundPre:SetTall(Menu.ButtonHeight)
 
@@ -644,17 +621,16 @@ function ACF.CreateSoundMenu(Panel)
 
 				-- The bottom group where the panels are added and removed dynamically
 				local SoundBanksGroup = self:AddCollapsible("Sound Banks", nil, "icon16/application_double.png") -- TODO: Localize me!
-				SoundBanksGroup:DockMargin(0, 4, 0, 4)
-
 				-- TODO: Localize me!
-				local SoundBankHelp = self:AddHelp("This panel allows you to set up to " .. _MAXSOUNDBANKPANELS .. " different sound banks and up to " .. _MAXSOUNDS .. " sounds total. If you can't add a new sound, check that you're not hitting this limit!")
-				SoundBankHelp:SetParent(SoundBanksGroup)
+				local SoundBankHelp = SoundBanksGroup:Add(self:AddHelp("This panel allows you to set up to " .. _MAXSOUNDBANKPANELS .. " different sound banks and up to " .. _MAXSOUNDS .. " sounds total. If you can't add a new sound, check that you're not hitting this limit!"))
+				local SoundBankSlider = SoundBanksGroup:Add(self:AddSlider("Sound Banks", 1, _MAXSOUNDBANKPANELS, 0))
+				local SoundBankList = SoundBanksGroup:Add(self:AddPanel("DListLayout"))
 
-				local SoundBankSlider = self:AddSlider("Sound Banks", 1, _MAXSOUNDBANKPANELS, 0)
-				local SoundBankList = self:AddPanel("DListLayout")
+				SoundBanksGroup:DockMargin(0, 0, 0, 0)
+
+				SoundBankHelp:DockMargin(0, 4, 0, 0)
 
 				local LastSoundBankValue = 0
-				SoundBankSlider:SetParent(SoundBanksGroup)
 				SoundBankSlider:Dock(TOP)
 				SoundBankSlider:SetValue(GetClientData("SoundBankSlider"))
 				SoundBankSlider:SetClientData("SoundBankSlider", "OnValueChanged")
@@ -663,6 +639,7 @@ function ACF.CreateSoundMenu(Panel)
 					if ValueAmount ~= LastSoundBankValue then
 						if ValueAmount > LastSoundBankValue then
 							for _ = LastSoundBankValue + 1, ValueAmount do
+								BankSlider:AddChoice("Plot Sound Bank " .. ValueAmount, ValueAmount) -- TODO: Localize me!
 								Current.Count.OfSoundBankPanels = Current.Count.OfSoundBankPanels + 1
 								SoundBankList:Add(AddSoundBankPanel())
 							end
@@ -673,12 +650,12 @@ function ACF.CreateSoundMenu(Panel)
 									Current.Count.OfSoundBankPanels = Current.Count.OfSoundBankPanels - 1
 									Current.Panels.SoundBankPanels[I][1]:Remove()
 									Current.Panels.SoundBankPanels[I] = nil
+									BankSlider:RemoveChoice(I)
 								end
 							end
 						end
 					end
 					LastSoundBankValue = ValueAmount
-					Panel:SetClientData("SoundBankSlider", ValueAmount)
 					Panel:SetValue(Value)
 				end)
 
@@ -686,7 +663,6 @@ function ACF.CreateSoundMenu(Panel)
 				self:StartTemporal(SoundBanksGroup)
 				self:ClearTemporal(SoundBanksGroup)
 
-				SoundBankList:SetParent(SoundBanksGroup)
 				SoundBankList:Dock(TOP)
 				SoundBankList.OnChildAdded = function()
 					Current.Count.OfSoundBankPanels = #Current.Panels.SoundBankPanels
@@ -703,7 +679,7 @@ function ACF.CreateSoundMenu(Panel)
 				local OptionColorCheckbox = self:AddCheckBox("Randomize colors of sound lines and panels") -- TODO: Localize me!
 				OptionColorCheckbox:SetParent(OptionGroup)
 				OptionColorCheckbox:Dock(TOP)
-				OptionColorCheckbox:SetValue(GetClientData("GetRandomColors", false)) -- WHAT: This value is initially set to false, yet somehow later on it toggles itself back to true??!
+				OptionColorCheckbox:SetValue(GetClientData("GetRandomColors")) -- WHAT: This value is initially set to false, yet somehow later on it toggles itself back to true??!
 				OptionColorCheckbox:SetClientData("GetRandomColors", "OnChange")
 				OptionColorCheckbox:DefineSetter(function(Panel, _, _, Value)
 					Panel:SetValue(Value)
