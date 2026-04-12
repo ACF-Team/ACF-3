@@ -40,8 +40,8 @@ function Notify.Start()
     end
 end
 
-function Notify.WithTitle(Title, ...) CurrentNotification.Title = {Title or "", ...} end
-function Notify.WithDescription(Text, ...) CurrentNotification.Text = {Text or "", ...} end
+function Notify.WithTitle(Title, ...) CurrentNotification.Title = {tostring(Title) or "", ...} end
+function Notify.WithDescription(Text, ...) CurrentNotification.Text = {tostring(Text) or "", ...} end
 function Notify.Duration(Duration) CurrentNotification.Duration = Duration or 0 end
 function Notify.WithIcon(Icon) CurrentNotification.Icon = Icon or "" end
 function Notify.WithSound(Sound) CurrentNotification.Sound = Sound or "" end
