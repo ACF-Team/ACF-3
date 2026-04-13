@@ -46,61 +46,6 @@ do -- Scalable Gearboxes
 	})
 end
 
-do -- Pre-Scalable Inline/Transaxial Gearboxes
-	local OldGearboxTypes = {"L", "T"}
-
-	for _, GearboxType in ipairs(OldGearboxTypes) do
-		local OldCategory = "1Gear-" .. GearboxType
-
-		-- Regular Gearboxes
-		Gearboxes.AddItemAlias("Differential", OldCategory, OldCategory .. "-S", {
-			Scale = ScaleS,
-			InvertGearRatios = true,
-		})
-
-		Gearboxes.AddItemAlias("Differential", OldCategory, OldCategory .. "-M", {
-			Scale = ScaleM,
-			InvertGearRatios = true,
-		})
-
-		Gearboxes.AddItemAlias("Differential", OldCategory, OldCategory .. "-L", {
-			Scale = ScaleL,
-			InvertGearRatios = true,
-		})
-
-		-- Dual Clutch Gearboxes
-		Gearboxes.AddItemAlias("Differential", OldCategory, OldCategory .. "D-S", {
-			Scale = ScaleS,
-			DualClutch = true,
-			InvertGearRatios = true,
-		})
-
-		Gearboxes.AddItemAlias("Differential", OldCategory, OldCategory .. "D-M", {
-			Scale = ScaleM,
-			DualClutch = true,
-			InvertGearRatios = true,
-		})
-
-		Gearboxes.AddItemAlias("Differential", OldCategory, OldCategory .. "D-L", {
-			Scale = ScaleL,
-			DualClutch = true,
-			InvertGearRatios = true,
-		})
-
-		-- ACF Extras Gearboxes
-		Gearboxes.AddItemAlias("Differential", OldCategory, OldCategory .. "-T", {
-			Scale = ScaleT,
-			InvertGearRatios = true,
-		})
-
-		Gearboxes.AddItemAlias("Differential", OldCategory, OldCategory .. "D-T", {
-			Scale = ScaleT,
-			DualClutch = true,
-			InvertGearRatios = true,
-		})
-	end
-end
-
 ACF.SetCustomAttachments("models/engines/transaxial_s.mdl", {
 	{ Name = "driveshaftR", Pos = Vector(0, 8, 3.2), Ang = Angle(0, 90, 90) },
 	{ Name = "driveshaftL", Pos = Vector(0, -8, 3.2), Ang = Angle(0, -90, 90) },

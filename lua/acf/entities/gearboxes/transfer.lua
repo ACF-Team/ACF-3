@@ -45,33 +45,3 @@ do -- Scalable gearboxes
 		},
 	})
 end
-
-do -- Pre-Scalable Inline/Transaxial Gearboxes
-	local OldGearboxTypes = {"L", "T"}
-
-	for _, GearboxType in ipairs(OldGearboxTypes) do
-		local OldCategory = "2Gear-" .. GearboxType
-
-		-- Regular Gearboxes
-		Gearboxes.AddItemAlias("Transfer", OldCategory, OldCategory .. "-S", {
-			Scale = ScaleS,
-			InvertGearRatios = true,
-		})
-
-		Gearboxes.AddItemAlias("Transfer", OldCategory, OldCategory .. "-M", {
-			Scale = ScaleM,
-			InvertGearRatios = true,
-		})
-
-		Gearboxes.AddItemAlias("Transfer", OldCategory, OldCategory .. "-L", {
-			Scale = ScaleL,
-			InvertGearRatios = true,
-		})
-
-		-- ACF Extras Gearboxes
-		Gearboxes.AddItemAlias("Transfer", OldCategory, OldCategory .. "-T", {
-			Scale = ScaleT,
-			InvertGearRatios = true,
-		})
-	end
-end

@@ -39,28 +39,6 @@ do -- Scalable Clutch
 	})
 end
 
-do -- Pre-Scalable Straight-through Gearboxes
-	Gearboxes.AddItemAlias("Clutch", "Clutch-S", "Clutch-S-T", {
-		Scale = ScaleT,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("Clutch", "Clutch-S", "Clutch-S-S", {
-		Scale = ScaleS,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("Clutch", "Clutch-S", "Clutch-S-M", {
-		Scale = ScaleM,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("Clutch", "Clutch-S", "Clutch-S-L", {
-		Scale = ScaleL,
-		InvertGearRatios = true,
-	})
-end
-
 ACF.SetCustomAttachments("models/engines/flywheelclutchs.mdl", {
 	{ Name = "input", Pos = Vector(), Ang = Angle(0, 0, 90) },
 	{ Name = "driveshaftR", Pos = Vector(0, 3), Ang = Angle(0, 180, 90) },
