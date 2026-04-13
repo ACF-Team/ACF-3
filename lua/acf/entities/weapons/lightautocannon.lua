@@ -55,18 +55,6 @@ Weapons.Register("LAC", {
 	CostScalar	= 0.5
 })
 
-Weapons.RegisterItem("20mmHMG", "LAC", {
-	Caliber = 20,
-})
-
-Weapons.RegisterItem("30mmHMG", "LAC", {
-	Caliber = 30,
-})
-
-Weapons.RegisterItem("40mmHMG", "LAC", {
-	Caliber = 40,
-})
-
 ACF.SetCustomAttachments("models/machinegun/machinegun_40mm_compact.mdl", {
 	{ Name = "muzzle", Pos = Vector(51.04, -0.03), Ang = Angle(0, 0, 90) },
 	{ Name = "muzzle2", Pos = Vector(115.39, -0.25), Ang = Angle(0, 0, 90) },
