@@ -44,7 +44,7 @@ do
     end
 
     -- Exposed functions
-    Compatibility.Weapons = {}
+    Compatibility.Weapons = Compatibility.Weapons or {}
 
     function Compatibility.Weapons.CheckGroupItem(GroupItem)
         return Aliases.Get("PreScalableWeapons_ItemChanges", GroupItem)
@@ -152,7 +152,7 @@ do
     end
 
     -- Exposed functions
-    Compatibility.Gearboxes = {}
+    Compatibility.Gearboxes = Compatibility.Gearboxes or {}
 
     function Compatibility.Gearboxes.CheckGroupItem(GroupItem)
         return Aliases.Get("PreScalableGearboxes_ItemChanges", GroupItem)
@@ -668,5 +668,25 @@ do
                 InvertGearRatios = true,
             })
         end
+    end
+end
+
+---------------------------------------------------------------------------------------------------------------------
+--  ACE Crew Compatibility
+--      These functions allow casting ACE crew internal names -> ACF internal names.
+--
+--      Breaking change introduced: Not applicable
+---------------------------------------------------------------------------------------------------------------------
+
+do
+    Aliases.Register("ACE_CrewTypes", "Crewseat_Driver", "Driver")
+    Aliases.Register("ACE_CrewTypes", "Crewseat_Gunner", "Gunner")
+    Aliases.Register("ACE_CrewTypes", "Crewseat_Loader", "Loader")
+
+    -- Exposed functions
+    Compatibility.Crew = Compatibility.Crew or {}
+
+    function Compatibility.Crew.CheckACECrewType(CrewType)
+        return Aliases.Get("ACE_CrewTypes", CrewType)
     end
 end
