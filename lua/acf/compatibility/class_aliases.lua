@@ -2,6 +2,10 @@
 -- to define. I wouldn't mind these being split up either, as long as they aren't in the main class definition files...
 -- This also separates aliasing from the class system, which in the future will be replaced. - March
 
+-- A gripe I had with a lot of the backwards compatibility stuff is that it was very implicit in the class system beyond
+-- just being intertwined. So all public facing functionality is done with the ACF.Compatibility namespace, with sub-namespaces
+-- for specific things. The system under the hood uses the ACF aliasing library.
+
 -- TODO: Evaluate how we can use verifydata hooks to move even more of this stuff later... I don't like how much slop you
 -- have to define in entity code to achieve backwards compatibility, it makes those files very unpleasant to read. If we
 -- are to keep backwards compatibility/allow conversion between other addons, we should do so as a separate layer, rather
