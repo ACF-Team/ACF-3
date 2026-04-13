@@ -35,7 +35,8 @@ do
         Data = Data or {}
         local Caliber, Group = str:match("^(%d+)mm(.+)$")
         Data.Caliber = tonumber(Caliber)
-        Data.Group   = GroupName or Group
+        Data.ID      = GroupName or Group
+
         Aliases.Register("PreScalableWeapons_ItemChanges", ClassName, Data)
     end
 

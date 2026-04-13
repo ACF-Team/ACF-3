@@ -243,28 +243,34 @@ do -- Spawn and Update functions --------------------------------
 
 		local Class = Classes.GetGroup(Weapons, Data.Weapon)
 
+		-- Backwards compatibility for pre-scalable guns
+		if not Class then
+			local AliasData = Compatibility.Weapons.CheckGroupItem(Data.Weapon)
+
+			if AliasData then
+				Data.Weapon  = AliasData.ID
+				Data.Caliber = AliasData.Caliber or Data.Caliber
+
+				Class = Classes.GetGroup(Weapons, Data.Weapon)
+			end
+		end
+
 		if not Class then
 			Class = Weapons.Get("C")
-
 			Data.Destiny = "Weapons"
 			Data.Weapon  = "C"
 			Data.Caliber = 50
-		elseif Weapons.IsAlias(Data.Weapon) then
-			Data.Weapon = Class.ID
 		end
 
 		-- Verifying and clamping caliber value
 		if Class.IsScalable then
 			local Weapon = Weapons.GetItem(Class.ID, Data.Weapon)
-
 			if Weapon then
 				Data.Weapon  = Class.ID
 				Data.Caliber = Weapon.Caliber
 			end
-
 			local Bounds  = Class.Caliber
 			local Caliber = ACF.CheckNumber(Data.Caliber, Bounds.Base)
-
 			Data.Caliber = math.Clamp(Caliber, Bounds.Min, Bounds.Max)
 		end
 
