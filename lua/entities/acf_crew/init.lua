@@ -376,12 +376,31 @@ do
 		"Entity (The crew entity itself) [ENTITY]"
 	}
 
-	local function VerifyData(Data)
-		-- Default crew is a sitting commander that can replace others and be replaced
+	local function ConvertACEData(Data)
 		-- The Id field is used by ACE to store their own crew type
-		if Data.CrewTypeID == nil then Data.CrewTypeID = Data.Id or "Commander" end
+
+		if Data.CrewTypeID == nil then
+			local ACE_Id = Data.Id
+			if ACE_Id ~= nil then
+				Data.CrewTypeID = ACF.Compatibility.Crew.CheckACECrewType(ACE_Id)
+			end
+		end
+
 		-- The ModelType field is used by ACE to store their own crew model
-		if Data.CrewModelID == nil then Data.CrewModelID = Data.ModelType or "Sitting" end
+		-- TODO: this seems unused, Craftian (?)   
+		--		- march
+		--  if Data.CrewModelID == nil then
+		--  	local ACE_ModelType = Data.ModelType
+		--  	if ACE_ModelType ~= nil then
+		--  		
+		--  	end
+		--  end
+	end
+	local function VerifyData(Data)
+		ConvertACEData(Data)
+		-- Default crew is a sitting commander that can replace others and be replaced
+		if Data.CrewTypeID == nil then Data.CrewTypeID = "Commander" end
+		if Data.CrewModelID == nil then Data.CrewModelID = "Sitting" end
 		if Data.ReplaceOthers == nil then Data.ReplaceOthers = true end
 		if Data.ReplaceSelf == nil then Data.ReplaceSelf = true end
 		if Data.UseAnimation == nil then Data.UseAnimation = false end
