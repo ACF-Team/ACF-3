@@ -265,7 +265,8 @@ Missiles.RegisterItem("9M133 ASM", "ATGM", {
 	},
 })
 
-Missiles.AddItemAlias("ATGM", "9M133 ASM", "9M113 ASM")
+-- TODO: This is the ONLY use of the alias system in Missiles. I would guess its for ACF2 -> ACF3 compatibility? hopefully...
+-- Missiles.AddItemAlias("ATGM", "9M133 ASM", "9M113 ASM")
 
 Missiles.RegisterItem("AT-2 ASM", "ATGM", {
 	Name		= "9M17 Fleyta",
