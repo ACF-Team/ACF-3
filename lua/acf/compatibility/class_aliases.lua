@@ -33,7 +33,7 @@ local Compatibility = ACF.Compatibility
 do
     local function Weapons_RegisterOldGunItem(ClassName, GroupName, Data)
         Data = Data or {}
-        local Caliber, Group = ClassName:match("^(%d+)mm(.+)$")
+        local Caliber, Group = ClassName:match("^([%d%.]+)mm(.+)$")
         Data.Caliber = tonumber(Caliber)
         Data.ID      = GroupName or Group
 
