@@ -997,7 +997,7 @@ do
 		if IsValid(Baseplate) then
 			local Type = Baseplate:ACF_GetUserVar("BaseplateType")
 			if Type ~= AllowedType then
-				Notify.WarningToPlayer(Entity:CPPIGetOwner(), string.format("%s was removed due to being on an invalid baseplate type", Entity), string.Format("Got %s, expected %s", Type, AllowedType))
+				Notify.WarningToPlayer(Entity:CPPIGetOwner(), string.format("%s was removed due to being on an invalid baseplate type", tostring(Entity)), string.format("Got %s, expected %s", Type and Type.ID or "none", AllowedType.ID))
 				Entity:Remove()
 				return
 			end
