@@ -32,19 +32,21 @@ include("shared.lua")
 --===============================================================================================--
 -- Local Funcs and Vars
 --===============================================================================================--
-local ACF = ACF
-local HookRun     = hook.Run
-local Utilities   = ACF.Utilities
-local Notify      = Utilities.Notify
-local WireIO      = Utilities.WireIO
+local ACF 			= ACF
 
-local Contraption = ACF.Contraption
-local hook	   = hook
-local Classes	= ACF.Classes
-local CrewTypes = Classes.CrewTypes
-local CrewModels = Classes.CrewModels
-local Entities   = Classes.Entities
-local TraceHull = util.TraceHull
+local HookRun     	= hook.Run
+local Utilities   	= ACF.Utilities
+local Notify      	= Utilities.Notify
+local WireIO      	= Utilities.WireIO
+
+local Compatibility = ACF.Compatibility
+local Contraption 	= ACF.Contraption
+local hook	   		= hook
+local Classes		= ACF.Classes
+local CrewTypes 	= Classes.CrewTypes
+local CrewModels 	= Classes.CrewModels
+local Entities   	= Classes.Entities
+local TraceHull 	= util.TraceHull
 local TimerSimple	= timer.Simple
 local Damage		= ACF.Damage
 
@@ -382,7 +384,7 @@ do
 		if Data.CrewTypeID == nil then
 			local ACE_Id = Data.Id
 			if ACE_Id ~= nil then
-				Data.CrewTypeID = ACF.Compatibility.Crew.CheckACECrewType(ACE_Id)
+				Data.CrewTypeID = Compatibility.Crew.CheckACECrewType(ACE_Id)
 			end
 		end
 

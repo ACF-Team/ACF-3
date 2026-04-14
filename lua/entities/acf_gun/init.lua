@@ -14,17 +14,18 @@ include("shared.lua")
 
 -- Local Vars -----------------------------------
 
-local ACF         = ACF
-local Contraption = ACF.Contraption
-local Classes     = ACF.Classes
-local AmmoTypes   = Classes.AmmoTypes
-local Utilities   = ACF.Utilities
-local Clock       = Utilities.Clock
-local Sounds      = Utilities.Sounds
-local TimerCreate = timer.Create
-local TraceLine = util.TraceLine
-local EMPTY       = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
-local Debug		 = ACF.Debug
+local ACF         	= ACF
+local Compatibility = ACF.Compatibility
+local Contraption 	= ACF.Contraption
+local Classes     	= ACF.Classes
+local AmmoTypes   	= Classes.AmmoTypes
+local Utilities   	= ACF.Utilities
+local Clock       	= Utilities.Clock
+local Sounds      	= Utilities.Sounds
+local TimerCreate 	= timer.Create
+local TraceLine 	= util.TraceLine
+local EMPTY       	= { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
+local Debug		 	= ACF.Debug
 
 -- Helper functions
 local function UpdateTotalAmmo(Entity)
