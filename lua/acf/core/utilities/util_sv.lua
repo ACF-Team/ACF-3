@@ -506,7 +506,7 @@ do -- Entity linking
 			function()
 				local Status, Message = ACF.PerformClassLinkCheck(Source, Target)
 				if not Status then
-					Notify.EntityWarning(Source, Source:CPPIGetOwner(), "A link has been automatically removed.", Message or "No additional info was provided")
+					Notify.EntityWarningToPlayer(Source, Source:CPPIGetOwner(), "A link has been automatically removed.", Message or "No additional info was provided")
 				end
 			end,
 			function() return IsValid(Source) and IsValid(Target) end,
