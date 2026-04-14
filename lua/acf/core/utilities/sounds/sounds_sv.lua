@@ -3,13 +3,15 @@ local Sounds = ACF.Utilities.Sounds
 util.AddNetworkString("ACF_Sounds")
 util.AddNetworkString("ACF_Sounds_Adjustable")
 util.AddNetworkString("ACF_Sounds_AdjustableCreate")
+util.AddNetworkString("ACF_Sounds_Adjustable_Multi")
+util.AddNetworkString("ACF_Sounds_AdjustableCreate_Multi")
 
---- Sends a single, non-looping sound to all clients in the PAS.
---- @param Origin table | vector The source to play the sound from
---- @param Path string The path to the sound to be played local to the game's sound folder
---- @param Level? integer The sound's level/attenuation from 0-127
---- @param Pitch? integer The sound's pitch from 0-255
---- @param Volume number A float representing the sound's volume. This is internally converted into an integer from 0-255 for network optimization
+	--- Sends a single, non-looping sound to all clients in the PAS.
+	--- @param Origin table | vector The source to play the sound from
+	--- @param Path string The path to the sound to be played local to the game's sound folder
+	--- @param Level? integer The sound's level/attenuation from 0-127
+	--- @param Pitch? integer The sound's pitch from 0-255
+	--- @param Volume number A float representing the sound's volume. This is internally converted into an integer from 0-255 for network optimization
 function Sounds.SendSound(Origin, Path, Level, Pitch, Volume)
 	if not IsValid(Origin) then return end
 
@@ -36,13 +38,13 @@ function Sounds.SendSound(Origin, Path, Level, Pitch, Volume)
 	net.SendPAS(Pos)
 end
 
---- Creates a sound patch on all clients in the PAS.  
---- This is intended to be used for self-looping sounds played on an entity that can be adjusted easily later.  
---- This allows us to modify the pitch/volume of a looping sound (ex. engines) with minimal network usage.
---- @param Origin table The entity to play the sound from
---- @param Path string The path to the sound to be played local to the game's sound folder
---- @param Pitch integer The sound's pitch from 0-255
---- @param Volume number A float representing the sound's volume
+	--- Creates a sound patch on all clients in the PAS.  
+	--- This is intended to be used for self-looping sounds played on an entity that can be adjusted easily later.  
+	--- This allows us to modify the pitch/volume of a looping sound (ex. engines) with minimal network usage.
+	--- @param Origin table The entity to play the sound from
+	--- @param Path string The path to the sound to be played local to the game's sound folder
+	--- @param Pitch integer The sound's pitch from 0-255
+	--- @param Volume number A float representing the sound's volume
 function Sounds.CreateAdjustableSound(Origin, Path, Pitch, Volume)
 	if not IsValid(Origin) then return end
 
@@ -54,17 +56,19 @@ function Sounds.CreateAdjustableSound(Origin, Path, Pitch, Volume)
 	net.SendPAS(Origin:GetPos())
 end
 
---- Sends an update to an adjustable sound to all clients in the PAS.  
---- If the adjustable sound was stopped on the client, it will begin playing again on the origin with the given parameters.  
---- This function is ratelimited to reduce network consumption, and subsequent updates will be smoothed on the client with an equivalent delta time.
---- @param Origin table The entity to update the sound on
---- @param ShouldStop? boolean Whether the sound should be destroyed; defaults to false
---- @param Pitch integer The sound's pitch from 0-255
---- @param Volume number A float representing the sound's volume. This is internally converted into an integer from 0-255 for network optimization
+	--- Sends an update to an adjustable sound to all clients in the PAS.  
+	--- If the adjustable sound was stopped on the client, it will begin playing again on the origin with the given parameters.  
+	--- This function is ratelimited to reduce network consumption, and subsequent updates will be smoothed on the client with an equivalent delta time.
+	--- @param Origin table The entity to update the sound on
+	--- @param ShouldStop? boolean Whether the sound should be destroyed; defaults to false
+	--- @param Pitch integer The sound's pitch from 0-255
+	--- @param Volume number A float representing the sound's volume. This is internally converted into an integer from 0-255 for network optimization
 function Sounds.SendAdjustableSound(Origin, ShouldStop, Pitch, Volume)
 	ShouldStop = ShouldStop or false
+
 	local Time = CurTime()
 	local OriginTbl = Origin.ACF
+
 	if not OriginTbl then
 		OriginTbl = {}
 		Origin.ACF = OriginTbl
@@ -81,6 +85,74 @@ function Sounds.SendAdjustableSound(Origin, ShouldStop, Pitch, Volume)
 
 			Volume = Volume * 100 -- Sending the approximate volume as an int to reduce message size
 			net.WriteUInt(Volume, 8)
+		end
+		net.SendPAS(Origin:GetPos())
+		OriginTbl.SoundTimer = Time + 0.05
+	end
+end
+
+	--- Creates a sound table to be broadcasted to all players within PAS.
+	--- This allows us to then create multiple sounds attached to a single entity, and be played fully clientside.
+	--- For creating 13 sounds, the data being sent can ballon up to 1.537kb's of data at once.
+	--- @param Origin table The entity to play the sound from
+	--- @param SoundTable table The table whose keys are arbitrary RPM's and values containing a table with a sound path, pitch and volume, to be played at a defined RPM(Its keys).
+function Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable, SoundCount)
+	if not IsValid(Origin) then return end
+	if not istable(SoundTable) then return end
+
+	-- Separate our table in chunks to be sent instead of all at once
+	-- This saves about 40% in data size vs. sending the whole table
+	net.Start("ACF_Sounds_AdjustableCreate_Multi")
+		net.WriteEntity(Origin)
+		net.WriteUInt(SoundCount, 4)
+
+		for _, v in ipairs(SoundTable) do
+			local rpm = v.RPM
+			local stringPath = v.Path
+			local pitch = v.Pitch
+			local volume = v.Volume
+			local width = v.Width
+
+			net.WriteUInt(rpm, 14)
+			net.WriteString(stringPath)
+			net.WriteUInt(pitch, 8)
+
+			volume = volume * 100 -- Sending the approximate volume as an int to reduce message size
+			net.WriteUInt(volume, 8)
+			net.WriteUInt(width, 4)
+		end
+	net.SendPAS(Origin:GetPos())
+end
+
+	--- Sends an update to the client regarding Throttle, RPM and if it should stop the sound, from an engine.
+	--- This also allows us to modify the pitch/volume of multiple looping sounds (for an engine) with minimal network usage.
+	--- The sound calculations are performed entirely clientside and require net unreliable for better sound composition.
+	--- This function is also rate limited to reduce network consumption, and subsequent updates will be smoothed on the client with an equivalent delta time. 
+	--- @param Origin table The entity to update the sound from
+	--- @param ShouldStop? boolean Whether the sound should be destroyed; defaults to false
+	--- @param Throttle int The entity's throttle
+	--- @param RPM int The entity's RPM
+function Sounds.SendMultipleAdjustableSounds(Origin, ShouldStop, Throttle, RPM)
+	if not IsValid(Origin) then return end
+	ShouldStop = ShouldStop or false
+
+	local Time = CurTime()
+	local OriginTbl = Origin.ACF
+
+	if not OriginTbl then
+		OriginTbl = {}
+		Origin.ACF = OriginTbl
+	end
+	OriginTbl.SoundTimer = OriginTbl.SoundTimer or Time
+
+	-- Slowing down the rate of sending a bit
+	if OriginTbl.SoundTimer <= Time or ShouldStop then
+		net.Start("ACF_Sounds_Adjustable_Multi", true)
+			net.WriteEntity(Origin)
+			net.WriteBool(ShouldStop)
+		if not ShouldStop then
+			net.WriteUInt(Throttle or 0, 7)
+			net.WriteUInt(RPM or 0, 14) -- Theorically there are engines capable of reaching more than 16K RPM. If you do so, you can go off yourself...
 		end
 		net.SendPAS(Origin:GetPos())
 		OriginTbl.SoundTimer = Time + 0.05

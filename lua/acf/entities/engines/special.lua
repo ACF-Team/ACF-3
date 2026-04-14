@@ -71,7 +71,42 @@ do -- Special I4 Engines
 			FOV = 120,
 		},
 	})
-
+	-- Test engine, remove before PR!
+	Engines.RegisterItem("2.0L-I4", "SP", {
+		Name		 = "2.0L 4B1 I4 Petrol",
+		Description	 = "The Mitsubishi 4B1 engine is a range of all-alloy straight-4 piston engines built at Mitsubishi's Japanese" ..
+					   "\"World Engine\" powertrain plant in Shiga on the basis of the Global Engine Manufacturing Alliance (GEMA).",
+		Model		 = "models/engines/inline4s.mdl",
+		Sound		 = "acf_extra/vehiclefx/engines/l4/mini_onhigh.wav",
+		SoundBank    = {
+						{RPM = 714, Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_00714.wav", Pitch = 100, Volume = 1, Width = 0},
+						{RPM = 967, Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_00967.wav", Pitch = 100, Volume = 1, Width = 0},
+						{RPM = 1538, Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_01538.wav", Pitch = 100, Volume = 1, Width = 0},
+						{RPM = 1978, Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_01978.wav", Pitch = 100, Volume = 1, Width = 0},
+						{RPM = 2571, Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_02571.wav", Pitch = 100, Volume = 1, Width = 0},
+						{RPM = 3450, Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_03450.wav", Pitch = 100, Volume = 1, Width = 0},
+						{RPM = 3889, Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_03889.wav", Pitch = 100, Volume = 1, Width = 0},
+						{RPM = 4482, Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_04482.wav", Pitch = 100, Volume = 1, Width = 0},
+						{RPM = 4922, Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_04922.wav", Pitch = 100, Volume = 1, Width = 0},
+						{RPM = 5295, Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_05295.wav", Pitch = 100, Volume = 1, Width = 0},
+						{RPM = 5823, Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_05823.wav", Pitch = 100, Volume = 1, Width = 0},
+						{RPM = 6350, Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_06350.wav", Pitch = 100, Volume = 1, Width = 0},
+						{RPM = 6833, Path = "acf_forza6apex/mitsubishi/mitsubishilancerevoxgsr/engine_06833.wav", Pitch = 100, Volume = 1, Width = 0}
+						},
+		Fuel		 = { Petrol = true },
+		Type		 = "GenericPetrol",
+		Mass		 = 138,
+		Torque		 = 199,
+		FlywheelMass = 0.083,
+		Pitch		 = 1,
+		RPM = {
+			Idle	= 700,
+			Limit	= 7500,
+		},
+		Preview = {
+			FOV = 120,
+		},
+	})
 	Engines.RegisterItem("1.9L-I4", "SP", {
 		Name		 = "1.9L I4 Petrol",
 		Description	 = "#acf.descs.engines.sp.1_9",

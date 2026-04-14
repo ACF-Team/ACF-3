@@ -122,6 +122,17 @@ local TimerCreate  = timer.Create
 local TimerRemove  = timer.Remove
 local TickInterval = engine.TickInterval
 
+-- Count all the existing sounds in a SoundBank
+local function GetSoundCount(Engine)
+	if not Engine.SoundBank then return 1 end
+
+	local SoundCount = 0
+	for _ in pairs(Engine.SoundBank) do
+		SoundCount = SoundCount + 1
+	end
+	return math.max(SoundCount, 1)
+end
+
 local function GetPitchVolume(Engine)
 	local RPM = Engine.FlyRPM
 	local Pitch = Clamp(20 + (RPM * Engine.SoundPitch) * 0.02, 1, 255)
@@ -182,7 +193,6 @@ end
 
 local function SetActive(Entity, Value, EntTbl)
 	EntTbl = EntTbl or Entity:GetTable()
-
 	local ActBool = tobool(Value)
 
 	if EntTbl.Active == ActBool then return end -- Already in the desired state
@@ -197,7 +207,11 @@ local function SetActive(Entity, Value, EntTbl)
 		EntTbl.Torque    = EntTbl.PeakTorque
 		EntTbl.FlyRPM    = EntTbl.IdleRPM * 1.5
 
-		Entity:UpdateSound(EntTbl)
+		if Entity.SoundCount > 1 then
+			Entity:UpdateSoundBank(EntTbl)
+		else
+			Entity:UpdateSound(EntTbl)
+		end
 
 		Entity:NextThink(Clock.CurTime + TickInterval())
 
@@ -210,11 +224,11 @@ local function SetActive(Entity, Value, EntTbl)
 			Entity:CalcMassRatio(EntTbl)
 		end)
 	else -- Was on, turn off
-		EntTbl.Active = false
-		EntTbl.FlyRPM = 0
-		EntTbl.Torque = 0
+		EntTbl.Active    = false
+		EntTbl.FlyRPM    = 0
+		EntTbl.Torque    = 0
 
-		Entity:DestroySound()
+		Entity:DestroyAllSounds()
 
 		TimerRemove("ACF Engine Clock " .. Entity:EntIndex())
 	end
@@ -284,6 +298,7 @@ do -- Spawn and Update functions
 		end
 	end
 
+	-- Engine update function
 	local function UpdateEngine(Entity, Data, Class, Engine, Type)
 		local Mass = Engine.Mass
 
@@ -304,6 +319,9 @@ do -- Spawn and Update functions
 		Entity.EntType          = Class.Name
 		Entity.ClassData        = Class
 		Entity.DefaultSound     = Engine.Sound
+		Entity.DefaultSoundBank = Engine.SoundBank
+		Entity.SoundBank 		= Engine.SoundBank
+		Entity.SoundCount       = GetSoundCount(Engine)
 		Entity.SoundPitch       = Engine.Pitch or 1
 		Entity.SoundVolume      = Engine.SoundVolume or 1
 		Entity.TorqueCurve      = Engine.TorqueCurve
@@ -333,7 +351,7 @@ do -- Spawn and Update functions
 		if Engine.IsTrans then
 			Entity.Out = ACF.LocalPlane(vector_origin, Vector(0, 1, 0))
 		end
-		Entity.IsSpecial        = Engines.IsSpecial(Engines.GetItem(Class.ID, Data.Engine))
+		Entity.IsSpecial = Engines.IsSpecial(Engines.GetItem(Class.ID, Data.Engine))
 
 		WireIO.SetupInputs(Entity, Inputs, Data, Class, Engine, Type)
 		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Engine, Type)
@@ -352,6 +370,7 @@ do -- Spawn and Update functions
 		Contraption.SetMass(Entity, Mass)
 	end
 
+	-- Engine creation function
 	function ACF.MakeEngine(Player, Pos, Angle, Data)
 		VerifyData(Data)
 
@@ -377,23 +396,25 @@ do -- Spawn and Update functions
 		Player:AddCleanup("acf_engine", Entity)
 		Player:AddCount(Limit, Entity)
 
-		Entity.Active        = false
-		Entity.Gearboxes     = {}
-		Entity.FuelTanks     = {}
-		Entity.LastThink     = 0
-		Entity.MassRatio     = 1
-		Entity.FuelUsage     = 0
-		Entity.Throttle      = 0
-		Entity.FlyRPM        = 0
-		Entity.SoundPath     = Engine.Sound
-		Entity.LastPitch     = 0
-		Entity.LastTorque    = 0
-		Entity.LastFuelUsage = 0
-		Entity.LastPower     = 0
-		Entity.LastRPM       = 0
-		Entity.LastTotalMass = 0
-		Entity.LastPhysMass  = 0
-		Entity.DataStore     = Entities.GetArguments("acf_engine")
+		Entity.Active         = false
+		Entity.Gearboxes      = {}
+		Entity.FuelTanks      = {}
+		Entity.LastThink      = 0
+		Entity.MassRatio      = 1
+		Entity.FuelUsage      = 0
+		Entity.Throttle       = 0
+		Entity.FlyRPM         = 0
+		Entity.SoundPath      = Engine.Sound
+		Entity.SoundBank      = Engine.SoundBank
+		Entity.SoundCount     = 0
+		Entity.LastPitch      = 0
+		Entity.LastTorque     = 0
+		Entity.LastFuelUsage  = 0
+		Entity.LastPower      = 0
+		Entity.LastRPM        = 0
+		Entity.LastTotalMass  = 0
+		Entity.LastPhysMass   = 0
+		Entity.DataStore      = Entities.GetArguments("acf_engine")
 		Entity.revLimiterEnabled = true
 
 		duplicator.ClearEntityModifier(Entity, "mass")
@@ -607,6 +628,29 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	return HitRes
 end
 
+function ENT:UpdateSoundBank(SelfTbl)
+	SelfTbl = SelfTbl or self:GetTable()
+
+	local SoundBank  = SelfTbl.SoundBank
+	local SoundCount = GetSoundCount(self)
+
+	if SelfTbl.Sound then
+		local Throttle = Round(SelfTbl.Throttle, 2) * 100
+		local RPM = Round(SelfTbl.FlyRPM)
+
+		Sounds.SendMultipleAdjustableSounds(self, false, Throttle, RPM)
+	else
+		if table.IsEmpty(SoundBank) then
+			SelfTbl.SoundBank = SelfTbl.DefaultSoundBank or {}
+		else
+			Sounds.CreateMultipleAdjustableSounds(self, SoundBank, SoundCount)
+			SelfTbl.Sound = true
+		end
+
+		SelfTbl.SoundCount = GetSoundCount(self)
+	end
+end
+
 function ENT:UpdateSound(SelfTbl)
 	SelfTbl = SelfTbl or self:GetTable()
 
@@ -614,7 +658,7 @@ function ENT:UpdateSound(SelfTbl)
 	local LastSound = SelfTbl.LastSound
 
 	if Path ~= LastSound and LastSound ~= nil then
-		self:DestroySound()
+		self:DestroyAllSounds()
 
 		SelfTbl.LastSound = Path
 	end
@@ -636,8 +680,12 @@ function ENT:UpdateSound(SelfTbl)
 	end
 end
 
-function ENT:DestroySound()
-	Sounds.SendAdjustableSound(self, true)
+function ENT:DestroyAllSounds()
+	if self.SoundCount > 1 then
+		Sounds.SendMultipleAdjustableSounds(self, true, _, _)
+	else
+		Sounds.SendAdjustableSound(self, true, _, _)
+	end
 
 	self.LastSound  = nil
 	self.LastPitch  = 0
@@ -854,7 +902,12 @@ function ENT:CalcRPM(SelfTbl)
 	SelfTbl.FlyRPM = FlyRPM - min(TorqueDiff, TotalReqTq) / Inertia
 	SelfTbl.LastThink = ClockTime
 
-	self:UpdateSound(SelfTbl)
+	if self.SoundCount > 1 then
+		self:UpdateSoundBank(SelfTbl)
+	else
+		self:UpdateSound(SelfTbl)
+	end
+
 	self:UpdateOutputs(SelfTbl)
 
 end
@@ -944,7 +997,7 @@ function ENT:OnRemove()
 
 	hook.Run("ACF_OnEntityLast", "acf_engine", self, Class)
 
-	self:DestroySound()
+	self:DestroyAllSounds()
 
 	for Gearbox in pairs(self.Gearboxes) do
 		self:Unlink(Gearbox)

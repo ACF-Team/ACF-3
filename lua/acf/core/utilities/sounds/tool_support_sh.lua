@@ -53,6 +53,21 @@ Sounds.acf_engine = {
 		Ent.SoundVolume = 1
 
 		Ent:UpdateSound()
+	end,
+	GetSoundBank = function(Ent)
+		return {
+			SoundBank = Ent.SoundBank
+		}
+	end,
+	SetSoundBank = function(Ent, SoundBankData)
+		Ent.SoundBank = SoundBankData
+
+		Ent:UpdateSoundBank()
+	end,
+	ResetSoundBank = function(Ent)
+		Ent.SoundBank = {}
+
+		Ent:UpdateSoundBank()
 	end
 }
 

@@ -173,7 +173,7 @@ do -- ACF global vars
 
 	-- The deviation of the input direction from the shaft + the output direction from the shaft cannot exceed this
 	ACF.DefineSetting("MaxDriveshaftAngle",   85,    nil, ACF.FloatDataCallback(85, 180, 0))
-	ACF.Year                 = 1945
+	ACF.Year                 = 2026 -- Was 1945. Define this hardcoded for now, always the year in course unless more work on this gets done and does actually get used properly
 	ACF.IllegalDisableTime   = 30 -- Time in seconds for an entity to be disabled when it fails ACF.IsLegal
 	ACF.Volume               = 1 -- Global volume for ACF sounds
 	ACF.MobilityLinkDistance = 650 -- Maximum distance, in inches, at which mobility-related components will remain linked with each other
@@ -195,6 +195,9 @@ do -- ACF global vars
 	ACF.KwToHp               = 1.341 -- Kilowatts to horsepower
 	ACF.LToGal               = 0.264172 -- Liters to gallons
 
+	-- Miscellaneous Sound Stuff
+	ACF.SpeedOfSound 		 = 343 * ACF.MeterToInch -- in Meters per Second. Source internally uses inches(or units) so we have to convert
+													 -- Actually this would vary as a function of temperature and air pressure, but this should suffice for now
 	-- Fuzes
 	ACF.MinFuzeCaliber       = 20 -- Minimum caliber in millimeters that can be fuzed
 
