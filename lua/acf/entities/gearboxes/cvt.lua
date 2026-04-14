@@ -10,12 +10,6 @@ local StWB = 0.75 -- Straight weight bonus mulitplier
 local GearCVTST = 700
 local StTB = 1.25 -- Straight torque bonus multiplier
 
--- Old gearbox scales
-local ScaleS = 1
-local ScaleM = 1.5
-local ScaleL = 2.5
-local StScaleL = 2 -- Straight gearbox large scale
-
 local function InitGearbox(Gearbox)
 	local Gears = Gearbox.Gears
 

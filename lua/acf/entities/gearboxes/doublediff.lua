@@ -7,11 +7,6 @@ local GearDDSW = 45
 -- Torque Rating
 local GearDDST = 4500
 
--- Old gearbox scales
-local ScaleS = 1
-local ScaleM = 1.5
-local ScaleL = 2.5
-
 local function InitGearbox(Gearbox)
 	Gearbox.DoubleDiff = true
 	Gearbox.SteerRate  = 0

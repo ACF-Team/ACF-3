@@ -33,7 +33,7 @@ local Compatibility = ACF.Compatibility
 do
     local function Weapons_RegisterOldGunItem(ClassName, GroupName, Data)
         Data = Data or {}
-        local Caliber, Group = str:match("^(%d+)mm(.+)$")
+        local Caliber, Group = ClassName:match("^(%d+)mm(.+)$")
         Data.Caliber = tonumber(Caliber)
         Data.ID      = GroupName or Group
 
@@ -139,6 +139,14 @@ end
 --      https://github.com/ACF-Team/ACF-3/pull/443
 ---------------------------------------------------------------------------------------------------------------------
 do
+    -- Old gearbox scales
+    -- MARCH: I checked, these were all the same across gearbox definitions
+    local ScaleT    = 0.75
+    local ScaleS    = 1
+    local ScaleM    = 1.5
+    local ScaleL    = 2.5
+    local StScaleL  = 2 -- Straight gearbox large scale
+
     local function Gearboxes_RegisterItemAlias(GroupID, ID, Alias, Overrides)
         local Data = {
             GroupID   = GroupID,
@@ -279,26 +287,28 @@ do
 
 
     -- Clutch gearboxes
-    do -- Pre-Scalable Straight-through Gearboxes
-        Gearboxes_RegisterItemAlias("Clutch", "Clutch-S", "Clutch-S-T", {
-            Scale = ScaleT,
-            InvertGearRatios = true,
-        })
+    do
+        do -- Pre-Scalable Straight-through Gearboxes
+            Gearboxes_RegisterItemAlias("Clutch", "Clutch-S", "Clutch-S-T", {
+                Scale = ScaleT,
+                InvertGearRatios = true,
+            })
 
-        Gearboxes_RegisterItemAlias("Clutch", "Clutch-S", "Clutch-S-S", {
-            Scale = ScaleS,
-            InvertGearRatios = true,
-        })
+            Gearboxes_RegisterItemAlias("Clutch", "Clutch-S", "Clutch-S-S", {
+                Scale = ScaleS,
+                InvertGearRatios = true,
+            })
 
-        Gearboxes_RegisterItemAlias("Clutch", "Clutch-S", "Clutch-S-M", {
-            Scale = ScaleM,
-            InvertGearRatios = true,
-        })
+            Gearboxes_RegisterItemAlias("Clutch", "Clutch-S", "Clutch-S-M", {
+                Scale = ScaleM,
+                InvertGearRatios = true,
+            })
 
-        Gearboxes_RegisterItemAlias("Clutch", "Clutch-S", "Clutch-S-L", {
-            Scale = ScaleL,
-            InvertGearRatios = true,
-        })
+            Gearboxes_RegisterItemAlias("Clutch", "Clutch-S", "Clutch-S-L", {
+                Scale = ScaleL,
+                InvertGearRatios = true,
+            })
+        end
     end
 
 
@@ -397,8 +407,6 @@ do
             })
         end
     end
-
-
 
     -- Differential gearboxes
     do -- Pre-Scalable Inline/Transaxial Gearboxes

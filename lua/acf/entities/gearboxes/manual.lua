@@ -9,13 +9,6 @@ local StWB = 0.75 -- Straight weight bonus mulitplier
 local Gear4ST = 1000
 local StTB = 1.25 -- Straight torque bonus multiplier
 
--- Old gearbox scales
-local ScaleT = 0.75
-local ScaleS = 1
-local ScaleM = 1.5
-local ScaleL = 2.5
-local StScaleL = 2 -- Straight gearbox large scale
-
 Gearboxes.Register("Manual", {
 	Name		= "Manual",
 	CreateMenu	= ACF.ManualGearboxMenu,

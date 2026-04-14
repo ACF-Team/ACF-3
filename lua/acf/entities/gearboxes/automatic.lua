@@ -14,12 +14,6 @@ local StTB = 1.25 --straight torque bonus multiplier
 -- Shift Time
 local ShiftS = 0.25
 
--- Old gearbox scales
-local ScaleS = 1
-local ScaleM = 1.5
-local ScaleL = 2.5
-local StScaleL = 2 -- Straight gearbox large scale
-
 local function InitGearbox(Gearbox)
 	local Gears = Gearbox.Gears
 

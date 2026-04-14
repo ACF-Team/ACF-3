@@ -7,12 +7,6 @@ local CSW = 5
 -- Torque Rating
 local CST = 3000
 
--- Old gearbox scales
-local ScaleT = 0.75
-local ScaleS = 1
-local ScaleM = 1.5
-local ScaleL = 2.5
-
 -- General description
 local CDesc = "A standalone clutch for when a full size gearbox is unnecessary or too long."
 

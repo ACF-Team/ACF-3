@@ -3,12 +3,6 @@ local Gearboxes = ACF.Classes.Gearboxes
 
 local Gear2SW = 20
 
--- Old gearbox scales
-local ScaleT = 0.75
-local ScaleS = 1
-local ScaleM = 1.5
-local ScaleL = 2.5
-
 Gearboxes.Register("Transfer", {
 	Name		= "Transfer Case",
 	CreateMenu	= ACF.ManualGearboxMenu,
