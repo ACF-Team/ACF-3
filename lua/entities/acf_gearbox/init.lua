@@ -56,9 +56,26 @@ do -- Spawn and Update functions -----------------------
 
 		local Class = Classes.GetGroup(Gearboxes, Data.Gearbox)
 
+		-- Backwards compatibility for pre-scalable gearboxes
+		if not Class then
+			local AliasData = Compatibility.Gearboxes.CheckGroupItem(Data.Gearbox)
+
+			if AliasData then
+				Data.Gearbox = AliasData.ID
+
+				if AliasData.Overrides then
+					for K, V in pairs(AliasData.Overrides) do
+						Data[K] = V
+					end
+				end
+
+				local GroupID = Compatibility.Gearboxes.CheckGroup(AliasData.GroupID) or AliasData.GroupID
+				Class = Classes.GetGroup(Gearboxes, GroupID)
+			end
+		end
+
 		if not Class then
 			Data.Gearbox = "2Gear-T"
-
 			Class = Classes.GetGroup(Gearboxes, "2Gear-T")
 		end
 
