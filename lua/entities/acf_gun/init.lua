@@ -14,17 +14,18 @@ include("shared.lua")
 
 -- Local Vars -----------------------------------
 
-local ACF         = ACF
-local Contraption = ACF.Contraption
-local Classes     = ACF.Classes
-local AmmoTypes   = Classes.AmmoTypes
-local Utilities   = ACF.Utilities
-local Clock       = Utilities.Clock
-local Sounds      = Utilities.Sounds
-local TimerCreate = timer.Create
-local TraceLine = util.TraceLine
-local EMPTY       = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
-local Debug		 = ACF.Debug
+local ACF         	= ACF
+local Compatibility = ACF.Compatibility
+local Contraption 	= ACF.Contraption
+local Classes     	= ACF.Classes
+local AmmoTypes   	= Classes.AmmoTypes
+local Utilities   	= ACF.Utilities
+local Clock       	= Utilities.Clock
+local Sounds      	= Utilities.Sounds
+local TimerCreate 	= timer.Create
+local TraceLine 	= util.TraceLine
+local EMPTY       	= { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
+local Debug		 	= ACF.Debug
 
 -- Helper functions
 local function UpdateTotalAmmo(Entity)
@@ -243,28 +244,34 @@ do -- Spawn and Update functions --------------------------------
 
 		local Class = Classes.GetGroup(Weapons, Data.Weapon)
 
+		-- Backwards compatibility for pre-scalable guns
+		if not Class then
+			local AliasData = Compatibility.Weapons.CheckGroupItem(Data.Weapon)
+
+			if AliasData then
+				Data.Weapon  = AliasData.ID
+				Data.Caliber = AliasData.Caliber or Data.Caliber
+
+				Class = Classes.GetGroup(Weapons, Data.Weapon)
+			end
+		end
+
 		if not Class then
 			Class = Weapons.Get("C")
-
 			Data.Destiny = "Weapons"
 			Data.Weapon  = "C"
 			Data.Caliber = 50
-		elseif Weapons.IsAlias(Data.Weapon) then
-			Data.Weapon = Class.ID
 		end
 
 		-- Verifying and clamping caliber value
 		if Class.IsScalable then
 			local Weapon = Weapons.GetItem(Class.ID, Data.Weapon)
-
 			if Weapon then
 				Data.Weapon  = Class.ID
 				Data.Caliber = Weapon.Caliber
 			end
-
 			local Bounds  = Class.Caliber
 			local Caliber = ACF.CheckNumber(Data.Caliber, Bounds.Base)
-
 			Data.Caliber = math.Clamp(Caliber, Bounds.Min, Bounds.Max)
 		end
 

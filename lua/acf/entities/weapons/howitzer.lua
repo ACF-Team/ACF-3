@@ -35,26 +35,6 @@ Weapons.Register("HW", {
 	CostScalar	= 0.5
 })
 
-Weapons.RegisterItem("75mmHW", "HW", {
-	Caliber = 75,
-})
-
-Weapons.RegisterItem("105mmHW", "HW", {
-	Caliber = 105,
-})
-
-Weapons.RegisterItem("122mmHW", "HW", {
-	Caliber = 122,
-})
-
-Weapons.RegisterItem("155mmHW", "HW", {
-	Caliber = 155,
-})
-
-Weapons.RegisterItem("203mmHW", "HW", {
-	Caliber = 203,
-})
-
 ACF.SetCustomAttachment("models/howitzer/howitzer_105mm.mdl", "muzzle", Vector(101.08, 0, -1.08))
 
 ACF.AddHitboxes("models/howitzer/howitzer_105mm.mdl", {

@@ -49,10 +49,6 @@ Weapons.Register("SL", {
 	CostScalar	= 0.02
 })
 
-Weapons.RegisterItem("40mmSL", "SL", {
-	Caliber = 40,
-})
-
 ACF.SetCustomAttachment("models/launcher/40mmsl.mdl", "muzzle", Vector(5), Angle(0, 0, 180))
 
 ACF.AddHitboxes("models/launcher/40mmsl.mdl", {
