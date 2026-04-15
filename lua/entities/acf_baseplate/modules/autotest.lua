@@ -10,13 +10,13 @@ local function RegisterTestCategory(CategoryName)
     end
 end
 
-local function RegisterTest(CategoryName, TestName, TestFunc, FixFunc, Description)
+local function RegisterTest(CategoryName, TestName, TestFunc, FixFunc, Advice)
     if not Tests[CategoryName] then RegisterTestCategory(CategoryName) end
 
     local testData = {
         Name = TestName,
         Func = TestFunc,
-        Description = Description or "",
+        Advice = Advice or "",
         FixFunc = FixFunc
     }
     table.insert(Tests[CategoryName], testData)
@@ -49,6 +49,7 @@ local function GetEntsMissingLinks(Entities, LinkStores)
     return Missing
 end
 
+-- Links all entities of Type1 to all entities of Type2
 local function LinkAll(Env, Type1, Type2)
     for _, Ent1 in pairs(Env.Contraption.entsbyclass[Type1] or {}) do
         for _, Ent2 in pairs(Env.Contraption.entsbyclass[Type2] or {}) do
@@ -57,90 +58,97 @@ local function LinkAll(Env, Type1, Type2)
     end
 end
 
+local ParentedVisibilityWhitelist = {
+    prop_physics = true,
+    primitive_shape = true,
+}
+
 ---------------------------------------------------------------------------------------------------------------------------
 -- TEST DEFINITIONS
 ---------------------------------------------------------------------------------------------------------------------------
 
-RegisterTest("Optimization", "Physical Entity Tests", function(Env)
-    local MaxConstraintsPerProp = 8
+RegisterTest("Optimization", "Physical Entity Constraints", function(Env)
+    local Max = 8
     local Faults = {}
-    Env.UniqueConstraints = {}
-
     for _, v in pairs(Env.Physical) do
-        local Constraints = constraint.GetTable(v)
-        for _, c in ipairs(Constraints) do Env.UniqueConstraints[c.Constraint] = true end
-
         if v ~= Env.Baseplate then
-            local Reasons = {}
-            local Count = table.Count(Constraints)
+            local Count = table.Count(constraint.GetTable(v))
+            if Count > Max then
+                table.insert(Faults, {Ent = v, Msg = "Excessive constraints (" .. Count .. " > " .. Max .. ")"})
+            end
+        end
+    end
+    return #Faults == 0, Faults
+end, nil, "Try to remove unnecessary constraints in your suspension or between props.")
 
-            if Count > MaxConstraintsPerProp then
-                table.insert(Reasons, "Excessive constraints (" .. Count .. " > " .. MaxConstraintsPerProp .. ")")
-            end
-            if IsValid(v:GetParent()) then
-                table.insert(Reasons, "Should not be parented and constrained")
-            end
-            if v:GetColor().a ~= 0 and not v:GetNoDraw() then
-                table.insert(Reasons, "Should have alpha 0 / NoDraw")
-            end
-
-            if #Reasons > 0 then
-                table.insert(Faults, {Ent = v, Msg = table.concat(Reasons, ", ")})
-            end
+-- 2. Parenting vs Constraints Check
+RegisterTest("Optimization", "Parented Entity Constraints", function(Env)
+    local Faults = {}
+    for _, v in pairs(Env.Physical) do
+        if v ~= Env.Baseplate and IsValid(v:GetParent()) then
+            table.insert(Faults, {Ent = v, Msg = "Entity is both parented and constrained"})
         end
     end
     return #Faults == 0, Faults
 end, function(Env)
     for _, v in pairs(Env.Physical) do
-        if v ~= Env.Baseplate then
-            if IsValid(v:GetParent()) then constraint.RemoveAll(v) end
-            if not IsValid(v:GetParent()) and v:GetColor().a ~= 0 then
-                v:SetColor(Color(255, 255, 255, 0))
-                v:SetRenderMode( RENDERMODE_TRANSCOLOR )
-            end
-        end
+        if v ~= Env.Baseplate and IsValid(v:GetParent()) then constraint.RemoveAll(v) end
     end
-end, "Checks per-prop constraint counts and visual status.")
+end, "Parented props should not have physical constraints")
 
-RegisterTest("Optimization", "Parented Entity Tests", function(Env)
+-- 3. Physical Prop Visibility
+RegisterTest("Optimization", "Physical Prop Visibility", function(Env)
     local Faults = {}
-    for v in pairs(Env.Contraption.ents) do
-        if IsValid(v:GetParent()) then
-            local Reasons = {}
-            if v:GetColor().a ~= 0 and not v:GetNoDraw() then table.insert(Reasons, "Should have alpha 0 / NoDraw") end
-
-            if #Reasons > 0 then
-                table.insert(Faults, {Ent = v, Msg = table.concat(Reasons, ", ")})
-            end
+    for _, v in pairs(Env.Physical) do
+        if v ~= Env.Baseplate and v:GetColor().a ~= 0 and not v:GetNoDraw() then
+            table.insert(Faults, {Ent = v, Msg = "Physical prop should be alpha 0 or NoDraw"})
         end
     end
     return #Faults == 0, Faults
-end, function()
-    for v in pairs(Env.Contraption.ents) do
-        if IsValid(v:GetParent()) and v:GetColor().a ~= 0 then
+end, function(Env)
+    for _, v in pairs(Env.Physical) do
+        if v ~= Env.Baseplate and v:GetColor().a ~= 0 then
             v:SetColor(Color(255, 255, 255, 0))
             v:SetRenderMode(RENDERMODE_TRANSCOLOR)
         end
     end
-end)
+end, "Physical props should be invisible")
 
-RegisterTest("Optimization", "Total Entities", function(Env)
+-- 4. Parented Prop Visibility (General)
+RegisterTest("Optimization", "Parented Prop Visibility", function(Env)
+    local Faults = {}
+    for v in pairs(Env.Contraption.ents) do
+        if IsValid(v:GetParent()) and ParentedVisibilityWhitelist[v:GetClass()] and v:GetColor().a ~= 0 and not v:GetNoDraw() then
+            table.insert(Faults, {Ent = v, Msg = "Parented prop should be alpha 0 or NoDraw"})
+        end
+    end
+    return #Faults == 0, Faults
+end, function(Env)
+    for v in pairs(Env.Contraption.ents) do
+        if IsValid(v:GetParent()) and ParentedVisibilityWhitelist[v:GetClass()] and v:GetColor().a ~= 0 then
+            v:SetColor(Color(255, 255, 255, 0))
+            v:SetRenderMode(RENDERMODE_TRANSCOLOR)
+        end
+    end
+end, "Parented armor props should be invisible")
+
+RegisterTest("Optimization", "Total Entity Count", function(Env)
     local MaxEntities = 150
     local TotalEnts = Env.Contraption.count
     if TotalEnts > MaxEntities then
         return false, {{Ent = Env.Baseplate, Msg = "Total entities " .. TotalEnts .. " > " .. MaxEntities}}
     end
     return true, "Entity count OK"
-end, nil)
+end, nil, "Use prop to mesh to merge detail props")
 
-RegisterTest("Optimization", "Total Physical Entities", function(Env)
+RegisterTest("Optimization", "Total Physical Entity Count", function(Env)
     local MaxPhysicals = 11
     local TotalPhysical = table.Count(Env.Physical)
     if TotalPhysical > MaxPhysicals then
         return false, {{Ent = Env.Baseplate, Msg = "Physical entities " .. TotalPhysical .. " > " .. MaxPhysicals}}
     end
     return true, "Physical count OK"
-end, nil)
+end, nil, "Only your baseplate, wheels and possibly steer plate need to be physical")
 
 RegisterTest("Optimization", "Total Constraints", function(Env)
     -- Check max total constraint count
@@ -150,14 +158,14 @@ RegisterTest("Optimization", "Total Constraints", function(Env)
         return false, {{Ent = Env.Baseplate, Msg = "Total constraints (" .. TotalConstraints .. ") exceeds recommended (" .. MaxConstraintsTotal .. ")"}}
     end
     return true, "Constraint count OK"
-end, nil)
+end, nil, "Try to remove unnecessary constraints in your suspension or between props")
 
 RegisterTest("Optimization", "P2M Controller", function(Env)
     if table.IsEmpty(Env.Contraption.entsbyclass.sent_prop2mesh or {}) then
         return false, {{Ent = Env.Baseplate, Msg = "Missing p2m controller for visual optimization"}}
     end
     return true, "P2M found"
-end, nil)
+end, nil, "Use prop to mesh to merge detail props")
 
 RegisterTest("Crew", "Basic Crew", function(Env)
     local Necessary = {}
@@ -176,7 +184,7 @@ RegisterTest("Crew", "Basic Crew", function(Env)
         end
     end
     return #Faults == 0, Faults
-end, nil)
+end, nil, "Ensure all necessary crew members are present")
 
 RegisterTest("Crew", "Crew Efficiency", function(Env)
     local MinEff = 0.25
@@ -187,7 +195,7 @@ RegisterTest("Crew", "Crew Efficiency", function(Env)
         end
     end
     return #Faults == 0, Faults
-end, nil)
+end, nil, "Ensure crew members have adequate efficiency")
 
 RegisterTest("Links", "Guns, Racks and Ammo", function(Env)
     local Faults = {}
@@ -199,7 +207,7 @@ end, function(Env)
     LinkAll(Env, "acf_gun", "Crates")
     LinkAll(Env, "acf_rack", "Crates")
     LinkAll(Env, "acf_ammo", "Weapons")
-end)
+end, "Ensure all guns and racks are linked to ammo crates, and all ammo crates are linked to guns or racks")
 
 RegisterTest("Links", "Engines, Fuel and Gearboxes", function(Env)
     local Faults = {}
@@ -215,7 +223,7 @@ end, function(Env)
     LinkAll(Env, "acf_engine", "Gearboxes")
     LinkAll(Env, "acf_gearbox", "GearboxIn")
     LinkAll(Env, "acf_gearbox", "GearboxOut")
-end)
+end, "Ensure all engines are linked to fuel tanks and gearboxes, and all gearboxes have proper input and output links")
 
 RegisterTest("Baseplate", "Orientation", function(Env)
     local Deviation = math.deg(math.acos(Env.Baseplate:GetForward():Dot(Vector(0, 1, 0))))
@@ -225,7 +233,7 @@ RegisterTest("Baseplate", "Orientation", function(Env)
     return true
 end, function(Env)
     Env.Baseplate:SetAngles(Angle(0, 90, 0))
-end)
+end, "The smile paint / sprays face north")
 
 RegisterTest("AIO", "Drivetrain Discovery", function(Env)
     local AIO = next(Env.Contraption.entsbyclass.acf_controller or {})
@@ -240,7 +248,7 @@ RegisterTest("AIO", "Drivetrain Discovery", function(Env)
         if Gearboxes and table.Count(Gearboxes) > 1 then table.insert(Faults, {Ent = Ent, Msg = "Entity powered by multiple gearboxes"}) end
     end
     return #Faults == 0, Faults
-end, nil)
+end, nil, "A gearbox is probably not linked to the rest of the drivetrain")
 
 ---------------------------------------------------------------------------------------------------------------------------
 -- NETWORKING
@@ -306,7 +314,7 @@ end
 return function()
     if CLIENT then
         local Autotester = {
-            MenuLabel = "Debug Baseplate",
+            MenuLabel = "Autotester",
             Order = 99999,
             PrependSpacer = true,
             MenuIcon = "icon16/image_edit.png",
@@ -315,8 +323,8 @@ return function()
 
             Action = function(_, ent)
                 local window = g_ContextMenu:Add("DFrame")
-                window:SetSize(400, 500)
-                window:SetTitle("Baseplate Debug [" .. ent:EntIndex() .. "]")
+                window:SetSize(400, ScrH() * 0.75)
+                window:SetTitle("Baseplate Autotester [" .. ent:EntIndex() .. "]")
                 window:Center()
                 window:SetSizable(true)
                 window:SetDraggable(true)
@@ -325,25 +333,20 @@ return function()
                 local Base = window:Add("ACF_Panel")
                 Base:Dock(FILL)
 
-                local Notice = Base:AddLabel("Click result buttons to highlight and snap camera to offending entities.\nIf the tests are gray, then you need to wait for a global cooldown to prevent spam.")
-                Notice:SetDark(true)
-                Notice:Dock(TOP)
-                Notice:DockMargin(10, 5, 10, 5)
-                Notice:SetWrap(true)
-                Notice:SetTall(40)
+                Base:AddLabel("IMPORTANT NOTICE:")
+                Base:AddLabel("Click result buttons to highlight and snap camera to offending entities.")
+                Base:AddLabel("If the tests are gray, then you need to wait for a global cooldown to prevent spam.")
+                Base:AddLabel("Fixes are irreversible and may have unintended side effects. Run at your own risk.")
+                Base:AddLabel("Hovering over a test will show you advice on how to fix it.")
 
-                local GlobalRun = Base:Add("DButton")
-                GlobalRun:SetText("Run All Tests")
-                GlobalRun:Dock(TOP)
-                GlobalRun:DockMargin(10, 0, 10, 5)
-                GlobalRun.DoClick = function()
+                Base:AddButton("Run All Tests", function()
                     for _, test in pairs(TestMap) do
                         if IsValid(test.RowCategory) and IsValid(test.RowCategory.Header) then
                             test.RowCategory.Header.ResultColor = nil
                         end
                         RunTest(ent, test.Name, false)
                     end
-                end
+                end)
 
                 net.Receive("ACF_Baseplate_TestResult", function()
                     local name = net.ReadString()
@@ -373,6 +376,7 @@ return function()
                                 Btn:Dock(TOP)
                                 Btn:DockMargin(5, 2, 5, 2)
                                 Btn:SetContentAlignment(4)
+                                Btn:SetTextInset(8, 0)
                                 Btn.DoClick = function()
                                     if not IsValid(targetEnt) then return end
                                     local View = render.GetViewSetup()
@@ -414,7 +418,7 @@ return function()
                         RowObject:Dock(TOP)
                         RowObject:DockMargin(0, 0, 0, 2)
                         test.RowCategory = RowObject
-                        if test.Description then RowObject.Header:SetTooltip(test.Description) end
+                        if test.Advice then RowObject.Header:SetTooltip(test.Advice) end
 
                         RowObject.Header.Paint = function(panel, w, h)
                             surface.SetDrawColor(panel.ResultColor or Color(60, 60, 60, 255))
