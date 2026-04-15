@@ -102,6 +102,16 @@ RegisterTest("Optimization", "Total Physical Entities", function(Env)
     return true, "Physical count OK"
 end, nil)
 
+RegisterTest("Optimization", "Total Constraints", function(Env)
+    -- Check max total constraint count
+    local MaxConstraintsTotal = 50
+    local TotalConstraints = table.Count(Env.UniqueConstraints)
+    if TotalConstraints > MaxConstraintsTotal then
+        return false, {{Ent = Env.Baseplate, Msg = "Total constraints (" .. TotalConstraints .. ") exceeds recommended (" .. MaxConstraintsTotal .. ")"}}
+    end
+    return true, "Constraint count OK"
+end, nil)
+
 RegisterTest("Optimization", "P2M Controller", function(Env)
     local p2ms = Env.Contraption.entsbyclass.sent_prop2mesh or {}
     if table.IsEmpty(p2ms) then
