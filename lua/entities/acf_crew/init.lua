@@ -29,6 +29,8 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
+local ENTITY = FindMetaTable("Entity")
+
 --===============================================================================================--
 -- Local Funcs and Vars
 --===============================================================================================--
@@ -321,22 +323,23 @@ do -- Random timer stuff
 
 	local DeltaTime = engine.TickInterval()
 	function ENT:EnforceGForces()
-		local Parent = self:GetParent()
+		local Parent = ENTITY.GetParent(self)
 		if not IsValid(Parent) then return end
 
-		local Contraption = self:GetContraption()
+		local Contraption = ENTITY.GetContraption(self)
 		local Baseplate = Contraption and Contraption.ACF_Baseplate
 		if not IsValid(Baseplate) then return end -- Why would this happen for a recent vehicle? no clue lol...
-		local SampleRate = Baseplate:ACF_GetUserVar("GForceTicks") or 1
+		-- This is ACF_LiveData to try to help with performance issues (__index'ing)... ugh
+		local SampleRate = ENTITY.GetTable(Baseplate).ACF_LiveData["GForceTicks"] or 1
 		if Contraption.IsPickedUp then return end
 
-		local SelfTbl = self:GetTable()
+		local SelfTbl = ENTITY.GetTable(self)
 		local GForceIter = SelfTbl.GForceIter or 0
 		GForceIter = GForceIter + 1
 		SelfTbl.GForceIter = GForceIter
 		if GForceIter % SampleRate ~= 0 then return end
 
-		local NewPos = self:LocalToWorld(SelfTbl.CrewModel.ScanOffsetL)
+		local NewPos = ENTITY.LocalToWorld(self, SelfTbl.CrewModel.ScanOffsetL)
 		-- debugoverlay.Cross(NewPos, 4, 1, Red, true)
 		local GForce = ACF.UpdateGForceTracker(SelfTbl.GForceTracker, NewPos, SampleRate)
 
@@ -359,6 +362,7 @@ do -- Random timer stuff
 				self:DamageCrew(Excess * SelfTbl.ACF.MaxHealth, "player/pl_fallpain3.wav")
 			end
 		end
+
 		SelfTbl.GForceStrain = math.Clamp(SelfTbl.GForceStrain - 0.001, 0, 1)
 		WireLib.TriggerOutput(self, "Stamina", SelfTbl.GForceStrain)
 	end
