@@ -1006,7 +1006,7 @@ do -- Metamethods
 
 			WireLib.TriggerOutput(self, "Degrees", -SelfTbl.CurrentAngle)
 
-			SelfTbl.SlewFuncs.SetRotatorAngle(self)
+			SelfTbl.SlewFuncs.SetRotatorAngle(self, SelfTbl.Rotator)
 
 			local MotorSpeed = math_Clamp(math_abs(SelfTbl.CurrentAngle - AngleChange), 0, SlewMax) / Tick
 

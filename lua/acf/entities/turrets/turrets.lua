@@ -11,19 +11,27 @@ local InchToMm = ACF.InchToMm
 	https://qcbslewingrings.com/wp-content/uploads/2021/01/E1-SPOOLVALVE.pdf - Has info on hydraulic motors
 ]]
 
+-- Performance optimizations
+local ENTITY = FindMetaTable("Entity")
+local VECTOR = FindMetaTable("Vector")
+local ANGLE  = FindMetaTable("Angle")
+local CachedTurretAngle  = Angle(0, 0, 0)
+
 -- Bunched all of the definitions together due to some loading issue
 
 do	-- Turret drives
 	local Clamp = math.Clamp
 
-	local function ClampAngle(A, Amin, Amax)
-		local p, y, r
+	local function ClampAngleInPlace(A, minp, miny, minr, maxp, maxy, maxr)
+		local p, y, r = ANGLE.Unpack(A)
 
-		p = Clamp(A[1], Amin[1], Amax[1])
-		y = Clamp(A[2], Amin[2], Amax[2])
-		r = Clamp(A[3], Amin[3], Amax[3])
+		p = Clamp(p, minp, maxp)
+		y = Clamp(y, miny, maxy)
+		r = Clamp(r, minr, maxr)
 
-		return Angle(p, y, r)
+		ANGLE.SetUnpacked(A, p, y, r)
+
+		return A
 	end
 
 	local WillUseSmallModel = function(Size) return Size <= 12.5 end
@@ -197,34 +205,56 @@ do	-- Turret drives
 				end,
 
 				GetTargetBearing	= function(Turret, StabAmt)
-					local TurretTbl = Turret:GetTable()
+					local TurretTbl = ENTITY.GetTable(Turret)
 					local Rotator = TurretTbl.Rotator
 
 					if TurretTbl.HasArc then
 						if TurretTbl.Manual then
-							return Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(0, -math.Clamp(TurretTbl.DesiredDeg, TurretTbl.MinDeg, TurretTbl.MaxDeg), 0))).yaw
+							ANGLE.SetUnpacked(CachedTurretAngle, 0, -math.Clamp(TurretTbl.DesiredDeg, TurretTbl.MinDeg, TurretTbl.MaxDeg), 0)
+							local _, Yaw = ANGLE.Unpack(ENTITY.WorldToLocalAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, CachedTurretAngle)))
+							return Yaw
 						else
-							local AngDiff = Rotator:WorldToLocalAngles(TurretTbl.LastRotatorAngle)
-							local LocalDesiredAngle = ClampAngle(Turret:WorldToLocalAngles(TurretTbl.DesiredAngle) - Angle(0, StabAmt, 0) - AngDiff, Angle(0, -TurretTbl.MaxDeg, 0), Angle(0, -TurretTbl.MinDeg, 0))
+							local AngDiff = ENTITY.WorldToLocalAngles(Rotator, TurretTbl.LastRotatorAngle)
+							local LocalDesiredAngle = ENTITY.WorldToLocalAngles(Turret, TurretTbl.DesiredAngle)
+							local ADPitch, ADYaw, ADRoll = ANGLE.Unpack(AngDiff)
+							ANGLE.SetUnpacked(CachedTurretAngle, -ADPitch, StabAmt - ADYaw, -ADRoll)
+							ANGLE.Sub(LocalDesiredAngle, CachedTurretAngle)
+							LocalDesiredAngle = ClampAngleInPlace(LocalDesiredAngle, 0, -TurretTbl.MaxDeg, 0, 0, -TurretTbl.MinDeg, 0)
 
-							return Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(LocalDesiredAngle)).yaw
+							local _, Yaw = ANGLE.Unpack(ENTITY.WorldToLocalAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, LocalDesiredAngle)))
+							return Yaw
 						end
 					else
-						local AngDiff = Rotator:WorldToLocalAngles(TurretTbl.LastRotatorAngle)
-						return TurretTbl.Manual and (Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(0, -TurretTbl.DesiredDeg, 0))).yaw) or (Rotator:WorldToLocalAngles(TurretTbl.DesiredAngle + AngDiff).yaw - StabAmt)
+						local AngDiff = ENTITY.WorldToLocalAngles(Rotator, TurretTbl.LastRotatorAngle)
+						local AngleRet
+						if TurretTbl.Manual then
+							AngleRet = ENTITY.WorldToLocalAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, Angle(0, -TurretTbl.DesiredDeg, 0)))
+							local _, Yaw = ANGLE.Unpack(AngleRet)
+							return Yaw
+						else
+							ANGLE.SetUnpacked(CachedTurretAngle, ANGLE.Unpack(TurretTbl.DesiredAngle))
+							ANGLE.Add(CachedTurretAngle, AngDiff)
+							AngleRet = ENTITY.WorldToLocalAngles(Rotator, CachedTurretAngle)
+							local _, Yaw = ANGLE.Unpack(AngleRet)
+							Yaw = Yaw - StabAmt
+							return Yaw
+						end
 					end
 				end,
 
 				GetWorldTarget		= function(Turret)
-					if Turret.Manual then
-						return Turret:LocalToWorldAngles(Angle(0, Turret.DesiredDeg, 0))
+					local SelfTbl = ENTITY.GetTable(Turret)
+					if SelfTbl.Manual then
+						ANGLE.SetUnpacked(CachedTurretAngle, 0, SelfTbl.DesiredDeg, 0)
+						return ENTITY.LocalToWorldAngles(Turret, CachedTurretAngle)
 					else
-						return Turret:LocalToWorldAngles(Turret:WorldToLocalAngles(Turret.DesiredAngle))
+						return ENTITY.LocalToWorldAngles(Turret, ENTITY.WorldToLocalAngles(Turret, SelfTbl.DesiredAngle))
 					end
 				end,
 
-				SetRotatorAngle		= function(Turret)
-					Turret.Rotator:SetAngles(Turret:LocalToWorldAngles(Angle(0, Turret.CurrentAngle, 0)))
+				SetRotatorAngle		= function(Turret, Rotator)
+					ANGLE.SetUnpacked(CachedTurretAngle, 0, Turret.CurrentAngle, 0)
+					ENTITY.SetAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, CachedTurretAngle))
 				end
 			}
 		})
@@ -278,32 +308,46 @@ do	-- Turret drives
 				end,
 
 				GetTargetBearing	= function(Turret, StabAmt)
-					local TurretTbl = Turret:GetTable()
+					local TurretTbl = ENTITY.GetTable(Turret)
 					local Rotator = TurretTbl.Rotator
 
 					if TurretTbl.HasArc then
 						if TurretTbl.Manual then
-							return Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(-math.Clamp(TurretTbl.DesiredDeg, TurretTbl.MinDeg, TurretTbl.MaxDeg), 0, 0))).pitch
+							ANGLE.SetUnpacked(CachedTurretAngle, -math.Clamp(TurretTbl.DesiredDeg, TurretTbl.MinDeg, TurretTbl.MaxDeg), 0, 0)
+							local Pitch = ANGLE.Unpack(ENTITY.WorldToLocalAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, CachedTurretAngle)))
+							return Pitch
 						else
-							local LocalDesiredAngle = ClampAngle(Turret:WorldToLocalAngles(TurretTbl.DesiredAngle) - Angle(StabAmt, 0, 0), Angle(-TurretTbl.MaxDeg, 0, 0), Angle(-TurretTbl.MinDeg, 0, 0))
+							local LocalDesiredAngle = ENTITY.WorldToLocalAngles(Turret, TurretTbl.DesiredAngle)
+							ANGLE.SetUnpacked(CachedTurretAngle, StabAmt, 0, 0)
+							ANGLE.Sub(LocalDesiredAngle, CachedTurretAngle)
+							local LocalDesiredAngle = ClampAngleInPlace(LocalDesiredAngle, -TurretTbl.MaxDeg, 0, 0, -TurretTbl.MinDeg, 0, 0)
 
-							return Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(LocalDesiredAngle)).pitch
+							local Pitch = ANGLE.Unpack(ENTITY.WorldToLocalAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, LocalDesiredAngle)))
+							return Pitch
 						end
+					elseif TurretTbl.Manual then
+						ANGLE.SetUnpacked(CachedTurretAngle, -TurretTbl.DesiredDeg, 0, 0)
+						local Pitch = ANGLE.Unpack(ENTITY.WorldToLocalAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, CachedTurretAngle)))
+						return Pitch
 					else
-						return TurretTbl.Manual and (Rotator:WorldToLocalAngles(Turret:LocalToWorldAngles(Angle(-TurretTbl.DesiredDeg, 0, 0))).pitch) or (Rotator:WorldToLocalAngles(TurretTbl.DesiredAngle).pitch - StabAmt)
+						local Pitch = ANGLE.Unpack(ENTITY.WorldToLocalAngles(Rotator, TurretTbl.DesiredAngle))
+						return Pitch - StabAmt
 					end
 				end,
 
 				GetWorldTarget		= function(Turret)
-					if Turret.Manual then
-						return Turret:LocalToWorldAngles(Angle(Turret.DesiredDeg, 0, 0))
+					local SelfTbl = ENTITY.GetTable(Turret)
+					if SelfTbl.Manual then
+						ANGLE.SetUnpacked(CachedTurretAngle, SelfTbl.DesiredDeg, 0, 0)
+						return ENTITY.LocalToWorldAngles(Turret, CachedTurretAngle)
 					else
-						return Turret:LocalToWorldAngles(Turret:WorldToLocalAngles(Turret.DesiredAngle))
+						return ENTITY.LocalToWorldAngles(Turret, ENTITY.WorldToLocalAngles(Turret, SelfTbl.DesiredAngle))
 					end
 				end,
 
-				SetRotatorAngle		= function(Turret)
-					Turret.Rotator:SetAngles(Turret:LocalToWorldAngles(Angle(Turret.CurrentAngle, 0, 0)))
+				SetRotatorAngle		= function(Turret, Rotator)
+					ANGLE.SetUnpacked(CachedTurretAngle, Turret.CurrentAngle, 0, 0)
+					ENTITY.SetAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, CachedTurretAngle))
 				end
 			}
 		})
