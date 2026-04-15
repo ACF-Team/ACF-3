@@ -117,11 +117,9 @@ RegisterTest("Optimization", "Parented Entity Tests", function(Env)
     return #Faults == 0, Faults
 end, function()
     for v in pairs(Env.Contraption.ents) do
-        if IsValid(v:GetParent()) then
-            if v:GetColor().a ~= 0 then
-                v:SetColor(Color(255, 255, 255, 0))
-                v:SetRenderMode(RENDERMODE_TRANSCOLOR)
-            end
+        if IsValid(v:GetParent()) and v:GetColor().a ~= 0 then
+            v:SetColor(Color(255, 255, 255, 0))
+            v:SetRenderMode(RENDERMODE_TRANSCOLOR)
         end
     end
 end)
