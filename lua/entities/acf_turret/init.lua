@@ -22,6 +22,7 @@ local math_max      = math.max
 local math_abs      = math.abs
 
 local ENTITY        = FindMetaTable("Entity")
+local PHYSOBJ       = FindMetaTable("PhysObj")
 local VECTOR        = FindMetaTable("Vector")
 
 local MaxLinkDistance = ACF.LinkDistance ^ 2
@@ -700,7 +701,7 @@ do	-- Spawn and Update funcs
 		ENT_UpdateTurretSlew(self, SelfTbl)
 		self:UpdateOverlay()
 	end
-	ENT.CheckCOM = ENT_CheckCoM
+	ENT.CheckCoM = ENT_CheckCoM
 
 	function ENT:UpdateTurretMass(Force) -- Will call the other parts above, this should be triggered after a parent (safe to call multiple times e.g. on dupe paste, as it has an internal delay to prevent spamming)
 		if (Force == false) and (Clock.CurTime < self.MassCheckDelay) then return end
@@ -715,7 +716,7 @@ do	-- Spawn and Update funcs
 			end
 
 			BuildWatchlist(self)
-			self:CheckCoM(Force)
+			ENT_CheckCoM(self, Force)
 
 			self:UpdateOverlay()
 		end)
@@ -968,7 +969,7 @@ do -- Metamethods
 			if SelfTbl.UseVector and SelfTbl.Manual == false then
 				local DesiredAngle = (SelfTbl.DesiredVector - ENTITY.GetPos(Rotator))
 				VECTOR.Normalize(DesiredAngle)
-				DesiredAngle = VECTOR.Angle(DesiredAngle)
+				SelfTbl.DesiredAngle = VECTOR.Angle(DesiredAngle)
 			end
 
 			local StabAmt	= math_Clamp(SelfTbl.SlewFuncs.GetStab(self), -SlewMax, SlewMax)
@@ -1101,27 +1102,47 @@ do -- Metamethods
 			self.ACF.Type		= "Prop"
 		end
 
+		local TempDamageVector = Vector(0, 0, 0)
 		function ENT:ACF_OnDamage(DmgResult, DmgInfo)
-			local Health = self.ACF.Health
+			local SelfTbl = ENTITY.GetTable(self)
+
+			local Health = SelfTbl.ACF.Health
 			local HitRes = DmgResult:Compute()
 
 			if DmgInfo.Attacker and IsValid(DmgInfo.Attacker) then
 				local Attacker = DmgInfo.Attacker
 				-- If the damage source is from an ammo crate or fueltank, store the time this damage took place...
 				local Cookoff = (Attacker:GetClass() == "acf_ammo" or Attacker:GetClass() == "acf_fueltank") and Attacker.Exploding == true
-				if Cookoff then	self.ShouldCookoff = Clock.CurTime end
+				if Cookoff then	SelfTbl.ShouldCookoff = Clock.CurTime end
 
 				-- If damaged by a cookoff in the last second, and the turret will die, then launch the turret
-				if (self.ShouldCookoff and (Clock.CurTime - self.ShouldCookoff) < 1) and HitRes.Damage >= self.ACF.Health and self.Disconnect == false then
-					self.Disconnect	= true
+				if (SelfTbl.ShouldCookoff and (Clock.CurTime - SelfTbl.ShouldCookoff) < 1) and HitRes.Damage >= SelfTbl.ACF.Health and SelfTbl.Disconnect == false then
+					SelfTbl.Disconnect	= true
 
-					self:SetParent(nil)
-					local PO = self:GetPhysicsObject()
+					ENTITY.SetParent(self, nil)
+					local PO = ENTITY.GetPhysicsObject(self)
 					if IsValid(PO) then
-						PO:EnableMotion(true)
-						local Mass = PO:GetMass()
+						PHYSOBJ.EnableMotion(PO, true)
+						local Mass = PHYSOBJ.GetMass(PO)
 
-						PO:ApplyForceOffset((self:GetPos() - Attacker:GetPos()):GetNormalized() * Mass * (Mass / (Mass + self.TurretData.TotalMass)), self:GetPos() + VectorRand(-self.RingSize / 2, self.RingSize / 2))
+						-- Start force direction (selfpos - attacker pos)
+						local Force = ENTITY.GetPos(self)
+						VECTOR.Sub(Force, ENTITY.GetPos(Attacker))
+						VECTOR.Normalize(Force)
+
+						-- Multiply drection by mass
+						VECTOR.Mul(Force, Mass)
+						-- Multiply by mass ratio 
+						VECTOR.Mul(Force, Mass / (Mass + SelfTbl.TurretData.TotalMass))
+
+						-- Setup offset as pos + ringsize randomness
+						local Offset = ENTITY.GetPos(self)
+						local RandMin, RandMax = -SelfTbl.RingSize / 2, SelfTbl.RingSize / 2
+						VECTOR.SetUnpacked(TempDamageVector, math.Rand(RandMin, RandMax), math.Rand(RandMin, RandMax), math.Rand(RandMin, RandMax))
+						VECTOR.Add(Offset, TempDamageVector)
+
+						-- Apply cookoff force
+						PHYSOBJ.ApplyForceOffset(PO, Force, Offset)
 					end
 
 					TimerSimple(7.5, function()
