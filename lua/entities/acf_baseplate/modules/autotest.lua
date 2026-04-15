@@ -49,6 +49,14 @@ local function GetEntsMissingLinks(Entities, LinkStores)
     return Missing
 end
 
+local function LinkAll(Env, Type1, Type2)
+    for _, Ent1 in pairs(Env.Contraption.entsbyclass[Type1] or {}) do
+        for _, Ent2 in pairs(Env.Contraption.entsbyclass[Type2] or {}) do
+            Ent1:LinkTo(Ent2)
+        end
+    end
+end
+
 ---------------------------------------------------------------------------------------------------------------------------
 -- TEST DEFINITIONS
 ---------------------------------------------------------------------------------------------------------------------------
@@ -72,7 +80,7 @@ RegisterTest("Optimization", "Physical Entity Tests", function(Env)
             if IsValid(v:GetParent()) then
                 table.insert(Reasons, "Should not be parented and constrained")
             end
-            if v:GetColor().a ~= 0 or v:GetNoDraw() then
+            if v:GetColor().a ~= 0 and not v:GetNoDraw() then
                 table.insert(Reasons, "Should have alpha 0 / NoDraw")
             end
 
@@ -82,7 +90,41 @@ RegisterTest("Optimization", "Physical Entity Tests", function(Env)
         end
     end
     return #Faults == 0, Faults
-end, nil, "Checks per-prop constraint counts and visual status.")
+end, function(Env)
+    for _, v in pairs(Env.Physical) do
+        if v ~= Env.Baseplate then
+            if IsValid(v:GetParent()) then constraint.RemoveAll(v) end
+            if not IsValid(v:GetParent()) and v:GetColor().a ~= 0 then
+                v:SetColor(Color(255, 255, 255, 0))
+                v:SetRenderMode( RENDERMODE_TRANSCOLOR )
+            end
+        end
+    end
+end, "Checks per-prop constraint counts and visual status.")
+
+RegisterTest("Optimization", "Parented Entity Tests", function(Env)
+    local Faults = {}
+    for v in pairs(Env.Contraption.ents) do
+        if IsValid(v:GetParent()) then
+            local Reasons = {}
+            if v:GetColor().a ~= 0 and not v:GetNoDraw() then table.insert(Reasons, "Should have alpha 0 / NoDraw") end
+
+            if #Reasons > 0 then
+                table.insert(Faults, {Ent = v, Msg = table.concat(Reasons, ", ")})
+            end
+        end
+    end
+    return #Faults == 0, Faults
+end, function()
+    for v in pairs(Env.Contraption.ents) do
+        if IsValid(v:GetParent()) then
+            if v:GetColor().a ~= 0 then
+                v:SetColor(Color(255, 255, 255, 0))
+                v:SetRenderMode(RENDERMODE_TRANSCOLOR)
+            end
+        end
+    end
+end)
 
 RegisterTest("Optimization", "Total Entities", function(Env)
     local MaxEntities = 150
@@ -105,7 +147,7 @@ end, nil)
 RegisterTest("Optimization", "Total Constraints", function(Env)
     -- Check max total constraint count
     local MaxConstraintsTotal = 50
-    local TotalConstraints = table.Count(Env.UniqueConstraints)
+    local TotalConstraints = table.Count(Env.UniqueConstraints or {})
     if TotalConstraints > MaxConstraintsTotal then
         return false, {{Ent = Env.Baseplate, Msg = "Total constraints (" .. TotalConstraints .. ") exceeds recommended (" .. MaxConstraintsTotal .. ")"}}
     end
@@ -113,8 +155,7 @@ RegisterTest("Optimization", "Total Constraints", function(Env)
 end, nil)
 
 RegisterTest("Optimization", "P2M Controller", function(Env)
-    local p2ms = Env.Contraption.entsbyclass.sent_prop2mesh or {}
-    if table.IsEmpty(p2ms) then
+    if table.IsEmpty(Env.Contraption.entsbyclass.sent_prop2mesh or {}) then
         return false, {{Ent = Env.Baseplate, Msg = "Missing p2m controller for visual optimization"}}
     end
     return true, "P2M found"
@@ -123,8 +164,8 @@ end, nil)
 RegisterTest("Crew", "Basic Crew", function(Env)
     local Necessary = {}
     if Env.Contraption:ACF_IsGroundVehicle() then
-        if not table.IsEmpty(Env.Contraption.entsbyclass.acf_turret) then Necessary.Gunner = true end
-        if not table.IsEmpty(Env.Contraption.entsbyclass.acf_engine) then Necessary.Driver = true end
+        if not table.IsEmpty(Env.Contraption.entsbyclass.acf_turret or {}) then Necessary.Gunner = true end
+        if not table.IsEmpty(Env.Contraption.entsbyclass.acf_engine or {}) then Necessary.Driver = true end
     elseif Env.Contraption:ACF_IsAircraft() then
         Necessary.Pilot = true
     end
@@ -156,7 +197,11 @@ RegisterTest("Links", "Guns, Racks and Ammo", function(Env)
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_rack, {"Crates"})) do table.insert(Faults, {Ent = e, Msg = "Rack unlinked from Ammo"}) end
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_ammo, {"Weapons"})) do table.insert(Faults, {Ent = e, Msg = "Ammo unlinked from Guns"}) end
     return #Faults == 0, Faults
-end, nil)
+end, function(Env)
+    LinkAll(Env, "acf_gun", "Crates")
+    LinkAll(Env, "acf_rack", "Crates")
+    LinkAll(Env, "acf_ammo", "Weapons")
+end)
 
 RegisterTest("Links", "Engines, Fuel and Gearboxes", function(Env)
     local Faults = {}
@@ -166,15 +211,23 @@ RegisterTest("Links", "Engines, Fuel and Gearboxes", function(Env)
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_gearbox, {"GearboxIn", "Engines"})) do table.insert(Faults, {Ent = e, Msg = "Gearbox missing Input link"}) end
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_gearbox, {"GearboxOut", "Wheels", "Effectors"})) do table.insert(Faults, {Ent = e, Msg = "Gearbox missing Output link"}) end
     return #Faults == 0, Faults
-end, nil)
+end, function(Env)
+    LinkAll(Env, "acf_fueltank", "Engines")
+    LinkAll(Env, "acf_engine", "FuelTanks")
+    LinkAll(Env, "acf_engine", "Gearboxes")
+    LinkAll(Env, "acf_gearbox", "GearboxIn")
+    LinkAll(Env, "acf_gearbox", "GearboxOut")
+end)
 
 RegisterTest("Baseplate", "Orientation", function(Env)
     local Deviation = math.deg(math.acos(Env.Baseplate:GetForward():Dot(Vector(0, 1, 0))))
     if Deviation > 0.05 then
-        return false, tostring(Env.Baseplate) .. " must be facing north. Deviation [" .. tostring(math.Round(Deviation, 2)) .. "]."
+        return false, {{Ent = Env.Baseplate, Msg = "Baseplate is misaligned with north by " .. math.Round(Deviation, 2) .. " degrees"}}
     end
     return true
-end, nil)
+end, function(Env)
+    Env.Baseplate:SetAngles(Angle(0, 90, 0))
+end)
 
 RegisterTest("AIO", "Drivetrain Discovery", function(Env)
     local AIO = next(Env.Contraption.entsbyclass.acf_controller or {})
@@ -201,7 +254,7 @@ if SERVER then
 
     local LastRun = {}
 
-    net.Receive("ACF_Baseplate_RunTest", function(len, ply)
+    net.Receive("ACF_Baseplate_RunTest", function(_, ply)
         local ent = net.ReadEntity()
         local testName = net.ReadString()
         local isFix = net.ReadBool()
@@ -217,23 +270,26 @@ if SERVER then
 
         local Env = {Baseplate = ent}
         SetupTests(Env)
+        if isFix then
+            if test.FixFunc then test.FixFunc(Env) end
+        else
+            local ok, results = test.Func(Env)
 
-        local ok, results = test.Func(Env)
-
-        net.Start("ACF_Baseplate_TestResult")
-            net.WriteString(testName)
-            net.WriteBool(ok or false)
-            if not ok and istable(results) then
-                net.WriteUInt(#results, 16)
-                for _, fault in ipairs(results) do
-                    net.WriteEntity(fault.Ent)
-                    net.WriteString(fault.Msg)
+            net.Start("ACF_Baseplate_TestResult")
+                net.WriteString(testName)
+                net.WriteBool(ok or false)
+                if not ok and istable(results) then
+                    net.WriteUInt(#results, 16)
+                    for _, fault in ipairs(results) do
+                        net.WriteEntity(fault.Ent)
+                        net.WriteString(fault.Msg)
+                    end
+                else
+                    net.WriteUInt(0, 16)
+                    net.WriteString(isstring(results) and results or "Success")
                 end
-            else
-                net.WriteUInt(0, 16)
-                net.WriteString(isstring(results) and results or "Success")
-            end
-        net.Send(ply)
+            net.Send(ply)
+        end
     end)
 end
 
@@ -241,7 +297,15 @@ end
 -- UI INITIALIZATION
 ---------------------------------------------------------------------------------------------------------------------------
 
-return function(ENT)
+local function RunTest(Ent, Name, IsFix)
+    net.Start("ACF_Baseplate_RunTest")
+        net.WriteEntity(Ent)
+        net.WriteString(Name)
+        net.WriteBool(IsFix)
+    net.SendToServer()
+end
+
+return function()
     if CLIENT then
         local Autotester = {
             MenuLabel = "Debug Baseplate",
@@ -279,11 +343,7 @@ return function(ENT)
                         if IsValid(test.RowCategory) and IsValid(test.RowCategory.Header) then
                             test.RowCategory.Header.ResultColor = nil
                         end
-                        net.Start("ACF_Baseplate_RunTest")
-                            net.WriteEntity(ent)
-                            net.WriteString(test.Name)
-                            net.WriteBool(false)
-                        net.SendToServer()
+                        RunTest(ent, test.Name, false)
                     end
                 end
 
@@ -306,7 +366,7 @@ return function(ENT)
                             Lbl:SetDark(true)
                             Lbl:DockMargin(10, 5, 10, 5)
                         else
-                            for i = 1, count do
+                            for _ = 1, count do
                                 local targetEnt = net.ReadEntity()
                                 local reason = net.ReadString()
 
@@ -347,16 +407,12 @@ return function(ENT)
                     RunAll:DockMargin(0, 2, 5, 2)
                     RunAll.DoClick = function()
                         for _, test in ipairs(Tests[category]) do
-                            net.Start("ACF_Baseplate_RunTest")
-                                net.WriteEntity(ent)
-                                net.WriteString(test.Name)
-                                net.WriteBool(false)
-                            net.SendToServer()
+                            RunTest(ent, test.Name, false)
                         end
                     end
 
                     for _, test in ipairs(Tests[category]) do
-                        local InnerPanel, RowObject = CategoryPanel:AddCollapsible(test.Name, false)
+                        local _, RowObject = CategoryPanel:AddCollapsible(test.Name, false)
                         RowObject:Dock(TOP)
                         RowObject:DockMargin(0, 0, 0, 2)
                         test.RowCategory = RowObject
@@ -369,20 +425,30 @@ return function(ENT)
                             surface.DrawOutlinedRect(0, 0, w, h)
                         end
 
+                        local FixBtn = RowObject.Header:Add("DButton")
+                        FixBtn:SetText("Fix")
+                        FixBtn:Dock(RIGHT)
+                        FixBtn:SetWide(50)
+                        FixBtn:DockMargin(0, 2, 5, 2)
+                        FixBtn.DoClick = function()
+                            RunTest(ent, test.Name, true)
+                        end
+                        if not test.FixFunc then FixBtn:SetDisabled(true) end
+
                         local RunBtn = RowObject.Header:Add("DButton")
                         RunBtn:SetText("Run")
                         RunBtn:Dock(RIGHT)
                         RunBtn:SetWide(50)
                         RunBtn:DockMargin(0, 2, 5, 2)
                         RunBtn.DoClick = function()
-                            net.Start("ACF_Baseplate_RunTest")
-                                net.WriteEntity(ent)
-                                net.WriteString(test.Name)
-                                net.WriteBool(false)
-                            net.SendToServer()
+                            RunTest(ent, test.Name, false)
                         end
                     end
                 end
+
+                ent:CallOnRemove("ACF_Baseplate_DebugCleanup", function()
+                    if IsValid(window) then window:Remove() end
+                end)
             end
         }
         properties.Add("edit.debug_baseplate", Autotester)

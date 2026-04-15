@@ -25,7 +25,6 @@ ENT.ACF_WireOutputs = {
 	"Vehicles (Seat for this entity, compatible with wire) [ARRAY]",
 }
 
-local InitAutotester = include("modules/autotest.lua")
-InitAutotester(ENT)
+include("modules/autotest.lua")()
 
 cleanup.Register("acf_baseplate")
