@@ -49,26 +49,6 @@ Weapons.Register("MG", {
 	CostScalar	= 0.25
 })
 
-Weapons.RegisterItem("7.62mmMG", "MG", {
-	Caliber = 7.62,
-})
-
-Weapons.RegisterItem("12.7mmMG", "MG", {
-	Caliber = 12.7,
-})
-
-Weapons.RegisterItem("13mmHMG", "MG", {
-	Caliber = 13,
-})
-
-Weapons.RegisterItem("14.5mmMG", "MG", {
-	Caliber = 14.5,
-})
-
-Weapons.RegisterItem("20mmMG", "MG", {
-	Caliber = 20,
-})
-
 ACF.SetCustomAttachment("models/machinegun/machinegun_20mm.mdl", "muzzle", Vector(53.05, 0, -0.11), Angle(0, 0, 90))
 
 ACF.AddHitboxes("models/machinegun/machinegun_20mm.mdl", {

@@ -5,18 +5,19 @@ include("shared.lua")
 
 -- Local variables ---------------------------------
 
-local ACF         = ACF
-local Contraption = ACF.Contraption
-local Mobility    = ACF.Mobility
-local MobilityObj = Mobility.Objects
-local Utilities   = ACF.Utilities
-local Clock       = Utilities.Clock
-local Notify      = Utilities.Notify
-local Clamp       = math.Clamp
-local abs         = math.abs
-local min         = math.min
-local max         = math.max
-local MaxDistance = ACF.MobilityLinkDistance * ACF.MobilityLinkDistance
+local ACF         	= ACF
+local Contraption 	= ACF.Contraption
+local Compatibility = ACF.Compatibility
+local Mobility    	= ACF.Mobility
+local MobilityObj 	= Mobility.Objects
+local Utilities   	= ACF.Utilities
+local Clock       	= Utilities.Clock
+local Notify      	= Utilities.Notify
+local Clamp       	= math.Clamp
+local abs         	= math.abs
+local min         	= math.min
+local max         	= math.max
+local MaxDistance 	= ACF.MobilityLinkDistance * ACF.MobilityLinkDistance
 
 local function CalcWheel(Entity, Link, Wheel, SelfWorld)
 	local WheelPhys = Wheel:GetPhysicsObject()
@@ -56,9 +57,26 @@ do -- Spawn and Update functions -----------------------
 
 		local Class = Classes.GetGroup(Gearboxes, Data.Gearbox)
 
+		-- Backwards compatibility for pre-scalable gearboxes
+		if not Class then
+			local AliasData = Compatibility.Gearboxes.CheckGroupItem(Data.Gearbox)
+
+			if AliasData then
+				Data.Gearbox = AliasData.ID
+
+				if AliasData.Overrides then
+					for K, V in pairs(AliasData.Overrides) do
+						Data[K] = V
+					end
+				end
+
+				local GroupID = Compatibility.Gearboxes.CheckGroup(AliasData.GroupID) or AliasData.GroupID
+				Class = Classes.GetGroup(Gearboxes, GroupID)
+			end
+		end
+
 		if not Class then
 			Data.Gearbox = "2Gear-T"
-
 			Class = Classes.GetGroup(Gearboxes, "2Gear-T")
 		end
 

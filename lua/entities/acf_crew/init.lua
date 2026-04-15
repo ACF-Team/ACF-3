@@ -29,22 +29,26 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
+local ENTITY = FindMetaTable("Entity")
+
 --===============================================================================================--
 -- Local Funcs and Vars
 --===============================================================================================--
-local ACF = ACF
-local HookRun     = hook.Run
-local Utilities   = ACF.Utilities
-local Notify      = Utilities.Notify
-local WireIO      = Utilities.WireIO
+local ACF 			= ACF
 
-local Contraption = ACF.Contraption
-local hook	   = hook
-local Classes	= ACF.Classes
-local CrewTypes = Classes.CrewTypes
-local CrewModels = Classes.CrewModels
-local Entities   = Classes.Entities
-local TraceHull = util.TraceHull
+local HookRun     	= hook.Run
+local Utilities   	= ACF.Utilities
+local Notify      	= Utilities.Notify
+local WireIO      	= Utilities.WireIO
+
+local Compatibility = ACF.Compatibility
+local Contraption 	= ACF.Contraption
+local hook	   		= hook
+local Classes		= ACF.Classes
+local CrewTypes 	= Classes.CrewTypes
+local CrewModels 	= Classes.CrewModels
+local Entities   	= Classes.Entities
+local TraceHull 	= util.TraceHull
 local TimerSimple	= timer.Simple
 local Damage		= ACF.Damage
 
@@ -319,22 +323,23 @@ do -- Random timer stuff
 
 	local DeltaTime = engine.TickInterval()
 	function ENT:EnforceGForces()
-		local Parent = self:GetParent()
+		local Parent = ENTITY.GetParent(self)
 		if not IsValid(Parent) then return end
 
-		local Contraption = self:GetContraption()
+		local Contraption = ENTITY.GetContraption(self)
 		local Baseplate = Contraption and Contraption.ACF_Baseplate
 		if not IsValid(Baseplate) then return end -- Why would this happen for a recent vehicle? no clue lol...
-		local SampleRate = Baseplate:ACF_GetUserVar("GForceTicks") or 1
+		-- This is ACF_LiveData to try to help with performance issues (__index'ing)... ugh
+		local SampleRate = ENTITY.GetTable(Baseplate).ACF_LiveData["GForceTicks"] or 1
 		if Contraption.IsPickedUp then return end
 
-		local SelfTbl = self:GetTable()
+		local SelfTbl = ENTITY.GetTable(self)
 		local GForceIter = SelfTbl.GForceIter or 0
 		GForceIter = GForceIter + 1
 		SelfTbl.GForceIter = GForceIter
 		if GForceIter % SampleRate ~= 0 then return end
 
-		local NewPos = self:LocalToWorld(SelfTbl.CrewModel.ScanOffsetL)
+		local NewPos = ENTITY.LocalToWorld(self, SelfTbl.CrewModel.ScanOffsetL)
 		-- debugoverlay.Cross(NewPos, 4, 1, Red, true)
 		local GForce = ACF.UpdateGForceTracker(SelfTbl.GForceTracker, NewPos, SampleRate)
 
@@ -357,6 +362,7 @@ do -- Random timer stuff
 				self:DamageCrew(Excess * SelfTbl.ACF.MaxHealth, "player/pl_fallpain3.wav")
 			end
 		end
+
 		SelfTbl.GForceStrain = math.Clamp(SelfTbl.GForceStrain - 0.001, 0, 1)
 		WireLib.TriggerOutput(self, "Stamina", SelfTbl.GForceStrain)
 	end
@@ -376,12 +382,31 @@ do
 		"Entity (The crew entity itself) [ENTITY]"
 	}
 
-	local function VerifyData(Data)
-		-- Default crew is a sitting commander that can replace others and be replaced
+	local function ConvertACEData(Data)
 		-- The Id field is used by ACE to store their own crew type
-		if Data.CrewTypeID == nil then Data.CrewTypeID = Data.Id or "Commander" end
+
+		if Data.CrewTypeID == nil then
+			local ACE_Id = Data.Id
+			if ACE_Id ~= nil then
+				Data.CrewTypeID = Compatibility.Crew.CheckACECrewType(ACE_Id)
+			end
+		end
+
 		-- The ModelType field is used by ACE to store their own crew model
-		if Data.CrewModelID == nil then Data.CrewModelID = Data.ModelType or "Sitting" end
+		-- TODO: this seems unused, Craftian (?)   
+		--		- march
+		--  if Data.CrewModelID == nil then
+		--  	local ACE_ModelType = Data.ModelType
+		--  	if ACE_ModelType ~= nil then
+		--  		
+		--  	end
+		--  end
+	end
+	local function VerifyData(Data)
+		ConvertACEData(Data)
+		-- Default crew is a sitting commander that can replace others and be replaced
+		if Data.CrewTypeID == nil then Data.CrewTypeID = "Commander" end
+		if Data.CrewModelID == nil then Data.CrewModelID = "Sitting" end
 		if Data.ReplaceOthers == nil then Data.ReplaceOthers = true end
 		if Data.ReplaceSelf == nil then Data.ReplaceSelf = true end
 		if Data.UseAnimation == nil then Data.UseAnimation = false end

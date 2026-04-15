@@ -51,6 +51,9 @@ local function CreateMenu(Menu)
 		local ImagePath = "materials/acf_public_dupes"
 
 		-- SQL Initialization
+		sql.Query("DROP TABLE IF EXISTS DupeData")
+		sql.Query("DROP TABLE IF EXISTS PackData")
+
 		local Schema = file.Read(DupePath .. "/schema.txt", "GAME")
 		if Schema then sql.Query(Schema) end
 
@@ -78,7 +81,7 @@ local function CreateMenu(Menu)
 		-- File Info Section
 		local FileInfoContent, _ = InfoPanel:AddCollapsible("Dupe Information (File)", true)
 		local DupeLabels = {}
-		for _, name in ipairs({"Name", "Owner", "Date", "Time", "Size"}) do
+		for _, name in ipairs({"Name", "Date", "Time", "Size"}) do
 			DupeLabels[name] = FileInfoContent:AddLabel(name .. ": ")
 		end
 
@@ -119,7 +122,6 @@ local function CreateMenu(Menu)
 
 			if success then
 				DupeLabels.Name:SetText("Name: " .. (New.Data.name or "Unknown"))
-				DupeLabels.Owner:SetText("Owner: " .. (info.name or "Unknown"))
 				DupeLabels.Date:SetText("Date: " .. (info.date or "Unknown"))
 				DupeLabels.Time:SetText("Time: " .. (info.time or "Unknown"))
 				DupeLabels.Size:SetText("Size: " .. string.NiceSize(tonumber(info.size or 0)))

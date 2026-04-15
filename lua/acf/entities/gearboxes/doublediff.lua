@@ -7,11 +7,6 @@ local GearDDSW = 45
 -- Torque Rating
 local GearDDST = 4500
 
--- Old gearbox scales
-local ScaleS = 1
-local ScaleM = 1.5
-local ScaleL = 2.5
-
 local function InitGearbox(Gearbox)
 	Gearbox.DoubleDiff = true
 	Gearbox.SteerRate  = 0
@@ -51,20 +46,5 @@ do -- Transaxial Gearboxes
 		Preview = {
 			FOV = 85,
 		},
-	})
-
-	Gearboxes.AddItemAlias("DoubleDiff", "DoubleDiff-T", "DoubleDiff-T-S", {
-		Scale = ScaleS,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("DoubleDiff", "DoubleDiff-T", "DoubleDiff-T-M", {
-		Scale = ScaleM,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("DoubleDiff", "DoubleDiff-T", "DoubleDiff-T-L", {
-		Scale = ScaleL,
-		InvertGearRatios = true,
 	})
 end

@@ -46,26 +46,6 @@ Weapons.Register("SA", {
 	CostScalar	= 0.55
 })
 
-Weapons.RegisterItem("25mmSA", "SA", {
-	Caliber = 25,
-})
-
-Weapons.RegisterItem("37mmSA", "SA", {
-	Caliber = 37,
-})
-
-Weapons.RegisterItem("45mmSA", "SA", {
-	Caliber = 45,
-})
-
-Weapons.RegisterItem("57mmSA", "SA", {
-	Caliber = 57,
-})
-
-Weapons.RegisterItem("76mmSA", "SA", {
-	Caliber = 76,
-})
-
 ACF.SetCustomAttachment("models/autocannon/semiautocannon_45mm.mdl", "muzzle", Vector(79.2), Angle(0, 0, 180))
 
 ACF.AddHitboxes("models/autocannon/semiautocannon_45mm.mdl", {
