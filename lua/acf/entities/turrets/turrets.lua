@@ -13,21 +13,21 @@ local InchToMm = ACF.InchToMm
 
 -- Performance optimizations
 local ENTITY = FindMetaTable("Entity")
-local VECTOR = FindMetaTable("Vector")
 local ANGLE  = FindMetaTable("Angle")
 local CachedTurretAngle  = Angle(0, 0, 0)
 
 -- Bunched all of the definitions together due to some loading issue
 
-do	-- Turret drives
-	local Clamp = math.Clamp
+local math_min = math.min
+local math_max = math.max
 
+do	-- Turret drives
 	local function ClampAngleInPlace(A, minp, miny, minr, maxp, maxy, maxr)
 		local p, y, r = ANGLE.Unpack(A)
 
-		p = Clamp(p, minp, maxp)
-		y = Clamp(y, miny, maxy)
-		r = Clamp(r, minr, maxr)
+		p = math_min(math_max(p, minp), maxp)
+		y = math_min(math_max(y, miny), maxy)
+		r = math_min(math_max(r, minr), maxr)
 
 		ANGLE.SetUnpacked(A, p, y, r)
 
@@ -198,10 +198,12 @@ do	-- Turret drives
 
 			SlewFuncs		= {
 				GetStab				= function(Turret)
-					if (not (Turret.Stabilized and Turret.Active)) or (Turret.Manual == true) then return 0 end
-					local AngDiff	= Turret.Rotator:WorldToLocalAngles(Turret.LastRotatorAngle)
+					local TurretTbl = ENTITY.GetTable(Turret)
 
-					return (AngDiff.yaw * Turret.StabilizeAmount) or 0
+					if (not (TurretTbl.Stabilized and TurretTbl.Active)) or (TurretTbl.Manual == true) then return 0 end
+					local AngDiff	= ENTITY.WorldToLocalAngles(TurretTbl.Rotator, TurretTbl.LastRotatorAngle)
+					local _, Yaw    = ANGLE.Unpack(AngDiff)
+					return (Yaw * TurretTbl.StabilizeAmount) or 0
 				end,
 
 				GetTargetBearing	= function(Turret, StabAmt)
@@ -301,10 +303,12 @@ do	-- Turret drives
 
 			SlewFuncs		= {
 				GetStab				= function(Turret)
-					if (not (Turret.Stabilized and Turret.Active)) or (Turret.Manual == true) then return 0 end
-					local AngDiff	= Turret.Rotator:WorldToLocalAngles(Turret.LastRotatorAngle)
+					local TurretTbl = ENTITY.GetTable(Turret)
 
-					return (AngDiff.pitch * Turret.StabilizeAmount) or 0
+					if (not (TurretTbl.Stabilized and TurretTbl.Active)) or (TurretTbl.Manual == true) then return 0 end
+					local AngDiff	= ENTITY.WorldToLocalAngles(TurretTbl.Rotator, TurretTbl.LastRotatorAngle)
+					local Pitch     = ANGLE.Unpack(AngDiff)
+					return (Pitch * TurretTbl.StabilizeAmount) or 0
 				end,
 
 				GetTargetBearing	= function(Turret, StabAmt)
