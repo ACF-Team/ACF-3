@@ -53,7 +53,7 @@ end
 -- TEST DEFINITIONS
 ---------------------------------------------------------------------------------------------------------------------------
 
-RegisterTest("Optimization", "Per Entity", function(Env)
+RegisterTest("Optimization", "Physical Entity Tests", function(Env)
     local MaxConstraintsPerProp = 8
     local Faults = {}
     Env.UniqueConstraints = {}
@@ -93,7 +93,7 @@ RegisterTest("Optimization", "Total Entities", function(Env)
     return true, "Entity count OK"
 end, nil)
 
-RegisterTest("Optimization", "Physical Entities", function(Env)
+RegisterTest("Optimization", "Total Physical Entities", function(Env)
     local MaxPhysicals = 11
     local TotalPhysical = table.Count(Env.Physical)
     if TotalPhysical > MaxPhysicals then
@@ -140,7 +140,7 @@ RegisterTest("Crew", "Crew Efficiency", function(Env)
     return #Faults == 0, Faults
 end, nil)
 
-RegisterTest("Links", "Guns and Ammo", function(Env)
+RegisterTest("Links", "Guns, Racks and Ammo", function(Env)
     local Faults = {}
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_gun, {"Crates"})) do table.insert(Faults, {Ent = e, Msg = "Gun unlinked from Ammo"}) end
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_rack, {"Crates"})) do table.insert(Faults, {Ent = e, Msg = "Rack unlinked from Ammo"}) end
@@ -148,7 +148,7 @@ RegisterTest("Links", "Guns and Ammo", function(Env)
     return #Faults == 0, Faults
 end, nil)
 
-RegisterTest("Links", "Drivetrain", function(Env)
+RegisterTest("Links", "Engines, Fuel and Gearboxes", function(Env)
     local Faults = {}
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_fueltank, {"Engines"})) do table.insert(Faults, {Ent = e, Msg = "Fuel Tank unlinked from Engines"}) end
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_engine, {"FuelTanks"})) do table.insert(Faults, {Ent = e, Msg = "Engine unlinked from Fuel or Gearbox"}) end
@@ -156,6 +156,14 @@ RegisterTest("Links", "Drivetrain", function(Env)
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_gearbox, {"GearboxIn", "Engines"})) do table.insert(Faults, {Ent = e, Msg = "Gearbox missing Input link"}) end
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_gearbox, {"GearboxOut", "Wheels", "Effectors"})) do table.insert(Faults, {Ent = e, Msg = "Gearbox missing Output link"}) end
     return #Faults == 0, Faults
+end, nil)
+
+RegisterTest("Baseplate", "Orientation", function(Env)
+    local Deviation = math.deg(math.acos(Env.Baseplate:GetForward():Dot(Vector(0, 1, 0))))
+    if Deviation > 0.05 then
+        return false, tostring(Env.Baseplate) .. " must be facing north. Deviation [" .. tostring(math.Round(Deviation, 2)) .. "]."
+    end
+    return true
 end, nil)
 
 RegisterTest("AIO", "Drivetrain Discovery", function(Env)
@@ -181,6 +189,8 @@ if SERVER then
     util.AddNetworkString("ACF_Baseplate_RunTest")
     util.AddNetworkString("ACF_Baseplate_TestResult")
 
+    local LastRun = {}
+
     net.Receive("ACF_Baseplate_RunTest", function(len, ply)
         local ent = net.ReadEntity()
         local testName = net.ReadString()
@@ -189,6 +199,11 @@ if SERVER then
         if not IsValid(ent) or not ent.IsACFBaseplate then return end
         local test = TestMap[testName]
         if not test then return end
+
+        -- Rate limit: 1-second global cooldown per test
+        local Time = CurTime()
+        if (LastRun[testName] or 0) + 2 > Time then return end
+        LastRun[testName] = Time -- Update the last run timestamp
 
         local Env = {Baseplate = ent}
         SetupTests(Env)
@@ -238,7 +253,7 @@ return function(ENT)
                 local Base = window:Add("ACF_Panel")
                 Base:Dock(FILL)
 
-                local Notice = Base:AddLabel("Click result buttons to highlight and snap camera to offending entities.")
+                local Notice = Base:AddLabel("Click result buttons to highlight and snap camera to offending entities.\nIf the tests are gray, then you need to wait for a global cooldown to prevent spam.")
                 Notice:SetDark(true)
                 Notice:Dock(TOP)
                 Notice:DockMargin(10, 5, 10, 5)
