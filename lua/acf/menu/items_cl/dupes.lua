@@ -51,6 +51,9 @@ local function CreateMenu(Menu)
 		local ImagePath = "materials/acf_public_dupes"
 
 		-- SQL Initialization
+		sql.Query("DROP TABLE IF EXISTS DupeData")
+		sql.Query("DROP TABLE IF EXISTS PackData")
+
 		local Schema = file.Read(DupePath .. "/schema.txt", "GAME")
 		if Schema then sql.Query(Schema) end
 

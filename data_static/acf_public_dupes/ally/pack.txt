@@ -1,23 +1,12 @@
 -- Insert pack
 INSERT INTO PackData (packid, packname, author, contact)
-VALUES ('ally', 'Ally', 'Ally', 'Ally');
+VALUES ('kinetic', 'Kinetic', 'Ally', 'AllyFH');
 
 -- Insert dupes using the string packid
 INSERT INTO DupeData (path, name, cost, weight, type, mobility, packid, description) VALUES
-('ex-2_mrv', 'EX-2 Medium Recon Vehicle', 445.28, 55856.27, 'MBT', 'Tracked', 'ally', '
-140mm Cannon [M1]
-20mm Machine Gun [M2]
-40mm Grenade Launcher [M2]
-60mm Smoke Launchers [Hold Shift]
-Ballistics Computer [M3]
-Automatic Braking [Passive]
-RWR [Passive, shows up on HUD]
-LWR [Passive, makes a beeping sound]
-MWR [Passive, makes a beeping sound]
-81mm Smoke Launchers [Passive, fires on LWR/MWR]'),
-('aas_hilo_td-1', 'HILO TD-1', 105.75, 9656.54, 'LT', 'Tracked', 'ally', '
-75mm Cannon [M1]
-7.62mm Machine Gun [M2]
-40mm Smoke Launchers [Hold Shift]
-Automatic Braking [Passive]
-')
+('ambt-267', 'AMBT-267', 266.55, 32951.15, 'MBT', 'Tracked', 'kinetic', ''),
+('amrv-377', 'AMRV-377', 387.96, 41923.24, 'MBT', 'Tracked', 'kinetic', ''),
+('awapc-25', 'AWAPC-25', 25.1, 2961.7, 'APC', 'Wheeled', 'kinetic', ''),
+('awmtd-40', 'AWMTD-40', 40.19, 3407.1, 'TD', 'Tracked', 'kinetic', ''),
+('alhw-165', 'ALHW-165', 163.52, 12974.8, 'HW', 'Tracked', 'kinetic', ''),
+('altd-105', 'ALTD-105', 105.2, 8812.35, 'LT', 'Tracked', 'kinetic', '');
