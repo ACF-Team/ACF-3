@@ -4,9 +4,9 @@ VALUES ('kinetic', 'Kinetic', 'Ally', 'AllyFH');
 
 -- Insert dupes using the string packid
 INSERT INTO DupeData (path, name, cost, weight, type, mobility, packid, description) VALUES
-('ambt-267', 'AMBT-267', 266.55, 32951.15, 'MBT', 'Tracked', 'kinetic', ''),
-('amrv-377', 'AMRV-377', 387.96, 41923.24, 'MBT', 'Tracked', 'kinetic', ''),
-('awapc-25', 'AWAPC-25', 25.1, 2961.7, 'APC', 'Wheeled', 'kinetic', ''),
-('awmtd-40', 'AWMTD-40', 40.19, 3407.1, 'ATGM', 'Tracked', 'kinetic', ''),
-('alhw-165', 'ALHW-165', 163.52, 12974.8, 'SPG', 'Tracked', 'kinetic', ''),
-('altd-105', 'ALTD-105', 105.2, 8812.35, 'LT', 'Tracked', 'kinetic', '');
+('ambt-267', 'AMBT-267', 266.55, 32951.15, 'MBT', 'Tracked', 'kinetic', 'UNFINISHED'),
+('amrv-377', 'AMRV-377', 387.96, 41923.24, 'MBT', 'Tracked', 'kinetic', 'UNFINISHED'),
+('awapc-25', 'AWAPC-25', 25.1, 2961.7, 'APC', 'Wheeled', 'kinetic', 'UNFINISHED'),
+('awmtd-40', 'AWMTD-40', 40.19, 3407.1, 'ATGM', 'Tracked', 'kinetic', 'UNFINISHED'),
+('alhw-165', 'ALHW-165', 163.52, 12974.8, 'SPG', 'Tracked', 'kinetic', 'UNFINISHED'),
+('altd-105', 'ALTD-105', 105.2, 8812.35, 'LT', 'Tracked', 'kinetic', 'UNFINISHED');
