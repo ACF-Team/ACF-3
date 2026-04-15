@@ -377,8 +377,9 @@ do	-- Turret motors
 		end,
 
 		CalculateSpeed	= function(self)
-			if self.Active == false then return 0 end
-			return self.Speed * self.DamageScale
+			local SelfTbl = ENTITY.GetTable(self)
+			if SelfTbl.Active == false then return 0 end
+			return SelfTbl.Speed * SelfTbl.DamageScale
 		end,
 	})
 

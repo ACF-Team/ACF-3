@@ -29,15 +29,18 @@ local MaxLinkDistance = ACF.LinkDistance ^ 2
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 
 do -- Random timer crew stuff
+	local function ReturnCrewTotalEff(Crew) return ENTITY.GetTable(Crew).TotalEff end
 	function ENT:UpdateAccuracyMod()
-		self.CrewsByType = self.CrewsByType or {}
-		local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Gunner or {}, function(Crew) return Crew.TotalEff end)
-		local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, function(Crew) return Crew.TotalEff end)
-		local Sum3, Count3 = ACF.WeightedLinkSum(self.CrewsByType.Pilot or {}, function(Crew) return Crew.TotalEff end)
+		local SelfTbl = ENTITY.GetTable(self)
+
+		SelfTbl.CrewsByType = SelfTbl.CrewsByType or {}
+		local Sum1, Count1 = ACF.WeightedLinkSum(SelfTbl.CrewsByType.Gunner or {}, ReturnCrewTotalEff)
+		local Sum2, Count2 = ACF.WeightedLinkSum(SelfTbl.CrewsByType.Commander or {}, ReturnCrewTotalEff)
+		local Sum3, Count3 = ACF.WeightedLinkSum(SelfTbl.CrewsByType.Pilot or {}, ReturnCrewTotalEff)
 		local Sum, Count = Sum1 + Sum2 + Sum3, Count1 + Count2 + Count3
 		local Val = (Count > 0) and (Sum / Count) or 0
-		self.AccuracyCrewMod = math_Clamp(Val, ACF.CrewFallbackCoef, 1)
-		return self.AccuracyCrewMod
+		SelfTbl.AccuracyCrewMod = math_Clamp(Val, ACF.CrewFallbackCoef, 1)
+		return SelfTbl.AccuracyCrewMod
 	end
 end
 
@@ -349,18 +352,20 @@ do	-- Spawn and Update funcs
 	function ENT:Update(Data)
 		VerifyData(Data)
 
-		if self.Turret ~= Data.Turret then return false, "Turret type is mismatched!\n(" .. self.Turret .. " > " .. Data.Turret .. ")" end
+		local SelfTbl = ENTITY.GetTable(self)
+
+		if SelfTbl.Turret ~= Data.Turret then return false, "Turret type is mismatched!\n(" .. SelfTbl.Turret .. " > " .. Data.Turret .. ")" end
 
 		local Class 	= Classes.GetGroup(Turrets, Data.Turret)
 		local Turret	= Turrets.GetItem(Class.ID, Data.Turret)
-		local OldClass	= self.ClassData
+		local OldClass	= SelfTbl.ClassData
 
 		local CanUpdate, Reason	= HookRun("ACF_PreUpdateEntity", "acf_turret", self, Data, Class, Turret)
 
 		if CanUpdate == false then return CanUpdate, Reason end
 
-		self.Active		= false
-		self.SlewRate	= 0
+		SelfTbl.Active		= false
+		SelfTbl.SlewRate	= 0
 
 		HookRun("ACF_OnEntityLast", "acf_turret", self, OldClass)
 
@@ -378,12 +383,14 @@ do	-- Spawn and Update funcs
 	end
 
 	function ENT:OnRemove()
-		if IsValid(self.Rotator) then
-			self.Rotator:Remove()
+		local SelfTbl = ENTITY.GetTable(self)
+
+		if IsValid(SelfTbl.Rotator) then
+			SelfTbl.Rotator:Remove()
 		end
 
-		if self.Crews and next(self.Crews) then
-			for Crew in pairs(self.Crews) do
+		if SelfTbl.Crews and next(SelfTbl.Crews) then
+			for Crew in pairs(SelfTbl.Crews) do
 				if IsValid(Crew) then self:Unlink(Crew) end
 			end
 		end
@@ -569,8 +576,10 @@ do	-- Spawn and Update funcs
 	end
 
 	function ENT:UpdateSound()
-		local Motor       = self.Motor
-		local SoundPath   = self.HandGear.Sound
+		local SelfTbl = ENTITY.GetTable(self)
+
+		local Motor       = SelfTbl.Motor
+		local SoundPath   = SelfTbl.HandGear.Sound
 		local SoundPitch  = 70
 		local SoundVolume = 0.1
 
@@ -580,9 +589,9 @@ do	-- Spawn and Update funcs
 			SoundVolume = Motor.SoundVolume or SoundVolume
 		end
 
-		self.SoundPath   = SoundPath
-		self.SoundPitch  = SoundPitch
-		self.SoundVolume = SoundVolume
+		SelfTbl.SoundPath   = SoundPath
+		SelfTbl.SoundPitch  = SoundPitch
+		SelfTbl.SoundVolume = SoundVolume
 	end
 
 	function ENT_UpdateTurretSlew(self, SelfTbl)
@@ -686,13 +695,13 @@ do	-- Spawn and Update funcs
 		SelfTbl	= SelfTbl or ENTITY.GetTable(self)
 
 		if (Force == false) and (Clock.CurTime < SelfTbl.CoMCheckDelay) then return end
-		self.CoMCheckDelay = Clock.CurTime + 2 + math.Rand(1, 2)
+		SelfTbl.CoMCheckDelay = Clock.CurTime + 2 + math.Rand(1, 2)
 
 		GetDynamicMass(self)
 		GetSubTurretMass(self)
 
 		if SelfTbl.ACF_TurretAncestor then
-			self.Complexity = (SelfTbl.Complexity or 1) * (SelfTbl.ACF_TurretAncestor.Complexity or 1)
+			SelfTbl.Complexity = (SelfTbl.Complexity or 1) * (SelfTbl.ACF_TurretAncestor.Complexity or 1)
 		end
 
 		ENT_GetTotalMass(self, SelfTbl)
@@ -704,19 +713,21 @@ do	-- Spawn and Update funcs
 	ENT.CheckCoM = ENT_CheckCoM
 
 	function ENT:UpdateTurretMass(Force) -- Will call the other parts above, this should be triggered after a parent (safe to call multiple times e.g. on dupe paste, as it has an internal delay to prevent spamming)
-		if (Force == false) and (Clock.CurTime < self.MassCheckDelay) then return end
+		local SelfTbl = ENTITY.GetTable(self)
+		if (Force == false) and (Clock.CurTime < SelfTbl.MassCheckDelay) then return end
 
-		self.MassCheckDelay = Clock.CurTime + 2 + math.Rand(1, 2)
+		SelfTbl.MassCheckDelay = Clock.CurTime + 2 + math.Rand(1, 2)
 
 		TimerSimple(Force and 0 or 3, function()
 			if not IsValid(self) then return end
+			SelfTbl = ENTITY.GetTable(self)
 
-			if IsValid(self.ACF_TurretAncestor) then
-				self.ACF_TurretAncestor:UpdateTurretMass(true)
+			if IsValid(SelfTbl.ACF_TurretAncestor) then
+				SelfTbl.ACF_TurretAncestor:UpdateTurretMass(true)
 			end
 
 			BuildWatchlist(self)
-			ENT_CheckCoM(self, Force)
+			ENT_CheckCoM(self, Force, SelfTbl)
 
 			self:UpdateOverlay()
 		end)
@@ -852,15 +863,16 @@ do -- Metamethods
 
 	do	-- Dupe Support
 		function ENT:PreEntityCopy()
-			if self.Motor then
-				duplicator.StoreEntityModifier(self, "ACFMotor", {self.Motor:EntIndex()})
-			end
+			local SelfTbl = ENTITY.GetTable(self)
 
-			if self.Gyro then
-				duplicator.StoreEntityModifier(self, "ACFGyro", {self.Gyro:EntIndex()})
+			if IsValid(SelfTbl.Motor) then
+				duplicator.StoreEntityModifier(self, "ACFMotor", {SelfTbl.Motor:EntIndex()})
 			end
 
 			-- Gyros!
+			if IsValid(SelfTbl.Gyro) then
+				duplicator.StoreEntityModifier(self, "ACFGyro", {SelfTbl.Gyro:EntIndex()})
+			end
 
 			-- Wire dupe info
 			self.BaseClass.PreEntityCopy(self)
@@ -893,7 +905,7 @@ do -- Metamethods
 			if State ~= SelfTbl.SoundPlaying then
 				if State == true then
 					Sounds.CreateAdjustableSound(self, SelfTbl.SoundPath, 100, 0)
-					SelfTbl.CurrentSound = self.SoundPath
+					SelfTbl.CurrentSound = SelfTbl.SoundPath
 				else
 					Sounds.SendAdjustableSound(self, true)
 				end
@@ -1076,30 +1088,35 @@ do -- Metamethods
 		end
 
 		function ENT:Disable()
-			self.Active 	= false
-			self.SlewRate	= 0
+			local SelfTbl = ENTITY.GetTable(self)
+
+			SelfTbl.Active 	= false
+			SelfTbl.SlewRate	= 0
 			self:UpdateOverlay()
 		end
 
 		------------------
 
 		function ENT:ACF_Activate(Recalc)
-			local PhysObj	= self.ACF.PhysObj
-			local Area		= PhysObj:GetSurfaceArea() * ACF.InchToCmSq
-			local Armour	= self.ScaledArmor
+			local SelfTbl = ENTITY.GetTable(self)
+			local SelfACF = SelfTbl.ACF
+
+			local PhysObj	= SelfACF.PhysObj
+			local Area		= PHYSOBJ.GetSurfaceArea(PhysObj) * ACF.InchToCmSq
+			local Armour	= SelfTbl.ScaledArmor
 			local Health	= (Area / ACF.Threshold) * 5
 			local Percent	= 1
 
-			if Recalc and self.ACF.Health and self.ACF.MaxHealth then
-				Percent = self.ACF.Health / self.ACF.MaxHealth
+			if Recalc and SelfACF.Health and SelfACF.MaxHealth then
+				Percent = SelfACF.Health / SelfACF.MaxHealth
 			end
 
-			self.ACF.Area		= Area
-			self.ACF.Health		= Health * Percent
-			self.ACF.MaxHealth	= Health
-			self.ACF.Armour		= Armour * Percent
-			self.ACF.MaxArmour	= Armour
-			self.ACF.Type		= "Prop"
+			SelfACF.Area		= Area
+			SelfACF.Health		= Health * Percent
+			SelfACF.MaxHealth	= Health
+			SelfACF.Armour		= Armour * Percent
+			SelfACF.MaxArmour	= Armour
+			SelfACF.Type		= "Prop"
 		end
 
 		local TempDamageVector = Vector(0, 0, 0)
@@ -1156,25 +1173,27 @@ do -- Metamethods
 
 			local NewHealth = math_max(0, Health - HitRes.Damage)
 
-			self.ACF.Health = NewHealth
-			self.ACF.Armour = self.ACF.MaxArmour * (NewHealth / self.ACF.MaxHealth)
+			SelfTbl.ACF.Health = NewHealth
+			SelfTbl.ACF.Armour = SelfTbl.ACF.MaxArmour * (NewHealth / SelfTbl.ACF.MaxHealth)
 
-			self.DamageScale = math_max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
+			SelfTbl.DamageScale = math_max((SelfTbl.ACF.Health / (SelfTbl.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
 			self:UpdateOverlay()
 
 			return HitRes
 		end
 
 		function ENT:ACF_OnRepaired() -- Normally has OldArmor, OldHealth, Armor, and Health passed
-			self.DamageScale = math_max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
+			local SelfTbl = ENTITY.GetTable(self)
+			SelfTbl.DamageScale = math_max((SelfTbl.ACF.Health / (SelfTbl.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
 
-			self.ACF.Armour = self.ACF.MaxArmour * (self.ACF.Health / self.ACF.MaxHealth)
+			SelfTbl.ACF.Armour = SelfTbl.ACF.MaxArmour * (SelfTbl.ACF.Health / SelfTbl.ACF.MaxHealth)
 
 			self:UpdateOverlay()
 		end
 
 		function ENT:CFW_OnParented(Entity, _) -- Potentially called many times a second, so we won't force mass to update
-			local Class = Entity:GetClass()
+			local SelfTbl = ENTITY.GetTable(self)
+			local Class   = ENTITY.GetClass(self)
 
 			if Class == "acf_turret_rotator" then return end
 
@@ -1183,7 +1202,7 @@ do -- Metamethods
 			-- Should only be called when parenting, checks the position of the motor relative to the ring
 			-- Shooouuld be using CFW_OnParented as it was made with this in mind, but turret entities will overwrite it with the above function to ensure everything is captured
 			if Class == "acf_turret_motor" then Entity:ValidatePlacement() end
-			if IsValid(self.Motor) then self.Motor:ValidatePlacement() end
+			if IsValid(SelfTbl.Motor) then SelfTbl.Motor:ValidatePlacement() end
 		end
 
 		function ENT:GetCost()
@@ -1198,14 +1217,15 @@ do -- Metamethods
 		end
 
 		function ENT:OnRemove()
+			local SelfTbl   = ENTITY.GetTable(self)
 			-- TODO: Destroy sound when that gets added
 
-			if IsValid(self.Motor) then
-				self.Motor:ValidatePlacement()
-				self:Unlink(self.Motor)
+			if IsValid(SelfTbl.Motor) then
+				SelfTbl.Motor:ValidatePlacement()
+				SelfTbl:Unlink(SelfTbl.Motor)
 			end
 
-			if IsValid(self.Gyro) then self:Unlink(Gyro) end
+			if IsValid(SelfTbl.Gyro) then self:Unlink(SelfTbl.Gyro) end
 
 			WireLib.Remove(self)
 		end
