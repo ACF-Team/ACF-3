@@ -1,5 +1,6 @@
 -- Some helpers for when you know the data-type of what you're validating
 -- Because otherwise, IsValid does an __index call...
+ACF.Optimizations = {}
 
 local ENTITY     = FindMetaTable("Entity")
 local PHYSOBJ    = FindMetaTable("PhysObj")
