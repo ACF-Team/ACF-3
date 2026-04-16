@@ -5,26 +5,38 @@ include("shared.lua")
 
 -- Local variables ---------------------------------
 
-local ACF         	= ACF
-local Contraption 	= ACF.Contraption
-local Compatibility = ACF.Compatibility
-local Mobility    	= ACF.Mobility
-local MobilityObj 	= Mobility.Objects
-local Utilities   	= ACF.Utilities
-local Clock       	= Utilities.Clock
-local Notify      	= Utilities.Notify
-local Clamp       	= math.Clamp
-local abs         	= math.abs
-local min         	= math.min
-local max         	= math.max
-local MaxDistance 	= ACF.MobilityLinkDistance * ACF.MobilityLinkDistance
+local ACF         	 = ACF
+local Contraption 	 = ACF.Contraption
+local Compatibility  = ACF.Compatibility
+local Mobility    	 = ACF.Mobility
+local MobilityObj 	 = Mobility.Objects
+local Utilities   	 = ACF.Utilities
+local Clock       	 = Utilities.Clock
+local Notify      	 = Utilities.Notify
+local Clamp       	 = math.Clamp
+local abs         	 = math.abs
+local min         	 = math.min
+local max         	 = math.max
+local MaxDistance 	 = ACF.MobilityLinkDistance * ACF.MobilityLinkDistance
+
+local ENTITY         = FindMetaTable("Entity")
+local VECTOR         = FindMetaTable("Vector")
+local PHYSOBJ        = FindMetaTable("PhysObj")
+
+local IsEntityValid  = ACF.Optimizations.IsEntityValid
+local IsPhysObjValid = ACF.Optimizations.IsPhysObjValid
+
+local ENT_ApplyBrakes
 
 local function CalcWheel(Entity, Link, Wheel, SelfWorld)
-	local WheelPhys = Wheel:GetPhysicsObject()
-	local VelDiff = WheelPhys:LocalToWorldVector(WheelPhys:GetAngleVelocity()) - SelfWorld
-	local BaseRPM = VelDiff:Dot(WheelPhys:LocalToWorldVector(Link.Axis))
-	local GearRatio = Entity.GearRatio
+	local EntityTable = ENTITY.GetTable(Entity)
 
+	local WheelPhys   = ENTITY.GetPhysicsObject(Wheel)
+	local VelDiff     = PHYSOBJ.LocalToWorldVector(WheelPhys, PHYSOBJ.GetAngleVelocity(WheelPhys))
+	VECTOR.Sub(VelDiff, SelfWorld)
+
+	local BaseRPM     = VECTOR.Dot(VelDiff, PHYSOBJ.LocalToWorldVector(WheelPhys, Link.Axis))
+	local GearRatio   = EntityTable.GearRatio
 	Link.Vel = BaseRPM
 
 	if GearRatio == 0 then return 0 end
@@ -225,7 +237,7 @@ do -- Spawn and Update functions -----------------------
 
 		local PhysObj = Entity.ACF.PhysObj
 
-		if IsValid(PhysObj) then
+		if IsPhysObjValid(PhysObj) then
 			local Mass = GetMass(Model, PhysObj, Class, Gearbox, ScaledMass)
 
 			Contraption.SetMass(Entity, Mass)
@@ -339,7 +351,7 @@ do -- Spawn and Update functions -----------------------
 
 		local Entity = ents.Create("acf_gearbox")
 
-		if not IsValid(Entity) then return end
+		if not IsEntityValid(Entity) then return end
 
 		Entity:SetAngles(Angle)
 		Entity:SetPos(Pos)
@@ -378,7 +390,7 @@ do -- Spawn and Update functions -----------------------
 		hook.Run("ACF_OnSpawnEntity", "acf_gearbox", Entity, Data, Class, Gearbox)
 
 		timer.Create("ACF Gearbox Clock " .. Entity:EntIndex(), 3, 0, function()
-			if IsValid(Entity) then
+			if IsEntityValid(Entity) then
 				CheckRopes(Entity, "GearboxOut")
 				CheckRopes(Entity, "Wheels")
 			else
@@ -514,7 +526,7 @@ do -- Inputs -------------------------------------------
 		if CanApply ~= Gearbox.Braking then
 			Gearbox.Braking = CanApply
 
-			Gearbox:ApplyBrakes()
+			ENT_ApplyBrakes(Gearbox)
 		end
 	end
 
@@ -687,7 +699,7 @@ do -- Linking ------------------------------------------
 		Wheel.ACF_Gearboxes[Gearbox] = Link
 
 		Wheel:CallOnRemove("ACF_GearboxUnlink" .. Gearbox:EntIndex(), function()
-			if IsValid(Gearbox) then
+			if IsEntityValid(Gearbox) then
 				Gearbox:Unlink(Wheel)
 			end
 		end)
@@ -984,7 +996,7 @@ do -- Movement -----------------------------------------
 	end
 
 	function ENT:Act(Torque, DeltaTime, MassRatio, FlyRPM)
-		local SelfTbl = self:GetTable()
+		local SelfTbl = ENTITY.GetTable(self)
 		if SelfTbl.Disabled then return end
 
 		if Torque == 0 then
@@ -1022,10 +1034,12 @@ do -- Movement -----------------------------------------
 		end
 
 		if ReactTq ~= 0 then
-			local BoxPhys = self:GetAncestor():GetPhysicsObject()
+			local BoxPhys = ENTITY.GetPhysicsObject(ENTITY.GetAncestor(self))
 
-			if IsValid(BoxPhys) then
-				BoxPhys:ApplyTorqueCenter(self:GetRight() * Clamp(2 * deg(ReactTq * MassRatio) * DeltaTime, -500000, 500000))
+			if IsPhysObjValid(BoxPhys) then
+				local RightDir = ENTITY.GetRight(self)
+				VECTOR.Mul(RightDir, Clamp(2 * deg(ReactTq * MassRatio) * DeltaTime, -500000, 500000))
+				PHYSOBJ.ApplyTorqueCenter(BoxPhys, RightDir)
 			end
 		end
 
@@ -1039,10 +1053,10 @@ end ----------------------------------------------------
 
 do -- Braking ------------------------------------------
 	local function BrakeWheel(Link, Wheel, Brake)
-		local Phys      = Wheel:GetPhysicsObject()
+		local Phys      = ENTITY.GetPhysicsObject(Wheel)
 		local AntiSpazz = 1
 
-		if not Phys:IsMotionEnabled() then return end -- skipping entirely if its frozen
+		if not PHYSOBJ.IsMotionEnabled(Phys) then return end -- skipping entirely if its frozen
 
 		if Brake > 100 then
 			local Overshot = abs(Link.LastVel - Link.Vel) > abs(Link.LastVel) -- Overshot the brakes last tick?
@@ -1055,23 +1069,32 @@ do -- Braking ------------------------------------------
 
 		Link.LastVel = Link.Vel
 
-		Phys:AddAngleVelocity(-Link.Axis * Link.Vel * AntiSpazz * Brake * 0.01)
+		-- creates negative copy, then performs in-place multiplication to not create as much garbage
+		local AngleVelocity = -Link.Axis
+		VECTOR.Mul(AngleVelocity, Link.Vel)
+		VECTOR.Mul(AngleVelocity, AntiSpazz)
+		VECTOR.Mul(AngleVelocity, Brake)
+		VECTOR.Mul(AngleVelocity, 0.01)
+
+		PHYSOBJ.AddAngleVelocity(Phys, AngleVelocity)
 	end
 
-	function ENT:ApplyBrakes() -- This is just for brakes
-		if self.Disabled then return end -- Illegal brakes man
-		if not self.Braking then return end -- Kills the whole thing if its not supposed to be running
-		if not next(self.Wheels) then return end -- No brakes for the non-wheel users
-		if self.LastBrake == Clock.CurTime then return end -- Don't run this twice in a tick
+	function ENT_ApplyBrakes(self) -- This is just for brakes
+		local SelfTbl = ENTITY.GetTable(self)
 
-		local BoxPhys = self:GetAncestor():GetPhysicsObject()
-		if not IsValid(BoxPhys) then return end -- Fixes an issue I had where deleting a contraption while driving it threw an error
+		if SelfTbl.Disabled then return end -- Illegal brakes man
+		if not SelfTbl.Braking then return end -- Kills the whole thing if its not supposed to be running
+		if not next(SelfTbl.Wheels) then return end -- No brakes for the non-wheel users
+		if SelfTbl.LastBrake == Clock.CurTime then return end -- Don't run this twice in a tick
 
-		local SelfWorld = BoxPhys:LocalToWorldVector(BoxPhys:GetAngleVelocity())
+		local BoxPhys = ENTITY.GetPhysicsObject(ENTITY.GetAncestor(self))
+		if not IsPhysObjValid(BoxPhys) then return end -- Fixes an issue I had where deleting a contraption while driving it threw an error
+
+		local SelfWorld = PHYSOBJ.LocalToWorldVector(BoxPhys, PHYSOBJ.GetAngleVelocity(BoxPhys))
 		local DeltaTime = Clock.DeltaTime
 
-		for Wheel, Link in pairs(self.Wheels) do
-			local Brake = Link.Side == 0 and self.LBrake or self.RBrake
+		for Wheel, Link in pairs(SelfTbl.Wheels) do
+			local Brake = Link.Side == 0 and SelfTbl.LBrake or SelfTbl.RBrake
 
 			if Brake > 0 then -- regular ol braking
 				Link.IsBraking = true
@@ -1082,14 +1105,15 @@ do -- Braking ------------------------------------------
 			end
 		end
 
-		self.LastBrake = Clock.CurTime
+		SelfTbl.LastBrake = Clock.CurTime
 
 		timer.Simple(DeltaTime, function()
-			if not IsValid(self) then return end
+			if not IsEntityValid(self) then return end
 
-			self:ApplyBrakes()
+			ENT_ApplyBrakes(self)
 		end)
 	end
+	ENT.ApplyBrakes = ENT_ApplyBrakes
 end ----------------------------------------------------
 
 do -- Duplicator Support -------------------------------
@@ -1183,7 +1207,7 @@ do	-- NET SURFER 2.0
 	net.Receive("ACF_RequestGearboxInfo", function(_, Ply)
 		local Entity = net.ReadEntity()
 
-		if IsValid(Entity) then
+		if IsEntityValid(Entity) then
 			local Inputs = {}
 			local OutputL = {}
 			local OutputR = {}
