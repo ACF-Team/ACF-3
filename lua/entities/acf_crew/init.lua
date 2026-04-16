@@ -35,23 +35,33 @@ local VECTOR = FindMetaTable("Vector")
 --===============================================================================================--
 -- Local Funcs and Vars
 --===============================================================================================--
-local ACF 			= ACF
+local ACF 			 = ACF
 
-local HookRun     	= hook.Run
-local Utilities   	= ACF.Utilities
-local Notify      	= Utilities.Notify
-local WireIO      	= Utilities.WireIO
+local HookRun     	 = hook.Run
+local Utilities   	 = ACF.Utilities
+local Notify      	 = Utilities.Notify
+local WireIO      	 = Utilities.WireIO
 
-local Compatibility = ACF.Compatibility
-local Contraption 	= ACF.Contraption
-local hook	   		= hook
-local Classes		= ACF.Classes
-local CrewTypes 	= Classes.CrewTypes
-local CrewModels 	= Classes.CrewModels
-local Entities   	= Classes.Entities
-local TraceHull 	= util.TraceHull
-local TimerSimple	= timer.Simple
-local Damage		= ACF.Damage
+local Compatibility  = ACF.Compatibility
+local Contraption 	 = ACF.Contraption
+local hook	   		 = hook
+local Classes		 = ACF.Classes
+local CrewTypes 	 = Classes.CrewTypes
+local CrewModels 	 = Classes.CrewModels
+local Entities   	 = Classes.Entities
+local TraceHull 	 = util.TraceHull
+local TimerSimple	 = timer.Simple
+local Damage		 = ACF.Damage
+
+local IsEntityValid  = ACF.Optimizations.IsEntityValid
+local IsPlayerValid  = ACF.Optimizations.IsPlayerValid
+
+local ENT_UpdateUltraLowFreq
+local ENT_UpdateLowFreq
+local ENT_UpdateMedFreq
+local ENT_UpdateHighFreq
+local ENT_EnforceLimits
+local ENT_DamageCrew
 
 --===============================================================================================--
 -- File locals
@@ -121,7 +131,7 @@ local function iterScan(crew, reps)
 	-- False to skip, true to hit
 	local filter = function(x)
 		local Owner = ENTITY.CPPIGetOwner(x)
-		if not IsValid(Owner) then return false end
+		if not IsPlayerValid(Owner) then return false end
 		return not (x == crew or ENTITY.GetTable(x).noradius or Owner ~= Owner or x:IsPlayer() or ACF.GlobalFilter[ENTITY.GetClass(x)])
 	end
 
@@ -214,15 +224,16 @@ local Vector6  = Vector(6, 6, 6)
 local VectorUp = Vector(0, 0, 1)
 
 do -- Random timer stuff
-	function ENT:UpdateUltraLowFreq(cfg)
+	function ENT_UpdateUltraLowFreq(self, cfg)
 		local SelfTbl = ENTITY.GetTable(self)
 
 		if SelfTbl.Disabled then return end
 
 		if SelfTbl.CrewType.UpdateUltraLowFreq then SelfTbl.CrewType.UpdateUltraLowFreq(self, cfg) end
 	end
+	ENT.UpdateUltraLowFreq = ENT_UpdateUltraLowFreq
 
-	function ENT:UpdateLowFreq(cfg)
+	function ENT_UpdateLowFreq(self, cfg)
 		local SelfTbl = ENTITY.GetTable(self)
 
 		if SelfTbl.Disabled then return end
@@ -253,8 +264,9 @@ do -- Random timer stuff
 
 		if SelfTbl.CrewType.UpdateLowFreq then SelfTbl.CrewType.UpdateLowFreq(self, cfg) end
 	end
+	ENT.UpdateLowFreq = ENT_UpdateLowFreq
 
-	function ENT:UpdateMedFreq(cfg)
+	function ENT_UpdateMedFreq(self, cfg)
 		local SelfTbl = ENTITY.GetTable(self)
 
 		if SelfTbl.Disabled then return end
@@ -281,8 +293,9 @@ do -- Random timer stuff
 
 		if SelfTbl.CrewType.UpdateMedFreq then SelfTbl.CrewType.UpdateMedFreq(self, cfg) end
 	end
+	ENT.UpdateMedFreq = ENT_UpdateMedFreq
 
-	function ENT:UpdateHighFreq(cfg)
+	function ENT_UpdateHighFreq(self, cfg)
 		local SelfTbl = ENTITY.GetTable(self)
 
 		if SelfTbl.Disabled then return end
@@ -309,8 +322,9 @@ do -- Random timer stuff
 
 		if SelfTbl.CrewType.UpdateHighFreq then SelfTbl.CrewType.UpdateHighFreq(self, cfg) end
 	end
+	ENT.UpdateHighFreq = ENT_UpdateHighFreq
 
-	function ENT:EnforceLimits()
+	function ENT_EnforceLimits(self)
 		local SelfTbl = ENTITY.GetTable(self)
 
 		local Targets = SelfTbl.Targets
@@ -320,7 +334,7 @@ do -- Random timer stuff
 		if IsParented and Targets ~= nil and next(Targets) then
 			local Pos = ENTITY.GetPos(self)
 			for Link in pairs(Targets) do
-				if not IsValid(Link) then self:Unlink(Link) continue end				-- If the link is invalid, remove it and skip it
+				if not IsEntityValid(Link) then self:Unlink(Link) continue end				-- If the link is invalid, remove it and skip it
 
 				local OutOfRange      = VECTOR.DistToSqr(Pos, ENTITY.GetPos(Link)) > MaxDistance			-- Check distance limit
 				local DiffAncestors   = SelfContraption ~= nil and SelfContraption ~= ENTITY.GetContraption(Link)	-- Check same Contraption
@@ -349,15 +363,16 @@ do -- Random timer stuff
 
 		self:UpdateOverlay()
 	end
+	ENT.EnforceLimits = ENT_EnforceLimits
 
 	local DeltaTime = engine.TickInterval()
 	function ENT:EnforceGForces()
 		local Parent = ENTITY.GetParent(self)
-		if not IsValid(Parent) then return end
+		if not IsEntityValid(Parent) then return end
 
 		local Contraption = ENTITY.GetContraption(self)
 		local Baseplate = Contraption and Contraption.ACF_Baseplate
-		if not IsValid(Baseplate) then return end -- Why would this happen for a recent vehicle? no clue lol...
+		if not IsEntityValid(Baseplate) then return end -- Why would this happen for a recent vehicle? no clue lol...
 		-- This is ACF_LiveData to try to help with performance issues (__index'ing)... ugh
 		local SampleRate = ENTITY.GetTable(Baseplate).ACF_LiveData["GForceTicks"] or 1
 		if Contraption.IsPickedUp then return end
@@ -388,7 +403,7 @@ do -- Random timer stuff
 			SelfTbl.GForceStrain = SelfTbl.GForceStrain + Damage
 			if SelfTbl.GForceStrain > 1 then
 				local Excess = SelfTbl.GForceStrain - 1 -- "Unmanageable damage"
-				self:DamageCrew(Excess * SelfTbl.ACF.MaxHealth, "player/pl_fallpain3.wav")
+				ENT_DamageCrew(self, Excess * SelfTbl.ACF.MaxHealth, "player/pl_fallpain3.wav")
 			end
 		end
 
@@ -580,11 +595,11 @@ do
 
 		-- Run randomized timers
 		-- TODO: Fix args
-		ACF.AugmentedTimer(function(cfg) Entity:UpdateUltraLowFreq(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 3, MaxTime = 5, Delay = 0.1})
-		ACF.AugmentedTimer(function(cfg) Entity:UpdateLowFreq(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2, Delay = 0.1})
-		ACF.AugmentedTimer(function(cfg) Entity:UpdateMedFreq(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1, Delay = 0.1})
-		ACF.AugmentedTimer(function(cfg) Entity:UpdateHighFreq(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 0.1, MaxTime = 0.5, Delay = 0.1})
-		ACF.AugmentedTimer(function(cfg) Entity:EnforceLimits(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2, Delay = 0.1})
+		ACF.AugmentedTimer(function(cfg) ENT_UpdateUltraLowFreq(Entity, cfg) end, function() return IsEntityValid(Entity) end, nil, {MinTime = 3, MaxTime = 5, Delay = 0.1})
+		ACF.AugmentedTimer(function(cfg) ENT_UpdateLowFreq(Entity, cfg) end, function() return IsEntityValid(Entity) end, nil, {MinTime = 1, MaxTime = 2, Delay = 0.1})
+		ACF.AugmentedTimer(function(cfg) ENT_UpdateMedFreq(Entity, cfg) end, function() return IsEntityValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1, Delay = 0.1})
+		ACF.AugmentedTimer(function(cfg) ENT_UpdateHighFreq(Entity, cfg) end, function() return IsEntityValid(Entity) end, nil, {MinTime = 0.1, MaxTime = 0.5, Delay = 0.1})
+		ACF.AugmentedTimer(function(cfg) ENT_EnforceLimits(Entity, cfg) end, function() return IsEntityValid(Entity) end, nil, {MinTime = 1, MaxTime = 2, Delay = 0.1})
 
 		hook.Add("Tick", "GForceCalculation" .. Entity:EntIndex(), function()
 			Entity:EnforceGForces(cfg)
@@ -780,17 +795,20 @@ do
 	end
 
 	-- Somewhat internal function to handle crew damage
-	function ENT:DamageCrew(Damage, sound)
+	function ENT_DamageCrew(self, Damage, sound)
+		local SelfTbl = ENTITY.GetTable(self)
+		local SelfACF = SelfTbl.ACF
 		-- Avoid negative health to avoid weird damage interactions
-		local NewHealth = math.max(0, self.ACF.Health - Damage)
+		local NewHealth = math.max(0, SelfACF.Health - Damage)
 
-		self.ACF.Health = NewHealth
-		self.ACF.Armour = self.ACF.MaxArmour * (NewHealth / self.ACF.MaxHealth)
+		SelfACF.Health = NewHealth
+		SelfACF.Armour = SelfACF.MaxArmour * (NewHealth / SelfACF.MaxHealth)
 
-		if NewHealth == 0 and self.IsAlive then
+		if NewHealth == 0 and SelfTbl.IsAlive then
 			self:KillCrew(sound)
 		end
 	end
+	ENT.DamageCrew = ENT_DamageCrew
 
 	-- sound is the sound to play when the crew dies
 	function ENT:KillCrew(Sound)
@@ -834,16 +852,18 @@ do
 	end
 
 	function ENT:ACF_OnDamage(DmgResult, DmgInfo)
-		local HitRes = DmgResult:Compute()
+		local HitRes  = DmgResult:Compute()
+		local SelfTbl = ENTITY.GetTable(self)
 
 		HitRes.Kill = false	-- Crew entities should never be removed
 
-		self:DamageCrew(HitRes.Damage, "npc/zombie/zombie_voice_idle6.wav")
+		ENT_DamageCrew(self, HitRes.Damage, "npc/zombie/zombie_voice_idle6.wav")
 
-		if IsValid(self.Pod) then
-			local Driver = self.Pod:GetDriver()
+		local Pod = SelfTbl.Pod
+		if IsEntityValid(Pod) then
+			local Driver = Pod:GetDriver()
 
-			if IsValid(Driver) then
+			if IsPlayerValid(Driver) then
 				Damage.doSquishyDamage(Driver, DmgResult, DmgInfo)
 			end
 		end
