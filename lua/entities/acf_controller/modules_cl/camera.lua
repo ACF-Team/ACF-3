@@ -1,5 +1,3 @@
-local Clock       = ACF.Utilities.Clock
-
 return function(State)
     State.CamAng = angle_zero
     State.FOV = 90
