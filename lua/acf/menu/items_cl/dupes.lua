@@ -24,13 +24,32 @@ end
 
 local function LoadDupe(name, path)
 	local read = file.Read(path, "GAME")
-	local success, dupe = AdvDupe2.Decode(read)
+	local success, dupe, info, moreinfo = AdvDupe2.Decode(read)
 
 	if success then
 		AdvDupe2.SendFile(name, read)
-		-- TODO: Find out why this errors the first time it's ran and never afterwards
-		-- AdvDupe2.LoadGhosts(dupe, info, moreinfo, name)
 		AdvDupe2.Notify("Dupe Loaded: " .. name, NOTIFY_GENERIC)
+
+		-- Yes, this sucks, but there doesn't seem to be a way to detect when ActivateTool is correct otherwise,
+		-- the other hooks are predicted which would introduce headache in singleplayer, etc. So this is the best solution I have for now...
+		-- If you have a better way please god suggest it I hate this so much - March
+		-- (and no PlayerSwitchWeapon is not enough, it says not to use it to detect weapon switching, and again its predicted)
+		local Start = SysTime()
+		hook.Add("Think", "ACF_WaitForToolGun", function()
+			local Player = LocalPlayer()
+			local InvalidConditions = (SysTime() - Start > 5) or not IsValid(Player)
+			local Weapon = Player:GetActiveWeapon()
+			local IsToolGun = IsValid(Weapon) and Weapon:GetClass() == "gmod_tool"
+			local ValidConditions = IsToolGun and Weapon:GetMode() == "advdupe2"
+
+			if InvalidConditions or ValidConditions then
+				if ValidConditions then
+					AdvDupe2.LoadGhosts(dupe, info, moreinfo, name)
+				end
+				hook.Remove("Think", "ACF_WaitForToolGun")
+			end
+		end)
+		spawnmenu.ActivateTool("advdupe2")
 	else
 		AdvDupe2.Notify("File could not be decoded. (" .. dupe .. ") Upload Canceled.", NOTIFY_ERROR)
 	end
@@ -138,7 +157,6 @@ local function CreateMenu(Menu)
 		DupeLoadButton.DoClick = function()
 			if CurrentDupePath then
 				DupeFrame:Close()
-				spawnmenu.ActivateTool("advdupe2")
 				LoadDupe(CurrentDupeName, CurrentDupePath)
 			end
 		end
