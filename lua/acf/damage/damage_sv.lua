@@ -225,7 +225,7 @@ function Damage.doPropDamage(Entity, DmgResult)
 	local HitRes = DmgResult:Compute()
 
 	-- Mark contraption as in combat when taking damage
-	local Contraption = Entity:GetContraption()
+	local Contraption = Entity:CFW_GetContraption()
 	if Contraption then
 		Contraption.InCombat = engine.TickCount()
 	end

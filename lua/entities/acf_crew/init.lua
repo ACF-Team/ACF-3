@@ -175,8 +175,8 @@ function ENT:CFW_PreParentedTo(OldParent, _)
 				self:Unlink(Target)
 			end
 		end
-		self:CFW_Unindex_Crew(self:GetContraption())
-		self:CFW_Index_Crew(self:GetContraption())
+		self:CFW_Unindex_Crew(self:CFW_GetContraption())
+		self:CFW_Index_Crew(self:CFW_GetContraption())
 	end
 end
 
@@ -200,7 +200,7 @@ local function EnforceLimits(crew)
 	local CrewType   = CrewTable.CrewType
 	local CrewTypeID = CrewTable.CrewTypeID
 
-	local Contraption = ENTITY.GetContraption(crew) or {}
+	local Contraption = ENTITY.CFW_GetContraption(crew) or {}
 	local CrewsByType = Contraption.CrewsByType or {}
 
 	local Limit = CrewType.LimitConVar
@@ -309,7 +309,7 @@ do -- Random timer stuff
 		end
 
 		-- TODO: Clean this shit up man
-		local Contraption = ENTITY.GetContraption(self) or {}
+		local Contraption = ENTITY.CFW_GetContraption(self) or {}
 		local CrewsByType = Contraption.CrewsByType or {}
 		local Commanders = CrewsByType.Commander or {}
 		local Commander = next(Commanders)
@@ -327,7 +327,7 @@ do -- Random timer stuff
 		local SelfTbl = ENTITY.GetTable(self)
 
 		local Targets = SelfTbl.Targets
-		local SelfContraption = ENTITY.GetContraption(self)
+		local SelfContraption = ENTITY.CFW_GetContraption(self)
 		local IsParented = CheckParentState(self)
 
 		if IsParented and Targets ~= nil and next(Targets) then
@@ -336,7 +336,7 @@ do -- Random timer stuff
 				if not IsEntityValid(Link) then self:Unlink(Link) continue end				-- If the link is invalid, remove it and skip it
 
 				local OutOfRange      = VECTOR.DistToSqr(Pos, ENTITY.GetPos(Link)) > MaxDistance			-- Check distance limit
-				local DiffAncestors   = SelfContraption ~= nil and SelfContraption ~= ENTITY.GetContraption(Link)	-- Check same Contraption
+				local DiffAncestors   = SelfContraption ~= nil and SelfContraption ~= ENTITY.CFW_GetContraption(Link)	-- Check same Contraption
 				if OutOfRange or DiffAncestors then
 					local Sound = UnlinkSound:format(math.random(1, 3))
 					ENTITY.EmitSound(Link, Sound, 70, 100, ACF.Volume)
@@ -369,7 +369,7 @@ do -- Random timer stuff
 		local Parent = ENTITY.GetParent(self)
 		if not IsEntityValid(Parent) then return end
 
-		local Contraption = ENTITY.GetContraption(self)
+		local Contraption = ENTITY.CFW_GetContraption(self)
 		local Baseplate = Contraption and Contraption.ACF_Baseplate
 		if not IsEntityValid(Baseplate) then return end -- Why would this happen for a recent vehicle? no clue lol...
 		-- This is ACF_LiveData to try to help with performance issues (__index'ing)... ugh
@@ -652,8 +652,8 @@ do
 					self:Unlink(Target)
 				end
 			end
-			self:CFW_Unindex_Crew(self:GetContraption())
-			self:CFW_Index_Crew(self:GetContraption())
+			self:CFW_Unindex_Crew(self:CFW_GetContraption())
+			self:CFW_Index_Crew(self:CFW_GetContraption())
 		end
 
 		ACF.SaveEntity(self)
@@ -738,7 +738,7 @@ do
 
 	--- Attempts to replace self with another crew member
 	function ENT:ReplaceCrew()
-		local Contraption = self:GetContraption()
+		local Contraption = self:CFW_GetContraption()
 		if Contraption == nil then return end 				-- No Contraption to replace crew in
 		if Contraption.CrewsByPriority == nil then return end 	-- No crew to replace with
 		if not self.ToBeReplaced and self.ReplaceSelf then
@@ -823,11 +823,13 @@ do
 
 		-- TODO: CLEAN THIS UP
 		-- Check how many crew remain and kill the owner if there are none left
-		local Contraption = self:GetContraption() or {}
-		local Crews = Contraption.Crews or {}
+		local Contraption = self:CFW_GetContraption()
+		local Crews = Contraption and Contraption.Crews
 		local Alive = 0
-		for crew, _ in pairs(Crews) do
-			if crew.IsAlive then Alive = Alive + 1 end
+		if Crews then
+			for crew, _ in pairs(Crews) do
+				if crew.IsAlive then Alive = Alive + 1 end
+			end
 		end
 
 		-- If all crew die, kill all seated players in the contraption

@@ -243,7 +243,7 @@ do -- Spawn and Update functions -----------------------
 
 		if not next(Ropes) then return end
 
-		local Contraption = Entity:GetContraption()
+		local Contraption = Entity:CFW_GetContraption()
 		local IsAircraft  = Contraption and Contraption:ACF_IsAircraft()
 
 		for Ent, Link in pairs(Ropes) do

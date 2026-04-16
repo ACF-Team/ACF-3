@@ -524,7 +524,7 @@ do -- Armor readout
 			GetCost = function(_, Trace)
 				if not IsValid(Trace.Entity) then return 0, {} end
 
-				local Contraption_ = Trace.Entity:GetContraption()
+				local Contraption_ = Trace.Entity:CFW_GetContraption()
 				if Contraption_ then
 					return Contraption.CostSystem.CalcCostsFromContraption(Contraption_)
 				else

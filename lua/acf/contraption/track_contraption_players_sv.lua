@@ -46,7 +46,7 @@ hook.Add("cfw.contraption.split", "ACF_CFW_TrackPlayersInContraptions", function
         if IsValid(Player) then
             local Vehicle = Player:GetVehicle()
             if IsValid(Vehicle) then
-                local NewContraption = Vehicle:GetContraption()
+                local NewContraption = Vehicle:CFW_GetContraption()
                 if NewContraption ~= nil then
                     ParentContraption.ACF_TrackPlayers[Player] = nil
                     NewContraption.ACF_TrackPlayers[Player] = true
@@ -78,7 +78,7 @@ end)
 -- Engine hooks to track players entering vehicles
 
 hook.Add("PlayerEnteredVehicle", "ACF_CFW_TrackPlayersInContraptions", function(Player, Vehicle)
-    local Contraption = Vehicle:GetContraption()
+    local Contraption = Vehicle:CFW_GetContraption()
     if not Contraption then return end
 
     Contraption.ACF_TrackPlayers[Player] = true
@@ -86,7 +86,7 @@ hook.Add("PlayerEnteredVehicle", "ACF_CFW_TrackPlayersInContraptions", function(
 end)
 
 hook.Add("PlayerLeaveVehicle", "ACF_CFW_TrackPlayersInContraptions", function(Player, Vehicle)
-    local Contraption = Vehicle:GetContraption()
+    local Contraption = Vehicle:CFW_GetContraption()
     if not Contraption then return end
 
     Contraption.ACF_TrackPlayers[Player] = nil
@@ -144,7 +144,7 @@ local function PlayerContraptionCheck(Entity)
     end
 
     -- No contraption means the lethal entity cannot work
-    local Contraption = Entity:GetContraption()
+    local Contraption = Entity:CFW_GetContraption()
     if not Contraption then return NO_CONTRAPTION end
 
     local Position = Entity:GetPos()

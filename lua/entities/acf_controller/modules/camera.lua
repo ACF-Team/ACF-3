@@ -67,7 +67,7 @@ do
 
 		-- Just get it from the contraption lol...
 		local Filter = {self} -- Atleast filter the controller itself
-		local Contraption = self:GetContraption()
+		local Contraption = self:CFW_GetContraption()
 		if Contraption ~= nil then
 			-- And the contraption too if it's valid
 			local LUT = Contraption.ents

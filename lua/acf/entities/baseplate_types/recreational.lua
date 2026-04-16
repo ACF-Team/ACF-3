@@ -8,7 +8,7 @@ function Baseplate:OnLoaded()
 	self.Icon        = "icon16/car_add.png"
 	self.Description = "A baseplate designed for non combat use (e.g. cars).\nWeapons and ammo will be removed. Fuel consumption rate set to 1."
 	self.EnforceLooped = function(Baseplate)
-		local Contraption = Baseplate:GetContraption()
+		local Contraption = Baseplate:CFW_GetContraption()
 		if not Contraption then return end
 
 		local Owner = Baseplate:CPPIGetOwner()

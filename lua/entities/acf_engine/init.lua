@@ -654,7 +654,7 @@ function ENT:ACF_IsLegal()
 			return false, "Parenting Issue", "The engine must be parented to an ACF baseplate."
 		end
 
-		local Contraption = self:GetContraption()
+		local Contraption = self:CFW_GetContraption()
 		if not AllowArbitraryParents and not Contraption then return false, "Parenting Issue", "Not part of a contraption (somehow??)" end -- Will this even be triggered?
 	end
 
@@ -693,7 +693,7 @@ end)
 -- specialized calcmassratio for engines
 function ENT:CalcMassRatio(SelfTbl)
 	SelfTbl        = SelfTbl or self:GetTable()
-	local Con      = self:GetContraption()
+	local Con      = self:CFW_GetContraption()
 	local PhysMass = 0
 
 	local Physical, _, Detached = Contraption.GetEnts(self)

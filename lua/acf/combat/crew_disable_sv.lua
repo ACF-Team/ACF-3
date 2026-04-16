@@ -5,7 +5,7 @@ local Notify = ACF.Utilities.Notify
 hook.Add("CanPlayerEnterVehicle", "ACF_CanPlayerEnterVehicle_BlockEnterVehicleOnDeadContraption", function(Player, Vehicle)
     if not IsValid(Vehicle) then return end
 
-    local Contraption = Vehicle:GetContraption()
+    local Contraption = Vehicle:CFW_GetContraption()
     if not Contraption then return end
 
     local Now = CurTime()

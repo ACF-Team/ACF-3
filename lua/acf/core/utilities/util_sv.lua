@@ -980,7 +980,7 @@ end
 
 do
 	function ACF.GetEntityBaseplate(Entity)
-		local Contraption = Entity:GetContraption()
+		local Contraption = Entity:CFW_GetContraption()
 		if not Contraption then return end
 
 		local Baseplate = Contraption.ACF_Baseplate

@@ -42,7 +42,7 @@ local function CanSupply(Supply, Target, Distance2)
 	if (Cap - Amount) <= 0.005 then return false end -- Treat near-full as full to avoid micro top-ups
 
 	-- Check if target's contraption is in combat
-	local TC = Target:GetContraption()
+	local TC = Target:CFW_GetContraption()
 	if TC and TC.InCombat and (engine.TickCount() - TC.InCombat) < CombatTimeout then
 		return false -- Still in combat, cannot refill
 	end

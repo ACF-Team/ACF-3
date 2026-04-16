@@ -624,7 +624,7 @@ do -- Metamethods --------------------------------
 
 			local EntityTbl = ENTITY.GetTable(Entity)
 			-- Roughly: Crate must be a possible propagator, with exceptions for machineguns and aircraft
-			if EntityTbl.IsBelted and EntityTbl.Weapon ~= "MG" and not ENTITY.GetContraption(Entity):ACF_IsAircraft() and ENT_FindPropagator(Entity, CrateParent) ~= CrateParent then return false end
+			if EntityTbl.IsBelted and EntityTbl.Weapon ~= "MG" and not ENTITY.CFW_GetContraption(Entity):ACF_IsAircraft() and ENT_FindPropagator(Entity, CrateParent) ~= CrateParent then return false end
 			return true
 		end
 
@@ -905,7 +905,7 @@ do -- Metamethods --------------------------------
 
 			SelfTbl.CurrentUser = self:GetUser(SelfTbl.Inputs.Fire.Src) -- Must be updated on every shot
 
-			local Contraption           = ENTITY.GetContraption(self)
+			local Contraption           = ENTITY.CFW_GetContraption(self)
 			local IsBlocked             = false
 			BulletData.Filter 			= Contraption and Contraption.BulletFilter or { self }
 			BulletData.Owner  			= SelfTbl.CurrentUser
@@ -1007,7 +1007,7 @@ do -- Metamethods --------------------------------
 			if Current and Check(Current, ...) then return Current end
 
 			-- Search crates by their stage level
-			local Crate = ACF.FindCrateByStage(ENTITY.GetContraption(self), ACF.AmmoStageMin, Check, ...)
+			local Crate = ACF.FindCrateByStage(ENTITY.CFW_GetContraption(self), ACF.AmmoStageMin, Check, ...)
 
 			-- This is not performant... but people may be unhappy if I don't do this
 			if not Crate then
@@ -1382,7 +1382,7 @@ do -- Metamethods --------------------------------
 			end
 
 			-- for each crate in the first stage, if it's restockable, restock it
-			SelfTbl.FirstStage = ACF.FindFirstStage(self:GetContraption())
+			SelfTbl.FirstStage = ACF.FindFirstStage(ENTITY.CFW_GetContraption(self))
 			for v, _ in pairs(SelfTbl.FirstStage) do
 				if CheckRestockable(v, self) then
 					v:Restock()

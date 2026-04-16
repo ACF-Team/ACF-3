@@ -20,7 +20,7 @@ local function GetBaseplateProperties(Ent, Self, SelfPos, SelfRadius)
 	end
 
 	local Vel         = Physics:GetVelocity()
-	local Contraption = Ent:GetContraption()
+	local Contraption = Ent:CFW_GetContraption()
 	local PhysMass    = Physics:GetMass()
 	local TotalMass	  = Contraption and Contraption.totalMass or PhysMass
 
