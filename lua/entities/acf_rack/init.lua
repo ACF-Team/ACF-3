@@ -740,7 +740,7 @@ do -- Firing -----------------------------------
 		Rack:UpdateLoad(Point)
 
 		-- Mark contraption as in combat when firing
-		local Contraption = Rack:GetContraption()
+		local Contraption = Rack:CFW_GetContraption()
 		if Contraption then
 			Contraption.InCombat = engine.TickCount()
 		end

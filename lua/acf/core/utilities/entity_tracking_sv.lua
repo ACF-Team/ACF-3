@@ -66,7 +66,7 @@ function ACF.GetEntitiesInCone(Position, Direction, Degrees, Contraption)
 	for Con in pairs(Contraptions) do
 		local Entity = Con.Ancestor
 		if not IsValid(Entity) then continue end
-		local EntityContraption = Entity:GetContraption()
+		local EntityContraption = Entity:CFW_GetContraption()
 		if Contraption and EntityContraption == Contraption then continue end
 
 		if ACF.LegalChecks and Entity:GetClass() == "acf_baseplate" and Entity.Disabled then continue end
@@ -86,7 +86,7 @@ function ACF.GetEntitiesInSphere(Position, Radius, Contraption)
 	for Con in pairs(Contraptions) do
 		local Entity = Con.Ancestor
 		if not IsValid(Entity) then continue end
-		if Contraption and Entity:GetContraption() == Contraption then continue end
+		if Contraption and Entity:CFW_GetContraption() == Contraption then continue end
 		-- Skip disabled baseplates here
 
 		if Position:DistToSqr(Entity:GetPos()) <= RadiusSqr then

@@ -134,7 +134,7 @@ do
 		-- Only allow baseplate-parented & aircraft baseplates.
 		local Rack       = self.Rack
 
-		local Contraption = Rack:GetContraption()
+		local Contraption = Rack:CFW_GetContraption()
 		if not Contraption then self.Complete = true return end
 
 		local Base = Contraption.ACF_Baseplate

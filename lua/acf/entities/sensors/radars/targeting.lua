@@ -15,7 +15,7 @@ Sensors.Register("TGT-Radar", {
 
 do -- Directional radars
 	local function DetectEntities(Radar)
-		return ACF.GetEntitiesInCone(Radar:LocalToWorld(Radar.Origin), Radar:GetForward(), Radar.ConeDegs, Radar:GetContraption())
+		return ACF.GetEntitiesInCone(Radar:LocalToWorld(Radar.Origin), Radar:GetForward(), Radar.ConeDegs, Radar:CFW_GetContraption())
 	end
 
 	Sensors.RegisterItem("SmallDIR-TGT", "TGT-Radar", {
@@ -70,7 +70,7 @@ end
 
 do -- Spherical radars
 	local function DetectEntities(Radar)
-		return ACF.GetEntitiesInSphere(Radar:LocalToWorld(Radar.Origin), Radar.Range, Radar:GetContraption())
+		return ACF.GetEntitiesInSphere(Radar:LocalToWorld(Radar.Origin), Radar.Range, Radar:CFW_GetContraption())
 	end
 
 	Sensors.RegisterItem("SmallOMNI-TGT", "TGT-Radar", {

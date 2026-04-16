@@ -185,8 +185,8 @@ local function ScanForEntities(Entity)
 			local EntSize = 0
 			if Ent.IsACFMissile then
 				EntSize = (Ent.Caliber or 0) / ACF.InchToMm
-			elseif Ent:GetContraption() then
-				local Mins, Maxs, _ = Ent:GetContraption():GetAABB()
+			elseif Ent:CFW_GetContraption() then
+				local Mins, Maxs, _ = Ent:CFW_GetContraption():GetAABB()
 				EntSize = (Maxs - Mins):Length()
 			end
 			EntSize = math.Round(EntSize) -- Round to nearest inch
