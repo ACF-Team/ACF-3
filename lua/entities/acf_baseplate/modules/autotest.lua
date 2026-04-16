@@ -381,7 +381,7 @@ return function()
 
                     local test = TestMap[name]
                     if test and IsValid(test.RowCategory) then
-                        test.RowCategory.Header.ResultColor = ok and Color(0, 255, 0, 150) or Color(255, 0, 0, 150)
+                        test.RowCategory.Header.ResultColor = ok and Color(0, 200, 0, 150) or Color(255, 0, 0, 150)
 
                         local Content = test.RowCategory.Contents
                         Content:Clear()
