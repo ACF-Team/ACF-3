@@ -3,14 +3,25 @@ local Clock           = ACF.Utilities.Clock
 local Countermeasures = ACF.Classes.Countermeasures
 local Contraptions    = {}
 
-local ENTITY = FindMetaTable("Entity")
-local VECTOR = FindMetaTable("Vector")
+local ENTITY  = FindMetaTable("Entity")
+local PHYSOBJ = FindMetaTable("PhysObj")
+local VECTOR  = FindMetaTable("Vector")
+
+local IsEntityValid  = ACF.Optimizations.IsEntityValid
+local IsPhysObjValid = ACF.Optimizations.IsPhysObjValid
 
 local function UpdateValues(Contraption)
 	local Entity = Contraption.ACF_Baseplate
 	-- If legal checks are disabled, use any ancestor
-	if not ACF.LegalChecks and not IsValid(Entity) and Contraption and Contraption.families and next(Contraption.families) and next(Contraption.families).ancestor then Entity = next(Contraption.families).ancestor end
-	if not IsValid(Entity) then return end
+	if not ACF.LegalChecks and not IsEntityValid(Entity) and Contraption and Contraption.families then
+		local NextFamily = next(Contraption.families)
+		local Ancestor   = NextFamily.ancestor
+		if IsEntityValid(Ancestor) then
+			Entity = Ancestor
+		end
+	end
+
+	if not IsEntityValid(Entity) then return end
 
 	local SelfTable = ENTITY.GetTable(Entity)
 	local PhysObj   = ENTITY.GetPhysicsObject(Entity)
@@ -18,8 +29,8 @@ local function UpdateValues(Contraption)
 	local PrevPos   = SelfTable.ACF_Position
 	local Position
 
-	if IsValid(PhysObj) then
-		Position = ENTITY.LocalToWorld(Entity, PhysObj:GetMassCenter())
+	if IsPhysObjValid(PhysObj) then
+		Position = ENTITY.LocalToWorld(Entity, PHYSOBJ.GetMassCenter(PhysObj))
 	else
 		Position = ENTITY.GetPos(Entity)
 	end
@@ -27,7 +38,8 @@ local function UpdateValues(Contraption)
 	-- Entities being moved around by SetPos will have a velocity of 0
 	-- By using the difference between positions we can get a proper value
 	if VECTOR.LengthSqr(Velocity) == 0 and PrevPos then
-		Velocity = (Position - PrevPos) / Clock.DeltaTime
+		Velocity = Position - PrevPos
+		VECTOR.Div(Velocity, Clock.DeltaTime)
 	end
 
 	SelfTable.ACF_Position = Position
