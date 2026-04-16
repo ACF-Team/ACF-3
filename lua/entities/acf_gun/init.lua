@@ -73,27 +73,29 @@ local ENT_UpdateLoadMod
 local ENT_FindPropagator
 
 do -- Random timer crew stuff
-	local TraceConfig = {start = Vector(), endpos = Vector(), filter = nil}
-
+	local TraceResult  = {}
+	local TraceResult2 = {}
+	local TraceConfig = {start = Vector(), endpos = Vector(), filter = nil, output = TraceResult}
 	-- Calculates the reload efficiency between a Crew, one of it's guns and an ammo crate
 	local function GetReloadEff(Crew, Gun, Ammo)
-		local BreechPos = Gun:LocalToWorld(Gun.BreechPos)
-		local CrewPos = Crew:LocalToWorld(Crew.CrewModel.ScanOffsetL)
-		local AmmoPos = Ammo:GetPos()
-		local D1 = CrewPos:Distance(BreechPos)
-		local D2 = CrewPos:Distance(AmmoPos)
+		local GunTable  = ENTITY.GetTable(Gun)
+		local CrewTable = ENTITY.GetTable(Crew)
+		local BreechPos = ENTITY.LocalToWorld(Gun, GunTable.BreechPos)
+		local CrewPos   = ENTITY.LocalToWorld(Crew, CrewTable.CrewModel.ScanOffsetL)
+		local AmmoPos   = ENTITY.GetPos(Ammo)
+		local D1 = VECTOR.Distance(CrewPos, BreechPos)
+		local D2 = VECTOR.Distance(CrewPos, AmmoPos)
 
 		TraceConfig.start = CrewPos
 		TraceConfig.endpos = BreechPos
-		TraceConfig.filter = function(x) return not (x == Gun or x.noradius or x == Crew or x == Gun:GetParent() or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()]) end
-		local tr = TraceLine(TraceConfig)
+		TraceConfig.filter = function(x) return not (x == Gun or x.noradius or x == Crew or x == ENTITY.GetParent(Gun) or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[ENTITY.GetClass(x)]) end
 
-		Debug.Line(CrewPos, tr.HitPos, 1, COLOR_GREEN, true)
-		Debug.Line(tr.HitPos, BreechPos, 1, COLOR_RED, true)
+		-- Debug.Line(CrewPos, TraceResult.HitPos, 1, COLOR_GREEN, true)
+		-- Debug.Line(TraceResult.HitPos, BreechPos, 1, COLOR_RED, true)
 
-		Crew.OverlayErrors.LOSCheck = (ACF.LegalChecks and tr.Hit) and "Crew cannot see the breech\nOf: " .. (tostring(Gun) or "<INVALID ENTITY???>") .. "\nBlocked by " .. (tostring(tr.Entity) or "<INVALID ENTITY???>") or nil
+		Crew.OverlayErrors.LOSCheck = (ACF.LegalChecks and TraceResult.Hit) and "Crew cannot see the breech\nOf: " .. (tostring(Gun) or "<INVALID ENTITY???>") .. "\nBlocked by " .. (tostring(TraceResult.Entity) or "<INVALID ENTITY???>") or nil
 		Crew:UpdateOverlay()
-		if tr.Hit then return 0.000001 end -- Wanna avoid division by zero...
+		if TraceResult.Hit then return 0.000001 end -- Wanna avoid division by zero...
 
 		return Crew.TotalEff * ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist)
 	end
@@ -123,14 +125,14 @@ do -- Random timer crew stuff
 			TraceConfig.start = wp1
 			TraceConfig.endpos = wp2
 			TraceConfig.filter = function(x) return not (x == self or x == ENTITY.GetParent(self) or x.noradius or x.IsACFAutoloader or ENTITY.GetOwner(x) ~= ENTITY.GetOwner(self) or x:IsPlayer() or ACF.GlobalFilter[ENTITY.GetClass(x)]) end
-			local tr = TraceLine(TraceConfig)
+			TraceLine(TraceConfig)
 
-			Debug.Line(wp1, tr.HitPos, 1, COLOR_GREEN, true)
-			Debug.Line(tr.HitPos, wp2, 1, COLOR_RED, true)
+			-- Debug.Line(wp1, TraceResult.HitPos, 1, COLOR_GREEN, true)
+			-- Debug.Line(TraceResult.HitPos, wp2, 1, COLOR_RED, true)
 
 			-- Additional Randomized check just in case
 			local tr2
-			if not tr.Hit then
+			if not TraceResult.Hit then
 				local rb = Vector(0, SelfTbl.BreechWidth or 0, SelfTbl.BreechHeight or 0) / 2 * VectorRand()
 				local rp1 = p1 + rb
 				local rp2 = p2 + rb
@@ -138,13 +140,17 @@ do -- Random timer crew stuff
 
 				TraceConfig.start = wrp1
 				TraceConfig.endpos = wrp2
-				tr2 = TraceLine(TraceConfig)
+				-- A temporary switch of output...
+				TraceConfig.output = TraceResult2
+				TraceLine(TraceConfig)
+				TraceConfig.output = TraceResult
+				tr2 = TraceResult2
 
-				Debug.Line(wrp1, tr2.HitPos, 1, COLOR_GREEN, true)
-				Debug.Line(tr2.HitPos, wrp2, 1, COLOR_RED, true)
+				-- Debug.Line(wrp1, tr2.HitPos, 1, COLOR_GREEN, true)
+				-- Debug.Line(tr2.HitPos, wrp2, 1, COLOR_RED, true)
 			end
 
-			local IsBlocked = (tr.Hit or (tr2 and tr2.Hit))
+			local IsBlocked = (TraceResult.Hit or (tr2 and tr2.Hit))
 			SelfTbl.OverlayErrors.BreechCheck = IsBlocked and "Not enough space behind breech!\nHover with ACF menu tool" or nil
 			self:UpdateOverlay()
 			if IsBlocked then return 0.000001 end
@@ -225,16 +231,16 @@ do -- Random timer crew stuff
 		TraceConfig.start = ReferenceBreechPos
 		TraceConfig.endpos = CurrentBreechPos
 		TraceConfig.filter = function(x) return not (x == self or x == ENTITY.GetParent(self) or x.noradius or ENTITY.GetOwner(x) ~= ENTITY.GetOwner(self) or x:IsPlayer() or ACF.GlobalFilter[ENTITY.GetClass(x)] or SelfTbl.RotationFilter[x]) end
-		local tr = TraceLine(TraceConfig)
+		TraceLine(TraceConfig)
 
-		if tr.Hit then
-			SelfTbl.OverlayErrors.BreechClipping = "Breech is clipping through" .. (tostring(tr.Entity) or "<INVALID ENTITY???>")
+		if TraceResult.Hit then
+			SelfTbl.OverlayErrors.BreechClipping = "Breech is clipping through" .. (tostring(TraceResult.Entity) or "<INVALID ENTITY???>")
 			self:Disable()
 		else
 			SelfTbl.OverlayErrors.BreechClipping = nil
 		end
 
-		Debug.Line(ReferenceBreechPos, CurrentBreechPos, 1, tr.Hit and COLOR_RED or COLOR_GREEN, true)
+		Debug.Line(ReferenceBreechPos, CurrentBreechPos, 1, TraceResult.Hit and COLOR_RED or COLOR_GREEN, true)
 	end
 end
 
