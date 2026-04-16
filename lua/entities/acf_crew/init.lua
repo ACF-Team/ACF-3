@@ -54,7 +54,6 @@ local TimerSimple	 = timer.Simple
 local Damage		 = ACF.Damage
 
 local IsEntityValid  = ACF.Optimizations.IsEntityValid
-local IsPlayerValid  = ACF.Optimizations.IsPlayerValid
 
 local ENT_UpdateUltraLowFreq
 local ENT_UpdateLowFreq
@@ -131,7 +130,7 @@ local function iterScan(crew, reps)
 	-- False to skip, true to hit
 	local filter = function(x)
 		local Owner = ENTITY.CPPIGetOwner(x)
-		if not IsPlayerValid(Owner) then return false end
+		if not IsEntityValid(Owner) then return false end
 		return not (x == crew or ENTITY.GetTable(x).noradius or Owner ~= Owner or x:IsPlayer() or ACF.GlobalFilter[ENTITY.GetClass(x)])
 	end
 
@@ -863,7 +862,7 @@ do
 		if IsEntityValid(Pod) then
 			local Driver = Pod:GetDriver()
 
-			if IsPlayerValid(Driver) then
+			if IsEntityValid(Driver) then
 				Damage.doSquishyDamage(Driver, DmgResult, DmgInfo)
 			end
 		end
