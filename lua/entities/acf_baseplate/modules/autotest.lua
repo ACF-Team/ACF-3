@@ -349,15 +349,19 @@ return function()
 
             Action = function(_, ent)
                 local window = g_ContextMenu:Add("DFrame")
-                window:SetSize(400, ScrH() * 0.75)
+                window:SetSize(480, ScrH() * 0.75)
                 window:SetTitle("Baseplate Autotester [" .. ent:EntIndex() .. "]")
                 window:Center()
                 window:SetSizable(true)
                 window:SetDraggable(true)
                 window:MoveToFront()
 
-                local Base = window:Add("ACF_Panel")
+                local BackPanel = window:Add("DPanel") -- This is just to draw the DWindow background basically
+                BackPanel:Dock(FILL)
+
+                local Base = BackPanel:Add("ACF_Panel")
                 Base:Dock(FILL)
+                Base:DockMargin(4, 4, 4, 4)
 
                 Base:AddLabel("IMPORTANT NOTICE:")
                 Base:AddLabel("Click result buttons to highlight and snap camera to offending entities.")
