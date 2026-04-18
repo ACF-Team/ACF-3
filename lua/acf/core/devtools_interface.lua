@@ -27,5 +27,7 @@ hook.Add("Initialize", AddonName .. "_SetupStubForDevTools", function()
 
         setmetatable(Addon.EventViewer, {__index = ACF_DevTools.EventViewer})
         setmetatable(Addon.EntityKeyValues, {__index = ACF_DevTools.EntityKeyValues})
+
+        hook.Run(AddonName .. "_ACF3DevToolsInitialized")
     end
 end)
