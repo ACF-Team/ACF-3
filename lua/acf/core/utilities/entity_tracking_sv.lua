@@ -15,9 +15,11 @@ local function UpdateValues(Contraption)
 	-- If legal checks are disabled, use any ancestor
 	if not ACF.LegalChecks and not IsEntityValid(Entity) and Contraption and Contraption.families then
 		local NextFamily = next(Contraption.families)
-		local Ancestor   = NextFamily.ancestor
-		if IsEntityValid(Ancestor) then
-			Entity = Ancestor
+		if NextFamily then
+			local Ancestor   = NextFamily.ancestor
+			if IsEntityValid(Ancestor) then
+				Entity = Ancestor
+			end
 		end
 	end
 
