@@ -25,6 +25,7 @@ ENT.ACF_WireOutputs = {
 	"Vehicles (Seat for this entity, compatible with wire) [ARRAY]",
 }
 
+AddCSLuaFile("modules/autotest.lua")
 include("modules/autotest.lua")()
 
 cleanup.Register("acf_baseplate")
