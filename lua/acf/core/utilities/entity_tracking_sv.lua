@@ -58,6 +58,10 @@ hook.Add("cfw.contraption.removed", "ACF Entity Tracking", function(Contraption)
 	Contraptions[Contraption] = nil
 end)
 
+hook.Add("cfw.contraption.merged", "ACF Entity Tracking", function(Contraption)
+	Contraptions[Contraption] = nil
+end)
+
 hook.Add("ACF_OnTick", "ACF Entity Tracking", function()
 	for Contraption in pairs(Contraptions) do UpdateValues(Contraption) end
 end)
