@@ -1224,7 +1224,7 @@ do -- Reload related
 				if self:GetStage() == 1 and self.Component:GetClass() == "starfall_hud" and ent.ACF and ent.ACF_GetSeatProxy then
 					self.Component:LinkVehicle(ent:ACF_GetSeatProxy())
 					self:SetStage(0)
-					SF.AddNotify(self:GetOwner(), "Linked to vehicle successfully.", "GENERIC" , 4, "DRIP2")
+					SF.AddNotify(self:GetOwner(), "Linked to ACF baseplate vehicle successfully.", "GENERIC" , 4, "DRIP2")
 					return true
 				end
 
