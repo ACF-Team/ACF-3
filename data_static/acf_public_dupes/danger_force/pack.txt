@@ -1,7 +1,7 @@
 -- Insert pack
 INSERT INTO PackData (packid, packname, author, contact)
-VALUES ('kinetic', 'Kinetic', 'Ally', 'AllyFH');
+VALUES ('danger_force', 'Danger Force', 'Plab', '');
 
 -- Insert dupes using the string packid
 INSERT INTO DupeData (path, name, cost, weight, type, mobility, packid, description) VALUES
-('ambt-267', 'AMBT-267', 266.55, 32951.15, 'MBT', 'Tracked', 'kinetic', 'Uses AIO Controls');
+('bi_dey', 'Bi-dey', 54.53, 5367, 'SPG', 'Tracked', 'danger_force', 'Uses AIO Controls');
