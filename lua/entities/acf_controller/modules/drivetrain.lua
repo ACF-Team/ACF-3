@@ -168,15 +168,14 @@ do
 
 		self.CanSteer = #self.SteerPlatesSorted > 0 -- Steer if there are any steer plates
 
-		self.CanNeutral = not self.CanSteer -- Can't neutral steer if you can steer
-
 		-- Can't neutral steer if a gearbox is connected to both sides
+		self.HasTransfers = (next(self.LeftGearboxes) or next(self.RightGearboxes)) ~= MainGearbox
+
+		self.CanNeutral = true
 		for Gearbox in pairs(self.LeftGearboxes) do if self.RightGearboxes[Gearbox] then self.CanNeutral = false break end end
 		for Gearbox in pairs(self.RightGearboxes) do if self.LeftGearboxes[Gearbox] then self.CanNeutral = false break end end
 
 		for Wheel in pairs(self.Wheels) do self.SteerAngles[Wheel] = 0 end
-
-		-- if self.Gearbox.DoubleDiff then self.CanNeutral = true end
 
 		-- Set default shift RPMs to one of the engine's powerbands
 		local Engine = next(self.Engines)
@@ -304,9 +303,9 @@ do
 		elseif RPM < MaxRPM then Gear = Gear - 1 end
 
 		-- Clean this up later
-		local ShouldNeutral = self.CanNeutral and not self:GetForceCarSteering()
+		local UseReverser = self.HasTransfers
 		local TrueGear = 0
-		if S and not ShouldNeutral then
+		if S and not UseReverser then
 			Gear = math.Clamp(Gear, 1, #self.ReverseGears)
 			TrueGear = self.ReverseGears[Gear] or 0
 		else
