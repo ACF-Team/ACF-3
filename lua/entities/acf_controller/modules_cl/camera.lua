@@ -70,7 +70,7 @@ return function(State)
     end)
 
     -- Transmit in a loop, if the angle changed
-    timer.Create("AimTransmit",CamAngleUpdateDelay,0,function()
+    timer.Create("AimTransmit", CamAngleUpdateDelay, 0, function()
         if not IsValid(State.MyController) then return end
         if State.LastCamAng ~= State.CamAng then
             State.LastCamAng = State.CamAng
