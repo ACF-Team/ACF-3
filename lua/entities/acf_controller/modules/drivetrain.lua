@@ -143,12 +143,12 @@ do
 		local LeftWheels, RightWheels = {}, {}
 		local avg, count = 0, 0
 		for Wheel in pairs(self.Wheels) do
-			avg, count = avg + Wheel:GetPos().x, count + 1
+			avg, count = avg + self.Baseplate:WorldToLocal(Wheel:GetPos()).y, count + 1
 		end
 		avg = avg / count
 
 		for Wheel in pairs(self.Wheels) do
-			if Wheel:GetPos().x < avg then LeftWheels[Wheel] = true else RightWheels[Wheel] = true end
+			if self.Baseplate:WorldToLocal(Wheel:GetPos()).y > avg then LeftWheels[Wheel] = true else RightWheels[Wheel] = true end
 		end
 		self.LeftWheels, self.RightWheels = LeftWheels, RightWheels
 
@@ -165,6 +165,11 @@ do
 
 		self.GearboxLeft, self.GearboxLeftDir = next(LeftGearboxes)
 		self.GearboxRight, self.GearboxRightDir = next(RightGearboxes)
+
+		for v in pairs(self.SteerPlates) do self.SteerPlatesSorted[#self.SteerPlatesSorted + 1] = v end
+		table.sort(self.SteerPlatesSorted, function(A, B)
+			return self.Baseplate:WorldToLocal(A:GetPos()).x > self.Baseplate:WorldToLocal(B:GetPos()).x
+		end)
 
 		self.CanSteer = #self.SteerPlatesSorted > 0 -- Steer if there are any steer plates
 
@@ -318,13 +323,5 @@ do
 		end
 		SelfTbl.LastGear = Gear
 		SelfTbl.LastTrueGear = TrueGear
-	end
-
-	function ENT:AnalyzeSteerPlates(SteerPlate)
-		if not IsValid(SteerPlate) then return end
-		table.insert(self.SteerPlatesSorted, SteerPlate)
-		table.sort(self.SteerPlatesSorted, function(A, B)
-			return A:GetPos().y > B:GetPos().y
-		end)
 	end
 end
