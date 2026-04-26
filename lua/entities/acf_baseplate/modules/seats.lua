@@ -27,7 +27,7 @@ function ENT:ConfigureLuaSeat(Pod, Player)
 	hook.Add("PlayerUse", "ACFBaseplateSeatEnterExternal" .. self:EntIndex(), function(Ply, Ent)
 		if not Ply:KeyDown(IN_WALK) then return end
 		if IsValid(Ent) then
-			local Contraption = Ent:GetContraption()
+			local Contraption = Ent:CFW_GetContraption()
 			if Contraption then
 				local Base = Contraption.ACF_Baseplate
 				if Base == self and IsValid(Pod) and Pod:GetDriver() ~= Ply and not self:ACF_GetUserVar("DisableAltE") then
@@ -76,14 +76,14 @@ local function ShowHidePhysicalEntities(Contraption, NoDraw)
 end
 
 hook.Add("PlayerEnteredVehicle", "ACFHidePhysicalEntities", function(_, Veh)
-	if Veh.GetContraption and IsValid(Veh:GetContraption()) then
-		ShowHidePhysicalEntities(Veh:GetContraption(), true)
+	if Veh:CFW_GetContraption() then
+		ShowHidePhysicalEntities(Veh:CFW_GetContraption(), true)
 	end
 end)
 
 hook.Add("PlayerLeaveVehicle", "ACFHidePhysicalEntities", function(_, Veh)
-	if Veh.GetContraption and IsValid(Veh:GetContraption()) then
-		ShowHidePhysicalEntities(Veh:GetContraption(), false)
+	if Veh:CFW_GetContraption() then
+		ShowHidePhysicalEntities(Veh:CFW_GetContraption(), false)
 	end
 end)
 

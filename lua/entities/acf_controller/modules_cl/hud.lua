@@ -172,24 +172,66 @@ return function(State)
         -- HUD 1
         local HudType = State.MyController:GetHUDType()
         if HudType == 0 then
-            DrawRect( x - 40 * Scale, y - thick / 2, 80 * Scale, thick )
-            DrawRect( x - thick / 2, y - 40 * Scale, thick, 80 * Scale )
+            DrawRect( x - 20 * Scale, y - thick / 2, 40 * Scale, thick )
+            DrawRect( x - thick / 2, y - 20 * Scale, thick, 40 * Scale )
 
             local AmmoType, AmmoCount = State.MyController:GetNWString("AHS_Primary_AT", ""), State.MyController:GetNWInt("AHS_Primary_SL", 0)
             DrawText(AmmoType .. " | " .. AmmoCount, Font, x - 10 * Scale, y + 50 * Scale, Col, TEXT_ALIGN_RIGHT)
             local TimeLeft = math.Round(State.MyController:GetNWFloat("AHS_Primary_NF", 0) - CurTime(), 2)
             DrawText(TimeLeft > 0 and TimeLeft or "0.00", Font, x + 10 * Scale, y + 50 * Scale, Col, TEXT_ALIGN_LEFT)
-        elseif HudType == 1 then
+
+            local SecondaryAmmoType = State.MyController:GetNWString("AHS_Secondary_AT", "")
+            local SecondaryAmmoCount = State.MyController:GetNWInt("AHS_Secondary_SL", 0)
+            DrawText(SecondaryAmmoType .. " | " .. SecondaryAmmoCount, Font, x - 10 * Scale, y + 70 * Scale, Col, TEXT_ALIGN_RIGHT)
+            local SecondaryTimeLeft = math.Round(State.MyController:GetNWFloat("AHS_Secondary_NF", 0) - CurTime(), 2)
+            DrawText(SecondaryTimeLeft > 0 and SecondaryTimeLeft or "0.00", Font, x + 10 * Scale, y + 70 * Scale, Col, TEXT_ALIGN_LEFT)
+
+            local TertiaryAmmoType = State.MyController:GetNWString("AHS_Tertiary_AT", "")
+            local TertiaryAmmoCount = State.MyController:GetNWInt("AHS_Tertiary_SL", 0)
+            DrawText(TertiaryAmmoType .. " | " .. TertiaryAmmoCount, Font, x - 10 * Scale, y + 90 * Scale, Col, TEXT_ALIGN_RIGHT)
+            local TertiaryTimeLeft = math.Round(State.MyController:GetNWFloat("AHS_Tertiary_NF", 0) - CurTime(), 2)
+            DrawText(TertiaryTimeLeft > 0 and TertiaryTimeLeft or "0.00", Font, x + 10 * Scale, y + 90 * Scale, Col, TEXT_ALIGN_LEFT)
+
+            for Index, Prefix in pairs({ "AHS_Primary", "AHS_Secondary", "AHS_Tertiary" }) do
+                local Ready = State.MyController:GetNWBool(Prefix .. "_RD", false)
+                local TimeLeft = Ready and 0 or math.max(math.Round(State.MyController:GetNWFloat(Prefix .. "_NF", 0) - CurTime(), 2), 0)
+                local Progress = 1 - (TimeLeft / State.MyController:GetNWFloat(Prefix .. "_RT", 0))
+
+                DrawReload(State.MyController:GetNWEntity( Prefix, nil ), Ready, 10 * Scale / Index, Progress)
+            end
+        elseif HudType == 1 or HudType == 2 then
+            -- Crosshair
+            if HudType == 1 then
+                DrawRect( x - 120 * Scale, y - thick / 2, 240 * Scale, thick )
+                DrawRect( x - thick / 2, y - 60 * Scale, thick, 120 * Scale )
+
+                DrawRect( x - 170 * Scale, y - thick / 2, 40 * Scale, thick )
+                DrawRect( x + 130 * Scale, y - thick / 2, 40 * Scale, thick )
+
+                DrawRect( x - thick / 2, y - 110 * Scale, thick, 40 * Scale )
+                DrawRect( x - thick / 2, y + 70 * Scale, thick, 40 * Scale )
+            elseif HudType == 2 then
+                DrawRect( x + 2.025 * Scale, y - thick / 2, 12.825 * Scale, thick )
+                DrawRect( x - 14.85 * Scale, y - thick / 2, 12.825 * Scale, thick )
+                DrawRect( x - thick / 2, y + 2.025 * Scale, thick, 12.825 * Scale )
+                DrawRect( x - thick / 2, y - 14.85 * Scale, thick, 12.825 * Scale )
+
+                DrawRect( x + 27.3375 * Scale, y - thick / 2, 26.325 * Scale, thick )
+                DrawRect( x - 53.6625 * Scale, y - thick / 2, 26.325 * Scale, thick )
+                DrawRect( x - thick / 2, y + 27.3375 * Scale, thick, 26.325 * Scale )
+                DrawRect( x - thick / 2, y - 53.6625 * Scale, thick, 26.325 * Scale )
+                DrawRect( x - thick / 2, y + 67.8375 * Scale, thick, 26.325 * Scale )
+                DrawRect( x - thick / 2, y - 94.1625 * Scale, thick, 26.325 * Scale )
+
+                DrawRect( x + 27.3375 * Scale, y + 26.5 * Scale, 66.825 * Scale, thick )
+                DrawRect( x + 27.3375 * Scale, y - 27.5 * Scale, 66.825 * Scale, thick )
+                DrawRect( x - 94.1625 * Scale, y + 26.5 * Scale, 66.825 * Scale, thick )
+                DrawRect( x - 94.1625 * Scale, y - 27.5 * Scale, 66.825 * Scale, thick )
+                DrawRect( x + 108.3375 * Scale, y - thick / 2, 66.825 * Scale, thick )
+                DrawRect( x - 175.1625 * Scale, y - thick / 2, 66.825 * Scale, thick )
+            end
+
             -- View border
-            DrawRect( x - 120 * Scale, y - thick / 2, 240 * Scale, thick )
-            DrawRect( x - thick / 2, y - 60 * Scale, thick, 120 * Scale )
-
-            DrawRect( x - 170 * Scale, y - thick / 2, 40 * Scale, thick )
-            DrawRect( x + 130 * Scale, y - thick / 2, 40 * Scale, thick )
-
-            DrawRect( x - thick / 2, y - 110 * Scale, thick, 40 * Scale )
-            DrawRect( x - thick / 2, y + 70 * Scale, thick, 40 * Scale )
-
             DrawRect( x - 400 * Scale, y - 200 * Scale, thick, 60 * Scale )
             DrawRect( x - 400 * Scale, y + 140 * Scale, thick, 60 * Scale )
             DrawRect( x + 400 * Scale, y - 200 * Scale, thick, 60 * Scale )
@@ -203,6 +245,9 @@ return function(State)
             surface.SetDrawColor(0, 0, 0, 200)
             surface.DrawRect(x - 400 * Scale, y + 205 * Scale, 125 * Scale, 70 * Scale)
             surface.DrawRect(x + 300 * Scale, y + 205 * Scale, 100 * Scale, 90 * Scale)
+            surface.SetDrawColor(Col)
+            surface.DrawOutlinedRect(x - 399 * Scale, y + 206 * Scale, 123 * Scale, 68 * Scale)
+            surface.DrawOutlinedRect(x + 301 * Scale, y + 206 * Scale, 98 * Scale, 88 * Scale)
 
             -- Ammo type | Ammo count | Time left
             SetDrawColor( Col )
@@ -239,23 +284,23 @@ return function(State)
 
             local ax, ay = x + 360 * Scale, y - 246 * Scale
             DrawPictograph(CrewMaterial, State.MyController:GetNWInt("AHS_Crew"), Font, ax, ay, Scale, white, Col, shade)
-        end
 
-        local LoadedAmmoType = State.MyController:GetNWString("AHS_Primary_AT", "")
-        for Index, AmmoType in pairs(State.MyController.TypesSorted or {}) do
-            local Material = State.MyController.MaterialsByType[AmmoType] or ""
-            local AmmoCount = State.MyController.PrimaryAmmoCountsByType[AmmoType] or 0
-            local ax = x - 400 * Scale + (46 * (Index - 1) * Scale)
-            local ay = y - 246 * Scale
+            local LoadedAmmoType = State.MyController:GetNWString("AHS_Primary_AT", "")
+            for Index, AmmoType in pairs(State.MyController.TypesSorted or {}) do
+                local Material = State.MyController.MaterialsByType[AmmoType] or ""
+                local AmmoCount = State.MyController.PrimaryAmmoCountsByType[AmmoType] or 0
+                local ax = x - 400 * Scale + (46 * (Index - 1) * Scale)
+                local ay = y - 246 * Scale
 
-            -- Outline currently selected ammo type
-            if AmmoType == State.MyController.SelectedAmmoType then
-                surface.SetDrawColor(Col)
-                surface.DrawOutlinedRect(ax - 2 * Scale, ay - 2 * Scale, 44 * Scale, 44 * Scale)
+                -- Outline currently selected ammo type
+                if AmmoType == State.MyController.SelectedAmmoType then
+                    surface.SetDrawColor(Col)
+                    surface.DrawOutlinedRect(ax - 2 * Scale, ay - 2 * Scale, 44 * Scale, 44 * Scale)
+                end
+
+                local Lighting = AmmoType == LoadedAmmoType and white or dimmed
+                DrawPictograph(Material, AmmoCount, Font, ax, ay, Scale, Lighting, Col, shade)
             end
-
-            local Lighting = AmmoType == LoadedAmmoType and white or dimmed
-            DrawPictograph(Material, AmmoCount, Font, ax, ay, Scale, Lighting, Col, shade)
         end
 
         local ColData2 = State.MyController:GetHUDColor2()

@@ -35,7 +35,7 @@ end
 
 local function DisableContraption(Player, Ent, Reason)
     DisableEntityCheckable(Player, Ent, Reason)
-    for Entity in pairs(ENTITY.GetContraption(Ent).ents) do
+    for Entity in pairs(ENTITY.CFW_GetContraption(Ent).ents) do
         DisableEntityCheckable(Player, Entity, Reason)
     end
 
@@ -85,7 +85,7 @@ local function IfEntManipulationOnACFContraption_ThenDisableContraption(Player, 
     if PreCheck() then return true end
     if not IsValid(Ent) then return false end
 
-    local Contraption = Ent:GetContraption()
+    local Contraption = Ent:CFW_GetContraption()
     -- Allow the call on non-contraptions, unless they are ACF entities.
     -- So ACF entities/contraptions with ACF entities get blocked.
     if not Contraption then

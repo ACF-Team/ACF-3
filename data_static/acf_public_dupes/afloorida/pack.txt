@@ -1,0 +1,8 @@
+-- Insert pack
+INSERT INTO PackData (packid, packname, author, contact)
+VALUES ('afloorida', 'Afloorida Fazel Allafum', 'Juls', 'julshno');
+
+-- Insert dupes using the string packid
+INSERT INTO DupeData (path, name, cost, weight, type, mobility, packid, description) VALUES
+('bandidirolla', 'Bandidirolla LT1', 109.21, 13107.19, 'LT', 'Tracked', 'afloorida', 'Uses AIO default controls.'),
+('fitrolla', 'Fitrolla LT1', 351.92, 60885.55, 'LT', 'Tracked', 'afloorida', 'Uses AIO default controls.');

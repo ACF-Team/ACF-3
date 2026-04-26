@@ -50,7 +50,7 @@ function ENT:Restock()
 		self.IsRestocking = true
 
 		local crate = FindCrateByStage(
-			self:GetContraption(),
+			self:CFW_GetContraption(),
 			self.AmmoStage + 1,
 			function(v) return IsValid(v) and v ~= self and v:CanConsume() and ACF.BulletEquality(self.BulletData, v.BulletData) end
 		)

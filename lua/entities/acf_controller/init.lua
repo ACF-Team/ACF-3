@@ -476,9 +476,6 @@ local LinkConfigs = {
 	prop_physics = {
 		Field = "SteerPlates",
 		Single = false,
-		OnLinked = function(Controller, Target)
-			Controller:AnalyzeSteerPlates(Target)
-		end
 	}
 }
 

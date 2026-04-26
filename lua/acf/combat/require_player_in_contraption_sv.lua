@@ -34,7 +34,7 @@ local function PlayerContraptionCheck(Entity)
     end
 
     -- No contraption means the lethal entity cannot work
-    local Contraption = Entity:GetContraption()
+    local Contraption = Entity:CFW_GetContraption()
     if not Contraption then return NO_CONTRAPTION end
 
     if Contraption.ACF_AllCrewKilled then return ALL_CREW_KILLED end

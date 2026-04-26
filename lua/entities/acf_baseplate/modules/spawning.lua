@@ -36,14 +36,14 @@ function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 	end
 
 	hook.Add("PhysgunPickup", "ACFBaseplatePickup" .. self:EntIndex(), function( _, ent )
-		local Contraption = ent.GetContraption and ent:GetContraption()
+		local Contraption = ent:CFW_GetContraption()
 		if Contraption ~= nil then
 			Contraption.IsPickedUp = true
 		end
 	end)
 
 	hook.Add("PhysgunDrop", "ACFBaseplateDrop" .. self:EntIndex(), function( _, ent )
-		local Contraption = ent.GetContraption and ent:GetContraption()
+		local Contraption = ent:CFW_GetContraption()
 		if Contraption ~= nil then
 			Contraption.IsPickedUp = false
 		end

@@ -181,7 +181,7 @@ end)
 -- Expression 2 Function Detour
     local E2ApplyForce_Orig E2ApplyForce_Orig = Detours.Expression2("e:applyForce(v)", function(scope, args, ...)
         local ent = args[1]
-        local contraption = ent:GetContraption()
+        local contraption = ent:CFW_GetContraption()
         print(contraption, contraption.ACF_Baseplate)
         if contraption and contraption.ACF_Baseplate then
             return ent:CPPIGetOwner():Kill()

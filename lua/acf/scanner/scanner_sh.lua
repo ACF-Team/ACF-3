@@ -351,7 +351,7 @@ if SERVER then
                             elseif class == "acf_fueltank" then
                                 fuelTanks[#fuelTanks + 1] = ent
                             end
-                            local contraption = ent:GetContraption()
+                            local contraption = ent:CFW_GetContraption()
                             if contraption == nil then
                                 noContraption[#noContraption + 1] = ent
                             else

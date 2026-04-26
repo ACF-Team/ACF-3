@@ -3,7 +3,7 @@
 do
     -- Purpose: Track inflictor info when ACF damages an entity on the contraption of the entity.
     hook.Add("ACF_OnDamageEntity", "ACF_OnDamageEntity_TrackInflictorInfo", function(Entity, _, DmgInfo)
-        local Contraption = Entity:GetContraption()
+        local Contraption = Entity:CFW_GetContraption()
         if not Contraption then return end
         Contraption.ACF_LastDamageTime = CurTime()
         Contraption.ACF_LastDamageAttacker = DmgInfo:GetAttacker()

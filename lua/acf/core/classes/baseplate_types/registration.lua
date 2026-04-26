@@ -13,10 +13,10 @@ local LastBaseplateExplosions = {}
 local TIME_BETWEEN_HE_EXPLOSIONS_PER_PLAYER = 10
 
 function BaseplateTypes.BP_PhysicsCollideExplosion(self, Data)
-	local Contraption = self:GetContraption()
+	local Contraption = self:CFW_GetContraption()
 	if not Contraption then return end
 
-	if Data.HitEntity:GetContraption() == Contraption then return end
+	if Data.HitEntity:CFW_GetContraption() == Contraption then return end
 	if Data.Speed > 1000 then
 		local Owner       = self:CPPIGetOwner()
 		local WillExplode = true

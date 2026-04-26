@@ -91,7 +91,7 @@ do
 
 		local AliveCrew = 0
 		local TotalCrew = 0
-		local Contraption = self:GetContraption()
+		local Contraption = self:CFW_GetContraption()
 		local Crew = Contraption and Contraption.Crews or {}
 		for CrewMember, _ in pairs(Crew) do
 			if CrewMember.IsAlive then AliveCrew = AliveCrew + 1 end

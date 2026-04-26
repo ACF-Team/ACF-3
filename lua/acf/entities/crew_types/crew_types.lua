@@ -261,7 +261,7 @@ CrewTypes.Register("Commander", {
 		Crew.TotalEff = math.Clamp(MyEff, ACF.CrewFallbackCoef, 1)
 	end,
 	UpdateFocus = function(Crew) -- Represents the fraction of efficiency a crew can give to its linked entities
-		local Contraption = Crew:GetContraption() or {}
+		local Contraption = Crew:CFW_GetContraption() or table_empty
 
 		local AliveCount = -1 -- Excluding the commander
 		for Crew, _ in pairs(Contraption.Crews or table_empty) do
@@ -327,8 +327,3 @@ CrewTypes.Register("Pilot", {
 	end,
 	EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, "Aircraft") end
 })
-
--- Compatibility with ACE crew types
-CrewTypes.AddAlias("Driver", "Crewseat_Driver")
-CrewTypes.AddAlias("Gunner", "Crewseat_Gunner")
-CrewTypes.AddAlias("Loader", "Crewseat_Loader")

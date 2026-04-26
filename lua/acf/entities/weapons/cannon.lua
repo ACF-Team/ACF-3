@@ -112,46 +112,6 @@ Weapons.Register("C", {
 	CostScalar	= 0.4
 })
 
-Weapons.RegisterItem("37mmC", "C", {
-	Caliber = 37,
-})
-
-Weapons.RegisterItem("50mmC", "C", {
-	Caliber = 50,
-})
-
-Weapons.RegisterItem("75mmC", "C", {
-	Caliber = 75,
-})
-
-Weapons.RegisterItem("100mmC", "C", {
-	Caliber = 100,
-})
-
-Weapons.RegisterItem("120mmC", "C", {
-	Caliber = 120,
-})
-
-Weapons.RegisterItem("140mmC", "C", {
-	Caliber = 140,
-})
-
-do -- Smoothbore compatibility
-	Weapons.AddAlias("C", "SB")
-
-	Weapons.RegisterItem("105mmSB", "C", {
-		Caliber = 105,
-	})
-
-	Weapons.RegisterItem("120mmSB", "C", {
-		Caliber = 120,
-	})
-
-	Weapons.RegisterItem("140mmSB", "C", {
-		Caliber = 140,
-	})
-end
-
 ACF.SetCustomAttachment("models/tankgun_new/tankgun_100mm.mdl", "muzzle", Vector(175), Angle(0, 0, 90))
 
 ACF.AddHitboxes("models/tankgun_new/tankgun_100mm.mdl", {

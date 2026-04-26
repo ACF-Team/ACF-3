@@ -160,56 +160,6 @@ function Classes.AddGroupedFunctions(Namespace, Entries)
 
 		return Result
 	end
-
-	-- Aliases
-
-	--- Adds an alias to a group item
-	--- @param GroupID string # The ID of the group the group item belongs to
-	--- @param ID string # The ID of the group item to make an alias of
-	--- @param Alias string # The alias to apply to the given group item
-	--- @param Overrides? table # An optional table of overrides to alter the behavior of the alias
-	function Namespace.AddItemAlias(GroupID, ID, Alias, Overrides)
-		local Group = isstring(GroupID) and Entries[GroupID]
-
-		if not Group then return end
-		if not isstring(ID) then return end
-		if not isstring(Alias) then return end
-
-		local Lookup = Group.Lookup
-
-		-- NOTE: This is commented out to prevent cyclic references with the regular duplicator
-		-- Try to add this back in if it seems to be useful for something
-		-- Lookup[Alias] = Lookup[ID]
-
-		if istable(Overrides) then
-			-- Make a shallow copy of the table, then apply overrides
-			Lookup[Alias] = {}
-
-			for Key, Value in pairs(Lookup[ID]) do
-				Lookup[Alias][Key] = Value
-			end
-
-			for Key, Value in pairs(Overrides) do
-				Lookup[Alias][Key] = Value
-			end
-		else
-			Lookup[Alias] = Lookup[ID]
-		end
-	end
-
-	--- Checks whether an ID is an alias of a group item
-	--- @param GroupID string # The ID of the group the group item belongs to
-	--- @param ID string # The ID to check
-	--- @return boolean # Whether the ID is an alias of a group item
-	function Namespace.IsItemAlias(GroupID, ID)
-		local Group = isstring(GroupID) and Entries[GroupID]
-
-		if not Group then return false end
-
-		local Data = isstring(ID) and Group.Lookup[ID]
-
-		return Data and Data.ID ~= ID or false
-	end
 end
 
 hook.Add("ACF_OnCreateGroup", "ACF Precache Model", function(_, Group)

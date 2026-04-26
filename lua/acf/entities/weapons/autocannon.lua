@@ -50,22 +50,6 @@ Weapons.Register("AC", {
 	CostScalar	= 0.75
 })
 
-Weapons.RegisterItem("20mmAC", "AC", {
-	Caliber = 20,
-})
-
-Weapons.RegisterItem("30mmAC", "AC", {
-	Caliber = 30,
-})
-
-Weapons.RegisterItem("40mmAC", "AC", {
-	Caliber = 40,
-})
-
-Weapons.RegisterItem("50mmAC", "AC", {
-	Caliber = 50,
-})
-
 ACF.SetCustomAttachment("models/autocannon/autocannon_50mm.mdl", "muzzle", Vector(120), Angle(0, 0, 180))
 
 ACF.AddHitboxes("models/autocannon/autocannon_50mm.mdl", {

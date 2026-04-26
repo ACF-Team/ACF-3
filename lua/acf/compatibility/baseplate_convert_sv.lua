@@ -94,7 +94,7 @@ function ACF.ConvertBaseplate(Player, Target)
 
     -- Determine which entities to area copy
     local EntsByIndex = {}
-    local Contraption = Target:GetContraption()
+    local Contraption = Target:CFW_GetContraption()
     if Contraption then
         -- Save everything including turrets through contraption data
         for ent, _ in pairs(Contraption.ents) do EntsByIndex[ent:EntIndex()] = ent end
