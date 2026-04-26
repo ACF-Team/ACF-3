@@ -199,10 +199,6 @@ function Sounds.Fade(N, Min, Mid, Max)
 	return math.cos((1 - ((N - Min) / (Mid - Min))) * (_PI / 2))
 end
 
--- Consider if we actually want to do this too! (commented out for now)
---local SmoothRPM = 0
---local SmoothThrottle = 0
-
 -- This is where the magic to interpolate sounds happen.
 -- In order to make yourself a better idea of what this does you can consult the image below:
 -- https://i.imgur.com/KaFmaMf.png
@@ -210,8 +206,6 @@ local function DoPitchVolumeAtRPM(Origin, Throttle, RPM)
 	local Fade = Sounds.Fade -- idk if this is faster to do, but given this is a hot path, might as well be...
 	local SoundObjects = Origin.SoundObjects
 	if not SoundObjects or table.IsEmpty(SoundObjects) then return end
-	--SmoothRPM = SmoothRPM * (1 - 0.1) + RPM 
-	--SmoothThrottle = SmoothThrottle * (1 - 0.1) + Throttle
 
 	-- TODO(TMF): Potentially add some mechanism here to check for any differences and only update those
 	for _, SoundBank in ipairs(SoundObjects) do
