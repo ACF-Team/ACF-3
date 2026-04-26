@@ -1,5 +1,5 @@
 local ACF      		= ACF
-
+local Notify        = ACF.Utilities.Notify
 function ENT.ACF_OnVerifyClientData(ClientData)
 	ClientData.Size = Vector(ClientData.Length, ClientData.Width, ClientData.Thickness)
 	if ClientData.BaseplateType ~= "Aircraft" then ClientData.GForceTicks = 1 end -- Only allow sample rates > 1 for aircraft baseplates
@@ -36,14 +36,14 @@ function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 	end
 
 	hook.Add("PhysgunPickup", "ACFBaseplatePickup" .. self:EntIndex(), function( _, ent )
-		local Contraption = ent.GetContraption and ent:GetContraption()
+		local Contraption = ent:CFW_GetContraption()
 		if Contraption ~= nil then
 			Contraption.IsPickedUp = true
 		end
 	end)
 
 	hook.Add("PhysgunDrop", "ACFBaseplateDrop" .. self:EntIndex(), function( _, ent )
-		local Contraption = ent.GetContraption and ent:GetContraption()
+		local Contraption = ent:CFW_GetContraption()
 		if Contraption ~= nil then
 			Contraption.IsPickedUp = false
 		end
@@ -81,7 +81,7 @@ function ENT:PostEntityPaste(_, _, CreatedEntities)
 	if LuaSeatID then
 		self.Pod = CreatedEntities[LuaSeatID]
 		if not IsValid(self.Pod) then
-			ACF.SendNotify(self:CPPIGetOwner(), false, "The baseplate pod did not get duplicated correctly. You may have to relink pod controllers, etc.")
+			Notify.EntityWarning(self, "The baseplate pod did not get duplicated correctly", "You may have to relink pod controllers, etc.")
 			local Pod = ACF.GenerateLuaSeat(self, self:CPPIGetOwner(), self:GetPos(), self:GetAngles(), self:GetModel(), true)
 			if IsValid(Pod) then self.Pod = Pod end
 		end

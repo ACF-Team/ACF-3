@@ -1,0 +1,7 @@
+-- Insert pack
+INSERT INTO PackData (packid, packname, author, contact)
+VALUES ('corporal', 'Corporal', 'Corporal the First', 'corporalthefirst_50450');
+
+-- Insert dupes using the string packid
+INSERT INTO DupeData (path, name, cost, weight, type, mobility, packid, description) VALUES
+('m4_sherman', 'M4 Sherman', 194.01, 24914.73, 'LT', 'Tracked', 'corporal', 'A custom made M4 Sherman that is not 100% accurate but close to.');

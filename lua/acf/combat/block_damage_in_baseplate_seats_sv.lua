@@ -14,7 +14,7 @@ hook.Add("EntityTakeDamage", "ACF_EntityTakeDamage_BlockDamageInBaseplateSeats",
     local Vehicle = Target:GetVehicle()
     if not IsValid(Vehicle) then return end
 
-    local Contraption = Vehicle:GetContraption()
+    local Contraption = Vehicle:CFW_GetContraption()
     if not Contraption then return end
 
     local Base = Contraption.ACF_Baseplate

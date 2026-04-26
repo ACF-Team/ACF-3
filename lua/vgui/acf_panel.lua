@@ -580,6 +580,18 @@ function PANEL:AddPonderAddonCategory(AddonID, CategoryID)
 	return Button
 end
 
+function PANEL:AddWikiLink(Name, RelativeURL)
+	local Text = language.GetPhrase("See Wiki Page For %s")
+
+	local Button = self:AddButton(Text:format(Name))
+
+	function Button:DoClick()
+		ACF.OpenWikiArticle(RelativeURL)
+	end
+
+	return Button
+end
+
 function PANEL:AddGraph()
 	local Base = self:AddPanel("Panel")
 	Base:DockMargin(0, 5, 0, 5)

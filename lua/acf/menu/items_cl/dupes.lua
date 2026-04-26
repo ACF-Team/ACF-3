@@ -24,13 +24,32 @@ end
 
 local function LoadDupe(name, path)
 	local read = file.Read(path, "GAME")
-	local success, dupe = AdvDupe2.Decode(read)
+	local success, dupe, info, moreinfo = AdvDupe2.Decode(read)
 
 	if success then
 		AdvDupe2.SendFile(name, read)
-		-- TODO: Find out why this errors the first time it's ran and never afterwards
-		-- AdvDupe2.LoadGhosts(dupe, info, moreinfo, name)
 		AdvDupe2.Notify("Dupe Loaded: " .. name, NOTIFY_GENERIC)
+
+		-- Yes, this sucks, but there doesn't seem to be a way to detect when ActivateTool is correct otherwise,
+		-- the other hooks are predicted which would introduce headache in singleplayer, etc. So this is the best solution I have for now...
+		-- If you have a better way please god suggest it I hate this so much - March
+		-- (and no PlayerSwitchWeapon is not enough, it says not to use it to detect weapon switching, and again its predicted)
+		local Start = SysTime()
+		hook.Add("Think", "ACF_WaitForToolGun", function()
+			local Player = LocalPlayer()
+			local InvalidConditions = (SysTime() - Start > 5) or not IsValid(Player)
+			local Weapon = Player:GetActiveWeapon()
+			local IsToolGun = IsValid(Weapon) and Weapon:GetClass() == "gmod_tool"
+			local ValidConditions = IsToolGun and Weapon:GetMode() == "advdupe2"
+
+			if InvalidConditions or ValidConditions then
+				if ValidConditions then
+					AdvDupe2.LoadGhosts(dupe, info, moreinfo, name)
+				end
+				hook.Remove("Think", "ACF_WaitForToolGun")
+			end
+		end)
+		spawnmenu.ActivateTool("advdupe2")
 	else
 		AdvDupe2.Notify("File could not be decoded. (" .. dupe .. ") Upload Canceled.", NOTIFY_ERROR)
 	end
@@ -51,6 +70,9 @@ local function CreateMenu(Menu)
 		local ImagePath = "materials/acf_public_dupes"
 
 		-- SQL Initialization
+		sql.Query("DROP TABLE IF EXISTS DupeData")
+		sql.Query("DROP TABLE IF EXISTS PackData")
+
 		local Schema = file.Read(DupePath .. "/schema.txt", "GAME")
 		if Schema then sql.Query(Schema) end
 
@@ -60,10 +82,12 @@ local function CreateMenu(Menu)
 			if PackData then sql.Query(PackData) end
 		end
 
+		local Scale = ScrH() / 1080 -- It was designed in 1920x1080
+
 		-- Main Window (Still a Frame, but we'll use ACF_Panel for the guts)
 		local DupeFrame = vgui.Create("DFrame")
 		DupeFrame:SetTitle("ACF Community Dupe Browser")
-		DupeFrame:SetSize(1215, 840)
+		DupeFrame:SetSize(1215 * Scale, 840 * Scale)
 		DupeFrame:Center()
 		DupeFrame:MakePopup()
 		DupeFrame:SetSizable(true)
@@ -71,12 +95,12 @@ local function CreateMenu(Menu)
 		-- Right Panel: Info (Using ACF_Panel wrapper)
 		local InfoPanel = vgui.Create("ACF_Panel", DupeFrame)
 		InfoPanel:Dock(RIGHT)
-		InfoPanel:SetWide(200)
+		InfoPanel:SetWide(200 * Scale)
 
 		-- File Info Section
 		local FileInfoContent, _ = InfoPanel:AddCollapsible("Dupe Information (File)", true)
 		local DupeLabels = {}
-		for _, name in ipairs({"Name", "Owner", "Date", "Time", "Size"}) do
+		for _, name in ipairs({"Name", "Date", "Time", "Size"}) do
 			DupeLabels[name] = FileInfoContent:AddLabel(name .. ": ")
 		end
 
@@ -117,7 +141,6 @@ local function CreateMenu(Menu)
 
 			if success then
 				DupeLabels.Name:SetText("Name: " .. (New.Data.name or "Unknown"))
-				DupeLabels.Owner:SetText("Owner: " .. (info.name or "Unknown"))
 				DupeLabels.Date:SetText("Date: " .. (info.date or "Unknown"))
 				DupeLabels.Time:SetText("Time: " .. (info.time or "Unknown"))
 				DupeLabels.Size:SetText("Size: " .. string.NiceSize(tonumber(info.size or 0)))
@@ -134,7 +157,6 @@ local function CreateMenu(Menu)
 		DupeLoadButton.DoClick = function()
 			if CurrentDupePath then
 				DupeFrame:Close()
-				spawnmenu.ActivateTool("advdupe2")
 				LoadDupe(CurrentDupeName, CurrentDupePath)
 			end
 		end
@@ -142,7 +164,7 @@ local function CreateMenu(Menu)
 		-- Left Panel: Filters
 		local FilterPanel = vgui.Create("ACF_Panel", DupeFrame)
 		FilterPanel:Dock(LEFT)
-		FilterPanel:SetWide(200)
+		FilterPanel:SetWide(200 * Scale)
 
 		local FilterContent, _ = FilterPanel:AddCollapsible("Dupe Filters", true)
 
@@ -201,7 +223,7 @@ local function CreateMenu(Menu)
 			for _, dupe in ipairs(dupes) do
 				local FilePath = ImagePath .. "/" .. dupe.packid .. "/" .. dupe.path
 				local Icon = vgui.Create("DImageButton")
-				Icon:SetSize(256, 256)
+				Icon:SetSize(256 * Scale, 256 * Scale)
 				Icon:SetMaterial(Material(FilePath .. ".jpg"))
 				Icon:SetTooltip(dupe.name)
 				Icon.Data = dupe

@@ -10,6 +10,9 @@ local function CreateMenu(Menu)
 	VerificationCtx:StartClientData(ACF.GetAllClientData(true))
 
 	Menu:AddTitle("#acf.menu.baseplates.settings")
+
+	Menu:AddWikiLink("Baseplates", "docs/getting_started/first_tank/baseplate_aio.html")
+
 	Menu:AddLabel("#acf.menu.baseplates.desc")
 
 					    	   Menu:AddSimpleClassUserVar(VerificationCtx, "",                                           "BaseplateType", "Name", "Icon")

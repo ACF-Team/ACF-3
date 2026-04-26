@@ -4,6 +4,7 @@
 local ACF          = ACF
 local Contraption  = ACF.Contraption
 local ModelData	   = ACF.ModelData
+local Notify       = ACF.Utilities.Notify
 local StringFind   = string.find
 local TimerSimple  = timer.Simple
 local Baddies	   = ACF.GlobalFilter
@@ -97,10 +98,10 @@ function ACF.DisableEntity(Entity, Reason, Message, Timeout)
 				timer.Simple(1.1, function() -- Remover tool sets nodraw and removes 1 second later, causing annoying alerts
 					if not IsValid(Entity) then return end
 
-					ACF.SendNotify(Owner, false, Name .. " has been disabled: " .. Message)
+					Notify.EntityDisabledToPlayer(Entity, Owner, Name .. " has been disabled", Message)
 				end)
 			else
-				ACF.SendNotify(Owner, false, Name .. " has been disabled: " .. Message)
+				Notify.EntityDisabledToPlayer(Entity, Owner, Name .. " has been disabled", Message)
 			end
 		end
 		-- Send the entity to the client

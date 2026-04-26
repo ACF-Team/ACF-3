@@ -20,7 +20,7 @@ do
 	end)
 
 	function ENT:ProcessAmmo(SelfTbl)
-		local Contraption = self:GetContraption()
+		local Contraption = self:CFW_GetContraption()
 		if Contraption == nil then return end
 
 		-- Determine current counts

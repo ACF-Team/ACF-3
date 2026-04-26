@@ -3,12 +3,6 @@ local Gearboxes = ACF.Classes.Gearboxes
 
 local Gear2SW = 20
 
--- Old gearbox scales
-local ScaleT = 0.75
-local ScaleS = 1
-local ScaleM = 1.5
-local ScaleL = 2.5
-
 Gearboxes.Register("Transfer", {
 	Name		= "Transfer Case",
 	CreateMenu	= ACF.ManualGearboxMenu,
@@ -44,34 +38,4 @@ do -- Scalable gearboxes
 			FOV = 85,
 		},
 	})
-end
-
-do -- Pre-Scalable Inline/Transaxial Gearboxes
-	local OldGearboxTypes = {"L", "T"}
-
-	for _, GearboxType in ipairs(OldGearboxTypes) do
-		local OldCategory = "2Gear-" .. GearboxType
-
-		-- Regular Gearboxes
-		Gearboxes.AddItemAlias("Transfer", OldCategory, OldCategory .. "-S", {
-			Scale = ScaleS,
-			InvertGearRatios = true,
-		})
-
-		Gearboxes.AddItemAlias("Transfer", OldCategory, OldCategory .. "-M", {
-			Scale = ScaleM,
-			InvertGearRatios = true,
-		})
-
-		Gearboxes.AddItemAlias("Transfer", OldCategory, OldCategory .. "-L", {
-			Scale = ScaleL,
-			InvertGearRatios = true,
-		})
-
-		-- ACF Extras Gearboxes
-		Gearboxes.AddItemAlias("Transfer", OldCategory, OldCategory .. "-T", {
-			Scale = ScaleT,
-			InvertGearRatios = true,
-		})
-	end
 end

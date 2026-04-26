@@ -39,30 +39,6 @@ Weapons.Register("SC", {
 	CostScalar	= 0.275
 })
 
-Weapons.RegisterItem("37mmSC", "SC", {
-	Caliber = 37,
-})
-
-Weapons.RegisterItem("50mmSC", "SC", {
-	Caliber = 50,
-})
-
-Weapons.RegisterItem("75mmSC", "SC", {
-	Caliber = 75,
-})
-
-Weapons.RegisterItem("100mmSC", "SC", {
-	Caliber = 100,
-})
-
-Weapons.RegisterItem("120mmSC", "SC", {
-	Caliber = 120,
-})
-
-Weapons.RegisterItem("140mmSC", "SC", {
-	Caliber = 140,
-})
-
 ACF.SetCustomAttachment("models/tankgun/tankgun_short_100mm.mdl", "muzzle", Vector(82.86, -0.01), Angle(0, 0, 90))
 
 ACF.AddHitboxes("models/tankgun/tankgun_short_100mm.mdl", {

@@ -3,7 +3,8 @@ local Components = ACF.Classes.Components
 
 Components.Register("WTJ", {
 	Name   = "Water Jet",
-	Entity = "acf_waterjet"
+	Entity = "acf_waterjet",
+	TutorialURL = "docs/acf_tutorials/waterjets.html"
 })
 
 Components.RegisterItem("WTJ-IMP", "WTJ", {

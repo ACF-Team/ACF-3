@@ -1,4 +1,5 @@
 local ACF = ACF
+local Notify = ACF.Utilities.Notify
 
 -- permutation is of the form (Axis mapped to X, Axis mapped to Y, Axis mapped to Z). Default is Vector(1, 2, 3) which means X -> X, Y -> Y, Z -> Z.
 -- addAngles is the angles to add to the model angles after the conversion
@@ -93,7 +94,7 @@ function ACF.ConvertBaseplate(Player, Target)
 
     -- Determine which entities to area copy
     local EntsByIndex = {}
-    local Contraption = Target:GetContraption()
+    local Contraption = Target:CFW_GetContraption()
     if Contraption then
         -- Save everything including turrets through contraption data
         for ent, _ in pairs(Contraption.ents) do EntsByIndex[ent:EntIndex()] = ent end
@@ -140,7 +141,7 @@ function ACF.ConvertBaseplate(Player, Target)
         end
 
         if foundTranslation.warning then
-            ACF.SendNotify(Player, false, foundTranslation.warning)
+            Notify.WarningToPlayer(Player, "An issue occured while converting a prop to an ACF baseplate", foundTranslation.warning)
         end
     elseif BaseplateToProp then
         -- Baseplate to prop conversion

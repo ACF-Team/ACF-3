@@ -193,6 +193,8 @@ local function CreateMenu(Menu)
 
 	Menu:AddTitle("#acf.menu.weapons.settings")
 
+	Menu:AddWikiLink("Weapons", "docs/acf_tutorials/weapons.html")
+
 	-- Weapon Settings Section (collapsible)
 	local WeaponBase = Menu:AddCollapsible("#acf.menu.weapons.weapon_info", true, "icon16/monitor_edit.png")
 

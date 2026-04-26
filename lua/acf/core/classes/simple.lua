@@ -84,27 +84,6 @@ function Classes.AddSimpleFunctions(Namespace, Entries)
 
 		return Result
 	end
-
-	-- Aliases
-
-	--- Adds an alias to a entry in the namespace
-	--- @param ID string The ID of the entry to apply an alias to
-	--- @param Alias string The Alias to map to the given ID
-	function Namespace.AddAlias(ID, Alias)
-		if not isstring(ID) then return end
-		if not isstring(Alias) then return end
-
-		Entries[Alias] = Entries[ID]
-	end
-
-	--- Checks whether an ID is an alias of an entry in the namespace
-	--- @param ID string The ID to check
-	--- @return boolean # Whether the ID is an alias
-	function Namespace.IsAlias(ID)
-		local Data = isstring(ID) and Entries[ID]
-
-		return Data and Data.ID ~= ID or false
-	end
 end
 
 hook.Add("ACF_OnCreateItem", "ACF Precache Model", function(_, Class)

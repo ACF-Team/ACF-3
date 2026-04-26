@@ -37,12 +37,13 @@ do
 		if not Gun then return end
 
 		local Delay = OverrideDelay or Gun.ReloadTime or 0
+		local Count = table.Count(Guns)
 		local Counter = 0
 		for Gun in pairs(Guns) do
 			local CurrentGun = Gun
 			if CurrentGun.Firing == Fire then continue end -- Don't make a timer if nothing changed
 			CurrentGun.Firing = Fire
-			local TrueDelay = Counter * Delay -- It's called good luck
+			local TrueDelay = Counter * Delay / Count -- It's called good luck
 			TimerSimple(TrueDelay, function()
 				if IsValid(CurrentGun) and Fire then
 					local GunCanFire = CurrentGun.CanFire and CurrentGun:CanFire()

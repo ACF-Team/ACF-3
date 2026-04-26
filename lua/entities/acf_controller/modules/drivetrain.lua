@@ -143,12 +143,12 @@ do
 		local LeftWheels, RightWheels = {}, {}
 		local avg, count = 0, 0
 		for Wheel in pairs(self.Wheels) do
-			avg, count = avg + Wheel:GetPos().x, count + 1
+			avg, count = avg + self.Baseplate:WorldToLocal(Wheel:GetPos()).y, count + 1
 		end
 		avg = avg / count
 
 		for Wheel in pairs(self.Wheels) do
-			if Wheel:GetPos().x < avg then LeftWheels[Wheel] = true else RightWheels[Wheel] = true end
+			if self.Baseplate:WorldToLocal(Wheel:GetPos()).y > avg then LeftWheels[Wheel] = true else RightWheels[Wheel] = true end
 		end
 		self.LeftWheels, self.RightWheels = LeftWheels, RightWheels
 
@@ -166,17 +166,21 @@ do
 		self.GearboxLeft, self.GearboxLeftDir = next(LeftGearboxes)
 		self.GearboxRight, self.GearboxRightDir = next(RightGearboxes)
 
+		for v in pairs(self.SteerPlates) do self.SteerPlatesSorted[#self.SteerPlatesSorted + 1] = v end
+		table.sort(self.SteerPlatesSorted, function(A, B)
+			return self.Baseplate:WorldToLocal(A:GetPos()).x > self.Baseplate:WorldToLocal(B:GetPos()).x
+		end)
+
 		self.CanSteer = #self.SteerPlatesSorted > 0 -- Steer if there are any steer plates
 
-		self.CanNeutral = not self.CanSteer -- Can't neutral steer if you can steer
-
 		-- Can't neutral steer if a gearbox is connected to both sides
+		self.HasTransfers = (next(self.LeftGearboxes) or next(self.RightGearboxes)) ~= MainGearbox
+
+		self.CanNeutral = true
 		for Gearbox in pairs(self.LeftGearboxes) do if self.RightGearboxes[Gearbox] then self.CanNeutral = false break end end
 		for Gearbox in pairs(self.RightGearboxes) do if self.LeftGearboxes[Gearbox] then self.CanNeutral = false break end end
 
 		for Wheel in pairs(self.Wheels) do self.SteerAngles[Wheel] = 0 end
-
-		-- if self.Gearbox.DoubleDiff then self.CanNeutral = true end
 
 		-- Set default shift RPMs to one of the engine's powerbands
 		local Engine = next(self.Engines)
@@ -202,6 +206,7 @@ do
 		RecacheBindOutput(self, SelfTbl, "Speed", Speed)
 
 		if not IsValid(SelfTbl.Gearbox) then return end
+		if self:GetDisableMobility() then return end
 
 		local W, A, S, D = GetKeyState(SelfTbl, IN_FORWARD), GetKeyState(SelfTbl, IN_MOVELEFT), GetKeyState(SelfTbl, IN_BACK), GetKeyState(SelfTbl, IN_MOVERIGHT)
 		local IsBraking = GetKeyState(SelfTbl, IN_JUMP)
@@ -229,6 +234,7 @@ do
 
 		if IsBraking or (self:GetBrakeEngagement() == 1 and not IsMoving) then -- Braking
 			SetLeft(SelfTbl, "Brake", BrakeStrength) SetRight(SelfTbl, "Brake", BrakeStrength)
+			SetLeft(SelfTbl, "Brake", BrakeStrength, true) SetRight(SelfTbl, "Brake", BrakeStrength, true) -- Differentials HAVE TO BE DIFFERENT
 			SetLeft(SelfTbl, "Clutch", CLUTCH_BLOCK) SetRight(SelfTbl, "Clutch", CLUTCH_BLOCK)
 			SetLatches(SelfTbl, true)
 			return
@@ -255,6 +261,7 @@ do
 		else
 			-- Car steering
 			SetLeft(SelfTbl, "Brake", 0) SetRight(SelfTbl, "Brake", 0)
+			SetLeft(SelfTbl, "Brake", 0, true) SetRight(SelfTbl, "Brake", 0, true)
 			SetLeft(SelfTbl, "Clutch", CLUTCH_FLOW) SetRight(SelfTbl, "Clutch", CLUTCH_FLOW)
 			SetLatches(SelfTbl, false) -- Revert braking if not braking
 
@@ -296,17 +303,18 @@ do
 
 		local MinRPM, MaxRPM = self:GetShiftMinRPM(), self:GetShiftMaxRPM()
 		if MinRPM == MaxRPM then return end -- Probably not set by the user
+		if self:GetDisableAutoShifter() then return end
 		if RPM > MinRPM then Gear = Gear + 1
 		elseif RPM < MaxRPM then Gear = Gear - 1 end
 
 		-- Clean this up later
-		local ShouldNeutral = self.CanNeutral and not self:GetForceCarSteering()
+		local UseReverser = self.HasTransfers
 		local TrueGear = 0
-		if S and not ShouldNeutral then
-			Gear = math.Clamp(Gear, 0, #self.ReverseGears)
+		if S and not UseReverser then
+			Gear = math.Clamp(Gear, 1, #self.ReverseGears)
 			TrueGear = self.ReverseGears[Gear] or 0
 		else
-			Gear = math.Clamp(Gear, 0, #self.ForwardGears)
+			Gear = math.Clamp(Gear, 1, #self.ForwardGears)
 			TrueGear = self.ForwardGears[Gear] or 0
 		end
 
@@ -315,13 +323,5 @@ do
 		end
 		SelfTbl.LastGear = Gear
 		SelfTbl.LastTrueGear = TrueGear
-	end
-
-	function ENT:AnalyzeSteerPlates(SteerPlate)
-		if not IsValid(SteerPlate) then return end
-		table.insert(self.SteerPlatesSorted, SteerPlate)
-		table.sort(self.SteerPlatesSorted, function(A, B)
-			return A:GetPos().y > B:GetPos().y
-		end)
 	end
 end

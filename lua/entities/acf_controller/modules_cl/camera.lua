@@ -1,4 +1,4 @@
-local Clock       = ACF.Utilities.Clock
+local CamAngleUpdateDelay = 0.05
 
 return function(State)
     State.CamAng = angle_zero
@@ -6,7 +6,8 @@ return function(State)
     State.Mode = 1
     State.CamOffset = vector_origin
     State.CamOrbit = 0
-    State.LastTimeAimTransmitted = 0
+
+    State.LastCamAng = angle_zero
 
     -- Camera related
     local WorldCamMins = Vector(-4, -4, -4)
@@ -66,9 +67,13 @@ return function(State)
 
         local TrueSlew = Slew * 1 / 60 -- Previously used frametime, to keep average sensitivity the same, use 1/60 for 60 FPS
         State.CamAng = Angle(math.Clamp(State.CamAng.pitch + y * TrueSlew, -90, 90), State.CamAng.yaw - x * TrueSlew, 0)
+    end)
 
-        if Clock.CurTime > State.LastTimeAimTransmitted + 0.1 then -- Don't send aim data more than 10 times per second
-            State.LastTimeAimTransmitted = Clock.CurTime
+    -- Transmit in a loop, if the angle changed
+    timer.Create("AimTransmit", CamAngleUpdateDelay, 0, function()
+        if not IsValid(State.MyController) then return end
+        if State.LastCamAng ~= State.CamAng then
+            State.LastCamAng = State.CamAng
             net.Start("ACF_Controller_CamData", true)
             net.WriteUInt(State.MyController:EntIndex(), MAX_EDICT_BITS)
             net.WriteAngle(State.CamAng)

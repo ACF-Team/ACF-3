@@ -2,6 +2,7 @@ local ACF          = ACF
 local Classes      = ACF.Classes
 local Utilities    = ACF.Utilities
 local WireIO       = Utilities.WireIO
+local Notify       = Utilities.Notify
 local WireLib      = WireLib
 local Entities     = Classes.Entities
 local AmmoTypes    = Classes.AmmoTypes
@@ -56,26 +57,35 @@ do -- Spawn/Update/Remove
 			end
 
 			local Source = Classes[Data.Destiny]
-			local Class  = Classes.GetGroup(Source, Data.Weapon)
+			local Class = Classes.GetGroup(Source, Data.Weapon)
 
+			-- Compatibility layer for pre-scalable guns
+			if not Class then
+				local Compat = ACF.Compatibility[Data.Destiny]
+				local AliasData = Compat and Compat.CheckGroupItem and Compat.CheckGroupItem(Data.Weapon)
+
+				if AliasData then
+					Data.Weapon = AliasData.ID
+					Data.Caliber = AliasData.Caliber or Data.Caliber
+
+					Class = Classes.GetGroup(Source, Data.Weapon)
+				end
+			end
+
+			-- No class exists!
 			if not Class then
 				Class = Weapons.Get("C")
-
 				Data.Destiny = "Weapons"
 				Data.Weapon  = "C"
 				Data.Caliber = Data.caliber or 50
-			elseif Source.IsAlias(Data.Weapon) then
-				Data.Weapon = Class.ID
 			end
 
 			do
 				local Weapon = Source.GetItem(Class.ID, Data.Weapon)
-
 				if Weapon then
 					if Class.IsScalable then
 						local Bounds  = Class.Caliber
 						local Caliber = ACF.CheckNumber(Weapon.Caliber, Bounds.Base)
-
 						Data.Weapon  = Class.ID
 						Data.Caliber = Clamp(Caliber, Bounds.Min, Bounds.Max)
 					else
@@ -365,7 +375,7 @@ do -- Spawn/Update/Remove
 			end
 
 			if Unloaded then
-				ACF.SendNotify(Entity.Owner, false, "Crate updated while weapons were loaded with its ammo. Weapons unloaded.")
+				Notify.EntityWarning(Entity, "Weapons unloaded.", "Crate updated while weapons were loaded with its ammo")
 			end
 		end
 

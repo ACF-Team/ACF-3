@@ -7,7 +7,7 @@ return {
 
         State.DmgResult = ACF.Damage.Objects.DamageResult()
         State.Ent       = {
-            GetContraption = function() return nil end
+            CFW_GetContraption = function() return nil end
         }
 
         if Entries then

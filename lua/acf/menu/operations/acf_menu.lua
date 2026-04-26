@@ -381,15 +381,16 @@ ACF.CreateMenuOperation("2-Motor", "turret motor")
 ACF.CreateMenuOperation("3-Gyro", "turret gyroscope")
 ACF.CreateMenuOperation("4-Computer", "turret computer")
 
+local Notify = ACF.Utilities.Notify
 ACF.CreateMenuOperation("Baseplate", "baseplate", nil, {
 	Text = "Attempts to convert the target entity into a baseplate.",
 	Func = function(Tool, Trace)
 		if CLIENT then return end
 		local success, msg = ACF.ConvertBaseplate(Tool.SWEP:GetOwner(), Trace.Entity)
 		if not success then
-			ACF.SendNotify(Tool:GetOwner(), false, "Could not convert baseplate: " .. msg)
+			Notify.WarningToPlayer(Tool:GetOwner(), "Could not convert", msg)
 		else
-			ACF.SendNotify(Tool:GetOwner(), true, "Successfully converted entity to baseplate.")
+			Notify.NoticeToPlayer(Tool:GetOwner(), "Successfully converted the entity.")
 		end
 	end
 })

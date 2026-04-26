@@ -29,23 +29,38 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
+local ENTITY = FindMetaTable("Entity")
+local VECTOR = FindMetaTable("Vector")
+
 --===============================================================================================--
 -- Local Funcs and Vars
 --===============================================================================================--
-local ACF = ACF
-local HookRun     = hook.Run
-local Utilities   = ACF.Utilities
-local WireIO      = Utilities.WireIO
+local ACF 			 = ACF
 
-local Contraption = ACF.Contraption
-local hook	   = hook
-local Classes	= ACF.Classes
-local CrewTypes = Classes.CrewTypes
-local CrewModels = Classes.CrewModels
-local Entities   = Classes.Entities
-local TraceHull = util.TraceHull
-local TimerSimple	= timer.Simple
-local Damage		= ACF.Damage
+local HookRun     	 = hook.Run
+local Utilities   	 = ACF.Utilities
+local Notify      	 = Utilities.Notify
+local WireIO      	 = Utilities.WireIO
+
+local Compatibility  = ACF.Compatibility
+local Contraption 	 = ACF.Contraption
+local hook	   		 = hook
+local Classes		 = ACF.Classes
+local CrewTypes 	 = Classes.CrewTypes
+local CrewModels 	 = Classes.CrewModels
+local Entities   	 = Classes.Entities
+local TraceHull 	 = util.TraceHull
+local TimerSimple	 = timer.Simple
+local Damage		 = ACF.Damage
+
+local IsEntityValid  = ACF.Optimizations.IsEntityValid
+
+local ENT_UpdateUltraLowFreq
+local ENT_UpdateLowFreq
+local ENT_UpdateMedFreq
+local ENT_UpdateHighFreq
+local ENT_EnforceLimits
+local ENT_DamageCrew
 
 --===============================================================================================--
 -- File locals
@@ -75,80 +90,93 @@ end
 
 --- Helper function that runs a hull trace between two points
 local TraceHullConfig = {start = Vector(), endpos = Vector(), filter = nil, mins = Vector(-1, -1, -1), maxs = Vector(1, 1, 1)}
+local TraceHullResult = {}
+
 local function traceVisHullCube(pos1, pos2, boxsize, filter)
-	TraceHullConfig.start = pos1
+	TraceHullConfig.start  = pos1
 	TraceHullConfig.endpos = pos2
 	TraceHullConfig.filter = filter
-	TraceHullConfig.mins = -boxsize / 2
-	TraceHullConfig.maxs = boxsize / 2
-	local res = TraceHull(TraceHullConfig)
+	TraceHullConfig.mins   = -boxsize / 2
+	TraceHullConfig.maxs   = boxsize / 2
+	TraceHullConfig.output = TraceHullResult
+	TraceHull(TraceHullConfig)
 
-	local length = pos1:Distance(pos2)
-	local truelength = res.Fraction * length
-	return res.Fraction, length, truelength, res.HitPos
+	local length = VECTOR.Distance(pos1, pos2)
+	local truelength = TraceHullResult.Fraction * length
+	return TraceHullResult.Fraction, length, truelength, TraceHullResult.HitPos
 end
 
-local Red = Color(255, 0, 0)
-local Green = Color(0, 255, 0)
-local LightBlue = Color(0, 255, 255, 50)
+-- local Red       = Color(255, 0, 0)
+-- local Green     = Color(0, 255, 0)
+-- local LightBlue = Color(0, 255, 255, 50)
 
 --- Helper function that Scans the space around the crew member by updating 
+local TraceVisHullCubeVectorBox    = Vector(0, 0, 0)
+local TraceVisHullCubeVectorOffset = Vector(0, 0, 0)
 local function iterScan(crew, reps)
-	local localoffset = crew.CrewModel.ScanOffsetL
-	local center = crew:LocalToWorld(localoffset)
-	local count = crew.ScanCount
+	local CrewTable = ENTITY.GetTable(crew)
+	local localoffset = CrewTable.CrewModel.ScanOffsetL
+	local center = ENTITY.LocalToWorld(crew, localoffset)
+	local count = CrewTable.ScanCount
 
-	local Box = crew.ScanBoxBase + crew.ScanBox
-	local Hull = crew.ScanHull
+	VECTOR.SetUnpacked(TraceVisHullCubeVectorBox, VECTOR.Unpack(CrewTable.ScanBox))
+	if CrewTable.ScanBoxBase then
+		VECTOR.Add(TraceVisHullCubeVectorBox, CrewTable.ScanBoxBase)
+	end
+
+	local Hull = CrewTable.ScanHull
 
 	-- Filter out players and other people's props
 	-- False to skip, true to hit
 	local filter = function(x)
-		local Owner = x:CPPIGetOwner()
-		if not IsValid(Owner) then return false end
-		return not (x == crew or x.noradius or Owner ~= Owner or x:IsPlayer() or ACF.GlobalFilter[x:GetClass()])
+		local Owner = ENTITY.CPPIGetOwner(x)
+		if not IsEntityValid(Owner) then return false end
+		return not (x == crew or ENTITY.GetTable(x).noradius or Owner ~= Owner or x:IsPlayer() or ACF.GlobalFilter[ENTITY.GetClass(x)])
 	end
 
 	-- Update reps hull traces
 	for _ = 1, reps do
 		-- Perform hull trace from scan center to corner of box
-		local index = crew.ScanIndex
-		local disp = crew.ScanDisplacements[index]
+		local index = CrewTable.ScanIndex
+		local disp = CrewTable.ScanDisplacements[index]
 		local p1 = center
-		local corner = Vector(disp.x * Box.x / 2, disp.y * Box.y / 2, disp.z * Box.z / 2)
-		local p2 = crew:LocalToWorld(localoffset + corner)
+		local DispX, DispY, DispZ = VECTOR.Unpack(disp)
+		local BoxX, BoxY, BoxZ    = VECTOR.Unpack(TraceVisHullCubeVectorBox)
+		VECTOR.SetUnpacked(TraceVisHullCubeVectorOffset, DispX * BoxX / 2, DispY * BoxY / 2, DispZ * BoxZ / 2)
+		VECTOR.Add(TraceVisHullCubeVectorOffset, localoffset)
+		local p2 = ENTITY.LocalToWorld(crew, TraceVisHullCubeVectorOffset)
 
-		local frac, _, _, hitpos = traceVisHullCube(p1, p2, Hull, filter)
-		crew.ScanLengths[index] = frac
+		local frac, _, _, _ = traceVisHullCube(p1, p2, Hull, filter)
+		CrewTable.ScanLengths[index] = frac
 
-		debugoverlay.Line(p1, hitpos, 1, Green)
-		debugoverlay.Line(hitpos, p2, 1, Red)
-		debugoverlay.Box(hitpos, -Hull / 2, Hull / 2, 10, LightBlue)
+		-- debugoverlay.Line(p1, hitpos, 1, Green)
+		-- debugoverlay.Line(hitpos, p2, 1, Red)
+		-- debugoverlay.Box(hitpos, -Hull / 2, Hull / 2, 10, LightBlue)
 
 		-- Save the index for the next iteration. Loop around if needed.
 		index = index + 1
 		if index > count then index = 1 end
-		crew.ScanIndex = index
+		CrewTable.ScanIndex = index
 	end
 	-- debugoverlay.BoxAngles(crew:LocalToWorld(localoffset), -Box / 2, Box / 2, crew:GetAngles(), 1, Blue)
 
 	-- Update using new and saved scan lengths
 	local sum = 0
-	for i = 1, count do sum = sum + crew.ScanLengths[i] end
+	for i = 1, count do sum = sum + CrewTable.ScanLengths[i] end
 	return sum / count
 end
 
 function ENT:CFW_PreParentedTo(OldParent, _)
 	-- Force unlinks if OldParent is valid
 	if IsValid(OldParent) and not self:IsMarkedForDeletion() then
-		ACF.SendNotify(self:CPPIGetOwner(), false, "Crew parent has changed from a previously valid parent. All links removed, please relink.")
+		Notify.EntityWarning(self, "Crew parent has changed", "This crew member was reparented. All links have been removed, please relink.")
 		if next(self.Targets) then
 			for Target in pairs(self.Targets) do
 				self:Unlink(Target)
 			end
 		end
-		self:CFW_Unindex_Crew(self:GetContraption())
-		self:CFW_Index_Crew(self:GetContraption())
+		self:CFW_Unindex_Crew(self:CFW_GetContraption())
+		self:CFW_Index_Crew(self:CFW_GetContraption())
 	end
 end
 
@@ -168,10 +196,11 @@ end
 
 --- Check other crews of the same type and enforce convar limits
 local function EnforceLimits(crew)
-	local CrewType = crew.CrewType
-	local CrewTypeID = crew.CrewTypeID
+	local CrewTable  = ENTITY.GetTable(crew)
+	local CrewType   = CrewTable.CrewType
+	local CrewTypeID = CrewTable.CrewTypeID
 
-	local Contraption = crew:GetContraption() or {}
+	local Contraption = ENTITY.CFW_GetContraption(crew) or {}
 	local CrewsByType = Contraption.CrewsByType or {}
 
 	local Limit = CrewType.LimitConVar
@@ -180,64 +209,77 @@ local function EnforceLimits(crew)
 		local Count = Crews and table.Count(Crews) or 0
 
 		if Count > Limit.Amount then
-			ACF.SendNotify(crew:GetOwner(), false, "You have reached the " .. CrewType.Name .. " limit for this Contraption.")
-			crew:Remove()
+			Notify.WarningToPlayer(ENTITY.CPPIGetOwner(crew), "You have reached the " .. CrewType.Name .. " limit for this Contraption.")
+			ENTITY.Remove(crew)
 		end
 	end
 
 	if CrewType.EnforceLimits then CrewType.EnforceLimits(crew) end
-	crew.Disabled = nil
+	CrewTable.Disabled = nil
 end
 
+local Vector0  = Vector(0, 0, 0)
+local Vector6  = Vector(6, 6, 6)
+local VectorUp = Vector(0, 0, 1)
+
 do -- Random timer stuff
-	function ENT:UpdateUltraLowFreq(cfg)
-		if self.Disabled then return end
+	function ENT_UpdateUltraLowFreq(self, cfg)
+		local SelfTbl = ENTITY.GetTable(self)
 
-		if self.CrewType.UpdateUltraLowFreq then self.CrewType.UpdateUltraLowFreq(self, cfg) end
+		if SelfTbl.Disabled then return end
+
+		if SelfTbl.CrewType.UpdateUltraLowFreq then SelfTbl.CrewType.UpdateUltraLowFreq(self, cfg) end
 	end
+	ENT.UpdateUltraLowFreq = ENT_UpdateUltraLowFreq
 
-	function ENT:UpdateLowFreq(cfg)
-		if self.Disabled then return end
+	function ENT_UpdateLowFreq(self, cfg)
+		local SelfTbl = ENTITY.GetTable(self)
+
+		if SelfTbl.Disabled then return end
 
 		local DeltaTime = cfg.DeltaTime
 
 		-- Update health ergonomics
-		self.HealthEff = self.ACF.Health / self.ACF.MaxHealth
-		WireLib.TriggerOutput(self, "HealthEff", self.HealthEff * 100)
+		SelfTbl.HealthEff = SelfTbl.ACF.Health / SelfTbl.ACF.MaxHealth
+		WireLib.TriggerOutput(self, "HealthEff", SelfTbl.HealthEff * 100)
 
 		-- Update oxygen levels and apply drowning if necessary
-		local MouthPos = self:LocalToWorld(self.CrewModel.MouthOffsetL) -- Probably well underwater at this point
+		local MouthPos = ENTITY.LocalToWorld(self, SelfTbl.CrewModel.MouthOffsetL) -- Probably well underwater at this point
 		-- debugoverlay.Cross(MouthPos, 4, 1, Red, true)
 		if bit.band(util.PointContents(MouthPos), CONTENTS_WATER) == CONTENTS_WATER then
-			self.Oxygen = self.Oxygen - DeltaTime * ACF.CrewOxygenLossRate
+			SelfTbl.Oxygen = SelfTbl.Oxygen - DeltaTime * ACF.CrewOxygenLossRate
 		else
-			self.Oxygen = self.Oxygen + DeltaTime * ACF.CrewOxygenGainRate
+			SelfTbl.Oxygen = SelfTbl.Oxygen + DeltaTime * ACF.CrewOxygenGainRate
 		end
-		self.Oxygen = math.Clamp(self.Oxygen, 0, ACF.CrewOxygen)
-		if self.Oxygen <= 0 and self.IsAlive then
+		SelfTbl.Oxygen = math.Clamp(SelfTbl.Oxygen, 0, ACF.CrewOxygen)
+		if SelfTbl.Oxygen <= 0 and SelfTbl.IsAlive then
 			self:KillCrew("player/pl_drown1.wav")
 		end
-		WireLib.TriggerOutput(self, "Oxygen", self.Oxygen)
+		WireLib.TriggerOutput(self, "Oxygen", SelfTbl.Oxygen)
 
 		-- Update crew focus
-		if self.IsAlive then self.CrewType.UpdateFocus(self, self.IsAlive)
-		else self.Focus = ACF.CrewFallbackCoef end
+		if SelfTbl.IsAlive then SelfTbl.CrewType.UpdateFocus(self, SelfTbl.IsAlive)
+		else SelfTbl.Focus = ACF.CrewFallbackCoef end
 
-		if self.CrewType.UpdateLowFreq then self.CrewType.UpdateLowFreq(self, cfg) end
+		if SelfTbl.CrewType.UpdateLowFreq then SelfTbl.CrewType.UpdateLowFreq(self, cfg) end
 	end
+	ENT.UpdateLowFreq = ENT_UpdateLowFreq
 
-	function ENT:UpdateMedFreq(cfg)
-		if self.Disabled then return end
-		local SelfTbl = self:GetTable()
+	function ENT_UpdateMedFreq(self, cfg)
+		local SelfTbl = ENTITY.GetTable(self)
+
+		if SelfTbl.Disabled then return end
 
 		-- If specified, affect crew ergonomics based on space
 		local SpaceInfo = SelfTbl.CrewType.SpaceInfo
 		if SpaceInfo and SelfTbl.ShouldScan then
 			if not SelfTbl.ScanIndex then
 				-- If we haven't ran an initial scan, setup relevant information
-				SelfTbl.ScanBoxBase = self:OBBMaxs() - self:OBBMins()
-				SelfTbl.ScanBox = SelfTbl.ScanBox or Vector()
-				SelfTbl.ScanHull = SelfTbl.ScanHull or Vector(6, 6, 6)
+				SelfTbl.ScanBoxBase = SelfTbl.ScanBoxBase or Vector(0, 0, 0) -- Keep this Vector(0, 0, 0), its a mutated vector
+				VECTOR.SetUnpacked(SelfTbl.ScanBoxBase, VECTOR.Unpack(ENTITY.OBBMaxs(self)))
+				VECTOR.Sub(SelfTbl.ScanBoxBase, ENTITY.OBBMins(self))
+				SelfTbl.ScanBox  = SelfTbl.ScanBox  or Vector0 -- These are not mutated
+				SelfTbl.ScanHull = SelfTbl.ScanHull or Vector6 -- These are not mutated
 				SelfTbl.ScanDisplacements, SelfTbl.ScanLengths, SelfTbl.ScanCount = GenerateScanSetup()
 				SelfTbl.ScanIndex = 1
 				SelfTbl.SpaceEff = iterScan(self, SelfTbl.ScanCount)
@@ -250,50 +292,55 @@ do -- Random timer stuff
 
 		if SelfTbl.CrewType.UpdateMedFreq then SelfTbl.CrewType.UpdateMedFreq(self, cfg) end
 	end
+	ENT.UpdateMedFreq = ENT_UpdateMedFreq
 
-	function ENT:UpdateHighFreq(cfg)
-		if self.Disabled then return end
-		local SelfTbl = self:GetTable()
+	function ENT_UpdateHighFreq(self, cfg)
+		local SelfTbl = ENTITY.GetTable(self)
+
+		if SelfTbl.Disabled then return end
 
 		-- If specified, affect crew ergonomics based on lean angle
 		local LeanInfo = SelfTbl.CrewType.LeanInfo
 		if LeanInfo then
-			local LeanDot = Vector(0, 0, 1):Dot(self:GetUp())
+			local LeanDot = VECTOR.Dot(VectorUp, ENTITY.GetUp(self))
 			local Angle = math.deg(math.acos(LeanDot))
 			SelfTbl.LeanEff = 1 - ACF.Normalize(Angle, LeanInfo.Min, LeanInfo.Max)
 			WireLib.TriggerOutput(self, "LeanEff", SelfTbl.LeanEff * 100)
 		end
 
 		-- TODO: Clean this shit up man
-		local Contraption = self:GetContraption() or {}
+		local Contraption = ENTITY.CFW_GetContraption(self) or {}
 		local CrewsByType = Contraption.CrewsByType or {}
 		local Commanders = CrewsByType.Commander or {}
 		local Commander = next(Commanders)
 
-		if self.IsAlive then SelfTbl.CrewType.UpdateEfficiency(self, Commander, self.IsAlive)
+		if SelfTbl.IsAlive then SelfTbl.CrewType.UpdateEfficiency(self, Commander, SelfTbl.IsAlive)
 		else SelfTbl.TotalEff = ACF.CrewFallbackCoef end
 
 		WireLib.TriggerOutput(self, "TotalEff", SelfTbl.TotalEff * 100)
 
 		if SelfTbl.CrewType.UpdateHighFreq then SelfTbl.CrewType.UpdateHighFreq(self, cfg) end
 	end
+	ENT.UpdateHighFreq = ENT_UpdateHighFreq
 
-	function ENT:EnforceLimits()
-		local Targets = self.Targets
-		local SelfContraption = self:GetContraption()
+	function ENT_EnforceLimits(self)
+		local SelfTbl = ENTITY.GetTable(self)
+
+		local Targets = SelfTbl.Targets
+		local SelfContraption = ENTITY.CFW_GetContraption(self)
 		local IsParented = CheckParentState(self)
-		local SelfTbl = self:GetTable()
-		if IsParented and Targets ~= nil and next(Targets) then
-			local Pos = self:GetPos()
-			for Link in pairs(Targets) do
-				if not IsValid(Link) then self:Unlink(Link) continue end				-- If the link is invalid, remove it and skip it
 
-				local OutOfRange      = Pos:DistToSqr(Link:GetPos()) > MaxDistance			-- Check distance limit
-				local DiffAncestors   = SelfContraption ~= nil and SelfContraption ~= Link:GetContraption()	-- Check same Contraption
+		if IsParented and Targets ~= nil and next(Targets) then
+			local Pos = ENTITY.GetPos(self)
+			for Link in pairs(Targets) do
+				if not IsEntityValid(Link) then self:Unlink(Link) continue end				-- If the link is invalid, remove it and skip it
+
+				local OutOfRange      = VECTOR.DistToSqr(Pos, ENTITY.GetPos(Link)) > MaxDistance			-- Check distance limit
+				local DiffAncestors   = SelfContraption ~= nil and SelfContraption ~= ENTITY.CFW_GetContraption(Link)	-- Check same Contraption
 				if OutOfRange or DiffAncestors then
 					local Sound = UnlinkSound:format(math.random(1, 3))
-					Link:EmitSound(Sound, 70, 100, ACF.Volume)
-					self:EmitSound(Sound, 70, 100, ACF.Volume)
+					ENTITY.EmitSound(Link, Sound, 70, 100, ACF.Volume)
+					ENTITY.EmitSound(self, Sound, 70, 100, ACF.Volume)
 					self:Unlink(Link)
 					Link:Unlink(self)
 
@@ -303,7 +350,7 @@ do -- Random timer stuff
 					Reasons = table.concat(Reasons, ", and ")
 					Reasons = string.upper(Reasons[1]) .. string.sub(Reasons, 2)
 
-					ACF.SendNotify(self:CPPIGetOwner(), false, "Crew #" .. self:EntIndex() .. " unlinked. " .. Reasons)
+					Notify.EntityWarning(self, "Crew member unlinked. ", Reasons)
 				end
 			end
 		end
@@ -315,25 +362,27 @@ do -- Random timer stuff
 
 		self:UpdateOverlay()
 	end
+	ENT.EnforceLimits = ENT_EnforceLimits
 
 	local DeltaTime = engine.TickInterval()
 	function ENT:EnforceGForces()
-		local Parent = self:GetParent()
-		if not IsValid(Parent) then return end
+		local Parent = ENTITY.GetParent(self)
+		if not IsEntityValid(Parent) then return end
 
-		local Contraption = self:GetContraption()
+		local Contraption = ENTITY.CFW_GetContraption(self)
 		local Baseplate = Contraption and Contraption.ACF_Baseplate
-		if not IsValid(Baseplate) then return end -- Why would this happen for a recent vehicle? no clue lol...
-		local SampleRate = Baseplate:ACF_GetUserVar("GForceTicks") or 1
+		if not IsEntityValid(Baseplate) then return end -- Why would this happen for a recent vehicle? no clue lol...
+		-- This is ACF_LiveData to try to help with performance issues (__index'ing)... ugh
+		local SampleRate = ENTITY.GetTable(Baseplate).ACF_LiveData["GForceTicks"] or 1
 		if Contraption.IsPickedUp then return end
 
-		local SelfTbl = self:GetTable()
+		local SelfTbl = ENTITY.GetTable(self)
 		local GForceIter = SelfTbl.GForceIter or 0
 		GForceIter = GForceIter + 1
 		SelfTbl.GForceIter = GForceIter
 		if GForceIter % SampleRate ~= 0 then return end
 
-		local NewPos = self:LocalToWorld(SelfTbl.CrewModel.ScanOffsetL)
+		local NewPos = ENTITY.LocalToWorld(self, SelfTbl.CrewModel.ScanOffsetL)
 		-- debugoverlay.Cross(NewPos, 4, 1, Red, true)
 		local GForce = ACF.UpdateGForceTracker(SelfTbl.GForceTracker, NewPos, SampleRate)
 
@@ -353,9 +402,10 @@ do -- Random timer stuff
 			SelfTbl.GForceStrain = SelfTbl.GForceStrain + Damage
 			if SelfTbl.GForceStrain > 1 then
 				local Excess = SelfTbl.GForceStrain - 1 -- "Unmanageable damage"
-				self:DamageCrew(Excess * SelfTbl.ACF.MaxHealth, "player/pl_fallpain3.wav")
+				ENT_DamageCrew(self, Excess * SelfTbl.ACF.MaxHealth, "player/pl_fallpain3.wav")
 			end
 		end
+
 		SelfTbl.GForceStrain = math.Clamp(SelfTbl.GForceStrain - 0.001, 0, 1)
 		WireLib.TriggerOutput(self, "Stamina", SelfTbl.GForceStrain)
 	end
@@ -375,7 +425,28 @@ do
 		"Entity (The crew entity itself) [ENTITY]"
 	}
 
+	local function ConvertACEData(Data)
+		-- The Id field is used by ACE to store their own crew type
+
+		if Data.CrewTypeID == nil then
+			local ACE_Id = Data.Id
+			if ACE_Id ~= nil then
+				Data.CrewTypeID = Compatibility.Crew.CheckACECrewType(ACE_Id)
+			end
+		end
+
+		-- The ModelType field is used by ACE to store their own crew model
+		-- TODO: this seems unused, Craftian (?)   
+		--		- march
+		--  if Data.CrewModelID == nil then
+		--  	local ACE_ModelType = Data.ModelType
+		--  	if ACE_ModelType ~= nil then
+		--  		
+		--  	end
+		--  end
+	end
 	local function VerifyData(Data)
+		ConvertACEData(Data)
 		-- Default crew is a sitting commander that can replace others and be replaced
 		if Data.CrewTypeID == nil then Data.CrewTypeID = "Commander" end
 		if Data.CrewModelID == nil then Data.CrewModelID = "Sitting" end
@@ -523,11 +594,11 @@ do
 
 		-- Run randomized timers
 		-- TODO: Fix args
-		ACF.AugmentedTimer(function(cfg) Entity:UpdateUltraLowFreq(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 3, MaxTime = 5, Delay = 0.1})
-		ACF.AugmentedTimer(function(cfg) Entity:UpdateLowFreq(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2, Delay = 0.1})
-		ACF.AugmentedTimer(function(cfg) Entity:UpdateMedFreq(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1, Delay = 0.1})
-		ACF.AugmentedTimer(function(cfg) Entity:UpdateHighFreq(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 0.1, MaxTime = 0.5, Delay = 0.1})
-		ACF.AugmentedTimer(function(cfg) Entity:EnforceLimits(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2, Delay = 0.1})
+		ACF.AugmentedTimer(function(cfg) ENT_UpdateUltraLowFreq(Entity, cfg) end, function() return IsEntityValid(Entity) end, nil, {MinTime = 3, MaxTime = 5, Delay = 0.1})
+		ACF.AugmentedTimer(function(cfg) ENT_UpdateLowFreq(Entity, cfg) end, function() return IsEntityValid(Entity) end, nil, {MinTime = 1, MaxTime = 2, Delay = 0.1})
+		ACF.AugmentedTimer(function(cfg) ENT_UpdateMedFreq(Entity, cfg) end, function() return IsEntityValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1, Delay = 0.1})
+		ACF.AugmentedTimer(function(cfg) ENT_UpdateHighFreq(Entity, cfg) end, function() return IsEntityValid(Entity) end, nil, {MinTime = 0.1, MaxTime = 0.5, Delay = 0.1})
+		ACF.AugmentedTimer(function(cfg) ENT_EnforceLimits(Entity, cfg) end, function() return IsEntityValid(Entity) end, nil, {MinTime = 1, MaxTime = 2, Delay = 0.1})
 
 		hook.Add("Tick", "GForceCalculation" .. Entity:EntIndex(), function()
 			Entity:EnforceGForces(cfg)
@@ -575,14 +646,14 @@ do
 
 		-- Unlink crews if their type changes
 		if self.CrewTypeID ~= Data.CrewTypeID then
-			ACF.SendNotify(self:GetOwner(), false, "Crew updated with different occupation. All links removed, please relink.")
+			Notify.EntityWarning(self, "Crew occupation has changed", "This crew member's occupation was changed. All links have been removed, please relink.")
 			if next(self.Targets) then
 				for Target in pairs(self.Targets) do
 					self:Unlink(Target)
 				end
 			end
-			self:CFW_Unindex_Crew(self:GetContraption())
-			self:CFW_Index_Crew(self:GetContraption())
+			self:CFW_Unindex_Crew(self:CFW_GetContraption())
+			self:CFW_Index_Crew(self:CFW_GetContraption())
 		end
 
 		ACF.SaveEntity(self)
@@ -597,27 +668,29 @@ do
 	end
 
 	function ENT:ACF_UpdateOverlayState(State)
-		if self.IsAlive then
+		local SelfTbl = ENTITY.GetTable(self)
+
+		if SelfTbl.IsAlive then
 			State:AddSuccess("Alive")
 		else
 			State:AddError("Dead")
 		end
 
-		for _, Error in pairs(self.OverlayErrors) do
+		for _, Error in pairs(SelfTbl.OverlayErrors) do
 			State:AddError(Error)
 		end
 
 		State:AddWidthBreak()
-		State:AddKeyValue("Role", self.CrewTypeID)
-		State:AddNumber("Health", math.Round(self.HealthEff * 100, 2), "%")
-		State:AddNumber("Lean", math.Round(self.LeanEff * 100, 2), "%")
-		State:AddNumber("Space", math.Round(self.SpaceEff * 100, 2), "%")
-		State:AddNumber("Move", math.Round(self.MoveEff * 100, 2), "%")
-		State:AddNumber("Focus", math.Round(self.Focus * 100, 2), "%")
-		State:AddNumber("Total", math.Round(self.TotalEff * 100, 2), "%")
-		State:AddKeyValue("Replaces Others", self.ReplaceOthers and "Yes" or "No")
-		State:AddKeyValue("Replaceable", self.ReplaceSelf and "Yes" or "No")
-		State:AddNumber("Priority", self.CrewPriority)
+		State:AddKeyValue("Role", SelfTbl.CrewTypeID)
+		State:AddNumber("Health", math.Round(SelfTbl.HealthEff * 100, 2), "%")
+		State:AddNumber("Lean", math.Round(SelfTbl.LeanEff * 100, 2), "%")
+		State:AddNumber("Space", math.Round(SelfTbl.SpaceEff * 100, 2), "%")
+		State:AddNumber("Move", math.Round(SelfTbl.MoveEff * 100, 2), "%")
+		State:AddNumber("Focus", math.Round(SelfTbl.Focus * 100, 2), "%")
+		State:AddNumber("Total", math.Round(SelfTbl.TotalEff * 100, 2), "%")
+		State:AddKeyValue("Replaces Others", SelfTbl.ReplaceOthers and "Yes" or "No")
+		State:AddKeyValue("Replaceable", SelfTbl.ReplaceSelf and "Yes" or "No")
+		State:AddNumber("Priority", SelfTbl.CrewPriority)
 	end
 
 	function ENT:Use(Activator)
@@ -665,7 +738,7 @@ do
 
 	--- Attempts to replace self with another crew member
 	function ENT:ReplaceCrew()
-		local Contraption = self:GetContraption()
+		local Contraption = self:CFW_GetContraption()
 		if Contraption == nil then return end 				-- No Contraption to replace crew in
 		if Contraption.CrewsByPriority == nil then return end 	-- No crew to replace with
 		if not self.ToBeReplaced and self.ReplaceSelf then
@@ -721,17 +794,20 @@ do
 	end
 
 	-- Somewhat internal function to handle crew damage
-	function ENT:DamageCrew(Damage, sound)
+	function ENT_DamageCrew(self, Damage, sound)
+		local SelfTbl = ENTITY.GetTable(self)
+		local SelfACF = SelfTbl.ACF
 		-- Avoid negative health to avoid weird damage interactions
-		local NewHealth = math.max(0, self.ACF.Health - Damage)
+		local NewHealth = math.max(0, SelfACF.Health - Damage)
 
-		self.ACF.Health = NewHealth
-		self.ACF.Armour = self.ACF.MaxArmour * (NewHealth / self.ACF.MaxHealth)
+		SelfACF.Health = NewHealth
+		SelfACF.Armour = SelfACF.MaxArmour * (NewHealth / SelfACF.MaxHealth)
 
-		if NewHealth == 0 and self.IsAlive then
+		if NewHealth == 0 and SelfTbl.IsAlive then
 			self:KillCrew(sound)
 		end
 	end
+	ENT.DamageCrew = ENT_DamageCrew
 
 	-- sound is the sound to play when the crew dies
 	function ENT:KillCrew(Sound)
@@ -747,11 +823,13 @@ do
 
 		-- TODO: CLEAN THIS UP
 		-- Check how many crew remain and kill the owner if there are none left
-		local Contraption = self:GetContraption() or {}
-		local Crews = Contraption.Crews or {}
+		local Contraption = self:CFW_GetContraption()
+		local Crews = Contraption and Contraption.Crews
 		local Alive = 0
-		for crew, _ in pairs(Crews) do
-			if crew.IsAlive then Alive = Alive + 1 end
+		if Crews then
+			for crew, _ in pairs(Crews) do
+				if crew.IsAlive then Alive = Alive + 1 end
+			end
 		end
 
 		-- If all crew die, kill all seated players in the contraption
@@ -775,16 +853,18 @@ do
 	end
 
 	function ENT:ACF_OnDamage(DmgResult, DmgInfo)
-		local HitRes = DmgResult:Compute()
+		local HitRes  = DmgResult:Compute()
+		local SelfTbl = ENTITY.GetTable(self)
 
 		HitRes.Kill = false	-- Crew entities should never be removed
 
-		self:DamageCrew(HitRes.Damage, "npc/zombie/zombie_voice_idle6.wav")
+		ENT_DamageCrew(self, HitRes.Damage, "npc/zombie/zombie_voice_idle6.wav")
 
-		if IsValid(self.Pod) then
-			local Driver = self.Pod:GetDriver()
+		local Pod = SelfTbl.Pod
+		if IsEntityValid(Pod) then
+			local Driver = Pod:GetDriver()
 
-			if IsValid(Driver) then
+			if IsEntityValid(Driver) then
 				Damage.doSquishyDamage(Driver, DmgResult, DmgInfo)
 			end
 		end
@@ -1024,7 +1104,7 @@ do
 			for _, EntID in pairs(EntMods.CrewTargets) do
 				local ActualEnt = CreatedEntities[EntID]
 				local result, err = self:Link(ActualEnt)
-				if not result then ACF.SendNotify(Ent:CPPIGetOwner(), false, "ACF Crew:PostEntityPaste failure: " .. err) end
+				if not result then Notify.EntityWarning(Ent, "ACF Crew:PostEntityPaste failure", err) end
 			end
 
 			self.RemainingLinks = RLs

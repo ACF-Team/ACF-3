@@ -37,26 +37,6 @@ Weapons.Register("MO", {
 	CostScalar	= 0.35
 })
 
-Weapons.RegisterItem("60mmM", "MO", {
-	Caliber = 60,
-})
-
-Weapons.RegisterItem("80mmM", "MO", {
-	Caliber = 80,
-})
-
-Weapons.RegisterItem("120mmM", "MO", {
-	Caliber = 120,
-})
-
-Weapons.RegisterItem("150mmM", "MO", {
-	Caliber = 150,
-})
-
-Weapons.RegisterItem("200mmM", "MO", {
-	Caliber = 200,
-})
-
 ACF.SetCustomAttachment("models/mortar/mortar_120mm.mdl", "muzzle", Vector(24.02), Angle(0, 0, 90))
 
 ACF.AddHitboxes("models/mortar/mortar_120mm.mdl", {
