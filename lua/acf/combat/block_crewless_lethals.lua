@@ -26,6 +26,8 @@ local function CrewlessLethalCheck(Entity)
     local Contraption = Entity:CFW_GetContraption()
     local Crews = Contraption and Contraption.entsbyclass.acf_crew
     if not Crews or next(Crews) == nil then return false end
+
+    return true
 end
 
 hook.Add("ACF_PreFireWeapon", "ACF_PreventCrewlessLethals", function(Ent)
