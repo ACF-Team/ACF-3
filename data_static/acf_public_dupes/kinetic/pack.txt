@@ -9,4 +9,6 @@ INSERT INTO DupeData (path, name, cost, weight, type, mobility, packid, descript
 ('awapc-25', 'AWAPC-25', 25.1, 2961.87, 'APC', 'Wheeled', 'kinetic', 'Uses AIO Controls'),
 ('awmtd-42', 'AWMTD-42', 42.18, 3906.18, 'ATGM', 'Tracked', 'kinetic', 'Uses AIO Controls'),
 ('alhw-165', 'ALHW-165', 165.3, 13379.39, 'SPG', 'Tracked', 'kinetic', 'Uses AIO Controls'),
-('altd-107', 'ALTD-107', 104.83, 8724.44, 'LT', 'Tracked', 'kinetic', 'Uses AIO Controls');
+('altd-107', 'ALTD-107', 104.83, 8724.44, 'LT', 'Tracked', 'kinetic', 'Uses AIO Controls'),
+('skyfisher', 'Skyfisher', 272.42, 32379.48, 'AA', 'Tracked', 'kinetic', 'Uses AIO Controls'),
+('sunfish', 'Sunfish', 316.45, 42634.85, 'MBT', 'Tracked', 'kinetic', 'Uses AIO Controls');
