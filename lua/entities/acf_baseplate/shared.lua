@@ -20,6 +20,10 @@ ENT.ACF_UserVars = {
 	["GForceTicks"]         = {Type = "Number",       Min = 1,   Max = 7,   Default = 1,  Decimals = 0},
 }
 
+ENT.ACF_WireInputs = {
+	"Unflip (Triggers an unflip on the baseplate)",
+}
+
 ENT.ACF_WireOutputs = {
 	"Entity (The entity itself) [ENTITY]",
 	"Vehicles (Seat for this entity, compatible with wire) [ARRAY]",
