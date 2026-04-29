@@ -217,7 +217,7 @@ end, function(Env)
     LinkAll(Env, "acf_rack", "Crates")
     LinkAll(Env, "acf_ammo", "Weapons")
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_gun, {"Crew", "Autoloader"})) do
-        if not e.IsBelted and e.Weapon ~= "SL" then
+        if not e.IsBelted and e.Weapon ~= "SL" and e.Weapon ~= "40mmFGL" then
             for _, crew in pairs(Env.Contraption.Crews or {}) do
                 if crew.Type == "Loader" then e:LinkTo(crew.Ent) end
             end
