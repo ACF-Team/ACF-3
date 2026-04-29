@@ -166,7 +166,12 @@ do
 		self.GearboxLeft, self.GearboxLeftDir = next(LeftGearboxes)
 		self.GearboxRight, self.GearboxRightDir = next(RightGearboxes)
 
-		for v in pairs(self.SteerPlates) do self.SteerPlatesSorted[#self.SteerPlatesSorted + 1] = v end
+		for v in pairs(self.SteerPlates) do
+			local PhysObj = v:GetPhysicsObject()
+			if IsValid(PhysObj) then PhysObj:EnableGravity(false) end
+			self.SteerPlatesSorted[#self.SteerPlatesSorted + 1] = v
+		end
+
 		table.sort(self.SteerPlatesSorted, function(A, B)
 			return self.Baseplate:WorldToLocal(A:GetPos()).x > self.Baseplate:WorldToLocal(B:GetPos()).x
 		end)
