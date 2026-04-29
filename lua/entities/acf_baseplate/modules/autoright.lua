@@ -7,6 +7,10 @@ ACF.AddInputAction("acf_baseplate", "Unflip", function(Entity, Value)
     if Value == 0 or CurTime() - LastFlipped < 10 then return end -- Only flip every 10 seconds to prevent spam
     Entity.LastFlipped = CurTime()
 
+    local IsFlipped = Entity:GetUp():Dot(Vector(0, 0, 1)) < 0
+    local IsStationary = Entity:GetVelocity():Length() < 100
+    if not IsFlipped or not IsStationary then return end
+
     local Physicals = constraint.GetAllConstrainedEntities(Entity)
 
     local NewPosition = Entity:GetPos() + Vector(0, 0, 100)
@@ -18,15 +22,15 @@ ACF.AddInputAction("acf_baseplate", "Unflip", function(Entity, Value)
     local Contraption = Entity:CFW_GetContraption()
     if Contraption then Contraption.IsPickedUp = true end
 
-    local ShouldNotReposition = {}
+    local SteerPlates = {}
 
     for v in pairs(Physicals) do
         if not IsValid(v) then continue end
         local Phys = v:GetPhysicsObject()
         if not IsValid(Phys) then continue end
 
-        if not Phys:IsMotionEnabled() then ShouldNotReposition[v] = true end
-        if not Phys:IsGravityEnabled() then ShouldNotReposition[v] = true end
+        if not Phys:IsMotionEnabled() then SteerPlates[v] = true end
+        if not Phys:IsGravityEnabled() then SteerPlates[v] = true end
     end
 
     for v in pairs(Physicals) do
@@ -50,7 +54,7 @@ ACF.AddInputAction("acf_baseplate", "Unflip", function(Entity, Value)
 
         for v in pairs(Physicals) do
             if not IsValid(v) then continue end
-            if not ShouldNotReposition[v] then v:SetPos(Entity:LocalToWorld(LocalPositions[v])) end
+            if not SteerPlates[v] then v:SetPos(Entity:LocalToWorld(LocalPositions[v])) end
             v:SetAngles(Entity:LocalToWorldAngles(LocalAngles[v]))
         end
 
@@ -59,7 +63,7 @@ ACF.AddInputAction("acf_baseplate", "Unflip", function(Entity, Value)
                 if not IsValid(v) then continue end
                 local Phys = v:GetPhysicsObject()
                 if not IsValid(Phys) then continue end
-
+                if SteerPlates[v] then continue end
                 Phys:EnableMotion(true)
                 Phys:Wake()
             end
