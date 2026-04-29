@@ -19,6 +19,7 @@ ACF.AddInputAction("acf_baseplate", "Unflip", function(Entity, Value)
     if Contraption then Contraption.IsPickedUp = true end
 
     for v in pairs(Physicals) do
+        if not IsValid(v) then continue end
         local Phys = v:GetPhysicsObject()
         if not IsValid(Phys) then continue end
 
@@ -27,6 +28,7 @@ ACF.AddInputAction("acf_baseplate", "Unflip", function(Entity, Value)
     end
 
     for v in pairs(Physicals) do
+        if not IsValid(v) then continue end
         LocalPositions[v] = Entity:WorldToLocal(v:GetPos())
         LocalAngles[v] = Entity:WorldToLocalAngles(v:GetAngles())
     end
@@ -36,12 +38,14 @@ ACF.AddInputAction("acf_baseplate", "Unflip", function(Entity, Value)
         Entity:SetAngles(NewAngles)
 
         for v in pairs(Physicals) do
+            if not IsValid(v) then continue end
             v:SetPos(Entity:LocalToWorld(LocalPositions[v]))
             v:SetAngles(Entity:LocalToWorldAngles(LocalAngles[v]))
         end
 
         timer.Simple(1, function()
             for v in pairs(Physicals) do
+                if not IsValid(v) then continue end
                 local Phys = v:GetPhysicsObject()
                 if not IsValid(Phys) then continue end
 
