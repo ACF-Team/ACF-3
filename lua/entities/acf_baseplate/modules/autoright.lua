@@ -20,7 +20,7 @@ ACF.AddInputAction("acf_baseplate", "Unflip", function(Entity, Value)
 
     for v in pairs(Physicals) do
         local Phys = v:GetPhysicsObject()
-        if IsValid(Phys) then continue end
+        if not IsValid(Phys) then continue end
 
         Phys:EnableMotion(false)
         Phys:Wake()
@@ -43,9 +43,9 @@ ACF.AddInputAction("acf_baseplate", "Unflip", function(Entity, Value)
         timer.Simple(1, function()
             for v in pairs(Physicals) do
                 local Phys = v:GetPhysicsObject()
-                if IsValid(Phys) then continue end
+                if not IsValid(Phys) then continue end
 
-                Phys:EnableMotion(false)
+                Phys:EnableMotion(true)
                 Phys:Wake()
             end
 
