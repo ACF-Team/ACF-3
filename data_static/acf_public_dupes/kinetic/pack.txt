@@ -4,9 +4,9 @@ VALUES ('kinetic', 'Kinetic', 'Ally', 'AllyFH');
 
 -- Insert dupes using the string packid
 INSERT INTO DupeData (path, name, cost, weight, type, mobility, packid, description) VALUES
-('ambt-267', 'AMBT-267', 267.55, 33223.4, 'MBT', 'Tracked', 'kinetic', ''),
-('amrv-379', 'AMRV-379', 382.73, 40642.29, 'MBT', 'Tracked', 'kinetic', ''),
-('awapc-25', 'AWAPC-25', 25.1, 2961.87, 'APC', 'Wheeled', 'kinetic', ''),
-('awmtd-42', 'AWMTD-42', 42.18, 3906.18, 'ATGM', 'Tracked', 'kinetic', ''),
-('alhw-165', 'ALHW-165', 165.3, 13379.39, 'SPG', 'Tracked', 'kinetic', ''),
-('altd-107', 'ALTD-107', 104.83, 8724.44, 'LT', 'Tracked', 'kinetic', '');
+('ambt-267', 'AMBT-267', 267.55, 33223.4, 'MBT', 'Tracked', 'kinetic', 'Uses AIO Controls'),
+('amrv-379', 'AMRV-379', 382.73, 40642.29, 'MBT', 'Tracked', 'kinetic', 'Uses AIO Controls'),
+('awapc-25', 'AWAPC-25', 25.1, 2961.87, 'APC', 'Wheeled', 'kinetic', 'Uses AIO Controls'),
+('awmtd-42', 'AWMTD-42', 42.18, 3906.18, 'ATGM', 'Tracked', 'kinetic', 'Uses AIO Controls'),
+('alhw-165', 'ALHW-165', 165.3, 13379.39, 'SPG', 'Tracked', 'kinetic', 'Uses AIO Controls'),
+('altd-107', 'ALTD-107', 104.83, 8724.44, 'LT', 'Tracked', 'kinetic', 'Uses AIO Controls');
