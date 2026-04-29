@@ -18,6 +18,17 @@ ACF.AddInputAction("acf_baseplate", "Unflip", function(Entity, Value)
     local Contraption = Entity:CFW_GetContraption()
     if Contraption then Contraption.IsPickedUp = true end
 
+    local ShouldNotReposition = {}
+
+    for v in pairs(Physicals) do
+        if not IsValid(v) then continue end
+        local Phys = v:GetPhysicsObject()
+        if not IsValid(Phys) then continue end
+
+        if not Phys:IsMotionEnabled() then ShouldNotReposition[v] = true end
+        if not Phys:IsGravityEnabled() then ShouldNotReposition[v] = true end
+    end
+
     for v in pairs(Physicals) do
         if not IsValid(v) then continue end
         local Phys = v:GetPhysicsObject()
@@ -39,7 +50,7 @@ ACF.AddInputAction("acf_baseplate", "Unflip", function(Entity, Value)
 
         for v in pairs(Physicals) do
             if not IsValid(v) then continue end
-            v:SetPos(Entity:LocalToWorld(LocalPositions[v]))
+            if not ShouldNotReposition[v] then v:SetPos(Entity:LocalToWorld(LocalPositions[v])) end
             v:SetAngles(Entity:LocalToWorldAngles(LocalAngles[v]))
         end
 
