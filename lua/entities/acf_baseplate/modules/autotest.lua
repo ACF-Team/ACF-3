@@ -228,8 +228,9 @@ end, "Ensure all guns and racks are linked to ammo crates, and all ammo crates a
 RegisterTest("Links", "Guidance", function(Env)
     local Faults = {}
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_rack, {"Computer"})) do
-        local _, Point = Rack:GetNextMountPoint("Loaded")
-        if Point.Missile.UseGuidance then table.insert(Faults, {Ent = e, Msg = "Guided rack needs link to guidance computer"}) end
+        for crate in pairs(e.Crates or {}) do
+            if crate.Guidance ~= "Dumb" then table.insert(Faults, {Ent = e, Msg = "Guided rack needs link to guidance computer"}) break end
+        end
     end
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_computer, {"Weapons"})) do table.insert(Faults, {Ent = e, Msg = "Guidance computer needs link to guns or racks"}) end
     return #Faults == 0, Faults
