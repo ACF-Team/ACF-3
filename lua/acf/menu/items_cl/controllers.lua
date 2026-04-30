@@ -1,55 +1,73 @@
 local ACF = ACF
+local Sensors = ACF.Classes.Sensors
 
 local function CreateMenu(Menu)
-	ACF.SetToolMode("acf_menu", "Spawner", "Controller")
+	Menu:AddWikiLink("Radars", "docs/acf_missiles_tutorials/radars.html")
+	Menu:AddWikiLink("Warning Receivers", "docs/acf_missiles_tutorials/warning_receivers.html")
 
-	ACF.SetClientData("PrimaryClass", "acf_controller")
+	local Entries = Sensors.GetEntries()
+
+	ACF.SetClientData("PrimaryClass", "N/A")
 	ACF.SetClientData("SecondaryClass", "N/A")
 
-	Menu:AddWikiLink("AIO Controllers", "docs/getting_started/first_tank/baseplate_aio.html")
-	Menu:AddWikiLink("AIO Car Steering", "docs/getting_started/first_car.html")
+	ACF.SetToolMode("acf_menu", "Spawner", "Sensor")
 
-	Menu:AddTitle("All-In-One Controllers")
-	Menu:AddLabel("Allows you to easily setup a tank without requiring a complex wiring setup.")
+	if not next(Entries) then
+		Menu:AddTitle("#acf.menu.sensors.none_registered")
+		Menu:AddLabel("#acf.menu.sensors.none_registered_desc")
+		return
+	end
 
-	local PreviewSettings = {
-		FOV = 120,
-		Height = 120,
-	}
-	local Preview = Menu:AddModelPreview("models/hunter/plates/plate025x025.mdl", true, "Primary")
-	Preview:UpdateSettings(PreviewSettings)
+	Menu:AddTitle("#acf.menu.sensors.settings")
 
-	local Instructions = Menu:AddCollapsible("Instructions", true, "icon16/computer_add.png")
-	Instructions:AddLabel("Place down the controller. Link each for the given effects: ")
-	Instructions:AddLabel("Seat -> Required to control anything")
-	Instructions:AddLabel("Main (Not transfer) Gearbox -> Drives mobility")
-	Instructions:AddLabel("Turret -> To aim turrets")
-	Instructions:AddLabel("Gun -> To shoot guns")
-	Instructions:AddLabel("Racks -> To shoot racks")
-	Instructions:AddLabel("Baseplates -> To use baseplate seats or to read speed from the controller")
-	Instructions:AddLabel("Direct ballistic computer -> To compute compensate for drop of projectiles")
-	Instructions:AddLabel("Warning receivers -> To receive warnings about lasers/radars aimed at you")
-	Instructions:AddLabel("Only these entities need to be linked. The rest will be automatically detected.")
-	Instructions:AddLabel("If you don't want the AIO controller to control something, just don't link it.")
-	Instructions:AddLabel("Hold C and right click the controller to edit the settings.")
+	local SensorClass = Menu:AddComboBox()
+	local SensorList = Menu:AddComboBox()
 
-	local Controls = Menu:AddCollapsible("Controls", false, "icon16/computer_go.png")
-	Controls:AddLabel("Mouse1: Fire primary weapon (largest caliber gun)")
-	Controls:AddLabel("Mouse2: Fire secondary weapon (any other gun)")
-	Controls:AddLabel("Alt: Fire tertiary weapon (any racks)")
-	Controls:AddLabel("Shift: Fire smoke launchers")
-	Controls:AddLabel("W/S: Move forward/backward")
-	Controls:AddLabel("A/D: Turn left/right")
-	Controls:AddLabel("Space: Brakes")
-	Controls:AddLabel("CTRL: Switch Cameras")
-	Controls:AddLabel("R: Unlock turret")
-	Controls:AddLabel("1/2/3: Select next ammo type (press again to force reload)")
-	Controls:AddLabel("Mouse3: Lase ballistic computer (+ Ctrl to reset)")
+	local Base = Menu:AddCollapsible("#acf.menu.sensors.sensor_info", nil, "icon16/transmit_edit.png")
+	local SensorName = Base:AddTitle()
+	local SensorDesc = Base:AddLabel()
+	local SensorPreview = Base:AddModelPreview(nil, true, "Primary")
 
-	local TroubleShooting = Menu:AddCollapsible("Troubleshooting", false, "icon16/computer_error.png")
-	TroubleShooting:AddLabel("If you're using a single gearbox, make sure all your forward gears come before your reverse gears in the readout.")
+	function SensorClass:OnSelect(Index, _, Data)
+		if self.Selected == Data then return end
 
-	ACF.SetClientData("AIOUseDefaults", true, true)
+		self.ListData.Index = Index
+		self.Selected = Data
+
+		ACF.SetClientData("SensorClass", Data.ID)
+
+		ACF.LoadSortedList(SensorList, Data.Items, "ID", "Model")
+	end
+
+	function SensorList:OnSelect(Index, _, Data)
+		if self.Selected == Data then return end
+
+		self.ListData.Index = Index
+		self.Selected = Data
+
+		local ClassData = SensorClass.Selected
+
+		ACF.SetClientData("Sensor", Data.ID)
+
+		SensorName:SetText(Data.Name)
+		SensorDesc:SetText(Data.Description or "#acf.menu.no_description_provided")
+
+		SensorPreview:UpdateModel(Data.Model)
+		SensorPreview:UpdateSettings(Data.Preview)
+
+		Menu:ClearTemporal(Base)
+		Menu:StartTemporal(Base)
+
+		local CustomMenu = Data.CreateMenu or ClassData.CreateMenu
+
+		if CustomMenu then
+			CustomMenu(Data, Base)
+		end
+
+		Menu:EndTemporal(Base)
+	end
+
+	ACF.LoadSortedList(SensorClass, Entries, "ID", "SpawnModel")
 end
 
-ACF.AddMenuItem(62, "#acf.menu.entities", "Controllers", "joystick", CreateMenu)
+ACF.AddMenuItem(401, "#acf.menu.entities", "#acf.menu.sensors", "transmit", CreateMenu)
