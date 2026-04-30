@@ -241,7 +241,7 @@ do
     function Notify.EntityDisabledToPlayer(Ent, Player, Reason, Ponder, WikiArticle)
         if not IsValid(Ent) then return end
 
-        local Name = (Entity.WireDebugName or Entity:GetClass()) .. " [" .. Entity:EntIndex() .. "]"
+        local Name = (Ent.WireDebugName or Ent:GetClass()) .. " [" .. Ent:EntIndex() .. "]"
         Notify.Start()
         Notify.WithTitle(string.format("%s has been disabled.", Name))
         Notify.WithSilkIcon("exclamation")
