@@ -241,8 +241,9 @@ do
     function Notify.EntityDisabledToPlayer(Ent, Player, Reason, Ponder, WikiArticle)
         if not IsValid(Ent) then return end
 
+        local Name = (Entity.WireDebugName or Entity:GetClass()) .. " [" .. Entity:EntIndex() .. "]"
         Notify.Start()
-        Notify.WithTitle("An ACF entity has been disabled.")
+        Notify.WithTitle(string.format("%s has been disabled.", Name))
         Notify.WithSilkIcon("exclamation")
         Notify.WithTargetEntity(Ent)
         Notify.WithDescription(Reason)
