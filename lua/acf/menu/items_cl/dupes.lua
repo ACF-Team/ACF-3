@@ -1,4 +1,6 @@
 local DefaultDescription = [[
+!Some vehicles may not have everything listed below!
+
 Look at baseplate or wheels with physgun and press R to unfreeze. Then press ALT + E anywhere on the vehicle to enter.
 
 W/A/S/D/Space for movement and brakes
