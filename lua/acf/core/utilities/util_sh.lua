@@ -1284,9 +1284,20 @@ do
 			LastVel = Vector(0, 0, 0),
 			LastAcc = Vector(0, 0, 0)
 		}
-		if pos then VECTOR.SetUnpacked(Object.Pos, VECTOR.Unpack(pos)) end
-		if vel then VECTOR.SetUnpacked(Object.Vel, VECTOR.Unpack(vel)) end
-		if accel then VECTOR.SetUnpacked(Object.Acc, VECTOR.Unpack(accel)) end
+		if pos then
+			VECTOR.SetUnpacked(Object.Pos, VECTOR.Unpack(pos))
+			VECTOR.SetUnpacked(Object.LastPos, VECTOR.Unpack(pos))
+		end
+
+		if vel then
+			VECTOR.SetUnpacked(Object.Vel, VECTOR.Unpack(vel))
+			VECTOR.SetUnpacked(Object.LastVel, VECTOR.Unpack(vel))
+		end
+
+		if accel then
+			VECTOR.SetUnpacked(Object.Acc, VECTOR.Unpack(accel))
+			VECTOR.SetUnpacked(Object.LastAcc, VECTOR.Unpack(accel))
+		end
 		return Object
 	end
 
