@@ -974,6 +974,81 @@ do
 			end
 		end
 	end)
+
+	-- Transfer crew data when contraptions merge
+	hook.Add("cfw.contraption.merged", "ACF_CFWCrewMerge", function(absorbed, into)
+		if absorbed.Crews then
+			into.Crews = into.Crews or {}
+			for crew in pairs(absorbed.Crews) do
+				into.Crews[crew] = true
+			end
+		end
+
+		if absorbed.CrewsByType then
+			into.CrewsByType = into.CrewsByType or {}
+			for typeID, crews in pairs(absorbed.CrewsByType) do
+				into.CrewsByType[typeID] = into.CrewsByType[typeID] or {}
+				for crew in pairs(crews) do
+					into.CrewsByType[typeID][crew] = true
+				end
+			end
+		end
+
+		if absorbed.CrewsByPriority then
+			into.CrewsByPriority = into.CrewsByPriority or {}
+			for priority, crews in pairs(absorbed.CrewsByPriority) do
+				into.CrewsByPriority[priority] = into.CrewsByPriority[priority] or {}
+				for crew in pairs(crews) do
+					into.CrewsByPriority[priority][crew] = true
+				end
+			end
+		end
+
+		if absorbed.RemainingLinks then
+			into.RemainingLinks = into.RemainingLinks or {}
+			for target, waiters in pairs(absorbed.RemainingLinks) do
+				into.RemainingLinks[target] = into.RemainingLinks[target] or {}
+				for waiter in pairs(waiters) do
+					into.RemainingLinks[target][waiter] = true
+				end
+			end
+		end
+	end)
+
+	-- Rebuild crew indexes when contraptions split
+	hook.Add("cfw.contraption.split", "ACF_CFWCrewSplit", function(parent, child)
+		child.Crews = {}
+		child.CrewsByType = {}
+		child.CrewsByPriority = {}
+
+		for ent in pairs(child.ents) do
+			if ent:GetClass() == "acf_crew" then
+				child.Crews[ent] = true
+
+				child.CrewsByType[ent.CrewTypeID] = child.CrewsByType[ent.CrewTypeID] or {}
+				child.CrewsByType[ent.CrewTypeID][ent] = true
+
+				child.CrewsByPriority[ent.CrewPriority] = child.CrewsByPriority[ent.CrewPriority] or {}
+				child.CrewsByPriority[ent.CrewPriority][ent] = true
+			end
+		end
+
+		parent.Crews = {}
+		parent.CrewsByType = {}
+		parent.CrewsByPriority = {}
+
+		for ent in pairs(parent.ents) do
+			if ent:GetClass() == "acf_crew" then
+				parent.Crews[ent] = true
+
+				parent.CrewsByType[ent.CrewTypeID] = parent.CrewsByType[ent.CrewTypeID] or {}
+				parent.CrewsByType[ent.CrewTypeID][ent] = true
+
+				parent.CrewsByPriority[ent.CrewPriority] = parent.CrewsByPriority[ent.CrewPriority] or {}
+				parent.CrewsByPriority[ent.CrewPriority][ent] = true
+			end
+		end
+	end)
 end
 
 -- Linkage Related

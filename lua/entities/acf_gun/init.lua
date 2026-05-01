@@ -785,12 +785,43 @@ do -- Metamethods --------------------------------
 		end
 
 		-- Logging contraption wide bullet filter
-		hook.Add("cfw.contraption.created", "ACF_CFW_BulletFilter", function(Contraption)
+		hook.Add("cfw.contraption.init", "ACF_CFW_BulletFilter", function(Contraption)
 			Contraption.BulletFilter = {}
 		end)
 
 		hook.Add("cfw.contraption.entityAdded", "ACF_CFW_BulletFilter", function(Contraption, Entity)
 			table.insert(Contraption.BulletFilter, Entity)
+		end)
+
+		hook.Add("cfw.contraption.entityRemoved", "ACF_CFW_BulletFilter", function(Contraption, Entity)
+			if not Contraption.BulletFilter then return end
+			for i, ent in ipairs(Contraption.BulletFilter) do
+				if ent == Entity then
+					table.remove(Contraption.BulletFilter, i)
+					break
+				end
+			end
+		end)
+
+		-- Transfer bullet filter when contraptions merge
+		hook.Add("cfw.contraption.merged", "ACF_CFW_BulletFilter", function(absorbed, into)
+			if not absorbed.BulletFilter then return end
+			for _, ent in ipairs(absorbed.BulletFilter) do
+				table.insert(into.BulletFilter, ent)
+			end
+		end)
+
+		-- Rebuild bullet filter when contraptions split
+		hook.Add("cfw.contraption.split", "ACF_CFW_BulletFilter", function(parent, child)
+			child.BulletFilter = {}
+			for ent in pairs(child.ents) do
+				table.insert(child.BulletFilter, ent)
+			end
+
+			parent.BulletFilter = {}
+			for ent in pairs(parent.ents) do
+				table.insert(parent.BulletFilter, ent)
+			end
 		end)
 	end -----------------------------------------
 
