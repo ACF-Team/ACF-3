@@ -57,6 +57,7 @@ function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 			if not IsValid(Ent) then continue end
 			if Ent.ACF_ReplacedPhysicsCollide then continue end
 			local PhysCollide = self:ACF_GetUserVar("BaseplateType").PhysicsCollide
+			if not PhysCollide then continue end
 			Ent.PhysicsCollide = PhysCollide
 			Ent.ACF_ReplacedPhysicsCollide = true
 		end
