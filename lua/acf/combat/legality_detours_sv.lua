@@ -259,6 +259,7 @@ end
 
 local PLAYER_USE_RADIUS = 120
 local function ApproveUseEntity(PlayerInvoker, ToBeUsedEntity, DoNotify)
+    if PreCheck() then return end
     if not IsValid(PlayerInvoker) then return end
     if not IsValid(ToBeUsedEntity) then return end
 
@@ -722,6 +723,7 @@ end
 -- TARGET  : Constraints between world <---> ACF contraptions
 local function ConstraintDetours()
     local function DetermineValidConstraint_WorldCheck(Entity1, Entity2, Type, DoNotify)
+        if PreCheck() then return true end
         -- Early exit. This will result in these functions being called a 2nd time in the actual constraint creators,
         -- but if we dont do this check here, we'd be both wasting time and potentially get nasty side effects (this runs
         -- so early on, we dont know if Entity1 or Entity2 are valid inputs from the developers calling these functions...)
@@ -783,6 +785,7 @@ local function ConstraintDetours()
 
     -- this hook handles cases where constraints are made before we have the ACF contraption guard
     hook.Add("ACF_OnPostACFEntityAddedToContraption", "ACF_LegalityDetours_NewACFContraption_CheckConstraints", function(Contraption, _)
+        if PreCheck() then return end
         if Contraption.ACF_EntitiesCount > 1 then return end -- constraint detours are already guarding us
 
         -- Lookup constraint classes, iterate on all constraints available.
