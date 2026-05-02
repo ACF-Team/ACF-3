@@ -1177,6 +1177,8 @@ do -- Misc -------------------------------------
 		local Previous = self.ACF_Position
 		local Current  = GetPosition(self)
 
+		self.LastThink = self.LastThink or Time -- Why isn't this handled propperly?
+
 		self.ACF_Position = Current
 
 		if Previous then
