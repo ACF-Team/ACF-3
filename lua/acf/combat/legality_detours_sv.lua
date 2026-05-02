@@ -196,6 +196,61 @@ local function SetAngDetours()
     end
 end
 
+-- TARGET  : Freezers and propFreeze equiv.
+-- METHODS : Expression 2, Starfall (Entity & Physobj bindings), Wiremod
+-- ON CALL : If target's contraption is an ACF contraption, disable the contraption and block the call.
+-- There are no good uses for freezing mid-air on an ACF contraption.
+-- We will allow unfreezing though, I don't see a problem with that.
+-- The most common abuse vector for these are what people refer to as "freezer brakes" to stop mid-air on aircraft/jumping tanks/
+-- regular tanks.
+local function FreezeDetours()
+    -- Propcore - Entity
+    do
+        local Func Func = Detours.Expression2("e:propFreeze(n)", function(Scope, Args, ...)
+            if Args[2] ~= 0 and not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Args[1], "e:propFreeze(n)") then return end
+            return Func(Scope, Args, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.Expression2("e:ragdollFreeze(n)", function(Scope, Args, ...)
+            if Args[2] ~= 0 and not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Args[1], "e:ragdollFreeze(n)") then return end
+            return Func(Scope, Args, ...)
+        end)
+    end
+    -- Propcore - Bone
+    do
+        local Func Func = Detours.Expression2("b:boneFreeze(n)", function(Scope, Args, ...)
+            local Ent = E2Lib.isValidBone(Args[1])
+            if Args[2] ~= 0 and not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Ent, "b:boneFreeze(n)") then return end
+            return Func(Scope, Args, ...)
+        end)
+    end
+    -- Starfall
+    do
+        local Func Func = Detours.Starfall("instance.Types.Entity.Methods.enableMotion", function(Instance, Ent, Move, ...)
+            if not Move and not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:enableMotion(n)") then return end
+            return Func(Instance, Ent, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.enableMotion", function(Instance, PhysObj, Move, ...)
+            if not Move and not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:enableMotion(n)") then return end
+            return Func(Instance, PhysObj, ...)
+        end)
+    end
+    -- Wiremod freezers. They call into this hook. Very convenient compared to other entity detours we've had to do...
+    do
+        hook.Add("OnPhysgunFreeze", "ACF_LegalityDetours_WiremodFreezer", function(Weapon, PhysObj, Ent, Player)
+            if  IsValid(Weapon)
+                and Weapon:GetClass() == "gmod_wire_freezer"
+                and not IfEntManipulationOnACFContraption_ThenDisableContraption(Player, Ent, "Wire Freezer Activate ~= 0")
+            then
+                return false
+            end
+        end)
+    end
+end
+
 -- TARGET  : AddAngleVelocity
 -- METHODS : Starfall (Entity & Physobj bindings)
 -- ON CALL : If target's contraption is an ACF contraption, disable the contraption and block the call.
@@ -214,6 +269,7 @@ local function AddAngleVelocityDetours()
         end)
     end
 end
+
 -- TARGET  : AddVelocity
 -- METHODS : Starfall (Entity & Physobj bindings)
 -- ON CALL : If target's contraption is an ACF contraption, disable the contraption and block the call.
@@ -571,6 +627,8 @@ local function TriggerDetourRebuild()
 
     SetPosDetours()
     SetAngDetours()
+
+    FreezeDetours()
 
     AddAngleVelocityDetours()
     AddVelocityDetours()
