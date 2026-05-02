@@ -711,6 +711,14 @@ local function WireTeleporterDetours()
     end
 end
 
+-- Somehow missed this one...
+-- This hook is also 3+ years old. Hopefully servers are up to date enough for this...
+local function WireForcerDetours()
+    hook.Add("Wire_ForcerCanUse", "ACF_LegalityDetours_BlockForcers", function(ply, ent, _)
+        if not IfEntManipulationOnACFContraption_ThenDisableContraption(ply, ent, "Wiremod Forcer") then return false end
+    end)
+end
+
 
 local function TriggerDetourRebuild()
     Detours.Loaded = true
@@ -736,6 +744,7 @@ local function TriggerDetourRebuild()
     WireHoverballDetours()
 
     WireTeleporterDetours()
+    WireForcerDetours()
 end
 
 ACF.TriggerDetourRebuild = TriggerDetourRebuild
