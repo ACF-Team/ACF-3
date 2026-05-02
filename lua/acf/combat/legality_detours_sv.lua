@@ -3,7 +3,7 @@
 
 local ACF = ACF
 local Detours = ACF.Detours
-
+local Notify  = ACF.Utilities.Notify
 local ENTITY = FindMetaTable("Entity")
 
 local function DisableEntity(Entity, Reason, Message)
@@ -719,6 +719,208 @@ local function WireForcerDetours()
     end)
 end
 
+-- TARGET  : Constraints between world <---> ACF contraptions
+local function ConstraintDetours()
+    local function DetermineValidConstraint_WorldCheck(Entity1, Entity2, Type, DoNotify)
+        -- Early exit. This will result in these functions being called a 2nd time in the actual constraint creators,
+        -- but if we dont do this check here, we'd be both wasting time and potentially get nasty side effects (this runs
+        -- so early on, we dont know if Entity1 or Entity2 are valid inputs from the developers calling these functions...)
+        -- We assume bone #0 exists at least??? We aren't making the constraint here, so I don't see a reason to capture the argument,
+        -- and pass it into every call of this function
+        if not constraint.CanConstrain(Entity1, 0) or not constraint.CanConstrain(Entity2, 0) then return false end
+
+        if Entity1 == Entity2 then return true end -- We don't care if the entities are the same (for whatever reason)
+
+        -- Determine which side is the world, and which side isn't, if one side is the world at all.
+        local WorldEntity = game.GetWorld()
+        local NonWorldEntity
+
+        if Entity1 == WorldEntity then
+            NonWorldEntity = Entity2
+        elseif Entity2 == WorldEntity then
+            NonWorldEntity = Entity1
+        else
+            return true -- We don't care, it's not trying to constrain to the world.
+        end
+
+        local Contraption = NonWorldEntity:CFW_GetContraption()
+        if not Contraption then return true end -- We don't care about non-contraptions.
+
+        if not Contraption:ACF_IsACFContraption() then return true end -- We don't care about non-ACF contraptions.
+
+        -- Ok, something tried to use a detoured constraint an ACF contraption to the world. Block it
+        if DoNotify then
+            local Player = NonWorldEntity:CPPIGetOwner()
+            if IsValid(Player) then
+                Notify.EntityWarningToPlayer(NonWorldEntity, Player, string.format("Cannot create constraint '%s'", Type), "Tried to constrain an ACF contraption to the world.")
+            end
+        end
+
+        return false
+    end
+
+    local ONLY_CHECK_WORLD          = 1
+    local ALWAYS_REMOVE             = 2
+
+    local isConstraint  = {
+        phys_hinge              = ONLY_CHECK_WORLD, -- axis
+        phys_lengthconstraint   = ONLY_CHECK_WORLD, -- rope
+        phys_constraint         = ONLY_CHECK_WORLD, -- weld
+        phys_ballsocket         = ONLY_CHECK_WORLD, -- ballsocket
+        phys_spring             = ONLY_CHECK_WORLD, -- elastic, hydraulics, muscles
+        phys_pulleyconstraint   = ONLY_CHECK_WORLD, -- pulley (do people ever use these?)
+        phys_slideconstraint    = ONLY_CHECK_WORLD, -- sliders
+        phys_ragdollconstraint  = ONLY_CHECK_WORLD, -- adv. ballsocket
+        phys_keepupright        = ALWAYS_REMOVE
+    }
+
+    -- These detour at the Lua level. I am not sure if that's the right approach. Normally, I would detour at a chip/individual entity
+    -- level. However, there are just so many things that can do these kinds of operations...
+    -- The validity of these constraints is also pretty universal. In general, there are no legitimate reasons to use these constraints
+    -- to constrain an ACF contraption entity to the world.
+
+    -- If this becomes a problem, then we will have to go through on an individual basis in E2, Starfall, and Wiremod. Which would be very annoying.
+
+    -- this hook handles cases where constraints are made before we have the ACF contraption guard
+    hook.Add("ACF_OnPostACFEntityAddedToContraption", "ACF_LegalityDetours_NewACFContraption_CheckConstraints", function(Contraption, _)
+        if Contraption.ACF_EntitiesCount > 1 then return end -- constraint detours are already guarding us
+
+        -- Lookup constraint classes, iterate on all constraints available.
+        for EntityClassName, CheckAction in pairs(isConstraint) do
+            local Constraints = Contraption.entsbyclass[EntityClassName]
+            if Constraints then
+                for Constraint in pairs(Constraints) do
+                    local Entity1, Entity2 = Constraint:GetConstrainedPhysObjects()
+                    if CheckAction == ONLY_CHECK_WORLD then
+                        if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "", false) then
+                            -- Remove the constraint.
+                            Constraint:Remove()
+                            if IsValid(Entity1) then
+                                local Entity1Owner = Entity1:CPPIGetOwner()
+                                if IsValid(Entity1Owner) then
+                                    Notify.EntityWarningToPlayer(Entity1Entity, Entity1Owner, string.format("Cannot keep constraint class '%s'", EntityClassName), "Tried to constrain an ACF contraption to the world.")
+                                end
+                            end
+                        end
+                    elseif CheckAction == ALWAYS_REMOVE then
+                        -- Remove the constraint.
+                        Constraint:Remove()
+                        if IsValid(Entity1) then
+                            local Entity1Owner = Entity1:CPPIGetOwner()
+                            if IsValid(Entity1Owner) then
+                                Notify.EntityWarningToPlayer(Entity1Entity, Entity1Owner, string.format("Cannot keep constraint class '%s'", EntityClassName), "This constraint cannot exist on ACF contraptions")
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end)
+
+    do
+        local Func Func = Detours.New("constraint.AdvBallsocket", function(Entity1, Entity2, ...)
+            if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "adv ballsocket", true) then return false end
+            return Func(Entity1, Entity2, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.New("constraint.Axis", function(Entity1, Entity2, ...)
+            if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "axis", true) then return false end
+            return Func(Entity1, Entity2, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.New("constraint.Ballsocket", function(Entity1, Entity2, ...)
+            if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "ballsocket", true) then return false end
+            return Func(Entity1, Entity2, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.New("constraint.Elastic", function(Entity1, Entity2, ...)
+            if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "elastic", true) then return false, nil end
+            return Func(Entity1, Entity2, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.New("constraint.Hydraulic", function(Player, Entity1, Entity2, ...)
+            if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "hydraulic", true) then return false, nil, nil, nil end
+            return Func(Player, Entity1, Entity2, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.New("constraint.Motor", function(Entity1, Entity2, ...)
+            if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "motor", true) then return false, nil end
+            return Func(Entity1, Entity2, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.New("constraint.Muscle", function(Player, Entity1, Entity2, ...)
+            if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "muscle", true) then return false, nil, nil, nil end
+            return Func(Player, Entity1, Entity2, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.New("constraint.NoCollide", function(Entity1, Entity2, ...)
+            if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "no collide", true) then return false, nil end
+            return Func(Entity1, Entity2, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.New("constraint.AdvBallsocket", function(Entity1, Entity2, ...)
+            if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "adv ballsocket", true) then return false end
+            return Func(Entity1, Entity2, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.New("constraint.Pulley", function(Entity1, Entity4, ...)
+            if not DetermineValidConstraint_WorldCheck(Entity1, Entity4, "pulley", true) then return false, nil, nil, nil end
+            return Func(Entity1, Entity4, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.New("constraint.Rope", function(Entity1, Entity2, ...)
+            if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "rope", true) then return false, nil end
+            return Func(Entity1, Entity2, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.New("constraint.Slider", function(Entity1, Entity2, ...)
+            if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "slider", true) then return false, nil end
+            return Func(Entity1, Entity2, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.New("constraint.Weld", function(Entity1, Entity2, ...)
+            if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "weld", true) then return false end
+            return Func(Entity1, Entity2, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.New("constraint.Winch", function(Player, Entity1, Entity2, ...)
+            if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "winch", true) then return false, nil, nil end
+            return Func(Player, Entity1, Entity2, ...)
+        end)
+    end
+
+    -- Keep upright detours
+    do
+        local Func Func = Detours.New("constraint.Keepupright", function(Entity, ...)
+            if not IsValid(Entity) then return false end
+            local Contraption = Entity:CFW_GetContraption()
+
+            if Contraption == nil then return Func(Entity, ...) end -- Don't care about non-contraptions
+            if not Contraption:ACF_IsACFContraption() then return Func(Entity, ...) end -- Don't care about non-ACF contraptions
+
+            -- Notify the player if they exist that this constraint can't be created
+            local Player = Entity:CPPIGetOwner()
+            if IsValid(Player) then
+                Notify.EntityWarningToPlayer(Entity, Player, "Cannot create constraint 'keep upright'", "This constraint cannot exist on ACF contraptions")
+            end
+
+            return false
+        end)
+    end
+end
 
 local function TriggerDetourRebuild()
     Detours.Loaded = true
@@ -745,6 +947,8 @@ local function TriggerDetourRebuild()
 
     WireTeleporterDetours()
     WireForcerDetours()
+
+    ConstraintDetours()
 end
 
 ACF.TriggerDetourRebuild = TriggerDetourRebuild
