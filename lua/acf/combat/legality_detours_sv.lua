@@ -782,7 +782,7 @@ local function ConstraintDetours()
     -- to constrain an ACF contraption entity to the world.
 
     -- If this becomes a problem, then we will have to go through on an individual basis in E2, Starfall, and Wiremod. Which would be very annoying.
-
+    local function GetNonWorldOwner(Entity1, Entity2) if IsValid(Entity1) then return Entity1, Entity1:CPPIGetOwner() else return Entity2, Entity2:CPPIGetOwner() end end
     local function CheckPreExistingConstraint(EntityClassName, Constraint, CheckAction)
         local PhysObj1, PhysObj2 = Constraint:GetConstrainedPhysObjects()
         if not IsValid(PhysObj1) then return end
@@ -793,21 +793,17 @@ local function ConstraintDetours()
             if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "", false) then
                 -- Remove the constraint.
                 Constraint:Remove()
-                if IsValid(Entity1) then
-                    local Entity1Owner = Entity1:CPPIGetOwner()
-                    if IsValid(Entity1Owner) then
-                        Notify.EntityWarningToPlayer(Entity1Entity, Entity1Owner, string.format("Cannot keep constraint class '%s'", EntityClassName), "Tried to constrain an ACF contraption to the world.")
-                    end
+                local NonWorldEntity, Owner = GetNonWorldOwner(Entity1, Entity2)
+                if IsValid(Owner) then
+                    Notify.EntityWarningToPlayer(NonWorldEntity, Owner, string.format("Cannot keep constraint class '%s'", EntityClassName), "Tried to constrain an ACF contraption to the world.")
                 end
             end
         elseif CheckAction == ALWAYS_REMOVE then
             -- Remove the constraint.
             Constraint:Remove()
-            if IsValid(Entity1) then
-                local Entity1Owner = Entity1:CPPIGetOwner()
-                if IsValid(Entity1Owner) then
-                    Notify.EntityWarningToPlayer(Entity1Entity, Entity1Owner, string.format("Cannot keep constraint class '%s'", EntityClassName), "This constraint cannot exist on ACF contraptions")
-                end
+            local NonWorldEntity, Owner = GetNonWorldOwner(Entity1, Entity2)
+            if IsValid(Owner) then
+                Notify.EntityWarningToPlayer(NonWorldEntity, Owner, string.format("Cannot keep constraint class '%s'", EntityClassName), "This constraint cannot exist on ACF contraptions")
             end
         end
     end
