@@ -782,17 +782,36 @@ local function ConstraintDetours()
     -- to constrain an ACF contraption entity to the world.
 
     -- If this becomes a problem, then we will have to go through on an individual basis in E2, Starfall, and Wiremod. Which would be very annoying.
+
+    local function PostActionUnsetUpright(Constraint) local Ent1 = Constraint.Ent1 if IsValid(Ent1) then Ent1:SetNWBool("IsUpright", false) end end
     local function GetNonWorldOwner(Entity1, Entity2) if IsValid(Entity1) then return Entity1, Entity1:CPPIGetOwner() else return Entity2, Entity2:CPPIGetOwner() end end
     local function CheckPreExistingConstraint(EntityClassName, Constraint, CheckAction)
         local PhysObj1, PhysObj2 = Constraint:GetConstrainedPhysObjects()
-        if not IsValid(PhysObj1) then return end
-        if not IsValid(PhysObj2) then return end
+        local PostAction
+        local PhysObj1_Valid, PhysObj2_Valid = IsValid(PhysObj1), IsValid(PhysObj2)
+        if not PhysObj1_Valid and not PhysObj2_Valid and Constraint:GetClass() == "phys_keepupright" then
+            -- It's weird, because it calls SetPhysConstraintObjects like the other constraints...
+            local Table = Constraint:GetTable()
+            local Ent1 = Table.Ent1
+            if IsValid(Ent1) then
+                PhysObj1 = Ent1:GetPhysicsObject()
+                PhysObj2 = PhysObj1
+
+                PhysObj1_Valid, PhysObj2_Valid = IsValid(PhysObj1), IsValid(PhysObj2)
+                PostAction = PostActionUnsetUpright
+            else
+                return
+            end
+        end
+
+        if not PhysObj1_Valid or not PhysObj2_Valid then return end
 
         local Entity1, Entity2   = PhysObj1:GetEntity(), PhysObj2:GetEntity()
         if CheckAction == ONLY_CHECK_WORLD then
             if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "", false) then
                 -- Remove the constraint.
                 Constraint:Remove()
+                PostAction(Constraint)
                 local NonWorldEntity, Owner = GetNonWorldOwner(Entity1, Entity2)
                 if IsValid(Owner) then
                     Notify.EntityWarningToPlayer(NonWorldEntity, Owner, string.format("Cannot keep constraint class '%s'", EntityClassName), "Tried to constrain an ACF contraption to the world.")
@@ -801,6 +820,7 @@ local function ConstraintDetours()
         elseif CheckAction == ALWAYS_REMOVE then
             -- Remove the constraint.
             Constraint:Remove()
+            PostAction(Constraint)
             local NonWorldEntity, Owner = GetNonWorldOwner(Entity1, Entity2)
             if IsValid(Owner) then
                 Notify.EntityWarningToPlayer(NonWorldEntity, Owner, string.format("Cannot keep constraint class '%s'", EntityClassName), "This constraint cannot exist on ACF contraptions")
