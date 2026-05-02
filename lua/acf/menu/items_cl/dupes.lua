@@ -1,3 +1,20 @@
+local DefaultDescription = [[
+!Some vehicles may not have everything listed below!
+
+Look at baseplate or wheels with physgun and press R to unfreeze. Then press ALT + E anywhere on the vehicle to enter.
+
+W/A/S/D/Space for movement and brakes
+R to toggle turret lock
+Mouse3 for ballistic computer lase
+
+Mouse1 for primary weapon
+Mouse2 for secondary weapon
+Left Alt for tertiary weapon
+Shift for smokes
+
+Number 1/2/3/... to select the next ammo type to load, double press to force a reload
+]]
+
 -- Returns the information header and the remaining dupe string of an ad2 file without deserializing the dupe
 local function GetInfo(str)
 	local last = str:find("\2")
@@ -148,6 +165,9 @@ local function CreateMenu(Menu)
 				for name, label in pairs(MetaLabels) do
 					label:SetText(name .. ": " .. (New.Data[string.lower(name)] or "Unknown"))
 				end
+
+				local Description = New.Data.description ~= "" and New.Data.description or DefaultDescription
+				MetaLabels.Description:SetText("Description: " .. Description)
 
 				CurrentDupeName = New.Data.name
 				CurrentDupePath = FilePath

@@ -86,6 +86,7 @@ do
 		local Primary = self.Primary
 		local BreechReference = IsValid(Primary) and Primary.BreechReference
 		local ReloadAngle = self:GetReloadAngle()
+		local ReloadAngleHorizontal = self:GetReloadAngleHorizontal()
 		local ShouldLevel = ReloadAngle ~= 0 and IsValid(Primary) and Primary.State ~= "Loaded"
 
 		-- Liddul... if you can hear me...
@@ -107,6 +108,7 @@ do
 		for Turret, _ in pairs(Turrets) do
 			if IsValid(Turret) then
 				if Turret == BreechReference and ShouldLevel then Turret:InputDirection(ReloadAngle)
+				elseif BreechReference and Turret == BreechReference:GetParent() and ShouldLevel and ReloadAngleHorizontal ~= 0 then Turret:InputDirection(ReloadAngleHorizontal)
 				else Turret:InputDirection(HitPos + AntiDrop + AntiDrift) end
 			end
 		end

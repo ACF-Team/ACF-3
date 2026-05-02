@@ -205,7 +205,7 @@ RegisterTest("Links", "Guns, Racks and Ammo", function(Env)
 
     -- Don't have to have a loader for belt fed or smoke launchers
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_gun, {"Crews", "Autoloader"})) do
-        if not e.IsBelted and e.Weapon ~= "SL" then
+        if not e.IsBelted and e.Weapon ~= "SL" and e.Weapon ~= "40mmFGL" then
             table.insert(Faults, {Ent = e, Msg = "Gun needs link to loader/autoloader"})
         end
     end
@@ -217,7 +217,7 @@ end, function(Env)
     LinkAll(Env, "acf_rack", "Crates")
     LinkAll(Env, "acf_ammo", "Weapons")
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_gun, {"Crew", "Autoloader"})) do
-        if not e.IsBelted and e.Weapon ~= "SL" then
+        if not e.IsBelted and e.Weapon ~= "SL" and e.Weapon ~= "40mmFGL" then
             for _, crew in pairs(Env.Contraption.Crews or {}) do
                 if crew.Type == "Loader" then e:LinkTo(crew.Ent) end
             end
@@ -228,8 +228,9 @@ end, "Ensure all guns and racks are linked to ammo crates, and all ammo crates a
 RegisterTest("Links", "Guidance", function(Env)
     local Faults = {}
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_rack, {"Computer"})) do
-        local _, Point = Rack:GetNextMountPoint("Loaded")
-        if Point.Missile.UseGuidance then table.insert(Faults, {Ent = e, Msg = "Guided rack needs link to guidance computer"}) end
+        for crate in pairs(e.Crates or {}) do
+            if crate.Guidance ~= "Dumb" then table.insert(Faults, {Ent = e, Msg = "Guided rack needs link to guidance computer"}) break end
+        end
     end
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_computer, {"Weapons"})) do table.insert(Faults, {Ent = e, Msg = "Guidance computer needs link to guns or racks"}) end
     return #Faults == 0, Faults
