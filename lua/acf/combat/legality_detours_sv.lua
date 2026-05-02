@@ -270,13 +270,12 @@ local function ApproveUseEntity(PlayerInvoker, ToBeUsedEntity, DoNotify)
     local PlayerPos, ToBeUsedPos = PlayerInvoker:GetPos(), ToBeUsedEntity:GetPos()
 
     local DistanceFromPlayerToUsed  = PlayerPos:Distance(ToBeUsedPos)
-
     if DistanceFromPlayerToUsed > PLAYER_USE_RADIUS then
         local Contraption = ToBeUsedEntity:CFW_GetContraption()
         if not Contraption then return true end -- We don't care about non-contraptions, that's none of our business.
 
         -- Otherwise, if not an ACF contraption, approve it, otherwise deny it.
-        if not Contraption:ACF_IsACFContraption() then
+        if Contraption:ACF_IsACFContraption() then
             if DoNotify then
                 Notify.EntityWarningToPlayer(ToBeUsedEntity, PlayerInvoker, "Cannot remote-use an ACF contraption from this distance.", string.format("The distance from your player to the target entity was %d, which exceeds the distance limit of %d", DistanceFromPlayerToUsed, PLAYER_USE_RADIUS))
             end
@@ -729,7 +728,8 @@ local function ConstraintDetours()
         -- so early on, we dont know if Entity1 or Entity2 are valid inputs from the developers calling these functions...)
         -- We assume bone #0 exists at least??? We aren't making the constraint here, so I don't see a reason to capture the argument,
         -- and pass it into every call of this function
-        if not constraint.CanConstrain(Entity1, 0) or not constraint.CanConstrain(Entity2, 0) then return false end
+        if not constraint.CanConstrain(Entity1, 0) then return false end
+        if not constraint.CanConstrain(Entity2, 0) then return false end
 
         if Entity1 == Entity2 then return true end -- We don't care if the entities are the same (for whatever reason)
 
@@ -783,7 +783,50 @@ local function ConstraintDetours()
 
     -- If this becomes a problem, then we will have to go through on an individual basis in E2, Starfall, and Wiremod. Which would be very annoying.
 
+    local function CheckPreExistingConstraint(EntityClassName, Constraint, CheckAction)
+        local PhysObj1, PhysObj2 = Constraint:GetConstrainedPhysObjects()
+        if not IsValid(PhysObj1) then return end
+        if not IsValid(PhysObj2) then return end
+
+        local Entity1, Entity2   = PhysObj1:GetEntity(), PhysObj2:GetEntity()
+        if CheckAction == ONLY_CHECK_WORLD then
+            if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "", false) then
+                -- Remove the constraint.
+                Constraint:Remove()
+                if IsValid(Entity1) then
+                    local Entity1Owner = Entity1:CPPIGetOwner()
+                    if IsValid(Entity1Owner) then
+                        Notify.EntityWarningToPlayer(Entity1Entity, Entity1Owner, string.format("Cannot keep constraint class '%s'", EntityClassName), "Tried to constrain an ACF contraption to the world.")
+                    end
+                end
+            end
+        elseif CheckAction == ALWAYS_REMOVE then
+            -- Remove the constraint.
+            Constraint:Remove()
+            if IsValid(Entity1) then
+                local Entity1Owner = Entity1:CPPIGetOwner()
+                if IsValid(Entity1Owner) then
+                    Notify.EntityWarningToPlayer(Entity1Entity, Entity1Owner, string.format("Cannot keep constraint class '%s'", EntityClassName), "This constraint cannot exist on ACF contraptions")
+                end
+            end
+        end
+    end
+
     -- this hook handles cases where constraints are made before we have the ACF contraption guard
+    hook.Add("cfw.contraption.entityAdded", "ACF_LegalityDetours_NewEntity_CheckConstraints", function(Contraption, Entity)
+        if PreCheck() then return end
+        if not Contraption:ACF_IsACFContraption() then return end
+
+        -- Check constraints
+        if not constraint.HasConstraints(Entity) then return end
+
+        -- Okay, check all of the constraints then
+        for _, Constraint in pairs(Entity.Constraints) do
+            local EntityClassName = Constraint:GetClass()
+            CheckPreExistingConstraint(EntityClassName, Constraint, isConstraint[EntityClassName])
+        end
+    end)
+
     hook.Add("ACF_OnPostACFEntityAddedToContraption", "ACF_LegalityDetours_NewACFContraption_CheckConstraints", function(Contraption, _)
         if PreCheck() then return end
         if Contraption.ACF_EntitiesCount > 1 then return end -- constraint detours are already guarding us
@@ -793,28 +836,7 @@ local function ConstraintDetours()
             local Constraints = Contraption.entsbyclass[EntityClassName]
             if Constraints then
                 for Constraint in pairs(Constraints) do
-                    local Entity1, Entity2 = Constraint:GetConstrainedPhysObjects()
-                    if CheckAction == ONLY_CHECK_WORLD then
-                        if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "", false) then
-                            -- Remove the constraint.
-                            Constraint:Remove()
-                            if IsValid(Entity1) then
-                                local Entity1Owner = Entity1:CPPIGetOwner()
-                                if IsValid(Entity1Owner) then
-                                    Notify.EntityWarningToPlayer(Entity1Entity, Entity1Owner, string.format("Cannot keep constraint class '%s'", EntityClassName), "Tried to constrain an ACF contraption to the world.")
-                                end
-                            end
-                        end
-                    elseif CheckAction == ALWAYS_REMOVE then
-                        -- Remove the constraint.
-                        Constraint:Remove()
-                        if IsValid(Entity1) then
-                            local Entity1Owner = Entity1:CPPIGetOwner()
-                            if IsValid(Entity1Owner) then
-                                Notify.EntityWarningToPlayer(Entity1Entity, Entity1Owner, string.format("Cannot keep constraint class '%s'", EntityClassName), "This constraint cannot exist on ACF contraptions")
-                            end
-                        end
-                    end
+                    CheckPreExistingConstraint(EntityClassName, Constraint, CheckAction)
                 end
             end
         end
