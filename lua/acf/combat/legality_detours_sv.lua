@@ -265,7 +265,7 @@ local function ApproveUseEntity(PlayerInvoker, ToBeUsedEntity, DoNotify)
 
     -- We don't care about non-vehicles in this case.
     -- TODO: Should we...?
-    if not ToBeUsedEntity:IsVehicle() then return true end
+    if not ToBeUsedEntity:IsVehicle() and ToBeUsedEntity:GetClass() ~= "acf_baseplate" then return true end
 
     local PlayerPos, ToBeUsedPos = PlayerInvoker:GetPos(), ToBeUsedEntity:GetPos()
 
