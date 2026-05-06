@@ -66,6 +66,29 @@ hook.Add("ACF_OnTick", "ACF Entity Tracking", function()
 	for Contraption in pairs(Contraptions) do UpdateValues(Contraption) end
 end)
 
+-- TODO: Fix this properly. It's something with CFW and elastics. I do not have the time to investigate why this happens at the moment,
+-- and to properly understand it we require a REALLY in-depth frame loop analysis
+timer.Create("ACF_CheckForDeadContraptionsHack", 10, 0, function()
+	local DeadContraptions = {}
+
+	for Contraption in pairs(Contraptions) do
+		local AnyValid = false
+		for Ent in pairs(Contraption.ents) do
+			if IsValid(Ent) then
+				AnyValid = true
+				break
+			end
+		end
+		if not AnyValid then
+			DeadContraptions[#DeadContraptions + 1] = Contraption
+		end
+	end
+
+	for _, Contraption in ipairs(DeadContraptions) do
+		Contraptions[Contraption] = nil
+	end
+end)
+
 function ACF.GetEntitiesInCone(Position, Direction, Degrees, Contraption)
 	local Result = {}
 
