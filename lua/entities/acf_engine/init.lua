@@ -609,6 +609,7 @@ ACF.AddInputAction("acf_engine", "Active", function(Entity, Value)
 end)
 
 -- Non-directional for now...
+-- TODO: Eventually we might want to use an output angle, for particle effects coming out of this very entity or from the engine itself
 ACF.AddInputAction("acf_engine", "Exhaust", function(Entity, Value)
 	Entity.Exhaust = Value
 end)
@@ -924,12 +925,8 @@ function ENT:CalcRPM(SelfTbl)
 	SelfTbl.FlyRPM = FlyRPM - Min(TorqueDiff, TotalReqTq) / Inertia
 	SelfTbl.LastThink = ClockTime
 
-	self:UpdateSoundBank(SelfTbl)
-	self:UpdateOutputs(SelfTbl)
-	--[[
-	SelfTbl.UpdateSound(self, SelfTbl)
+	SelfTbl.UpdateSoundBank(self, SelfTbl)
 	SelfTbl.UpdateOutputs(self, SelfTbl)
-	]]--
 end
 
 function ENT:PreEntityCopy()
