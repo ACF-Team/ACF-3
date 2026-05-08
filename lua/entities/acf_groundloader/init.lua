@@ -129,11 +129,11 @@ do
 	function RackTrackData:IsComplete() return self.Complete end
 
 	function RackTrackData:TryLink(Crates)
-		if not IsValid(self.Rack) then return end
+		local Rack = self.Rack
+		if not IsValid(Rack) then return end
+
 		-- Evaluate the validity of the rack.
 		-- Only allow baseplate-parented & aircraft baseplates.
-		local Rack       = self.Rack
-
 		local Contraption = Rack:CFW_GetContraption()
 		if not Contraption then self.Complete = true return end
 
@@ -203,7 +203,10 @@ function ENT:CheckForNewRacks(_)
 		if not TrackedRacks[Rack] then
 			TrackData[Rack] = nil
 			dbg("Stopped tracking", Rack)
-			Rack:SetLoadModOverride(nil)
+
+			if IsValid(Rack) then
+				Rack:SetLoadModOverride(nil)
+			end
 		end
 	end
 	-- Any rack that was not in TrackData but now is in TrackedRacks must be initially tracked
