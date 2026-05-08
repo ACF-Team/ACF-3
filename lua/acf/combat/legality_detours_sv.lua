@@ -811,7 +811,9 @@ local function ConstraintDetours()
             if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "", false) then
                 -- Remove the constraint.
                 Constraint:Remove()
-                PostAction(Constraint)
+                if PostAction then
+                    PostAction(Constraint)
+                end
                 local NonWorldEntity, Owner = GetNonWorldOwner(Entity1, Entity2)
                 if IsValid(Owner) then
                     Notify.EntityWarningToPlayer(NonWorldEntity, Owner, string.format("Cannot keep constraint class '%s'", EntityClassName), "Tried to constrain an ACF contraption to the world.")
@@ -820,7 +822,9 @@ local function ConstraintDetours()
         elseif CheckAction == ALWAYS_REMOVE then
             -- Remove the constraint.
             Constraint:Remove()
-            PostAction(Constraint)
+            if PostAction then
+                PostAction(Constraint)
+            end
             local NonWorldEntity, Owner = GetNonWorldOwner(Entity1, Entity2)
             if IsValid(Owner) then
                 Notify.EntityWarningToPlayer(NonWorldEntity, Owner, string.format("Cannot keep constraint class '%s'", EntityClassName), "This constraint cannot exist on ACF contraptions")
