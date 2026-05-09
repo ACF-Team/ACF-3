@@ -99,12 +99,26 @@ local function CreateMenu(Menu)
 			if PackData then sql.Query(PackData) end
 		end
 
-		local Scale = ScrH() / 1080 -- It was designed in 1920x1080
+		local SW, SH = ScrW(), ScrH()
+		-- Window: fixed proportion of the actual screen, works at any resolution
+		local WinW = math.Round(SW * 0.633)
+		local WinH = math.Round(SH * 0.778)
+		-- UI element scale: min of both axes so nothing overflows on non-16:9
+		local Scale = math.min(SW / 1920, SH / 1080)
+		local SideW = math.Round(WinW * 0.165) -- ~200px at 1080p
+
+		surface.CreateFont("ACF_Dupe_Title", { font = "Roboto", size = math.max(10, math.Round(18 * Scale)), weight = 850, antialias = true })
+		surface.CreateFont("ACF_Dupe_Label", { font = "Roboto", size = math.max(10, math.Round(14 * Scale)), weight = 650, antialias = true })
+		surface.CreateFont("ACF_Dupe_Control", { font = "Roboto", size = math.max(10, math.Round(14 * Scale)), weight = 550, antialias = true })
+
+		local ElemH = math.max(18, math.Round(22 * Scale))
+		local CollH = math.max(18, math.Round(24 * Scale))
+		local SliderH = math.max(36, math.Round(43 * Scale))
 
 		-- Main Window (Still a Frame, but we'll use ACF_Panel for the guts)
 		local DupeFrame = vgui.Create("DFrame")
 		DupeFrame:SetTitle("ACF Community Dupe Browser")
-		DupeFrame:SetSize(1215 * Scale, 840 * Scale)
+		DupeFrame:SetSize(WinW, WinH)
 		DupeFrame:Center()
 		DupeFrame:MakePopup()
 		DupeFrame:SetSizable(true)
@@ -112,23 +126,31 @@ local function CreateMenu(Menu)
 		-- Right Panel: Info (Using ACF_Panel wrapper)
 		local InfoPanel = vgui.Create("ACF_Panel", DupeFrame)
 		InfoPanel:Dock(RIGHT)
-		InfoPanel:SetWide(200 * Scale)
+		InfoPanel:SetWide(SideW)
 
 		-- File Info Section
-		local FileInfoContent, _ = InfoPanel:AddCollapsible("Dupe Information (File)", true)
+		local FileInfoContent, FileInfoCat = InfoPanel:AddCollapsible("Dupe Information (File)", true)
+		FileInfoCat.Header:SetFont("ACF_Dupe_Title")
+		FileInfoCat.Header:SetTall(CollH)
 		local DupeLabels = {}
 		for _, name in ipairs({"Name", "Date", "Time", "Size"}) do
 			DupeLabels[name] = FileInfoContent:AddLabel(name .. ": ")
+			DupeLabels[name]:SetFont("ACF_Dupe_Label")
 		end
 
-		local MetaInfoContent, _ = InfoPanel:AddCollapsible("Dupe Information (Meta)", true)
+		local MetaInfoContent, MetaInfoCat = InfoPanel:AddCollapsible("Dupe Information (Meta)", true)
+		MetaInfoCat.Header:SetFont("ACF_Dupe_Title")
+		MetaInfoCat.Header:SetTall(CollH)
 		local MetaLabels = {}
 		for _, name in ipairs({"Author", "Type", "Weight", "Cost", "Description"}) do
 			MetaLabels[name] = MetaInfoContent:AddLabel(name .. ": ")
+			MetaLabels[name]:SetFont("ACF_Dupe_Label")
 		end
 
 		-- Load Button
 		local DupeLoadButton = InfoPanel:AddButton("Load Selected")
+		DupeLoadButton:SetFont("ACF_Dupe_Control")
+		DupeLoadButton:SetTall(ElemH)
 		DupeLoadButton:Dock(BOTTOM)
 
 		-- Center Panel: Selection
@@ -184,11 +206,15 @@ local function CreateMenu(Menu)
 		-- Left Panel: Filters
 		local FilterPanel = vgui.Create("ACF_Panel", DupeFrame)
 		FilterPanel:Dock(LEFT)
-		FilterPanel:SetWide(200 * Scale)
+		FilterPanel:SetWide(SideW)
 
-		local FilterContent, _ = FilterPanel:AddCollapsible("Dupe Filters", true)
+		local FilterContent, FilterCat = FilterPanel:AddCollapsible("Dupe Filters", true)
+		FilterCat.Header:SetFont("ACF_Dupe_Title")
+		FilterCat.Header:SetTall(CollH)
 
 		local FilterAuthor = FilterContent:AddComboBox("Author")
+		FilterAuthor:SetFont("ACF_Dupe_Control")
+		FilterAuthor:SetTall(ElemH)
 		FilterAuthor:AddChoice("Any Author", nil)
 		FilterAuthor:ChooseOptionID(1)
 		local Authors = sql.Query("SELECT DISTINCT author FROM PackData")
@@ -197,6 +223,8 @@ local function CreateMenu(Menu)
 		end
 
 		local FilterType = FilterContent:AddComboBox("Type")
+		FilterType:SetFont("ACF_Dupe_Control")
+		FilterType:SetTall(ElemH)
 		FilterType:AddChoice("Any Type", nil)
 		FilterType:ChooseOptionID(1)
 		local Types = sql.Query("SELECT DISTINCT type FROM DupeData")
@@ -207,16 +235,26 @@ local function CreateMenu(Menu)
 		local WeightData = sql.QueryRow("SELECT min(weight) AS Min, max(weight) AS Max FROM DupeData")
 		local WMin, WMax = WeightData.Min, WeightData.Max
 		local FilterWeightMin = FilterContent:AddSlider("Min Weight", WMin, WMax)
+		FilterWeightMin.Label:SetFont("ACF_Dupe_Control")
+		FilterWeightMin:SetTall(SliderH)
 		local FilterWeightMax = FilterContent:AddSlider("Max Weight", WMin, WMax)
+		FilterWeightMax.Label:SetFont("ACF_Dupe_Control")
+		FilterWeightMax:SetTall(SliderH)
 		FilterWeightMax:SetValue(WMax)
 
 		local CostData = sql.QueryRow("SELECT min(cost) AS Min, max(cost) AS Max FROM DupeData")
 		local CMin, CMax = CostData.Min, CostData.Max
 		local FilterCostMin = FilterContent:AddSlider("Min Cost", CMin, CMax)
+		FilterCostMin.Label:SetFont("ACF_Dupe_Control")
+		FilterCostMin:SetTall(SliderH)
 		local FilterCostMax = FilterContent:AddSlider("Max Cost", CMin, CMax)
+		FilterCostMax.Label:SetFont("ACF_Dupe_Control")
+		FilterCostMax:SetTall(SliderH)
 		FilterCostMax:SetValue(CMax)
 
 		local FilterMobility = FilterContent:AddComboBox("Mobility")
+		FilterMobility:SetFont("ACF_Dupe_Control")
+		FilterMobility:SetTall(ElemH)
 		FilterMobility:AddChoice("Any Mobility", nil)
 		FilterMobility:ChooseOptionID(1)
 		local MobilityOptions = sql.Query("SELECT DISTINCT mobility FROM DupeData")
@@ -225,6 +263,8 @@ local function CreateMenu(Menu)
 		end
 
 		local ApplyFilter = FilterPanel:AddButton("Apply Filters")
+		ApplyFilter:SetFont("ACF_Dupe_Control")
+		ApplyFilter:SetTall(ElemH)
 		ApplyFilter:Dock(BOTTOM)
 		ApplyFilter.DoClick = function()
 			local _, author = FilterAuthor:GetSelected()
