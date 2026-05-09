@@ -241,6 +241,11 @@ do
 
 		return true, "All-In-One Controller updated successfully!"
 	end
+
+	function ENT:ACF_PostMenuSpawn()
+		ACF.DropToFloor(self)
+		self:SetAngles(self:GetAngles() + Angle(0, -90, 0))
+	end
 end
 
 -- Receiver related
