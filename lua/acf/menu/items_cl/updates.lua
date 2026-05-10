@@ -38,13 +38,6 @@ local function DrawGitStatus(Menu, Version, MostRecentCommit, _)
 	-- Server up to date with main, client out of date with dev, but dev is ahead of main.
 	if MostRecentCommit then
 		local Outdated = Version.date < MostRecentCommit.date
-		local WrongBranch = Version.head ~= MostRecentCommit.branch
-		if WrongBranch then
-			Status:SetText("Status: Client and Server branches differ")
-			Status:SetTextColor(Red)
-			return
-		end
-
 		Status:SetText("Status: " .. (Outdated and "Outdated" or "Up to Date"))
 		Status:SetTextColor(Outdated and Red or Green)
 	end

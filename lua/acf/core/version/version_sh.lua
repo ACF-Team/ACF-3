@@ -9,12 +9,6 @@ local function LocalToUTC(time)
 	return os.time(os.date("!*t", time))
 end
 
---- Returns the path of the addon by figuring out where the file is being run from
-local function GetAddonPath()
-	local info = debug.getinfo(2, "S")                  -- Get the source of the caller (the file that called this function)
-	return string.Split(info.short_src, "/lua/")[1]     -- Extract the path before "/lua/"
-end
-
 --- Returns the current git branch name
 local function GetGitHead(Path)
 	local HeadFile = Path .. "/.git/HEAD"
@@ -61,9 +55,7 @@ end
 
 --- Returns a table with information about the most recent commit on the current branch.
 --- Handles git, workshop and zip installations.
-function ACF.CheckLocalVersion()
-	local Path = GetAddonPath()
-
+function ACF.CheckLocalVersion(Name, Path)
 	local Result = {
 		realm = Realm,
 		path  = Path,
@@ -93,7 +85,7 @@ function ACF.CheckLocalVersion()
 	end
 
 	-- Workshop install
-	local WorkshopPath = "data_static/ACF/ACF-3-version.txt"
+	local WorkshopPath = "data_static/acf/" .. string.lower(Name) .. "-version.txt"
 	if file.Exists(WorkshopPath, "GAME") then
 		local FileData = file.Read(WorkshopPath, "GAME"):Trim()
 		local Code = FileData:sub(1, 7)
@@ -186,8 +178,10 @@ end
 
 ACF.Extensions = ACF.Extensions or {}
 function ACF.AddRepository(_, Name)
-	-- print("Checking version for repository:", Name)
-	local Version = ACF.CheckLocalVersion()
+	local info = debug.getinfo(2, "S")
+	local Path = string.Split(info.short_src, "/lua/")[1]
+
+	local Version = ACF.CheckLocalVersion(Name, Path)
 	ACF.Extensions[Name] = ACF.Extensions[Name] or {}
 	ACF.Extensions[Name].Version = Version -- Version info for this repository
 end
