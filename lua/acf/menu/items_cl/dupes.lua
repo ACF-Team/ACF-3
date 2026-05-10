@@ -105,15 +105,16 @@ local function CreateMenu(Menu)
 		local WinH = math.Round(SH * 0.778)
 		-- UI element scale: min of both axes so nothing overflows on non-16:9
 		local Scale = math.min(SW / 1920, SH / 1080)
-		local SideW = math.Round(WinW * 0.165) -- ~200px at 1080p
+		local FontScale = math.Clamp(Scale, 0.75, 1)
+		local SideW = math.max(220, math.Round(WinW * 0.2))
 
-		surface.CreateFont("ACF_Dupe_Title", { font = "Roboto", size = math.max(10, math.Round(18 * Scale)), weight = 850, antialias = true })
-		surface.CreateFont("ACF_Dupe_Label", { font = "Roboto", size = math.max(10, math.Round(14 * Scale)), weight = 650, antialias = true })
-		surface.CreateFont("ACF_Dupe_Control", { font = "Roboto", size = math.max(10, math.Round(14 * Scale)), weight = 550, antialias = true })
+		surface.CreateFont("ACF_Dupe_Title", { font = "Roboto", size = math.max(10, math.Round(18 * FontScale)), weight = 850, antialias = true })
+		surface.CreateFont("ACF_Dupe_Label", { font = "Roboto", size = math.max(10, math.Round(14 * FontScale)), weight = 650, antialias = true })
+		surface.CreateFont("ACF_Dupe_Control", { font = "Roboto", size = math.max(10, math.Round(14 * FontScale)), weight = 550, antialias = true })
 
-		local ElemH = math.max(18, math.Round(22 * Scale))
-		local CollH = math.max(18, math.Round(24 * Scale))
-		local SliderH = math.max(36, math.Round(43 * Scale))
+		local ElemH = math.max(18, math.Round(22 * FontScale))
+		local CollH = math.max(18, math.Round(24 * FontScale))
+		local SliderH = math.max(36, math.Round(43 * FontScale))
 
 		-- Main Window (Still a Frame, but we'll use ACF_Panel for the guts)
 		local DupeFrame = vgui.Create("DFrame")
