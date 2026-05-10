@@ -35,7 +35,7 @@ local function CreateMenu(Menu)
 		local Wiki = Base:AddButton("#acf.menu.wiki.open")
 
 		function Wiki:DoClickInternal()
-			gui.OpenURL("https://github.com/ACF-Team/ACF-3/wiki")
+			gui.OpenURL("https://acf-team.github.io/Wiki/")
 		end
 
 		Menu:AddHelp("#acf.menu.wiki.wip_notice")

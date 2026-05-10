@@ -2,9 +2,6 @@ local ACF = ACF
 local Sensors = ACF.Classes.Sensors
 
 local function CreateMenu(Menu)
-	Menu:AddWikiLink("Radars", "docs/acf_missiles_tutorials/radars.html")
-	Menu:AddWikiLink("Warning Receivers", "docs/acf_missiles_tutorials/warning_receivers.html")
-
 	local Entries = Sensors.GetEntries()
 
 	ACF.SetClientData("PrimaryClass", "N/A")
@@ -19,6 +16,10 @@ local function CreateMenu(Menu)
 	end
 
 	Menu:AddTitle("#acf.menu.sensors.settings")
+
+	Menu:AddWikiLink("Radars", "docs/acf_missiles_tutorials/radars.html")
+	Menu:AddWikiLink("Warning Receivers", "docs/acf_missiles_tutorials/warning_receivers.html")
+
 
 	local SensorClass = Menu:AddComboBox()
 	local SensorList = Menu:AddComboBox()
