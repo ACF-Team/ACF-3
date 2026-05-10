@@ -1,6 +1,6 @@
-local Orange = Color(255, 150, 50)
-local Green = Color(100, 255, 100)
-local Red = Color(255, 100, 100)
+local Orange = Color(255, 93, 50)
+local Green = Color(0, 150, 0)
+local Red = Color(150, 0, 0)
 
 local function DrawGitCommit(Menu, Commit)
 	local Base = Menu:AddCollapsible("Latest Commit (Server Branch)", false, "icon16/clock.png")
