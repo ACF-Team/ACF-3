@@ -1,6 +1,3 @@
--- TODO: Add registration for extensions of ACF
--- TODO: Check local version in a client file and receive the server's version for comparison
-
 local ACF = ACF
 local Realm = SERVER and "Server" or "Client"
 
@@ -137,35 +134,33 @@ end
 
 --- Fetches the (latest) commit given a url and runs the callback with the commit information
 local function FetchCommit(url, callback)
-	HTTP({
-		url = url,
-		method = "GET",
-		success = function(_, body)
-			local data = util.JSONToTable(body)
-			if not data then print("[ACF] Failed to fetch commit information") return end
+	ACF.StartRequest(url,
+	function(body, _, _, _)
+		local data = util.JSONToTable(body)
+		if not data then ACF.PrintLog("HTTP_Error", "Failed to fetch commit information") return end
 
-			local raw = data[1] or data
-			if not raw or not raw.commit then print("[ACF] Failed to fetch commit information") return end
+		local raw = data[1] or data
+		if not raw or not raw.commit then ACF.PrintLog("HTTP_Error", "Failed to fetch commit information") return end
 
-			local Title, Body = GitTitleBody(raw.commit.message)
+		local Title, Body = GitTitleBody(raw.commit.message)
 
-			callback({
-				short_sha = raw.sha:sub(1, 7),
-				title     = Title,
-				body      = Body,
-				author    = raw.commit.author.name,
-				date      = GitDateToEpoch(raw.commit.author.date),
-				url       = raw.html_url
-			})
-		end,
-		failed = function(err)
-			print("[ACF] Commit HTTP failed:", err)
-		end
-	})
+		callback({
+			short_sha = raw.sha:sub(1, 7),
+			title     = Title,
+			body      = Body,
+			author    = raw.commit.author.name,
+			date      = GitDateToEpoch(raw.commit.author.date),
+			url       = raw.html_url
+		})
+	end,
+	function(_)
+		ACF.PrintLog("HTTP_Error", "Failed to fetch commit information")
+	end
+	)
 end
 
 --- Get information about the latest commit for a given repo and branch
---- Example usage: lua_run ACF.GetLatestCommit("ACF-Team", "ACF-3", "main", function(commit) PrintTable(commit) end)
+--- Example usage: lua_run ACF.GetLatestCommit("ACF-Team", "ACF-3", "master", function(commit) PrintTable(commit) end)
 function ACF.GetLatestCommit(owner, repo, branch, callback)
 	FetchCommit(("https://api.github.com/repos/%s/%s/commits?per_page=1&sha=%s"):format(owner, repo, branch), callback)
 end
@@ -179,6 +174,7 @@ end
 ACF.Extensions = ACF.Extensions or {}
 ACF.ExtensionOrders = ACF.ExtensionOrders or {}
 function ACF.AddRepository(_, Name)
+	if ACF.Extensions[Name] then return end
 	local info = debug.getinfo(2, "S")
 	local Path = string.Split(info.short_src, "/lua/")[1]
 
