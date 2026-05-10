@@ -44,7 +44,8 @@ local function DrawGitStatus(Menu, Version, MostRecentCommit, _)
 end
 
 local function CreateMenu(Menu)
-	for ExtensionName, ClientExtension in pairs(ACF.Extensions) do
+	for _, ExtensionName in ipairs(ACF.ExtensionOrders) do
+		ClientExtension = ACF.Extensions[ExtensionName]
 		ServerExtension = ACF.ServerExtensions[ExtensionName]
 		local Base = Menu:AddCollapsible(ExtensionName, true, "icon16/package.png")
 		DrawGitCommit(Base, ServerExtension.Commit)

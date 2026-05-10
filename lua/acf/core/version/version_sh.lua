@@ -177,6 +177,7 @@ function ACF.GetCommit(owner, repo, sha, callback)
 end
 
 ACF.Extensions = ACF.Extensions or {}
+ACF.ExtensionOrders = ACF.ExtensionOrders or {}
 function ACF.AddRepository(_, Name)
 	local info = debug.getinfo(2, "S")
 	local Path = string.Split(info.short_src, "/lua/")[1]
@@ -184,6 +185,7 @@ function ACF.AddRepository(_, Name)
 	local Version = ACF.CheckLocalVersion(Name, Path)
 	ACF.Extensions[Name] = ACF.Extensions[Name] or {}
 	ACF.Extensions[Name].Version = Version -- Version info for this repository
+	table.insert(ACF.ExtensionOrders, Name)
 end
 
 ACF.AddRepository("ACF-Team", "ACF-3")
@@ -208,6 +210,7 @@ if SERVER then
 	hook.Add("ACF_OnLoadPlayer", "ACF_SendVersionInfo", function(ply)
 		net.Start("ACF_VersionInfo")
 		net.WriteString(util.TableToJSON(ACF.Extensions or {}))
+		net.WriteString(util.TableToJSON(ACF.ExtensionOrders or {}))
 		net.Send(ply)
 	end)
 elseif CLIENT then
