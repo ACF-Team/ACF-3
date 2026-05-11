@@ -101,12 +101,11 @@ local function CreateMenu(Menu)
 
 		local SW, SH = ScrW(), ScrH()
 		-- Window: fixed proportion of the actual screen, works at any resolution
-		local WinW = math.Round(SW * 0.633)
+		local WinW = math.max(560, math.Round(SW * 0.633))
 		local WinH = math.Round(SH * 0.778)
-		-- UI element scale: min of both axes so nothing overflows on non-16:9
-		local Scale = math.min(SW / 1920, SH / 1080)
-		local FontScale = math.Clamp(Scale, 0.75, 1)
-		local SideW = math.max(220, math.Round(WinW * 0.2))
+		local FontScale = math.Clamp(math.min(SW / 1920, SH / 1080), 0.75, 1)
+		local SideW = math.max(150, math.Round(WinW * 0.22))
+		local IconSz = math.max(60, math.floor((WinW - 2 * SideW - 40) / 3))
 
 		surface.CreateFont("ACF_Dupe_Title", { font = "Roboto", size = math.max(10, math.Round(18 * FontScale)), weight = 850, antialias = true })
 		surface.CreateFont("ACF_Dupe_Label", { font = "Roboto", size = math.max(10, math.Round(14 * FontScale)), weight = 650, antialias = true })
@@ -279,12 +278,14 @@ local function CreateMenu(Menu)
 			if type then query = query .. " AND type = " .. sql.SQLStr(type) end
 			if mobility then query = query .. " AND mobility = " .. sql.SQLStr(mobility) end
 
+			local sz = IconSz
+
 			local dupes = sql.Query(query) or {}
 			DupeList:Clear()
 			for _, dupe in ipairs(dupes) do
 				local FilePath = ImagePath .. "/" .. dupe.packid .. "/" .. dupe.path
 				local Icon = vgui.Create("DImageButton")
-				Icon:SetSize(256 * Scale, 256 * Scale)
+				Icon:SetSize(sz, sz)
 				Icon:SetMaterial(Material(FilePath .. ".jpg"))
 				Icon:SetTooltip(dupe.name)
 				Icon.Data = dupe
