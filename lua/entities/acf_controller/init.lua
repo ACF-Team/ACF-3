@@ -37,6 +37,7 @@ util.AddNetworkString("ACF_Controller_CamData")	-- Relay camera updates
 util.AddNetworkString("ACF_Controller_Zoom")	-- Relay camera zooms
 util.AddNetworkString("ACF_Controller_Ammo")	-- Relay ammo counts
 util.AddNetworkString("ACF_Controller_Receivers")	-- Relay LWS/RWS data
+util.AddNetworkString("ACF_Controller_Radar")	-- Relay radar data
 
 -- https://wiki.facepunch.com/gmod/Enums/IN
 local IN_ENUM_TO_WIRE_OUTPUT = {
@@ -147,6 +148,8 @@ do
 		Entity.GuidanceComputer = nil		-- The guidance computer, if any
 		Entity.TurretComputer = nil			-- The turret computer, if any
 		Entity.Receivers = {}				-- LWR/RWRs
+		Entity.Radar = nil					-- Radar, if any
+		Entity.RadarVertical = nil			-- Radar vertical turret, if any
 
 		-- Determined automatically
 		Entity.Driver = nil					-- The player driving the vehicle
@@ -192,6 +195,11 @@ do
 
 		Entity.ReceiverDirections = {}			-- LWS/RWS receiver angles
 		Entity.ReceiverDetecteds = {}			-- LWS/RWS receiver detected states
+
+		Entity.RadarUpdateRate = 7			-- How often to update the radar, in ticks.
+		Entity.SelectedTargetID = nil		-- Currently selected radar target ID
+		Entity.SelectedTargetPos = Vector()	-- Position of currently selected radar target
+		Entity.SelectedTargetVel = Vector()	-- Velocity of currently selected radar target
 
 		Entity.Speed = 0
 
@@ -267,6 +275,45 @@ do
 				end
 			end
 		end
+	end
+end
+
+-- Radar related
+do
+	function ENT:AnalyzeRadars(Radar)
+		self.RadarVertical = Radar:GetParent()
+		self.RadarUpdateRate = math.ceil(Radar.Outputs["Think Delay"].Value / (1 / 66))
+	end
+
+	net.Receive("ACF_Controller_Radar", function()
+		local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
+		local SelectedID = net.ReadUInt(6)
+		local Entity = Entity(EntIndex)
+		if not IsValid(Entity) then return end
+		Entity.SelectedTargetID = SelectedID ~= 0 and SelectedID or nil
+	end)
+
+	function ENT:ProcessRadars(SelfTbl)
+		local Radar = SelfTbl.Radar
+		if not IsValid(Radar) then return end
+		local Count = math.min(#Radar.Outputs.IDs.Value, 15) -- Avoid spam
+
+		net.Start("ACF_Controller_Radar")
+		net.WriteEntity(self)
+		net.WriteUInt(Count, 4)
+		for i = 1, Count do
+			local ID = Radar.Outputs.IDs.Value[i] or 0
+			net.WriteUInt(ID, 6)
+			net.WriteString(Radar.Outputs.Owner.Value[i] or "")
+			net.WriteVector(Radar.Outputs.Position.Value[i] or vector_origin)
+
+			if ID == SelfTbl.SelectedTargetID then
+				SelfTbl.SelectedTargetPos = Radar.Outputs.Position.Value[i] or vector_origin
+				SelfTbl.SelectedTargetVel = Radar.Outputs.Velocity.Value[i] or vector_origin
+			end
+		end
+		net.WriteVector(SelfTbl.SelectedTargetVel)
+		net.Send(self.Driver)
 	end
 end
 
@@ -481,6 +528,13 @@ local LinkConfigs = {
 	prop_physics = {
 		Field = "SteerPlates",
 		Single = false,
+	},
+	acf_radar = {
+		Field = "Radar",
+		Single = true,
+		OnLinked = function(Controller, Target)
+			Controller:AnalyzeRadars(Target)
+		end
 	}
 }
 
@@ -570,6 +624,8 @@ do
 
 		-- Process HUDs
 		if iters % 7 == 0 then self:ProcessHUDs(SelfTbl) end
+
+		if iters % SelfTbl.RadarUpdateRate == 0 then self:ProcessRadars(SelfTbl) end
 
 		SelfTbl.iters = iters + 1
 		self:UpdateOverlay()

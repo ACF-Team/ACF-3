@@ -110,6 +110,8 @@ do
 				if Turret == BreechReference and ShouldLevel then Turret:InputDirection(ReloadAngle)
 				elseif BreechReference and Turret == BreechReference:GetParent() and ShouldLevel and ReloadAngleHorizontal ~= 0 then Turret:InputDirection(ReloadAngleHorizontal)
 				else Turret:InputDirection(HitPos + AntiDrop + AntiDrift) end
+
+				if Turret == SelfTbl.RadarVertical then Turret:InputDirection(SelfTbl.SelectedTargetPos) end
 			end
 		end
 	end
