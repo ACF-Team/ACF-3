@@ -375,9 +375,9 @@ return function(State)
                 local TargetPos = Data[1]
                 local TargetVel = State.MyController.TargetVelocity or vector_origin
                 local MyPos = State.MyController:GetPos()
-                local MuzzleVel = State.MyController:GetNWFloat("AHS_Primary_MV", 1000)
+                local MuzzleVel = State.MyController:GetNWFloat("AHS_Primary_MV", 0)
                 if MuzzleVel > 0 then
-                    local TimeToTarget = (TargetPos - MyPos):Length() / (MuzzleVel * 39.37)
+                    local TimeToTarget = (TargetPos - MyPos):Length() / (MuzzleVel * 39.37) * 1.27
                     local Drop = Vector(0, 0, 300 * TimeToTarget * TimeToTarget)
                     local LeadPos = TargetPos + TargetVel * TimeToTarget + Drop
                     local LeadSP = LeadPos:ToScreen()
