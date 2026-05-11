@@ -6,6 +6,7 @@ Look at baseplate or wheels with physgun and press R to unfreeze. Then press ALT
 W/A/S/D/Space for movement and brakes
 R to toggle turret lock
 Mouse3 for ballistic computer lase
+F for radar lock
 
 Mouse1 for primary weapon
 Mouse2 for secondary weapon
