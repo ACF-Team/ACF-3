@@ -1,0 +1,18 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "models\ghosteh/zuni"
+	"$bumpmap" "models\ghosteh/zuni_norm"
+	"$normalmapalphaenvmapmask" "1"	
+
+	"$surfaceprop" "metal"
+	"$envmap" "env_cubemap"
+	"$envmaptint" "[ 0.1 0.1 0.1 ]"
+	"$envmapcontrast" 0.1
+	"$envmapsaturation" 0.1
+	"$phong" "1" 
+	"$phongboost" "0.6" 
+	"$phongfresnelranges" "[0.15 1 1]"
+	"$phongexponent" "10.5"
+	"$blendtintbybasealpha" "1"
+
+}
