@@ -139,7 +139,7 @@ do -- ACF global vars
 	ACF.FuelRate = 15 -- Multiplier for fuel usage, 1.0 is approx real world
 	ACF.DefineSetting("FuelFactor",           1,      "Fuel rate multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("FuelRate", 0.01, 2, 2))
 
-	ACF.MinimumArmor         = 1     -- Minimum possible armor that can be given to an entity
+	ACF.MinimumArmor         = 0.01     -- Minimum possible armor that can be given to an entity
 	ACF.MaximumArmor         = 5000  -- Maximum possible armor that can be given to an entity
 	ACF.MinDuctility         = -80   -- The minimum amount of ductility that can be set on an entity
 	ACF.MaxDuctility         = 80    -- The maximum amount of ductility that can be set on an entity
