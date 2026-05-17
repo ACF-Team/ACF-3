@@ -22,18 +22,19 @@ end
 
 function ENT:SetAmount(Amount)
 	local Cap = self.Capacity or 0
-	local New = Round(Clamp(Amount or 0, 0, Cap), 2)
-
-	if New == self.Amount then return end
+	local New = Clamp(Amount or 0, 0, Cap)
 
 	self.Amount = New
 
-	if WireLib then
-		WireLib.TriggerOutput(self, self.WireAmountName, New)
-	end
+	if CurTime() - (self.LastInfoUpdate or 0) > 0.1 then
+		if WireLib then
+			WireLib.TriggerOutput(self, self.WireAmountName, New)
+		end
 
-	self:UpdateMass()
-	if self.UpdateOverlay then self:UpdateOverlay() end
+		self:UpdateMass()
+		if self.UpdateOverlay then self:UpdateOverlay() end
+		self.LastInfoUpdate = CurTime()
+	end
 end
 
 function ENT:Consume(Amount)
