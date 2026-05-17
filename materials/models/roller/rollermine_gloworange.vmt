@@ -1,0 +1,20 @@
+"UnLitGeneric"
+{
+	// Original shader: VertexLitMaskedEnvMappedTexture
+	"$basetexture" "models/Roller/rollermine_gloworange"
+	"$additive" "1"
+	"$translucent" "1"
+//	"$nocull" "1"
+	"$model" "1"
+
+"Proxies"
+{
+ "AnimatedTexture"
+ {
+  "animatedtexturevar" "$basetexture"
+  "animatedtextureframenumvar" "$frame"
+  "animatedtextureframerate" 15 
+ }
+}
+
+}

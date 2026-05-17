@@ -176,6 +176,13 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 		return true
 	end
 
+	--- Called when a baseplate attempts to create an explosion, usually due to mid-air collisions.
+	--- @param Entity entity The affected baseplate.
+	--- @return boolean # True if the baseplate can explode, false otherwise.
+	function Gamemode:ACF_PreExplodeBaseplate()
+		return true
+	end
+
 	--- Called when a weapon attempts to fire a projectile.
 	--- @param Entity entity The weapon attempting to fire.
 	--- @return boolean # True if the weapon can be fired, false otherwise.

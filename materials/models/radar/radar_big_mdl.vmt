@@ -1,0 +1,26 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "models\radar/radar_big_mdl"
+	$bumpmap "models\radar/radar_big_mdl_bumbmap"
+	$normalmap "models\radar/radar_big_mdl_bumbmap"
+	$PhongExponentTexture "models\radar/radar_big_mdl_shadowmap"
+
+	"$envmap" "env_cubemap"
+	"$envmaptint" "[ .11 .11 .07 ]"
+	
+	
+	"$model" "1"
+	"$halflambert" 			1
+	$blendtintbybasealpha		1
+	$surfaceprop	metal
+
+	"$phong" "1"
+	"$phongboost" "2"
+	"$phongfresnelranges" "[.15 .5 1]"
+	$phongexponent			5			// either/or
+	
+$detail detail\metal_detail_01
+$detailscale 22.283
+$detailblendfactor .55
+$detailblendmode 0
+}

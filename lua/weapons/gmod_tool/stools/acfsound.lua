@@ -13,6 +13,7 @@ TOOL.Information = {
 }
 
 local Sounds = ACF.SoundToolSupport
+local Notify = ACF.Utilities.Notify
 
 local function ReplaceSound(_, Entity, Data)
 	if not IsValid(Entity) then return end
