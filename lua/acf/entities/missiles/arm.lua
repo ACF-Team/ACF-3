@@ -6,7 +6,7 @@ Missiles.Register("ARM", {
 	Sound		= "acf_missiles/missiles/missile_rocket.mp3",
 	Effect		= "Rocket Motor ATGM",
 	Spread		= 1,
-	Blacklist	= { "AP", "APHE", "HEAT", "HP", "FL", "SM" },
+	Blacklist	= { "AP", "APHE", "HP", "FL", "SM" },
 	LimitConVar = {
 		Name = "_acfm_arm",
 		Amount = 8,
