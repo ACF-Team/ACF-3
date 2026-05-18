@@ -259,7 +259,7 @@ end
 
 local PLAYER_USE_RADIUS = 120
 local function ApproveUseEntity(PlayerInvoker, ToBeUsedEntity, DoNotify)
-    if PreCheck() then return end
+    if PreCheck() then return true end
     if not IsValid(PlayerInvoker) then return end
     if not IsValid(ToBeUsedEntity) then return end
 
