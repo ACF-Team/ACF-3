@@ -26,7 +26,9 @@ function ENT:SetAmount(Amount)
 
 	self.Amount = New
 
-	if CurTime() - (self.LastInfoUpdate or 0) > 0.1 then
+	local TimeCheck = CurTime() - (self.LastInfoUpdate or 0) > 0.1
+	local ValueCheck = math.abs((self.LastInfoAmount or 0) - New) > 0.001
+	if TimeCheck and ValueCheck then
 		if WireLib then
 			WireLib.TriggerOutput(self, self.WireAmountName, New)
 		end
@@ -34,6 +36,7 @@ function ENT:SetAmount(Amount)
 		self:UpdateMass()
 		if self.UpdateOverlay then self:UpdateOverlay() end
 		self.LastInfoUpdate = CurTime()
+		self.LastInfoAmount = New
 	end
 end
 
