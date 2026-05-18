@@ -229,7 +229,7 @@ local function FreezeDetours()
     do
         local Func Func = Detours.Starfall("instance.Types.Entity.Methods.enableMotion", function(Instance, Ent, Move, ...)
             if not Move and not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:enableMotion(n)") then return end
-            return Func(Instance, Ent, ...)
+            return Func(Instance, Ent, Move, ...)
         end)
     end
     do
