@@ -911,12 +911,6 @@ local function ConstraintDetours()
         end)
     end
     do
-        local Func Func = Detours.New("constraint.AdvBallsocket", function(Entity1, Entity2, ...)
-            if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "adv ballsocket", true) then return false end
-            return Func(Entity1, Entity2, ...)
-        end)
-    end
-    do
         local Func Func = Detours.New("constraint.Pulley", function(Entity1, Entity4, ...)
             if not DetermineValidConstraint_WorldCheck(Entity1, Entity4, "pulley", true) then return false, nil, nil, nil end
             return Func(Entity1, Entity4, ...)
