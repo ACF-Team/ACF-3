@@ -106,15 +106,9 @@ function ENT:Detonate(VisualOnly)
 	local FragMass   = BulletData.ProjMass or Explosive * 0.5
 	local DmgInfo    = Objects.DamageInfo(self.Attacker or self, self.Inflictor)
 
-	ACF.KillChildProps(self, Position, Explosive)
-
 	if not VisualOnly then
 		Damage.createExplosion(Position, Explosive, FragMass, { self }, DmgInfo)
 	end
 
 	Damage.explosionEffect(Position, nil, Explosive)
-
-	constraint.RemoveAll(self)
-
-	self:Remove()
 end

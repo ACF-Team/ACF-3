@@ -8,6 +8,22 @@ return function()
     function ENT:Disable() end
     function ENT:ACF_UpdateOverlayState() end
 
+    --- Called when the entity is killed (health reaches 0 on an indestructible entity).
+    --- ACF_Killed is already set by doPropDamage before this is called.
+    --- Default behavior: disable the entity so it stops functioning.
+    --- Override for custom death behavior (e.g. containers clear their contents).
+    function ENT:ACF_OnKilled()
+        self:Disable()
+    end
+
+    --- Called when the entity is repaired from a dead state (health rises above 0).
+    --- ACF_Killed is already cleared by the torch before this is called.
+    --- Default behavior: re-enable the entity so it can function again.
+    --- Override for custom revival behavior (e.g. re-enable subsystems).
+    function ENT:ACF_OnRevived()
+        self:Enable()
+    end
+
     do -- Entity Overlay ----------------------------
         local Name    = "ACF Overlay Buffer %s"
         local timer   = timer
@@ -103,6 +119,7 @@ return function()
 
         function ENT:TriggerInput(Name, Value)
             if self.Disabled then return end -- Ignore input if disabled
+            if self.ACF_Killed then return end -- Dead entities cannot receive inputs
             if not self.InputActions then SetupInputActions(self) end
 
             local Actions  = self.InputActions

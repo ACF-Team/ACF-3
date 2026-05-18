@@ -276,6 +276,7 @@ do	-- Metamethods and other important stuff
 
 		function ENT:IsActive()
 			if self.Disabled then return false end
+			if self.ACF_Killed then return false end
 			if self.ValidPlacement == false then return false end
 
 			if (self.ACF.Health / self.ACF.MaxHealth) <= 0.25 then

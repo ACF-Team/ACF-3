@@ -1176,6 +1176,12 @@ do -- Metamethods
 			SelfTbl.ACF.Health = NewHealth
 			SelfTbl.ACF.Armour = SelfTbl.ACF.MaxArmour * (NewHealth / SelfTbl.ACF.MaxHealth)
 
+			-- If the turret died, mark it and shut it down
+			if NewHealth <= 0 then
+				SelfTbl.ACF_Killed = true
+				self:ACF_OnKilled()
+			end
+
 			SelfTbl.DamageScale = math_max((SelfTbl.ACF.Health / (SelfTbl.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
 			self:UpdateOverlay()
 

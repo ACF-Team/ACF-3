@@ -310,6 +310,9 @@ function ENT:ACF_UpdateOverlayState(State)
 end
 
 function ENT:Think()
+	if self.ACF_Killed then return end
+	if self.Disabled then return end
+
 	if self.OnThink then
 		self:OnThink()
 	end

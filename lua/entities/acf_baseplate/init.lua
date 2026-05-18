@@ -4,7 +4,6 @@ AddCSLuaFile("cl_init.lua")
 include("shared.lua")
 
 ENT.ACF_UserWeighable             = true
-ENT.ACF_KillableButIndestructible = true
 ENT.ACF_HealthUpdatesWireOverlay  = true
 
 -- Might be a good idea to put this somewhere else later

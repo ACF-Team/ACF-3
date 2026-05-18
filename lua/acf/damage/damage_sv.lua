@@ -7,6 +7,18 @@ local QueueTime = 0.5 -- Seconds to buffer damage updates before sending
 
 util.AddNetworkString("ACF_Damage")
 
+--- Returns true if the entity should not be removed when killed.
+--- All entities on an ACF contraption are indestructible by default.
+--- Entities with ACF_Destructible = true are always destructible.
+--- @param Entity entity The entity to check.
+--- @return boolean True if the entity should persist when health reaches 0.
+function ACF.IsIndestructible(Entity)
+	if Entity.ACF_Destructible then return false end
+	local Contraption = Entity:CFW_GetContraption()
+	if Contraption and Contraption.ACF_IsACFContraption then return true end
+	return false
+end
+
 local function SendQueue()
 	local Batch = {}
 
@@ -46,7 +58,8 @@ function Damage.Network(Entity, _, NewHealth, MaxHealth)
 	local Value = NewHealth / MaxHealth
 
 	if Value ~= Value then return end -- NaN guard
-	if Value == 0     then return end -- Fully destroyed; entity removal handles client cleanup
+	-- Entities are no longer removed when dead; they persist on the contraption for repair.
+	-- Allow health=0 to network so the visual damage material updates to fully destroyed.
 
 	local Step = math.Round(Value * 10) -- Integer 0-10, snapped to nearest 10% boundary
 
@@ -231,11 +244,16 @@ function Damage.doPropDamage(Entity, DmgResult)
 	end
 
 	if HitRes.Damage >= Health then
-		if Entity.ACF_KillableButIndestructible then
-			HitRes.Kill = false
-			Entity.ACF.Health = 0
-		else
-			HitRes.Kill = true
+		EntACF.Health     = 0
+		EntACF.Armour     = 0
+		Entity.ACF_Killed = true
+		HitRes.Kill       = not ACF.IsIndestructible(Entity)
+
+		-- Update visual damage to show fully destroyed
+		Damage.Network(Entity, nil, 0, EntACF.MaxHealth)
+
+		if Entity.ACF_OnKilled then
+			Entity:ACF_OnKilled()
 		end
 	else
 		local NewHealth = Health - HitRes.Damage

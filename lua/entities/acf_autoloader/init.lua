@@ -3,8 +3,6 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
-ENT.ACF_KillableButIndestructible = true
-
 local ACF         = ACF
 local TraceLine   = util.TraceLine
 local Classes     = ACF.Classes

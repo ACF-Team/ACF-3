@@ -62,9 +62,8 @@ do -- ACF.trace
 		if ACF.FilterMakeSpherical and EntTbl._IsSpherical then return true end
 		if EntTbl.ACF_InvisibleToTrace then return true end
 
-		if EntTbl.ACF_KillableButIndestructible and EntTbl.ACF and EntTbl.ACF.Health <= 0 then
-			return true
-		end
+		-- Dead entities are transparent to traces so projectiles pass through
+		if EntTbl.ACF_Killed then return true end
 
 		return false
 	end

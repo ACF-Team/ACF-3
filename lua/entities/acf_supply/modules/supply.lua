@@ -35,6 +35,7 @@ local function CanSupply(Supply, Target, Distance2)
 	if Supply == Target then return false end
 	if Target.Disabled then return false end
 	if Target.Damaged then return false end
+	if Target.ACF_Killed then return false end -- Dead containers cannot be refilled
 
 	local Amount = Target.Amount
 	local Cap    = Target.Capacity

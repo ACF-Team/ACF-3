@@ -277,6 +277,15 @@ function SWEP:PrimaryAttack()
 		local Health = math.min(OldHealth + (30 / MaxArmor), MaxHealth)
 		local Armor = MaxArmor * (0.5 + Health / MaxHealth * 0.5)
 
+		-- If the entity was dead (health was 0), revive it
+		if OldHealth <= 0 and Entity.ACF_Killed then
+			Entity.ACF_Killed = nil
+
+			if Entity.ACF_OnRevived then
+				Entity:ACF_OnRevived()
+			end
+		end
+
 		Entity.ACF.Health = Health
 		Entity.ACF.Armour = Armor
 

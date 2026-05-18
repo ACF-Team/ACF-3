@@ -222,6 +222,7 @@ do	-- Metamethods and other important stuff
 
 		function ENT:IsActive()
 			if self.Disabled then return false end
+			if self.ACF_Killed then return false end
 
 			if not (IsValid(self.Turret) or IsValid(self["Turret-H"]) or IsValid(self["Turret-V"])) then self:SetActive(false, "") return false end
 

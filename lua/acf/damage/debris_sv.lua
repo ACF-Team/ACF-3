@@ -115,14 +115,9 @@ local function Gib(Entity, DmgInfo)
 end
 
 function ACF.HEKill(Entity, Normal, Energy, BlastPos, DmgInfo, DoNotExplode) -- blast pos is an optional world-pos input for flinging away children props more realistically
-	-- if it hasn't been processed yet, check for children
-	if not Entity.ACF_Killed then
-		ACF.KillChildProps(Entity, BlastPos or Entity:GetPos(), Energy, DoNotExplode)
-	end
-
-	local Radius = Entity:BoundingRadius()
-	local Debris = {}
-	local Class = Entity:GetClass()
+	local Radius   = Entity:BoundingRadius()
+	local Debris   = {}
+	local Class    = Entity:GetClass()
 	local CanBreak = (Class == "prop_physics") and (Entity:Health() > 0)
 
 	if not CanBreak then DebrisNetter(Entity, Normal, Energy, false, true) end -- if we can't break the prop into its own gibs, then use ACF's system
@@ -163,12 +158,16 @@ function ACF.HEKill(Entity, Normal, Energy, BlastPos, DmgInfo, DoNotExplode) -- 
 		end
 	end
 
-	constraint.RemoveAll(Entity)
+	if not ACF.IsIndestructible(Entity) then
+		ACF.KillChildProps(Entity, BlastPos or Entity:GetPos(), Energy, DoNotExplode)
 
-	if CanBreak then
-		Gib(Entity, DmgInfo)
-	else
-		Entity:Remove()
+		constraint.RemoveAll(Entity)
+
+		if CanBreak then
+			Gib(Entity, DmgInfo)
+		else
+			Entity:Remove()
+		end
 	end
 
 	return Debris
@@ -180,15 +179,17 @@ function ACF.APKill(Entity, Normal, Power, DmgInfo, DoNotExplode)
 	local Class = Entity:GetClass()
 	local CanBreak = (Class == "prop_physics") and (Entity:Health() > 0)
 
-	ACF.KillChildProps(Entity, Entity:GetPos(), Power, DoNotExplode) -- kill the children of this ent, instead of disappearing them from removing parent
-
 	if not CanBreak then DebrisNetter(Entity, Normal, Power, true, false) end -- if we can't break the prop into its own gibs, then use ACF's system
 
-	constraint.RemoveAll(Entity)
+	if not ACF.IsIndestructible(Entity) then
+		ACF.KillChildProps(Entity, Entity:GetPos(), Power, DoNotExplode)
 
-	if CanBreak then
-		Gib(Entity, DmgInfo)
-	else
-		Entity:Remove()
+		constraint.RemoveAll(Entity)
+
+		if CanBreak then
+			Gib(Entity, DmgInfo)
+		else
+			Entity:Remove()
+		end
 	end
 end

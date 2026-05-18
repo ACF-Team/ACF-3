@@ -45,6 +45,7 @@ end
 function ENT:CanConsume()
 	if self.Disabled then return false end
 	if not self.Active then return false end
+	if self.ACF_Killed then return false end
 
 	return self.Amount > 0
 end
@@ -106,6 +107,12 @@ function ENT:ACF_Activate(Recalc)
 	self.ACF.Armour    = Armour * (0.5 + Percent * 0.5)
 	self.ACF.MaxArmour = Armour
 	self.ACF.Type      = "Prop"
+end
+
+--- Called when the container is destroyed. Contents are lost and the container disables.
+function ENT:ACF_OnKilled()
+	self:SetAmount(0)
+	self:Disable()
 end
 
 function ENT:OnResized(Size)

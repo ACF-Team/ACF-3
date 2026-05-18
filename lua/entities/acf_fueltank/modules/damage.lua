@@ -69,13 +69,8 @@ function ENT:Detonate()
 	local Explosive = (math.max(self.Amount, self.Capacity * 0.0025) / self.FuelDensity) * 0.1
 	local DmgInfo   = Objects.DamageInfo(self.Attacker or self, self.Inflictor)
 
-	ACF.KillChildProps(self, Position, Explosive)
-
 	Damage.createExplosion(Position, Explosive, Explosive * 0.5, { self }, DmgInfo)
 	Damage.explosionEffect(Position, nil, Explosive)
-
-	constraint.RemoveAll(self)
-	self:Remove()
 end
 
 --- Only runs when the tank is leaking
