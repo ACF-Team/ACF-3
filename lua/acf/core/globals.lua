@@ -26,19 +26,22 @@ do
 	-- standard for a specific type; see ACF.BooleanDataCallback, FloatDataCallback, etc for examples of how that
 	-- behavior works.
 
-	function ACF.DefineSetting(Key, Default, TextWhenChanged, Callback)
+	-- UnrestrictedValue denotes the value that should be used if restrictions are removed.
+
+	function ACF.DefineSetting(Key, Default, TextWhenChanged, Callback, UnrestrictedValue)
 		ACF[Key] = Default
 
 		SettingData.Key             = Key
 		SettingData.Default         = Default
 		SettingData.TextWhenChanged = TextWhenChanged
 		SettingData.Callback        = Callback
+		SettingData.UnrestrictedValue = UnrestrictedValue
 
 		ACF.__DefinedSettings[Key]  = SettingData
 		SettingData                 = {}
 
 		if ACF.__OnDefinedSetting then
-			ACF.__OnDefinedSetting(Key, Default, TextWhenChanged, Callback)
+			ACF.__OnDefinedSetting(Key, Default, TextWhenChanged, Callback, UnrestrictedValue)
 		end
 	end
 
@@ -119,9 +122,9 @@ do -- ACF global vars
 	-- General Settings
 	ACF.DefineSetting("AllowAdminData",       false,  "Admin server data access has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("RestrictInfo",         true,   "Entity information restrictions have been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("LegalChecks",          true,   "Legality checks for ACF entities has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("NameAndShame",         false,  "Console messages for failed legality checks have been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("VehicleLegalChecks",   true,   "Legality checks for vehicles has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("LegalChecks",          true,   "Legality checks for ACF entities has been %s.", ACF.BooleanDataCallback(), false)
+	ACF.DefineSetting("NameAndShame",         true,	  "Console messages for failed legality checks have been %s.", ACF.BooleanDataCallback(), false)
+	ACF.DefineSetting("VehicleLegalChecks",   true,   "Legality checks for vehicles has been %s.", ACF.BooleanDataCallback(), false)
 
 	ACF.DefineSetting("GunsCanFire",          true,   "Gunfire has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("GunsCanSmoke",         true,   "Gun sounds and particles have been %s.", ACF.BooleanDataCallback())
@@ -154,10 +157,10 @@ do -- ACF global vars
 	ACF.DefineSetting("RecoilPush",           true,   "Recoil entity pushing has been %s.", ACF.BooleanDataCallback())
 
 	ACF.DefineSetting("AllowFunEnts",              true,     "Fun Entities have been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("AllowArbitraryParents",     false,    "Arbitrary parenting has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("AllowArbitraryParents",     false,    "Arbitrary parenting has been %s.", ACF.BooleanDataCallback(), true)
 	ACF.DefineSetting("AllowSpecialEngines",       true,     "Special engines have been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("AllowDynamicLinking",       false,    "Dynamic ACF linking has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("LethalEntityPlayerChecks",  true,     "Lethal entity player checks have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("LethalEntityPlayerChecks",  true,     "Lethal entity player checks have been %s.", ACF.BooleanDataCallback(), false)
 	ACF.DefineSetting("ShowFunMenu",               true,     "The Fun Entities menu option has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("DetachedPhysmassRatio",     false,    "Detached entities affecting mass ratio has been %s.", ACF.BooleanDataCallback())
 
