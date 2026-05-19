@@ -154,11 +154,11 @@ do -- Serverside settings
 	end
 
 	ACF.AddServerSettings(1, "#acf.menu.settings.general", function(Base)
-		Base:AddButton("Default values", function()
+		Base:AddButton("#acf.menu.settings.general.default_values", function()
 			SetDefinedServerSettingsToPreset(false)
 		end)
 
-		Base:AddButton("Unrestricted values", function()
+		Base:AddButton("#acf.menu.settings.general.unrestricted_values", function()
 			SetDefinedServerSettingsToPreset(true)
 		end)
 
@@ -215,6 +215,9 @@ do -- Serverside settings
 
 		Base:AddCheckBox("#acf.menu.settings.fun_menu.arbitrary_parents"):LinkToServerData("AllowArbitraryParents")
 			Base:AddHelp("#acf.menu.settings.fun_menu.arbitrary_parents_desc")
+
+		Base:AddCheckBox("#acf.menu.settings.general.legality_detours"):LinkToServerData("LegalityDetours")
+			Base:AddHelp("#acf.menu.settings.general.legality_detours_desc")
 	end)
 
 	ACF.AddServerSettings(301, "#acf.menu.settings.fun_menu", function(Base)

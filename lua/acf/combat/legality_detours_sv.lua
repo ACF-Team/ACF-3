@@ -43,7 +43,7 @@ local function DisableContraption(Player, Ent, Reason)
 end
 
 local function PreCheck()
-    if not ACF.LegalChecks then return true end
+    if not ACF.LegalityDetours then return true end
 end
 
 local ATTEMPT_MESSAGE = "Attempted to use %s (a blocked usercall)."
