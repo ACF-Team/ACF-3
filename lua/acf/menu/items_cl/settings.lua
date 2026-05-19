@@ -190,7 +190,7 @@ do -- Serverside settings
 	ACF.AddServerSettings(201, "#acf.menu.settings.legal_checks", function(Base)
 		Base:AddButton("Disable Legal Checks", function()
 			-- Set settings variable based on its UnrestrictedValue
-			for _, SettingKey in ipairs({"LegalChecks", "VehicleLegalChecks", "NameAndShame", "LethalEntityPlayerChecks"}) do
+			for _, SettingKey in ipairs({"LegalChecks", "VehicleLegalChecks", "NameAndShame", "LethalEntityPlayerChecks", "AllowArbitraryParents"}) do
 				local SettingData = ACF.__DefinedSettings[SettingKey]
 				if SettingData and SettingData.UnrestrictedValue ~= nil then
 					ACF.SetServerData(SettingKey, SettingData.UnrestrictedValue, true)
@@ -200,7 +200,7 @@ do -- Serverside settings
 
 		Base:AddButton("Enable Legal Checks", function()
 			-- Set settings variable based on its Default value
-			for _, SettingKey in ipairs({"LegalChecks", "VehicleLegalChecks", "NameAndShame", "LethalEntityPlayerChecks"}) do
+			for _, SettingKey in ipairs({"LegalChecks", "VehicleLegalChecks", "NameAndShame", "LethalEntityPlayerChecks", "AllowArbitraryParents"}) do
 				local SettingData = ACF.__DefinedSettings[SettingKey]
 				if SettingData then
 					ACF.SetServerData(SettingKey, SettingData.Default, true)
