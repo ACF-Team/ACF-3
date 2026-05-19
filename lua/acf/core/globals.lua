@@ -129,7 +129,7 @@ do -- ACF global vars
 	ACF.DefineSetting("GunsCanFire",          true,   "Gunfire has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("GunsCanSmoke",         true,   "Gun sounds and particles have been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("RacksCanFire",         true,   "Missile racks have been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("RequireFuel",          true,   "Engine fuel requirements have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("RequireFuel",          true,   "Engine fuel requirements have been %s.", ACF.BooleanDataCallback(), false)
 	ACF.DefineSetting("AllowBaseplateDamage", false,  "Non-ACF damage while driving baseplates has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("SquishyDamageMult",    1,      "Player/NPC damage multiplier has been set to a factor of %.2f.", ACF.FloatDataCallback(0.1, 2, 2))
 
@@ -175,7 +175,7 @@ do -- ACF global vars
 	ACF.DefineSetting("NoclipOutsideZones",   true,   "Noclipping outside safezones has been %s.", ACF.BooleanDataCallback())
 
 	-- The deviation of the input direction from the shaft + the output direction from the shaft cannot exceed this
-	ACF.DefineSetting("MaxDriveshaftAngle",   85,    nil, ACF.FloatDataCallback(85, 180, 0))
+	ACF.DefineSetting("MaxDriveshaftAngle",   85,    nil, ACF.FloatDataCallback(85, 180, 0), 360)
 	ACF.Year                 = 1945
 	ACF.IllegalDisableTime   = 30 -- Time in seconds for an entity to be disabled when it fails ACF.IsLegal
 	ACF.Volume               = 1 -- Global volume for ACF sounds

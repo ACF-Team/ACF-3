@@ -143,7 +143,25 @@ end
 do -- Serverside settings
 	ACF.AddMenuItem(101, "#acf.menu.settings", "#acf.menu.settings.server", "server", ACF.GenerateServerSettings)
 
+	local function SetDefinedServerSettingsToPreset(UseUnrestricted)
+		for SettingKey, SettingData in pairs(ACF.__DefinedSettings) do
+			if SettingData.UnrestrictedValue ~= nil then
+				local Value = SettingData.Default
+				if UseUnrestricted then Value = SettingData.UnrestrictedValue end
+				if Value ~= nil then ACF.SetServerData(SettingKey, Value, true) end
+			end
+		end
+	end
+
 	ACF.AddServerSettings(1, "#acf.menu.settings.general", function(Base)
+		Base:AddButton("Default values", function()
+			SetDefinedServerSettingsToPreset(false)
+		end)
+
+		Base:AddButton("Unrestricted values", function()
+			SetDefinedServerSettingsToPreset(true)
+		end)
+
 		Base:AddCheckBox("#acf.menu.settings.general.allow_admin"):          LinkToServerData("ServerDataAllowAdmin")
 			Base:AddHelp("#acf.menu.settings.general.allow_admin_desc")
 
@@ -188,26 +206,6 @@ do -- Serverside settings
 	end)
 
 	ACF.AddServerSettings(201, "#acf.menu.settings.legal_checks", function(Base)
-		Base:AddButton("Disable Legal Checks", function()
-			-- Set settings variable based on its UnrestrictedValue
-			for _, SettingKey in ipairs({"LegalChecks", "VehicleLegalChecks", "NameAndShame", "LethalEntityPlayerChecks", "AllowArbitraryParents"}) do
-				local SettingData = ACF.__DefinedSettings[SettingKey]
-				if SettingData and SettingData.UnrestrictedValue ~= nil then
-					ACF.SetServerData(SettingKey, SettingData.UnrestrictedValue, true)
-				end
-			end
-		end)
-
-		Base:AddButton("Enable Legal Checks", function()
-			-- Set settings variable based on its Default value
-			for _, SettingKey in ipairs({"LegalChecks", "VehicleLegalChecks", "NameAndShame", "LethalEntityPlayerChecks", "AllowArbitraryParents"}) do
-				local SettingData = ACF.__DefinedSettings[SettingKey]
-				if SettingData then
-					ACF.SetServerData(SettingKey, SettingData.Default, true)
-				end
-			end
-		end)
-
 		Base:AddCheckBox("#acf.menu.settings.general.legal_checks"):                         LinkToServerData("LegalChecks")
 		Base:AddCheckBox("#acf.menu.settings.general.legal_checks_vehicle"):                 LinkToServerData("VehicleLegalChecks")
 		Base:AddCheckBox("#acf.menu.settings.general.name_and_shame"):                       LinkToServerData("NameAndShame")
