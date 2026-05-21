@@ -206,14 +206,12 @@ if SERVER then
 	hook.Add("ACF_OnLoadPlayer", "ACF_SendVersionInfo", function(ply)
 		net.Start("ACF_VersionInfo")
 		net.WriteString(util.TableToJSON(ACF.Extensions or {}))
-		net.WriteString(util.TableToJSON(ACF.ExtensionOrders or {}))
 		net.Send(ply)
 	end)
 elseif CLIENT then
 	-- Receive version info from server
 	net.Receive("ACF_VersionInfo", function()
 		ACF.ServerExtensions = util.JSONToTable(net.ReadString())
-		ACF.ExtensionsOrdered = util.JSONToTable(net.ReadString())
 
 		-- Determine if client or server versions are out of date with most recent commit and notify.
 		-- Sends message when player first moves for visibility (Is this working?)
