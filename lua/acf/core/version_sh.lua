@@ -52,14 +52,14 @@ end
 
 --- Returns a table with information about the most recent commit on the current branch.
 --- Handles git, workshop and zip installations.
-function ACF.CheckLocalVersion(Name, Path)
+function ACF.CheckLocalVersion(Owner, Name, Path)
 	local Result = {
 		realm = Realm,
 		path  = Path,
 		head  = "master",
 		code  = "Not Installed",
 		date  = 0,
-		owner = nil
+		owner = Owner
 	}
 
 	-- Default result if no installation found
@@ -71,7 +71,7 @@ function ACF.CheckLocalVersion(Name, Path)
 		local Code, Date = GetGitCommit(Path, Head)
 
 		Result.head  = Head or "master"
-		Result.owner = GetGitOwner(Path)
+		Result.owner = GetGitOwner(Path) -- Makes sure the owner of the repo is correct, deals with forks
 
 		if Code and Date then
 			Result.code = "Git-" .. Code
@@ -173,12 +173,12 @@ end
 
 ACF.Extensions = ACF.Extensions or {}
 ACF.ExtensionOrders = ACF.ExtensionOrders or {}
-function ACF.AddRepository(_, Name)
+function ACF.AddRepository(Owner, Name)
 	if ACF.Extensions[Name] then return end
 	local info = debug.getinfo(2, "S")
 	local Path = string.Split(info.short_src, "/lua/")[1]
 
-	local Version = ACF.CheckLocalVersion(Name, Path)
+	local Version = ACF.CheckLocalVersion(Owner, Name, Path)
 	ACF.Extensions[Name] = ACF.Extensions[Name] or {}
 	ACF.Extensions[Name].Version = Version -- Version info for this repository
 	table.insert(ACF.ExtensionOrders, Name)
@@ -206,12 +206,29 @@ if SERVER then
 	hook.Add("ACF_OnLoadPlayer", "ACF_SendVersionInfo", function(ply)
 		net.Start("ACF_VersionInfo")
 		net.WriteString(util.TableToJSON(ACF.Extensions or {}))
-		net.WriteString(util.TableToJSON(ACF.ExtensionOrders or {}))
 		net.Send(ply)
 	end)
 elseif CLIENT then
 	-- Receive version info from server
 	net.Receive("ACF_VersionInfo", function()
 		ACF.ServerExtensions = util.JSONToTable(net.ReadString())
+
+		-- Determine if client or server versions are out of date with most recent commit and notify.
+		-- Sends message when player first moves for visibility (Is this working?)
+		hook.Add("CreateMove", "ACF_VersionInfoReceived", function()
+			local Messages = ACF.Utilities.Messages
+			for _, ExtensionName in ipairs(ACF.ExtensionOrders) do
+				ClientExtension = ACF.Extensions[ExtensionName]
+				ServerExtension = ACF.ServerExtensions[ExtensionName]
+				if not ClientExtension or not ServerExtension or not ClientExtension.Version or not ServerExtension.Commit then continue end -- Why would this happen :(
+				if ClientExtension.Version.date < ServerExtension.Commit.date then
+					Messages.PrintChat("Error", "Your version of " .. ExtensionName .. " is out of date with the latest commit on the server's branch.\nPlease update to avoid potential compatibility issues.")
+				end
+				if ServerExtension.Version.date < ServerExtension.Commit.date then
+					Messages.PrintChat("Error", "The server's version of " .. ExtensionName .. " is out of date with the latest commit on its branch.\nPlease notify the server administrator to update to avoid potential compatibility issues.")
+				end
+			end
+			hook.Remove("CreateMove", "ACF_VersionInfoReceived")
+		end)
 	end)
 end

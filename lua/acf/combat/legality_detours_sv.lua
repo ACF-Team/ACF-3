@@ -43,7 +43,7 @@ local function DisableContraption(Player, Ent, Reason)
 end
 
 local function PreCheck()
-    if not ACF.LegalChecks then return true end
+    if not ACF.LegalityDetours then return true end
 end
 
 local ATTEMPT_MESSAGE = "Attempted to use %s (a blocked usercall)."
@@ -229,7 +229,7 @@ local function FreezeDetours()
     do
         local Func Func = Detours.Starfall("instance.Types.Entity.Methods.enableMotion", function(Instance, Ent, Move, ...)
             if not Move and not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:enableMotion(n)") then return end
-            return Func(Instance, Ent, ...)
+            return Func(Instance, Ent, Move, ...)
         end)
     end
     do
@@ -259,7 +259,7 @@ end
 
 local PLAYER_USE_RADIUS = 120
 local function ApproveUseEntity(PlayerInvoker, ToBeUsedEntity, DoNotify)
-    if PreCheck() then return end
+    if PreCheck() then return true end
     if not IsValid(PlayerInvoker) then return end
     if not IsValid(ToBeUsedEntity) then return end
 
@@ -907,12 +907,6 @@ local function ConstraintDetours()
     do
         local Func Func = Detours.New("constraint.NoCollide", function(Entity1, Entity2, ...)
             if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "no collide", true) then return false, nil end
-            return Func(Entity1, Entity2, ...)
-        end)
-    end
-    do
-        local Func Func = Detours.New("constraint.AdvBallsocket", function(Entity1, Entity2, ...)
-            if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "adv ballsocket", true) then return false end
             return Func(Entity1, Entity2, ...)
         end)
     end
