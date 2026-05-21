@@ -220,7 +220,7 @@ elseif CLIENT then
 			for _, ExtensionName in ipairs(ACF.ExtensionOrders) do
 				ClientExtension = ACF.Extensions[ExtensionName]
 				ServerExtension = ACF.ServerExtensions[ExtensionName]
-				if not ClientExtension or not ServerExtension or not ServerExtension.Commit then continue end -- Why would this happen :(
+				if not ClientExtension or not ServerExtension or not ClientExtension.Version or not ServerExtension.Commit then continue end -- Why would this happen :(
 				if ClientExtension.Version.date < ServerExtension.Commit.date then
 					Messages.PrintChat("Error", "Your version of " .. ExtensionName .. " is out of date with the latest commit on the server's branch.\nPlease update to avoid potential compatibility issues.")
 				end
