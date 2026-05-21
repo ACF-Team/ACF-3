@@ -213,6 +213,7 @@ elseif CLIENT then
 	-- Receive version info from server
 	net.Receive("ACF_VersionInfo", function()
 		ACF.ServerExtensions = util.JSONToTable(net.ReadString())
+		ACF.ExtensionsOrdered = util.JSONToTable(net.ReadString())
 
 		-- Determine if client or server versions are out of date with most recent commit and notify.
 		-- Sends message when player first moves for visibility (Is this working?)
