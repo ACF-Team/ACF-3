@@ -52,14 +52,14 @@ end
 
 --- Returns a table with information about the most recent commit on the current branch.
 --- Handles git, workshop and zip installations.
-function ACF.CheckLocalVersion(Name, Path)
+function ACF.CheckLocalVersion(Owner, Name, Path)
 	local Result = {
 		realm = Realm,
 		path  = Path,
 		head  = "master",
 		code  = "Not Installed",
 		date  = 0,
-		owner = nil
+		owner = Owner
 	}
 
 	-- Default result if no installation found
@@ -71,7 +71,7 @@ function ACF.CheckLocalVersion(Name, Path)
 		local Code, Date = GetGitCommit(Path, Head)
 
 		Result.head  = Head or "master"
-		Result.owner = GetGitOwner(Path)
+		Result.owner = GetGitOwner(Path) -- Makes sure the owner of the repo is correct, deals with forks
 
 		if Code and Date then
 			Result.code = "Git-" .. Code
@@ -173,12 +173,12 @@ end
 
 ACF.Extensions = ACF.Extensions or {}
 ACF.ExtensionOrders = ACF.ExtensionOrders or {}
-function ACF.AddRepository(_, Name)
+function ACF.AddRepository(Owner, Name)
 	if ACF.Extensions[Name] then return end
 	local info = debug.getinfo(2, "S")
 	local Path = string.Split(info.short_src, "/lua/")[1]
 
-	local Version = ACF.CheckLocalVersion(Name, Path)
+	local Version = ACF.CheckLocalVersion(Owner, Name, Path)
 	ACF.Extensions[Name] = ACF.Extensions[Name] or {}
 	ACF.Extensions[Name].Version = Version -- Version info for this repository
 	table.insert(ACF.ExtensionOrders, Name)
