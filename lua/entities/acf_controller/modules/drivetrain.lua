@@ -325,7 +325,6 @@ do
 
 		if TrueGear ~= SelfTbl.LastTrueGear then
 			Gearbox:TriggerInput("Gear", TrueGear)
-			print(TrueGear)
 		end
 		SelfTbl.LastGear = Gear
 		SelfTbl.LastTrueGear = TrueGear
