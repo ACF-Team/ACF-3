@@ -32,7 +32,10 @@ return {
             end,
 
             CPPIGetOwner = function()
-                return { IsValid = stub().returns( true ) }
+                return {
+                    IsValid = stub().returns( true ),
+                    GetName = stub().returns( "Test Name" ),
+                }
             end,
         }
     end,
