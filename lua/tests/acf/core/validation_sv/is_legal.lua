@@ -29,7 +29,11 @@ return {
 
             GetCollisionGroup = function()
                 return COLLISION_GROUP_NONE
-            end
+            end,
+
+            CPPIGetOwner = function()
+                return { IsValid = stub().returns( true ) }
+            end,
         }
     end,
 
