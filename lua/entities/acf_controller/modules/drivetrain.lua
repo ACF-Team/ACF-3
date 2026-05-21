@@ -189,7 +189,7 @@ do
 
 		-- Set default shift RPMs to one of the engine's powerbands
 		local Engine = next(self.Engines)
-		if not MainGearbox.Automatic and IsValid(Engine) then
+		if IsValid(Engine) then
 			if self:GetShiftMinRPM() == 0 then self:SetShiftMinRPM(Engine.PeakMinRPM + 100) end
 			if self:GetShiftMaxRPM() == 0 then self:SetShiftMaxRPM(Engine.PeakMaxRPM - 100) end
 		end
@@ -325,6 +325,7 @@ do
 
 		if TrueGear ~= SelfTbl.LastTrueGear then
 			Gearbox:TriggerInput("Gear", TrueGear)
+			print(TrueGear)
 		end
 		SelfTbl.LastGear = Gear
 		SelfTbl.LastTrueGear = TrueGear
