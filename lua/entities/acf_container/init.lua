@@ -8,7 +8,6 @@ local Contraption = ACF.Contraption
 local TimerCreate = timer.Create
 local TimerExists = timer.Exists
 local Clamp       = math.Clamp
-local Round       = math.Round
 
 ENT.Spawnable      = false
 ENT.AdminSpawnable = false
