@@ -213,22 +213,24 @@ elseif CLIENT then
 	net.Receive("ACF_VersionInfo", function()
 		ACF.ServerExtensions = util.JSONToTable(net.ReadString())
 
-		-- Determine if client or server versions are out of date with most recent commit and notify.
-		-- Sends message when player first moves for visibility (Is this working?)
-		hook.Add("CreateMove", "ACF_VersionInfoReceived", function()
-			local Messages = ACF.Utilities.Messages
-			for _, ExtensionName in ipairs(ACF.ExtensionOrders) do
-				ClientExtension = ACF.Extensions[ExtensionName]
-				ServerExtension = ACF.ServerExtensions[ExtensionName]
-				if not ClientExtension or not ServerExtension or not ClientExtension.Version or not ServerExtension.Commit then continue end -- Why would this happen :(
-				if ClientExtension.Version.date < ServerExtension.Commit.date then
-					Messages.PrintChat("Error", "Your version of " .. ExtensionName .. " is out of date with the latest commit on the server's branch.\nPlease update to avoid potential compatibility issues.")
+		hook.Add("CreateMove", "ACF Outdated Notice", function(Move)
+			if Move:GetButtons() ~= 0 then
+				-- Determine if client or server versions are out of date with most recent commit and notify.
+				local Messages = ACF.Utilities.Messages
+				for _, ExtensionName in ipairs(ACF.ExtensionOrders) do
+					ClientExtension = ACF.Extensions[ExtensionName]
+					ServerExtension = ACF.ServerExtensions[ExtensionName]
+					if not ClientExtension or not ServerExtension or not ClientExtension.Version or not ServerExtension.Commit then continue end -- Why would this happen :(
+					if ClientExtension.Version.date < ServerExtension.Commit.date then
+						Messages.PrintChat("Error", "Your version of " .. ExtensionName .. " is out of date with the latest commit on the server's branch.\nPlease update to avoid potential compatibility issues.")
+					end
+					if ServerExtension.Version.date < ServerExtension.Commit.date then
+						Messages.PrintChat("Error", "The server's version of " .. ExtensionName .. " is out of date with the latest commit on its branch.\nPlease notify the server administrator to update to avoid potential compatibility issues.")
+					end
 				end
-				if ServerExtension.Version.date < ServerExtension.Commit.date then
-					Messages.PrintChat("Error", "The server's version of " .. ExtensionName .. " is out of date with the latest commit on its branch.\nPlease notify the server administrator to update to avoid potential compatibility issues.")
-				end
+
+				hook.Remove("CreateMove", "ACF Outdated Notice")
 			end
-			hook.Remove("CreateMove", "ACF_VersionInfoReceived")
 		end)
 	end)
 end
