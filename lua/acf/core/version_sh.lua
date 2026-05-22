@@ -3,7 +3,7 @@ local Realm = SERVER and "Server" or "Client"
 
 --- Converts a local time to UTC for comparison
 local function LocalToUTC(time)
-	return os.time(os.date("!*t", time))
+	return os.time(os.date("!*t", time)) or 0 -- WHY WOULD IT EVER BE NIL :(
 end
 
 --- Returns the current git branch name
