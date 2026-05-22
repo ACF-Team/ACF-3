@@ -143,7 +143,25 @@ end
 do -- Serverside settings
 	ACF.AddMenuItem(101, "#acf.menu.settings", "#acf.menu.settings.server", "server", ACF.GenerateServerSettings)
 
+	local function SetDefinedServerSettingsToPreset(UseUnrestricted)
+		for SettingKey, SettingData in pairs(ACF.__DefinedSettings) do
+			if SettingData.UnrestrictedValue ~= nil then
+				local Value = SettingData.Default
+				if UseUnrestricted then Value = SettingData.UnrestrictedValue end
+				if Value ~= nil then ACF.SetServerData(SettingKey, Value, true) end
+			end
+		end
+	end
+
 	ACF.AddServerSettings(1, "#acf.menu.settings.general", function(Base)
+		Base:AddButton("#acf.menu.settings.general.default_values", function()
+			SetDefinedServerSettingsToPreset(false)
+		end)
+
+		Base:AddButton("#acf.menu.settings.general.unrestricted_values", function()
+			SetDefinedServerSettingsToPreset(true)
+		end)
+
 		Base:AddCheckBox("#acf.menu.settings.general.allow_admin"):          LinkToServerData("ServerDataAllowAdmin")
 			Base:AddHelp("#acf.menu.settings.general.allow_admin_desc")
 
@@ -197,6 +215,9 @@ do -- Serverside settings
 
 		Base:AddCheckBox("#acf.menu.settings.fun_menu.arbitrary_parents"):LinkToServerData("AllowArbitraryParents")
 			Base:AddHelp("#acf.menu.settings.fun_menu.arbitrary_parents_desc")
+
+		Base:AddCheckBox("#acf.menu.settings.general.legality_detours"):LinkToServerData("LegalityDetours")
+			Base:AddHelp("#acf.menu.settings.general.legality_detours_desc")
 	end)
 
 	ACF.AddServerSettings(301, "#acf.menu.settings.fun_menu", function(Base)

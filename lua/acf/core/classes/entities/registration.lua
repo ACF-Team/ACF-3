@@ -984,7 +984,11 @@ function Entities.AutoRegister(ENT)
 			end
 		end
 
-		local _, SpawnedEntity = Entities.Spawn(Class, Player, Pos, Angle, UserData, true)
+		local success, SpawnedEntity = Entities.Spawn(Class, Player, Pos, Angle, UserData, true)
+		if not success then
+			ErrorNoHaltWithStack(SpawnedEntity)
+			return
+		end
 
 		if ShouldTransferLegacyData then
 			for _, KeyName in ipairs(ReadKeys) do

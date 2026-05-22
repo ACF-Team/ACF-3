@@ -6,7 +6,7 @@ ACF.CrewlessLethalQueryTimes = ACF.CrewlessLethalQueryTimes or {}
 local CrewlessLethalQueryTimes = ACF.CrewlessLethalQueryTimes
 
 local function CrewlessLethalCheck(Entity)
-    if ACF.CrewFallbackCoef == 1 then return true end -- Crew effectively disabled
+    if not ACF.LethalEntityPlayerChecks then return true end
 
     local Now  = Clock.CurTime
     local Then = CrewlessLethalQueryTimes[Entity]
