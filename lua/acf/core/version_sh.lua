@@ -196,6 +196,7 @@ if SERVER then
 			ACF.GetLatestCommit(Extension.Version.owner, ExtensionName, Extension.Version.head, function(Commit)
 				Extension.Commit = Commit
 				Extension.Retrieved = true
+				Extension.Commit.Code = "Git-" .. Extension.Version.head .. "-" .. Commit.short_sha
 			end)
 		end
 		hook.Remove("Initialize", "ACF_GetLatestCommit")
