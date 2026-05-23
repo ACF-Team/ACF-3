@@ -196,7 +196,7 @@ if SERVER then
 			ACF.GetLatestCommit(Extension.Version.owner, ExtensionName, Extension.Version.head, function(Commit)
 				Extension.Commit = Commit
 				Extension.Retrieved = true
-				Extension.Commit.Code = "Git-" .. Extension.Version.head .. "-" .. Commit.short_sha
+				Extension.Commit.code = "Git-" .. Extension.Version.head .. "-" .. Commit.short_sha
 			end)
 		end
 		hook.Remove("Initialize", "ACF_GetLatestCommit")
@@ -222,10 +222,10 @@ elseif CLIENT then
 					ClientExtension = ACF.Extensions[ExtensionName]
 					ServerExtension = ACF.ServerExtensions[ExtensionName]
 					if not ClientExtension or not ServerExtension or not ClientExtension.Version or not ServerExtension.Commit then continue end -- Why would this happen :(
-					if ClientExtension.Version.code ~= ServerExtension.Commit.Code then
+					if ClientExtension.Version.code ~= ServerExtension.Commit.code then
 						Messages.PrintChat("Error", "Your version of " .. ExtensionName .. " is out of date with the latest commit on the server's branch.\nPlease update to avoid potential compatibility issues.")
 					end
-					if ServerExtension.Version.code ~= ServerExtension.Commit.Code then
+					if ServerExtension.Version.code ~= ServerExtension.Commit.code then
 						Messages.PrintChat("Error", "The server's version of " .. ExtensionName .. " is out of date with the latest commit on its branch.\nPlease notify the server administrator to update to avoid potential compatibility issues.")
 					end
 				end

@@ -18,7 +18,7 @@ end
 
 local function DrawGitStatus(Menu, ExtensionName, Version, MostRecentCommit)
 	local BaseText     = language.GetPhrase("acf.menu.updates.realm_status"):format(ExtensionName, Version.realm)
-	local Outdated     = (MostRecentCommit and Version.code ~= MostRecentCommit.Code) or false
+	local Outdated     = (MostRecentCommit and Version.code ~= MostRecentCommit.code) or false
 	local IconSuffix   = Outdated and "_error.png" or ".png"
 	local BaseIcon     = Version.realm == "Server" and "icon16/server" .. IconSuffix or "icon16/computer" .. IconSuffix
 	local Base         = Menu:AddCollapsible(BaseText, true, BaseIcon)
