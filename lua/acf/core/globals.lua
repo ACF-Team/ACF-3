@@ -220,6 +220,7 @@ do -- ACF global vars
 
 		gmod_wire_expression2 = true,
 		gmod_wire_hologram    = true,
+		gmod_wire_customprop  = true,
 
 		phys_bone_follower    = true,
 		prop_dynamic          = true,
