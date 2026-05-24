@@ -144,8 +144,18 @@ if CLIENT then
 		local MaxArmour = math.Round(Weapon:GetNWFloat("MaxArmour", 0), 2)
 
 		local ShowEffective = self:GetOwner():KeyDown(IN_SPEED)
-		local EffectiveAngle = ACF.GetHitAngle(Trace, (Trace.HitPos - Trace.StartPos):GetNormalized())
-		local EffectiveArmour = Armour / math.abs(math.cos(math.rad(math.min(EffectiveAngle, 89.999))))
+		local EffectiveAngle = 0
+		local EffectiveArmour = Armour
+
+		if ShowEffective then
+			local Ray = Trace.HitPos - Trace.StartPos
+			if Ray:LengthSqr() > 0 then
+				local Dot = math.Clamp(math.abs((Trace.HitPos - Trace.StartPos):GetNormalized():Dot(Trace.HitNormal)), 0, 1)
+
+				EffectiveAngle = math.deg(math.acos(Dot))
+				EffectiveArmour = Armour / math.max(math.cos(math.rad(math.min(EffectiveAngle, 89.999))), 0.00001)
+			end
+		end
 
 		cam.Start2D()
 			render.Clear(0, 0, 0, 0)
