@@ -116,9 +116,7 @@ if CLIENT then
 	local BGGray = Color(200, 200, 200)
 	local Blue = Color(50, 200, 200)
 	local Red = Color(200, 50, 50)
-	local Green = Color(50, 200, 50)
 	local Black = Color(0, 0, 0)
-	local drawText = draw.SimpleTextOutlined
 
 	surface.CreateFont("ACF_ToolTitle", {
 		font = "Arial",
@@ -138,7 +136,6 @@ if CLIENT then
 
 	function TOOL:DrawToolScreen()
 		local Trace = self:GetOwner():GetEyeTrace()
-		local Ent   = Trace.Entity
 		local Weapon = self.Weapon
 		local Health = math.Round(Weapon:GetNWFloat("HP", 0))
 		local MaxHealth = math.Round(Weapon:GetNWFloat("MaxHP", 0))
@@ -147,8 +144,8 @@ if CLIENT then
 		local MaxArmour = math.Round(Weapon:GetNWFloat("MaxArmour", 0), 2)
 
 		local ShowEffective = self:GetOwner():KeyDown(IN_SPEED)
-		local EffectiveAngle = math.Round(ACF.GetHitAngle(Trace, (Trace.HitPos - Trace.StartPos):GetNormalized()), 2)
-		local EffectiveArmour = math.Round(Armour / math.abs(math.cos(math.rad(math.min(EffectiveAngle, 89.999)))), 2)
+		local EffectiveAngle = ACF.GetHitAngle(Trace, (Trace.HitPos - Trace.StartPos):GetNormalized())
+		local EffectiveArmour = Armour / math.abs(math.cos(math.rad(math.min(EffectiveAngle, 89.999))))
 
 		cam.Start2D()
 			render.Clear(0, 0, 0, 0)
@@ -165,7 +162,7 @@ if CLIENT then
 			end
 
 			draw.SimpleTextOutlined(ShowEffective and "Eff Armor" or "#acf.menu.armor", "torchfont", 128, 100, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
-			draw.SimpleTextOutlined(ShowEffective and EffectiveArmour or (Armour .. "/" .. MaxArmour), "torchfont", 128, 130, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+			draw.SimpleTextOutlined(ShowEffective and math.Round(EffectiveArmour, 2) or (Armour .. "/" .. MaxArmour), "torchfont", 128, 130, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
 
 			draw.RoundedBox(6, 10, 183, 236, 64, BGGray)
 			if Health ~= 0 and MaxHealth ~= 0 then
@@ -173,7 +170,7 @@ if CLIENT then
 			end
 
 			draw.SimpleTextOutlined(ShowEffective and "Eff Angle" or "#acf.menu.health", "torchfont", 128, 200, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
-			draw.SimpleTextOutlined(ShowEffective and (EffectiveAngle .. " deg") or (Health .. "/" .. MaxHealth), "torchfont", 128, 230, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+			draw.SimpleTextOutlined(ShowEffective and (math.Round(90 - EffectiveAngle, 2) .. " deg") or (Health .. "/" .. MaxHealth), "torchfont", 128, 230, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
 		cam.End2D()
 	end
 
