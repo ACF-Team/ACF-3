@@ -31,9 +31,9 @@ local function EntityPiecewiseFn()
             local Class = Entity:GetClass()
             if not IgnoreClasses[Class] then
                 if not Entity.IsACFEntity and not VisibleClasses[Class] then
-                    Entity:SetNoDraw(true)
+                    if Class == "base_anim" then Entity:SetColor(Color(255, 255, 255, 0)) Entity:SetRenderMode(RENDERMODE_TRANSCOLOR) else Entity:SetNoDraw(true) end
                 else
-                    Entity:SetNoDraw(false)
+                    if Class == "base_anim" then Entity:SetColor(Visible) else Entity:SetNoDraw(false) end
                     Entity:SetColor(Visible)
                     Entity:SetMaterial("")
                     Entity:SetRenderMode(RENDERMODE_NORMAL)
