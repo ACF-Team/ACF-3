@@ -14,12 +14,4 @@ Hooks.Add("ACF_Missiles_Server", function(Gamemode)
 	function Gamemode:ACF_PreExplodeMissile()
 		return true
 	end
-
-	--- Called when a missile plays its sound if the ACF Sound Extension Project by looterz is installed.
-	--- This is a legacy hook from ACF-2 and may be removed at any time.
-	--- @deprecated
-	--- @param Entity entity The missile entity to play sound on.
-	--- @param Sound string The sound to play.
-	function Gamemode:ACF_SOUND_MISSILE()
-	end
 end)
