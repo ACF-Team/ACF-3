@@ -65,7 +65,8 @@ do -- Clientside settings
 	ACF.AddClientSettings(101, "#acf.menu.settings.effects_visual_elements", function(Base)
 		local Ropes = Base:AddCheckBox("#acf.menu.settings.effects_visual_elements.rope_links")
 		Ropes:SetConVar("acf_mobilityropelinks")
-
+		local DrawTrueVisuals = Base:AddCheckBox("#acf.menu.settings.effects_visual_elements.draw_true_visuals")
+		DrawTrueVisuals:SetConVar("acf_drawtruevisuals")
 		-- local AdvShafts = Base:AddCheckBox("#acf.menu.settings.effects_visual_elements.adv_shafts")
 		-- AdvShafts:SetConVar("acf_advancedmobilityropelinks")
 

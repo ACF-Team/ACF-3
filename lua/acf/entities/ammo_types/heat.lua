@@ -309,6 +309,7 @@ if SERVER then
 
 			local Angle          = ACF.GetHitAngle(TraceRes, Direction)
 			local EffectiveArmor = Ent.GetArmor and BaseArmor or BaseArmor / math.abs(math.cos(math.rad(Angle)))
+			EffectiveArmor = math.max(EffectiveArmor, 0.01) -- Prevent divide by zero and nan armor
 
 			-- Percentage of total jet mass lost to this penetration
 			local LostMassPct =  EffectiveArmor / Penetration

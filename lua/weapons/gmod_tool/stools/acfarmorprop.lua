@@ -9,6 +9,7 @@ TOOL.ConfigName	 = ""
 TOOL.Information = {
 	{ name = "left" },
 	{ name = "right" },
+	{ name = "", icon2 = "gui/info", },
 	{ name = "reload" }
 }
 
@@ -115,9 +116,7 @@ if CLIENT then
 	local BGGray = Color(200, 200, 200)
 	local Blue = Color(50, 200, 200)
 	local Red = Color(200, 50, 50)
-	local Green = Color(50, 200, 50)
 	local Black = Color(0, 0, 0)
-	local drawText = draw.SimpleTextOutlined
 
 	surface.CreateFont("ACF_ToolTitle", {
 		font = "Arial",
@@ -137,79 +136,52 @@ if CLIENT then
 
 	function TOOL:DrawToolScreen()
 		local Trace = self:GetOwner():GetEyeTrace()
-		local Ent   = Trace.Entity
 		local Weapon = self.Weapon
 		local Health = math.Round(Weapon:GetNWFloat("HP", 0))
 		local MaxHealth = math.Round(Weapon:GetNWFloat("MaxHP", 0))
 
-		if Ent.GetArmor then -- Is procedural armor
-			local Material = Ent.ArmorType
-			local Mass     = math.Round(Weapon:GetNWFloat("WeightMass", 0), 1)
-			local Angle    = math.Round(ACF.GetHitAngle(Trace, (Trace.HitPos - Trace.StartPos):GetNormalized()), 1)
-			local Armor    = math.Round(Ent:GetArmor(Trace))
-			local Size     = Ent:GetSize()
-			local Nominal  = math.Round(math.min(Size[1], Size[2], Size[3]) * ACF.InchToMm, 1)
-			local MaxArmor = Ent:GetSize():Length() * ACF.InchToMm
+		local Armour = math.Round(Weapon:GetNWFloat("Armour", 0), 2)
+		local MaxArmour = math.Round(Weapon:GetNWFloat("MaxArmour", 0), 2)
 
-			cam.Start2D()
-				render.Clear(0, 0, 0, 0)
-				surface.SetDrawColor(Black)
-				surface.DrawRect(0, 0, 256, 256)
-				surface.SetDrawColor(BGGray)
-				surface.DrawRect(0, 34, 256, 2)
+		local ShowEffective = self:GetOwner():KeyDown(IN_SPEED)
+		local EffectiveAngle = 0
+		local EffectiveArmour = Armour
 
-				drawText("#tool.acfarmorprop.procedural.data", "ACF_ToolTitle", 128, 20, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
-				drawText(language.GetPhrase("tool.acfarmorprop.procedural.material"):format(Material), "ACF_ToolSub", 128, 48, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
-				drawText(language.GetPhrase("tool.acfarmorprop.procedural.weight"):format(Mass), "ACF_ToolSub", 128, 70, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
-				drawText(language.GetPhrase("tool.acfarmorprop.procedural.nominal_armor"):format(Nominal), "ACF_ToolSub", 128, 92, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, BGGray)
+		if ShowEffective then
+			local Ray = Trace.HitPos - Trace.StartPos
+			if Ray:LengthSqr() > 0 then
+				local Dot = math.Clamp(math.abs((Trace.HitPos - Trace.StartPos):GetNormalized():Dot(Trace.HitNormal)), 0, 1)
 
-				draw.RoundedBox(6, 10, 110, 236, 32, BGGray)
-				draw.RoundedBox(6, 10, 110, Angle / 90 * 236, 32, Green)
-				drawText(language.GetPhrase("tool.acfarmorprop.procedural.hit_angle"):format(Angle), "ACF_ToolLabel", 15, 110, Black, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 0, BGGray)
-
-				draw.RoundedBox(6, 10, 160, 236, 32, BGGray)
-				draw.RoundedBox(6, 10, 160, Armor / MaxArmor * 236, 32, Blue)
-				drawText(language.GetPhrase("tool.acfarmorprop.procedural.armor"):format(Armor), "ACF_ToolLabel", 15, 160, Black, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 0, BGGray)
-
-				draw.RoundedBox(6, 10, 210, 236, 32, BGGray)
-				draw.RoundedBox(6, 10, 210, Health / MaxHealth * 236, 32, Red)
-				drawText(language.GetPhrase("tool.acfarmorprop.procedural.health"):format(Health), "ACF_ToolLabel", 15, 210, Black, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 0, Black)
-			cam.End2D()
-		else
-			local Armour = math.Round(Weapon:GetNWFloat("Armour", 0), 2)
-			local MaxArmour = math.Round(Weapon:GetNWFloat("MaxArmour", 0), 2)
-			local HealthTxt = Health .. "/" .. MaxHealth
-			local ArmourTxt = Armour .. "/" .. MaxArmour
-
-			cam.Start2D()
-				render.Clear(0, 0, 0, 0)
-
-				surface.SetDrawColor(Black)
-				surface.DrawRect(0, 0, 256, 256)
-				surface.SetFont("torchfont")
-
-				-- header
-				draw.SimpleTextOutlined("#tool.acfarmorprop.armor_stats", "torchfont", 128, 30, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
-
-				-- armor bar
-				draw.RoundedBox(6, 10, 83, 236, 64, BGGray)
-				if Armour ~= 0 and MaxArmour ~= 0 then
-					draw.RoundedBox(6, 15, 88, Armour / MaxArmour * 226, 54, Blue)
-				end
-
-				draw.SimpleTextOutlined("#acf.menu.armor", "torchfont", 128, 100, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
-				draw.SimpleTextOutlined(ArmourTxt, "torchfont", 128, 130, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
-
-				-- health bar
-				draw.RoundedBox(6, 10, 183, 236, 64, BGGray)
-				if Health ~= 0 and MaxHealth ~= 0 then
-					draw.RoundedBox(6, 15, 188, Health / MaxHealth * 226, 54, Red)
-				end
-
-				draw.SimpleTextOutlined("#acf.menu.health", "torchfont", 128, 200, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
-				draw.SimpleTextOutlined(HealthTxt, "torchfont", 128, 230, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
-			cam.End2D()
+				EffectiveAngle = math.deg(math.acos(Dot))
+				EffectiveArmour = Armour / math.max(math.cos(math.rad(math.min(EffectiveAngle, 89.999))), 0.00001)
+			end
 		end
+
+		cam.Start2D()
+			render.Clear(0, 0, 0, 0)
+
+			surface.SetDrawColor(Black)
+			surface.DrawRect(0, 0, 256, 256)
+			surface.SetFont("torchfont")
+
+			draw.SimpleTextOutlined("#tool.acfarmorprop.armor_stats", "torchfont", 128, 30, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+
+			draw.RoundedBox(6, 10, 83, 236, 64, BGGray)
+			if Armour ~= 0 and MaxArmour ~= 0 then
+				draw.RoundedBox(6, 15, 88, Armour / MaxArmour * 226, 54, Blue)
+			end
+
+			draw.SimpleTextOutlined(ShowEffective and "Eff Armor" or "#acf.menu.armor", "torchfont", 128, 100, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+			draw.SimpleTextOutlined(ShowEffective and math.Round(EffectiveArmour, 2) or (Armour .. "/" .. MaxArmour), "torchfont", 128, 130, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+
+			draw.RoundedBox(6, 10, 183, 236, 64, BGGray)
+			if Health ~= 0 and MaxHealth ~= 0 then
+				draw.RoundedBox(6, 15, 188, Health / MaxHealth * 226, 54, Red)
+			end
+
+			draw.SimpleTextOutlined(ShowEffective and "Eff Angle" or "#acf.menu.health", "torchfont", 128, 200, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+			draw.SimpleTextOutlined(ShowEffective and (math.Round(90 - EffectiveAngle, 2) .. " deg") or (Health .. "/" .. MaxHealth), "torchfont", 128, 230, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+		cam.End2D()
 	end
 
 	-- Clamp thickness if the change in ductility puts mass out of range

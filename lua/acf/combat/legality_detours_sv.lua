@@ -235,7 +235,7 @@ local function FreezeDetours()
     do
         local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.enableMotion", function(Instance, PhysObj, Move, ...)
             if not Move and not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:enableMotion(n)") then return end
-            return Func(Instance, PhysObj, ...)
+            return Func(Instance, PhysObj, Move, ...)
         end)
     end
     -- Wiremod freezers. They call into this hook. Very convenient compared to other entity detours we've had to do...

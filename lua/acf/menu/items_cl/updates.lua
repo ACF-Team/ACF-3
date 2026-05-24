@@ -9,6 +9,7 @@ local function DrawGitCommit(Menu, Commit)
 	Base:AddLabel(Commit.body or "#acf.menu.updates.commit_message_default")
 	Base:AddLabel(language.GetPhrase("acf.menu.updates.commit_author"):format(Commit.author))
 	Base:AddLabel(language.GetPhrase("acf.menu.updates.commit_date"):format(os.date("%Y-%m-%d %H:%M:%S", Commit.date)))
+	Base:AddLabel(language.GetPhrase("acf.menu.updates.commit_code"):format(Commit.Code or Commit.code or "#acf.menu.updates.unknown"))
 	local Button = Base:AddButton("#acf.menu.updates.commit_view")
 	function Button:DoClickInternal()
 		gui.OpenURL(Commit.url)
@@ -17,7 +18,7 @@ end
 
 local function DrawGitStatus(Menu, ExtensionName, Version, MostRecentCommit)
 	local BaseText     = language.GetPhrase("acf.menu.updates.realm_status"):format(ExtensionName, Version.realm)
-	local Outdated     = (MostRecentCommit and Version.date < MostRecentCommit.date) or false
+	local Outdated     = (MostRecentCommit and Version.code ~= MostRecentCommit.code) or false
 	local IconSuffix   = Outdated and "_error.png" or ".png"
 	local BaseIcon     = Version.realm == "Server" and "icon16/server" .. IconSuffix or "icon16/computer" .. IconSuffix
 	local Base         = Menu:AddCollapsible(BaseText, true, BaseIcon)
