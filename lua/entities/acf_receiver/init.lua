@@ -48,8 +48,9 @@ local function CheckReceive(Entity)
 		if Entity.CheckLOS(Entity, Ent, Origin, EntPos) and (math.Rand(0, 1) >= (EntDamage / 5)) then
 			IsDetected = true
 
-			local PreAng = (EntPos - Origin):GetNormalized():Angle()
-			Ang = Angle(math.Round((PreAng.p + math.random(-Spread, Spread)) / Entity.Divisor), math.Round((PreAng.y + math.random(-Spread, Spread)) / Entity.Divisor), 0) * Entity.Divisor
+			local PreAng = Entity:WorldToLocalAngles((EntPos - Origin):Angle())
+			local LocalAng = Angle(math.Round((PreAng.p + math.random(-Spread, Spread)) / Entity.Divisor), math.Round((PreAng.y + math.random(-Spread, Spread)) / Entity.Divisor), 0) * Entity.Divisor
+			Ang = Entity:LocalToWorldAngles(LocalAng)
 			Dir = Ang:Forward()
 
 			break -- Stop at the first valid source
