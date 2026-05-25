@@ -442,7 +442,7 @@ if SERVER then
 end
 
 if CLIENT then
-    local acf_scanner_show_clips = CreateClientConVar("acf_scanner_show_clips", "1", true, false, "Show clip visualization in the ACF scanner.")
+    local acf_scanner_show_clips = CreateClientConVar("acf_scanner_show_clips", "0", true, false, "Show clip visualization in the ACF scanner.")
 
     local TEXT_ALIGN_TOP = TEXT_ALIGN_TOP
     local TEXT_ALIGN_LEFT = TEXT_ALIGN_LEFT
