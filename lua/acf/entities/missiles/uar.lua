@@ -48,7 +48,7 @@ Missiles.RegisterItem("RS82 ASR", "UAR", {
 	Round = {
 		Model           = "models/missiles/rs82.mdl",
 		MaxLength       = 60,
-		Armor           = 2,
+		Armor           = 1,
 		ProjLength      = 25,
 		PropLength      = 35,
 		Thrust          = 50000, -- in kg*in/s^2
@@ -91,7 +91,7 @@ Missiles.RegisterItem("HVAR ASR", "UAR", {
 		Model           = "models/missiles/hvar.mdl",
 		RackModel       = "models/missiles/hvar_folded.mdl",
 		MaxLength       = 173,
-		Armor           = 2,
+		Armor           = 1,
 		ProjLength      = 35.8,
 		PropLength      = 120,
 		Thrust          = 800000, -- in kg*in/s^2
@@ -135,7 +135,7 @@ Missiles.RegisterItem("SPG-9 ASR", "UAR", {
 		Model           = "models/missiles/rs82.mdl",
 		RackModel       = "models/missiles/rs82.mdl",
 		MaxLength       = 128.18,
-		Armor           = 2,
+		Armor           = 1,
 		ProjLength      = 20.07,
 		PropLength      = 67.8,
 		Thrust          = 180000, -- in kg*in/s^2
@@ -179,7 +179,7 @@ Missiles.RegisterItem("S-24 ASR", "UAR", {
 	Round = {
 		Model           = "models/missiles/s24.mdl",
 		MaxLength       = 233,
-		Armor           = 2,
+		Armor           = 1,
 		ProjLength      = 103,
 		PropLength      = 130,
 		Thrust          = 2000000, -- in kg*in/s^2
@@ -220,7 +220,7 @@ Missiles.RegisterItem("RW61 ASR", "UAR", {
 		Model           = "models/missiles/RW61M.mdl",
 		RackModel       = "models/missiles/RW61M.mdl",
 		MaxLength       = 150,
-		Armor           = 5,
+		Armor           = 2,
 		ProjLength      = 60,
 		PropLength      = 90,
 		Thrust          = 700000, -- in kg*in/s^2

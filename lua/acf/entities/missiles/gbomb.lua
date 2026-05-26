@@ -32,7 +32,7 @@ Missiles.RegisterItem("100kgGBOMB", "GBOMB", {
 	Round = {
 		Model           = "models/missiles/micro.mdl",
 		MaxLength       = 100,
-		Armor           = 5,
+		Armor           = 2,
 		ProjLength      = 65,
 		PropLength      = 0,
 		Thrust          = 1, -- in kg*in/s^2
@@ -71,7 +71,7 @@ Missiles.RegisterItem("250kgGBOMB", "GBOMB", {
 	Round = {
 		Model           = "models/missiles/fab250.mdl",
 		MaxLength       = 150,
-		Armor           = 5,
+		Armor           = 2,
 		ProjLength      = 100,
 		PropLength      = 0,
 		Thrust          = 1, -- in kg*in/s^2

@@ -37,7 +37,7 @@ Missiles.RegisterItem("AIM-9 AAM", "AAM", {
 		Model           = "models/missiles/aim9m.mdl",
 		MaxLength       = 289,
 		ProjLength      = 68,
-		Armor           = 2,
+		Armor           = 1,
 		PropLength      = 160,
 		Thrust          = 800000, -- in kg*in/s^2
 		FuelConsumption = 0.02, -- in g/s/f
@@ -79,7 +79,7 @@ Missiles.RegisterItem("AIM-120 AAM", "AAM", {
 	Round = {
 		Model           = "models/missiles/aim120c.mdl",
 		MaxLength       = 370,
-		Armor           = 2,
+		Armor           = 1,
 		ProjLength      = 70,
 		PropLength      = 200,
 		Thrust          = 1500000, -- in kg*in/s^2
@@ -122,7 +122,7 @@ Missiles.RegisterItem("AIM-7 AAM", "AAM", {
 	Round = {
 		Model           = "models/missiles/aim7f.mdl",
 		MaxLength       = 370,
-		Armor           = 2,
+		Armor           = 1,
 		ProjLength      = 70,
 		PropLength      = 200,
 		Thrust          = 3000000, -- in kg*in/s^2
@@ -165,7 +165,7 @@ Missiles.RegisterItem("AIM-54 AAM", "AAM", {
 	Round = {
 		Model           = "models/missiles/aim54a.mdl",
 		MaxLength       = 400,
-		Armor           = 2,
+		Armor           = 1,
 		ProjLength      = 60,
 		PropLength      = 220,
 		Thrust          = 4000000, -- in kg*in/s^2

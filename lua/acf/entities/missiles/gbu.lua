@@ -35,7 +35,7 @@ Missiles.RegisterItem("WalleyeGBU", "GBU", {
 	Round = {
 		Model           = "models/bombs/gbu/agm62.mdl",
 		MaxLength       = 345,
-		Armor           = 5,
+		Armor           = 2,
 		ProjLength      = 155,
 		PropLength      = 0,
 		Thrust          = 1, -- in kg*in/s^2
@@ -94,7 +94,7 @@ Missiles.RegisterItem("227kgGBU", "GBU", {
 		Model           = "models/bombs/gbu/gbu12_fold.mdl",
 		RackModel       = "models/bombs/gbu/gbu12.mdl",
 		MaxLength       = 220,
-		Armor           = 5,
+		Armor           = 2,
 		ProjLength      = 155,
 		PropLength      = 0,
 		Thrust          = 1, -- in kg*in/s^2
@@ -153,7 +153,7 @@ Missiles.RegisterItem("454kgGBU", "GBU", {
 		Model           = "models/bombs/gbu/gbu16_fold.mdl",
 		RackModel       = "models/bombs/gbu/gbu16.mdl",
 		MaxLength       = 250,
-		Armor           = 5,
+		Armor           = 2,
 		ProjLength      = 170,
 		PropLength      = 0,
 		Thrust          = 1, -- in kg*in/s^2
@@ -212,7 +212,7 @@ Missiles.RegisterItem("909kgGBU", "GBU", {
 		Model           = "models/bombs/gbu/gbu10_fold.mdl",
 		RackModel       = "models/bombs/gbu/gbu10.mdl",
 		MaxLength       = 320,
-		Armor           = 5,
+		Armor           = 2,
 		ProjLength      = 205,
 		PropLength      = 0,
 		Thrust          = 1, -- in kg*in/s^2
