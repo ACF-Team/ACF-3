@@ -449,6 +449,11 @@ function ACF.MakeMissile(Player, Pos, Ang, Rack, MountPoint, Crate)
 		Missile.SpeedBoost = Missile.StarterPercent * TotalLength * Missile.MaxThrust / (Missile.ProjMass + Missile.PropMass * 0.5)
 	end
 
+	if Missile.NoDamage then
+		Missile.ACF_InvisibleToBallistics = true
+		Missile.ACF_InvisibleToTrace = true
+	end
+
 	local PhysObj = Missile:GetPhysicsObject()
 
 	if IsValid(PhysObj) then
@@ -526,6 +531,9 @@ function ENT:Launch(Delay, IsMisfire)
 	self.ACF_Velocity = Velocity
 	self.LastVel      = Velocity
 	self.CurDir       = Flight
+
+	self.ACF_InvisibleToBallistics = false
+	self.ACF_InvisibleToTrace = false
 
 	if self.RackModel then
 		self:UpdateModel(self.RealModel)
@@ -716,6 +724,13 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 
 	-- If the missile was destroyed, then we detonate it.
 	if HitRes.Kill then
+		local BulletData = self.BulletData
+
+		if BulletData.Type == "HEAT" then
+			BulletData.Type = "HE"
+
+			self:SetNW2String("AmmoType", "HE")
+		end
 		DetonateMissile(self, Owner)
 
 		return HitRes
@@ -723,36 +738,28 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 		local Ratio      = self.ACF.Health / self.ACF.MaxHealth
 		local BulletData = self.BulletData
 
-		-- We give it a chance to explode when it gets penetrated aswell.
-		if math.random() > 0.55 * Ratio then
+		-- The missile should detonate when it gets penetrated, but only have a chance to detonate if not penetrated.
+		if math.random() > 0.55 * Ratio or DmgResult.Penetration > self.ForcedArmor then
 			if BulletData.Type == "HEAT" then
-			BulletData.Type = "HE"
+				BulletData.Type = "HE"
 
-			self:SetNW2String("AmmoType", "HE")
+				self:SetNW2String("AmmoType", "HE")
 			end
 			DetonateMissile(self, Owner)
 
 			return HitRes
 		end
 
-		-- Turning off the missile's motor.
+		-- Chance for any damage to disable the missile's motor.
 		if self.MotorLength > 0 and math.random() > 0.35 * Ratio then
 			self.MotorLength = 0
 
 			SetMotorState(self, false)
 		end
 
-		-- Turning off the missile's guidance.
+		-- Chance for any damage to disable the missile's guidance.
 		if self.UseGuidance and math.random() > 0.2 * Ratio then
 			self.UseGuidance = nil
-		end
-
-		-- Any Damage to the liner.
-		-- For sake of consistency and reducing of RNG on damage
-		if BulletData.Type == "HEAT" and 0.95 > Ratio then
-			BulletData.Type = "HE"
-
-			self:SetNW2String("AmmoType", "HE")
 		end
 	end
 
