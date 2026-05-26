@@ -200,7 +200,7 @@ do -- ACF global vars
 	ACF.LToGal               = 0.264172 -- Liters to gallons
 
 	-- Fuzes
-	ACF.MinFuzeCaliber       = 20 -- Minimum caliber in millimeters that can be fuzed
+	ACF.MinFuzeCaliber       = 25 -- Minimum caliber in millimeters that can be fuzed
 
 	-- Reload Mechanics
 	ACF.BaseReload         = 1 -- Minimum reload time. Time it takes to move around a weightless projectile
