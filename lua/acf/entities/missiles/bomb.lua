@@ -34,7 +34,7 @@ Missiles.RegisterItem("50kgBOMB", "BOMB", {
 	Round = {
 		Model           = "models/bombs/fab50.mdl",
 		MaxLength       = 109,
-		Armor           = 5,
+		Armor           = 1,
 		ProjLength      = 50,
 		PropLength      = 0,
 		Thrust          = 1, -- in kg*in/s^2
@@ -75,7 +75,7 @@ Missiles.RegisterItem("100kgBOMB", "BOMB", {
 	Round = {
 		Model           = "models/bombs/fab100.mdl",
 		MaxLength       = 106,
-		Armor           = 5,
+		Armor           = 2,
 		ProjLength      = 55,
 		PropLength      = 0,
 		Thrust          = 1, -- in kg*in/s^2
@@ -116,7 +116,7 @@ Missiles.RegisterItem("250kgBOMB", "BOMB", {
 	Round = {
 		Model           = "models/bombs/fab250.mdl",
 		MaxLength       = 145,
-		Armor           = 5,
+		Armor           = 2,
 		ProjLength      = 100,
 		PropLength      = 0,
 		Thrust          = 1, -- in kg*in/s^2
@@ -157,7 +157,7 @@ Missiles.RegisterItem("500kgBOMB", "BOMB", {
 	Round = {
 		Model           = "models/bombs/fab500.mdl",
 		MaxLength       = 240,
-		Armor           = 5,
+		Armor           = 3,
 		ProjLength      = 130,
 		PropLength      = 0,
 		Thrust          = 1, -- in kg*in/s^2
@@ -198,7 +198,7 @@ Missiles.RegisterItem("1000kgBOMB", "BOMB", {
 	Round = {
 		Model           = "models/bombs/an_m66.mdl",
 		MaxLength       = 270,
-		Armor           = 5,
+		Armor           = 3,
 		ProjLength      = 190,
 		PropLength      = 0,
 		Thrust          = 1, -- in kg*in/s^2

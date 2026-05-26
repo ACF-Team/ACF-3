@@ -35,7 +35,7 @@ Missiles.RegisterItem("AT-3 ASM", "ATGM", {
 	Round = {
 		Model           = "models/missiles/at3.mdl",
 		MaxLength       = 86,
-		Armor           = 2,
+		Armor           = 1,
 		ProjLength      = 16,
 		PropLength      = 26,
 		Thrust          = 8020, -- in kg*in/s^2
@@ -79,7 +79,7 @@ Missiles.RegisterItem("BGM-71E ASM", "ATGM", {
 		Model           = "models/missiles/bgm_71e.mdl",
 		RackModel       = "models/missiles/bgm_71e_round.mdl",
 		MaxLength       = 117,
-		Armor           = 2,
+		Armor           = 1,
 		ProjLength      = 20,
 		PropLength      = 18,
 		Thrust          = 34000, -- in kg*in/s^2
@@ -137,7 +137,7 @@ Missiles.RegisterItem("AGM-114 ASM", "ATGM", {
 	Round = {
 		Model           = "models/missiles/agm_114.mdl",
 		MaxLength       = 160,
-		Armor           = 2,
+		Armor           = 1,
 		ProjLength      = 30,
 		PropLength      = 56,
 		Thrust          = 210000, -- in kg*in/s^2
@@ -185,7 +185,7 @@ Missiles.RegisterItem("Ataka ASM", "ATGM", {
 		Model           = "models/missiles/9m120.mdl",
 		RackModel       = "models/missiles/9m120_rk1.mdl",
 		MaxLength       = 183,
-		Armor           = 2,
+		Armor           = 1,
 		ProjLength      = 17.5,
 		PropLength      = 68,
 		Thrust          = 230000, -- in kg*in/s^2
@@ -241,7 +241,7 @@ Missiles.RegisterItem("9M133 ASM", "ATGM", {
 		Model           = "models/kali/weapons/kornet/parts/9m133 kornet missile.mdl",
 		RackModel       = "models/kali/weapons/kornet/parts/9m133 kornet tube.mdl",
 		MaxLength       = 120,
-		Armor           = 2,
+		Armor           = 1,
 		ProjLength      = 21,
 		PropLength      = 30,
 		Thrust          = 40000,   -- in kg*in/s^2
@@ -289,7 +289,7 @@ Missiles.RegisterItem("AT-2 ASM", "ATGM", {
 	Round = {
 		Model           = "models/missiles/at2.mdl",
 		MaxLength       = 116,
-		Armor           = 2,
+		Armor           = 1,
 		ProjLength      = 23,
 		PropLength      = 26,
 		Thrust          = 68000, -- in kg*in/s^2

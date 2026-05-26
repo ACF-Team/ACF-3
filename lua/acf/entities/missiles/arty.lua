@@ -34,7 +34,7 @@ Missiles.RegisterItem("Type 63 RA", "ARTY", {
 	Round = {
 		Model           = "models/missiles/glatgm/mgm51.mdl",
 		MaxLength       = 80,
-		Armor           = 2,
+		Armor           = 1,
 		ProjLength      = 35,
 		PropLength      = 45,
 		Thrust          = 5000, -- in kg*in/s^2
@@ -77,7 +77,7 @@ Missiles.RegisterItem("SAKR-10 RA", "ARTY", {
 		Model           = "models/missiles/hvar_folded.mdl",
 		RackModel       = "models/missiles/hvar_folded.mdl",
 		MaxLength       = 287,
-		Armor           = 2,
+		Armor           = 1,
 		ProjLength      = 100,
 		PropLength      = 160,
 		Thrust          = 800000, -- in kg*in/s^2
@@ -120,7 +120,7 @@ Missiles.RegisterItem("SS-40 RA", "ARTY", {
 		Model           = "models/missiles/hvar_folded.mdl",
 		RackModel       = "models/missiles/hvar_folded.mdl",
 		MaxLength       = 370,
-		Armor           = 2,
+		Armor           = 1,
 		ProjLength      = 140,
 		PropLength      = 200,
 		Thrust          = 2400000, -- in kg*in/s^2

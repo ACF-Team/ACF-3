@@ -36,7 +36,7 @@ Missiles.RegisterItem("FIM-92 SAM", "SAM", {
 		Model           = "models/missiles/fim_92.mdl",
 		RackModel       = "models/missiles/fim_92_folded.mdl",
 		MaxLength       = 152,
-		Armor           = 2,
+		Armor           = 1,
 		ProjLength      = 60,
 		PropLength      = 80,
 		Thrust          = 200000, -- in kg*in/s^2
@@ -79,7 +79,7 @@ Missiles.RegisterItem("Strela-1 SAM", "SAM", {
 		RackModel       = "models/missiles/9m31f.mdl",
 		IgnoreRackModel = true, -- Ignore the rack model when determining the size of the round for ammo crates
 		MaxLength       = 180,
-		Armor           = 2,
+		Armor           = 1,
 		ProjLength      = 60,
 		PropLength      = 100,
 		Thrust          = 800000, -- in kg*in/s^2
