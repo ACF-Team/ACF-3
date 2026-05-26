@@ -738,8 +738,8 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 		local Ratio      = self.ACF.Health / self.ACF.MaxHealth
 		local BulletData = self.BulletData
 
-		-- The missile should detonate when it gets penetrated, but only have a chance to detonate if not penetrated.
-		if math.random() > 0.55 * Ratio or DmgResult.Penetration > self.ForcedArmor then
+		-- The missile should detonate when it gets penetrated.
+		if DmgResult.Penetration > self.ForcedArmor then
 			if BulletData.Type == "HEAT" then
 				BulletData.Type = "HE"
 
