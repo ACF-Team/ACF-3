@@ -36,18 +36,18 @@ local FilterCollisionGroups = {
 }
 
 local Visible = Color(255, 255, 255, 255)
+local Invisible = Color(255, 255, 255, 0)
 local function EntityPiecewiseFn()
     for _, Entity in ents.Iterator() do
         if not Entity:IsWeapon() and not Entity:IsPlayer() and not Entity:IsNPC() and not Entity:IsNextBot() then
             local Class = Entity:GetClass()
             if not IgnoreClasses[Class] then
                 if (not Entity.IsACFEntity and not VisibleClasses[Class]) or FilterSolid[Entity:GetSolid()] or FilterCollisionGroups[Entity:GetCollisionGroup()] then
-                    if Class == "base_anim" then Entity:SetColor(Color(255, 255, 255, 0)) Entity:SetRenderMode(RENDERMODE_TRANSCOLOR) else Entity:SetNoDraw(true) end
+                    if Class == "base_anim" then Entity:SetColor(Invisible) Entity:SetRenderMode(RENDERMODE_TRANSCOLOR) else Entity:SetNoDraw(true) end
                 else
-                    if Class == "base_anim" then Entity:SetColor(Visible) else Entity:SetNoDraw(false) end
+                    if Class == "base_anim" then Entity:SetColor(Visible) Entity:SetRenderMode(RENDERMODE_NORMAL) else Entity:SetNoDraw(false) end
                     Entity:SetColor(Visible)
                     Entity:SetMaterial("")
-                    Entity:SetRenderMode(RENDERMODE_NORMAL)
                 end
             end
         end
