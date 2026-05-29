@@ -752,7 +752,6 @@ local function ConstraintDetours()
 
         -- Final chance: if NoCollideState is passed, then only return false if NoCollideState is true (kind of a hack)
         -- This should probably be rewritten to use something that requires less to be passed around but w/e
-        print(NoCollideState)
         if NoCollideState ~= nil and NoCollideState == false or NoCollideState == 0 then return true end
 
         -- Ok, something tried to use a detoured constraint an ACF contraption to the world. Block it
