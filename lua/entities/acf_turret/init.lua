@@ -501,24 +501,23 @@ do	-- Spawn and Update funcs
 		local WeightedCoM = Vector()
 		local TreeMass = FamilyMass
 
-		for FamEnt in pairs(Family.ents or {}) do
+		-- Accumulate sum(m_i * x_i) for the family of the turret excluding itself
+		for FamEnt in pairs(Family and Family.ents or {}) do
 			local PhysObj = ENTITY.GetPhysicsObject(FamEnt)
 			if IsValid(PhysObj) then
 				local EntMass = PhysObj:GetMass()
-				if EntMass > 0 then
-					WeightedCoM = WeightedCoM + (Rotator:WorldToLocal(FamEnt:LocalToWorld(PhysObj:GetMassCenter())) * EntMass)
-				end
+				WeightedCoM = WeightedCoM + (Rotator:WorldToLocal(FamEnt:LocalToWorld(PhysObj:GetMassCenter())) * EntMass)
 			end
 		end
 
+		-- Accumulate sum(m_i * x_i) for subturrets
 		for Child in pairs(Entity.SubTurrets) do
+			if not IsValid(Child) then continue end
 			local ChildMass = GetTurretTreeMass(Child)
-			if ChildMass > 0 then
-				local ChildCoM = GetTurretTreeCoM(Child, Seen)
-				local Shift = Rotator:WorldToLocal(Child.Rotator:LocalToWorld(ChildCoM))
-				WeightedCoM = WeightedCoM + (Shift * ChildMass)
-				TreeMass = TreeMass + ChildMass
-			end
+			local ChildCoM = GetTurretTreeCoM(Child, Seen)
+			local Shift = Rotator:WorldToLocal(Child.Rotator:LocalToWorld(ChildCoM))
+			WeightedCoM = WeightedCoM + (Shift * ChildMass)
+			TreeMass = TreeMass + ChildMass
 		end
 
 		return WeightedCoM / TreeMass
