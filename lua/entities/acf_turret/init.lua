@@ -484,43 +484,35 @@ do	-- Spawn and Update funcs
 		return Mass
 	end
 
-	--- Recursively calculates the center of mass of turret and its subturrets
-	--- Returns a local vector of the center of mass.
-	local function GetTurretTreeCoM(Entity, Seen)
-		if not IsValid(Entity) then return Vector() end
+	local function GetTurretTreeMassPos(Entity, Seen)
+		if not IsValid(Entity) then return Vector(), 0 end
 
 		Seen = Seen or {}
-		if Seen[Entity] then return Vector() end
+		if Seen[Entity] then return Vector(), 0 end
 		Seen[Entity] = true
 
-		local Family = ENTITY.GetFamily(Entity)
-		local FamilyMass = (Family and Family.totalMass) or 0
-		if FamilyMass <= 0 then return Vector() end
+		local Family    = ENTITY.GetFamily(Entity)
+		local FamMass   = Family and Family.totalMass or 0
+		local Rotator   = Entity.Rotator or Entity
+		local MassPos   = Vector()
+		local TotalMass = FamMass
 
-		local Rotator = Entity.Rotator or Entity
-		local WeightedCoM = Vector()
-		local TreeMass = FamilyMass
+		if FamMass > 0 and Family and IsValid(Family.ancestor) then
+			local FamCoM = Family.ancestor:LocalToWorld(Family.massPos / FamMass)
+			MassPos      = Rotator:WorldToLocal(FamCoM) * FamMass
+		end
 
-		-- Accumulate sum(m_i * x_i) for the family of the turret excluding itself
-		for FamEnt in pairs(Family and Family.ents or {}) do
-			local PhysObj = ENTITY.GetPhysicsObject(FamEnt)
-			if IsValid(PhysObj) then
-				local EntMass = PhysObj:GetMass()
-				WeightedCoM = WeightedCoM + (Rotator:WorldToLocal(FamEnt:LocalToWorld(PhysObj:GetMassCenter())) * EntMass)
+		for Child in pairs(Entity.SubTurrets) do
+			if not IsValid(Child) then continue end
+			local ChildMassPos, ChildMass = GetTurretTreeMassPos(Child, Seen)
+			if ChildMass > 0 then
+				local ChildCoM = (Child.Rotator or Child):LocalToWorld(ChildMassPos / ChildMass)
+				MassPos   = MassPos + Rotator:WorldToLocal(ChildCoM) * ChildMass
+				TotalMass = TotalMass + ChildMass
 			end
 		end
 
-		-- Accumulate sum(m_i * x_i) for subturrets
-		for Child in pairs(Entity.SubTurrets) do
-			if not IsValid(Child) then continue end
-			local ChildMass = GetTurretTreeMass(Child)
-			local ChildCoM = GetTurretTreeCoM(Child, Seen)
-			local Shift = Rotator:WorldToLocal(Child.Rotator:LocalToWorld(ChildCoM))
-			WeightedCoM = WeightedCoM + (Shift * ChildMass)
-			TreeMass = TreeMass + ChildMass
-		end
-
-		return WeightedCoM / TreeMass
+		return MassPos, TotalMass
 	end
 
 	function ENT_GetTotalMass(self, SelfTbl)
@@ -542,7 +534,8 @@ do	-- Spawn and Update funcs
 	function ENT_GetTurretMassCenter(self, SelfTbl) -- Returns a local vector of the center of all of the mass on the turret component, from the rotator
 		SelfTbl = SelfTbl or ENTITY.GetTable(self)
 
-		SelfTbl.TurretData.LocalCoM = GetTurretTreeCoM(self)
+		local MassPos, TreeMass = GetTurretTreeMassPos(self)
+		SelfTbl.TurretData.LocalCoM = TreeMass > 0 and (MassPos / TreeMass) or Vector()
 
 		self:UpdateOverlay()
 		return SelfTbl.TurretData.LocalCoM
@@ -559,8 +552,13 @@ do	-- Spawn and Update funcs
 			SelfTbl.Complexity = (SelfTbl.Complexity or 1) * (SelfTbl.ACF_TurretAncestor.Complexity or 1)
 		end
 
-		ENT_GetTotalMass(self, SelfTbl)
-		ENT_GetTurretMassCenter(self, SelfTbl)
+		local MassPos, TreeMass = GetTurretTreeMassPos(self)
+		local OwnMass = (SelfTbl.ACF and SelfTbl.ACF.Mass) or 0
+
+		SelfTbl.TurretData.TotalMass = math_max(0, TreeMass - OwnMass)
+		SelfTbl.TurretData.LocalCoM  = TreeMass > 0 and (MassPos / TreeMass) or Vector()
+
+		WireLib.TriggerOutput(self, "Mass", SelfTbl.TurretData.TotalMass)
 
 		ENT_UpdateTurretSlew(self, SelfTbl)
 		self:UpdateOverlay()
