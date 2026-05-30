@@ -288,6 +288,7 @@ do	-- Spawn and Update funcs
 		end
 
 		Entity.ACF				= {}
+		Entity.SubTurrets 		= {}
 
 		Contraption.SetModel(Entity, Model)
 
@@ -465,26 +466,6 @@ do	-- Spawn and Update funcs
 	end
 	ENT.UpdateTurretSlew = ENT_UpdateTurretSlew
 
-	--- Recursively traverses the turret's sub-entity tree to find all child turrets, used for mass and CoM calculations.
-	--- Returns a table of turret entities.
-	local function GetSubTurrets(Entity, Pass, Seen)
-		local List = Pass or {}
-		Seen = Seen or {}
-
-		local Source = Entity.Rotator or Entity
-
-		for _, Child in pairs(Source:GetChildren()) do
-			if IsValid(Child) and not Seen[Child] then
-				Seen[Child] = true
-				if Child:GetClass() == "acf_turret" then List[Child] = true end
-
-				GetSubTurrets(Child, List, Seen)
-			end
-		end
-
-		return List
-	end
-
 	--- Recursively calculates the total mass of the turret and its subturrets
 	--- Returns the total mass.
 	local function GetTurretTreeMass(Entity, Seen)
@@ -496,7 +477,7 @@ do	-- Spawn and Update funcs
 
 		local Family = ENTITY.GetFamily(Entity)
 		local Mass = (Family and Family.totalMass) or 0
-		for Child in pairs(GetSubTurrets(Entity)) do
+		for Child in pairs(Entity.SubTurrets) do
 			Mass = Mass + GetTurretTreeMass(Child, Seen)
 		end
 
@@ -530,7 +511,7 @@ do	-- Spawn and Update funcs
 			end
 		end
 
-		for Child in pairs(GetSubTurrets(Entity)) do
+		for Child in pairs(Entity.SubTurrets) do
 			local ChildMass = GetTurretTreeMass(Child)
 			if ChildMass > 0 then
 				local ChildCoM = GetTurretTreeCoM(Child, Seen)
@@ -1065,7 +1046,7 @@ do -- Metamethods
 			self:UpdateOverlay()
 		end
 
-		function ENT:CFW_OnParented(Entity, _) -- Potentially called many times a second, so we won't force mass to update
+		function ENT:CFW_OnParented(Entity, Parenting) -- Potentially called many times a second, so we won't force mass to update
 			local SelfTbl = ENTITY.GetTable(self)
 			local Class   = ENTITY.GetClass(self)
 
@@ -1077,6 +1058,7 @@ do -- Metamethods
 			-- Shooouuld be using CFW_OnParented as it was made with this in mind, but turret entities will overwrite it with the above function to ensure everything is captured
 			if Class == "acf_turret_motor" then Entity:ValidatePlacement() end
 			if IsValid(SelfTbl.Motor) then SelfTbl.Motor:ValidatePlacement() end
+			if Entity.IsACFTurret then self.SubTurrets[Entity] = Parenting and true or nil end -- Note: will contain null entities because removes don't call CFW's deparent :(
 		end
 
 		function ENT:GetCost()
