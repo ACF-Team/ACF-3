@@ -1187,7 +1187,7 @@ do -- Metamethods --------------------------------
 
 				WireLib.TriggerOutput(self, "Shots Left", SelfTbl.CurrentShot)
 
-				local IdealTime, Manual = ACF.CalcReloadTimeMag(SelfTbl.Caliber, SelfTbl.ClassData, SelfTbl.WeaponData, SelfTbl.BulletData)
+				local IdealTime, Manual = ACF.CalcReloadTimeMag(SelfTbl.Caliber, SelfTbl.ClassData, SelfTbl.WeaponData, SelfTbl.BulletData, SelfTbl)
 				local Time = Manual and IdealTime / SelfTbl.LoadCrewMod or IdealTime
 
 				SelfTbl.NextFire = Clock.CurTime + Time

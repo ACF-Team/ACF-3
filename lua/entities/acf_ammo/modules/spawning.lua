@@ -623,8 +623,8 @@ do -- Overlay
 		end
 		State:AddKeyValue("Shell dimensions", Caliber .. "mm x " .. Length .. "cm")
 
-		local IdealReloadTime = math.Round(ACF.CalcReloadTime(Caliber, self.Class, self.Weapon, self.BulletData, self.Override), 2)
-		local IdealMagReloadTime = math.Round(ACF.CalcReloadTimeMag(self.Caliber, self.Class, self.Weapon, self.BulletData, {MagSize = self.MagSize}), 2)
+		local IdealReloadTime = math.Round(ACF.CalcReloadTime(Caliber, self.ClassData, self.Weapon, self.BulletData, self.Override), 2)
+		local IdealMagReloadTime = math.Round(ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.Weapon, self.BulletData, {MagSize = self.Amount}), 2)
 		State:AddKeyValue("Ideal Reload Time", IdealReloadTime .. " s")
 		State:AddKeyValue("Ideal Mag Reload Time", IdealMagReloadTime .. " s")
 
