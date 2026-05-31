@@ -54,7 +54,6 @@ function EFFECT:Init(Data)
 end
 
 function EFFECT:Core(Origin, Radius)
-
 	local SoundData = Sounds.GetExplosionSoundPath(Radius)
 
 	Sounds.PlaySound(Origin, SoundData.SoundPath:format(math.random(0, 4)), SoundData.SoundVolume, SoundData.SoundPitch, 1)
