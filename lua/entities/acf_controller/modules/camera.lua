@@ -12,7 +12,7 @@ do
 		Entity.CamMode = math.Clamp(CamMode, 1, Entity:GetCamCount())
 		Entity.CamOffset = Entity["GetCam" .. CamMode .. "Offset"]()
 		Entity.CamOrbit = Entity["GetCam" .. CamMode .. "Orbit"]()
-		Entity.CamParent = Entity["GetCam" .. CamMode .. "Parent"]()
+		Entity:SetCamParent(Entity["GetCam" .. CamMode .. "Parent"]())
 	end)
 
 	net.Receive("ACF_Controller_CamData", function(_, ply)
@@ -77,6 +77,15 @@ do
 			end
 		end
 		self.Filter = Filter
-		if not IsValid(self.CamParent) then self.CamParent = self end
+		if not IsValid(self.CamParent) then
+			self:SetCamParent(self)
+		end
+	end
+
+	function ENT:SetCamParent(Parent)
+		self.CamParent = Parent
+		if SERVER then
+			WireLib.TriggerOutput(self, "CamParent", Parent)
+		end
 	end
 end

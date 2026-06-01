@@ -84,6 +84,7 @@ do
 		"Active",
 		"Speed (Determined by selected unit)",
 		"Driver (The player driving the vehicle.) [ENTITY]",
+		"CamParent (The entity the camera is parented to) [ENTITY]",
 		"Entity (The controller entity itself) [ENTITY]",
 	}
 
