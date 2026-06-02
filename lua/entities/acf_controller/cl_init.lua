@@ -18,9 +18,14 @@ local State = {
 	MyFilter = nil,
 }
 
-include("modules_cl/overlay.lua")(State)
-local UpdateCamera = include("modules_cl/camera.lua")(State)
-include("modules_cl/hud.lua")(State)
+local ActivationCallbacks = {}
+local function RegisterClientModule(OnActivated)
+	if OnActivated then ActivationCallbacks[#ActivationCallbacks + 1] = OnActivated end
+end
+
+RegisterClientModule(include("modules_cl/overlay.lua")(State))
+RegisterClientModule(include("modules_cl/camera.lua")(State))
+RegisterClientModule(include("modules_cl/hud.lua")(State))
 
 -- Maintain a record of links to the entity from the server
 net.Receive("ACF_Controller_Links", function()
@@ -43,13 +48,8 @@ net.Receive("ACF_Controller_Active", function()
 	local Ent = Entity(EntIndex)
 	if not IsValid(Ent) then return end
 
-	-- When entering the seat, update the camera info
 	State.MyController = Activated and Ent or nil
-	if Activated then UpdateCamera(LocalPlayer()) end
-end)
-
--- Receive filter from server (for camera and hud)
-net.Receive("ACF_Controller_CamInfo", function()
-	local Temp = net.ReadTable()
-	if #Temp > 0 then State.MyFilter = Temp end
+	if Activated then
+		for _, OnActivated in ipairs(ActivationCallbacks) do OnActivated(LocalPlayer()) end
+	end
 end)
