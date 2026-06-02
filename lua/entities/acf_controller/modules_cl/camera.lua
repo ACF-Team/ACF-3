@@ -121,6 +121,7 @@ return function(State)
             angles = State.CamAng,
             fov = State.FOV,
             drawviewer = true,
+            znear = math.Remap(math.Clamp(State.FOV, 0, 90), 0, 90, 6, 0.1)
         }
 
         return View
