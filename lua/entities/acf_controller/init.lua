@@ -47,39 +47,35 @@ function ACF.RegisterControllerLink(Class, Config)
 	ControllerLinkRegistry[Class] = Config
 end
 
+local WireOutputRegistry = {}
+function ACF.RegisterControllerOutput(Spec)
+	WireOutputRegistry[#WireOutputRegistry + 1] = Spec
+end
+
+local WireInputRegistry = {}
+function ACF.RegisterControllerInput(Spec)
+	WireInputRegistry[#WireInputRegistry + 1] = Spec
+end
+
+-- Note: The order of the includes is important. For example, wire inputs will be added in order of includes.
 local ModuleInits = {}
 local function RegisterServerModule(InitFn)
 	if InitFn then ModuleInits[#ModuleInits + 1] = InitFn end
 end
 
 RegisterServerModule(include("modules/seat.lua"))
-RegisterServerModule(include("modules/drivetrain.lua"))
-RegisterServerModule(include("modules/fire_control.lua"))
 RegisterServerModule(include("modules/camera.lua"))
+RegisterServerModule(include("modules/fire_control.lua"))
+RegisterServerModule(include("modules/drivetrain.lua"))
 RegisterServerModule(include("modules/ammo.lua"))
 RegisterServerModule(include("modules/receivers.lua"))
 RegisterServerModule(include("modules/radar.lua"))
 RegisterServerModule(include("modules/hud.lua"))
 RegisterServerModule(include("modules/overlay.lua"))
 
+ACF.RegisterControllerOutput("Entity (The controller entity itself) [ENTITY]")
+
 do
-	local Inputs = {
-		"Filter (Filters out entities from the camera trace) [ARRAY]",
-	}
-
-	local Outputs = {
-		"W", "A", "S", "D", "Mouse1", "Mouse2",
-		"R", "Space", "Shift", "Zoom", "Alt", "Duck",
-		"HitPos (The position the driver is looking at) [VECTOR]",
-		"CamAng (The direction of the camera.) [ANGLE]",
-		"IsTurretLocked (Whether the turret is locked or not.)",
-		"Active",
-		"Speed (Determined by selected unit)",
-		"Driver (The player driving the vehicle.) [ENTITY]",
-		"CamParent (The entity the camera is parented to) [ENTITY]",
-		"Entity (The controller entity itself) [ENTITY]",
-	}
-
 	local function VerifyData(Data)
 		if Data.AIOUseDefaults then
 			Data.AIODefaults = Defaults
@@ -143,8 +139,8 @@ do
 		-- Finish setting up the entity
 		HookRun("ACF_OnSpawnEntity", "acf_controller", Entity, Data)
 
-		WireIO.SetupInputs(Entity, Inputs, Data)
-		WireIO.SetupOutputs(Entity, Outputs, Data)
+		WireIO.SetupInputs(Entity, WireInputRegistry, Data)
+		WireIO.SetupOutputs(Entity, WireOutputRegistry, Data)
 
 		if Data.AIODefaults then Entity:RestoreNetworkVars(Data.AIODefaults) end
 
@@ -287,14 +283,6 @@ do
 		return true
 	end
 
-	-- Handle Inputs
-	do
-		ACF.AddInputAction("acf_controller", "Filter", function(Controller, Value)
-			if Value == nil or not istable(Value) then return end
-			Controller.UsesWireFilter = true
-			Controller.Filter = Value
-		end)
-	end
 end
 
 -- Adv Dupe 2 Related

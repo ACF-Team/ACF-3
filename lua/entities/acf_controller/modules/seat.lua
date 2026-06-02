@@ -6,21 +6,29 @@ local function Init(Entity)
 end
 
 -- https://wiki.facepunch.com/gmod/Enums/IN
-local IN_ENUM_TO_WIRE_OUTPUT = {
-	[IN_FORWARD]  = "W",
-	[IN_MOVELEFT] = "A",
-	[IN_BACK]     = "S",
-	[IN_MOVERIGHT] = "D",
-	[IN_ATTACK]   = "Mouse1",
-	[IN_ATTACK2]  = "Mouse2",
-
-	[IN_RELOAD] = "R",
-	[IN_JUMP]   = "Space",
-	[IN_SPEED]  = "Shift",
-	[IN_ZOOM]   = "Zoom",
-	[IN_WALK]   = "Alt",
-	[IN_DUCK]   = "Duck",
+local KEY_WIRE_BINDINGS = {
+	{ IN_FORWARD,   "W" },
+	{ IN_MOVELEFT,  "A" },
+	{ IN_BACK,      "S" },
+	{ IN_MOVERIGHT, "D" },
+	{ IN_ATTACK,    "Mouse1" },
+	{ IN_ATTACK2,   "Mouse2" },
+	{ IN_RELOAD,    "R" },
+	{ IN_JUMP,      "Space" },
+	{ IN_SPEED,     "Shift" },
+	{ IN_ZOOM,      "Zoom" },
+	{ IN_WALK,      "Alt" },
+	{ IN_DUCK,      "Duck" },
 }
+
+local IN_ENUM_TO_WIRE_OUTPUT = {}
+for _, Binding in ipairs(KEY_WIRE_BINDINGS) do
+	IN_ENUM_TO_WIRE_OUTPUT[Binding[1]] = Binding[2]
+	ACF.RegisterControllerOutput(Binding[2])
+end
+
+ACF.RegisterControllerOutput("Active")
+ACF.RegisterControllerOutput("Driver (The player driving the vehicle.) [ENTITY]")
 
 -- Handle a player entering or exiting the vehicle
 local function OnActiveChanged(Controller, Ply, Active)

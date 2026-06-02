@@ -8,6 +8,17 @@ local function Init(Entity)
 	Entity.CamOrbit  = 0              -- Camera orbit (from client)
 end
 
+ACF.RegisterControllerOutput("HitPos (The position the driver is looking at) [VECTOR]")
+ACF.RegisterControllerOutput("CamAng (The direction of the camera.) [ANGLE]")
+ACF.RegisterControllerOutput("CamParent (The entity the camera is parented to) [ENTITY]")
+
+ACF.RegisterControllerInput("Filter (Filters out entities from the camera trace) [ARRAY]")
+ACF.AddInputAction("acf_controller", "Filter", function(Controller, Value)
+	if Value == nil or not istable(Value) then return end
+	Controller.UsesWireFilter = true
+	Controller.Filter = Value
+end)
+
 -- Camera related
 do
 	net.Receive("ACF_Controller_CamInfo", function(_, ply)

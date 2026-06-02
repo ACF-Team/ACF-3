@@ -27,6 +27,8 @@ local function Init(Entity)
 	Entity.Speed                = 0
 end
 
+ACF.RegisterControllerOutput("Speed (Determined by selected unit)")
+
 -- Drivetrain related
 do
 	local CLUTCH_FLOW = 0
