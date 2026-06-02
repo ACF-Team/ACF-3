@@ -63,12 +63,24 @@ include("modules_sh/helpers_sh.lua")
 local RecacheBindState = ENT.RecacheBindState
 local RecacheBindOutput = ENT.RecacheBindOutput
 
-include("modules/drivetrain.lua")
-include("modules/ammo.lua")
-include("modules/camera.lua")
-include("modules/hud.lua")
-include("modules/fire_control.lua")
-include("modules/overlay.lua")
+local ControllerLinkRegistry = {}
+function ACF.RegisterControllerLink(Class, Config)
+	ControllerLinkRegistry[Class] = Config
+end
+
+local ModuleInits = {}
+local function RegisterServerModule(InitFn)
+	if InitFn then ModuleInits[#ModuleInits + 1] = InitFn end
+end
+
+RegisterServerModule(include("modules/drivetrain.lua"))
+RegisterServerModule(include("modules/fire_control.lua"))
+RegisterServerModule(include("modules/camera.lua"))
+RegisterServerModule(include("modules/ammo.lua"))
+RegisterServerModule(include("modules/receivers.lua"))
+RegisterServerModule(include("modules/radar.lua"))
+RegisterServerModule(include("modules/hud.lua"))
+RegisterServerModule(include("modules/overlay.lua"))
 
 do
 	local Inputs = {
@@ -138,78 +150,12 @@ do
 		Entity.ShortName = "ACF AIO Controller"
 		Entity.EntType = "ACF AIO Controller"
 
-		-- Determined from links
-		Entity.Seat = nil					-- The single seat
-		Entity.Gearbox = nil				-- Main gearbox of the vehicle
-		Entity.Turrets = {}					-- Turrets, both horizontal and vertical
-		Entity.Guns = {}					-- All guns
-		Entity.Racks = {}					-- All racks
-		Entity.Baseplate = nil				-- The baseplate of the vehicle
-		Entity.SteerPlates = {}				-- Steering plates, if any
-		Entity.GuidanceComputer = nil		-- The guidance computer, if any
-		Entity.TurretComputer = nil			-- The turret computer, if any
-		Entity.Receivers = {}				-- LWR/RWRs
-		Entity.Radar = nil					-- Radar, if any
-		Entity.RadarVertical = nil			-- Radar vertical turret, if any
+		Entity.Driver    = nil
+		Entity.Active    = false
+		Entity.KeyStates = {}
+		Entity.Seat      = nil
 
-		-- Determined automatically
-		Entity.Driver = nil					-- The player driving the vehicle
-		Entity.GunsPrimary = {}				-- Primary guns (Main gun, cannon, etc)
-		Entity.GunsSecondary = {}			-- Secondary guns (Machine guns, etc)
-		Entity.GunsSmoke = {}				-- Smoke and flare launchers
-		Entity.GearboxEnds = {}				-- Gearboxes connected to a wheel
-		Entity.GearboxIntermediates = {}	-- Or otherwise
-		Entity.Wheels = {}					-- Wheels
-		Entity.Engines = {}					-- Engines
-		Entity.Fuels = {}					-- Fuel tanks
-		Entity.SteerPlatesSorted = {}		-- Steer plates sorted by their position
-		Entity.SteerPhysicsObjects = {}		-- Steering physics objects
-
-		Entity.LeftGearboxes = {}			-- Gearboxes connected to the left drive wheel
-		Entity.RightGearboxes = {}			-- Gearboxes connected to the right drive wheel
-		Entity.LeftWheels = {}				-- Wheels connected to the left drive wheel
-		Entity.RightWheels = {}				-- Wheels connected to the right drive wheel
-
-		Entity.GearboxLeft = nil			-- A Gearbox connected to the left drive wheel
-		Entity.GearboxRight = nil			-- A Gearbox connected to the right drive wheel
-		Entity.GearboxLeftDir = nil			-- Direction of that left gearbox's output
-		Entity.GearboxRightDir = nil		-- Direction of that right gearbox's output
-
-		Entity.ControllerWelds = {}			-- Keep track of the welds we created
-
-		Entity.PrimaryAmmoCountsByType = {}
-
-		-- State and meta variables
-		Entity.TurretLocked = false			-- Whether the turret is locked or not
-		Entity.LargestCaliber = 0			-- Largest caliber gun of the vehicle
-		Entity.FuelCapacity = 0				-- Total fuel capacity of the vehicle
-		Entity.Active = false				-- Whether the controller is active or not
-
-		Entity.CamMode = 0					-- Camera mode (from client)
-		Entity.CamAng = Angle(0, 0, 0)		-- Camera angle (from client)
-		Entity.CamOffset = Vector() 		-- Camera offset (from client)
-		Entity.CamOrbit = 0					-- Camera orbit (from client)
-
-		Entity.KeyStates = {} 				-- Key states for the driver
-
-		Entity.SteerAngles = {} 			-- Steering angles for the wheels
-
-		Entity.ReceiverDirections = {}			-- LWS/RWS receiver angles
-		Entity.ReceiverDetecteds = {}			-- LWS/RWS receiver detected states
-
-		Entity.RadarUpdateRate = 7			-- How often to update the radar, in ticks.
-		Entity.SelectedTargetID = nil		-- Currently selected radar target ID
-		Entity.SelectedTargetPos = Vector()	-- Position of currently selected radar target
-		Entity.SelectedTargetVel = Vector()	-- Velocity of currently selected radar target
-
-		Entity.Speed = 0
-
-		Entity.Primary = nil
-		Entity.Secondary = nil
-		Entity.Tertiary = nil
-		Entity.Smoke = nil
-
-		Entity.GearboxEndCount = 1			-- Number of endpoint gearboxes
+		for _, Init in ipairs(ModuleInits) do Init(Entity) end
 
 		Entity.DataStore = Entities.GetArguments("acf_controller")
 
@@ -254,67 +200,6 @@ do
 	function ENT:ACF_PostMenuSpawn()
 		ACF.DropToFloor(self)
 		self:SetAngles(self:GetAngles() + Angle(0, -90, 0))
-	end
-end
-
--- Receiver related
-do
-	function ENT:ProcessReceivers(SelfTbl)
-		for Receiver, _ in pairs(SelfTbl.Receivers) do
-			if IsValid(Receiver) then
-				local Detected = Receiver.Outputs.Detected.Value
-				local Direction = Receiver.Outputs.Direction.Value
-				if (SelfTbl.ReceiverDetecteds[Receiver] ~= Detected or SelfTbl.ReceiverDirections[Receiver] ~= Direction) then
-					SelfTbl.ReceiverDirections[Receiver] = Direction
-					SelfTbl.ReceiverDetecteds[Receiver] = Detected
-					if Detected == 0 then return end
-					net.Start("ACF_Controller_Receivers")
-					net.WriteEntity(self)
-					net.WriteEntity(Receiver)
-					net.WriteVector(Direction)
-					net.Send(self.Driver)
-				end
-			end
-		end
-	end
-end
-
--- Radar related
-do
-	function ENT:AnalyzeRadars(Radar)
-		self.RadarVertical = Radar:GetParent()
-		self.RadarUpdateRate = math.ceil(Radar.Outputs["Think Delay"].Value / (1 / 66))
-	end
-
-	net.Receive("ACF_Controller_Radar", function()
-		local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
-		local SelectedID = net.ReadUInt(6)
-		local Entity = Entity(EntIndex)
-		if not IsValid(Entity) then return end
-		Entity.SelectedTargetID = SelectedID ~= 0 and SelectedID or nil
-	end)
-
-	function ENT:ProcessRadars(SelfTbl)
-		local Radar = SelfTbl.Radar
-		if not IsValid(Radar) then return end
-		local Count = math.min(#Radar.Outputs.IDs.Value, 15) -- Avoid spam
-
-		net.Start("ACF_Controller_Radar")
-		net.WriteEntity(self)
-		net.WriteUInt(Count, 4)
-		for i = 1, Count do
-			local ID = Radar.Outputs.IDs.Value[i] or 0
-			net.WriteUInt(ID, 6)
-			net.WriteString(Radar.Outputs.Owner.Value[i] or "")
-			net.WriteVector(Radar.Outputs.Position.Value[i] or vector_origin)
-
-			if ID == SelfTbl.SelectedTargetID then
-				SelfTbl.SelectedTargetPos = Radar.Outputs.Position.Value[i] or vector_origin
-				SelfTbl.SelectedTargetVel = Radar.Outputs.Velocity.Value[i] or vector_origin
-			end
-		end
-		net.WriteVector(SelfTbl.SelectedTargetVel)
-		net.Send(self.Driver)
 	end
 end
 
@@ -463,84 +348,16 @@ local function OnUnlinkedSeat(Controller)
 	hook.Remove("KeyRelease", "ACFControllerSeatKeyRelease" .. Controller:EntIndex())
 end
 
--- Using this to auto generate the link/unlink functions
-local LinkConfigs = {
-	prop_vehicle_prisoner_pod = {
-		Field = "Seat",
-		Single = true,
-		OnLinked = function(Controller, Target)
-			OnLinkedSeat(Controller, Target)
-		end,
-		OnUnlinked = function(Controller, _)
-			OnUnlinkedSeat(Controller)
-		end,
-	},
-	acf_gearbox = {
-		Field = "Gearbox",
-		Single = true,
-		OnLinked = function(Controller, Target)
-			Controller:AnalyzeDrivetrain(Target)
-		end
-	},
-	acf_turret = {
-		Field = "Turrets",
-		Single = false
-	},
-	acf_gun = {
-		Field = "Guns",
-		Single = false,
-		OnLinked = function(Controller, Target)
-			Controller:AnalyzeGuns(Target)
-		end
-	},
-	acf_turret_computer = {
-		Field = "TurretComputer",
-		Single = true
-	},
-	acf_computer = {
-		Field = "GuidanceComputer",
-		Single = true,
-		PreLink = function(_, Target)
-			if Target.Computer ~= "CPR-LSR" and Target.Computer ~= "CPR-OPT" then return false, "Only laser/optical guidance computers are supported." end
-			return true
-		end
-	},
-	acf_receiver = {
-		Field = "Receivers",
-		Single = false
-	},
-	acf_baseplate = {
-		Field = "Baseplate",
-		Single = true,
-		OnLinked = function(Controller, Target)
-			if IsValid(Target.Pod) and not Controller.Seat then Controller:Link(Target.Pod) end
-		end,
-		OnUnlinked = function(Controller, Target)
-			if IsValid(Target.Pod) and not Controller.Seat then Controller:Unlink(Target.Pod) end
-		end
-	},
-	acf_rack = {
-		Field = "Racks",
-		Single = false,
-		OnLinked = function(Controller, Target)
-			Controller:AnalyzeRacks(Target)
-		end
-	},
-	prop_physics = {
-		Field = "SteerPlates",
-		Single = false,
-	},
-	acf_radar = {
-		Field = "Radar",
-		Single = true,
-		OnLinked = function(Controller, Target)
-			Controller:AnalyzeRadars(Target)
-		end
-	}
-}
+-- Register seat link (kept here since OnLinkedSeat/OnUnlinkedSeat are local)
+ACF.RegisterControllerLink("prop_vehicle_prisoner_pod", {
+	Field = "Seat",
+	Single = true,
+	OnLinked = function(Controller, Target) OnLinkedSeat(Controller, Target) end,
+	OnUnlinked = function(Controller, _) OnUnlinkedSeat(Controller) end,
+})
 
 -- Register links to the controller with various classes
-for Class, Data in pairs(LinkConfigs) do
+for Class, Data in pairs(ControllerLinkRegistry) do
 	local Field = Data.Field
 	local Single = Data.Single
 	local PreLink = Data.PreLink
@@ -648,7 +465,7 @@ end
 do
 	-- Hopefully we can improve this when the codebase is refactored.
 	function ENT:PreEntityCopy()
-		for _, Data in pairs(LinkConfigs) do
+		for _, Data in pairs(ControllerLinkRegistry) do
 			local Field = Data.Field
 			if Data.Single then
 				if IsValid(self[Field]) then
@@ -676,7 +493,7 @@ do
 	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
 		local EntMods = Ent.EntityMods
 
-		for _, Data in pairs(LinkConfigs) do
+		for _, Data in pairs(ControllerLinkRegistry) do
 			local Field = Data.Field
 			if EntMods[Field] then
 				if Data.Single then
@@ -704,7 +521,7 @@ do
 	function ENT:OnRemove()
 		HookRun("ACF_OnEntityLast", "acf_controller", self)
 
-		for _, Data in pairs(LinkConfigs) do
+		for _, Data in pairs(ControllerLinkRegistry) do
 			local Field = Data.Field
 			if Data.Single then
 				if IsValid(self[Field]) then self:Unlink(self[Field]) end

@@ -1,3 +1,10 @@
+local function Init(Entity)
+	Entity.CamMode   = 0              -- Camera mode (from client)
+	Entity.CamAng    = Angle(0, 0, 0) -- Camera angle (from client)
+	Entity.CamOffset = Vector()        -- Camera offset (from client)
+	Entity.CamOrbit  = 0              -- Camera orbit (from client)
+end
+
 local TraceLine = util.TraceLine
 local RecacheBindOutput = ENT.RecacheBindOutput
 -- Camera related
@@ -91,3 +98,5 @@ do
 		end
 	end
 end
+
+return Init

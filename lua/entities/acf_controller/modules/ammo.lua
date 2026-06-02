@@ -1,3 +1,7 @@
+local function Init(Entity)
+	Entity.PrimaryAmmoCountsByType = {}
+end
+
 -- Ammo related
 do
 	net.Receive("ACF_Controller_Ammo", function(_, ply)
@@ -47,3 +51,5 @@ do
 		end
 	end
 end
+
+return Init
