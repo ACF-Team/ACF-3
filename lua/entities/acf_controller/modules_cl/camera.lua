@@ -76,7 +76,8 @@ return function(State)
             State.LastCamAng = State.CamAng
             net.Start("ACF_Controller_CamData", true)
             net.WriteUInt(State.MyController:EntIndex(), MAX_EDICT_BITS)
-            net.WriteAngle(State.CamAng)
+            net.WriteFloat(State.CamAng.pitch)
+            net.WriteFloat(State.CamAng.yaw)
             net.SendToServer()
         end
     end)

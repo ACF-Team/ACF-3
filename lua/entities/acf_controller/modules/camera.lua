@@ -17,7 +17,9 @@ do
 
 	net.Receive("ACF_Controller_CamData", function(_, ply)
 		local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
-		local CamAng = net.ReadAngle()
+		local CamAngPitch = net.ReadFloat()
+		local CamAngYaw = net.ReadFloat()
+		local CamAng = Angle(CamAngPitch, CamAngYaw, 0)
 		local Entity = Entity(EntIndex)
 		if not IsValid(Entity) then return end
 		if Entity.Driver ~= ply then return end
