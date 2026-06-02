@@ -1,3 +1,6 @@
+local TraceLine = util.TraceLine
+local RecacheBindOutput = ENT.RecacheBindOutput
+
 local function Init(Entity)
 	Entity.CamMode   = 0              -- Camera mode (from client)
 	Entity.CamAng    = Angle(0, 0, 0) -- Camera angle (from client)
@@ -5,8 +8,6 @@ local function Init(Entity)
 	Entity.CamOrbit  = 0              -- Camera orbit (from client)
 end
 
-local TraceLine = util.TraceLine
-local RecacheBindOutput = ENT.RecacheBindOutput
 -- Camera related
 do
 	net.Receive("ACF_Controller_CamInfo", function(_, ply)

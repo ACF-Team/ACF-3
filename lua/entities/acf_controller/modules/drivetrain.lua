@@ -1,3 +1,6 @@
+local RecacheBindOutput = ENT.RecacheBindOutput
+local GetKeyState = ENT.GetKeyState
+
 local function Init(Entity)
 	Entity.Gearbox              = nil  -- Main gearbox of the vehicle
 	Entity.Baseplate            = nil  -- The baseplate of the vehicle
@@ -23,9 +26,6 @@ local function Init(Entity)
 	Entity.GearboxEndCount      = 1    -- Number of endpoint gearboxes
 	Entity.Speed                = 0
 end
-
-local RecacheBindOutput = ENT.RecacheBindOutput
-local GetKeyState = ENT.GetKeyState
 
 -- Drivetrain related
 do

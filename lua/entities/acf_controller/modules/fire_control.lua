@@ -1,3 +1,8 @@
+local TimerSimple = timer.Simple
+
+local RecacheBindOutput = ENT.RecacheBindOutput
+local GetKeyState = ENT.GetKeyState
+
 local function Init(Entity)
 	Entity.Turrets          = {}    -- Turrets, both horizontal and vertical
 	Entity.Guns             = {}    -- All guns
@@ -18,11 +23,6 @@ local function Init(Entity)
 	Entity.LaseDist         = 0
 	Entity.LasePitch        = 0
 end
-
-local TimerSimple = timer.Simple
-
-local RecacheBindOutput = ENT.RecacheBindOutput
-local GetKeyState = ENT.GetKeyState
 
 -- Turret related
 do
