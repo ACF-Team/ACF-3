@@ -376,11 +376,11 @@ do -- Terminal ballistics --------------------------
 		if HitRes.Loss == 1 then
 			-- If the there's more armor than penetration, the bullet ricochets
 			Ricochet, HitRes.Loss = Ballistics.CalculateRicochet(Bullet, Trace)
-		else
-			-- If there's less armor than penetration, spalling happens
-			if not Bullet.IsSpall and not Bullet.IsCookOff then
-				Ballistics.DoSpall(Bullet, Trace, HitRes, Bullet.Flight:Length())
-			end
+		end
+
+		if (HitRes.Overkill > 0 or HitRes.Kill) and not Bullet.IsSpall and not Bullet.IsCookOff then
+			-- Penetrated or killed plate
+			Ballistics.DoSpall(Bullet, Trace, HitRes, Bullet.Flight:Length())
 		end
 
 		-- Transfer bullet momentum into target
