@@ -47,17 +47,44 @@ function ACF.RegisterControllerLink(Class, Config)
 	ControllerLinkRegistry[Class] = Config
 end
 
-local WireOutputRegistry = {}
-function ACF.RegisterControllerOutput(Spec)
-	WireOutputRegistry[#WireOutputRegistry + 1] = Spec
-end
+-- https://wiki.facepunch.com/gmod/Enums/IN
+local KEY_WIRE_BINDINGS = {
+	{ IN_FORWARD,   "W" },
+	{ IN_MOVELEFT,  "A" },
+	{ IN_BACK,      "S" },
+	{ IN_MOVERIGHT, "D" },
+	{ IN_ATTACK,    "Mouse1" },
+	{ IN_ATTACK2,   "Mouse2" },
+	{ IN_RELOAD,    "R" },
+	{ IN_JUMP,      "Space" },
+	{ IN_SPEED,     "Shift" },
+	{ IN_ZOOM,      "Zoom" },
+	{ IN_WALK,      "Alt" },
+	{ IN_DUCK,      "Duck" },
+}
+ACF.ControllerKeyBindings = KEY_WIRE_BINDINGS
 
-local WireInputRegistry = {}
-function ACF.RegisterControllerInput(Spec)
-	WireInputRegistry[#WireInputRegistry + 1] = Spec
-end
+local Inputs = {
+	"Filter (Filters out entities from the camera trace) [ARRAY]",
+}
 
--- Note: The order of the includes is important. For example, wire inputs will be added in order of includes.
+local ADDITIONAL_OUTPUTS = {
+	"HitPos (The position the driver is looking at) [VECTOR]",
+	"CamAng (The direction of the camera.) [ANGLE]",
+	"IsTurretLocked (Whether the turret is locked or not.)",
+	"Active",
+	"Speed (Determined by selected unit)",
+	"Driver (The player driving the vehicle.) [ENTITY]",
+	"CamParent (The entity the camera is parented to) [ENTITY]",
+	"Entity (The controller entity itself) [ENTITY]",
+}
+
+local Outputs = {}
+for _, Binding in ipairs(KEY_WIRE_BINDINGS) do
+	Outputs[#Outputs + 1] = Binding[2]
+end
+table.Add(Outputs, ADDITIONAL_OUTPUTS)
+
 local ModuleInits = {}
 local function RegisterServerModule(InitFn)
 	if InitFn then ModuleInits[#ModuleInits + 1] = InitFn end
@@ -72,8 +99,6 @@ RegisterServerModule(include("modules/receivers.lua"))
 RegisterServerModule(include("modules/radar.lua"))
 RegisterServerModule(include("modules/hud.lua"))
 RegisterServerModule(include("modules/overlay.lua"))
-
-ACF.RegisterControllerOutput("Entity (The controller entity itself) [ENTITY]")
 
 do
 	local function VerifyData(Data)
@@ -139,8 +164,8 @@ do
 		-- Finish setting up the entity
 		HookRun("ACF_OnSpawnEntity", "acf_controller", Entity, Data)
 
-		WireIO.SetupInputs(Entity, WireInputRegistry, Data)
-		WireIO.SetupOutputs(Entity, WireOutputRegistry, Data)
+		WireIO.SetupInputs(Entity, Inputs, Data)
+		WireIO.SetupOutputs(Entity, Outputs, Data)
 
 		if Data.AIODefaults then Entity:RestoreNetworkVars(Data.AIODefaults) end
 
@@ -175,6 +200,15 @@ do
 	function ENT:ACF_PostMenuSpawn()
 		ACF.DropToFloor(self)
 		self:SetAngles(self:GetAngles() + Angle(0, -90, 0))
+	end
+
+	-- Handle Inputs
+	do
+		ACF.AddInputAction("acf_controller", "Filter", function(Controller, Value)
+			if Value == nil or not istable(Value) then return end
+			Controller.UsesWireFilter = true
+			Controller.Filter = Value
+		end)
 	end
 end
 

@@ -24,8 +24,6 @@ local function Init(Entity)
 	Entity.LasePitch        = 0
 end
 
-ACF.RegisterControllerOutput("IsTurretLocked (Whether the turret is locked or not.)")
-
 -- Turret related
 do
 	function ENT:AnalyzeGuns(Gun)
