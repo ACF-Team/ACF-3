@@ -388,7 +388,7 @@ do -- Terminal ballistics --------------------------
 			ACF.KEShove(
 				Entity,
 				Trace.HitPos,
-				Bullet.Flight:GetNormalized(),
+				-Bullet.Flight:GetNormalized(),
 				Energy.Kinetic * HitRes.Loss * 1000 * Bullet.ShovePower
 			)
 		end
