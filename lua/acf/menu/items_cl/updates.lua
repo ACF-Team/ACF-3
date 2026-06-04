@@ -9,7 +9,7 @@ local function DrawGitCommit(Menu, Commit)
 	Base:AddLabel(Commit.body or "#acf.menu.updates.commit_message_default")
 	Base:AddLabel(language.GetPhrase("acf.menu.updates.commit_author"):format(Commit.author))
 	Base:AddLabel(language.GetPhrase("acf.menu.updates.commit_date"):format(
-		os.date("%Y-%m-%d %H:%M:%S", Commit.date) .. " (" .. string.FormattedTime(os.time() - Commit.date, "%dh %dm") .. " ago)"
+		os.date("%Y-%m-%d %H:%M:%S", Commit.date) .. " (" .. string.FormattedTime(os.time() - Commit.date, "%dh") .. " ago)"
 	))
 	Base:AddLabel(language.GetPhrase("acf.menu.updates.commit_code"):format(Commit.Code or Commit.code or "#acf.menu.updates.unknown"))
 	local Button = Base:AddButton("#acf.menu.updates.commit_view")
@@ -35,7 +35,7 @@ local function DrawGitStatus(Menu, ExtensionName, Version, MostRecentCommit)
 		if Outdated and Version.date and Version.date > 0 then
 			local Diff      = MostRecentCommit.date - Version.date
 			local Direction = Diff >= 0 and "behind" or "ahead"
-			StatusValue     = StatusValue .. " (" .. string.FormattedTime(math.abs(Diff), "%dh %dm") .. " " .. Direction .. ")"
+			StatusValue     = StatusValue .. " (" .. string.FormattedTime(math.abs(Diff), "%dh") .. " " .. Direction .. ")"
 		end
 		Status:SetText(StatusPrefix:format(StatusValue))
 	else
