@@ -6,6 +6,10 @@ local VisibleClasses = {
     ["prop_physics"] = true,
     ["prop_physics_multiplayer"] = true,
     ["primitive_shape"] = true,
+    ["primitive_airfoil"] = true,
+    ["primitive_rail_slider"] = true,
+    ["primitive_ladder"] = true,
+    ["primitive_staircase"] = true,
 }
 
 local IgnoreClasses = {
