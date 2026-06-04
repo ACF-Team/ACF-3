@@ -8,7 +8,9 @@ local function DrawGitCommit(Menu, Commit)
 	Base:AddTitle(Commit.title or "#acf.menu.updates.commit_title_default")
 	Base:AddLabel(Commit.body or "#acf.menu.updates.commit_message_default")
 	Base:AddLabel(language.GetPhrase("acf.menu.updates.commit_author"):format(Commit.author))
-	Base:AddLabel(language.GetPhrase("acf.menu.updates.commit_date"):format(os.date("%Y-%m-%d %H:%M:%S", Commit.date)))
+	Base:AddLabel(language.GetPhrase("acf.menu.updates.commit_date"):format(
+		os.date("%Y-%m-%d %H:%M:%S", Commit.date) .. " (" .. string.FormattedTime(os.time() - Commit.date, "%dh %dm") .. " ago)"
+	))
 	Base:AddLabel(language.GetPhrase("acf.menu.updates.commit_code"):format(Commit.Code or Commit.code or "#acf.menu.updates.unknown"))
 	local Button = Base:AddButton("#acf.menu.updates.commit_view")
 	function Button:DoClickInternal()
@@ -30,6 +32,11 @@ local function DrawGitStatus(Menu, ExtensionName, Version, MostRecentCommit)
 	-- Server up to date with main, client out of date with dev, but dev is ahead of main.
 	if MostRecentCommit then
 		local StatusValue = language.GetPhrase(Outdated and "acf.menu.updates.outdated" or "acf.menu.updates.up_to_date")
+		if Outdated and Version.date and Version.date > 0 then
+			local Diff      = MostRecentCommit.date - Version.date
+			local Direction = Diff >= 0 and "behind" or "ahead"
+			StatusValue     = StatusValue .. " (" .. string.FormattedTime(math.abs(Diff), "%dh %dm") .. " " .. Direction .. ")"
+		end
 		Status:SetText(StatusPrefix:format(StatusValue))
 	else
 		Status:SetText(StatusPrefix:format("#acf.menu.updates.unknown"))
