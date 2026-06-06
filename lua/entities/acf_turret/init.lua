@@ -56,7 +56,8 @@ do	-- Spawn and Update funcs
 	local Entities	= Classes.Entities
 	local Turrets	= Classes.Turrets
 
-	CFW.addParentDetour("acf_turret", "Rotator")
+	-- The turret drive is the logical entity; the rotator transforms children, but stays invisible to CFW
+	CFW.addTransformProxy("acf_turret", "Rotator", "acf_turret_rotator", "Turret")
 
 	local Inputs	= {
 		"Active (Enables movement of the turret.)",

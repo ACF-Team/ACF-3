@@ -50,7 +50,7 @@ local function UpdateValues(Contraption)
 end
 
 -- Maintain ancestors array
-hook.Add("cfw.contraption.created", "ACF Entity Tracking", function(Contraption)
+hook.Add("cfw.contraption.init", "ACF Entity Tracking", function(Contraption)
 	Contraptions[Contraption] = true
 end)
 
