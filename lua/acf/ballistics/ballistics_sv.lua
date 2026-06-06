@@ -376,11 +376,11 @@ do -- Terminal ballistics --------------------------
 		if HitRes.Loss == 1 then
 			-- If the there's more armor than penetration, the bullet ricochets
 			Ricochet, HitRes.Loss = Ballistics.CalculateRicochet(Bullet, Trace)
-		else
-			-- If there's less armor than penetration, spalling happens
-			if not Bullet.IsSpall and not Bullet.IsCookOff then
-				Ballistics.DoSpall(Bullet, Trace, HitRes, Bullet.Flight:Length())
-			end
+		end
+
+		if (HitRes.Kill or HitRes.Overkill > 0) and not Bullet.IsSpall and not Bullet.IsCookOff then
+			-- Penetrated or killed plate
+			Ballistics.DoSpall(Bullet, Trace, HitRes, Bullet.Flight:Length())
 		end
 
 		-- Transfer bullet momentum into target
@@ -388,7 +388,7 @@ do -- Terminal ballistics --------------------------
 			ACF.KEShove(
 				Entity,
 				Trace.HitPos,
-				Bullet.Flight:GetNormalized(),
+				-Bullet.Flight:GetNormalized(),
 				Energy.Kinetic * HitRes.Loss * 1000 * Bullet.ShovePower
 			)
 		end

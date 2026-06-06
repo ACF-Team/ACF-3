@@ -1,0 +1,37 @@
+-- Insert pack
+INSERT INTO PackData (packid, packname, author, contact)
+VALUES ('half_track_pack', 'Half Track Pack', 'Daleks2377', 'Daleks2377');
+
+-- Insert dupes using the string packid
+INSERT INTO DupeData (path, name, cost, weight, type, mobility, packid, description) VALUES
+('ht_runner_supply_transport', 'HT "Runner" Supply Transport', 30.03, 3.85, 'Transport', 'Other', 'half_track_pack', 'Lightly armored Supply / transport capable of moving infantry and ferrying supplies
+
+6mm MG at the front
+
+Moves at about 34km/h
+
+~10mm all around'),
+
+('ht_petal_anti-tank', 'HT "Petal" Anti-Tank', 127.43, 5.95, 'SPG', 'Other', 'half_track_pack', 'Lightly armored Anti-Tank half track
+
+APHE,Flechette,HEAT,Smoke 16 Rounds Each
+
+Pen 154mm - 62mm
+
+6mm MG at the front
+
+Moves at about 34km/h
+
+~10mm all around
+14mm At the gunshield'),
+
+('ht_boxer_spaa', 'HT "Boxer" SPAA', 93.26, 5.47, 'AA', 'Other', 'half_track_pack', 'Lightly armored SPAA Half track
+
+759 Rounds of APHE with 23mm of Pen
+
+6mm MG at the front
+
+Moves at 34km/h
+
+~10mm Hull, Mantlet
+20mm Turret sides and top');

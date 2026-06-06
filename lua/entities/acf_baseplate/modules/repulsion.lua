@@ -54,6 +54,8 @@ hook.Add("Think", "ACF_Baseplate_Collision_Simulation", function()
 		for j = 1, Count do
 			if i >= j then continue end
 			local BP1, BP2 = BaseplatesArray[i], BaseplatesArray[j]
+			if not IsValid(BP1) or not IsValid(BP2) then continue end
+
 			local BP1Table, BP2Table = ENTITY.GetTable(BP1), ENTITY.GetTable(BP2)
 
 			if not BP1Table.Size or not BP2Table.Size then continue end

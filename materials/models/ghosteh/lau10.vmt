@@ -1,0 +1,17 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "models\ghosteh/lau10"
+	"$bumpmap" "models\ghosteh/lau10_norm"
+	"$surfaceprop" "metal"
+	"$envmap" "env_cubemap"
+	"$normalmapalphaenvmapmask" "1"
+	"$envmaptint" "[ 0.05 0.05 0.05 ]"
+	"$envmapcontrast" 0.1
+	"$envmapsaturation" 0.1
+	"$phong" "1" 
+	"$phongboost" "0.6" 
+	"$phongfresnelranges" "[0.15 1 1]"
+	"$phongexponent" "10.5"
+	"$blendtintbybasealpha" "1"
+
+}

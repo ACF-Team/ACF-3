@@ -1,0 +1,7 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "models\missiles/uarx3"
+	$halflambert 			1
+	$blendtintbybasealpha		1
+	$surfaceprop	metal
+}

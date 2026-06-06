@@ -40,9 +40,7 @@ function EFFECT:Init(Data)
 	end
 
 	local SoundData = Sounds.GetHitSoundPath(Data, Trace, "impact")
-
 	Sounds.PlaySound(Trace.HitPos, SoundData.SoundPath:format(math.random(0, 4)), 100, SoundData.SoundPitch, 1)
-
 end
 
 function EFFECT:Think()

@@ -1,0 +1,11 @@
+"VertexLitGeneric"
+{
+
+	 $model "1"
+	 $basetexturetransform "center 0.5 0.5 scale 1.0 1.0 rotate 0.0 translate 0.0 0.0"
+	 $bumptransform "center 0.5 0.5 scale 1.0 1.0 rotate 0.0 translate 0.0 0.0"
+	 $basetexture "models/missiles/launcher7_40mm_skin1"
+
+	"$blendtintbybasealpha" "1"
+	"$color"	"{1 50 200}"
+}

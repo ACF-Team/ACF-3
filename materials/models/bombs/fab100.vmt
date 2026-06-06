@@ -1,0 +1,6 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "models\Bombs/fab100"
+	$halflambert 			1
+	$blendtintbybasealpha		1
+}

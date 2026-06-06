@@ -933,9 +933,9 @@ do -- Metamethods --------------------------------
 			local AmmoType = AmmoTypes.Get(BulletData.Type)
 
 			if BulletData.CanFuze and SelfTbl.SetFuze then
-				local Variance = math.Rand(-0.015, 0.015) * math.max(0, 203 - SelfTbl.Caliber) * 0.01
+				local Variance = 0.00005 * math.Rand(-1, 1) * (math.max(0, 50 - SelfTbl.Caliber) + 30)
 
-				SelfTbl.Fuze = math.max(SelfTbl.SetFuze, 0.02) + Variance -- If possible, we're gonna update the fuze time
+				SelfTbl.Fuze = math.max(SelfTbl.SetFuze + Variance, 0.01) -- If possible, we update the fuze time
 			else
 				SelfTbl.Fuze = nil
 			end
@@ -1218,7 +1218,7 @@ do -- Metamethods --------------------------------
 
 				WireLib.TriggerOutput(self, "Shots Left", SelfTbl.CurrentShot)
 
-				local IdealTime, Manual = ACF.CalcReloadTimeMag(SelfTbl.Caliber, SelfTbl.ClassData, SelfTbl.WeaponData, SelfTbl.BulletData)
+				local IdealTime, Manual = ACF.CalcReloadTimeMag(SelfTbl.Caliber, SelfTbl.ClassData, SelfTbl.WeaponData, SelfTbl.BulletData, SelfTbl)
 				local Time = Manual and IdealTime / SelfTbl.LoadCrewMod or IdealTime
 
 				SelfTbl.NextFire = Clock.CurTime + Time

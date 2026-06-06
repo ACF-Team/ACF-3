@@ -1,0 +1,54 @@
+-- Insert pack
+INSERT INTO PackData (packid, packname, author, contact)
+VALUES ('eaglitetankette', 'EagliteTankette', 'Daleks2377', 'Daleks2377');
+
+-- Insert dupes using the string packid
+INSERT INTO DupeData (path, name, cost, weight, type, mobility, packid, description) VALUES
+('eaglite_spaa', 'Eaglite SPAA', 70.21, 2.46, 'AA', 'Tracked', 'eaglitetankette', 'Small, Light, Tracked RAC-AA with a targeting Radar
+
+Fairly fast at about 60~ km/h
+
+max armor of around 22mm
+
+~12mm everywhere else
+
+Right click to use the supply Crate (Must be out of combat)'),
+
+('eaglite_raider_apc', 'Eaglite Raider APC', 27.28, 1.87, 'APC', 'Tracked', 'eaglitetankette', 'Two seated "APC" with a MG
+
+Recon vehicle optimized for shock-troop style flanking operations and light tank-hunting
+
+Cheap battle wagon!
+
+60~ km/h
+
+max armor of around 22mm
+
+~12mm everywhere else'),
+
+('eaglite_popper', 'Eaglite "Popper"', 41.63, 2.27, 'SPG', 'Tracked', 'eaglitetankette', '80mm shell slugger / Supply
+
+Rip up infantry positions and light vehicles from rock throwing distance
+
+50m/s Shell speed, Aim high!
+
+Right click Supply
+
+60~ km/h
+
+max armor 22mm
+
+~12mm everywhere else'),
+
+('4x4_jt_portee', '4X4 "JT" Portee', 97.82, 3.65, 'SPG', 'Wheeled', 'eaglitetankette', 'Bonus Vehicle! Cold War Portee!
+
+90mm Short gun
+Flechette, APFDS, HEAT, Smoke
+
+~305mm Of Pen
+
+~55 Km/h
+
+~10 - ~5 mm of armor
+
+Dont get shot at!');

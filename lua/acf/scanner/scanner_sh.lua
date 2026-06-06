@@ -125,45 +125,46 @@ end
 --local unknowntype   = DefineScannerType(nil, "Unknown",        Color(255, 255, 255), "?",  {})
 local baseplateC    = DefineScannerType(nil, "Baseplate",      Color(255, 150, 255), "BP", {})
 local playerC       = DefineScannerType(nil, "Player",         Color(150, 200, 200), "PL", {})
-DefineScannerType("prop_vehicle_prisoner_pod", "Seat/Pod",                Color(130, 255, 100), "P",   {drawModelOverlay = true})
+DefineScannerType("prop_vehicle_prisoner_pod", "Seat/Pod",                  Color(130, 255, 100), "P",   {drawModelOverlay = true})
 
-DefineScannerType("acf_gun",                   "ACF Gun",                 Color(100, 130, 255), "G",   {drawModelOverlay = true})
-DefineScannerType("acf_ammo",                  "ACF Ammo Crate",          Color(255, 50, 35),   "A",   {drawBounds = true, drawMarker = true})
+DefineScannerType("acf_gun",                   "ACF Gun",                   Color(100, 130, 255), "G",   {drawModelOverlay = true})
+DefineScannerType("acf_ammo",                  "ACF Ammo Crate",            Color(255, 50, 35),   "A",   {drawBounds = true, drawMarker = true})
 
-DefineScannerType("acf_rack",                  "ACF Missile Rack",        Color(100, 230, 255), "RK",  {drawModelOverlay = true})
-DefineScannerType("acf_radar",                 "ACF Radar",               Color(255, 200, 50),  "R",   {drawModelOverlay = true})
+DefineScannerType("acf_rack",                  "ACF Missile Rack",          Color(100, 230, 255), "RK",  {drawModelOverlay = true})
+DefineScannerType("acf_radar",                 "ACF Radar",                 Color(255, 200, 50),  "R",   {drawModelOverlay = true})
 
-DefineScannerType("acf_engine",                "ACF Engine",              Color(200, 255, 100), "E",   {drawModelOverlay = true})
-DefineScannerType("acf_gearbox",               "ACF Gearbox",             Color(148, 148, 20),  "GB",  {drawModelOverlay = true, drawOverlay = true})
-DefineScannerType("acf_fueltank",              "ACF Fueltank",            Color(200, 180, 230), "F",   {drawBounds = true})
+DefineScannerType("acf_engine",                "ACF Engine",                Color(200, 255, 100), "E",   {drawModelOverlay = true})
+DefineScannerType("acf_gearbox",               "ACF Gearbox",               Color(148, 148, 20),  "GB",  {drawModelOverlay = true, drawOverlay = true})
+DefineScannerType("acf_fueltank",              "ACF Fueltank",              Color(200, 180, 230), "F",   {drawBounds = true})
 
-DefineScannerType("acf_piledriver",            "ACF Piledriver",          Color(255, 100, 90),  "PD",  {})
-DefineScannerType("acf_computer",              "ACF Computer",            Color(235, 235, 255), "E",   {drawModelOverlay = true})
+DefineScannerType("acf_piledriver",            "ACF Piledriver",            Color(255, 100, 90),  "PD",  {})
+DefineScannerType("acf_computer",              "ACF Computer",              Color(235, 235, 255), "E",   {drawModelOverlay = true})
 
-DefineScannerType("acf_turret",                "ACF Turret",              Color(155, 215, 255), "T",   {drawModelOverlay = true, drawMesh = true})
-DefineScannerType("acf_turret_motor",          "ACF Turret Motor",        Color(155, 215, 255), "TM",  {drawModelOverlay = true, drawMesh = true})
-DefineScannerType("acf_turret_gyro",           "ACF Turret Gyroscope",    Color(155, 215, 255), "TG",  {drawModelOverlay = true, drawMesh = true})
-DefineScannerType("acf_turret_computer",       "ACF Turret Computer",     Color(155, 215, 255), "TC",  {drawModelOverlay = true, drawMesh = true})
+DefineScannerType("acf_turret",                "ACF Turret",                Color(155, 215, 255), "T",   {drawModelOverlay = true, drawMesh = true})
+DefineScannerType("acf_turret_motor",          "ACF Turret Motor",          Color(155, 215, 255), "TM",  {drawModelOverlay = true, drawMesh = true})
+DefineScannerType("acf_turret_gyro",           "ACF Turret Gyroscope",      Color(155, 215, 255), "TG",  {drawModelOverlay = true, drawMesh = true})
+DefineScannerType("acf_turret_computer",       "ACF Turret Computer",       Color(155, 215, 255), "TC",  {drawModelOverlay = true, drawMesh = true})
 
-DefineScannerType("acf_baseplate",             "ACF Baseplate",           Color(255, 65, 160),  "ABP", {drawBounds = true, drawMarker = true})
-DefineScannerType("acf_crew",                  "ACF Crew Member",         Color(211, 33, 196),  "CR",  {drawModelOverlay = true})
-DefineScannerType("acf_controller",            "ACF Controller",          Color(156, 0, 177),   "CON", {drawModelOverlay = true})
+DefineScannerType("acf_baseplate",             "ACF Baseplate",             Color(255, 65, 160),  "ABP", {drawBounds = true, drawMarker = true})
+DefineScannerType("acf_crew",                  "ACF Crew Member",           Color(211, 33, 196),  "CR",  {drawModelOverlay = true})
+DefineScannerType("acf_controller",            "ACF Controller",            Color(156, 0, 177),   "CON", {drawModelOverlay = true})
 
-DefineScannerType("acf_supply",                "ACF Supply Crate",        Color(255, 171, 164), "SC",  {drawModelOverlay = true})
-DefineScannerType("acf_waterjet",              "ACF Waterjet",            Color(160, 236, 255), "WJ",  {drawModelOverlay = true})
-DefineScannerType("acf_autoloader",            "ACF Autoloader",          Color(168, 39, 27),   "AL",  {drawModelOverlay = true})
-DefineScannerType("acf_receiver",              "ACF Warning Receiver",    Color(241, 255, 164), "WR",  {drawModelOverlay = true})
-DefineScannerType("acf_groundloader",          "ACF Ground Loader",       Color(255, 166, 0),   "GL",  {})
+DefineScannerType("acf_supply",                "ACF Supply Crate",          Color(255, 171, 164), "SC",  {drawModelOverlay = true})
+DefineScannerType("acf_waterjet",              "ACF Waterjet",              Color(160, 236, 255), "WJ",  {drawModelOverlay = true})
+DefineScannerType("acf_autoloader",            "ACF Autoloader",            Color(168, 39, 27),   "AL",  {drawModelOverlay = true})
+DefineScannerType("acf_receiver",              "ACF Warning Receiver",      Color(241, 255, 164), "WR",  {drawModelOverlay = true})
+DefineScannerType("acf_groundloader",          "ACF Ground Loader",         Color(255, 166, 0),   "GL",  {})
 
-DefineScannerType("gmod_wire_expression2",     "Expression 2 Chip",       Color(230, 40, 40),   "E2",  {})
-DefineScannerType("starfall_processor",        "Starfall Chip",           Color(100, 140, 230), "SF",  {})
-DefineScannerType("starfall_prop",             "Starfall-Created Prop",   Color(160, 200, 255), "SP",  {})
+DefineScannerType("gmod_wire_expression2",     "Expression 2 Chip",         Color(230, 40, 40),   "E2",  {})
+DefineScannerType("gmod_wire_customprop",      "Expression 2-Created Prop", Color(255, 139, 139), "EP",  {})
+DefineScannerType("starfall_processor",        "Starfall Chip",             Color(100, 140, 230), "SF",  {})
+DefineScannerType("starfall_prop",             "Starfall-Created Prop",     Color(160, 200, 255), "SP",  {})
 
-DefineScannerType("primitive_shape",           "Primitive Shape",         Color(200, 200, 255), "PR",  {drawMesh = true})
-DefineScannerType("primitive_staircase",       "Primitive Staircase",     Color(200, 200, 255), "PRs", {drawMesh = true})
-DefineScannerType("primitive_ladder",          "Primitive Ladder",        Color(200, 200, 255), "PRl", {drawMesh = true})
-DefineScannerType("primitive_rail_slider",     "Primitive Rail Slider",   Color(200, 200, 255), "PRr", {drawMesh = true})
-DefineScannerType("primitive_airfoil",         "Primitive Airfoil",       Color(200, 200, 255), "PRa", {drawMesh = true})
+DefineScannerType("primitive_shape",           "Primitive Shape",           Color(200, 200, 255), "PR",  {drawMesh = true})
+DefineScannerType("primitive_staircase",       "Primitive Staircase",       Color(200, 200, 255), "PRs", {drawMesh = true})
+DefineScannerType("primitive_ladder",          "Primitive Ladder",          Color(200, 200, 255), "PRl", {drawMesh = true})
+DefineScannerType("primitive_rail_slider",     "Primitive Rail Slider",     Color(200, 200, 255), "PRr", {drawMesh = true})
+DefineScannerType("primitive_airfoil",         "Primitive Airfoil",         Color(200, 200, 255), "PRa", {drawMesh = true})
 
 local function NetStart(n)
     net_Start("ACF_Scanning_NetworkPacket")
@@ -441,6 +442,8 @@ if SERVER then
 end
 
 if CLIENT then
+    local acf_scanner_show_clips = CreateClientConVar("acf_scanner_show_clips", "0", true, false, "Show clip visualization in the ACF scanner.")
+
     local TEXT_ALIGN_TOP = TEXT_ALIGN_TOP
     local TEXT_ALIGN_LEFT = TEXT_ALIGN_LEFT
     local TEXT_ALIGN_RIGHT = TEXT_ALIGN_RIGHT
@@ -1475,7 +1478,9 @@ if CLIENT then
                             drawPhysMesh(ent, scanDef.color)
                         end
 
-                        VisualizeClips(ent)
+                        if acf_scanner_show_clips:GetBool() then
+                            VisualizeClips(ent)
+                        end
                     end
                 end
             end
@@ -1488,7 +1493,9 @@ if CLIENT then
                         drawBounds(ent, baseplateC)
                     end
 
-                    VisualizeClips(ent)
+                    if acf_scanner_show_clips:GetBool() then
+                        VisualizeClips(ent)
+                    end
                 end
             end
 

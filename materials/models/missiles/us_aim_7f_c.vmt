@@ -1,0 +1,12 @@
+"VertexLitGeneric"
+{
+	"$basetexture" "models/missiles/us_aim_7f_c"
+	"$normalmap" "models/missiles/us_aim_7f_n_n"
+	"$envmap" "env_cubemap"
+	"$normalmapalphaenvmapmask" "1"
+	"$model" "1"
+	"$halflambert" "1"
+	"$surfaceprop" "metal"
+	"$phong" "1"
+	"$envmaptint" "[ 0.25 0.25 0.25 ]"
+}

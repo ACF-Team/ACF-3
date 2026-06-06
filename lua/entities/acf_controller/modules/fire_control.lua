@@ -3,6 +3,27 @@ local TimerSimple = timer.Simple
 local RecacheBindOutput = ENT.RecacheBindOutput
 local GetKeyState = ENT.GetKeyState
 
+local function Init(Entity)
+	Entity.Turrets          = {}    -- Turrets, both horizontal and vertical
+	Entity.Guns             = {}    -- All guns
+	Entity.Racks            = {}    -- All racks
+	Entity.GuidanceComputer = nil   -- The guidance computer, if any
+	Entity.TurretComputer   = nil   -- The turret computer, if any
+	Entity.GunsPrimary      = {}    -- Primary guns (Main gun, cannon, etc)
+	Entity.GunsSecondary    = {}    -- Secondary guns (Machine guns, etc)
+	Entity.GunsSmoke        = {}    -- Smoke and flare launchers
+	Entity.LargestCaliber   = 0     -- Largest caliber gun of the vehicle
+	Entity.TurretLocked     = false -- Whether the turret is locked or not
+	Entity.Primary          = nil
+	Entity.Secondary        = nil
+	Entity.Tertiary         = nil
+	Entity.Smoke            = nil
+	Entity.Drop             = 0
+	Entity.TravelTime       = 0
+	Entity.LaseDist         = 0
+	Entity.LasePitch        = 0
+end
+
 -- Turret related
 do
 	function ENT:AnalyzeGuns(Gun)
@@ -110,6 +131,8 @@ do
 				if Turret == BreechReference and ShouldLevel then Turret:InputDirection(ReloadAngle)
 				elseif BreechReference and Turret == BreechReference:GetParent() and ShouldLevel and ReloadAngleHorizontal ~= 0 then Turret:InputDirection(ReloadAngleHorizontal)
 				else Turret:InputDirection(HitPos + AntiDrop + AntiDrift) end
+
+				if Turret == SelfTbl.RadarVertical then Turret:InputDirection(SelfTbl.SelectedTargetPos) end
 			end
 		end
 	end
@@ -138,3 +161,40 @@ do
 		end
 	end
 end
+
+ACF.RegisterControllerLink("acf_turret", {
+	Field = "Turrets",
+	Single = false,
+})
+
+ACF.RegisterControllerLink("acf_gun", {
+	Field = "Guns",
+	Single = false,
+	OnLinked = function(Controller, Target)
+		Controller:AnalyzeGuns(Target)
+	end,
+})
+
+ACF.RegisterControllerLink("acf_turret_computer", {
+	Field = "TurretComputer",
+	Single = true,
+})
+
+ACF.RegisterControllerLink("acf_computer", {
+	Field = "GuidanceComputer",
+	Single = true,
+	PreLink = function(_, Target)
+		if Target.Computer ~= "CPR-LSR" and Target.Computer ~= "CPR-OPT" then return false, "Only laser/optical guidance computers are supported." end
+		return true
+	end,
+})
+
+ACF.RegisterControllerLink("acf_rack", {
+	Field = "Racks",
+	Single = false,
+	OnLinked = function(Controller, Target)
+		Controller:AnalyzeRacks(Target)
+	end,
+})
+
+return Init
