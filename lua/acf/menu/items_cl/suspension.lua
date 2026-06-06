@@ -41,7 +41,7 @@ function ACF.CreateSuspensionToolMenuHeadless(Menu)
     DisableCollisions:SetTooltip("If checked, the wheels will not collide with anything else.\nSame thing as doing it via the context menu.")
 
     local DoubleSocket = GeneralSettings:AddCheckBox("Double Socket", "acf_sus_tool_doublesocket")
-    DoubleSocket:SetTooltip("If checked, adds an additional inverted ballsocket to each wheel for extra stability.")
+    DoubleSocket:SetTooltip("If checked, adds an additional inverted ballsocket to each wheel to increase rotational stability.")
 
     -- Spring related
     local SpringType = GeneralSettings:AddComboBox()
