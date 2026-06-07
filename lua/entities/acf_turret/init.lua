@@ -501,12 +501,23 @@ do	-- Spawn and Update funcs
 			if not IsValid(self) then return end
 			SelfTbl = ENTITY.GetTable(self)
 
+			-- Stacking turrets of the same type, where the upper one is more than half the lower's size, compounds complexity penalties down the chain
+			SelfTbl.Complexity = 1
+
+			for Child in pairs(SelfTbl.SubTurrets) do
+				if not IsValid(Child) then continue end
+
+				if (Child.Turret == SelfTbl.Turret) and (Child.TurretData.RingSize > (SelfTbl.TurretData.RingSize * 0.5)) then
+					SelfTbl.Complexity = SelfTbl.Complexity * math_Clamp(((SelfTbl.TurretData.RingSize * 0.5) / Child.TurretData.RingSize) ^ 2, 0, 1)
+				end
+			end
+
 			if IsValid(SelfTbl.ACF_TurretAncestor) then
 				local Ancestor = SelfTbl.ACF_TurretAncestor
 
 				Ancestor:UpdateTurretMassAndCOM(true)
 
-				SelfTbl.Complexity = (SelfTbl.Complexity or 1) * (Ancestor.Complexity or 1)
+				SelfTbl.Complexity = SelfTbl.Complexity * (Ancestor.Complexity or 1)
 			end
 
 			local MassPos, TreeMass = GetTurretMassPosRecursive(self)
