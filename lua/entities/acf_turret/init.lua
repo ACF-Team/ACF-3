@@ -477,7 +477,7 @@ do	-- Spawn and Update funcs
 		Seen[Entity] = true
 
 		local Family = ENTITY.GetFamily(Entity)
-		local Mass = (Family and Family.totalMass) or 0
+		local Mass = (Family and Family:GetMass()) or 0
 		for Child in pairs(Entity.SubTurrets) do
 			Mass = Mass + GetTurretTreeMass(Child, Seen)
 		end
@@ -493,13 +493,13 @@ do	-- Spawn and Update funcs
 		Seen[Entity] = true
 
 		local Family    = ENTITY.GetFamily(Entity)
-		local FamMass   = Family and Family.totalMass or 0
+		local FamMass   = Family and Family:GetMass() or 0
 		local Rotator   = Entity.Rotator or Entity
 		local MassPos   = Vector()
 		local TotalMass = FamMass
 
-		if FamMass > 0 and Family and IsValid(Family.ancestor) then
-			local FamCoM = Family.ancestor:LocalToWorld(Family.massPos / FamMass)
+		if FamMass > 0 then
+			local FamCoM = Family:GetCenterOfMass()
 			MassPos      = Rotator:WorldToLocal(FamCoM) * FamMass
 		end
 

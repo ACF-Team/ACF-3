@@ -4,6 +4,5 @@ ENT.PrintName     	= "ACF Turret Drive"
 ENT.WireDebugName 	= "ACF Turret Drive"
 ENT.PluralName    	= "ACF Turret Drives"
 ENT.IsACFTurret		= true
-ENT.CFW_NO_FAMILY_TRAVERSAL = true
 
 cleanup.Register("acf_turret")
