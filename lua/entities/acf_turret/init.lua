@@ -46,9 +46,6 @@ end
 
 -- Some locals for entity functions that are stored as locals to avoid expensive
 -- __index operations in think hooks. They are still available for convenience.
-local ENT_CheckCoM
-local ENT_GetTotalMass
-local ENT_GetTurretMassCenter
 local ENT_UpdateTurretSlew
 
 do	-- Spawn and Update funcs
@@ -299,7 +296,6 @@ do	-- Spawn and Update funcs
 
 		Entity.DataStore		= Entities.GetArguments("acf_turret")
 		Entity.MassCheckDelay 	= 0
-		Entity.CoMCheckDelay	= 0
 		Entity.ScaledArmor		= 0
 		Entity.HandGear			= Class.HandGear
 		Entity.Disconnect		= false
@@ -361,7 +357,7 @@ do	-- Spawn and Update funcs
 
 		HookRun("ACF_OnUpdateEntity", "acf_turret", self, Data, Class, Turret)
 
-		self:UpdateTurretMass()
+		self:UpdateTurretMassAndCOM()
 
 		return true, "Turret updated successfully!"
 	end
@@ -467,30 +463,10 @@ do	-- Spawn and Update funcs
 	end
 	ENT.UpdateTurretSlew = ENT_UpdateTurretSlew
 
-	--- Recursively calculates the total mass of the turret and its subturrets
-	--- Returns the total mass.
-	local function GetTurretTreeMass(Entity, Seen)
-		if not IsValid(Entity) then return 0 end
-
-		Seen = Seen or {}
-		if Seen[Entity] then return 0 end
-		Seen[Entity] = true
-
-		local Family = ENTITY.GetFamily(Entity)
-		local Mass = (Family and Family:GetMass()) or 0
-		for Child in pairs(Entity.SubTurrets) do
-			Mass = Mass + GetTurretTreeMass(Child, Seen)
-		end
-
-		return Mass
-	end
-
-	local function GetTurretTreeMassPos(Entity, Seen)
+	--- Recursively calculates the total mass and mass-weighted position (local to Entity's rotator)
+	--- of the turret and its subturrets in one pass (deriving the position requires the mass anyway).
+	local function GetTurretMassPosRecursive(Entity, Seen)
 		if not IsValid(Entity) then return Vector(), 0 end
-
-		Seen = Seen or {}
-		if Seen[Entity] then return Vector(), 0 end
-		Seen[Entity] = true
 
 		local Family    = ENTITY.GetFamily(Entity)
 		local FamMass   = Family and Family:GetMass() or 0
@@ -498,75 +474,24 @@ do	-- Spawn and Update funcs
 		local MassPos   = Vector()
 		local TotalMass = FamMass
 
-		if FamMass > 0 then
-			local FamCoM = Family:GetCenterOfMass()
-			MassPos      = Rotator:WorldToLocal(FamCoM) * FamMass
-		end
+		local FamCoM = Family:GetCenterOfMass()
+		MassPos      = Rotator:WorldToLocal(FamCoM) * FamMass
 
 		for Child in pairs(Entity.SubTurrets) do
 			if not IsValid(Child) then continue end
-			local ChildMassPos, ChildMass = GetTurretTreeMassPos(Child, Seen)
-			if ChildMass > 0 then
-				local ChildCoM = (Child.Rotator or Child):LocalToWorld(ChildMassPos / ChildMass)
-				MassPos   = MassPos + Rotator:WorldToLocal(ChildCoM) * ChildMass
-				TotalMass = TotalMass + ChildMass
-			end
+			local ChildMassPos, ChildMass = GetTurretMassPosRecursive(Child, Seen)
+			local ChildCoM = (Child.Rotator or Child):LocalToWorld(ChildMassPos / ChildMass)
+			MassPos   = MassPos + Rotator:WorldToLocal(ChildCoM) * ChildMass
+			TotalMass = TotalMass + ChildMass
 		end
 
 		return MassPos, TotalMass
 	end
 
-	function ENT_GetTotalMass(self, SelfTbl)
-		if not IsValid(self) then return 0 end
-
-		SelfTbl = SelfTbl or ENTITY.GetTable(self)
-
-		local TreeMass = GetTurretTreeMass(self)
-		local OwnMass = (SelfTbl.ACF and SelfTbl.ACF.Mass) or 0
-
-		SelfTbl.TurretData.TotalMass = math_max(0, TreeMass - OwnMass)
-
-		WireLib.TriggerOutput(self, "Mass", SelfTbl.TurretData.TotalMass)
-
-		return SelfTbl.TurretData.TotalMass
-	end
-	ENT.GetTotalMass = ENT_GetTotalMass
-
-	function ENT_GetTurretMassCenter(self, SelfTbl) -- Returns a local vector of the center of all of the mass on the turret component, from the rotator
-		SelfTbl = SelfTbl or ENTITY.GetTable(self)
-
-		local MassPos, TreeMass = GetTurretTreeMassPos(self)
-		SelfTbl.TurretData.LocalCoM = TreeMass > 0 and (MassPos / TreeMass) or Vector()
-
-		self:UpdateOverlay()
-		return SelfTbl.TurretData.LocalCoM
-	end
-	ENT.GetTurretMassCenter = ENT_GetTurretMassCenter
-
-	function ENT_CheckCoM(self, Force, SelfTbl)
-		SelfTbl	= SelfTbl or ENTITY.GetTable(self)
-
-		if (Force == false) and (Clock.CurTime < SelfTbl.CoMCheckDelay) then return end
-		SelfTbl.CoMCheckDelay = Clock.CurTime + 2 + math.Rand(1, 2)
-
-		if SelfTbl.ACF_TurretAncestor then
-			SelfTbl.Complexity = (SelfTbl.Complexity or 1) * (SelfTbl.ACF_TurretAncestor.Complexity or 1)
-		end
-
-		local MassPos, TreeMass = GetTurretTreeMassPos(self)
-		local OwnMass = (SelfTbl.ACF and SelfTbl.ACF.Mass) or 0
-
-		SelfTbl.TurretData.TotalMass = math_max(0, TreeMass - OwnMass)
-		SelfTbl.TurretData.LocalCoM  = TreeMass > 0 and (MassPos / TreeMass) or Vector()
-
-		WireLib.TriggerOutput(self, "Mass", SelfTbl.TurretData.TotalMass)
-
-		ENT_UpdateTurretSlew(self, SelfTbl)
-		self:UpdateOverlay()
-	end
-	ENT.CheckCoM = ENT_CheckCoM
-
-	function ENT:UpdateTurretMass(Force) -- Will call the other parts above, this should be triggered after a parent (safe to call multiple times e.g. on dupe paste, as it has an internal delay to prevent spamming)
+	--- Recomputes the turret's total mass, CoM, and slew rate, then propagates to its ancestor.
+	--- Should be triggered after a parent change; safe to call multiple times (e.g. on dupe paste)
+	--- as it's debounced by MassCheckDelay, with the actual recompute deferred and batched via timer.
+	function ENT:UpdateTurretMassAndCOM(Force)
 		local SelfTbl = ENTITY.GetTable(self)
 		if (Force == false) and (Clock.CurTime < SelfTbl.MassCheckDelay) then return end
 
@@ -577,11 +502,22 @@ do	-- Spawn and Update funcs
 			SelfTbl = ENTITY.GetTable(self)
 
 			if IsValid(SelfTbl.ACF_TurretAncestor) then
-				SelfTbl.ACF_TurretAncestor:UpdateTurretMass(true)
+				local Ancestor = SelfTbl.ACF_TurretAncestor
+
+				Ancestor:UpdateTurretMassAndCOM(true)
+
+				SelfTbl.Complexity = (SelfTbl.Complexity or 1) * (Ancestor.Complexity or 1)
 			end
 
-			ENT_CheckCoM(self, Force, SelfTbl)
+			local MassPos, TreeMass = GetTurretMassPosRecursive(self)
+			local OwnMass = (SelfTbl.ACF and SelfTbl.ACF.Mass) or 0
 
+			SelfTbl.TurretData.TotalMass = math_max(0, TreeMass - OwnMass) -- Exclude the turret's own mass...
+			SelfTbl.TurretData.LocalCoM  = TreeMass > 0 and (MassPos / TreeMass) or Vector()
+
+			WireLib.TriggerOutput(self, "Mass", SelfTbl.TurretData.TotalMass)
+
+			ENT_UpdateTurretSlew(self, SelfTbl)
 			self:UpdateOverlay()
 		end)
 	end
@@ -806,7 +742,7 @@ do -- Metamethods
 				return true
 			end
 
-			ENT_CheckCoM(self, false, SelfTbl)
+			self:UpdateTurretMassAndCOM(false)
 			local Tick		= Clock.DeltaTime
 			local Rotator	= SelfTbl.Rotator
 			if not IsValid(Rotator) then ENTITY.Remove(self) return end
@@ -1050,7 +986,7 @@ do -- Metamethods
 
 			if Class == "acf_turret_rotator" then return end
 
-			self:UpdateTurretMass(false)
+			self:UpdateTurretMassAndCOM(false)
 
 			-- Should only be called when parenting, checks the position of the motor relative to the ring
 			-- Shooouuld be using CFW_OnParented as it was made with this in mind, but turret entities will overwrite it with the above function to ensure everything is captured
