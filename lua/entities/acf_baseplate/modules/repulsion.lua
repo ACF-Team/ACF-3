@@ -7,6 +7,29 @@ local ENTITY          = FindMetaTable("Entity")
 local VECTOR          = FindMetaTable("Vector")
 local PHYSOBJ         = FindMetaTable("PhysObj")
 
+-- Bounding sphere enclosing the family of a baseplate.
+-- Rate limitted for optimization.
+local function GetFamilyBoundingSphere(Ent, EntTable)
+	if Clock.CurTime < (EntTable.FamilyBoundsDelay or 0) then return EntTable.FamilyBoundsPos, EntTable.FamilyBoundsRadius end
+
+	EntTable.FamilyBoundsDelay  = Clock.CurTime + 3 + math.Rand(-1, 1)
+
+	-- I don't know why family isn't valid sometimes... oh well.
+	local Family = Ent:GetFamily()
+	if not Family then return EntTable.FamilyBoundsPos, EntTable.FamilyBoundsRadius end
+
+	local Verts = Family:GetOBB()
+	local MinCorner, MaxCorner = Verts[1], Verts[8]
+
+	local Pos    = (MinCorner + MaxCorner) * 0.5
+	local Radius = VECTOR.Distance(MinCorner, MaxCorner) * 0.5
+
+	EntTable.FamilyBoundsPos    = Pos
+	EntTable.FamilyBoundsRadius = Radius
+
+	return Pos, Radius
+end
+
 local function GetBaseplateProperties(Ent, Self, SelfPos, SelfRadius)
 	if Ent == Self then return false end
 
@@ -19,11 +42,7 @@ local function GetBaseplateProperties(Ent, Self, SelfPos, SelfRadius)
 	if not IsPhysObjValid(Physics) then return false end
 
 	local EntTable  = ENTITY.GetTable(Ent)
-
-	local EntX, EntY = VECTOR.Unpack(EntTable.Size)
-
-	local Pos         = PHYSOBJ.GetPos(Physics)
-	local Radius      = math.sqrt((EntX / 2) ^ 2 + (EntY / 2) ^ 2)
+	local Pos, Radius = GetFamilyBoundingSphere(Ent, EntTable)
 
 	if Self and not util.IsSphereIntersectingSphere(SelfPos, SelfRadius, Pos, Radius) then
 		return false
