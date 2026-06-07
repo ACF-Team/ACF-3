@@ -156,26 +156,6 @@ do	-- Spawn and Update funcs
 		Entity.DesiredVector = Vector()
 		Entity.DesiredDeg	= 0
 
-		-- Any turrets that happen to get parented to this one, either directly or indirectly
-		-- Mass calculation will stop at this, and instead read whatever that turret has calculated
-		Entity.SubTurrets		= {}
-
-		-- Anything else deemed dynamic when it comes to mass (e.g. ammo, racks, fuel (for whatever reason))
-		Entity.DynamicEntities	= {}
-
-		-- Three different mass types to track, all checked differently
-		--[[
-			Static is updated only when parenting is updated, or a mass change function is called, and after a delay (not indefinite)
-			Dynamic is from any entities deemed able to change mass at will (ammo, racks, fuel)
-			SubTurret is from any turret components parented to this one, and will simply used whatever was calculated already
-		]]
-		Entity.StaticMass		= 0
-		Entity.StaticCoM		= Vector()
-		Entity.DynamicMass		= 0
-		Entity.DynamicCoM		= Vector()
-		Entity.SubTurretMass	= 0
-		Entity.SubTurretCoM		= Vector()
-
 		Entity.Active			= false
 		Entity.SlewRate			= 0 -- Rotation rate
 		Entity.Stabilized		= false
@@ -199,6 +179,8 @@ do	-- Spawn and Update funcs
 		Entity.MotorGearRatio	= 1
 		Entity.EffortScale		= 1
 		Entity.Complexity		= 1
+
+		-- Mass is resolved from family.totalMass and recursive sub-turret traversal.
 
 		local MaxSpeed	= Data.MaxSpeed or 0
 		Entity.SpeedLimited		= MaxSpeed > 0
@@ -307,6 +289,7 @@ do	-- Spawn and Update funcs
 		end
 
 		Entity.ACF				= {}
+		Entity.SubTurrets 		= {}
 
 		Contraption.SetModel(Entity, Model)
 
@@ -399,183 +382,6 @@ do	-- Spawn and Update funcs
 
 	------------------
 
-	-- Entity types that can have a different mass from time to time
-	-- Need to hook into SetMass specifically for these so it can do a simple update for the turret
-	local DynamicMassTypes = {
-		acf_ammo		= true,
-		acf_rack		= true,
-		acf_fueltank	= true
-	}
-
-	local function GetFilteredChildren(Entity, Pass, FilterClass) -- Specialized for this use case, this will stop at any subturrets found, but still include them
-		local List = Pass or {}
-
-		if Entity.Rotator then Entity = Entity.Rotator end
-
-		for _, V in pairs(Entity:GetChildren()) do
-			if not IsValid(V) or List[V] then continue end
-
-			local Parent = V:GetParent()
-			if Parent == NULL then continue end -- somehow this shit is still a problem
-
-			List[V] = V
-
-			if V:GetClass() == FilterClass then continue end
-
-			GetFilteredChildren(V, List, FilterClass)
-		end
-
-		return List
-	end
-
-	local function Proxy_ACF_OnParent(self, _, _)
-		local SelfTbl = ENTITY.GetTable(self)
-		if (not IsValid(SelfTbl.ACF_TurretAncestor)) or (not Contraption.HasAncestor(self, SelfTbl.ACF_TurretAncestor)) then self.CFW_OnParented = nil SelfTbl.ACF_TurretAncestor = nil return end
-
-		SelfTbl.ACF_TurretAncestor:UpdateTurretMass(false)
-	end
-
-	local function Proxy_ACF_OnMassChange(self)
-		local SelfTbl = ENTITY.GetTable(self)
-		if (not IsValid(SelfTbl.ACF_TurretAncestor)) or (not Contraption.HasAncestor(self, SelfTbl.ACF_TurretAncestor)) then self.ACF_OnMassChange = nil SelfTbl.ACF_TurretAncestor = nil return end
-
-		SelfTbl.ACF_TurretAncestor:UpdateTurretMass(false)
-	end
-
-	local function ParentLink(Turret, Entity, Connect)
-		if Connect then
-			Entity.CFW_OnParented		= Proxy_ACF_OnParent
-			Entity.ACF_OnMassChange		= Proxy_ACF_OnMassChange
-			Entity.ACF_TurretAncestor	= Turret
-		else
-			Entity.CFW_OnParented		= nil
-			Entity.ACF_OnMassChange		= nil
-			Entity.ACF_TurretAncestor	= nil
-		end
-
-		if IsValid(Turret) then
-			Turret:InvalidateClientInfo()
-		end
-	end
-
-	local function BuildWatchlist(Entity) -- Potentially hot and heavy, should only be triggered after a (maximum) delay to catch large changes and not every single new entity
-		if not IsValid(Entity) then return end
-
-		local PhysObj = Entity.ACF.PhysObj
-		if not IsValid(PhysObj) then return end
-
-		local Mass = 0
-		local CoM = Vector()
-		local AddCoM = {}
-
-		Entity.DynamicEntities	= {}
-		Entity.SubTurrets		= {}
-
-		local ChildList = GetFilteredChildren(Entity, {}, "acf_turret")
-
-		for k in pairs(ChildList) do
-			local Class = k:GetClass()
-
-			k.ACF_TurretAncestor = nil
-			if Class == "acf_turret" then
-				Entity.SubTurrets[k] = true
-
-				k.ACF_TurretAncestor = Entity
-			elseif DynamicMassTypes[Class] then
-				Entity.DynamicEntities[k] = true
-
-				ParentLink(Entity, k, true)
-			else
-				if not ACF.Check(k) then continue end
-				ParentLink(Entity, k, true)
-
-				if Class == "acf_turret_motor" then k:ValidatePlacement() end
-
-				local PO = k:GetPhysicsObject()
-				if not IsValid(PO) then continue end
-
-				Mass = Mass + PO:GetMass()
-				AddCoM[k] = PO
-			end
-		end
-
-		Entity.StaticMass = Mass
-
-		local Rotator = Entity.Rotator
-		for Ent, PhysObj in pairs(AddCoM) do
-			local Shift = Rotator:WorldToLocal(Ent:LocalToWorld(PhysObj:GetMassCenter())) * (PhysObj:GetMass() / Mass)
-			CoM = CoM + Shift
-		end
-
-		Entity.StaticCoM = CoM
-	end
-
-	local function GetDynamicMass(Entity) -- Returns mass center (local to rotator) and amount from all "dynamic" entities, should be triggered after a resettable delay (only delayable by so long) in order to reduce spammed calls
-		if not IsValid(Entity) then return end
-
-		if next(Entity.DynamicEntities) == nil then return Vector(), 0 end -- Early stop if empty
-
-		local Mass = 0
-		local CoM = Vector()
-		local AddCoM = {}
-
-		for k in pairs(Entity.DynamicEntities) do
-			if not IsValid(k) then continue end
-			local PO = k:GetPhysicsObject()
-			if not IsValid(PO) then continue end
-
-			Mass = Mass + PO:GetMass()
-			AddCoM[k] = PO
-		end
-
-		Entity.DynamicMass = Mass
-
-		local Rotator = Entity.Rotator
-		for Ent, PhysObj in pairs(AddCoM) do
-			local Shift = Rotator:WorldToLocal(Ent:LocalToWorld(PhysObj:GetMassCenter())) * (PhysObj:GetMass() / Mass)
-			CoM = CoM + Shift
-		end
-
-		Entity.DynamicCoM = CoM
-
-		return CoM, Mass
-	end
-
-	local function GetSubTurretMass(Entity) -- Returns mass center (local to rotator) and amount from all subturrets
-		if not IsValid(Entity) then return end
-
-		Entity.Complexity = 1
-
-		if next(Entity.SubTurrets) == nil then return Vector(), 0 end
-
-		local Mass = 0
-		local CoM = Vector()
-		local AddCoM = {}
-
-		for k in pairs(Entity.SubTurrets) do
-			if not IsValid(k) then continue end
-
-			if (k.Turret == Entity.Turret) and (k.TurretData.RingSize > (Entity.TurretData.RingSize * 0.5)) then
-				Entity.Complexity = Entity.Complexity * math_Clamp(((Entity.TurretData.RingSize * 0.5) / k.TurretData.RingSize) ^ 2, 0, 1)
-			end
-
-			Mass = Mass + k:GetTotalMass() + k.ACF.Mass
-			AddCoM[k] = true
-		end
-
-		Entity.SubTurretMass = Mass
-
-		local Rotator = Entity.Rotator
-		for Turret in pairs(AddCoM) do
-			local Shift = Rotator:WorldToLocal(Turret.Rotator:LocalToWorld(Turret:GetTurretMassCenter())) * (Turret.TurretData.TotalMass / Mass)
-			CoM = CoM + Shift
-		end
-
-		Entity.SubTurretCoM = CoM
-
-		return CoM, Mass
-	end
-
 	function ENT:UpdateSound()
 		local SelfTbl = ENTITY.GetTable(self)
 
@@ -661,15 +467,64 @@ do	-- Spawn and Update funcs
 	end
 	ENT.UpdateTurretSlew = ENT_UpdateTurretSlew
 
-	function ENT_GetTotalMass(self, SelfTbl) -- Sum of all of the mass mounted on the turret, plus the turret component itself
+	--- Recursively calculates the total mass of the turret and its subturrets
+	--- Returns the total mass.
+	local function GetTurretTreeMass(Entity, Seen)
+		if not IsValid(Entity) then return 0 end
+
+		Seen = Seen or {}
+		if Seen[Entity] then return 0 end
+		Seen[Entity] = true
+
+		local Family = ENTITY.GetFamily(Entity)
+		local Mass = (Family and Family.totalMass) or 0
+		for Child in pairs(Entity.SubTurrets) do
+			Mass = Mass + GetTurretTreeMass(Child, Seen)
+		end
+
+		return Mass
+	end
+
+	local function GetTurretTreeMassPos(Entity, Seen)
+		if not IsValid(Entity) then return Vector(), 0 end
+
+		Seen = Seen or {}
+		if Seen[Entity] then return Vector(), 0 end
+		Seen[Entity] = true
+
+		local Family    = ENTITY.GetFamily(Entity)
+		local FamMass   = Family and Family.totalMass or 0
+		local Rotator   = Entity.Rotator or Entity
+		local MassPos   = Vector()
+		local TotalMass = FamMass
+
+		if FamMass > 0 and Family and IsValid(Family.ancestor) then
+			local FamCoM = Family.ancestor:LocalToWorld(Family.massPos / FamMass)
+			MassPos      = Rotator:WorldToLocal(FamCoM) * FamMass
+		end
+
+		for Child in pairs(Entity.SubTurrets) do
+			if not IsValid(Child) then continue end
+			local ChildMassPos, ChildMass = GetTurretTreeMassPos(Child, Seen)
+			if ChildMass > 0 then
+				local ChildCoM = (Child.Rotator or Child):LocalToWorld(ChildMassPos / ChildMass)
+				MassPos   = MassPos + Rotator:WorldToLocal(ChildCoM) * ChildMass
+				TotalMass = TotalMass + ChildMass
+			end
+		end
+
+		return MassPos, TotalMass
+	end
+
+	function ENT_GetTotalMass(self, SelfTbl)
 		if not IsValid(self) then return 0 end
 
 		SelfTbl = SelfTbl or ENTITY.GetTable(self)
 
-		local PhysObj = ENTITY.GetPhysicsObject(self)
-		if not IsValid(PhysObj) then return 0 end
+		local TreeMass = GetTurretTreeMass(self)
+		local OwnMass = (SelfTbl.ACF and SelfTbl.ACF.Mass) or 0
 
-		SelfTbl.TurretData.TotalMass = SelfTbl.StaticMass + SelfTbl.DynamicMass + SelfTbl.SubTurretMass
+		SelfTbl.TurretData.TotalMass = math_max(0, TreeMass - OwnMass)
 
 		WireLib.TriggerOutput(self, "Mass", SelfTbl.TurretData.TotalMass)
 
@@ -680,12 +535,8 @@ do	-- Spawn and Update funcs
 	function ENT_GetTurretMassCenter(self, SelfTbl) -- Returns a local vector of the center of all of the mass on the turret component, from the rotator
 		SelfTbl = SelfTbl or ENTITY.GetTable(self)
 
-		local PhysObj = ENTITY.GetPhysicsObject(self)
-		if not IsValid(PhysObj) then return Vector() end
-
-		local MassTotal = ENT_GetTotalMass(self, SelfTbl) + SelfTbl.ACF.Mass
-
-		SelfTbl.TurretData.LocalCoM = (PhysObj:GetMassCenter() * (SelfTbl.ACF.Mass / MassTotal)) + (SelfTbl.StaticCoM * (SelfTbl.StaticMass / MassTotal)) + (SelfTbl.DynamicCoM * (SelfTbl.DynamicMass / MassTotal)) + (SelfTbl.SubTurretCoM * (SelfTbl.SubTurretMass / MassTotal))
+		local MassPos, TreeMass = GetTurretTreeMassPos(self)
+		SelfTbl.TurretData.LocalCoM = TreeMass > 0 and (MassPos / TreeMass) or Vector()
 
 		self:UpdateOverlay()
 		return SelfTbl.TurretData.LocalCoM
@@ -698,15 +549,17 @@ do	-- Spawn and Update funcs
 		if (Force == false) and (Clock.CurTime < SelfTbl.CoMCheckDelay) then return end
 		SelfTbl.CoMCheckDelay = Clock.CurTime + 2 + math.Rand(1, 2)
 
-		GetDynamicMass(self)
-		GetSubTurretMass(self)
-
 		if SelfTbl.ACF_TurretAncestor then
 			SelfTbl.Complexity = (SelfTbl.Complexity or 1) * (SelfTbl.ACF_TurretAncestor.Complexity or 1)
 		end
 
-		ENT_GetTotalMass(self, SelfTbl)
-		ENT_GetTurretMassCenter(self, SelfTbl)
+		local MassPos, TreeMass = GetTurretTreeMassPos(self)
+		local OwnMass = (SelfTbl.ACF and SelfTbl.ACF.Mass) or 0
+
+		SelfTbl.TurretData.TotalMass = math_max(0, TreeMass - OwnMass)
+		SelfTbl.TurretData.LocalCoM  = TreeMass > 0 and (MassPos / TreeMass) or Vector()
+
+		WireLib.TriggerOutput(self, "Mass", SelfTbl.TurretData.TotalMass)
 
 		ENT_UpdateTurretSlew(self, SelfTbl)
 		self:UpdateOverlay()
@@ -727,7 +580,6 @@ do	-- Spawn and Update funcs
 				SelfTbl.ACF_TurretAncestor:UpdateTurretMass(true)
 			end
 
-			BuildWatchlist(self)
 			ENT_CheckCoM(self, Force, SelfTbl)
 
 			self:UpdateOverlay()
@@ -1192,7 +1044,7 @@ do -- Metamethods
 			self:UpdateOverlay()
 		end
 
-		function ENT:CFW_OnParented(Entity, _) -- Potentially called many times a second, so we won't force mass to update
+		function ENT:CFW_OnParented(Entity, Parenting) -- Potentially called many times a second, so we won't force mass to update
 			local SelfTbl = ENTITY.GetTable(self)
 			local Class   = ENTITY.GetClass(self)
 
@@ -1204,6 +1056,7 @@ do -- Metamethods
 			-- Shooouuld be using CFW_OnParented as it was made with this in mind, but turret entities will overwrite it with the above function to ensure everything is captured
 			if Class == "acf_turret_motor" then Entity:ValidatePlacement() end
 			if IsValid(SelfTbl.Motor) then SelfTbl.Motor:ValidatePlacement() end
+			if Entity.IsACFTurret then self.SubTurrets[Entity] = Parenting and true or nil end -- Note: will contain null entities because removes don't call CFW's deparent :(
 		end
 
 		function ENT:GetCost()
