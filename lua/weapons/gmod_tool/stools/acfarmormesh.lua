@@ -10,7 +10,6 @@ The basic controller functions were modified from Prop To Mesh ()
 --]]
 
 local ACF = ACF
-local Contraption	= ACF.Contraption
 local Entities   = ACF.Classes.Entities
 local ProcArmorTypes = ACF.Classes.ProcArmorTypes
 local Messages   = ACF.Utilities.Messages
@@ -122,14 +121,6 @@ if CLIENT then
 		CreateMenu(ACF.ArmorMenu.Panel)
 	end)
 
-	local TextGray = Color(224, 224, 255)
-	local BGGray = Color(200, 200, 200)
-	local Blue = Color(50, 200, 200)
-	local Red = Color(200, 50, 50)
-	local Green = Color(50, 200, 50)
-	local Black = Color(0, 0, 0)
-	local drawText = draw.SimpleTextOutlined
-
 	surface.CreateFont("ACF_ToolTitle", {
 		font = "Arial",
 		size = 32
@@ -236,7 +227,7 @@ elseif SERVER then -- Serverside-only stuff
 
 		print("Compiling mesh for controller ", self.controller.ent)
 		print("Selected entities:")
-		PrintTable(self.selection)
+		PrintTable(table.GetKeys(self.selection))
 
 		self:UnSetController()
 	end

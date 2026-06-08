@@ -15,7 +15,7 @@ properties.Add("armorcontroller", {
 	Order         = 300001,
 	MenuIcon      = "icon16/brick_edit.png",
 
-	Filter = function(self, ent, pl)
+	Filter = function(_, ent, pl)
 		if not IsValid(ent) then return false end
 		if not gamemode.Call("CanProperty", pl, "acf_armor_controller", ent) then return false end
 		return ent.IsACFArmorController or false
@@ -27,11 +27,11 @@ properties.Add("armorcontroller", {
 		self:MsgEnd()
 	end,
 
-	Receive = function(self, length, ply) -- The action to perform upon using the property ( Serverside )
+	Receive = function(self, _, ply) -- The action to perform upon using the property ( Serverside )
 		local ent = net.ReadEntity()
 
-		if ( !properties.CanBeTargeted( ent, ply ) ) then return end
-		if ( !self:Filter( ent, ply ) ) then return end
+		if ( not properties.CanBeTargeted( ent, ply ) ) then return end
+		if ( not self:Filter( ent, ply ) ) then return end
 
 		print("test")
 	end
