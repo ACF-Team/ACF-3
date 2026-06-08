@@ -378,7 +378,7 @@ do -- Terminal ballistics --------------------------
 			Ricochet, HitRes.Loss = Ballistics.CalculateRicochet(Bullet, Trace)
 		end
 
-		if (HitRes.Kill or HitRes.Overkill > 0) and not Bullet.IsSpall and not Bullet.IsCookOff then
+		if (HitRes.Kill or (HitRes.Overkill and HitRes.Overkill > 0)) and not Bullet.IsSpall and not Bullet.IsCookOff then
 			-- Penetrated or killed plate
 			Ballistics.DoSpall(Bullet, Trace, HitRes, Bullet.Flight:Length())
 		end
