@@ -573,7 +573,7 @@ do -- Spawn/Update/Remove
 		self.EmptyMass = Mass
 	end
 
-	Entities.Register("acf_ammo", ACF.MakeAmmo, "Weapon", "Caliber", "AmmoType", "AmmoShape", "Size", "AmmoStage", "CrateProjectilesX", "CrateProjectilesY", "CrateProjectilesZ")
+	Entities.LegacyRegister("acf_ammo", ACF.MakeAmmo, "Weapon", "Caliber", "AmmoType", "AmmoShape", "Size", "AmmoStage", "CrateProjectilesX", "CrateProjectilesY", "CrateProjectilesZ")
 
 	ACF.RegisterLinkSource("acf_ammo", "Weapons")
 end

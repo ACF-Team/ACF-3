@@ -417,7 +417,7 @@ do -- Spawn and Update functions
 		return Entity
 	end
 
-	Entities.Register("acf_engine", ACF.MakeEngine, "Engine")
+	Entities.LegacyRegister("acf_engine", ACF.MakeEngine, "Engine")
 
 	ACF.RegisterLinkSource("acf_engine", "FuelTanks")
 	ACF.RegisterLinkSource("acf_engine", "Gearboxes")

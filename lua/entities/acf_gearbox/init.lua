@@ -401,7 +401,7 @@ do -- Spawn and Update functions -----------------------
 		return Entity
 	end
 
-	Entities.Register("acf_gearbox", ACF.MakeGearbox, "Gearbox", "Gears", "FinalDrive", "ShiftPoints", "Reverse", "MinRPM", "MaxRPM", "GearAmount", "GearboxScale", "GearboxLegacyRatio", "DualClutch")
+	Entities.LegacyRegister("acf_gearbox", ACF.MakeGearbox, "Gearbox", "Gears", "FinalDrive", "ShiftPoints", "Reverse", "MinRPM", "MaxRPM", "GearAmount", "GearboxScale", "GearboxLegacyRatio", "DualClutch")
 
 	ACF.RegisterLinkSource("acf_gearbox", "GearboxIn")
 	ACF.RegisterLinkSource("acf_gearbox", "GearboxOut")

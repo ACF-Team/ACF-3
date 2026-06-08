@@ -347,7 +347,7 @@ do	-- Spawn and Update funcs
 		return Entity
 	end
 
-	Entities.Register("acf_turret", ACF.MakeTurret, "Turret", "RingSize", "MinDeg", "MaxDeg", "MaxSpeed")
+	Entities.LegacyRegister("acf_turret", ACF.MakeTurret, "Turret", "RingSize", "MinDeg", "MaxDeg", "MaxSpeed")
 
 	function ENT:Update(Data)
 		VerifyData(Data)

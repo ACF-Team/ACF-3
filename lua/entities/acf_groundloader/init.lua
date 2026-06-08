@@ -254,4 +254,4 @@ end
 
 function ENT:GetCost() return 15 end
 
-Entities.Register()
+Entities.AutoRegisterV1()

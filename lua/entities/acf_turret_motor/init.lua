@@ -134,7 +134,7 @@ do	-- Spawn and Update funcs
 		return Entity
 	end
 
-	Entities.Register("acf_turret_motor", ACF.MakeTurretMotor, "Motor", "CompSize", "Teeth")
+	Entities.LegacyRegister("acf_turret_motor", ACF.MakeTurretMotor, "Motor", "CompSize", "Teeth")
 
 	function ENT:Update(Data)
 		VerifyData(Data)

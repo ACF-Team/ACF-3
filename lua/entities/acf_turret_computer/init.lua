@@ -127,7 +127,7 @@ do	-- Spawn and Update funcs
 		return Entity
 	end
 
-	Entities.Register("acf_turret_computer", ACF.MakeBallisticComputer, "Computer")
+	Entities.LegacyRegister("acf_turret_computer", ACF.MakeBallisticComputer, "Computer")
 
 	function ENT:Update(Data)
 		VerifyData(Data)

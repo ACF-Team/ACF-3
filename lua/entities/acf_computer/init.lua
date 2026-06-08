@@ -238,8 +238,8 @@ do -- Spawn and update function
 		return Entity
 	end
 
-	Entities.Register("acf_opticalcomputer", ACF.MakeComputer, "Computer") -- Backwards compatibility
-	Entities.Register("acf_computer", ACF.MakeComputer, "Computer")
+	Entities.LegacyRegister("acf_opticalcomputer", ACF.MakeComputer, "Computer") -- Backwards compatibility
+	Entities.LegacyRegister("acf_computer", ACF.MakeComputer, "Computer")
 
 	ACF.RegisterLinkSource("acf_computer", "Weapons")
 

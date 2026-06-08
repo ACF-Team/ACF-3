@@ -1,6 +1,9 @@
 
 if CLIENT then return end
 
+local Classes    = ACF.Classes
+local Entities   = Classes.Entities
+
 do -- Spawning and updating
 	local undo = undo
 

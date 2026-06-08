@@ -532,7 +532,7 @@ do -- Spawn and Update functions --------------------------------
 		return Entity
 	end
 
-	Entities.Register("acf_gun", ACF.MakeWeapon, "Weapon", "Caliber", "BreechIndex")
+	Entities.LegacyRegister("acf_gun", ACF.MakeWeapon, "Weapon", "Caliber", "BreechIndex")
 
 	ACF.RegisterLinkSource("acf_gun", "Crates")
 

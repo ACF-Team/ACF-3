@@ -175,7 +175,7 @@ do
 	end
 
 	-- Bare minimum arguments to reconstruct an all-in-one controller
-	Entities.Register("acf_controller", ACF.MakeController)
+	Entities.LegacyRegister("acf_controller", ACF.MakeController)
 
 	function ENT:Update(Data)
 		-- Called when updating the entity

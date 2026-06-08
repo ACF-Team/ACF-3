@@ -1,7 +1,5 @@
---[[
-The purpose of this class is to define a class that represents an entity, storing its spawn function as well as registering the arguments attached to the entity with duplicators.
---]]
-
+local Classes    = ACF.Classes
+local Entities   = Classes.Entities
 
 local UserArgumentTypes = {}
 

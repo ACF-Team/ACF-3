@@ -147,13 +147,7 @@ end
 --- @param Class string The class to register
 --- @param Function fun(Player:entity, Pos:vector, Ang:angle, Data:table):Entity A function defining how to spawn your class (This should be your ACF.Make<something> function)
 --- @param ... any #A vararg of arguments to attach to the entity
-function Entities.Register(Class, Function, ...)
-    if Class == nil and Function == nil then
-        -- Calling Entities.Register with no arguments performs an automatic registration
-        Entities.AutoRegister(ENT)
-        return
-    end
-
+function Entities.LegacyRegister(Class, Function, ...)
     if not isstring(Class) then return end
     if not isfunction(Function) then return end
 

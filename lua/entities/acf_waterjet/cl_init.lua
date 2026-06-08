@@ -23,4 +23,4 @@ function ENT:Draw()
     BaseClass.Draw(self)
 end
 
-ACF.Classes.Entities.Register()
+ACF.Classes.Entities.AutoRegisterV1()

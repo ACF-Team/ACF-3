@@ -398,7 +398,7 @@ do -- Spawning and Updating --------------------
 		return Rack
 	end
 
-	Entities.Register("acf_rack", ACF.MakeRack, "Rack", "BreechIndex")
+	Entities.LegacyRegister("acf_rack", ACF.MakeRack, "Rack", "BreechIndex")
 
 	ACF.RegisterLinkSource("acf_rack", "Crates")
 	ACF.RegisterLinkSource("acf_rack", "Computer", true)

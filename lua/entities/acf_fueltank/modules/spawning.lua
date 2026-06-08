@@ -191,7 +191,7 @@ function ACF.MakeFuelTank(Player, Pos, Angle, Data)
 	return Tank
 end
 
-Entities.Register("acf_fueltank", ACF.MakeFuelTank, "FuelTank", "FuelType", "FuelShape", "FuelSizeX", "FuelSizeY", "FuelSizeZ", "Size")
+Entities.LegacyRegister("acf_fueltank", ACF.MakeFuelTank, "FuelTank", "FuelType", "FuelShape", "FuelSizeX", "FuelSizeY", "FuelSizeZ", "Size")
 
 ACF.RegisterLinkSource("acf_fueltank", "Engines")
 

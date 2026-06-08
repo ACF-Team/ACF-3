@@ -24,4 +24,4 @@ function ENT:DrawOverlay()
 	end
 end
 
-ACF.Classes.Entities.Register()
+ACF.Classes.Entities.AutoRegisterV1()

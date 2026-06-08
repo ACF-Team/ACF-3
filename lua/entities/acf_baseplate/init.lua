@@ -19,4 +19,4 @@ include("modules/spawning.lua")
 include("modules/state.lua")
 include("modules/autoright.lua")
 
-ACF.Classes.Entities.Register()
+ACF.Classes.Entities.AutoRegisterV1()

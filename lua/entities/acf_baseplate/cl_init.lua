@@ -186,4 +186,4 @@ function ENT:OnRemove()
     end
 end
 
-ACF.Classes.Entities.Register()
+ACF.Classes.Entities.AutoRegisterV1()
