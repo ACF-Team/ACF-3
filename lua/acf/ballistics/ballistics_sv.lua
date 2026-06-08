@@ -383,6 +383,11 @@ do -- Terminal ballistics --------------------------
 			Ballistics.DoSpall(Bullet, Trace, HitRes, Bullet.Flight:Length())
 		end
 
+		if HitRes.Loss == 1 then
+			-- If the there's more armor than penetration, the bullet ricochets
+			Ricochet, HitRes.Loss = Ballistics.CalculateRicochet(Bullet, Trace)
+		end
+
 		-- Transfer bullet momentum into target
 		if ACF.KEPush then
 			ACF.KEShove(
