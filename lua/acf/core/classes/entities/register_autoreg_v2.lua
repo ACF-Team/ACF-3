@@ -48,10 +48,11 @@ local function PrepareWiremodFunctions(ENT)
 end
 
 function ACF.AutoRegisterV2(DefineFields)
+    ENT.IsACFEntity = true
     ClassNameTrick(ENT)
     ClassFieldDefinitions(ENT, DefineFields)
 
-    local ExpectedClass = ACF.ClassName
+    local ExpectedClass = ENT.ACF_ClassName
 
     local Idx = "ACF.AutoRegister" .. SysTime()
     hook.Add("PreRegisterSENT", Idx, function(ENT, Class)
