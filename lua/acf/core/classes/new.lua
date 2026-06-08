@@ -54,10 +54,37 @@ do
         local function GetType() return NewClass end
         NewClass.GetType = GetType
 
+        -- Initialize Fields, inheriting from base class
+        NewClass.Fields = { List = {}, Lookup = {} }
+        if BaseClass and BaseClass.Fields then
+            for _, Field in ipairs(BaseClass.Fields.List) do
+                local Copy = table.Copy(Field)
+                table.insert(NewClass.Fields.List, Copy)
+                NewClass.Fields.Lookup[Field.Name] = Copy
+            end
+        end
+
         if NewClass.OnInit then
             local Environment = {}
             Environment.CLASS = NewClass
             Environment.BASE  = BaseClass
+
+            local function AddField(Menu, FieldType, Name, Options)
+                local Existing = NewClass.Fields.Lookup[Name]
+                if Existing then
+                    Existing.Type    = FieldType
+                    Existing.Options = Options or {}
+                    Existing.Menu    = Menu
+                else
+                    local Field = { Type = FieldType, Name = Name, Options = Options or {}, Menu = Menu }
+                    table.insert(NewClass.Fields.List, Field)
+                    NewClass.Fields.Lookup[Name] = Field
+                end
+            end
+
+            Environment.FIELD      = function(FieldType, Name, Options) AddField(false, FieldType, Name, Options) end
+            Environment.MENU_FIELD = function(FieldType, Name, Options) AddField(true,  FieldType, Name, Options) end
+
             setmetatable(Environment, {__index = _G})
             setfenv(NewClass.OnInit, Environment)
 
