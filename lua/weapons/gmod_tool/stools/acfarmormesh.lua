@@ -244,6 +244,20 @@ elseif SERVER then -- Serverside-only stuff
 			local Phys = Entity:GetPhysicsObject()
 			local Mesh = Phys and Phys:GetMeshConvexes()
 			if Mesh then
+				local MeshData = { Verts = {}, Tris = {} }
+				local Lookup = {}
+
+				local function GetIndex(Pos)
+					local Key = Pos.x .. " " .. Pos.y .. " " .. Pos.z
+					local Index = Lookup[Key]
+					if not Index then
+						MeshData.Verts[#MeshData.Verts + 1] = Pos
+						Index = #MeshData.Verts
+						Lookup[Key] = Index
+					end
+					return Index
+				end
+
 				for Index, Convex in ipairs(Mesh) do
 					local Col = HSVToColor((Index * 47) % 360, 1, 1)
 					Col.a = 150
@@ -253,9 +267,13 @@ elseif SERVER then -- Serverside-only stuff
 						local B = Phys:LocalToWorld(Convex[I + 1].pos)
 						local C = Phys:LocalToWorld(Convex[I + 2].pos)
 
+						MeshData.Tris[#MeshData.Tris + 1] = { GetIndex(A), GetIndex(B), GetIndex(C) }
+
 						debugoverlay.Triangle(A, B, C, 5, Col, true)
 					end
 				end
+
+				Entity.ACF_Armor_Mesh = MeshData
 			end
 		end
 		return true
