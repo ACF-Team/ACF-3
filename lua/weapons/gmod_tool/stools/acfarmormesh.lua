@@ -12,6 +12,7 @@ The basic controller functions were modified from Prop To Mesh ()
 local ACF = ACF
 local Contraption	= ACF.Contraption
 local Entities   = ACF.Classes.Entities
+local ProcArmorTypes = ACF.Classes.ProcArmorTypes
 local Messages   = ACF.Utilities.Messages
 local IsValid = IsValid
 
@@ -94,17 +95,15 @@ if CLIENT then
 		Menu:AddLabel("ACF Armor Mesh Tool")
 		Menu:AddLabel("This tool is used to create and edit ACF armor meshes.")
 
-		-- PLACEHOLDERS
 		local Materials = Menu:AddComboBox()
-		Materials:AddChoice("Rolled Homogenous Armor", 1)
-		Materials:AddChoice("Aluminum", 2)
-		Materials:AddChoice("Rubber", 3)
-		Materials:AddChoice("Textolite", 4)
-		Materials:AddChoice("Kevlar", 5)
-		Materials:AddChoice("Depleted Uranium", 6)
-		Materials:AddChoice("FY1", 7)
-		Materials:AddChoice("FY5", 8)
-		Materials:ChooseOptionID(1)
+		function Materials:OnSelect(Index, _, Data)
+			if self.Selected == Data then return end
+
+			self.ListData.Index = Index
+			self.Selected       = Data
+		end
+
+		ACF.LoadSortedList(Materials, ProcArmorTypes.GetEntries(), "Name")
 		Menu:AddHelp("#tool.acfarmormesh.material_desc")
 
 		local SphereRadius = Menu:AddSlider("#tool.acfarmormesh.sphere_search_radius", 0, 2000, 0)
