@@ -150,9 +150,9 @@ if CLIENT then
 	end
 
 	-- Toolgun beam will show even if nothing happens serverside. I don't wanna fix this :(...
-	function TOOL:LeftClick(Trace) return true end
-	function TOOL:RightClick(Trace) return true end
-	function TOOL:Reload(Trace) return true end
+	function TOOL:LeftClick(_) return true end
+	function TOOL:RightClick(_) return true end
+	function TOOL:Reload(_) return true end
 elseif SERVER then -- Serverside-only stuff
 	util.AddNetworkString("acf_mesh_selected") -- Currently selected mesh controller
 
@@ -253,7 +253,7 @@ elseif SERVER then -- Serverside-only stuff
 		return true
 	end
 
-	function TOOL:Reload(Trace)
+	function TOOL:Reload(_)
 		-- Deselect the controller
 		if self.controller then self:UnSetController() end
 		return true

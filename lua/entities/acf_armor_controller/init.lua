@@ -23,9 +23,8 @@ function ENT:ACF_PostMenuSpawn()
 	self:SetAngles(self:GetAngles() + Angle(0, 0, 0))
 end
 
-local Text = "%s"
-function ENT:UpdateOverlayText()
-	return Text:format("LOL")
+function ENT:ACF_UpdateOverlayState(State)
+	State:AddNumber("Test", 4)
 end
 
 ACF.Classes.Entities.Register()
