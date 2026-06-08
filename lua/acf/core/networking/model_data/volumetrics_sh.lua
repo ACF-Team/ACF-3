@@ -34,34 +34,25 @@ if SERVER then
         local Detours = ACF and ACF.Detours
         print("Loading ACF Volumetric Detours", Detours)
 
-        local PhysicsInit PhysicsInit = Detours.Metatable("Entity", "PhysicsInit", function(self, ...)
-            print("physicsinit", self)
-
-            return PhysicsInit(self, ...)
-        end)
-
+        -- Stuff like primitives reinitializing
         local PhysInitConvex_Orig PhysInitConvex_Orig = Detours.Metatable("Entity", "PhysicsInitConvex", function(self, Mesh, ...)
             print("physinitconvex", self, Mesh)
-
+            ACF.ProcessMesh(self, Mesh)
             return PhysInitConvex_Orig(self, Mesh, ...)
         end)
 
+        -- Stuff like primitives reinitializing
         local PhysInitMultiConvex_Orig PhysInitMultiConvex_Orig = Detours.Metatable("Entity", "PhysicsInitMultiConvex", function(self, Meshes, ...)
             print("physinitmulticonvex", self, Meshes)
-
+            ACF.ProcessMesh(self, Meshes)
             return PhysInitMultiConvex_Orig(self, Meshes, ...)
         end)
 
-        local PhysicsInitStatic_Orig PhysicsInitStatic_Orig = Detours.Metatable("Entity", "PhysicsInitStatic", function(self, ...)
-            print("physicsinitstatic", self)
-
-            return PhysicsInitStatic_Orig(self, ...)
-        end)
-
+        -- Everything in general
         hook.Add("OnEntityCreated", "ACF_Volumetric_Detours", function(ent)
             timer.Simple(0, function()
                 if IsValid(ent) and IsValid(ent:GetPhysicsObject()) then
-                    print("OnEntityCreated", ent, ent:GetPhysicsObject())
+                    ACF.ProcessMesh(ent, ent:GetPhysicsObject():GetMeshConvexes() or {})
                 end
             end)
         end)

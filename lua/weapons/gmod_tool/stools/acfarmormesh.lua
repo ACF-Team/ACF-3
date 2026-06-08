@@ -245,8 +245,6 @@ elseif SERVER then -- Serverside-only stuff
 			local Phys = Entity:GetPhysicsObject()
 			local Mesh = Phys and Phys:GetMeshConvexes()
 			if Mesh then
-				ACF.ProcessMesh(Entity, Mesh)
-
 				local MeshData = Entity.ACF_Volumetric_Mesh
 				local Verts = MeshData.Verts
 
