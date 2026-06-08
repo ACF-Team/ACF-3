@@ -24,9 +24,9 @@ if SERVER then
             MeshData.Convexes[#MeshData.Convexes + 1] = ConvexTris
 
             for I = 1, #Convex, 3 do
-                local A = Entity:LocalToWorld(Convex[I].pos)
-                local B = Entity:LocalToWorld(Convex[I + 1].pos)
-                local C = Entity:LocalToWorld(Convex[I + 2].pos)
+                local A = Convex[I].pos
+                local B = Convex[I + 1].pos
+                local C = Convex[I + 2].pos
 
                 ConvexTris[#ConvexTris + 1] = Vector(GetIndex(A), GetIndex(B), GetIndex(C))
             end
@@ -48,7 +48,7 @@ if SERVER then
 
         local PhysInitConvex_Orig PhysInitConvex_Orig = Detours.Metatable("Entity", "PhysicsInitConvex", function(self, Mesh, ...)
             timer.Simple(0, function()
-                print("PhysicsInitConvex", self, Mesh)
+                -- print("PhysicsInitConvex", self, Mesh)
                 ProcessEntity(self)
             end)
             return PhysInitConvex_Orig(self, Mesh, ...)
@@ -56,7 +56,7 @@ if SERVER then
 
         local PhysInitMultiConvex_Orig PhysInitMultiConvex_Orig = Detours.Metatable("Entity", "PhysicsInitMultiConvex", function(self, Meshes, ...)
             timer.Simple(0, function()
-                print("PhysicsInitMultiConvex", self, Meshes)
+                -- print("PhysicsInitMultiConvex", self, Meshes)
                 ProcessEntity(self)
             end)
             return PhysInitMultiConvex_Orig(self, Meshes, ...)
@@ -65,7 +65,7 @@ if SERVER then
         -- Everything in general
         hook.Add("OnEntityCreated", "ACF_Volumetric_Detours", function(ent)
             timer.Simple(0, function()
-                print("OnEntityCreated", ent)
+                -- print("OnEntityCreated", ent)
                 ProcessEntity(ent)
             end)
         end)

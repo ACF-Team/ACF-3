@@ -241,11 +241,8 @@ elseif SERVER then -- Serverside-only stuff
 				SpawnEntity(self, Trace)
 			end
 		else
-			-- Debug code for now to test convex visualization
-			local Phys = Entity:GetPhysicsObject()
-			local Mesh = Phys and Phys:GetMeshConvexes()
-			if Mesh then
-				local MeshData = Entity.ACF_Volumetric_Mesh
+			local MeshData = Entity.ACF_Volumetric_Mesh
+			if MeshData then
 				local Verts = MeshData.Verts
 
 				for Index, ConvexTris in ipairs(MeshData.Convexes) do
@@ -254,8 +251,11 @@ elseif SERVER then -- Serverside-only stuff
 
 					local AveragePos = Vector(0, 0, 0)
 					for _, Tri in ipairs(ConvexTris) do
-						debugoverlay.Triangle(Verts[Tri[1]], Verts[Tri[2]], Verts[Tri[3]], 5, Col, true)
-						AveragePos = AveragePos + (Verts[Tri[1]] + Verts[Tri[2]] + Verts[Tri[3]])
+						local A = Entity:LocalToWorld(Verts[Tri[1]])
+						local B = Entity:LocalToWorld(Verts[Tri[2]])
+						local C = Entity:LocalToWorld(Verts[Tri[3]])
+						debugoverlay.Triangle(A, B, C, 5, Col, true)
+						AveragePos = AveragePos + A + B + C
 					end
 					AveragePos = AveragePos / (3 * #ConvexTris)
 					debugoverlay.Text(AveragePos, tostring(Index), 5, Col, true)
