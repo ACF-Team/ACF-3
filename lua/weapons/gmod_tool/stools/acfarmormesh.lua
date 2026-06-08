@@ -262,6 +262,7 @@ elseif SERVER then -- Serverside-only stuff
 					local Col = HSVToColor((Index * 47) % 360, 1, 1)
 					Col.a = 150
 
+					local Average = Vector()
 					for I = 1, #Convex, 3 do
 						local A = Phys:LocalToWorld(Convex[I].pos)
 						local B = Phys:LocalToWorld(Convex[I + 1].pos)
@@ -270,7 +271,10 @@ elseif SERVER then -- Serverside-only stuff
 						MeshData.Tris[#MeshData.Tris + 1] = { GetIndex(A), GetIndex(B), GetIndex(C) }
 
 						debugoverlay.Triangle(A, B, C, 5, Col, true)
+						Average = Average + A + B + C
 					end
+					Average = Average / (#Convex / 3 * 3)
+					debugoverlay.Text(Average, Index, 5, Col, true)
 				end
 
 				Entity.ACF_Armor_Mesh = MeshData
