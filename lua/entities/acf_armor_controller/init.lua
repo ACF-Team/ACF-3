@@ -27,4 +27,8 @@ function ENT:ACF_UpdateOverlayState(State)
 	State:AddNumber("Test", 4)
 end
 
+function ENT:Compile(Entities)
+	print("Compiling controller with entities:")
+end
+
 ACF.Classes.Entities.Register()

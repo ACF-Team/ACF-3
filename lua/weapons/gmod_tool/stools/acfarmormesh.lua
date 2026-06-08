@@ -227,15 +227,36 @@ elseif SERVER then -- Serverside-only stuff
 
 		print("Compiling mesh for controller ", self.controller.ent)
 		print("Selected entities:")
-		PrintTable(table.GetKeys(self.selection))
+		self.controller.ent:Compile(table.GetKeys(self.selection))
 
 		self:UnSetController()
 	end
 
 	function TOOL:LeftClick(Trace)
-		if not self.controller then
-			-- No controller, so spawn one
-			SpawnEntity(self, Trace)
+		local Entity = Trace.Entity
+		if not IsValid(Entity) then
+			if not self.controller then
+				-- No controller, so spawn one
+				SpawnEntity(self, Trace)
+			end
+		else
+			-- Debug code for now to test convex visualization
+			local Phys = Entity:GetPhysicsObject()
+			local Mesh = Phys and Phys:GetMeshConvexes()
+			if Mesh then
+				for Index, Convex in ipairs(Mesh) do
+					local Col = HSVToColor((Index * 47) % 360, 1, 1)
+					Col.a = 150
+
+					for I = 1, #Convex, 3 do
+						local A = Phys:LocalToWorld(Convex[I].pos)
+						local B = Phys:LocalToWorld(Convex[I + 1].pos)
+						local C = Phys:LocalToWorld(Convex[I + 2].pos)
+
+						debugoverlay.Triangle(A, B, C, 5, Col, true)
+					end
+				end
+			end
 		end
 		return true
 	end
