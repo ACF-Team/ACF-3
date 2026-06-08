@@ -10,10 +10,11 @@ The basic controller functions were modified from Prop To Mesh ()
 --]]
 
 local ACF = ACF
-local Entities   = ACF.Classes.Entities
+local Entities      = ACF.Classes.Entities
 local ProcArmorTypes = ACF.Classes.ProcArmorTypes
-local Messages   = ACF.Utilities.Messages
-local IsValid = IsValid
+local Messages      = ACF.Utilities.Messages
+local IsValid       = IsValid
+local debugoverlay  = debugoverlay
 
 TOOL.Category	 = (ACF.CustomToolCategory and ACF.CustomToolCategory:GetBool()) and "ACF" or "Construction"
 TOOL.Name		 = "#tool.acfarmormesh.name"
@@ -244,40 +245,23 @@ elseif SERVER then -- Serverside-only stuff
 			local Phys = Entity:GetPhysicsObject()
 			local Mesh = Phys and Phys:GetMeshConvexes()
 			if Mesh then
-				local MeshData = { Verts = {}, Tris = {} }
-				local Lookup = {}
+				ACF.ProcessMesh(Entity, Mesh)
 
-				local function GetIndex(Pos)
-					local Key = Pos.x .. " " .. Pos.y .. " " .. Pos.z
-					local Index = Lookup[Key]
-					if not Index then
-						MeshData.Verts[#MeshData.Verts + 1] = Pos
-						Index = #MeshData.Verts
-						Lookup[Key] = Index
-					end
-					return Index
-				end
+				local MeshData = Entity.ACF_Volumetric_Mesh
+				local Verts = MeshData.Verts
 
-				for Index, Convex in ipairs(Mesh) do
+				for Index, ConvexTris in ipairs(MeshData.Convexes) do
 					local Col = HSVToColor((Index * 47) % 360, 1, 1)
 					Col.a = 150
 
-					local Average = Vector()
-					for I = 1, #Convex, 3 do
-						local A = Phys:LocalToWorld(Convex[I].pos)
-						local B = Phys:LocalToWorld(Convex[I + 1].pos)
-						local C = Phys:LocalToWorld(Convex[I + 2].pos)
-
-						MeshData.Tris[#MeshData.Tris + 1] = { GetIndex(A), GetIndex(B), GetIndex(C) }
-
-						debugoverlay.Triangle(A, B, C, 5, Col, true)
-						Average = Average + A + B + C
+					local AveragePos = Vector(0, 0, 0)
+					for _, Tri in ipairs(ConvexTris) do
+						debugoverlay.Triangle(Verts[Tri[1]], Verts[Tri[2]], Verts[Tri[3]], 5, Col, true)
+						AveragePos = AveragePos + (Verts[Tri[1]] + Verts[Tri[2]] + Verts[Tri[3]])
 					end
-					Average = Average / (#Convex / 3 * 3)
-					debugoverlay.Text(Average, Index, 5, Col, true)
+					AveragePos = AveragePos / (3 * #ConvexTris)
+					debugoverlay.Text(AveragePos, tostring(Index), 5, Col, true)
 				end
-
-				Entity.ACF_Armor_Mesh = MeshData
 			end
 		end
 		return true
