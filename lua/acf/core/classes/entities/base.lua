@@ -56,11 +56,11 @@ do -- Spawning and updating
 	--- @return boolean, string # Whether the update was successful and the reason why
 	function Entities.Update(Entity, Data)
 		if not IsValid(Entity) then return false, "Can't update invalid entities." end
-		if not isfunction(Entity.Update) then return false, "This entity does not support updating." end
+		local UpdateFn = Entity.Update or Entity.ACF_UpdateEntityData
+		if not isfunction(UpdateFn) then return false, "This entity does not support updating." end
 
 		Data = istable(Data) and Data or {}
-
-		local Result, Message = Entity:Update(Data)
+		local Result, Message = UpdateFn(Entity, Data)
 
 		if Result then
 			if Entity.UpdateOverlay then

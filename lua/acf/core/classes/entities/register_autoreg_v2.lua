@@ -64,15 +64,27 @@ local function PrepareSpawnFunctions(ENT, ClassName)
     -- Calls ACF_OnVerifyClientData (entity-specific transforms) before,
     -- and ACF_PostUpdateEntityData (entity init) after.
     function ENT:ACF_UpdateEntityData(ClientData)
+        self.ACF = self.ACF or {} -- Why does this line exist? I feel like there's a reason and it scares me from removing it
+
         if ENT.ACF_OnVerifyClientData then
             ENT.ACF_OnVerifyClientData(ClientData)
         end
 
+        local CanUpdate, Reason = hook.Run("ACF_PreUpdateEntity", Class, self, ClientData)
+        if CanUpdate == false then return CanUpdate, Reason end
+
+        ACF.SaveEntity(self)
+
         self.ACF_LiveData = Serialization.DeserializePartial(ClassDef, ClientData)
+
+        hook.Run("ACF_OnUpdateEntity", Class, self, ClientData)
+        ACF.RestoreEntity(self)
 
         if self.ACF_PostUpdateEntityData then
             self:ACF_PostUpdateEntityData(ClientData)
         end
+        ACF.Activate(self, true)
+        return true, (self.PrintName or Class) .. " updated successfully!"
     end
 
     local function DoSpawn(Player, Pos, Angle, ClientData, IsMenuSpawn)

@@ -10,7 +10,7 @@ ENT.ACF_PreventArmoring = false
 ACF.AutoRegisterV2(function()
 	MENU_FIELD("ACF.Baseplates.BaseplateType", 	"BaseplateType", 			{InstantiateTypeForDefault = "ACF.Baseplates.GroundVehicle"})
 	MENU_FIELD("Number",  					  	"Width", 					{Min = 36,  Max = 240, Default = 36, Decimals = 2})
-	MENU_FIELD("Number",  					  	"Width", 					{Min = 36,  Max = 480, Default = 36, Decimals = 2})
+	MENU_FIELD("Number",  					  	"Length", 					{Min = 36,  Max = 480, Default = 36, Decimals = 2})
 	MENU_FIELD("Number",  					  	"Thickness",				{Min = 0.5,  Max = 3, Default = 3, Decimals = 2})
 	MENU_FIELD("Boolean", 					  	"DisableAltE",    			{Default = false})
 	MENU_FIELD("Boolean", 					  	"ExplodeOnCollisions",    	{Default = false})
