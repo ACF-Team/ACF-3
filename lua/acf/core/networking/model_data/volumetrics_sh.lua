@@ -75,3 +75,42 @@ if SERVER then
         end)
     end)
 end
+
+-- Returns a sorted list of { Pos, Normal, ConvexIndex, T } for every triangle the ray pierces.
+-- Verts are stored in local space, so Entity is required to transform them into world space.
+function ACF.RayIntersectMesh(Entity, Start, Direction, Length)
+    local MeshData = Entity.ACF_Volumetric_Mesh
+    if not MeshData then return {} end
+
+    local Verts   = MeshData.Verts
+    local Hits    = {}
+    local NormDir = Direction:GetNormalized()
+
+    for ConvexID, ConvexTris in ipairs(MeshData.Convexes) do
+        for _, Tri in ipairs(ConvexTris) do
+            local A = Entity:LocalToWorld(Verts[Tri[1]])
+            local B = Entity:LocalToWorld(Verts[Tri[2]])
+            local C = Entity:LocalToWorld(Verts[Tri[3]])
+
+            local Normal = (B - A):Cross(C - A):GetNormalized()
+
+            local P = util.IntersectRayWithPlane(Start, NormDir, A, Normal)
+            if not P then continue end
+
+            -- Recover the T value along the ray and make sure it's within the ray length
+            local T = (P - Start):Dot(NormDir)
+            if T < 0 or T > Length then continue end
+
+            -- Make sure the point is within the triangle, not just its plane
+            if (B - A):Cross(P - A):Dot(Normal) < 0 then continue end
+            if (C - B):Cross(P - B):Dot(Normal) < 0 then continue end
+            if (A - C):Cross(P - C):Dot(Normal) < 0 then continue end
+
+            Hits[#Hits + 1] = { Pos = P, Normal = Normal, ConvexID = ConvexID, T = T }
+        end
+    end
+
+    -- Order hits by distance from ray start
+    table.sort(Hits, function(a, b) return a.T < b.T end)
+    return Hits
+end
