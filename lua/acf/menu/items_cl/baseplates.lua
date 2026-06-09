@@ -1,5 +1,4 @@
 local ACF = ACF
-local BaseplateTypes = ACF.Classes.BaseplateTypes
 
 local function CreateMenu(Menu)
 	ACF.SetToolMode("acf_menu", "Spawner", "Baseplate")
@@ -47,8 +46,8 @@ local function CreateMenu(Menu)
 		BaseplateName:SetText(Data.Name)
 		BaseplateDesc:SetText(Data.Description)
 
-		local IsAircraft = Data.ID == "Aircraft"
-		local IsRecreational = Data.ID == "Recreational"
+		local IsAircraft = Data.ID == "ACF.Baseplates.Aircraft"
+		local IsRecreational = Data.ID == "ACF.Baseplates.Recreational"
 
 		ExplodeCollide:SetVisible(IsRecreational)
 		ExplodeCollideInfo:SetVisible(IsRecreational)
@@ -121,7 +120,7 @@ local function CreateMenu(Menu)
 	end
 	BaseplateConvertInfo:AddLabel(BaseplateConvertText)
 
-	local Entries = BaseplateTypes.GetEntries()
+	local Entries = ACF.Classes.GetSubtypes("ACF.Baseplates.BaseplateType")
 	ACF.LoadSortedList(ClassList, Entries, "Name", "Icon")
 	ClassList:ChooseOptionID(2)
 end

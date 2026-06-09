@@ -153,6 +153,21 @@ function ACF.Classes.GetTypeByName(ClassName)
     return Classes[ClassName]
 end
 
+function ACF.Classes.GetSubtypes(ClassName)
+    local Class = Classes[ClassName]
+    if not Class then return {} end
+
+    local Result = {}
+    local function Collect(C)
+        for _, Child in pairs(C.Children) do
+            Result[#Result + 1] = Child
+            Collect(Child)
+        end
+    end
+    Collect(Class)
+    return Result
+end
+
 -- This checks if ClassA can be basically "down-casted" down to ClassB by going down its parent tree.
 function ACF.Classes.IsAssignableTo(ClassTypeA, ClassTypeB)
     local C = ClassTypeA
