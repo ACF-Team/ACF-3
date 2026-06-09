@@ -290,7 +290,6 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		local Direction     = Delta / Distance -- Normalize without second sqrt
 		local Sphere        = max(4 * pi * (Distance * InchToCm) ^ 2, 1)
 		local EntArea       = HitEnt.ACF.Area
-		local EntArmor      = HitEnt.ACF.Armour
 		local Area          = min(EntArea / Sphere, 0.5) * MaxSphere
 		local AreaFraction  = Area / MaxSphere
 		local PowerFraction = Power * AreaFraction
@@ -301,29 +300,62 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		DmgInfo:SetHitPos(HitPos)
 		DmgInfo:SetHitGroup(TraceResult.HitGroup)
 
+		-- Geometry-derived armor thickness at the hit point
+		local Entry, ExitHit
+		local MeshData = HitEnt.ACF_Volumetric_Mesh
+		if MeshData then
+			local Hits = ACF.RayIntersectMesh(HitEnt, HitPos - Direction * 2, Direction, 10000)
+			for _, Hit in ipairs(Hits) do
+				if not Entry then
+					if Direction:Dot(Hit.Normal) < 0 then Entry = Hit end
+				elseif Hit.ConvexID == Entry.ConvexID and Direction:Dot(Hit.Normal) > 0 then
+					ExitHit = Hit
+					break
+				end
+			end
+		end
+
+		local BlastThickness, FragThickness, HitAngle
+
+		if Entry and ExitHit then
+			local ArmorTypes = ACF.Classes.ProcArmorTypes
+			local Convex     = MeshData.Convexes[Entry.ConvexID]
+			local ArmorType  = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("RHA")
+			local GeoThick   = (ExitHit.T - Entry.T) * 25.4
+
+			BlastThickness = GeoThick * ArmorType.ChemicalMul
+			FragThickness  = GeoThick * ArmorType.KineticMul
+			HitAngle       = math.deg(math.acos(max(-1, min(1, -Direction:Dot(Entry.Normal)))))
+
+			DmgInfo:SetConvexID(Entry.ConvexID)
+		else
+			BlastThickness = HitEnt.ACF.Armour
+			FragThickness  = HitEnt.ACF.Armour
+			HitAngle       = ACF.GetHitAngle(TraceResult, Direction)
+		end
+
 		do -- Blast damage
 			local Feathering  = 1 - min(0.99, Distance / Radius) ^ 0.5
 			local BlastArea   = EntArea / Threshold * Feathering
 			local BlastEnergy = PowerFraction ^ 0.3 * BlastArea
 			local BlastPen    = Damage.getBlastPenetration(BlastEnergy, BlastArea)
-			local BlastDmg    = Objects.DamageResult(BlastArea, BlastPen, EntArmor)
+			local BlastDmg    = Objects.DamageResult(BlastArea, BlastPen, BlastThickness)
 
 			DmgInfo:SetType(DMG_BLAST)
 
 			BlastResult = Damage.dealDamage(HitEnt, BlastDmg, DmgInfo)
 			Losses      = BlastResult.Loss * 0.5
-			Penetration = BlastPen > EntArmor
+			Penetration = BlastPen > BlastThickness
 		end
 
 		do -- Fragment damage
 			local FragHit = floor(Fragments * AreaFraction)
 
 			if FragHit > 0 then
-				local Loss      = BaseFragV * Distance / Radius
-				local FragVel   = max(BaseFragV - Loss, 0) * InchToMeter
-				local FragPen   = ACF.Penetration(FragVel, FragMassCalc, FragCaliber)
-				local HitAngle  = ACF.GetHitAngle(TraceResult, Direction)
-				local FragDmg   = Objects.DamageResult(FragArea, FragPen, EntArmor, HitAngle, nil, Fragments)
+				local Loss     = BaseFragV * Distance / Radius
+				local FragVel  = max(BaseFragV - Loss, 0) * InchToMeter
+				local FragPen  = ACF.Penetration(FragVel, FragMassCalc, FragCaliber)
+				local FragDmg  = Objects.DamageResult(FragArea, FragPen, FragThickness, HitAngle, nil, Fragments)
 
 				DmgInfo:SetType(DMG_BULLET)
 
