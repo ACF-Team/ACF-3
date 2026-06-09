@@ -44,18 +44,20 @@ if SERVER then
                 Tris   = Tris,
                 Normal = NormSum:GetNormalized(),
                 Volume = math.abs(Volume) / 6,
+                Material = "rha", -- Placeholder default
             }
         end
 
         Entity.ACF_Volumetric_Mesh = MeshData
     end
 
-    local function ProcessEntity(entity)
+    local function ComputeVolumetricMesh(entity)
         if IsValid(entity) and (entity.IsACFEntity or ArmorableClasses[entity:GetClass()]) and IsValid(entity:GetPhysicsObject()) then
             local convexes = entity:GetPhysicsObject():GetMeshConvexes() or {}
             ProcessConvexes(entity, convexes)
         end
     end
+    ACF.ComputeVolumetricMesh = ComputeVolumetricMesh
 
     hook.Add("ACF_OnLoadAddon", "ACF_Volumetric_Detours", function()
         local Detours = ACF and ACF.Detours
@@ -64,7 +66,7 @@ if SERVER then
         local PhysInitConvex_Orig PhysInitConvex_Orig = Detours.Metatable("Entity", "PhysicsInitConvex", function(self, Mesh, ...)
             timer.Simple(0, function()
                 -- print("PhysicsInitConvex", self, Mesh)
-                ProcessEntity(self)
+                ComputeVolumetricMesh(self)
             end)
             return PhysInitConvex_Orig(self, Mesh, ...)
         end)
@@ -72,7 +74,7 @@ if SERVER then
         local PhysInitMultiConvex_Orig PhysInitMultiConvex_Orig = Detours.Metatable("Entity", "PhysicsInitMultiConvex", function(self, Meshes, ...)
             timer.Simple(0, function()
                 -- print("PhysicsInitMultiConvex", self, Meshes)
-                ProcessEntity(self)
+                ComputeVolumetricMesh(self)
             end)
             return PhysInitMultiConvex_Orig(self, Meshes, ...)
         end)
@@ -81,7 +83,7 @@ if SERVER then
         hook.Add("OnEntityCreated", "ACF_Volumetric_Detours", function(ent)
             timer.Simple(0, function()
                 -- print("OnEntityCreated", ent)
-                ProcessEntity(ent)
+                ComputeVolumetricMesh(ent)
             end)
         end)
     end)

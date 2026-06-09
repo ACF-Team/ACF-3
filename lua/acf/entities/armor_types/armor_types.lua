@@ -67,3 +67,12 @@ function Armor:OnLoaded()
     self.Description = "Heavy Explosive Reactive Armor, offers some protection against kinetic threats too."
     self.Density = 10e-3
 end
+
+-- Flesh
+local Armor = Types.Register("Flesh")
+function Armor:OnLoaded()
+    self.Name = "Flesh"
+    self.Description = "Soft biological tissue."
+    self.Density = 1.0e-3
+    self.SuppressLoad = true
+end
