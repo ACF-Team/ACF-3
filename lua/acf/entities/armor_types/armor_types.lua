@@ -28,6 +28,14 @@ function Armor:OnLoaded()
     self.Density = 1.5e-3
 end
 
+-- Textolite
+local Armor = Types.Register("Textolite")
+function Armor:OnLoaded()
+    self.Name = "Textolite"
+    self.Description = "Composite material, good for lightweight applications."
+    self.Density = 1.8e-3
+end
+
 -- Tungsten
 local Armor = Types.Register("Tungsten")
 function Armor:OnLoaded()

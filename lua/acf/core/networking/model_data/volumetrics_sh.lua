@@ -1,10 +1,14 @@
 local ArmorableClasses = {
     prop_physics = true,
     primitive_shape = true,
+    primitive_staircase = true,
+    primitive_ladder = true,
+    primitive_rail_silder = true,
+    primitive_airfoil = true,
 }
 
 if SERVER then
-    function ACF.ProcessMesh(Entity, Meshes)
+    function ProcessMesh(Entity, Meshes)
         local MeshData = { Verts = {}, Convexes = {} }
         local Lookup = {}
 
@@ -38,7 +42,7 @@ if SERVER then
     local function ProcessEntity(entity)
         if IsValid(entity) and (entity.IsACFEntity or ArmorableClasses[entity:GetClass()]) and IsValid(entity:GetPhysicsObject()) then
             local convexes = entity:GetPhysicsObject():GetMeshConvexes() or {}
-            ACF.ProcessMesh(entity, convexes)
+            ProcessMesh(entity, convexes)
         end
     end
 
