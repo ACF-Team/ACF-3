@@ -82,35 +82,6 @@ function ENT:OnRemove()
 	WireLib.Remove(self)
 end
 
-function ENT:ACF_Activate(Recalc)
-	local Wall  = ACF.ContainerArmor * ACF.MmToInch
-	local Shape = self.Shape or "Box"
-	local ShapeCalc = ACF.ContainerShapes[Shape]
-	local Size  = self.Size or (self.GetOriginalSize and self:GetOriginalSize())
-
-	if not ShapeCalc or not Size then return end
-
-	local _, SurfaceAreaIn2 = ShapeCalc(Size, Wall)
-	local Area = SurfaceAreaIn2 * ACF.InchToCmSq -- convert to cm^2 to match damage model
-
-	local Percent = 1
-	if Recalc and self.ACF and self.ACF.Health and self.ACF.MaxHealth then
-		Percent = self.ACF.Health / self.ACF.MaxHealth
-	end
-
-	self.ACF = self.ACF or {}
-
-	local Armour = ACF.ContainerArmor * ACF.ArmorMod
-	local Health = Area / ACF.Threshold
-
-	self.ACF.Area      = Area
-	self.ACF.Health    = Health * Percent
-	self.ACF.MaxHealth = Health
-	self.ACF.Armour    = Armour * (0.5 + Percent * 0.5)
-	self.ACF.MaxArmour = Armour
-	self.ACF.Type      = "Prop"
-end
-
 function ENT:OnResized(Size)
 	local Wall = ACF.ContainerArmor * ACF.MmToInch
 	local Shape = self.Shape or "Box"

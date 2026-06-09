@@ -702,26 +702,6 @@ end
 
 -- Entity methods
 do
-	function ENT:ACF_Activate(Recalc)
-		local PhysObj = self.ACF.PhysObj
-		-- local Mass    = PhysObj:GetMass()
-		local Area    = PhysObj:GetSurfaceArea() * ACF.InchToCmSq
-		local Armour  = ACF.CrewArmor -- Human body isn't that thick but we have to put something here
-		local Health  = ACF.CrewHealth
-		local Percent = 1
-
-		if Recalc and self.ACF.Health and self.ACF.MaxHealth then
-			Percent = self.ACF.Health / self.ACF.MaxHealth
-		end
-
-		self.ACF.Area      = Area
-		self.ACF.Health    = Health * Percent
-		self.ACF.MaxHealth = Health
-		self.ACF.Armour    = Armour * Percent
-		self.ACF.MaxArmour = Armour
-		self.ACF.Type      = "Prop"
-	end
-
 	-- If the player trips a legality check (e.g. notsolid)
 	-- You can't bring back a dead crew so there is no enable...
 	function ENT:Disable()

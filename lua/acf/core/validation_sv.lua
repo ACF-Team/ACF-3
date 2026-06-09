@@ -240,17 +240,14 @@ function ACF.Check(Entity, ForceUpdate) -- IsValid but for ACF
 
 		ACF.Activate(Entity)
 		EntACF = Entity.ACF
-	elseif ForceUpdate or EntACF.Mass ~= PhysObj:GetMass() or (not IsValid(EntACF.PhysObj) or EntACF.PhysObj ~= PhysObj) then
-		ACF.Activate(Entity, true)
+	elseif ForceUpdate or not IsValid(EntACF.PhysObj) or EntACF.PhysObj ~= PhysObj then
+		ACF.Activate(Entity)
 	end
 
 	return EntACF.Type
 end
 
---- Initializes the entity's armor properties. If ACF_Activate is defined by the entity, that method is called as well.
---- @param Recalc boolean Whether or not to recalculate the health
-function ACF.Activate(Entity, Recalc)
-	-- Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
+function ACF.Activate(Entity)
 	local PhysObj = Entity:GetPhysicsObject()
 	local EntTbl  = Entity:GetTable()
 
@@ -259,28 +256,15 @@ function ACF.Activate(Entity, Recalc)
 
 	ModelData.Populate(Entity:GetModel())
 
-	EntTbl.ACF.Type    = ACF.GetEntityType(Entity)
-	EntTbl.ACF.PhysObj = PhysObj
+	EntTbl.ACF.Type      = ACF.GetEntityType(Entity)
+	EntTbl.ACF.PhysObj   = PhysObj
 
-	-- Note that if the entity has its own ENT:ACF_Activate(Recalc) function, the rest of the code after this block won't be ran (instead the function should specify the rest)
-	if EntTbl.ACF_Activate then
-		Entity:ACF_Activate(Recalc)
-		return
-	end
+	-- Backwards compatibility placeholders. To remove later.
+	EntTbl.ACF.Health    = 1
+	EntTbl.ACF.MaxHealth = 1
+	EntTbl.ACF.Armour    = 1
+	EntTbl.ACF.MaxArmour = 1
+	EntTbl.ACF.Area      = 1
 
-	local Area      = ACF.UpdateArea(Entity, PhysObj)
-	local Ductility = math.Clamp(EntTbl.ACF.Ductility or 0, -0.8, 0.8)
-	local Thickness = math.Clamp(ACF.UpdateThickness(Entity, PhysObj, Area, Ductility) * ACF.ArmorMod, ACF.MinimumArmor, ACF.MaxThickness)
-	local Health    = (Area / ACF.Threshold) * (1 + Ductility) -- Setting the threshold of the prop Area gone
-	local Percent   = 1
-
-	if Recalc and EntTbl.ACF.Health and EntTbl.ACF.MaxHealth then
-		Percent = EntTbl.ACF.Health / EntTbl.ACF.MaxHealth
-	end
-
-	EntTbl.ACF.Health    = Health * Percent
-	EntTbl.ACF.MaxHealth = Health
-	EntTbl.ACF.Armour    = Thickness * (0.5 + Percent * 0.5)
-	EntTbl.ACF.MaxArmour = Thickness
-	EntTbl.ACF.Ductility = Ductility
+	ACF.ComputeVolumetricMesh(Entity)
 end
