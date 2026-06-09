@@ -13,7 +13,7 @@ ACF.AutoRegisterV2(function()
 	MENU_FIELD("Number",  					  	"Length", 					{Min = 36,  Max = 480, Default = 36, Decimals = 2})
 	MENU_FIELD("Number",  					  	"Thickness",				{Min = 0.5,  Max = 3, Default = 1.5, Decimals = 2})
 	MENU_FIELD("Boolean", 					  	"DisableAltE",    			{Default = false})
-		 FIELD("Entity", 						"Seat",    				{AcceptableClasses = {prop_vehicle_prisoner_pod = true}})
+		 FIELD("Entity", 						"Seat",    					{AcceptableClasses = {prop_vehicle_prisoner_pod = true}})
 		 FIELD("Boolean", 					  	"AlreadyHasSeat",    		{Default = false})
 end)
 
