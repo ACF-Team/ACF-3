@@ -47,6 +47,65 @@ local function PrepareWiremodFunctions(ENT)
     if not ENT.ACF_SetupWireIO then ENT.ACF_SetupWireIO = function() end end
 end
 
+local function PrepareSpawnFunctions(ENT, ClassName)
+    local ClassDef      = ENT.ACF_ClassDef
+    local Serialization = ACF.Classes.Serialization
+
+    function ENT:ACF_GetUserVar(Key)
+        return self.ACF_LiveData and self.ACF_LiveData[Key]
+    end
+
+    function ENT:ACF_SetUserVar(Key, Value)
+        if not self.ACF_LiveData then self.ACF_LiveData = ClassDef() end
+        self.ACF_LiveData[Key] = Value
+    end
+
+    -- Populates ACF_LiveData from raw ClientData (menu or duplicator).
+    -- Calls ACF_OnVerifyClientData (entity-specific transforms) before,
+    -- and ACF_PostUpdateEntityData (entity init) after.
+    function ENT:ACF_UpdateEntityData(ClientData)
+        if ENT.ACF_OnVerifyClientData then
+            ENT.ACF_OnVerifyClientData(ClientData)
+        end
+
+        self.ACF_LiveData = Serialization.DeserializePartial(ClassDef, ClientData)
+
+        if self.ACF_PostUpdateEntityData then
+            self:ACF_PostUpdateEntityData(ClientData)
+        end
+    end
+
+    local function DoSpawn(Player, Pos, Angle, ClientData, IsMenuSpawn)
+        local Entity = ents.Create(ClassName)
+        if not IsValid(Entity) then return end
+
+        Entity:SetPos(Pos)
+        Entity:SetAngles(Angle)
+
+        if Entity.ACF_PreSpawn then Entity:ACF_PreSpawn() end
+
+        Entity:Spawn()
+        Entity:Activate()
+
+        Entity:ACF_UpdateEntityData(ClientData)
+
+        if Entity.ACF_PostSpawn then Entity:ACF_PostSpawn(Player, Pos, Angle, ClientData) end
+        if IsMenuSpawn and Entity.ACF_PostMenuSpawn then Entity:ACF_PostMenuSpawn() end
+
+        return Entity
+    end
+
+    duplicator.RegisterEntityClass(ClassName, function(Player, Pos, Angle, UserData)
+        return DoSpawn(Player, Pos, Angle, UserData or {}, false)
+    end, "Pos", "Angle", "ACF_UserData")
+
+    hook.Add("ACF_TemporaryHook_InstantiateEntity", "AutoRegV2_" .. ClassName, function(Class, Player, Pos, Ang, ClientData)
+        if Class ~= ClassName then return end
+        local Entity = DoSpawn(Player, Pos, Ang, ClientData or {}, true)
+        if IsValid(Entity) then return Entity end
+    end)
+end
+
 local function PrepareSerializationFunctions(ENT)
     local ClassDef             = ENT.ACF_ClassDef
     local OrigPreEntityCopy    = ENT.PreEntityCopy
@@ -83,5 +142,6 @@ function ACF.AutoRegisterV2(DefineFields)
         if Class ~= ExpectedClass then return end
         PrepareWiremodFunctions(ENT)
         PrepareSerializationFunctions(ENT)
+        PrepareSpawnFunctions(ENT, ExpectedClass)
     end)
 end

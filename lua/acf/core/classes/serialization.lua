@@ -52,6 +52,11 @@ local function SerializeValue(ElemType, Value)
         local ClassType = GetTypeByName(ElemType)
         if ClassType and Value then
             local ActualType = Value.GetType and Value:GetType() or ClassType
+            -- If the stored value IS the class type itself (a type reference, not an instance),
+            -- serialize as just the ID string — no per-instance data to capture.
+            if ActualType == Value then
+                return Value.ID
+            end
             return {
                 type = ActualType.ID,
                 data = Serialization.Serialize(ActualType, Value)
@@ -70,10 +75,19 @@ local function DeserializeValue(ElemType, Raw, Options)
         return ValidateString(Raw, Options)
     else
         local ClassType = GetTypeByName(ElemType)
-        if ClassType and type(Raw) == "table" and Raw.type then
-            local ActualType = GetTypeByName(Raw.type)
-            if ActualType and IsAssignableTo(ActualType, ClassType) then
-                return Serialization.DeserializePartial(ActualType, Raw.data)
+        if ClassType then
+            if type(Raw) == "string" then
+                -- Type reference: the value IS the class type (serialized as its ID)
+                local TypeObj = GetTypeByName(Raw)
+                if TypeObj and IsAssignableTo(TypeObj, ClassType) then
+                    return TypeObj
+                end
+            elseif type(Raw) == "table" and Raw.type then
+                -- Class instance: serialized as { type, data }
+                local ActualType = GetTypeByName(Raw.type)
+                if ActualType and IsAssignableTo(ActualType, ClassType) then
+                    return Serialization.DeserializePartial(ActualType, Raw.data)
+                end
             end
         end
         return nil
@@ -136,7 +150,11 @@ function Serialization.DeserializePartial(Class, Data)
             local Deserialized = DeserializeValue(ElemType, Raw, Options)
             if Deserialized ~= nil then
                 Instance[Field.Name] = Deserialized
+            elseif Options.InstantiateTypeForDefault then
+                Instance[Field.Name] = GetTypeByName(Options.InstantiateTypeForDefault)
             end
+        elseif Options.InstantiateTypeForDefault then
+            Instance[Field.Name] = GetTypeByName(Options.InstantiateTypeForDefault)
         end
     end
 

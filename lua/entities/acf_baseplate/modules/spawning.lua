@@ -4,7 +4,7 @@ local Con = ACF.Contraption
 
 function ENT.ACF_OnVerifyClientData(ClientData)
 	ClientData.Size = Vector(ClientData.Length, ClientData.Width, ClientData.Thickness)
-	if ClientData.BaseplateType ~= "Aircraft" then ClientData.GForceTicks = 1 end -- Only allow sample rates > 1 for aircraft baseplates
+	if ClientData.BaseplateType ~= "ACF.Baseplates.Aircraft" then ClientData.GForceTicks = 1 end -- Only allow sample rates > 1 for aircraft baseplates
 end
 
 function ENT:ACF_PostUpdateEntityData(ClientData)
