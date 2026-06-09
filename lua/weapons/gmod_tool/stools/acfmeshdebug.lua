@@ -24,15 +24,18 @@ if CLIENT then
 
 	TOOL.BuildCPanel = function() end
 elseif SERVER then
-	local function VisualizeConvexes(Entity, ConvexIDs)
+	local White = Color(255, 255, 255, 255)
+
+	local function VisualizeConvexes(Entity, ConvexIDs, HighlightID)
 		local MeshData = Entity.ACF_Volumetric_Mesh
 		if not MeshData then return end
 
 		local Verts = MeshData.Verts
 
 		for Index, Convex in ipairs(MeshData.Convexes) do
+			local IsHighlighted = Index == HighlightID
 			local Col = (ConvexIDs and not ConvexIDs[Index]) and Color(255, 255, 255) or HSVToColor((Index * 47) % 360, 1, 1)
-			Col.a = Alpha
+			Col.a = IsHighlighted and 150 or Alpha
 
 			local AveragePos = Vector(0, 0, 0)
 			for _, Tri in ipairs(Convex.Tris) do
@@ -40,10 +43,20 @@ elseif SERVER then
 				local B = Entity:LocalToWorld(Verts[Tri[2]])
 				local C = Entity:LocalToWorld(Verts[Tri[3]])
 				debugoverlay.Triangle(A, B, C, FadeTime, Col, true)
+
+				if IsHighlighted then
+					debugoverlay.Line(A, B, FadeTime, White, true)
+					debugoverlay.Line(B, C, FadeTime, White, true)
+					debugoverlay.Line(C, A, FadeTime, White, true)
+				end
+
 				AveragePos = AveragePos + A + B + C
 			end
 			AveragePos = AveragePos / (3 * #Convex.Tris)
-			debugoverlay.Text(AveragePos, tostring(Index), FadeTime, Col, true)
+
+			local Label = IsHighlighted and string.format("%d: %s (%.2f cm^3)", Index, Convex.Material, Convex.Volume) or tostring(Index)
+
+			debugoverlay.Text(AveragePos, Label, FadeTime, Col, true)
 		end
 	end
 
@@ -51,7 +64,11 @@ elseif SERVER then
 		local Entity = Trace.Entity
 		if not IsValid(Entity) then return true end
 
-		VisualizeConvexes(Entity)
+		local Dir       = (Trace.HitPos - Trace.StartPos):GetNormalized()
+		local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir)
+		print("Hit", ConvexHit and ConvexHit.ConvexID or "none")
+
+		VisualizeConvexes(Entity, nil, ConvexHit and ConvexHit.ConvexID)
 		return true
 	end
 

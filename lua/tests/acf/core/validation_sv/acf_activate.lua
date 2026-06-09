@@ -27,8 +27,6 @@ return {
                 Ent.ACF = nil
 
                 stub( ACF, "GetEntityType" ).returns( "Prop" )
-                stub( ACF, "UpdateArea" ).returns( 1 )
-                stub( ACF, "UpdateThickness" ).returns( 1 )
 
                 ACF.Activate( Ent )
 

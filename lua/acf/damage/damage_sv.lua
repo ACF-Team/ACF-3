@@ -84,9 +84,11 @@ function Damage.getBulletDamage(Bullet, Trace)
 	if ACF.Check(Entity) then
 		local NormDir   = Bullet.Flight:GetNormalized()
 		local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, NormDir)
-		local Thickness = ConvexHit and ConvexHit.GeoThick * ConvexHit.ArmorType.KineticMul
+		local AmmoType  = ACF.Classes.AmmoTypes.Get(Bullet.Type)
+		local MulField  = (AmmoType and AmmoType.IsChemical) and "ChemicalMul" or "KineticMul"
+		local Thickness = ConvexHit and ConvexHit.GeoThick * ConvexHit.ArmorType[MulField]
 		               or Entity.ACF.Armour
-		local Angle     = ConvexHit and ConvexHit.HitAngle
+		local Angle     = ConvexHit and 0 -- GeoThick already accounts for obliquity
 		               or ACF.GetHitAngle(Trace, Bullet.Flight)
 
 		if ConvexHit then DmgInfo:SetConvexID(ConvexHit.ConvexID) end

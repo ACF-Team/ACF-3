@@ -53,7 +53,7 @@ if SERVER then
                 local B = Convex[I + 1].pos
                 local C = Convex[I + 2].pos
 
-                NormSum = NormSum + (B - A):Cross(C - A)
+                NormSum = NormSum + (C - A):Cross(B - A) -- Outward-facing; GetMeshConvexes triangles wind such that (B-A)x(C-A) points inward
                 Volume  = Volume + A:Dot(B:Cross(C)) -- Scalar triple product gives 6 times the volume
 
                 Tris[#Tris + 1] = Vector(GetIndex(A), GetIndex(B), GetIndex(C))
@@ -149,9 +149,10 @@ function ACF.RayIntersectMesh(Entity, Start, Direction, Length)
             local B = Entity:LocalToWorld(Verts[Tri[2]])
             local C = Entity:LocalToWorld(Verts[Tri[3]])
 
-            local Normal = (B - A):Cross(C - A):GetNormalized()
+            -- Plane/barycentric math is orientation-agnostic, so this raw cross product is fine for it
+            local RawNormal = (B - A):Cross(C - A):GetNormalized()
 
-            local P = util.IntersectRayWithPlane(Start, NormDir, A, Normal)
+            local P = util.IntersectRayWithPlane(Start, NormDir, A, RawNormal)
             if not P then continue end
 
             -- Recover the T value along the ray and make sure it's within the ray length
@@ -159,11 +160,12 @@ function ACF.RayIntersectMesh(Entity, Start, Direction, Length)
             if T < 0 or T > Length then continue end
 
             -- Make sure the point is within the triangle, not just its plane
-            if (B - A):Cross(P - A):Dot(Normal) < 0 then continue end
-            if (C - B):Cross(P - B):Dot(Normal) < 0 then continue end
-            if (A - C):Cross(P - C):Dot(Normal) < 0 then continue end
+            if (B - A):Cross(P - A):Dot(RawNormal) < 0 then continue end
+            if (C - B):Cross(P - B):Dot(RawNormal) < 0 then continue end
+            if (A - C):Cross(P - C):Dot(RawNormal) < 0 then continue end
 
-            Hits[#Hits + 1] = { Pos = P, Normal = Normal, ConvexID = ConvexID, T = T }
+            -- GetMeshConvexes triangles wind such that (B-A)x(C-A) points inward; flip for the stored outward normal
+            Hits[#Hits + 1] = { Pos = P, Normal = -RawNormal, ConvexID = ConvexID, T = T }
         end
     end
 

@@ -14,6 +14,7 @@ function Ammo:OnLoaded()
 	self.Bodygroup   = 8 -- HEAT bodygroup index
 	self.MortarBodygroup = 3 -- HEAT mortar submodel
 	self.Description = "#acf.descs.ammo.heat"
+	self.IsChemical  = true
 	self.Blacklist = {
 		AC = true,
 		MG = true,
@@ -289,6 +290,7 @@ if SERVER then
 			-- Get the effective armor thickness
 			local BaseArmor = 0
 			local DamageDealt
+			local ConvexHit
 			if TraceRes.HitWorld or TraceRes.Entity and TraceRes.Entity:IsWorld() then
 				-- Get the surface and calculate the RHA equivalent
 				local Surface = util.GetSurfaceData(TraceRes.SurfaceProps)
@@ -302,13 +304,27 @@ if SERVER then
 				-- TODO: Fix world entity penetration
 				--BaseArmor = Penetration + 1
 			elseif TraceRes.Hit then
-				BaseArmor = Ent.GetArmor and Ent:GetArmor(TraceRes) or Ent.ACF and Ent.ACF.Armour or 0
+				ConvexHit = ACF.GetConvexHit(Ent, PenHitPos, Direction)
+
+				if ConvexHit then
+					BaseArmor = ConvexHit.GeoThick * ConvexHit.ArmorType.ChemicalMul
+				else
+					BaseArmor = Ent.GetArmor and Ent:GetArmor(TraceRes) or Ent.ACF and Ent.ACF.Armour or 0
+				end
+
 				-- Enable damage if a valid entity is hit
 				DamageDealt = 0
 			end
 
 			local Angle          = ACF.GetHitAngle(TraceRes, Direction)
-			local EffectiveArmor = Ent.GetArmor and BaseArmor or BaseArmor / math.abs(math.cos(math.rad(Angle)))
+			local EffectiveArmor
+			if ConvexHit then
+				EffectiveArmor = BaseArmor -- GeoThick already accounts for obliquity
+			elseif Ent.GetArmor then
+				EffectiveArmor = BaseArmor
+			else
+				EffectiveArmor = BaseArmor / math.abs(math.cos(math.rad(Angle)))
+			end
 			EffectiveArmor = math.max(EffectiveArmor, 0.01) -- Prevent divide by zero and nan armor
 
 			-- Percentage of total jet mass lost to this penetration

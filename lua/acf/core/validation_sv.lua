@@ -2,15 +2,12 @@
 
 -- Local Vars -----------------------------------
 local ACF          = ACF
-local Contraption  = ACF.Contraption
 local ModelData	   = ACF.ModelData
 local Notify       = ACF.Utilities.Notify
 local StringFind   = string.find
 local TimerSimple  = timer.Simple
 local Baddies	   = ACF.GlobalFilter
 local BaddiesLess  = ACF.ArmorableGlobalFilterExceptions
-local MinimumArmor = ACF.MinimumArmor
-local MaximumArmor = ACF.MaxThickness
 
 util.AddNetworkString("ACF_Error_Entity")
 
@@ -157,66 +154,6 @@ function ACF.GetEntityType(Entity)
 
 	return "Prop"
 end
-
-function ACF.UpdateArea(Entity, PhysObj)
-	local Area = PhysObj:GetSurfaceArea()
-
-	if Area then -- Normal collisions
-		local AreaMult = 0.52505066107 -- This seems to be a conversion from cm to grid units on the architectural scale (approx. 1 / 1.905)
-		Area = Area * ACF.InchToCmSq * AreaMult
-	elseif PhysObj:GetMesh() then -- Box collisions
-		local Size = Entity:OBBMaxs() - Entity:OBBMins()
-
-		Area = ((Size.x * Size.y) + (Size.x * Size.z) + (Size.y * Size.z)) * ACF.InchToCmSq
-	else -- Spherical collisions
-		local Radius = Entity:BoundingRadius()
-
-		Area = 4 * math.pi * Radius * Radius * ACF.InchToCmSq
-	end
-
-	Entity.ACF.Area = Area
-
-	return Area
-end
-
-function ACF.UpdateThickness(Entity, PhysObj, Area, Ductility)
-	local EntMods   = Entity.EntityMods
-	local ArmorMod  = EntMods and EntMods.ACF_Armor
-	local Thickness = ArmorMod and ArmorMod.Thickness
-	local MassMod   = EntMods and EntMods.mass
-
-	if Thickness then
-		if not MassMod then
-			local Mass = Area * (1 + Ductility) ^ 0.5 * Thickness * 0.00078
-
-			if Mass ~= Entity.ACF.Mass then
-				Contraption.SetMass(Entity, Mass)
-			end
-
-			return Thickness
-		end
-
-		duplicator.ClearEntityModifier(Entity, "ACF_Armor")
-		duplicator.StoreEntityModifier(Entity, "ACF_Armor", { Thickness = Thickness, Ductility = Ductility * 100 })
-	end
-
-	local Mass  = MassMod and MassMod.Mass or PhysObj:GetMass()
-	local Armor = ACF.CalcArmor(Area, Ductility, Mass)
-
-	if Mass ~= Entity.ACF.Mass then
-		Contraption.SetMass(Entity, Mass)
-
-		duplicator.StoreEntityModifier(Entity, "mass", { Mass = Mass })
-	end
-
-	return math.Clamp(Armor, MinimumArmor, MaximumArmor)
-end
-
-hook.Add("ACF_OnUpdateServerData", "ACF_MaxThickness", function(_, Key, Value)
-	if Key ~= "MaxThickness" then return end
-
-	MaximumArmor = math.floor(ACF.CheckNumber(Value, ACF.MaxThickness))
-end)
 
 -- Global Funcs ---------------------------------
 
