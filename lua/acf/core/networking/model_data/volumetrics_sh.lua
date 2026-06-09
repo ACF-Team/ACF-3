@@ -1,3 +1,9 @@
+local ACF = ACF
+
+-- TODO: Merge these lists with the other global ACF filters
+
+local CubicInchToCm3 = 16.3871 -- 1 in^3 = 16.3871 cm^3 (Hammer units are inches in physics)
+
 -- Classes we should compute the mesh for
 local ArmorableClasses = {
     prop_physics = true,
@@ -20,8 +26,9 @@ local ReInitializableClasses = {
 
 if SERVER then
     function ProcessConvexes(Entity, Meshes)
-        local MeshData = { Verts = {}, Convexes = {} }
-        local Lookup = {}
+        local MeshData   = { Verts = {}, Convexes = {} }
+        local Lookup     = {}
+        local ArmorTypes = ACF.Classes.ProcArmorTypes
 
         local function GetIndex(Pos)
             local Key = Pos.x .. " " .. Pos.y .. " " .. Pos.z
@@ -50,11 +57,19 @@ if SERVER then
                 Tris[#Tris + 1] = Vector(GetIndex(A), GetIndex(B), GetIndex(C))
             end
 
+            -- TODO: TUNE THESE ONCE FUNCTIONALITY IS DONE
+            local Material   = "RHA" -- Placeholder
+            local ArmorType  = ArmorTypes.Get(Material) or ArmorTypes.Get("RHA")
+            local Volume_cm3 = math.abs(Volume) / 6 * CubicInchToCm3
+            local Health     = Volume_cm3 * ArmorType.Density * ArmorType.HealthMul -- Density in kg/cm^3.
+
             MeshData.Convexes[#MeshData.Convexes + 1] = {
-                Tris   = Tris,
-                Normal = NormSum:GetNormalized(),
-                Volume = math.abs(Volume) / 6,
-                Material = "rha", -- Placeholder default
+                Tris      = Tris,
+                Normal    = NormSum:GetNormalized(),
+                Volume    = Volume_cm3,
+                Material  = Material,
+                Health    = Health,
+                MaxHealth = Health,
             }
         end
 
