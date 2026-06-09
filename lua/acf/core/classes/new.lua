@@ -29,7 +29,7 @@ do
         local ClassMeta = {
             __index = BaseClass, -- If I don't have it, check my super (inheritance)
             __tostring = function() return TypeName end,
-
+            __CLASS_ID = FullyQualifiedName,
             -- Instantiation
             __call = function(self, ...)
                 local Instance    = {}
@@ -153,6 +153,11 @@ function ACF.Classes.GetTypeByName(ClassName)
     return Classes[ClassName]
 end
 
+function ACF.Classes.GetTypeName(Class)
+    return Class and getmetatable(Class).__CLASS_ID or "none"
+end
+
+
 function ACF.Classes.GetSubtypes(ClassName)
     local Class = Classes[ClassName]
     if not Class then return {} end
@@ -185,3 +190,4 @@ end
 function ACF.Classes.IsAssignableFrom(ClassTypeA, ClassTypeB)
     return ACF.Classes.IsAssignableTo(ClassTypeB, ClassTypeA)
 end
+

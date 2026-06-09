@@ -18,7 +18,7 @@ function ENT:UpdateFuelMod()
     local Sum, Count = Sum1 + Sum2, Count1 + Count2
     local Val = (Count > 0) and (Sum / Count) or 0
     self.FuelCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
-    if self:ACF_GetUserVar("BaseplateType").Name == "Recreational" then
+    if Baseplate:ACF_GetUserVar("BaseplateType"):GetType() == ACF.Classes.GetTypeByName("ACF.Baseplates.Recreational") then
         self.FuelCrewMod = 1 -- Recreational baseplates have no fuel consumption
     end
     return self.FuelCrewMod

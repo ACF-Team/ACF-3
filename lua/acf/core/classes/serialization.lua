@@ -77,10 +77,10 @@ local function DeserializeValue(ElemType, Raw, Options)
         local ClassType = GetTypeByName(ElemType)
         if ClassType then
             if type(Raw) == "string" then
-                -- Type reference: the value IS the class type (serialized as its ID)
+                -- Class type given as an ID string — instantiate it
                 local TypeObj = GetTypeByName(Raw)
                 if TypeObj and IsAssignableTo(TypeObj, ClassType) then
-                    return TypeObj
+                    return TypeObj()
                 end
             elseif type(Raw) == "table" and Raw.type then
                 -- Class instance: serialized as { type, data }
