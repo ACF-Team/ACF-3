@@ -110,8 +110,7 @@ function Damage.getBulletDamage(Bullet, Trace)
 			end
 		end
 
-		local Angle = Entry and math.deg(math.acos(math.Clamp(-NormDir:Dot(Entry.Normal), -1, 1)))
-		           or ACF.GetHitAngle(Trace, Bullet.Flight)
+		local Angle = Entry and math.deg(math.acos(math.Clamp(-NormDir:Dot(Entry.Normal), -1, 1))) or ACF.GetHitAngle(Trace, Bullet.Flight)
 
 		DmgResult:SetArea(Bullet.ProjArea)
 		DmgResult:SetPenetration(Bullet:GetPenetration())
