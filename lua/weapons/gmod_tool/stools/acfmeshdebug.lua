@@ -30,19 +30,19 @@ elseif SERVER then
 
 		local Verts = MeshData.Verts
 
-		for Index, ConvexTris in ipairs(MeshData.Convexes) do
+		for Index, Convex in ipairs(MeshData.Convexes) do
 			local Col = (ConvexIDs and not ConvexIDs[Index]) and Color(255, 255, 255) or HSVToColor((Index * 47) % 360, 1, 1)
 			Col.a = Alpha
 
 			local AveragePos = Vector(0, 0, 0)
-			for _, Tri in ipairs(ConvexTris) do
+			for _, Tri in ipairs(Convex.Tris) do
 				local A = Entity:LocalToWorld(Verts[Tri[1]])
 				local B = Entity:LocalToWorld(Verts[Tri[2]])
 				local C = Entity:LocalToWorld(Verts[Tri[3]])
 				debugoverlay.Triangle(A, B, C, FadeTime, Col, true)
 				AveragePos = AveragePos + A + B + C
 			end
-			AveragePos = AveragePos / (3 * #ConvexTris)
+			AveragePos = AveragePos / (3 * #Convex.Tris)
 			debugoverlay.Text(AveragePos, tostring(Index), FadeTime, Col, true)
 		end
 	end
@@ -71,10 +71,8 @@ elseif SERVER then
 		VisualizeConvexes(Entity, HitConvexIDs)
 
 		for I, Hit in ipairs(Hits) do
-			-- Force normal to face against the ray so winding inconsistencies don't flip it
-			local VisNormal = Hit.Normal:Dot(Dir) > 0 and -Hit.Normal or Hit.Normal
 			debugoverlay.Cross(Hit.Pos, 3, FadeTime, Color(255, 0, 0, 200), true)
-			debugoverlay.Line(Hit.Pos, Hit.Pos + VisNormal * 5, FadeTime, Color(0, 255, 255, 255), true)
+			debugoverlay.Line(Hit.Pos, Hit.Pos + Hit.Normal * 5, FadeTime, Color(0, 255, 255, 255), true)
 			if Hits[I - 1] then
 				debugoverlay.Line(Hits[I - 1].Pos, Hit.Pos, FadeTime, Color(255, 128, 0, 255), true)
 			end

@@ -1,3 +1,4 @@
+-- Classes we should compute the mesh for
 local ArmorableClasses = {
     prop_physics = true,
     primitive_shape = true,
@@ -8,7 +9,7 @@ local ArmorableClasses = {
 }
 
 if SERVER then
-    function ProcessMesh(Entity, Meshes)
+    function ProcessConvexes(Entity, Meshes)
         local MeshData = { Verts = {}, Convexes = {} }
         local Lookup = {}
 
@@ -24,16 +25,26 @@ if SERVER then
         end
 
         for _, Convex in ipairs(Meshes) do
-            local ConvexTris = {}
-            MeshData.Convexes[#MeshData.Convexes + 1] = ConvexTris
+            local Tris    = {}
+            local NormSum = Vector(0, 0, 0)
+            local Volume  = 0
 
             for I = 1, #Convex, 3 do
                 local A = Convex[I].pos
                 local B = Convex[I + 1].pos
                 local C = Convex[I + 2].pos
 
-                ConvexTris[#ConvexTris + 1] = Vector(GetIndex(A), GetIndex(B), GetIndex(C))
+                NormSum = NormSum + (B - A):Cross(C - A)
+                Volume  = Volume + A:Dot(B:Cross(C)) -- Scalar triple product gives 6 times the volume
+
+                Tris[#Tris + 1] = Vector(GetIndex(A), GetIndex(B), GetIndex(C))
             end
+
+            MeshData.Convexes[#MeshData.Convexes + 1] = {
+                Tris   = Tris,
+                Normal = NormSum:GetNormalized(),
+                Volume = math.abs(Volume) / 6,
+            }
         end
 
         Entity.ACF_Volumetric_Mesh = MeshData
@@ -42,7 +53,7 @@ if SERVER then
     local function ProcessEntity(entity)
         if IsValid(entity) and (entity.IsACFEntity or ArmorableClasses[entity:GetClass()]) and IsValid(entity:GetPhysicsObject()) then
             local convexes = entity:GetPhysicsObject():GetMeshConvexes() or {}
-            ProcessMesh(entity, convexes)
+            ProcessConvexes(entity, convexes)
         end
     end
 
@@ -86,8 +97,8 @@ function ACF.RayIntersectMesh(Entity, Start, Direction, Length)
     local Hits    = {}
     local NormDir = Direction:GetNormalized()
 
-    for ConvexID, ConvexTris in ipairs(MeshData.Convexes) do
-        for _, Tri in ipairs(ConvexTris) do
+    for ConvexID, Convex in ipairs(MeshData.Convexes) do
+        for _, Tri in ipairs(Convex.Tris) do
             local A = Entity:LocalToWorld(Verts[Tri[1]])
             local B = Entity:LocalToWorld(Verts[Tri[2]])
             local C = Entity:LocalToWorld(Verts[Tri[3]])
