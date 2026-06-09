@@ -83,34 +83,13 @@ function Damage.getBulletDamage(Bullet, Trace)
 
 	if ACF.Check(Entity) then
 		local NormDir   = Bullet.Flight:GetNormalized()
-		local Thickness = Entity.ACF.Armour -- fallback for entities without a volumetric mesh
-		local Entry     -- first convex entry hit, used for angle and ConvexID
+		local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, NormDir)
+		local Thickness = ConvexHit and ConvexHit.GeoThick * ConvexHit.ArmorType.KineticMul
+		               or Entity.ACF.Armour
+		local Angle     = ConvexHit and ConvexHit.HitAngle
+		               or ACF.GetHitAngle(Trace, Bullet.Flight)
 
-		local MeshData = Entity.ACF_Volumetric_Mesh
-		if MeshData then
-			local Hits    = ACF.RayIntersectMesh(Entity, Trace.HitPos - NormDir * 2, NormDir, 10000)
-			local ExitHit
-
-			for _, Hit in ipairs(Hits) do
-				if not Entry then
-					if NormDir:Dot(Hit.Normal) < 0 then Entry = Hit end -- facing toward ray = entry face
-				elseif Hit.ConvexID == Entry.ConvexID and NormDir:Dot(Hit.Normal) > 0 then
-					ExitHit = Hit -- same convex, facing away = exit face
-					break
-				end
-			end
-
-			if Entry and ExitHit then
-				local ArmorTypes = ACF.Classes.ProcArmorTypes
-				local Convex     = MeshData.Convexes[Entry.ConvexID]
-				local ArmorType  = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("RHA")
-
-				Thickness = (ExitHit.T - Entry.T) * 25.4 * ArmorType.KineticMul -- inches to mm, scaled by RHA equivalent
-				DmgInfo:SetConvexID(Entry.ConvexID)
-			end
-		end
-
-		local Angle = Entry and math.deg(math.acos(math.Clamp(-NormDir:Dot(Entry.Normal), -1, 1))) or ACF.GetHitAngle(Trace, Bullet.Flight)
+		if ConvexHit then DmgInfo:SetConvexID(ConvexHit.ConvexID) end
 
 		DmgResult:SetArea(Bullet.ProjArea)
 		DmgResult:SetPenetration(Bullet:GetPenetration())

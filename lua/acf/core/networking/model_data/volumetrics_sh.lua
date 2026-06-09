@@ -171,3 +171,36 @@ function ACF.RayIntersectMesh(Entity, Start, Direction, Length)
     table.sort(Hits, function(a, b) return a.T < b.T end)
     return Hits
 end
+
+-- Finds the first convex entry/exit pair the ray passes through and returns damage-relevant data.
+-- Returns nil if the entity has no mesh or the ray misses all live convexes.
+-- GeoThick is geometric thickness in mm; multiply by ArmorType.KineticMul or .ChemicalMul as needed.
+function ACF.GetConvexHit(Entity, HitPos, Direction)
+    local MeshData = Entity.ACF_Volumetric_Mesh
+    if not MeshData then return nil end
+
+    local Hits  = ACF.RayIntersectMesh(Entity, HitPos - Direction * 2, Direction, 10000)
+    local Entry, ExitHit
+
+    for _, Hit in ipairs(Hits) do
+        if not Entry then
+            if Direction:Dot(Hit.Normal) < 0 then Entry = Hit end
+        elseif Hit.ConvexID == Entry.ConvexID and Direction:Dot(Hit.Normal) > 0 then
+            ExitHit = Hit
+            break
+        end
+    end
+
+    if not (Entry and ExitHit) then return nil end
+
+    local ArmorTypes = ACF.Classes.ProcArmorTypes
+    local Convex     = MeshData.Convexes[Entry.ConvexID]
+    local ArmorType  = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("RHA")
+
+    return {
+        ConvexID = Entry.ConvexID,
+        GeoThick = (ExitHit.T - Entry.T) * 25.4, -- inches to mm
+        ArmorType = ArmorType,
+        HitAngle = math.deg(math.acos(math.min(1, math.max(-1, -Direction:Dot(Entry.Normal))))),
+    }
+end

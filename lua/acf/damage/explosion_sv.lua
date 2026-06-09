@@ -300,34 +300,16 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		DmgInfo:SetHitPos(HitPos)
 		DmgInfo:SetHitGroup(TraceResult.HitGroup)
 
-		-- Geometry-derived armor thickness at the hit point
-		local Entry, ExitHit
-		local MeshData = HitEnt.ACF_Volumetric_Mesh
-		if MeshData then
-			local Hits = ACF.RayIntersectMesh(HitEnt, HitPos - Direction * 2, Direction, 10000)
-			for _, Hit in ipairs(Hits) do
-				if not Entry then
-					if Direction:Dot(Hit.Normal) < 0 then Entry = Hit end
-				elseif Hit.ConvexID == Entry.ConvexID and Direction:Dot(Hit.Normal) > 0 then
-					ExitHit = Hit
-					break
-				end
-			end
-		end
+		local ConvexHit = ACF.GetConvexHit(HitEnt, HitPos, Direction)
 
 		local BlastThickness, FragThickness, HitAngle
 
-		if Entry and ExitHit then
-			local ArmorTypes = ACF.Classes.ProcArmorTypes
-			local Convex     = MeshData.Convexes[Entry.ConvexID]
-			local ArmorType  = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("RHA")
-			local GeoThick   = (ExitHit.T - Entry.T) * 25.4
+		if ConvexHit then
+			BlastThickness = ConvexHit.GeoThick * ConvexHit.ArmorType.ChemicalMul
+			FragThickness  = ConvexHit.GeoThick * ConvexHit.ArmorType.KineticMul
+			HitAngle       = ConvexHit.HitAngle
 
-			BlastThickness = GeoThick * ArmorType.ChemicalMul
-			FragThickness  = GeoThick * ArmorType.KineticMul
-			HitAngle       = math.deg(math.acos(max(-1, min(1, -Direction:Dot(Entry.Normal)))))
-
-			DmgInfo:SetConvexID(Entry.ConvexID)
+			DmgInfo:SetConvexID(ConvexHit.ConvexID)
 		else
 			BlastThickness = HitEnt.ACF.Armour
 			FragThickness  = HitEnt.ACF.Armour
