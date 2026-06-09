@@ -266,5 +266,5 @@ function ACF.Activate(Entity)
 	EntTbl.ACF.MaxArmour = 1
 	EntTbl.ACF.Area      = 1
 
-	ACF.ComputeVolumetricMesh(Entity)
+	ACF.ComputeVolumetricMesh(Entity, true)
 end

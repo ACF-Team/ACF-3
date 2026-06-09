@@ -8,6 +8,16 @@ local ArmorableClasses = {
     primitive_airfoil = true,
 }
 
+-- Classes whose physics mesh may be reinitialized after creation (e.g. primitives that change shape)
+local ReInitializableClasses = {
+    primitive_shape      = true,
+    primitive_staircase  = true,
+    primitive_ladder     = true,
+    primitive_rail_silder = true,
+    primitive_rail_slider = true,
+    primitive_airfoil    = true,
+}
+
 if SERVER then
     function ProcessConvexes(Entity, Meshes)
         local MeshData = { Verts = {}, Convexes = {} }
@@ -51,11 +61,15 @@ if SERVER then
         Entity.ACF_Volumetric_Mesh = MeshData
     end
 
-    local function ComputeVolumetricMesh(entity)
-        if IsValid(entity) and (entity.IsACFEntity or ArmorableClasses[entity:GetClass()]) and IsValid(entity:GetPhysicsObject()) then
-            local convexes = entity:GetPhysicsObject():GetMeshConvexes() or {}
-            ProcessConvexes(entity, convexes)
-        end
+    local function ComputeVolumetricMesh(entity, isReInit)
+        if not IsValid(entity) then return end
+        if not entity.IsACFEntity and not ArmorableClasses[entity:GetClass()] then return end
+        if not isReInit and ReInitializableClasses[entity:GetClass()] then return end
+
+        local PhysObj = entity:GetPhysicsObject()
+        if not IsValid(PhysObj) then return end
+
+        ProcessConvexes(entity, PhysObj:GetMeshConvexes() or {})
     end
     ACF.ComputeVolumetricMesh = ComputeVolumetricMesh
 
