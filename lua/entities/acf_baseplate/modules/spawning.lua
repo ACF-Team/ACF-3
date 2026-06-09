@@ -3,15 +3,34 @@ local Notify        = ACF.Utilities.Notify
 local Con = ACF.Contraption
 
 function ENT.ACF_OnVerifyClientData(ClientData)
+	-- Patch pre-new class system
+	if type(ClientData.BaseplateType) == "string" then
+		local OldBaseplateTypeString = ClientData.BaseplateType
+		local Type = ACF.Classes.GetTypeByName("ACF.Baseplates." .. OldBaseplateTypeString)
+		if not Type then
+			Type = ACF.Classes.GetTypeByName("ACF.Baseplates.GroundVehicle")
+		end
+
+		local BpData = {}
+		ClientData.BaseplateType = {
+			Type = ACF.Classes.GetTypeName(Type),
+			Data = BpData
+		}
+		if OldBaseplateTypeString == "Aircraft" then
+			BpData.GForceTicks = ClientData.GForceTicks
+		end
+		if OldBaseplateTypeString == "Recreational" then
+			BpData.ExplodeOnCollisions = ClientData.ExplodeOnCollisions
+		end
+	end
 	ClientData.Size = Vector(ClientData.Length, ClientData.Width, ClientData.Thickness)
-	if ClientData.BaseplateType ~= "ACF.Baseplates.Aircraft" then ClientData.GForceTicks = 1 end -- Only allow sample rates > 1 for aircraft baseplates
 end
 
 function ENT:ACF_PostUpdateEntityData(ClientData)
 	self:SetSize(ClientData.Size)
-	local Hook = self:ACF_GetUserVar("BaseplateType").OnInitialize
-	if Hook then
-		Hook(self)
+	local BPTypeInst = self:ACF_GetUserVar("BaseplateType")
+	if BPTypeInst and BPTypeInst.OnInitialize then
+		BPTypeInst:OnInitialize(self)
 	end
 end
 
@@ -51,14 +70,20 @@ function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 		end
 	end)
 
+	local Baseplate = self
 	timer.Create("ACFPhysicalChecks" .. self:EntIndex(), 3, 0, function()
-		local Physical, _, _ = Con.GetEnts(self)
+		local Physical, _, _ = Con.GetEnts(Baseplate)
 		for Ent in pairs(Physical) do
 			if not IsValid(Ent) then continue end
 			if Ent.ACF_ReplacedPhysicsCollide then continue end
-			local PhysCollide = self:ACF_GetUserVar("BaseplateType").PhysicsCollide
-			if not PhysCollide then continue end
-			Ent.PhysicsCollide = PhysCollide
+			local BPTypeInst = IsValid(Baseplate) and Baseplate:ACF_GetUserVar("BaseplateType")
+			if not BPTypeInst or not BPTypeInst.PhysicsCollide then continue end
+			Ent.PhysicsCollide = function(_, Data)
+				local Current = IsValid(Baseplate) and Baseplate:ACF_GetUserVar("BaseplateType")
+				if Current and Current.PhysicsCollide then
+					Current:PhysicsCollide(Ent, Data)
+				end
+			end
 			Ent.ACF_ReplacedPhysicsCollide = true
 		end
 	end)

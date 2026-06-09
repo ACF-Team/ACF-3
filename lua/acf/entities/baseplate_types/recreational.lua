@@ -6,6 +6,20 @@ ACF.Classes.DefineClass("ACF.Baseplates.Recreational", "ACF.Baseplates.Baseplate
 	CLASS.Icon        = "icon16/car_add.png"
 	CLASS.Description = "A baseplate designed for non combat use (e.g. cars).\nWeapons and ammo will be removed. Fuel consumption rate set to 1."
 
+	MENU_FIELD("Boolean", "ExplodeOnCollisions", {Default = false})
+
+	function CLASS.CreateMenu(SubMenu, NestedData, PushData)
+		local Opts = ACF.Classes.GetTypeFieldByName(CLASS, "ExplodeOnCollisions").Options
+		local Box  = SubMenu:AddCheckBox("Explode on Collisions")
+		local Init = NestedData.ExplodeOnCollisions
+		if Init == nil then Init = Opts.Default or false end
+		Box:SetValue(Init)
+		function Box:OnChange(Value)
+			NestedData.ExplodeOnCollisions = Value
+			PushData()
+		end
+	end
+
 	function CLASS.EnforceLooped(Baseplate)
 		local Contraption = Baseplate:CFW_GetContraption()
 		if not Contraption then return end
@@ -45,8 +59,8 @@ ACF.Classes.DefineClass("ACF.Baseplates.Recreational", "ACF.Baseplates.Baseplate
 		end
 	end
 
-	function CLASS:PhysicsCollide(Data)
-		if not self:ACF_GetUserVar("ExplodeOnCollisions") then return end
-		BASE.BP_PhysicsCollideExplosion(self, Data)
+	function CLASS:PhysicsCollide(Entity, Data)
+		if not self.ExplodeOnCollisions then return end
+		BASE.BP_PhysicsCollideExplosion(Entity, Data)
 	end
 end)

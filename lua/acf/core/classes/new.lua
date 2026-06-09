@@ -13,8 +13,12 @@
 -- A class has initialized <-> Classes[ID] = ClassTable
 -- A class is waiting on its parent to initialize <-> Queued[BaseID][ID] = ClassTable
 
-local Classes = {} --- A mapping from a class' ID to its table
+local Classes = ACF.Classes.Registry or {} --- A mapping from a class' ID to its table
+ACF.Classes.Registry = Classes
+
 local Queued = {} -- A mapping from a class' ID to a (mapping from its children's IDs to their tables)
+
+local READ_ONLY_MT = {__newindex = function() end}
 
 do
     --- Initializes a class by adding its metatable and running callbacks/hooks.
@@ -55,12 +59,13 @@ do
         NewClass.GetType = GetType
 
         -- Initialize Fields, inheriting from base class
-        NewClass.Fields = { List = {}, Lookup = {} }
-        if BaseClass and BaseClass.Fields then
-            for _, Field in ipairs(BaseClass.Fields.List) do
+        ClassMeta.__FIELDS = { List = {}, Lookup = {} }
+        local BaseClassMT = BaseClass and getmetatable(BaseClass)
+        if BaseClassMT and BaseClassMT.__FIELDS then
+            for _, Field in ipairs(BaseClassMT.__FIELDS.List) do
                 local Copy = table.Copy(Field)
-                table.insert(NewClass.Fields.List, Copy)
-                NewClass.Fields.Lookup[Field.Name] = Copy
+                table.insert(ClassMeta.__FIELDS.List, Copy)
+                ClassMeta.__FIELDS.Lookup[Field.Name] = Copy
             end
         end
 
@@ -70,15 +75,16 @@ do
             Environment.BASE  = BaseClass
 
             local function AddField(Menu, FieldType, Name, Options)
-                local Existing = NewClass.Fields.Lookup[Name]
+                local NewClassMT = getmetatable(NewClass)
+                local Existing = NewClassMT.__FIELDS.Lookup[Name]
                 if Existing then
                     Existing.Type    = FieldType
                     Existing.Options = Options or {}
                     Existing.Menu    = Menu
                 else
                     local Field = { Type = FieldType, Name = Name, Options = Options or {}, Menu = Menu }
-                    table.insert(NewClass.Fields.List, Field)
-                    NewClass.Fields.Lookup[Name] = Field
+                    table.insert(NewClassMT.__FIELDS.List, Field)
+                    NewClassMT.__FIELDS.Lookup[Name] = Field
                 end
             end
 
@@ -101,6 +107,11 @@ do
             end
             Queued[FullyQualifiedName] = nil
         end
+
+        -- Don't allow these to be modified by users, just in case someone is stupid
+        setmetatable(ClassMeta.__FIELDS, READ_ONLY_MT)
+        setmetatable(ClassMeta.__FIELDS.List, READ_ONLY_MT)
+        setmetatable(ClassMeta.__FIELDS.Lookup, READ_ONLY_MT)
     end
 
     --- Defines and returns a class' table, which you can define methods on.
@@ -145,6 +156,7 @@ do
     ACF.Classes.DefineClass = DefineClass
 end
 
+local ReadOnlyTable = setmetatable({}, nil)
 
 -- NOTE: When I specify a name, I will say "ClassName".
 -- When I specify a class object, I will say "ClassType"
@@ -155,6 +167,17 @@ end
 
 function ACF.Classes.GetTypeName(Class)
     return Class and getmetatable(Class).__CLASS_ID or "none"
+end
+
+-- Returns a contiguous read-only array of fields
+function ACF.Classes.GetTypeFields(Class)
+    return Class and getmetatable(Class).__FIELDS.List or ReadOnlyTable
+end
+
+-- Looks up a field on a class by name
+function ACF.Classes.GetTypeFieldByName(Class, Name)
+    if Class == nil then return nil end
+    return getmetatable(Class).__FIELDS.Lookup[Name]
 end
 
 

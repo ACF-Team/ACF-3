@@ -1,4 +1,5 @@
-local ACF = ACF
+local ACF     = ACF
+local Classes = ACF.Classes
 
 local function CreateMenu(Menu)
 	ACF.SetToolMode("acf_menu", "Spawner", "Baseplate")
@@ -6,60 +7,44 @@ local function CreateMenu(Menu)
 	ACF.SetClientData("SecondaryClass", "N/A")
 
 	Menu:AddTitle("#acf.menu.baseplates.settings")
-
 	Menu:AddWikiLink("Baseplates", "docs/getting_started/first_tank/baseplate_aio.html")
-
 	Menu:AddLabel("#acf.menu.baseplates.desc")
 
-	local ClassList    = Menu:AddComboBox()
+	local EntityClassDef = Classes.GetTypeByName("acf_baseplate")
 
-	-- Set default baseplate size values before creating sliders to prevent nil value errors
-	local DefaultWidth = ACF.GetClientNumber("Width", 36)
-	local DefaultLength = ACF.GetClientNumber("Length", 36)
-	local DefaultThickness = ACF.GetClientNumber("Thickness", 1.5)
-	local DefaultGForceTicks = ACF.GetClientNumber("GForceTicks", 4)
+	local TypeSelector = Classes.CreateTypeSelector(Menu, EntityClassDef, "BaseplateType")
+	local ClassList    = TypeSelector.ComboBox
 
-	ACF.SetClientData("Width", DefaultWidth, true)
-	ACF.SetClientData("Length", DefaultLength, true)
-	ACF.SetClientData("Thickness", DefaultThickness, true)
-	ACF.SetClientData("GForceTicks", DefaultGForceTicks, true)
+	local WidthOpts     	= Classes.GetTypeFieldByName(EntityClassDef, "Width").Options
+	local LengthOpts     	= Classes.GetTypeFieldByName(EntityClassDef, "Length").Options
+	local ThicknessOpts     = Classes.GetTypeFieldByName(EntityClassDef, "Thickness").Options
 
-	local SizeX        			= Menu:AddSlider("#acf.menu.baseplates.plate_width", 36, 240, 2)
-	local SizeY        			= Menu:AddSlider("#acf.menu.baseplates.plate_length", 36, 420, 2)
-	local SizeZ        			= Menu:AddSlider("#acf.menu.baseplates.plate_thickness", 0.5, 3, 2)
-	local DisableAltE  			= Menu:AddCheckBox("#acf.menu.baseplates.disable_alt_e")
-	local ExplodeCollide 		= Menu:AddCheckBox("#acf.menu.baseplates.explode_on_collisions")
-	local ExplodeCollideInfo 	= Menu:AddHelp("#acf.menu.baseplates.explode_on_collisions_info")
-	local GForceTicks  			= Menu:AddSlider("#acf.menu.baseplates.gforce_ticks", 1, 7, 0)
-	local GForceTicksInfo   	= Menu:AddHelp("#acf.menu.baseplates.gforce_ticks_info")
+	ACF.SetClientData("Width",     ACF.GetClientNumber("Width",     WidthOpts.Default     or 36),  true)
+	ACF.SetClientData("Length",    ACF.GetClientNumber("Length",    LengthOpts.Default    or 36),  true)
+	ACF.SetClientData("Thickness", ACF.GetClientNumber("Thickness", ThicknessOpts.Default or 1.5), true)
 
-	local BaseplateBase     = Menu:AddCollapsible("#acf.menu.baseplates.baseplate_info", nil, "icon16/shape_square_edit.png")
-	local BaseplateName     = BaseplateBase:AddTitle()
-	local BaseplateDesc     = BaseplateBase:AddLabel()
+	local SizeX      = Menu:AddSlider("#acf.menu.baseplates.plate_width",     WidthOpts.Min     or 36,  WidthOpts.Max     or 240, WidthOpts.Decimals     or 2)
+	local SizeY      = Menu:AddSlider("#acf.menu.baseplates.plate_length",    LengthOpts.Min    or 36,  LengthOpts.Max    or 480, LengthOpts.Decimals    or 2)
+	local SizeZ      = Menu:AddSlider("#acf.menu.baseplates.plate_thickness", ThicknessOpts.Min or 0.5, ThicknessOpts.Max or 3,   ThicknessOpts.Decimals or 2)
+	local DisableAltE = Menu:AddCheckBox("#acf.menu.baseplates.disable_alt_e")
 
-	function ClassList:OnSelect(Index, _, Data)
-		if self.Selected == Data then return end
+	local BaseplateBase = Menu:AddCollapsible("#acf.menu.baseplates.baseplate_info", nil, "icon16/shape_square_edit.png")
+	local BaseplateName = BaseplateBase:AddTitle()
+	local BaseplateDesc = BaseplateBase:AddLabel()
 
-		self.ListData.Index = Index
-		self.Selected       = Data
+	if ClassList and ClassList.Selected then
+		BaseplateName:SetText(ClassList.Selected.Name)
+		BaseplateDesc:SetText(ClassList.Selected.Description)
+	end
 
-		BaseplateName:SetText(Data.Name)
-		BaseplateDesc:SetText(Data.Description)
-
-		local IsAircraft = Data.ID == "ACF.Baseplates.Aircraft"
-		local IsRecreational = Data.ID == "ACF.Baseplates.Recreational"
-
-		ExplodeCollide:SetVisible(IsRecreational)
-		ExplodeCollideInfo:SetVisible(IsRecreational)
-		GForceTicks:SetVisible(IsAircraft)
-		GForceTicksInfo:SetVisible(IsAircraft)
-
-		ACF.SetClientData("BaseplateType", Data.ID)
+	function TypeSelector.OnTypeChanged(TypeObj)
+		BaseplateName:SetText(TypeObj.Name)
+		BaseplateDesc:SetText(TypeObj.Description)
 	end
 
 	local PreviewSettings = {
-		FOV = 120,
-		Height = 120,
+		FOV       = 120,
+		Height    = 120,
 		AngOffset = Angle(0, -90, 0),
 	}
 
@@ -69,13 +54,12 @@ local function CreateMenu(Menu)
 
 	local function UpdatePreviewSize()
 		local X, Y, Z = SizeX:GetValue(), SizeY:GetValue(), SizeZ:GetValue()
-		BaseplatePreview:SetModelScale(Vector(Y, X, Z)) -- Yes, X and Y are swapped on purpose...
+		BaseplatePreview:SetModelScale(Vector(Y, X, Z)) -- X and Y are swapped intentionally
 	end
 
 	SizeX:SetClientData("Width", "OnValueChanged")
 	SizeX:DefineSetter(function(Panel, _, _, Value)
 		local X = math.Round(Value, 2)
-
 		Panel:SetValue(X)
 		UpdatePreviewSize()
 		return X
@@ -84,7 +68,6 @@ local function CreateMenu(Menu)
 	SizeY:SetClientData("Length", "OnValueChanged")
 	SizeY:DefineSetter(function(Panel, _, _, Value)
 		local Y = math.Round(Value, 2)
-
 		Panel:SetValue(Y)
 		UpdatePreviewSize()
 		return Y
@@ -93,23 +76,12 @@ local function CreateMenu(Menu)
 	SizeZ:SetClientData("Thickness", "OnValueChanged")
 	SizeZ:DefineSetter(function(Panel, _, _, Value)
 		local Z = math.Round(Value, 2)
-
 		Panel:SetValue(Z)
 		UpdatePreviewSize()
 		return Z
 	end)
 
-	GForceTicks:SetClientData("GForceTicks", "OnValueChanged")
-	GForceTicks:DefineSetter(function(Panel, _, _, Value)
-		local Ticks = math.Round(Value, 0)
-
-		Panel:SetValue(Ticks)
-
-		return Ticks
-	end)
-
 	DisableAltE:SetClientData("DisableAltE", "OnChange")
-	ExplodeCollide:SetClientData("ExplodeOnCollisions", "OnChange")
 
 	UpdatePreviewSize()
 
@@ -119,10 +91,6 @@ local function CreateMenu(Menu)
 		BaseplateConvertText = BaseplateConvertText .. language.GetPhrase("acf.menu.baseplates.convert_info" .. I)
 	end
 	BaseplateConvertInfo:AddLabel(BaseplateConvertText)
-
-	local Entries = ACF.Classes.GetSubtypes("ACF.Baseplates.BaseplateType")
-	ACF.LoadSortedList(ClassList, Entries, "Name", "Icon")
-	ClassList:ChooseOptionID(2)
 end
 
 ACF.AddMenuItem(50, "#acf.menu.entities", "#acf.menu.baseplates", "shape_square", CreateMenu)

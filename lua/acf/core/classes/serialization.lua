@@ -1,8 +1,9 @@
-ACF.Classes.Serialization = ACF.Classes.Serialization or {}
+local Classes        = ACF.Classes
+Classes.Serialization = Classes.Serialization or {}
 
-local Serialization  = ACF.Classes.Serialization
-local GetTypeByName  = ACF.Classes.GetTypeByName
-local IsAssignableTo = ACF.Classes.IsAssignableTo
+local Serialization  = Classes.Serialization
+local GetTypeByName  = Classes.GetTypeByName
+local IsAssignableTo = Classes.IsAssignableTo
 
 local function ParseType(TypeStr)
     if TypeStr:sub(-2) == "[]" then
@@ -52,14 +53,10 @@ local function SerializeValue(ElemType, Value)
         local ClassType = GetTypeByName(ElemType)
         if ClassType and Value then
             local ActualType = Value.GetType and Value:GetType() or ClassType
-            -- If the stored value IS the class type itself (a type reference, not an instance),
-            -- serialize as just the ID string — no per-instance data to capture.
-            if ActualType == Value then
-                return Value.ID
-            end
+            if ActualType == Value then return Value.ID end
             return {
-                type = ActualType.ID,
-                data = Serialization.Serialize(ActualType, Value)
+                Type = ActualType.ID,
+                Data = Serialization.Serialize(ActualType, Value)
             }
         end
         return nil
@@ -77,16 +74,15 @@ local function DeserializeValue(ElemType, Raw, Options)
         local ClassType = GetTypeByName(ElemType)
         if ClassType then
             if type(Raw) == "string" then
-                -- Class type given as an ID string — instantiate it
                 local TypeObj = GetTypeByName(Raw)
                 if TypeObj and IsAssignableTo(TypeObj, ClassType) then
                     return TypeObj()
                 end
-            elseif type(Raw) == "table" and Raw.type then
-                -- Class instance: serialized as { type, data }
-                local ActualType = GetTypeByName(Raw.type)
+            elseif type(Raw) == "table" and Raw.Type then
+                -- Class instance: serialized as { Type, Data }
+                local ActualType = GetTypeByName(Raw.Type)
                 if ActualType and IsAssignableTo(ActualType, ClassType) then
-                    return Serialization.DeserializePartial(ActualType, Raw.data)
+                    return Serialization.DeserializePartial(ActualType, Raw.Data)
                 end
             end
         end
@@ -100,7 +96,7 @@ function Serialization.Serialize(Class, Instance)
 
     if not Instance then return Out end
 
-    for _, Field in ipairs(Class.Fields.List) do
+    for _, Field in ipairs(Classes.GetTypeFields(Class)) do
         local ElemType, IsArray = ParseType(Field.Type)
         local Value = Instance[Field.Name]
 
@@ -120,14 +116,55 @@ function Serialization.Serialize(Class, Instance)
     return Out
 end
 
--- Step 1: Create a class instance with non-Entity fields populated and validated.
--- Entity fields are left nil — they must be resolved separately via ResolveEntities.
+-- The deserialization here is split into two steps, due to most deserialization going through an entity duplicator pipeline.
+-- The first step is dedicated to handling every field that isn't an Entity, since those fields will be a different type. We
+-- explicitly wait until later and do NOT store the number in place to avoid type confusion
+-- The second step is dedicated to handling all Entity fields that were missing, since PostEntityPaste will provide the LUT of
+-- old entity indices -> new entity references. TODO: integrate with linking, somehow, perhaps LINKED_ENTITY_FIELD macros
+
+function Serialization.DeserializeInto(Class, Instance, Data)
+    if not Instance or not Data then return Instance end
+
+    for _, Field in ipairs(Classes.GetTypeFields(Class)) do
+        if not Field.Menu then continue end
+
+        local ElemType, IsArray = ParseType(Field.Type)
+        if ElemType == "Entity" then continue end
+
+        local Options = Field.Options
+        local Raw     = Data[Field.Name]
+
+        if IsArray then
+            if type(Raw) == "table" then
+                local Arr = {}
+                for _, V in ipairs(Raw) do
+                    local Deserialized = DeserializeValue(ElemType, V, Options)
+                    if Deserialized ~= nil then Arr[#Arr + 1] = Deserialized end
+                end
+                Instance[Field.Name] = Arr
+            end
+        elseif Raw ~= nil then
+            local Deserialized = DeserializeValue(ElemType, Raw, Options)
+            if Deserialized ~= nil then
+                Instance[Field.Name] = Deserialized
+            elseif Options.InstantiateTypeForDefault and Instance[Field.Name] == nil then
+                local DefaultType = GetTypeByName(Options.InstantiateTypeForDefault)
+                Instance[Field.Name] = DefaultType and DefaultType() or nil
+            end
+        elseif Options.InstantiateTypeForDefault and Instance[Field.Name] == nil then
+            local DefaultType = GetTypeByName(Options.InstantiateTypeForDefault)
+            Instance[Field.Name] = DefaultType and DefaultType() or nil
+        end
+    end
+
+    return Instance
+end
+
 function Serialization.DeserializePartial(Class, Data)
     local Instance = Class()
-
     if not Data then return Instance end
 
-    for _, Field in ipairs(Class.Fields.List) do
+    for _, Field in ipairs(Classes.GetTypeFields(Class)) do
         local ElemType, IsArray = ParseType(Field.Type)
 
         if ElemType == "Entity" then continue end
@@ -151,22 +188,22 @@ function Serialization.DeserializePartial(Class, Data)
             if Deserialized ~= nil then
                 Instance[Field.Name] = Deserialized
             elseif Options.InstantiateTypeForDefault then
-                Instance[Field.Name] = GetTypeByName(Options.InstantiateTypeForDefault)
+                local DefaultType = GetTypeByName(Options.InstantiateTypeForDefault)
+                Instance[Field.Name] = DefaultType and DefaultType() or nil
             end
         elseif Options.InstantiateTypeForDefault then
-            Instance[Field.Name] = GetTypeByName(Options.InstantiateTypeForDefault)
+            local DefaultType = GetTypeByName(Options.InstantiateTypeForDefault)
+            Instance[Field.Name] = DefaultType and DefaultType() or nil
         end
     end
 
     return Instance
 end
 
--- Step 2: Fill Entity fields on an existing instance using the duplicator old-index -> new-entity LUT.
--- Also recurses into class-typed fields to resolve any entity fields nested inside them.
 function Serialization.ResolveEntities(Class, Instance, Data, CreatedEntities)
     if not Instance or not Data then return end
 
-    for _, Field in ipairs(Class.Fields.List) do
+    for _, Field in ipairs(Classes.GetTypeFields(Class)) do
         local ElemType, IsArray = ParseType(Field.Type)
         local Options           = Field.Options
 
@@ -188,25 +225,24 @@ function Serialization.ResolveEntities(Class, Instance, Data, CreatedEntities)
                 Instance[Field.Name] = ValidateEntity(CreatedEntities[Raw], Options)
             end
         elseif GetTypeByName(ElemType) then
-            -- Recurse into class-typed fields — they may have entity fields of their own
             if IsArray then
                 local NestedArr = Instance[Field.Name]
                 local RawArr    = Data[Field.Name]
                 if type(NestedArr) == "table" and type(RawArr) == "table" then
                     for I, NestedInst in ipairs(NestedArr) do
                         local RawElem = RawArr[I]
-                        if NestedInst and type(RawElem) == "table" and RawElem.data then
+                        if NestedInst and type(RawElem) == "table" and RawElem.Data then
                             local ActualClass = NestedInst.GetType and NestedInst:GetType() or GetTypeByName(ElemType)
-                            Serialization.ResolveEntities(ActualClass, NestedInst, RawElem.data, CreatedEntities)
+                            Serialization.ResolveEntities(ActualClass, NestedInst, RawElem.Data, CreatedEntities)
                         end
                     end
                 end
             else
                 local NestedInst = Instance[Field.Name]
                 local RawField   = Data[Field.Name]
-                if NestedInst and type(RawField) == "table" and RawField.data then
+                if NestedInst and type(RawField) == "table" and RawField.Data then
                     local ActualClass = NestedInst.GetType and NestedInst:GetType() or GetTypeByName(ElemType)
-                    Serialization.ResolveEntities(ActualClass, NestedInst, RawField.data, CreatedEntities)
+                    Serialization.ResolveEntities(ActualClass, NestedInst, RawField.Data, CreatedEntities)
                 end
             end
         end

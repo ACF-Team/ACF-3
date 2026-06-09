@@ -51,6 +51,8 @@ local function PrepareSpawnFunctions(ENT, ClassName)
     local ClassDef      = ENT.ACF_ClassDef
     local Serialization = ACF.Classes.Serialization
 
+    cleanup.Register(ClassName)
+
     function ENT:ACF_GetUserVar(Key)
         return self.ACF_LiveData and self.ACF_LiveData[Key]
     end
@@ -75,7 +77,11 @@ local function PrepareSpawnFunctions(ENT, ClassName)
 
         ACF.SaveEntity(self)
 
-        self.ACF_LiveData = Serialization.DeserializePartial(ClassDef, ClientData)
+        if self.ACF_LiveData then
+            Serialization.DeserializeInto(ClassDef, self.ACF_LiveData, ClientData)
+        else
+            self.ACF_LiveData = Serialization.DeserializePartial(ClassDef, ClientData)
+        end
 
         hook.Run("ACF_OnUpdateEntity", Class, self, ClientData)
         ACF.RestoreEntity(self)
@@ -132,9 +138,10 @@ local function PrepareSerializationFunctions(ENT)
     end
 
     function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
-        local Data        = Ent.ACF_UserData or {}
-        self.ACF_LiveData = ACF.Classes.Serialization.DeserializePartial(ClassDef, Data)
-        ACF.Classes.Serialization.ResolveEntities(ClassDef, self.ACF_LiveData, Data, CreatedEntities)
+        local Data = Ent.ACF_UserData or {}
+        if self.ACF_LiveData then
+            ACF.Classes.Serialization.ResolveEntities(ClassDef, self.ACF_LiveData, Data, CreatedEntities)
+        end
         if OrigPostEntityPaste then OrigPostEntityPaste(self, Player, Ent, CreatedEntities) end
         self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
     end
@@ -155,5 +162,6 @@ function ACF.AutoRegisterV2(DefineFields)
         PrepareWiremodFunctions(ENT)
         PrepareSerializationFunctions(ENT)
         PrepareSpawnFunctions(ENT, ExpectedClass)
+        ENT.ACF_ClassDef = nil -- Otherwise hot reloading entities completely breaks lol
     end)
 end
