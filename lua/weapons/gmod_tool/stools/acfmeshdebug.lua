@@ -54,7 +54,7 @@ elseif SERVER then
 			end
 			AveragePos = AveragePos / (3 * #Convex.Tris)
 
-			local Label = IsHighlighted and string.format("%d: %s (%.2f cm^3)", Index, Convex.Material, Convex.Volume) or tostring(Index)
+			local Label = IsHighlighted and string.format("Mat: %s | HP: %.2f | Vol: %.2f", Convex.Material, Convex.Health, Convex.Volume) or tostring(Index)
 
 			debugoverlay.Text(AveragePos, Label, FadeTime, Col, true)
 		end
@@ -66,7 +66,6 @@ elseif SERVER then
 
 		local Dir       = (Trace.HitPos - Trace.StartPos):GetNormalized()
 		local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir)
-		print("Hit", ConvexHit and ConvexHit.ConvexID or "none")
 
 		VisualizeConvexes(Entity, nil, ConvexHit and ConvexHit.ConvexID)
 		return true
