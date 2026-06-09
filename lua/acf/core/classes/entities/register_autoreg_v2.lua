@@ -11,7 +11,7 @@ local function ClassNameTrick(ENT)
 end
 
 local function ClassFieldDefinitions(ENT, DefineFields)
-    ENT.ACF_ClassDef = ACF.Classes.DefineClass(ENT.ACF_ClassName, ENT.ACF_BaseClass, DefineFields)
+    ENT.ACF_ClassDef = ACF.Classes.DefineClass(ENT.ACF_ClassName, ENT.ACF_BaseClassName, DefineFields)
 end
 
 --- This sets up wiremod functions
@@ -47,6 +47,28 @@ local function PrepareWiremodFunctions(ENT)
     if not ENT.ACF_SetupWireIO then ENT.ACF_SetupWireIO = function() end end
 end
 
+local function PrepareSerializationFunctions(ENT)
+    local ClassDef             = ENT.ACF_ClassDef
+    local OrigPreEntityCopy    = ENT.PreEntityCopy
+    local OrigPostEntityPaste  = ENT.PostEntityPaste
+
+    function ENT:PreEntityCopy()
+        if self.ACF_LiveData then
+            self.ACF_UserData = ACF.Classes.Serialization.Serialize(ClassDef, self.ACF_LiveData)
+        end
+        if OrigPreEntityCopy then OrigPreEntityCopy(self) end
+        self.BaseClass.PreEntityCopy(self)
+    end
+
+    function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+        local Data        = Ent.ACF_UserData or {}
+        self.ACF_LiveData = ACF.Classes.Serialization.DeserializePartial(ClassDef, Data)
+        ACF.Classes.Serialization.ResolveEntities(ClassDef, self.ACF_LiveData, Data, CreatedEntities)
+        if OrigPostEntityPaste then OrigPostEntityPaste(self, Player, Ent, CreatedEntities) end
+        self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
+    end
+end
+
 function ACF.AutoRegisterV2(DefineFields)
     ENT.IsACFEntity = true
     ClassNameTrick(ENT)
@@ -60,5 +82,6 @@ function ACF.AutoRegisterV2(DefineFields)
 
         if Class ~= ExpectedClass then return end
         PrepareWiremodFunctions(ENT)
+        PrepareSerializationFunctions(ENT)
     end)
 end
