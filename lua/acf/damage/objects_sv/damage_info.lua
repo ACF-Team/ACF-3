@@ -38,6 +38,7 @@ AccessorFunc(Meta, "Type", "Type", FORCE_NUMBER)
 AccessorFunc(Meta, "Origin", "Origin")
 AccessorFunc(Meta, "HitPos", "HitPos")
 AccessorFunc(Meta, "HitGroup", "HitGroup", FORCE_NUMBER)
+AccessorFunc(Meta, "ConvexID", "ConvexID") -- Index into Entity.ACF_Volumetric_Mesh.Convexes; nil if no mesh was hit
 
 Meta.__index    = Meta
 Meta.__tostring = Meta.ToString
