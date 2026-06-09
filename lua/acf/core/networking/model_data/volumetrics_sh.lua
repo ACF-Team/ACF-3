@@ -41,6 +41,8 @@ if SERVER then
             return Index
         end
 
+        local TotalMaxHealth = 0
+
         for _, Convex in ipairs(Meshes) do
             local Tris    = {}
             local NormSum = Vector(0, 0, 0)
@@ -63,6 +65,8 @@ if SERVER then
             local Volume_cm3 = math.abs(Volume) / 6 * CubicInchToCm3
             local Health     = Volume_cm3 * ArmorType.Density * ArmorType.HealthMul -- Density in kg/cm^3.
 
+            TotalMaxHealth = TotalMaxHealth + Health
+
             MeshData.Convexes[#MeshData.Convexes + 1] = {
                 Tris      = Tris,
                 Normal    = NormSum:GetNormalized(),
@@ -70,9 +74,11 @@ if SERVER then
                 Material  = Material,
                 Health    = Health,
                 MaxHealth = Health,
+                Entity    = Entity,
             }
         end
 
+        MeshData.MaxHealth         = TotalMaxHealth
         Entity.ACF_Volumetric_Mesh = MeshData
     end
 
@@ -85,6 +91,13 @@ if SERVER then
         if not IsValid(PhysObj) then return end
 
         ProcessConvexes(entity, PhysObj:GetMeshConvexes() or {})
+
+        local EntACF = entity.ACF
+        if EntACF then
+            local MaxHealth  = entity.ACF_Volumetric_Mesh.MaxHealth
+            EntACF.MaxHealth = MaxHealth
+            EntACF.Health    = MaxHealth
+        end
     end
     ACF.ComputeVolumetricMesh = ComputeVolumetricMesh
 
@@ -129,6 +142,8 @@ function ACF.RayIntersectMesh(Entity, Start, Direction, Length)
     local NormDir = Direction:GetNormalized()
 
     for ConvexID, Convex in ipairs(MeshData.Convexes) do
+        if Convex.Health <= 0 then continue end -- destroyed convex is transparent to projectiles
+
         for _, Tri in ipairs(Convex.Tris) do
             local A = Entity:LocalToWorld(Verts[Tri[1]])
             local B = Entity:LocalToWorld(Verts[Tri[2]])

@@ -247,9 +247,7 @@ end
 -- @param DmgResult A DamageResult object.
 -- @param DmgInfo A DamageInfo object.
 -- @return The output of the DamageResult object.
-function Damage.doPropDamage(Entity, DmgResult)
-	local EntACF = Entity.ACF
-	local Health = EntACF.Health
+function Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 	local HitRes = DmgResult:Compute()
 
 	-- Mark contraption as in combat when taking damage
@@ -258,21 +256,37 @@ function Damage.doPropDamage(Entity, DmgResult)
 		Contraption.InCombat = engine.TickCount()
 	end
 
-	if HitRes.Damage >= Health then
-		if Entity.ACF_KillableButIndestructible then
-			HitRes.Kill = false
-			Entity.ACF.Health = 0
-		else
-			HitRes.Kill = true
-		end
+	local MeshData = Entity.ACF_Volumetric_Mesh
+	local ConvexID = DmgInfo and DmgInfo:GetConvexID()
+
+	if MeshData and ConvexID then
+		local Convex    = MeshData.Convexes[ConvexID]
+		local OldHealth = Convex.Health
+		Convex.Health   = math.max(0, Convex.Health - HitRes.Damage)
+
+		local EntACF  = Entity.ACF
+		EntACF.Health = math.max(0, EntACF.Health - (OldHealth - Convex.Health))
+
+		Damage.Network(Entity, nil, EntACF.Health, EntACF.MaxHealth)
 	else
-		local NewHealth = Health - HitRes.Damage
-		local MaxHealth = EntACF.MaxHealth
+		-- Fallback for entities without a volumetric mesh
+		local EntACF = Entity.ACF
+		local Health = EntACF.Health
 
-		EntACF.Health = NewHealth
-		EntACF.Armour = EntACF.MaxArmour * (0.5 + NewHealth / MaxHealth * 0.5) -- Simulating the plate weakening after a hit
+		if HitRes.Damage >= Health then
+			if Entity.ACF_KillableButIndestructible then
+				HitRes.Kill = false
+				EntACF.Health = 0
+			else
+				HitRes.Kill = true
+			end
+		else
+			local NewHealth = Health - HitRes.Damage
+			local MaxHealth = EntACF.MaxHealth
 
-		Damage.Network(Entity, nil, NewHealth, MaxHealth)
+			EntACF.Health = NewHealth
+			Damage.Network(Entity, nil, NewHealth, MaxHealth)
+		end
 	end
 
 	if Entity.ACF_HealthUpdatesWireOverlay then
