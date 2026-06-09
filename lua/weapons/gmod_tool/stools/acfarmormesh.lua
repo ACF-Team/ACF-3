@@ -96,15 +96,26 @@ if CLIENT then
 		Menu:AddLabel("This tool is used to create and edit ACF armor meshes.")
 
 		local Materials = Menu:AddComboBox()
+
+		Menu:AddHelp("#tool.acfarmormesh.material_desc")
+
+		local Base = Menu:AddCollapsible("Material Info", true)
+		local MatName    = Base:AddTitle()
+		local MatDesc    = Base:AddLabel()
+		local MatDensity = Base:AddLabel()
+
 		function Materials:OnSelect(Index, _, Data)
 			if self.Selected == Data then return end
 
 			self.ListData.Index = Index
 			self.Selected       = Data
+
+			MatName:SetText(Data.Name)
+			MatDesc:SetText(Data.Description)
+			MatDensity:SetText(string.format("Density: %g g/cm^3", Data.Density * 1000))
 		end
 
 		ACF.LoadSortedList(Materials, ProcArmorTypes.GetEntries(), "Name")
-		Menu:AddHelp("#tool.acfarmormesh.material_desc")
 
 		local SphereRadius = Menu:AddSlider("#tool.acfarmormesh.sphere_search_radius", 0, 2000, 0)
 		SphereRadius:SetConVar("acfarmormesh_sphere_radius")
