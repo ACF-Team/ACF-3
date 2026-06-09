@@ -120,7 +120,6 @@ local function PrepareSpawnFunctions(ENT, ClassName)
     local function DoSpawn(Player, Pos, Angle, ClientData, IsMenuSpawn)
         if IsValid(Player) and not Player:CheckLimit("_" .. ClassName) then return end
 
-        local HookArgs  = ENT.ACF_GetHookArguments and ENT.ACF_GetHookArguments(ClientData)
         local CanSpawn  = hook.Run("ACF_PreSpawnEntity", ClassName, Player, ClientData, HookArgs)
         if CanSpawn == false then return end
 
@@ -141,19 +140,18 @@ local function PrepareSpawnFunctions(ENT, ClassName)
         end
 
         if Entity.ACF_OnSpawn then Entity:ACF_OnSpawn(Player, Pos, Angle, ClientData) end
-        hook.Run("ACF_OnSpawnEntity", ClassName, Entity, ClientData, HookArgs)
+        hook.Run("ACF_OnSpawnEntity", ClassName, Entity, ClientData)
 
         Entity:ACF_UpdateEntityData(ClientData)
 
         if Entity.ACF_PostSpawn then Entity:ACF_PostSpawn(Player, Pos, Angle, ClientData) end
         if IsMenuSpawn and Entity.ACF_PostMenuSpawn then Entity:ACF_PostMenuSpawn() end
 
+        Entity.ACF_UserData = ClientData or {} -- to allow entity fetching later
         return Entity
     end
 
-    duplicator.RegisterEntityClass(ClassName, function(Player, Pos, Angle, UserData)
-        return DoSpawn(Player, Pos, Angle, UserData or {}, false)
-    end, "Pos", "Angle", "ACF_UserData")
+    duplicator.RegisterEntityClass(ClassName, DoSpawn, "Pos", "Angle", "ACF_UserData")
 
     hook.Add("ACF_TemporaryHook_InstantiateEntity", "AutoRegV2_" .. ClassName, function(HookClass, Player, Pos, Ang, ClientData)
         if HookClass ~= ClassName then return end
@@ -179,7 +177,7 @@ local function PrepareSerializationFunctions(ENT, ClassName)
     function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
         local Data = Ent.ACF_UserData or {}
         if self.ACF_LiveData then
-            ACF.Classes.Serialization.ResolveEntities(ClassDef, self.ACF_LiveData, Data, CreatedEntities)
+            ACF.Classes.Serialization.ResolveEntities(ClassDef, self.ACF_LiveData, Data, CreatedEntities, self)
         end
         if OrigPostEntityPaste then OrigPostEntityPaste(self, Player, Ent, CreatedEntities) end
         self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)

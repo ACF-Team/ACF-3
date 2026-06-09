@@ -88,8 +88,38 @@ do
                 end
             end
 
-            Environment.FIELD      = function(FieldType, Name, Options) AddField(false, FieldType, Name, Options) end
-            Environment.MENU_FIELD = function(FieldType, Name, Options) AddField(true,  FieldType, Name, Options) end
+            Environment.FIELD       = function(FieldType, Name, Options) AddField(false, FieldType, Name, Options) end
+            Environment.MENU_FIELD  = function(FieldType, Name, Options) AddField(true,  FieldType, Name, Options) end
+
+            Environment.LINKED_ENTITY_FIELD = function(Name, Options)
+                local NewClassMT = getmetatable(NewClass)
+                local Existing = NewClassMT.__FIELDS.Lookup[Name]
+                if Existing then
+                    Existing.Type    = "Entity"
+                    Existing.Options = Options or {}
+                    Existing.Menu    = false
+                    Existing.Linked  = true
+                else
+                    local Field = { Type = "Entity", Name = Name, Options = Options or {}, Menu = false, Linked = true }
+                    table.insert(NewClassMT.__FIELDS.List, Field)
+                    NewClassMT.__FIELDS.Lookup[Name] = Field
+                end
+            end
+
+            Environment.LINKED_ENTITY_ARRAY_FIELD = function(Name, Options)
+                local NewClassMT = getmetatable(NewClass)
+                local Existing = NewClassMT.__FIELDS.Lookup[Name]
+                if Existing then
+                    Existing.Type    = "Entity[]"
+                    Existing.Options = Options or {}
+                    Existing.Menu    = false
+                    Existing.Linked  = true
+                else
+                    local Field = { Type = "Entity[]", Name = Name, Options = Options or {}, Menu = false, Linked = true }
+                    table.insert(NewClassMT.__FIELDS.List, Field)
+                    NewClassMT.__FIELDS.Lookup[Name] = Field
+                end
+            end
 
             setmetatable(Environment, {__index = _G})
             setfenv(NewClass.OnInit, Environment)

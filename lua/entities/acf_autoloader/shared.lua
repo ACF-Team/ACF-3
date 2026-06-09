@@ -8,10 +8,9 @@ ENT.ACF_PreventArmoring = true
 
 ENT.IsACFAutoloader = true
 
--- Maps user var name to its type, whether it is client data and type specific arguments (all support defaults?)
-ENT.ACF_UserVars = {
-    ["AutoloaderCaliber"] = {Type = "Number", Min = ACF.MinAutoloaderCaliber, Max = ACF.MaxAutoloaderCaliber, Default = 1, Decimals = 2},
-    ["AutoloaderLength"] = {Type = "Number", Min = ACF.MinAutoloaderLength, Max = ACF.MaxAutoloaderLength, Default = 1, Decimals = 2},
-}
-
-cleanup.Register("acf_autoloader")
+ACF.AutoRegisterV2(function()
+	MENU_FIELD("Number", "AutoloaderCaliber", { Min = ACF.MinAutoloaderCaliber, Max = ACF.MaxAutoloaderCaliber, Default = 1, Decimals = 2 })
+	MENU_FIELD("Number", "AutoloaderLength",  { Min = ACF.MinAutoloaderLength,  Max = ACF.MaxAutoloaderLength,  Default = 1, Decimals = 2 })
+	LINKED_ENTITY_FIELD("Gun",        { AcceptableClasses = { acf_gun = true, acf_rack = true } })
+	LINKED_ENTITY_ARRAY_FIELD("AmmoCrates", { AcceptableClasses = { acf_ammo = true } })
+end)

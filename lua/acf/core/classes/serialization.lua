@@ -103,8 +103,12 @@ function Serialization.Serialize(Class, Instance)
         if IsArray then
             local Arr = {}
             if type(Value) == "table" then
-                for I, V in ipairs(Value) do
-                    Arr[I] = SerializeValue(ElemType, V)
+                if Field.Linked then
+                    for Ent in pairs(Value) do
+                        if IsValid(Ent) then Arr[#Arr + 1] = SerializeValue(ElemType, Ent) end
+                    end
+                else
+                    for I, V in ipairs(Value) do Arr[I] = SerializeValue(ElemType, V) end
                 end
             end
             Out[Field.Name] = Arr
@@ -167,7 +171,12 @@ function Serialization.DeserializePartial(Class, Data)
     for _, Field in ipairs(Classes.GetTypeFields(Class)) do
         local ElemType, IsArray = ParseType(Field.Type)
 
-        if ElemType == "Entity" then continue end
+        if ElemType == "Entity" then
+            if IsArray and Field.Linked then
+                Instance[Field.Name] = Instance[Field.Name] or {}
+            end
+            continue
+        end
 
         local Options = Field.Options
         local Raw     = Data[Field.Name]
@@ -200,7 +209,7 @@ function Serialization.DeserializePartial(Class, Data)
     return Instance
 end
 
-function Serialization.ResolveEntities(Class, Instance, Data, CreatedEntities)
+function Serialization.ResolveEntities(Class, Instance, Data, CreatedEntities, Entity)
     if not Instance or not Data then return end
 
     for _, Field in ipairs(Classes.GetTypeFields(Class)) do
@@ -210,14 +219,24 @@ function Serialization.ResolveEntities(Class, Instance, Data, CreatedEntities)
         if ElemType == "Entity" then
             local Raw = Data[Field.Name]
 
-            if IsArray then
+            if Field.Linked and Entity then
+                if IsArray then
+                    if type(Raw) == "table" then
+                        for _, Idx in ipairs(Raw) do
+                            local Ent = ValidateEntity(CreatedEntities[Idx], Options)
+                            if IsValid(Ent) then Entity:Link(Ent) end
+                        end
+                    end
+                else
+                    local Ent = ValidateEntity(CreatedEntities[Raw], Options)
+                    if IsValid(Ent) then Entity:Link(Ent) end
+                end
+            elseif IsArray then
                 local Arr = {}
                 if type(Raw) == "table" then
                     for _, Idx in ipairs(Raw) do
                         local Ent = ValidateEntity(CreatedEntities[Idx], Options)
-                        if IsValid(Ent) then
-                            Arr[#Arr + 1] = Ent
-                        end
+                        if IsValid(Ent) then Arr[#Arr + 1] = Ent end
                     end
                 end
                 Instance[Field.Name] = Arr

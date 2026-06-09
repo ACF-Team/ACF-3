@@ -8,7 +8,6 @@ ENT.ACF_KillableButIndestructible = true
 local ACF         = ACF
 local TraceLine   = util.TraceLine
 local Classes     = ACF.Classes
-local HookRun     = hook.Run
 
 util.AddNetworkString("ACF_Autoloader_Links")
 
@@ -41,6 +40,9 @@ function ENT:ACF_PostUpdateEntityData(ClientData)
 	local R, H = ClientData.AutoloaderSize.y, ClientData.AutoloaderSize.x
 	local Volume = math.pi * R * R * H
 	ACF.Contraption.SetMass(self, Volume * 250)
+
+	-- Share the AmmoCrates LUT with ACF_LiveData so Serialize reads from Instance[Field.Name]
+	self.AmmoCrates = self.ACF_LiveData.AmmoCrates
 end
 
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
@@ -67,6 +69,7 @@ end)
 ACF.RegisterClassLink("acf_autoloader", "acf_gun", function(This, Gun)
 	This.Gun = Gun
 	Gun.Autoloader = This
+	if This.ACF_LiveData then This.ACF_LiveData.Gun = Gun end
 	BroadcastEntity("ACF_Autoloader_Links", This, Gun, true)
 	return true, "Autoloader linked successfully."
 end)
@@ -75,6 +78,7 @@ ACF.RegisterClassUnlink("acf_autoloader", "acf_gun", function(This, Gun)
 	if not IsValid(This.Gun) or not Gun.Autoloader then return false, "Autoloader was not linked to that gun." end
 	This.Gun = nil
 	Gun.Autoloader = nil
+	if This.ACF_LiveData then This.ACF_LiveData.Gun = nil end
 	BroadcastEntity("ACF_Autoloader_Links", This, Gun, false)
 	return true, "Autoloader unlinked successfully."
 end)
@@ -93,6 +97,7 @@ end)
 ACF.RegisterClassLink("acf_autoloader", "acf_rack", function(This, Rack)
 	This.Gun = Rack
 	Rack.Autoloader = This
+	if This.ACF_LiveData then This.ACF_LiveData.Gun = Rack end
 	return true, "Autoloader linked successfully."
 end)
 
@@ -100,6 +105,7 @@ ACF.RegisterClassUnlink("acf_autoloader", "acf_rack", function(This, Rack)
 	if not IsValid(This.Gun) or not Rack.Autoloader then return false, "Autoloader was not linked to that rack." end
 	This.Gun = nil
 	Rack.Autoloader = nil
+	if This.ACF_LiveData then This.ACF_LiveData.Gun = nil end
 	return true, "Autoloader unlinked successfully."
 end)
 
@@ -267,48 +273,7 @@ function ENT:ACF_UpdateOverlayState(State)
 	State:AddNumber("Estimated Magazine Reload (s)", math.Round(self.EstimatedReloadMag or 0, 4))
 end
 
--- Adv Dupe 2 Related
-do
-	-- Hopefully we can improve this when the codebase is refactored.
-	function ENT:PreEntityCopy()
-		if IsValid(self.Gun) then
-			duplicator.StoreEntityModifier(self, "ACFGun", {self.Gun:EntIndex()})
-		end
-
-		if next(self.AmmoCrates) then
-			local Entities = {}
-			for Ent in pairs(self.AmmoCrates) do Entities[#Entities + 1] = Ent:EntIndex() end
-			duplicator.StoreEntityModifier(self, "ACFAmmoCrates", Entities)
-		end
-
-		-- Wire dupe info
-		self.BaseClass.PreEntityCopy(self)
-	end
-
-	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
-		local EntMods = Ent.EntityMods
-		if EntMods and EntMods.ACFGun then
-			local Gun = CreatedEntities[EntMods.ACFGun[1]]
-			if IsValid(Gun) then self:Link(Gun) end
-		end
-
-		if EntMods and EntMods.ACFAmmoCrates then
-			for _, EntIndex in ipairs(EntMods.ACFAmmoCrates) do
-				local Ammo = CreatedEntities[EntIndex]
-				if IsValid(Ammo) then self:Link(Ammo) end
-			end
-		end
-
-		--Wire dupe info
-		self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
-	end
-
-	function ENT:OnRemove()
-		HookRun("ACF_OnEntityLast", "acf_autoloader", self)
-		if IsValid(self.Gun) then self:Unlink(self.Gun) end
-		for v, _ in pairs(self.AmmoCrates) do self:Unlink(v) end
-		WireLib.Remove(self)
-	end
+function ENT:OnRemove()
+	if IsValid(self.Gun) then self:Unlink(self.Gun) end
+	for Ammo in pairs(self.AmmoCrates) do self:Unlink(Ammo) end
 end
-
-ACF.Classes.Entities.AutoRegisterV1()
