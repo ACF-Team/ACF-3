@@ -12,7 +12,12 @@ local ArmorCoef = ACF.ArmorCoef
 -- Classes we should compute the mesh for
 local ArmorableClasses = {
     prop_physics = true,
+
+    -- Vehicles
     prop_vehicle_prisoner_pod = true,
+    prop_vehicle_jeep = true,
+    prop_vehicle_airboat = true,
+    prop_vehicle_apc = true,
 
     -- Primitives
     primitive_shape = true,
@@ -50,7 +55,7 @@ do
 
         MeshData.TotalMaxHealth = TotalMaxHealth
         MeshData.TotalHealth    = TotalHealth
-        MeshData.Mass           = TotalMass
+        MeshData.TotalMass      = TotalMass
 
         if SERVER then
             local EntACF = Entity.ACF
@@ -111,7 +116,7 @@ do
 
         MeshData.TotalMaxHealth    = 0
         MeshData.TotalHealth       = 0
-        MeshData.Mass              = 0
+        MeshData.TotalMass         = 0
         Entity.ACF_Volumetric_Mesh = MeshData
 
         for ConvexID in ipairs(MeshData.Convexes) do
