@@ -265,56 +265,50 @@ if CLIENT then
 		render.DrawWireframeSphere(Pos, Radius, 20, 20, GreenFrame, true)
 	end)
 elseif SERVER then
-	-- Stores the material of every convex as an entity modifier so it persists through duplication.
+	-- Stores the entity's convex materials as an entity modifier so they persist through duplication.
 	local function SaveConvexMaterials(Entity)
+		duplicator.StoreEntityModifier(Entity, "ACF_ArmorMesh", { Materials = Entity.ACF_Volumetric_Materials })
+	end
+
+	-- ProcessConvexes reads Entity.ACF_Volumetric_Materials whenever it (re)computes the mesh, so attaching it
+	-- here is enough to survive any future rebuilds (e.g. primitives reinitializing their physics). Convexes
+	-- that already exist at restore time still need their materials applied directly.
+	duplicator.RegisterEntityModifier("ACF_ArmorMesh", function(_, Entity, Data)
+		if not Data or not Data.Materials then return end
+
+		Entity.ACF_Volumetric_Materials = Data.Materials
+
+		local MeshData = Entity.ACF_Volumetric_Mesh
+		if not MeshData then return end
+
+		for ConvexID in ipairs(MeshData.Convexes) do
+			local Material = Data.Materials[ConvexID]
+			if Material then
+				ACF.SetConvexMaterial(Entity, ConvexID, Material)
+			end
+		end
+	end)
+
+	-- Backwards compatibility: entities duplicated with the old armor system's "ACF_Armor" entity modifier
+	-- were always RHA. Convert them to the new per-convex material system, then clear the deprecated
+	-- modifier so this conversion only happens once.
+	duplicator.RegisterEntityModifier("ACF_Armor", function(_, Entity, Data)
+		if not Data then return end
+		if Entity.ACF_Volumetric_Materials then return end
+
+		duplicator.ClearEntityModifier(Entity, "ACF_Armor")
+
 		local MeshData = Entity.ACF_Volumetric_Mesh
 		if not MeshData then return end
 
 		local Materials = {}
-		for ConvexID, Convex in ipairs(MeshData.Convexes) do
-			Materials[ConvexID] = Convex.Material
+		for ConvexID in ipairs(MeshData.Convexes) do
+			Materials[ConvexID] = "RHA"
+			ACF.SetConvexMaterial(Entity, ConvexID, "RHA")
 		end
 
-		duplicator.StoreEntityModifier(Entity, "ACF_ArmorMesh", { Materials = Materials })
-	end
-
-	duplicator.RegisterEntityModifier("ACF_ArmorMesh", function(_, Entity, Data)
-		if not Data or not Data.Materials then return end
-
-		local HookName = "ACF_ArmorMesh_Restore_" .. tostring(Entity)
-
-		-- Primitives in particular can rebuild their physics (and thus the volumetric mesh) several times
-		-- while initializing, so reapply every time the mesh changes until all convexes are accounted for.
-		local function Apply()
-			if not IsValid(Entity) then
-				hook.Remove("ACF_OnVolumetricMeshComputed", HookName)
-				return
-			end
-
-			local MeshData = Entity.ACF_Volumetric_Mesh
-			if not MeshData then return end
-
-			Entity.ACF_Volumetric_Materials = Data.Materials
-
-			for ConvexID, Material in ipairs(Data.Materials) do
-				if MeshData.Convexes[ConvexID] then
-					-- print("Restoring convex material", Entity, ConvexID, Material)
-					ACF.SetConvexMaterial(Entity, ConvexID, Material)
-				end
-			end
-
-			if #MeshData.Convexes >= #Data.Materials then
-				hook.Remove("ACF_OnVolumetricMeshComputed", HookName)
-			end
-		end
-
-		hook.Add("ACF_OnVolumetricMeshComputed", HookName, function(Ent)
-			if Ent ~= Entity then return end
-
-			Apply()
-		end)
-
-		timer.Simple(0, Apply)
+		Entity.ACF_Volumetric_Materials = Materials
+		SaveConvexMaterials(Entity)
 	end)
 
 	-- Keeps the toolgun's NW vars in sync with the convex under the player's crosshair, for client-side display.
@@ -359,7 +353,13 @@ elseif SERVER then
 		local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir)
 		if not ConvexHit then return false end
 
-		ACF.SetConvexMaterial(Entity, ConvexHit.ConvexID, self:GetClientInfo("material"))
+		local Material = self:GetClientInfo("material")
+
+		ACF.SetConvexMaterial(Entity, ConvexHit.ConvexID, Material)
+
+		Entity.ACF_Volumetric_Materials = Entity.ACF_Volumetric_Materials or {}
+		Entity.ACF_Volumetric_Materials[ConvexHit.ConvexID] = Material
+
 		SaveConvexMaterials(Entity)
 
 		return true

@@ -123,7 +123,6 @@ do
         Entity.ACF_Volumetric_Mesh = MeshData
 
         for ConvexID in ipairs(MeshData.Convexes) do
-            -- TODO: Maybe this should be read in? I love race conditions...
             local Material = Entity.ACF_Volumetric_Materials and Entity.ACF_Volumetric_Materials[ConvexID] or "Default"
             ACF.SetConvexMaterial(Entity, ConvexID, Material)
         end
@@ -146,11 +145,8 @@ do
         -- Fallback if no physobj exists on the client
         if CLIENT and not IsValid(PhysObj) then Mesh = ModelData.GetModelMesh(entity:GetModel(), ModelData.GetEntityScale(entity)) end
 
+        -- TODO: Fix the error that forced me to do this...
         ProcessConvexes(entity, Mesh or {})
-
-        -- Entities (particularly primitives) can rebuild their physics multiple times while
-        -- initializing/duplicating, recomputing this mesh from scratch each time.
-        hook.Run("ACF_OnVolumetricMeshComputed", entity, isReInit)
     end
     ACF.ComputeVolumetricMesh = ComputeVolumetricMesh
 
