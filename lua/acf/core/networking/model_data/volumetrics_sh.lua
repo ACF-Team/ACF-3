@@ -1,8 +1,11 @@
 local ACF = ACF
 
--- TODO: Merge these lists with the other global ACF filters
 
+-- TODO: Move these into the globals file
 local CubicInchToCm3 = 16.3871 -- 1 in^3 = 16.3871 cm^3 (Hammer units are inches in physics)
+local HealthMul = 1
+
+-- TODO: Merge these lists with the other global ACF filters
 
 -- Classes we should compute the mesh for
 local ArmorableClasses = {
@@ -63,7 +66,7 @@ if SERVER then
             local Material   = "RHA" -- Placeholder
             local ArmorType  = ArmorTypes.Get(Material) or ArmorTypes.Get("RHA")
             local Volume_cm3 = math.abs(Volume) / 6 * CubicInchToCm3
-            local Health     = Volume_cm3 * ArmorType.Density * ArmorType.HealthMul -- Density in kg/cm^3.
+            local Health     = Volume_cm3 * ArmorType.Density * ArmorType.HealthMul * HealthMul-- Density in kg/cm^3.
 
             TotalMaxHealth = TotalMaxHealth + Health
 
