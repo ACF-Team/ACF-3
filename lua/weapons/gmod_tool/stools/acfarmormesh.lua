@@ -26,7 +26,7 @@ if CLIENT then
 	function TOOL:Reload(_) return true end
 
 	local function CreateArmorMeshMenu(Panel)
-		local ProcArmorTypes = ACF.Classes.ProcArmorTypes
+		local ArmorTypes = ACF.Classes.ArmorTypes
 		local Menu = ACF.InitMenuBase(Panel, "ArmorMeshMenu", "acf_reload_armor_mesh_menu")
 
 		local Materials = Menu:AddComboBox()
@@ -57,7 +57,7 @@ if CLIENT then
 			RunConsoleCommand("acfarmormesh_material", Data.ID)
 		end
 
-		ACF.LoadSortedList(Materials, ProcArmorTypes.GetEntries(), "Name")
+		ACF.LoadSortedList(Materials, ArmorTypes.GetEntries(), "Name")
 
 		-- Keeps the combo box and info panel in sync when the material is sampled via right-click.
 		cvars.AddChangeCallback("acfarmormesh_material", function(_, _, New)
@@ -205,7 +205,7 @@ if CLIENT then
 			local MaxHealth = Weapon:GetNWFloat("ConvexMaxHealth", 0)
 			local Volume    = Entity.ACF_Volumetric_Mesh.Convexes[HighlightID].Volume
 
-			local ArmorType = ACF.Classes.ProcArmorTypes.Get(Material) or ACF.Classes.ProcArmorTypes.Get("RHA")
+			local ArmorType = ACF.Classes.ArmorTypes.Get(Material) or ACF.Classes.ArmorTypes.Get("RHA")
 			local Mass      = Volume * ArmorType.Density
 			local Nominal   = ConvexHit.GeoThick * math.cos(math.rad(ConvexHit.HitAngle))
 

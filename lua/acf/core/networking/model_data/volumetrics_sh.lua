@@ -10,6 +10,9 @@ local HealthMul = 1
 -- Classes we should compute the mesh for
 local ArmorableClasses = {
     prop_physics = true,
+    prop_vehicle_prisoner_pod = true,
+
+    -- Primitives
     primitive_shape = true,
     primitive_staircase = true,
     primitive_ladder = true,
@@ -20,7 +23,7 @@ local ArmorableClasses = {
 -- TODO: Handle reinitializable classes
 
 do
-    local ArmorTypes = ACF.Classes.ProcArmorTypes
+    local ArmorTypes = ACF.Classes.ArmorTypes
 
     -- Sets the material of a convex, recalculating its mass, health pool, and the entity's aggregates.
     function ACF.SetConvexMaterial(Entity, ConvexID, Material)
@@ -44,8 +47,9 @@ do
             TotalMass      = TotalMass + Conv.Mass
         end
 
-        MeshData.MaxHealth = TotalMaxHealth
-        MeshData.Mass      = TotalMass
+        MeshData.TotalMaxHealth = TotalMaxHealth
+        MeshData.TotalHealth    = TotalHealth
+        MeshData.Mass           = TotalMass
 
         if SERVER then
             local EntACF = Entity.ACF
@@ -104,7 +108,8 @@ do
             }
         end
 
-        MeshData.MaxHealth         = 0
+        MeshData.TotalMaxHealth    = 0
+        MeshData.TotalHealth       = 0
         MeshData.Mass              = 0
         Entity.ACF_Volumetric_Mesh = MeshData
 
@@ -210,7 +215,7 @@ function ACF.GetConvexHits(Entity, HitPos, Direction)
     if not MeshData then return {} end
 
     local Hits       = ACF.RayIntersectMesh(Entity, HitPos - Direction * 2, Direction, 10000)
-    local ArmorTypes = ACF.Classes.ProcArmorTypes
+    local ArmorTypes = ACF.Classes.ArmorTypes
     local ConvexHits = {}
     local Entry
 

@@ -1,16 +1,16 @@
 local Classes = ACF.Classes
-Classes.ProcArmorTypes = Classes.ProcArmorTypes or {}
+Classes.ArmorTypes = Classes.ArmorTypes or {}
 
-local ProcArmorTypes = Classes.ProcArmorTypes
+local ArmorTypes = Classes.ArmorTypes
 
-local Entries = Classes.GetOrCreateEntries(ProcArmorTypes)
+local Entries = Classes.GetOrCreateEntries(ArmorTypes)
 
 
-function ProcArmorTypes.Register(ID, Base)
+function ArmorTypes.Register(ID, Base)
 
     return Classes.AddObject(ID, Base, Entries)
 
 end
 
 
-Classes.AddSimpleFunctions(ProcArmorTypes, Entries)
+Classes.AddSimpleFunctions(ArmorTypes, Entries)

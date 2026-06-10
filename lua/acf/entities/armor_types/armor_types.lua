@@ -1,5 +1,5 @@
 local ACF       = ACF
-local Types     = ACF.Classes.ProcArmorTypes
+local Types     = ACF.Classes.ArmorTypes
 
 -- Density stored in kg/cm^3
 -- HealthMul  : multiplier on volume-derived health pool (toughness beyond density)
