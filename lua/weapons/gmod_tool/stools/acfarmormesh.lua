@@ -110,13 +110,17 @@ if CLIENT then
 		local Health    = math.Round(Weapon:GetNWFloat("EntityHealth", 0))
 		local MaxHealth = math.Round(Weapon:GetNWFloat("EntityMaxHealth", 0))
 
+		local ShowChemical = input.IsKeyDown(KEY_LSHIFT)
+		local ArmorLabel   = ShowChemical and "Effective CE Armor" or "Effective KE Armor"
+
 		local Armor = 0
 		if IsValid(Entity) and Entity.ACF_Volumetric_Mesh then
 			local Dir       = (Trace.HitPos - Trace.StartPos):GetNormalized()
 			local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir)
 
 			if ConvexHit then
-				Armor = math.Round(ConvexHit.GeoThick, 2)
+				local Mul = ShowChemical and ConvexHit.ArmorType.ChemicalMul or ConvexHit.ArmorType.KineticMul
+				Armor = math.Round(ConvexHit.GeoThick * Mul, 2)
 			end
 		end
 
@@ -131,7 +135,7 @@ if CLIENT then
 
 			draw.RoundedBox(6, 10, 83, 236, 64, BGGray)
 			draw.RoundedBox(6, 15, 88, 226, 54, Blue)
-			draw.SimpleTextOutlined("Convex Armor", "torchfont", 128, 100, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+			draw.SimpleTextOutlined(ArmorLabel, "torchfont", 128, 100, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
 			draw.SimpleTextOutlined(Armor .. " mm", "torchfont", 128, 130, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
 
 			draw.RoundedBox(6, 10, 183, 236, 64, BGGray)
@@ -222,12 +226,16 @@ if CLIENT then
 			local MaxHealth = Weapon:GetNWFloat("ConvexMaxHealth", 0)
 			local Volume    = Entity.ACF_Volumetric_Mesh.Convexes[HighlightID].Volume
 
-			local ArmorType  = ACF.Classes.ArmorTypes.Get(Material) or ACF.Classes.ArmorTypes.Get("RHA")
+			local ArmorType  = ACF.Classes.ArmorTypes.Get(Material) or ACF.Classes.ArmorTypes.Get("Default")
 			local Mass       = Volume * ArmorType.Density
 			local NominalHit = ACF.GetConvexHit(Entity, Trace.HitPos, -Trace.HitNormal)
 			local Nominal    = NominalHit and NominalHit.GeoThick or 0
 
-			local Text = string.format("Mat: %s\nNominal: %.2f mm\nHP: %.2f / %.2f\nVol: %.2f cm^3\nMass: %.2f kg", Material, Nominal, Health, MaxHealth, Volume, Mass)
+			local ShowChemical = input.IsKeyDown(KEY_LSHIFT)
+			local EffLabel     = ShowChemical and "Effective CE" or "Effective KE"
+			local Effective    = Nominal * (ShowChemical and ArmorType.ChemicalMul or ArmorType.KineticMul)
+
+			local Text = string.format("Mat: %s\nNominal: %.2f mm\n%s: %.2f mm\nHP: %.2f / %.2f\nVol: %.2f cm^3\nMass: %.2f kg", Material, Nominal, EffLabel, Effective, Health, MaxHealth, Volume, Mass)
 			AddWorldTip(Entity, Text, nil, Trace.HitPos)
 		end
 	end)

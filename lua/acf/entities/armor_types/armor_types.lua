@@ -6,6 +6,18 @@ local Types     = ACF.Classes.ArmorTypes
 -- KineticMul : RHA equivalent multiplier vs kinetic (AP) threats
 -- ChemicalMul: RHA equivalent multiplier vs chemical energy (HEAT/shaped charge) threats
 
+-- Default special type. Does not set mass, but abysmal for armor usage
+local Armor = Types.Register("Default")
+function Armor:OnLoaded()
+    self.Name        = "Default"
+    self.Description = "Does not set mass, used for default props."
+    self.SuppressLoad = true
+    self.Density     = 1e-4
+    self.HealthMul   = 1
+    self.KineticMul  = 1e-4
+    self.ChemicalMul = 1e-4
+    self.SpallMul    = 1e-4
+end
 
 -- Aluminum
 local Armor = Types.Register("Aluminum")

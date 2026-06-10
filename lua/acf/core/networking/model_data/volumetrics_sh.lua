@@ -40,7 +40,7 @@ do
         local Convex = MeshData.Convexes[ConvexID]
         if not Convex then return end
 
-        local ArmorType = ArmorTypes.Get(Material) or ArmorTypes.Get("RHA")
+        local ArmorType = ArmorTypes.Get(Material) or ArmorTypes.Get("Default")
 
         Convex.Material  = ArmorType.ID
         Convex.Mass      = Convex.Volume * ArmorType.Density
@@ -58,7 +58,7 @@ do
         MeshData.TotalHealth    = TotalHealth
         MeshData.TotalMass      = TotalMass
 
-        if SERVER then
+        if SERVER and ArmorType.ID ~= "Default" then
             local EntACF = Entity.ACF
             if EntACF then
                 EntACF.MaxHealth = TotalMaxHealth
@@ -122,7 +122,7 @@ do
 
         for ConvexID in ipairs(MeshData.Convexes) do
             -- TODO: Maybe this should be read in? I love race conditions...
-            ACF.SetConvexMaterial(Entity, ConvexID, "RHA")
+            ACF.SetConvexMaterial(Entity, ConvexID, "Default")
         end
     end
 
@@ -241,7 +241,7 @@ function ACF.GetConvexHits(Entity, HitPos, Direction)
             if Direction:Dot(Hit.Normal) < 0 then Entry = Hit end
         elseif Hit.ConvexID == Entry.ConvexID and Direction:Dot(Hit.Normal) > 0 then
             local Convex    = MeshData.Convexes[Entry.ConvexID]
-            local ArmorType = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("RHA")
+            local ArmorType = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("Default")
 
             ConvexHits[#ConvexHits + 1] = {
                 ConvexID  = Entry.ConvexID,
