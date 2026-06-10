@@ -290,7 +290,7 @@ if SERVER then
 			-- Get the effective armor thickness
 			local BaseArmor = 0
 			local DamageDealt
-			local ConvexHit
+			local ConvexHits
 			if TraceRes.HitWorld or TraceRes.Entity and TraceRes.Entity:IsWorld() then
 				-- Get the surface and calculate the RHA equivalent
 				local Surface = util.GetSurfaceData(TraceRes.SurfaceProps)
@@ -304,10 +304,13 @@ if SERVER then
 				-- TODO: Fix world entity penetration
 				--BaseArmor = Penetration + 1
 			elseif TraceRes.Hit then
-				ConvexHit = ACF.GetConvexHit(Ent, PenHitPos, Direction)
+				ConvexHits = ACF.GetConvexHits(Ent, PenHitPos, Direction)
 
-				if ConvexHit then
-					BaseArmor = ConvexHit.GeoThick * ConvexHit.ArmorType.ChemicalMul
+				if #ConvexHits > 0 then
+					BaseArmor = 0
+					for _, Hit in ipairs(ConvexHits) do
+						BaseArmor = BaseArmor + Hit.GeoThick * Hit.ArmorType.ChemicalMul
+					end
 				else
 					BaseArmor = Ent.GetArmor and Ent:GetArmor(TraceRes) or Ent.ACF and Ent.ACF.Armour or 0
 				end
@@ -318,7 +321,7 @@ if SERVER then
 
 			local Angle          = ACF.GetHitAngle(TraceRes, Direction)
 			local EffectiveArmor
-			if ConvexHit then
+			if ConvexHits and #ConvexHits > 0 then
 				EffectiveArmor = BaseArmor -- GeoThick already accounts for obliquity
 			elseif Ent.GetArmor then
 				EffectiveArmor = BaseArmor

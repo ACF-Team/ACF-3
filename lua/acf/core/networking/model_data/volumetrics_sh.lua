@@ -16,12 +16,12 @@ local ArmorableClasses = {
 
 -- Classes whose physics mesh may be reinitialized after creation (e.g. primitives that change shape)
 local ReInitializableClasses = {
-    primitive_shape      = true,
-    primitive_staircase  = true,
-    primitive_ladder     = true,
-    primitive_rail_silder = true,
-    primitive_rail_slider = true,
-    primitive_airfoil    = true,
+--     primitive_shape      = true,
+--     primitive_staircase  = true,
+--     primitive_ladder     = true,
+--     primitive_rail_silder = true,
+--     primitive_rail_slider = true,
+--     primitive_airfoil    = true,
 }
 
 if SERVER then
@@ -174,35 +174,40 @@ function ACF.RayIntersectMesh(Entity, Start, Direction, Length)
     return Hits
 end
 
--- Finds the first convex entry/exit pair the ray passes through and returns damage-relevant data.
--- Returns nil if the entity has no mesh or the ray misses all live convexes.
+-- Finds every convex entry/exit pair the ray passes through, in order, and returns damage-relevant data for each.
+-- Returns an empty table if the entity has no mesh or the ray misses all live convexes.
 -- GeoThick is geometric thickness in mm; multiply by ArmorType.KineticMul or .ChemicalMul as needed.
-function ACF.GetConvexHit(Entity, HitPos, Direction)
+function ACF.GetConvexHits(Entity, HitPos, Direction)
     local MeshData = Entity.ACF_Volumetric_Mesh
-    if not MeshData then return nil end
+    if not MeshData then return {} end
 
-    local Hits  = ACF.RayIntersectMesh(Entity, HitPos - Direction * 2, Direction, 10000)
-    local Entry, ExitHit
+    local Hits       = ACF.RayIntersectMesh(Entity, HitPos - Direction * 2, Direction, 10000)
+    local ArmorTypes = ACF.Classes.ProcArmorTypes
+    local ConvexHits = {}
+    local Entry
 
     for _, Hit in ipairs(Hits) do
         if not Entry then
             if Direction:Dot(Hit.Normal) < 0 then Entry = Hit end
         elseif Hit.ConvexID == Entry.ConvexID and Direction:Dot(Hit.Normal) > 0 then
-            ExitHit = Hit
-            break
+            local Convex    = MeshData.Convexes[Entry.ConvexID]
+            local ArmorType = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("RHA")
+
+            ConvexHits[#ConvexHits + 1] = {
+                ConvexID  = Entry.ConvexID,
+                GeoThick  = (Hit.T - Entry.T) * 25.4, -- inches to mm
+                ArmorType = ArmorType,
+                HitAngle  = math.deg(math.acos(math.min(1, math.max(-1, -Direction:Dot(Entry.Normal))))),
+            }
+
+            Entry = nil
         end
     end
 
-    if not (Entry and ExitHit) then return nil end
+    return ConvexHits
+end
 
-    local ArmorTypes = ACF.Classes.ProcArmorTypes
-    local Convex     = MeshData.Convexes[Entry.ConvexID]
-    local ArmorType  = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("RHA")
-
-    return {
-        ConvexID = Entry.ConvexID,
-        GeoThick = (ExitHit.T - Entry.T) * 25.4, -- inches to mm
-        ArmorType = ArmorType,
-        HitAngle = math.deg(math.acos(math.min(1, math.max(-1, -Direction:Dot(Entry.Normal))))),
-    }
+-- Convenience wrapper for ACF.GetConvexHits that returns only the first convex entry/exit pair (or nil if none).
+function ACF.GetConvexHit(Entity, HitPos, Direction)
+    return ACF.GetConvexHits(Entity, HitPos, Direction)[1]
 end

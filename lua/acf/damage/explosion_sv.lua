@@ -300,16 +300,26 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		DmgInfo:SetHitPos(HitPos)
 		DmgInfo:SetHitGroup(TraceResult.HitGroup)
 
-		local ConvexHit = ACF.GetConvexHit(HitEnt, HitPos, Direction)
+		local ConvexHits = ACF.GetConvexHits(HitEnt, HitPos, Direction)
 
-		local BlastThickness, FragThickness, HitAngle
+		local BlastThickness, FragThickness, HitAngle, BlastHits, FragHits
 
-		if ConvexHit then
-			BlastThickness = ConvexHit.GeoThick * ConvexHit.ArmorType.ChemicalMul
-			FragThickness  = ConvexHit.GeoThick * ConvexHit.ArmorType.KineticMul
-			HitAngle       = ConvexHit.HitAngle
+		if #ConvexHits > 0 then
+			BlastThickness, FragThickness = 0, 0
+			BlastHits, FragHits = {}, {}
 
-			DmgInfo:SetConvexID(ConvexHit.ConvexID)
+			for _, Hit in ipairs(ConvexHits) do
+				local BlastWeight = Hit.GeoThick * Hit.ArmorType.ChemicalMul
+				local FragWeight  = Hit.GeoThick * Hit.ArmorType.KineticMul
+
+				BlastThickness = BlastThickness + BlastWeight
+				FragThickness  = FragThickness + FragWeight
+
+				BlastHits[#BlastHits + 1] = { ConvexID = Hit.ConvexID, Weight = BlastWeight }
+				FragHits[#FragHits + 1]   = { ConvexID = Hit.ConvexID, Weight = FragWeight }
+			end
+
+			HitAngle = ConvexHits[1].HitAngle
 		else
 			BlastThickness = HitEnt.ACF.Armour
 			FragThickness  = HitEnt.ACF.Armour
@@ -324,6 +334,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 			local BlastDmg    = Objects.DamageResult(BlastArea, BlastPen, BlastThickness)
 
 			DmgInfo:SetType(DMG_BLAST)
+			if BlastHits then DmgInfo:SetConvexHits(BlastHits) end
 
 			BlastResult = Damage.dealDamage(HitEnt, BlastDmg, DmgInfo)
 			Losses      = BlastResult.Loss * 0.5
@@ -340,6 +351,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 				local FragDmg  = Objects.DamageResult(FragArea, FragPen, FragThickness, HitAngle, nil, Fragments)
 
 				DmgInfo:SetType(DMG_BULLET)
+				if FragHits then DmgInfo:SetConvexHits(FragHits) end
 
 				FragResult  = Damage.dealDamage(HitEnt, FragDmg, DmgInfo)
 				Losses      = Losses + FragResult.Loss * 0.5

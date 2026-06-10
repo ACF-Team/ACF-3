@@ -82,16 +82,28 @@ function Damage.getBulletDamage(Bullet, Trace)
 	local DmgInfo   = Objects.DamageInfo()
 
 	if ACF.Check(Entity) then
-		local NormDir   = Bullet.Flight:GetNormalized()
-		local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, NormDir)
-		local AmmoType  = ACF.Classes.AmmoTypes.Get(Bullet.Type)
-		local MulField  = (AmmoType and AmmoType.IsChemical) and "ChemicalMul" or "KineticMul"
-		local Thickness = ConvexHit and ConvexHit.GeoThick * ConvexHit.ArmorType[MulField]
-		               or Entity.ACF.Armour
-		local Angle     = ConvexHit and 0 -- GeoThick already accounts for obliquity
-		               or ACF.GetHitAngle(Trace, Bullet.Flight)
+		local NormDir    = Bullet.Flight:GetNormalized()
+		local AmmoType   = ACF.Classes.AmmoTypes.Get(Bullet.Type)
+		local MulField   = (AmmoType and AmmoType.IsChemical) and "ChemicalMul" or "KineticMul"
+		local ConvexHits = ACF.GetConvexHits(Entity, Trace.HitPos, NormDir)
 
-		if ConvexHit then DmgInfo:SetConvexID(ConvexHit.ConvexID) end
+		local Thickness, Angle
+		if #ConvexHits > 0 then
+			Thickness = 0
+
+			local Hits = {}
+			for _, Hit in ipairs(ConvexHits) do
+				local Weight = Hit.GeoThick * Hit.ArmorType[MulField]
+				Thickness    = Thickness + Weight
+				Hits[#Hits + 1] = { ConvexID = Hit.ConvexID, Weight = Weight }
+			end
+
+			Angle = 0 -- GeoThick already accounts for obliquity
+			DmgInfo:SetConvexHits(Hits)
+		else
+			Thickness = Entity.ACF.Armour
+			Angle     = ACF.GetHitAngle(Trace, Bullet.Flight)
+		end
 
 		DmgResult:SetArea(Bullet.ProjArea)
 		DmgResult:SetPenetration(Bullet:GetPenetration())
@@ -237,16 +249,25 @@ function Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 		Contraption.InCombat = engine.TickCount()
 	end
 
-	local MeshData = Entity.ACF_Volumetric_Mesh
-	local ConvexID = DmgInfo and DmgInfo:GetConvexID()
+	local MeshData   = Entity.ACF_Volumetric_Mesh
+	local ConvexHits = DmgInfo and DmgInfo:GetConvexHits()
 
-	if MeshData and ConvexID then
-		local Convex    = MeshData.Convexes[ConvexID]
-		local OldHealth = Convex.Health
-		Convex.Health   = math.max(0, Convex.Health - HitRes.Damage)
+	if MeshData and ConvexHits then
+		local TotalWeight = 0
+		for _, Hit in ipairs(ConvexHits) do TotalWeight = TotalWeight + Hit.Weight end
+
+		local TotalLoss = 0
+		for _, Hit in ipairs(ConvexHits) do
+			local Convex    = MeshData.Convexes[Hit.ConvexID]
+			local OldHealth = Convex.Health
+			local Share     = HitRes.Damage * (Hit.Weight / TotalWeight)
+
+			Convex.Health = math.max(0, Convex.Health - Share)
+			TotalLoss     = TotalLoss + (OldHealth - Convex.Health)
+		end
 
 		local EntACF  = Entity.ACF
-		EntACF.Health = math.max(0, EntACF.Health - (OldHealth - Convex.Health))
+		EntACF.Health = math.max(0, EntACF.Health - TotalLoss)
 
 		Damage.Network(Entity, nil, EntACF.Health, EntACF.MaxHealth)
 	else
