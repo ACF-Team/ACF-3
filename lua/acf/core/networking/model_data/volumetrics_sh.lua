@@ -1,4 +1,5 @@
-local ACF = ACF
+local ACF       = ACF
+local ModelData = ACF.ModelData
 
 -- Note: Put this in console for good luck: hook.Run("ACF_OnLoadAddon")
 
@@ -91,9 +92,9 @@ do
             local Volume  = 0
 
             for I = 1, #Convex, 3 do
-                local A = Convex[I].pos
-                local B = Convex[I + 1].pos
-                local C = Convex[I + 2].pos
+                local A = Convex[I]
+                local B = Convex[I + 1]
+                local C = Convex[I + 2]
 
                 NormSum = NormSum + (C - A):Cross(B - A) -- Outward-facing; GetMeshConvexes triangles wind such that (B-A)x(C-A) points inward
                 Volume  = Volume + A:Dot(B:Cross(C)) -- Scalar triple product gives 6 times the volume
@@ -129,10 +130,20 @@ do
         if not IsValid(entity) then return end
         if not entity.IsACFEntity and not ArmorableClasses[entity:GetClass()] then return end
 
+        -- NOTE: I HATE THIS SO MUCH... ONLY PRIMITIVES AND SCALEABLES HAVE VALID CLIENTSIDE PHYSOBJs...
+        local Mesh
         local PhysObj = entity:GetPhysicsObject()
-        if not IsValid(PhysObj) then return end
 
-        ProcessConvexes(entity, PhysObj:GetMeshConvexes() or {})
+        -- This is fine on the client, but not fine on the server
+        if SERVER and not IsValid(PhysObj) then return end
+
+        -- Sanitized version of GetMeshConvexes
+        if IsValid(PhysObj) then Mesh = ModelData.SanitizeMesh(PhysObj) end
+
+        -- Fallback if no physobj exists on the client
+        if CLIENT and not IsValid(PhysObj) then Mesh = ModelData.GetModelMesh(entity:GetModel(), ModelData.GetEntityScale(entity)) end
+
+        ProcessConvexes(entity, Mesh or {})
 
         -- Entities (particularly primitives) can rebuild their physics multiple times while
         -- initializing/duplicating, recomputing this mesh from scratch each time.
