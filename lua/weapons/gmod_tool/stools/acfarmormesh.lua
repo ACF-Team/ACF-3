@@ -207,8 +207,9 @@ if CLIENT then
 
 			local ArmorType = ACF.Classes.ProcArmorTypes.Get(Material) or ACF.Classes.ProcArmorTypes.Get("RHA")
 			local Mass      = Volume * ArmorType.Density
+			local Nominal   = ConvexHit.GeoThick * math.cos(math.rad(ConvexHit.HitAngle))
 
-			local Text = string.format("Mat: %s\nHP: %.2f / %.2f\nVol: %.2f cm^3\nMass: %.2f kg", Material, Health, MaxHealth, Volume, Mass)
+			local Text = string.format("Mat: %s\nNominal: %.2f mm\nHP: %.2f / %.2f\nVol: %.2f cm^3\nMass: %.2f kg", Material, Nominal, Health, MaxHealth, Volume, Mass)
 			AddWorldTip(Entity, Text, nil, Trace.HitPos)
 		end
 	end)
@@ -287,7 +288,6 @@ elseif SERVER then
 		end
 
 		local Convex = Entity.ACF_Volumetric_Mesh.Convexes[ConvexHit.ConvexID]
-		-- print(Convex, Convex.Health)
 
 		Weapon:SetNWInt("ConvexID", ConvexHit.ConvexID)
 		Weapon:SetNWString("ConvexMaterial", Convex.Material)

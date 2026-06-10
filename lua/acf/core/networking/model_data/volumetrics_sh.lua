@@ -20,10 +20,49 @@ local ArmorableClasses = {
 -- TODO: Handle reinitializable classes
 
 do
+    local ArmorTypes = ACF.Classes.ProcArmorTypes
+
+    -- Sets the material of a convex, recalculating its mass, health pool, and the entity's aggregates.
+    function ACF.SetConvexMaterial(Entity, ConvexID, Material)
+        local MeshData = Entity.ACF_Volumetric_Mesh
+        if not MeshData then return end
+
+        local Convex = MeshData.Convexes[ConvexID]
+        if not Convex then return end
+
+        local ArmorType = ArmorTypes.Get(Material) or ArmorTypes.Get("RHA")
+
+        Convex.Material  = ArmorType.ID
+        Convex.Mass      = Convex.Volume * ArmorType.Density
+        Convex.MaxHealth = Convex.Volume * ArmorType.Density * ArmorType.HealthMul * HealthMul
+        Convex.Health    = Convex.MaxHealth
+
+        local TotalMaxHealth, TotalHealth, TotalMass = 0, 0, 0
+        for _, Conv in ipairs(MeshData.Convexes) do
+            TotalMaxHealth = TotalMaxHealth + Conv.MaxHealth
+            TotalHealth    = TotalHealth + Conv.Health
+            TotalMass      = TotalMass + Conv.Mass
+        end
+
+        MeshData.MaxHealth = TotalMaxHealth
+        MeshData.Mass      = TotalMass
+
+        if SERVER then
+            local EntACF = Entity.ACF
+            if EntACF then
+                EntACF.MaxHealth = TotalMaxHealth
+                EntACF.Health    = TotalHealth
+
+                ACF.Contraption.SetMass(Entity, TotalMass)
+            else
+                Entity:GetPhysicsObject():SetMass(TotalMass)
+            end
+        end
+    end
+
     function ProcessConvexes(Entity, Meshes)
-        local MeshData   = { Verts = {}, Convexes = {} }
-        local Lookup     = {}
-        local ArmorTypes = ACF.Classes.ProcArmorTypes
+        local MeshData = { Verts = {}, Convexes = {} }
+        local Lookup   = {}
 
         local function GetIndex(Pos)
             local Key = Pos.x .. " " .. Pos.y .. " " .. Pos.z
@@ -35,9 +74,6 @@ do
             end
             return Index
         end
-
-        local TotalMaxHealth = 0
-        local TotalMass      = 0
 
         for _, Convex in ipairs(Meshes) do
             local Tris    = {}
@@ -55,31 +91,27 @@ do
                 Tris[#Tris + 1] = Vector(GetIndex(A), GetIndex(B), GetIndex(C))
             end
 
-            -- TODO: TUNE THESE ONCE FUNCTIONALITY IS DONE
-            local Material   = "RHA" -- Placeholder
-            local ArmorType  = ArmorTypes.Get(Material) or ArmorTypes.Get("RHA")
-            local Volume_cm3 = math.abs(Volume) / 6 * CubicInchToCm3
-            local Mass       = Volume_cm3 * ArmorType.Density -- Density in kg/cm^3.
-            local Health     = Volume_cm3 * ArmorType.Density * ArmorType.HealthMul * HealthMul
-
-            TotalMaxHealth = TotalMaxHealth + Health
-            TotalMass      = TotalMass + Mass
-
+            -- Material-independent characteristics; material-dependent ones (Material, Mass, Health, MaxHealth)
+            -- are filled in below by ACF.SetConvexMaterial.
             MeshData.Convexes[#MeshData.Convexes + 1] = {
                 Tris      = Tris,
                 Normal    = NormSum:GetNormalized(),
-                Volume    = Volume_cm3,
-                Material  = Material,
-                Mass      = Mass,
-                Health    = Health,
-                MaxHealth = Health,
+                Volume    = math.abs(Volume) / 6 * CubicInchToCm3, -- 1 in^3 = CubicInchToCm3 cm^3
+                Mass      = 0,
+                Health    = 0,
+                MaxHealth = 0,
                 Entity    = Entity,
             }
         end
 
-        MeshData.MaxHealth         = TotalMaxHealth
-        MeshData.Mass              = TotalMass
+        MeshData.MaxHealth         = 0
+        MeshData.Mass              = 0
         Entity.ACF_Volumetric_Mesh = MeshData
+
+        for ConvexID in ipairs(MeshData.Convexes) do
+            -- TODO: Maybe this should be read in? I love race conditions...
+            ACF.SetConvexMaterial(Entity, ConvexID, "RHA")
+        end
     end
 
     local function ComputeVolumetricMesh(entity, isReInit)
@@ -91,65 +123,11 @@ do
 
         ProcessConvexes(entity, PhysObj:GetMeshConvexes() or {})
 
-        if SERVER then
-            local MeshData = entity.ACF_Volumetric_Mesh
-            local EntACF   = entity.ACF
-
-            if EntACF then
-                EntACF.MaxHealth = MeshData.MaxHealth
-                EntACF.Health    = MeshData.MaxHealth
-
-                ACF.Contraption.SetMass(entity, MeshData.Mass)
-            else
-                PhysObj:SetMass(MeshData.Mass)
-            end
-        end
-
         -- Entities (particularly primitives) can rebuild their physics multiple times while
         -- initializing/duplicating, recomputing this mesh from scratch each time.
         hook.Run("ACF_OnVolumetricMeshComputed", entity, isReInit)
     end
     ACF.ComputeVolumetricMesh = ComputeVolumetricMesh
-
-    if SERVER then
-        -- Sets the material of a convex, recalculating its mass, health pool, and the entity's aggregates.
-        function ACF.SetConvexMaterial(Entity, ConvexID, Material)
-            local MeshData = Entity.ACF_Volumetric_Mesh
-            if not MeshData then return end
-
-            local Convex = MeshData.Convexes[ConvexID]
-            print("Setting convex material", Entity, ConvexID, Material, Convex)
-            if not Convex then return end
-
-            local ArmorTypes = ACF.Classes.ProcArmorTypes
-            local ArmorType  = ArmorTypes.Get(Material) or ArmorTypes.Get("RHA")
-
-            Convex.Material  = ArmorType.ID
-            Convex.Mass      = Convex.Volume * ArmorType.Density
-            Convex.MaxHealth = Convex.Volume * ArmorType.Density * ArmorType.HealthMul * HealthMul
-            Convex.Health    = Convex.MaxHealth
-
-            local TotalMaxHealth, TotalHealth, TotalMass = 0, 0, 0
-            for _, Conv in ipairs(MeshData.Convexes) do
-                TotalMaxHealth = TotalMaxHealth + Conv.MaxHealth
-                TotalHealth    = TotalHealth + Conv.Health
-                TotalMass      = TotalMass + Conv.Mass
-            end
-
-            MeshData.MaxHealth = TotalMaxHealth
-            MeshData.Mass      = TotalMass
-
-            local EntACF = Entity.ACF
-            if EntACF then
-                EntACF.MaxHealth = TotalMaxHealth
-                EntACF.Health    = TotalHealth
-
-                ACF.Contraption.SetMass(Entity, TotalMass)
-            else
-                Entity:GetPhysicsObject():SetMass(TotalMass)
-            end
-        end
-    end
 
     hook.Add("ACF_OnLoadAddon", "ACF_Volumetric_Detours", function()
         local Detours = ACF and ACF.Detours
