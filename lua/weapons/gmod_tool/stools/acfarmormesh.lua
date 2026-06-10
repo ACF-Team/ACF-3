@@ -205,11 +205,16 @@ if CLIENT then
 			local MaxHealth = Weapon:GetNWFloat("ConvexMaxHealth", 0)
 			local Volume    = Entity.ACF_Volumetric_Mesh.Convexes[HighlightID].Volume
 
-			local Text = string.format("Mat: %s\nHP: %.2f / %.2f\nVol: %.2f cm^3", Material, Health, MaxHealth, Volume)
+			local ArmorType = ACF.Classes.ProcArmorTypes.Get(Material) or ACF.Classes.ProcArmorTypes.Get("RHA")
+			local Mass      = Volume * ArmorType.Density
+
+			local Text = string.format("Mat: %s\nHP: %.2f / %.2f\nVol: %.2f cm^3\nMass: %.2f kg", Material, Health, MaxHealth, Volume, Mass)
 			AddWorldTip(Entity, Text, nil, Trace.HitPos)
 		end
 	end)
 elseif SERVER then
+	local Messages = ACF.Utilities.Messages
+
 	-- Keeps the toolgun's NW vars in sync with the convex under the player's crosshair, for client-side display.
 	function TOOL:Think()
 		local Player = self:GetOwner()
@@ -233,6 +238,7 @@ elseif SERVER then
 		end
 
 		local Convex = Entity.ACF_Volumetric_Mesh.Convexes[ConvexHit.ConvexID]
+		-- print(Convex, Convex.Health)
 
 		Weapon:SetNWInt("ConvexID", ConvexHit.ConvexID)
 		Weapon:SetNWString("ConvexMaterial", Convex.Material)
@@ -272,5 +278,15 @@ elseif SERVER then
 		return true
 	end
 
-	function TOOL:Reload(_) return true end
+	function TOOL:Reload(Trace)
+		local Entity = Trace.Entity
+		if not IsValid(Entity) then return false end
+
+		local Contraption = Entity:CFW_GetContraption()
+		if not Contraption then return false end
+
+		Messages.SendChat(self:GetOwner(), "Info", "Contraption mass: " .. math.Round(Contraption.totalMass, 2) .. " kg")
+
+		return true
+	end
 end
