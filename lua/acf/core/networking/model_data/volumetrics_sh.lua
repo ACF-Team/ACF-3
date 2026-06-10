@@ -27,7 +27,7 @@ local ReInitializableClasses = {
 --     primitive_airfoil    = true,
 }
 
-if SERVER then
+do
     function ProcessConvexes(Entity, Meshes)
         local MeshData   = { Verts = {}, Convexes = {} }
         local Lookup     = {}
@@ -95,14 +95,48 @@ if SERVER then
 
         ProcessConvexes(entity, PhysObj:GetMeshConvexes() or {})
 
-        local EntACF = entity.ACF
-        if EntACF then
-            local MaxHealth  = entity.ACF_Volumetric_Mesh.MaxHealth
-            EntACF.MaxHealth = MaxHealth
-            EntACF.Health    = MaxHealth
+        if SERVER then
+            local EntACF = entity.ACF
+            if EntACF then
+                local MaxHealth  = entity.ACF_Volumetric_Mesh.MaxHealth
+                EntACF.MaxHealth = MaxHealth
+                EntACF.Health    = MaxHealth
+            end
         end
     end
     ACF.ComputeVolumetricMesh = ComputeVolumetricMesh
+
+    if SERVER then
+        -- Sets the material of a convex, recalculating its health pool and the entity's aggregate health.
+        function ACF.SetConvexMaterial(Entity, ConvexID, Material)
+            local MeshData = Entity.ACF_Volumetric_Mesh
+            if not MeshData then return end
+
+            local Convex = MeshData.Convexes[ConvexID]
+            if not Convex then return end
+
+            local ArmorTypes = ACF.Classes.ProcArmorTypes
+            local ArmorType  = ArmorTypes.Get(Material) or ArmorTypes.Get("RHA")
+
+            Convex.Material  = ArmorType.ID
+            Convex.MaxHealth = Convex.Volume * ArmorType.Density * ArmorType.HealthMul * HealthMul
+            Convex.Health    = Convex.MaxHealth
+
+            local TotalMaxHealth, TotalHealth = 0, 0
+            for _, Conv in ipairs(MeshData.Convexes) do
+                TotalMaxHealth = TotalMaxHealth + Conv.MaxHealth
+                TotalHealth    = TotalHealth + Conv.Health
+            end
+
+            MeshData.MaxHealth = TotalMaxHealth
+
+            local EntACF = Entity.ACF
+            if EntACF then
+                EntACF.MaxHealth = TotalMaxHealth
+                EntACF.Health    = TotalHealth
+            end
+        end
+    end
 
     hook.Add("ACF_OnLoadAddon", "ACF_Volumetric_Detours", function()
         local Detours = ACF and ACF.Detours
