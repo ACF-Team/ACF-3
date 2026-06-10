@@ -16,6 +16,7 @@ function Armor:OnLoaded()
     self.HealthMul   = 0.8
     self.KineticMul  = 0.5
     self.ChemicalMul = 0.6
+    self.SpallMul    = 0.5
 end
 
 -- RHA
@@ -27,6 +28,7 @@ function Armor:OnLoaded()
     self.HealthMul   = 1.0
     self.KineticMul  = 1.0
     self.ChemicalMul = 1.0
+    self.SpallMul    = 1.0
 end
 
 -- Rubber
@@ -38,6 +40,7 @@ function Armor:OnLoaded()
     self.HealthMul   = 1.5
     self.KineticMul  = 0.2
     self.ChemicalMul = 0.3
+    self.SpallMul    = 0.5
 end
 
 -- Textolite
@@ -49,6 +52,7 @@ function Armor:OnLoaded()
     self.HealthMul   = 1.0
     self.KineticMul  = 0.4
     self.ChemicalMul = 0.5
+    self.SpallMul    = 0.6
 end
 
 -- Tungsten
@@ -60,6 +64,7 @@ function Armor:OnLoaded()
     self.HealthMul   = 0.7
     self.KineticMul  = 1.5
     self.ChemicalMul = 1.2
+    self.SpallMul    = 0.8
 end
 
 -- DU
@@ -71,6 +76,7 @@ function Armor:OnLoaded()
     self.HealthMul   = 0.9
     self.KineticMul  = 1.3
     self.ChemicalMul = 1.1
+    self.SpallMul    = 1.0
 end
 
 -- Light ERA
@@ -82,6 +88,7 @@ function Armor:OnLoaded()
     self.HealthMul   = 0.5
     self.KineticMul  = 0.3
     self.ChemicalMul = 3.0
+    self.SpallMul    = 0.2
 end
 
 -- Heavy ERA
@@ -93,16 +100,5 @@ function Armor:OnLoaded()
     self.HealthMul   = 0.6
     self.KineticMul  = 0.6
     self.ChemicalMul = 2.0
-end
-
--- Flesh
-local Armor = Types.Register("Flesh")
-function Armor:OnLoaded()
-    self.Name        = "Flesh"
-    self.Description = "Soft biological tissue."
-    self.Density     = 1.0e-3
-    self.HealthMul   = 0.5
-    self.KineticMul  = 0.1
-    self.ChemicalMul = 0.1
-    self.SuppressLoad = true
+    self.SpallMul    = 0.3
 end

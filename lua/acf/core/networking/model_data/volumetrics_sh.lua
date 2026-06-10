@@ -3,7 +3,7 @@ local ACF = ACF
 
 -- TODO: Move these into the globals file
 local CubicInchToCm3 = 16.3871 -- 1 in^3 = 16.3871 cm^3 (Hammer units are inches in physics)
-local HealthMul = 1
+local HealthMul = 0.1
 
 -- TODO: Merge these lists with the other global ACF filters
 

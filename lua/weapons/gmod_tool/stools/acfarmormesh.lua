@@ -205,9 +205,10 @@ if CLIENT then
 			local MaxHealth = Weapon:GetNWFloat("ConvexMaxHealth", 0)
 			local Volume    = Entity.ACF_Volumetric_Mesh.Convexes[HighlightID].Volume
 
-			local ArmorType = ACF.Classes.ArmorTypes.Get(Material) or ACF.Classes.ArmorTypes.Get("RHA")
-			local Mass      = Volume * ArmorType.Density
-			local Nominal   = ConvexHit.GeoThick * math.cos(math.rad(ConvexHit.HitAngle))
+			local ArmorType  = ACF.Classes.ArmorTypes.Get(Material) or ACF.Classes.ArmorTypes.Get("RHA")
+			local Mass       = Volume * ArmorType.Density
+			local NominalHit = ACF.GetConvexHit(Entity, Trace.HitPos, -Trace.HitNormal)
+			local Nominal    = NominalHit and NominalHit.GeoThick or 0
 
 			local Text = string.format("Mat: %s\nNominal: %.2f mm\nHP: %.2f / %.2f\nVol: %.2f cm^3\nMass: %.2f kg", Material, Nominal, Health, MaxHealth, Volume, Mass)
 			AddWorldTip(Entity, Text, nil, Trace.HitPos)
