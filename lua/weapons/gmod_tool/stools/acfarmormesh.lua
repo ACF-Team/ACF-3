@@ -1,4 +1,5 @@
 local ACF = ACF
+local IsValid = IsValid
 
 TOOL.Category   = (ACF and ACF.CustomToolCategory and ACF.CustomToolCategory:GetBool()) and "ACF" or "Construction"
 TOOL.Name       = "#tool.acfarmormesh.name"
@@ -272,6 +273,8 @@ elseif SERVER then
 		local Trace  = Player:GetEyeTrace()
 		local Entity = Trace.Entity
 		local Weapon = self.Weapon
+
+		if IsValid(Entity) then ACF.Check(Entity) end
 
 		local EntACF = IsValid(Entity) and Entity.ACF
 		Weapon:SetNWFloat("EntityHealth", EntACF and EntACF.Health or 0)
