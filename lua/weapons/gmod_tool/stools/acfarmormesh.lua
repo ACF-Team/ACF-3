@@ -22,9 +22,12 @@ if CLIENT then
 	language.Add("tool.acfarmormesh.material_desc", "The material that will be applied to the convex under your crosshair.")
 	language.Add("tool.acfarmormesh.armor_stats", "ACF Stats")
 
+	local SphereSearch = CreateClientConVar("acfarmormesh_sphere_search", 0, false, true, "", 0, 1)
+	local SphereRadius = CreateClientConVar("acfarmormesh_sphere_radius", 0, false, true, "", 0, 10000)
+
 	function TOOL:LeftClick(_) return true end
 	function TOOL:RightClick(_) return true end
-	function TOOL:Reload(_) return true end
+	function TOOL:Reload(Trace) return self:GetContraptionReadout(Trace, self:GetOwner():KeyDown(IN_SPEED)) end
 
 	local function CreateArmorMeshMenu(Panel)
 		local ArmorTypes = ACF.Classes.ArmorTypes
@@ -72,6 +75,19 @@ if CLIENT then
 				end
 			end
 		end, "ACF_ArmorMeshMenu")
+
+		local SphereCheck = Menu:AddCheckBox("#tool.acfarmormesh.sphere_search", "acfarmormesh_sphere_search")
+		Menu:AddHelp("#tool.acfarmormesh.sphere_search_desc")
+
+		local SphereRadiusSlider = Menu:AddSlider("#tool.acfarmormesh.sphere_search_radius", 0, 2000, 0)
+		SphereRadiusSlider:SetConVar("acfarmormesh_sphere_radius")
+		Menu:AddHelp("#tool.acfarmormesh.sphere_search_radius_desc")
+
+		function SphereCheck:OnChange(Bool)
+			SphereRadiusSlider:SetEnabled(Bool)
+		end
+
+		SphereRadiusSlider:SetEnabled(SphereCheck:GetChecked())
 	end
 
 	ACF.CreateArmorMeshMenu = CreateArmorMeshMenu
@@ -215,9 +231,32 @@ if CLIENT then
 			AddWorldTip(Entity, Text, nil, Trace.HitPos)
 		end
 	end)
-elseif SERVER then
-	local Messages = ACF.Utilities.Messages
 
+	-- Draws the contraption readout's sphere search area, when enabled.
+	local GreenSphere = Color(0, 200, 0, 50)
+	local GreenFrame  = Color(0, 200, 0, 100)
+
+	hook.Add("PostDrawOpaqueRenderables", "ACF_ArmorMesh_SearchSphere", function(bDrawingDepth, _, bDrawingSkybox)
+		if bDrawingDepth or bDrawingSkybox then return end
+
+		local Player = LocalPlayer()
+		local Weapon = Player:GetActiveWeapon()
+		if not IsValid(Weapon) or Weapon:GetClass() ~= "gmod_tool" then return end
+
+		local Tool = Player:GetTool()
+		if not Tool or Tool ~= Player:GetTool("acfarmormesh") then return end
+		if not SphereSearch:GetBool() then return end
+
+		local Radius = SphereRadius:GetFloat()
+		if Radius <= 0 then return end
+
+		local Pos = Player:GetEyeTrace().HitPos
+
+		render.SetColorMaterial()
+		render.DrawSphere(Pos, Radius, 20, 20, GreenSphere)
+		render.DrawWireframeSphere(Pos, Radius, 20, 20, GreenFrame, true)
+	end)
+elseif SERVER then
 	-- Stores the material of every convex as an entity modifier so it persists through duplication.
 	local function SaveConvexMaterials(Entity)
 		local MeshData = Entity.ACF_Volumetric_Mesh
@@ -333,14 +372,112 @@ elseif SERVER then
 	end
 
 	function TOOL:Reload(Trace)
-		local Entity = Trace.Entity
-		if not IsValid(Entity) then return false end
+		return self:GetContraptionReadout(Trace, self:GetOwner():KeyDown(IN_SPEED))
+	end
+end
 
-		local Contraption = Entity:CFW_GetContraption()
-		if Contraption then
-			Messages.SendChat(self:GetOwner(), "Info", "Contraption mass: " .. math.Round(Contraption.totalMass, 2) .. " kg")
+do -- Armor readout
+	local Contraption = ACF.Contraption
+	local Messages    = ACF.Utilities.Messages
+
+	local Modes = {
+		Default = {
+			CanCheck = function(_, Trace)
+				local Ent = Trace.Entity
+
+				if not IsValid(Ent) then return false end
+				if Ent:IsPlayer() or Ent:IsNPC() or Ent:IsNextBot() then return false end
+
+				return true
+			end,
+			GetResult = function(_, Trace)
+				local Ent = Trace.Entity
+				local Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum = Contraption.CalcMassRatio(Ent, true)
+
+				return Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum, Ent.acftotal, Ent.acfphystotal
+			end,
+			GetCost = function(_, Trace)
+				if not IsValid(Trace.Entity) then return 0, {} end
+
+				local Contraption_ = Trace.Entity:CFW_GetContraption()
+				if Contraption_ then
+					return Contraption.CostSystem.CalcCostsFromContraption(Contraption_)
+				else
+					return Contraption.CostSystem.CalcCostsFromEnts({Trace.Entity})
+				end
+			end
+		},
+		Sphere = {
+			CanCheck = function(Tool)
+				return Tool:GetClientNumber("sphere_radius") > 0
+			end,
+			-- TODO: The old armor tool's ProcessList walked every entity in the sphere individually to
+			-- build this readout; it was dated and unoptimized, so it hasn't been ported yet.
+			GetResult = function(_, _)
+				return 0, 0, 0, 0, 0, "Sphere readout not yet implemented", 0, 0, 0
+			end,
+			GetCost = function(Tool, Trace)
+				local Ents = ents.FindInSphere(Trace.HitPos, Tool:GetClientNumber("sphere_radius"))
+				return Contraption.CostSystem.CalcCostsFromEnts(Ents)
+			end
+		}
+	}
+
+	local function GetReadoutMode(Tool)
+		if tobool(Tool:GetClientInfo("sphere_search")) then return Modes.Sphere end
+
+		return Modes.Default
+	end
+
+	local Text1 = "--- Contraption Readout (Owner: %s) ---"
+	local Text2 = "Mass: %s kg total | %s kg physical (%s%%) | %s kg parented"
+	local Text3 = "Mobility: %s hp/ton @ %s hp | %s liters of fuel"
+	local Text4 = "Entities: %s (%s physical, %s parented, %s other entities) | %s constraints"
+	local Text5 = "Name: %s | Type: %s"
+	local Text6 = "Cost: %s | Ammo: %s | Max Nominal: %s mm"
+
+	-- Total up mass of constrained ents
+	function TOOL:GetContraptionReadout(Trace, UseCostBreakdown)
+		local Mode = GetReadoutMode(self)
+
+		if not Mode.CanCheck(self, Trace) then return false end
+		if CLIENT then return true end
+
+		local Cost, Breakdown = Mode.GetCost(self, Trace)
+		if UseCostBreakdown then
+			local Player = self:GetOwner()
+
+			local NiceBreakdown = {}
+			for item, cost in pairs(Breakdown) do
+				table.insert(NiceBreakdown, {name = item, cost = cost})
+			end
+
+			table.sort(NiceBreakdown, function(a, b)
+				return a.cost > b.cost
+			end)
+
+			Messages.SendChat(Player, nil, "--- Contraption Cost Breakdown ---")
+
+			for _, Item in ipairs(NiceBreakdown) do
+				Messages.SendChat(Player, nil, "| " .. Item.name .. ": " .. math.Round(Item.cost, 2))
+			end
+
+			Messages.SendChat(Player, nil, "TOTAL COST: ", math.Round(Cost, 2))
 		else
-			Messages.SendChat(self:GetOwner(), "Info", "Entity mass: " .. math.Round(Entity:GetPhysicsObject():GetMass(), 2) .. " kg")
+			local Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum, Total, PhysTotal = Mode.GetResult(self, Trace)
+			local HorsePower = math.Round(Power / math.max(Total * 0.001, 0.001), 1)
+			local PhysRatio = math.Round(100 * PhysTotal / math.max(Total, 0.001))
+			local ParentTotal = Total - PhysTotal
+			local Player = self:GetOwner()
+			local BaseplateName, BaseplateType, AmmoTypes, MaxNominal = Contraption.GetMiscInfo(Trace.Entity)
+			local AmmoList = next(AmmoTypes) and table.concat(AmmoTypes, ", ") or "N/A"
+
+			Messages.SendChat(Player, nil, Text1:format(Name))
+			Messages.SendChat(Player, nil, Text2:format(math.Round(Total, 2), math.Round(PhysTotal, 2), PhysRatio, math.Round(ParentTotal, 2)))
+			Messages.SendChat(Player, nil, Text3:format(HorsePower, math.Round(Power), math.Round(Fuel)))
+			Messages.SendChat(Player, nil, Text4:format(PhysNum + ParNum + OtherNum, PhysNum, ParNum, OtherNum, ConNum))
+			Messages.SendChat(Player, nil, Text5:format(BaseplateName, BaseplateType))
+			Messages.SendChat(Player, nil, Text6:format(math.Round(Cost, 2), AmmoList, math.Round(MaxNominal, 2)))
 		end
 
 		return true
