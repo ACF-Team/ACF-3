@@ -34,9 +34,12 @@ if CLIENT then
 		Menu:AddHelp("#tool.acfarmormesh.material_desc")
 
 		local Base = Menu:AddCollapsible("Material Info", true)
-		local MatName    = Base:AddTitle()
-		local MatDesc    = Base:AddLabel()
-		local MatDensity = Base:AddLabel()
+		local MatName     = Base:AddTitle()
+		local MatDesc     = Base:AddLabel()
+		local MatDensity  = Base:AddLabel()
+		local MatHealth   = Base:AddLabel()
+		local MatKinetic  = Base:AddLabel()
+		local MatChemical = Base:AddLabel()
 
 		function Materials:OnSelect(Index, _, Data)
 			if self.Selected == Data then return end
@@ -47,6 +50,9 @@ if CLIENT then
 			MatName:SetText(Data.Name)
 			MatDesc:SetText(Data.Description)
 			MatDensity:SetText(string.format("Density: %g g/cm^3", Data.Density * 1000))
+			MatHealth:SetText(string.format("Health Multiplier: %gx", Data.HealthMul))
+			MatKinetic:SetText(string.format("Kinetic Multiplier: %gx", Data.KineticMul))
+			MatChemical:SetText(string.format("Chemical Multiplier: %gx", Data.ChemicalMul))
 
 			RunConsoleCommand("acfarmormesh_material", Data.ID)
 		end
@@ -108,14 +114,14 @@ if CLIENT then
 
 			draw.RoundedBox(6, 10, 83, 236, 64, BGGray)
 			draw.RoundedBox(6, 15, 88, 226, 54, Blue)
-			draw.SimpleTextOutlined("#acf.menu.armor", "torchfont", 128, 100, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+			draw.SimpleTextOutlined("Convex Armor", "torchfont", 128, 100, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
 			draw.SimpleTextOutlined(Armor .. " mm", "torchfont", 128, 130, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
 
 			draw.RoundedBox(6, 10, 183, 236, 64, BGGray)
 			if Health ~= 0 and MaxHealth ~= 0 then
 				draw.RoundedBox(6, 15, 188, Health / MaxHealth * 226, 54, Red)
 			end
-			draw.SimpleTextOutlined("#acf.menu.health", "torchfont", 128, 200, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
+			draw.SimpleTextOutlined("Total Health", "torchfont", 128, 200, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
 			draw.SimpleTextOutlined(Health .. "/" .. MaxHealth, "torchfont", 128, 230, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
 		cam.End2D()
 	end
@@ -151,9 +157,8 @@ if CLIENT then
 		end
 	end
 
-	hook.Add("PostDrawOpaqueRenderables", "ACF_ArmorMesh_Visualizer", function(bDrawingDepth, _, bDrawingSkybox)
-		if bDrawingDepth or bDrawingSkybox then return end
-
+	-- Returns the entity under the crosshair if the armor mesh tool is active and it has a volumetric mesh.
+	local function GetMeshTraceTarget()
 		local Player = LocalPlayer()
 		local Weapon = Player:GetActiveWeapon()
 		if not IsValid(Weapon) or Weapon:GetClass() ~= "gmod_tool" then return end
@@ -164,6 +169,29 @@ if CLIENT then
 		local Trace  = Player:GetEyeTrace()
 		local Entity = Trace.Entity
 		if not IsValid(Entity) or not Entity.ACF_Volumetric_Mesh then return end
+
+		return Player, Weapon, Trace, Entity
+	end
+
+	-- The targeted prop is hidden while its convexes are being drawn, so it doesn't occlude or z-fight with the overlay.
+	-- SetNoDraw only takes effect on the following frame's opaque pass, so the prop is unhidden again as soon as it
+	-- stops being the target.
+	local HiddenEntity
+
+	hook.Add("PostDrawOpaqueRenderables", "ACF_ArmorMesh_Visualizer", function(bDrawingDepth, _, bDrawingSkybox)
+		if bDrawingDepth or bDrawingSkybox then return end
+
+		local _, Weapon, Trace, Entity = GetMeshTraceTarget()
+
+		if IsValid(HiddenEntity) and HiddenEntity ~= Entity then
+			HiddenEntity:SetNoDraw(false)
+			HiddenEntity = nil
+		end
+
+		if not Entity then return end
+
+		Entity:SetNoDraw(true)
+		HiddenEntity = Entity
 
 		local Dir         = (Trace.HitPos - Trace.StartPos):GetNormalized()
 		local ConvexHit   = ACF.GetConvexHit(Entity, Trace.HitPos, Dir)
