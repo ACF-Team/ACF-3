@@ -231,11 +231,10 @@ if CLIENT then
 			local NominalHit = ACF.GetConvexHit(Entity, Trace.HitPos, -Trace.HitNormal)
 			local Nominal    = NominalHit and NominalHit.GeoThick or 0
 
-			local ShowChemical = input.IsKeyDown(KEY_LSHIFT)
-			local EffLabel     = ShowChemical and "Effective CE" or "Effective KE"
-			local Effective    = Nominal * (ShowChemical and ArmorType.ChemicalMul or ArmorType.KineticMul)
+			local EffKE = ConvexHit.GeoThick * ArmorType.KineticMul
+			local EffCE = ConvexHit.GeoThick * ArmorType.ChemicalMul
 
-			local Text = string.format("Mat: %s\nNominal: %.2f mm\n%s: %.2f mm\nHP: %.2f / %.2f\nVol: %.2f cm^3\nMass: %.2f kg", Material, Nominal, EffLabel, Effective, Health, MaxHealth, Volume, Mass)
+			local Text = string.format("Mat: %s\nNominal (mm): %.2f\nEff (mm): %.2f (KE) %.2f (CE)\nHP: %.2f / %.2f\nVolume (cm^3): %.2f\nMass (kg): %.2f", Material, Nominal, EffKE, EffCE, Health, MaxHealth, Volume, Mass)
 			AddWorldTip(Entity, Text, nil, Trace.HitPos)
 		end
 	end)
