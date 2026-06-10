@@ -294,8 +294,11 @@ elseif SERVER then
 			local MeshData = Entity.ACF_Volumetric_Mesh
 			if not MeshData then return end
 
+			Entity.ACF_Volumetric_Materials = Data.Materials
+
 			for ConvexID, Material in ipairs(Data.Materials) do
 				if MeshData.Convexes[ConvexID] then
+					-- print("Restoring convex material", Entity, ConvexID, Material)
 					ACF.SetConvexMaterial(Entity, ConvexID, Material)
 				end
 			end

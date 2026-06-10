@@ -13,6 +13,7 @@ local ArmorCoef = ACF.ArmorCoef
 -- Classes we should compute the mesh for
 local ArmorableClasses = {
     prop_physics = true,
+    starfall_prop = true,
 
     -- Vehicles
     prop_vehicle_prisoner_pod = true,
@@ -43,6 +44,7 @@ do
         local ArmorType = ArmorTypes.Get(Material) or ArmorTypes.Get("Default")
 
         Convex.Material  = ArmorType.ID
+        -- print("SetConvexMaterial", Entity, ConvexID, Material, Convex.Material)
         Convex.Mass      = Convex.Volume * ArmorType.Density
         Convex.MaxHealth = Convex.Volume * ArmorType.Density * ArmorType.HealthMul * HealthMul
         Convex.Health    = Convex.MaxHealth
@@ -122,7 +124,8 @@ do
 
         for ConvexID in ipairs(MeshData.Convexes) do
             -- TODO: Maybe this should be read in? I love race conditions...
-            ACF.SetConvexMaterial(Entity, ConvexID, "Default")
+            local Material = Entity.ACF_Volumetric_Materials and Entity.ACF_Volumetric_Materials[ConvexID] or "Default"
+            ACF.SetConvexMaterial(Entity, ConvexID, Material)
         end
     end
 
