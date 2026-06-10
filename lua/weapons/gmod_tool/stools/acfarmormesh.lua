@@ -334,9 +334,11 @@ elseif SERVER then
 		if not IsValid(Entity) then return false end
 
 		local Contraption = Entity:CFW_GetContraption()
-		if not Contraption then return false end
-
-		Messages.SendChat(self:GetOwner(), "Info", "Contraption mass: " .. math.Round(Contraption.totalMass, 2) .. " kg")
+		if Contraption then
+			Messages.SendChat(self:GetOwner(), "Info", "Contraption mass: " .. math.Round(Contraption.totalMass, 2) .. " kg")
+		else
+			Messages.SendChat(self:GetOwner(), "Info", "Entity mass: " .. math.Round(Entity:GetPhysicsObject():GetMass(), 2) .. " kg")
+		end
 
 		return true
 	end

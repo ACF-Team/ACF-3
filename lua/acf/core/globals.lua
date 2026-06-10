@@ -134,11 +134,11 @@ do -- ACF global vars
 	ACF.DefineSetting("AllowBaseplateDamage", false,  "Non-ACF damage while driving baseplates has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("SquishyDamageMult",    1,      "Player/NPC damage multiplier has been set to a factor of %.2f.", ACF.FloatDataCallback(0.1, 2, 2))
 
-	ACF.Threshold = 264.7
-	ACF.DefineSetting("HealthFactor",         1,      "Health multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("Threshold", 0.01, 2, 2))
+	ACF.DefineSetting("HealthCoef",           0.1,    "Health coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
 
-	ACF.ArmorMod = 1
-	ACF.DefineSetting("ArmorFactor",          1,      "Armor multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("ArmorMod", 0.01, 2, 2))
+	ACF.DefineSetting("ArmorCoef",            1,      "Armor coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
+
+	ACF.DefineSetting("DamageCoef",           1,      "Damage coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
 
 	ACF.FuelRate = 15 -- Multiplier for fuel usage, 1.0 is approx real world
 	ACF.DefineSetting("FuelFactor",           1,      "Fuel rate multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("FuelRate", 0.01, 2, 2))

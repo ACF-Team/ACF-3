@@ -1,7 +1,8 @@
-local ACF     = ACF
-local Damage  = ACF.Damage
-local Objects = Damage.Objects
-local Effects = ACF.Utilities.Effects
+local ACF       = ACF
+local Damage    = ACF.Damage
+local Objects   = Damage.Objects
+local Effects   = ACF.Utilities.Effects
+local DamageCoef = ACF.DamageCoef
 local Queue = {} -- Queue[Entity] = Step; always broadcast
 local QueueTime = 0.5 -- Seconds to buffer damage updates before sending
 
@@ -242,6 +243,7 @@ end
 -- @return The output of the DamageResult object.
 function Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 	local HitRes = DmgResult:Compute()
+	HitRes.Damage = HitRes.Damage * DamageCoef
 
 	-- Mark contraption as in combat when taking damage
 	local Contraption = Entity:CFW_GetContraption()

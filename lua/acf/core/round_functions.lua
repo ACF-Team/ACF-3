@@ -130,7 +130,7 @@ end
 
 -- changes here will be automatically reflected in the armor properties tool
 function ACF.CalcArmor(Area, Ductility, Mass)
-	return (Mass * 1000 / Area / 0.78) / (1 + Ductility) ^ 0.5 * ACF.ArmorMod
+	return (Mass * 1000 / Area / 0.78) / (1 + Ductility) ^ 0.5 * ACF.ArmorCoef
 end
 
 local Weaponry = {

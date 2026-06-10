@@ -1,9 +1,11 @@
 local ACF = ACF
 
+-- Note: Put this in console for good luck: hook.Run("ACF_OnLoadAddon")
 
 -- TODO: Move these into the globals file
-local CubicInchToCm3 = 16.3871 -- 1 in^3 = 16.3871 cm^3 (Hammer units are inches in physics)
-local HealthMul = 0.1
+local CubicInchToCm3 = ACF.InchToCmCu
+local HealthMul = ACF.HealthCoef
+local ArmorCoef = ACF.ArmorCoef
 
 -- TODO: Merge these lists with the other global ACF filters
 
@@ -21,7 +23,6 @@ local ArmorableClasses = {
 }
 
 -- TODO: Handle reinitializable classes
-
 do
     local ArmorTypes = ACF.Classes.ArmorTypes
 
@@ -228,7 +229,7 @@ function ACF.GetConvexHits(Entity, HitPos, Direction)
 
             ConvexHits[#ConvexHits + 1] = {
                 ConvexID  = Entry.ConvexID,
-                GeoThick  = (Hit.T - Entry.T) * 25.4, -- inches to mm
+                GeoThick  = (Hit.T - Entry.T) * 25.4 * ArmorCoef, -- inches to mm
                 ArmorType = ArmorType,
                 HitAngle  = math.deg(math.acos(math.min(1, math.max(-1, -Direction:Dot(Entry.Normal))))),
             }
