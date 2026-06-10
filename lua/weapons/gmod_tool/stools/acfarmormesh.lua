@@ -215,6 +215,55 @@ if CLIENT then
 elseif SERVER then
 	local Messages = ACF.Utilities.Messages
 
+	-- Stores the material of every convex as an entity modifier so it persists through duplication.
+	local function SaveConvexMaterials(Entity)
+		local MeshData = Entity.ACF_Volumetric_Mesh
+		if not MeshData then return end
+
+		local Materials = {}
+		for ConvexID, Convex in ipairs(MeshData.Convexes) do
+			Materials[ConvexID] = Convex.Material
+		end
+
+		duplicator.StoreEntityModifier(Entity, "ACF_ArmorMesh", { Materials = Materials })
+	end
+
+	duplicator.RegisterEntityModifier("ACF_ArmorMesh", function(_, Entity, Data)
+		if not Data or not Data.Materials then return end
+
+		local HookName = "ACF_ArmorMesh_Restore_" .. tostring(Entity)
+
+		-- Primitives in particular can rebuild their physics (and thus the volumetric mesh) several times
+		-- while initializing, so reapply every time the mesh changes until all convexes are accounted for.
+		local function Apply()
+			if not IsValid(Entity) then
+				hook.Remove("ACF_OnVolumetricMeshComputed", HookName)
+				return
+			end
+
+			local MeshData = Entity.ACF_Volumetric_Mesh
+			if not MeshData then return end
+
+			for ConvexID, Material in ipairs(Data.Materials) do
+				if MeshData.Convexes[ConvexID] then
+					ACF.SetConvexMaterial(Entity, ConvexID, Material)
+				end
+			end
+
+			if #MeshData.Convexes >= #Data.Materials then
+				hook.Remove("ACF_OnVolumetricMeshComputed", HookName)
+			end
+		end
+
+		hook.Add("ACF_OnVolumetricMeshComputed", HookName, function(Ent)
+			if Ent ~= Entity then return end
+
+			Apply()
+		end)
+
+		timer.Simple(0, Apply)
+	end)
+
 	-- Keeps the toolgun's NW vars in sync with the convex under the player's crosshair, for client-side display.
 	function TOOL:Think()
 		local Player = self:GetOwner()
@@ -257,6 +306,7 @@ elseif SERVER then
 		if not ConvexHit then return false end
 
 		ACF.SetConvexMaterial(Entity, ConvexHit.ConvexID, self:GetClientInfo("material"))
+		SaveConvexMaterials(Entity)
 
 		return true
 	end

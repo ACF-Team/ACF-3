@@ -104,6 +104,10 @@ do
                 PhysObj:SetMass(MeshData.Mass)
             end
         end
+
+        -- Entities (particularly primitives) can rebuild their physics multiple times while
+        -- initializing/duplicating, recomputing this mesh from scratch each time.
+        hook.Run("ACF_OnVolumetricMeshComputed", entity, isReInit)
     end
     ACF.ComputeVolumetricMesh = ComputeVolumetricMesh
 
@@ -114,6 +118,7 @@ do
             if not MeshData then return end
 
             local Convex = MeshData.Convexes[ConvexID]
+            print("Setting convex material", Entity, ConvexID, Material, Convex)
             if not Convex then return end
 
             local ArmorTypes = ACF.Classes.ProcArmorTypes
