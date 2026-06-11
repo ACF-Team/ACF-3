@@ -173,7 +173,7 @@ end
 
 -- Returns a sorted list of { Pos, Normal, ConvexIndex, T } for every triangle the ray pierces.
 -- Verts are stored in local space, so Entity is required to transform them into world space.
-function ACF.RayIntersectMesh(Entity, Start, Direction, Length)
+function ACF.RayIntersectMesh(Entity, Start, Direction, Length, IncludeDead)
     local MeshData = Entity.ACF_Volumetric_Mesh
     if not MeshData then return {} end
 
@@ -182,7 +182,7 @@ function ACF.RayIntersectMesh(Entity, Start, Direction, Length)
     local NormDir = Direction:GetNormalized()
 
     for ConvexID, Convex in ipairs(MeshData.Convexes) do
-        if Convex.Health <= 0 then continue end -- destroyed convex is transparent to projectiles
+        if Convex.Health <= 0 and not IncludeDead then continue end -- destroyed convex is transparent to projectiles
 
         for _, Tri in ipairs(Convex.Tris) do
             local A = Entity:LocalToWorld(Verts[Tri[1]])
@@ -217,11 +217,11 @@ end
 -- Finds every convex entry/exit pair the ray passes through, in order, and returns damage-relevant data for each.
 -- Returns an empty table if the entity has no mesh or the ray misses all live convexes.
 -- GeoThick is geometric thickness in mm; multiply by ArmorType.KineticMul or .ChemicalMul as needed.
-function ACF.GetConvexHits(Entity, HitPos, Direction)
+function ACF.GetConvexHits(Entity, HitPos, Direction, IncludeDead)
     local MeshData = Entity.ACF_Volumetric_Mesh
     if not MeshData then return {} end
 
-    local Hits       = ACF.RayIntersectMesh(Entity, HitPos - Direction * 2, Direction, 10000)
+    local Hits       = ACF.RayIntersectMesh(Entity, HitPos - Direction * 2, Direction, 10000, IncludeDead)
     local ArmorTypes = ACF.Classes.ArmorTypes
     local ConvexHits = {}
     local Entry
@@ -248,6 +248,6 @@ function ACF.GetConvexHits(Entity, HitPos, Direction)
 end
 
 -- Convenience wrapper for ACF.GetConvexHits that returns only the first convex entry/exit pair (or nil if none).
-function ACF.GetConvexHit(Entity, HitPos, Direction)
-    return ACF.GetConvexHits(Entity, HitPos, Direction)[1]
+function ACF.GetConvexHit(Entity, HitPos, Direction, IncludeDead)
+    return ACF.GetConvexHits(Entity, HitPos, Direction, IncludeDead)[1]
 end

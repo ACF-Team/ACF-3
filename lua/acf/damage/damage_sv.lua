@@ -243,6 +243,7 @@ end
 function Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 	local HitRes = DmgResult:Compute()
 	HitRes.Damage = HitRes.Damage * DamageCoef
+	HitRes.Kill = false
 
 	-- Mark contraption as in combat when taking damage
 	local Contraption = Entity:CFW_GetContraption()
@@ -259,25 +260,6 @@ function Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 			local HealthLoss = (Hit.Volume / Convex.Volume) * Convex.MaxHealth
 
 			Convex.Health = math.max(0, Convex.Health - HealthLoss)
-		end
-	else
-		-- Fallback for entities without a volumetric mesh
-		local EntACF = Entity.ACF
-		local Health = EntACF.Health
-
-		if HitRes.Damage >= Health then
-			if Entity.ACF_KillableButIndestructible then
-				HitRes.Kill = false
-				EntACF.Health = 0
-			else
-				HitRes.Kill = true
-			end
-		else
-			local NewHealth = Health - HitRes.Damage
-			local MaxHealth = EntACF.MaxHealth
-
-			EntACF.Health = NewHealth
-			Damage.Network(Entity, nil, NewHealth, MaxHealth)
 		end
 	end
 

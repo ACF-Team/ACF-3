@@ -163,7 +163,7 @@ if CLIENT then
 		HiddenEntity = Entity
 
 		local Dir         = (Trace.HitPos - Trace.StartPos):GetNormalized()
-		local ConvexHit   = ACF.GetConvexHit(Entity, Trace.HitPos, Dir)
+		local ConvexHit   = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
 		local HighlightID = ConvexHit and ConvexHit.ConvexID
 
 		DrawConvexes(Entity, HighlightID)
@@ -176,7 +176,7 @@ if CLIENT then
 
 			local ArmorType  = ACF.Classes.ArmorTypes.Get(Material) or ACF.Classes.ArmorTypes.Get("Default")
 			local Mass       = Volume * ArmorType.Density
-			local NominalHit = ACF.GetConvexHit(Entity, Trace.HitPos, -Trace.HitNormal)
+			local NominalHit = ACF.GetConvexHit(Entity, Trace.HitPos, -Trace.HitNormal, true)
 			local Nominal    = NominalHit and NominalHit.GeoThick or 0
 
 			local EffKE = ConvexHit.GeoThick * ArmorType.KineticMul
@@ -270,7 +270,7 @@ elseif SERVER then
 		local ConvexHit
 		if IsValid(Entity) and Entity.ACF_Volumetric_Mesh then
 			local Dir = (Trace.HitPos - Trace.StartPos):GetNormalized()
-			ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir)
+			ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
 		end
 
 		if not ConvexHit then
@@ -293,7 +293,7 @@ elseif SERVER then
 		if not Entity.ACF_Volumetric_Mesh then return false end
 
 		local Dir       = (Trace.HitPos - Trace.StartPos):GetNormalized()
-		local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir)
+		local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
 		if not ConvexHit then return false end
 
 		local Material = self:GetClientInfo("material")
@@ -315,7 +315,7 @@ elseif SERVER then
 		if not Entity.ACF_Volumetric_Mesh then return false end
 
 		local Dir       = (Trace.HitPos - Trace.StartPos):GetNormalized()
-		local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir)
+		local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
 		if not ConvexHit then return false end
 
 		local Convex = Entity.ACF_Volumetric_Mesh.Convexes[ConvexHit.ConvexID]
