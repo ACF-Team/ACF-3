@@ -30,7 +30,7 @@ function EFFECT:Init(Data)
 		Scale = Velocity,
 	}
 
-	-- Effects.CreateEffect("cball_explode", EffectTable)
+	Effects.CreateEffect("cball_explode", EffectTable)
 
 	if IsValid(Trace.Entity) or Trace.HitWorld then
 		local DecalType = ValidDecal(Type) and Type or 1

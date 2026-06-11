@@ -60,7 +60,7 @@ function EFFECT:Metal(Emitter, Origin, Scale, HitNormal, DebrisColor)
 		Radius = Scale,
 	}
 
-	-- Effects.CreateEffect("Sparks", EffectTable)
+	Effects.CreateEffect("Sparks", EffectTable)
 
 	if not IsValid(Emitter) then return end
 
@@ -122,7 +122,7 @@ function EFFECT:Concrete(Emitter, Origin, Scale, HitNormal, DebrisColor)
 		Radius = Scale,
 	}
 
-	-- Effects.CreateEffect("Sparks", EffectTable)
+	Effects.CreateEffect("Sparks", EffectTable)
 
 	if not IsValid(Emitter) then return end
 
