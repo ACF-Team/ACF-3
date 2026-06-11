@@ -49,23 +49,16 @@ do
         Convex.MaxHealth = Convex.Volume * ArmorType.Density * ArmorType.HealthMul * HealthMul
         Convex.Health    = Convex.MaxHealth
 
-        local TotalMaxHealth, TotalHealth, TotalMass = 0, 0, 0
+        local TotalMass = 0
         for _, Conv in ipairs(MeshData.Convexes) do
-            TotalMaxHealth = TotalMaxHealth + Conv.MaxHealth
-            TotalHealth    = TotalHealth + Conv.Health
-            TotalMass      = TotalMass + Conv.Mass
+            TotalMass = TotalMass + Conv.Mass
         end
 
-        MeshData.TotalMaxHealth = TotalMaxHealth
-        MeshData.TotalHealth    = TotalHealth
-        MeshData.TotalMass      = TotalMass
+        MeshData.TotalMass = TotalMass
 
         if SERVER and ArmorType.ID ~= "Default" then
             local EntACF = Entity.ACF
             if EntACF then
-                EntACF.MaxHealth = TotalMaxHealth
-                EntACF.Health    = TotalHealth
-
                 ACF.Contraption.SetMass(Entity, TotalMass)
             else
                 Entity:GetPhysicsObject():SetMass(TotalMass)
@@ -117,8 +110,6 @@ do
             }
         end
 
-        MeshData.TotalMaxHealth    = 0
-        MeshData.TotalHealth       = 0
         MeshData.TotalMass         = 0
         Entity.ACF_Volumetric_Mesh = MeshData
 

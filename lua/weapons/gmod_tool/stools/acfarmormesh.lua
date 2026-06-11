@@ -93,59 +93,7 @@ if CLIENT then
 	ACF.CreateArmorMeshMenu = CreateArmorMeshMenu
 	TOOL.BuildCPanel = CreateArmorMeshMenu
 
-	local White   = Color(255, 255, 255, Alpha)
-	local TextGray = Color(224, 224, 255)
-	local BGGray   = Color(200, 200, 200)
-	local Red      = Color(200, 50, 50)
-	local Blue     = Color(50, 200, 200)
-	local Black    = Color(0, 0, 0)
-
-	-- Toolgun screen: total entity health and the nominal thickness of the convex under the crosshair.
-	function TOOL:DrawToolScreen()
-		local Player = self:GetOwner()
-		local Trace  = Player:GetEyeTrace()
-		local Entity = Trace.Entity
-		local Weapon = self.Weapon
-
-		local Health    = math.Round(Weapon:GetNWFloat("EntityHealth", 0))
-		local MaxHealth = math.Round(Weapon:GetNWFloat("EntityMaxHealth", 0))
-
-		local ShowChemical = input.IsKeyDown(KEY_LSHIFT)
-		local ArmorLabel   = ShowChemical and "Effective CE Armor" or "Effective KE Armor"
-
-		local Armor = 0
-		if IsValid(Entity) and Entity.ACF_Volumetric_Mesh then
-			local Dir       = (Trace.HitPos - Trace.StartPos):GetNormalized()
-			local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir)
-
-			if ConvexHit then
-				local Mul = ShowChemical and ConvexHit.ArmorType.ChemicalMul or ConvexHit.ArmorType.KineticMul
-				Armor = math.Round(ConvexHit.GeoThick * Mul, 2)
-			end
-		end
-
-		cam.Start2D()
-			render.Clear(0, 0, 0, 0)
-
-			surface.SetDrawColor(Black)
-			surface.DrawRect(0, 0, 256, 256)
-			surface.SetFont("torchfont")
-
-			draw.SimpleTextOutlined("#tool.acfarmormesh.armor_stats", "torchfont", 128, 30, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
-
-			draw.RoundedBox(6, 10, 83, 236, 64, BGGray)
-			draw.RoundedBox(6, 15, 88, 226, 54, Blue)
-			draw.SimpleTextOutlined(ArmorLabel, "torchfont", 128, 100, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
-			draw.SimpleTextOutlined(Armor .. " mm", "torchfont", 128, 130, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
-
-			draw.RoundedBox(6, 10, 183, 236, 64, BGGray)
-			if Health ~= 0 and MaxHealth ~= 0 then
-				draw.RoundedBox(6, 15, 188, Health / MaxHealth * 226, 54, Red)
-			end
-			draw.SimpleTextOutlined("Total Health", "torchfont", 128, 200, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
-			draw.SimpleTextOutlined(Health .. "/" .. MaxHealth, "torchfont", 128, 230, TextGray, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4, color_black)
-		cam.End2D()
-	end
+	local White = Color(255, 255, 255, Alpha)
 
 	-- Draws every convex of the mesh as a translucent quad: white normally, colored if highlighted.
 	-- Runs every frame instead of using debugoverlay so the visualization doesn't flicker.
@@ -318,10 +266,6 @@ elseif SERVER then
 		local Weapon = self.Weapon
 
 		if IsValid(Entity) then ACF.Check(Entity) end
-
-		local EntACF = IsValid(Entity) and Entity.ACF
-		Weapon:SetNWFloat("EntityHealth", EntACF and EntACF.Health or 0)
-		Weapon:SetNWFloat("EntityMaxHealth", EntACF and EntACF.MaxHealth or 0)
 
 		local ConvexHit
 		if IsValid(Entity) and Entity.ACF_Volumetric_Mesh then

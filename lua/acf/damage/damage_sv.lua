@@ -94,9 +94,8 @@ function Damage.getBulletDamage(Bullet, Trace)
 
 			local Hits = {}
 			for _, Hit in ipairs(ConvexHits) do
-				local Weight = Hit.GeoThick * Hit.ArmorType[MulField]
-				Thickness    = Thickness + Weight
-				Hits[#Hits + 1] = { ConvexID = Hit.ConvexID, Weight = Weight }
+				Thickness = Thickness + Hit.GeoThick * Hit.ArmorType[MulField]
+				Hits[#Hits + 1] = { ConvexID = Hit.ConvexID, Volume = Hit.GeoThick * 0.1 * Bullet.ProjArea } -- (mm)(mm to cm)(cm^2) = cm^3
 			end
 
 			Angle = 0 -- GeoThick already accounts for obliquity
@@ -255,23 +254,12 @@ function Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 	local ConvexHits = DmgInfo and DmgInfo:GetConvexHits()
 
 	if MeshData and ConvexHits then
-		local TotalWeight = 0
-		for _, Hit in ipairs(ConvexHits) do TotalWeight = TotalWeight + Hit.Weight end
-
-		local TotalLoss = 0
 		for _, Hit in ipairs(ConvexHits) do
-			local Convex    = MeshData.Convexes[Hit.ConvexID]
-			local OldHealth = Convex.Health
-			local Share     = HitRes.Damage * (Hit.Weight / TotalWeight)
+			local Convex     = MeshData.Convexes[Hit.ConvexID]
+			local HealthLoss = (Hit.Volume / Convex.Volume) * Convex.MaxHealth
 
-			Convex.Health = math.max(0, Convex.Health - Share)
-			TotalLoss     = TotalLoss + (OldHealth - Convex.Health)
+			Convex.Health = math.max(0, Convex.Health - HealthLoss)
 		end
-
-		local EntACF  = Entity.ACF
-		EntACF.Health = math.max(0, EntACF.Health - TotalLoss)
-
-		Damage.Network(Entity, nil, EntACF.Health, EntACF.MaxHealth)
 	else
 		-- Fallback for entities without a volumetric mesh
 		local EntACF = Entity.ACF
