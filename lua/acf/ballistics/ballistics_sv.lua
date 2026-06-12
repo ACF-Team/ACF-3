@@ -461,7 +461,7 @@ do -- Terminal ballistics --------------------------
 			local Convex    = MeshData.Convexes[ExitHit.ConvexID]
 			local ArmorType = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("Default")
 
-			RemovedMass = ExitHit.Volume * ArmorType.Density -- ExitHit.Volume is the actual penetration channel volume (m^3), Density is kg/m^3
+			RemovedMass = ExitHit.Volume * ACF.InchToMCu * ArmorType.Density -- ExitHit.Volume is the actual penetration channel volume (in^3), Density is kg/m^3
 			SpallMul    = ArmorType.SpallMul
 		else
 			RemovedMass = HitRes.Damage * ACF.RHADensity -- Damage is used as a proxy for volume (cm^3) and RHA density is in kg/cm^3

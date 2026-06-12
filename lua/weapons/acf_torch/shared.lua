@@ -332,7 +332,7 @@ function SWEP:SecondaryAttack()
 
 		for _, Hit in ipairs(ConvexHits) do
 			Thickness = Thickness + Hit.GeoThick * Hit.ArmorType.ChemicalMul
-			Hits[#Hits + 1] = { ConvexID = Hit.ConvexID, Volume = Hit.GeoThick * 0.1 * DmgResult:GetArea() }
+			Hits[#Hits + 1] = { ConvexID = Hit.ConvexID, Volume = Hit.GeoThick * 0.1 * DmgResult:GetArea() / ACF.InchToCmCu } -- (mm)(mm to cm)(cm^2) = cm^3, then cm^3 to in^3
 		end
 
 		DmgResult:SetThickness(Thickness)

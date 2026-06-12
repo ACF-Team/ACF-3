@@ -45,8 +45,8 @@ do
 
         Convex.Material  = ArmorType.ID
         -- print("SetConvexMaterial", Entity, ConvexID, Material, Convex.Material)
-        Convex.Mass      = Convex.Volume * ArmorType.Density -- Volume is m^3, Density is kg/m^3
-        Convex.MaxHealth = Convex.Volume * ArmorType.Density * ArmorType.HealthMul * HealthMul
+        Convex.Mass      = Convex.Volume * CubicInchToM3 * ArmorType.Density -- Volume is in^3, Density is kg/m^3
+        Convex.MaxHealth = Convex.Volume * CubicInchToM3 * ArmorType.Density * ArmorType.HealthMul * HealthMul
         Convex.Health    = Convex.MaxHealth
 
         local TotalMass = 0
@@ -102,7 +102,7 @@ do
             MeshData.Convexes[#MeshData.Convexes + 1] = {
                 Tris      = Tris,
                 Normal    = NormSum:GetNormalized(),
-                Volume    = math.abs(Volume) / 6 * CubicInchToM3, -- 1 in^3 = CubicInchToM3 m^3
+                Volume    = math.abs(Volume) / 6, -- Verts are in inches (Source units), so this is in^3
                 Mass      = 0,
                 Health    = 0,
                 MaxHealth = 0,

@@ -1,6 +1,7 @@
 local ACF			= ACF
 local Contraption	= ACF.Contraption
 local Objects		= ACF.Contraption.Objects
+local CubicInchToM3	= ACF.InchToMCu
 Contraption.CostSystem	= {}
 local CostSystem	= Contraption.CostSystem
 -- Thank you for most of the base cost logic liddul <3
@@ -219,7 +220,7 @@ do	-- Actual registration for known things
 				for _, Convex in ipairs(MeshData.Convexes) do
 					local ArmorType = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("Default")
 
-					Cost = Cost + Convex.Volume * ArmorType.CostMul -- Convex.Volume is m^3, CostMul is points/m^3
+					Cost = Cost + Convex.Volume * CubicInchToM3 * ArmorType.CostMul -- Convex.Volume is in^3, CostMul is points/m^3
 				end
 
 				return Cost
