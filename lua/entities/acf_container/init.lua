@@ -54,7 +54,7 @@ end
 
 function ENT:UpdateMass(Instant)
 	if Instant then
-		local NewMass = self.EmptyMass + (self.Amount * self:GetUnitMass())
+		local NewMass = math.max(ACF.MinimumMass, self.Amount * self:GetUnitMass())
 		Contraption.SetMass(self, NewMass)
 		return
 	end
@@ -65,7 +65,7 @@ function ENT:UpdateMass(Instant)
 
 	TimerCreate(ID, 0, 1, function()
 		if not IsValid(self) then return end
-		local NewMass = self.EmptyMass + (self.Amount * self:GetUnitMass())
+		local NewMass = math.max(ACF.MinimumMass, self.Amount * self:GetUnitMass())
 		Contraption.SetMass(self, NewMass)
 	end)
 end
@@ -80,14 +80,6 @@ end
 
 function ENT:OnRemove()
 	WireLib.Remove(self)
-end
-
-function ENT:OnResized(Size)
-	local Wall = ACF.ContainerArmor * ACF.MmToInch
-	local Shape = self.Shape or "Box"
-	local _, SurfaceArea = ACF.ContainerShapes[Shape](Size, Wall)
-
-	self.EmptyMass = (SurfaceArea * Wall) * ACF.InchToCmCu * ACF.SteelDensity
 end
 
 function ENT:VerifySize(Data, SizeKeyX, SizeKeyY, SizeKeyZ, DefaultSize)
@@ -106,16 +98,14 @@ function ENT:VerifySize(Data, SizeKeyX, SizeKeyY, SizeKeyZ, DefaultSize)
 	return Vector(X, Y, Z)
 end
 
--- Calculate volume, capacity, and empty mass from size
--- Returns: Volume (cu in), Capacity (liters), EmptyMass (kg)
+-- Calculate volume and capacity from size
+-- Returns: Volume (cu in), Capacity (liters)
 function ENT:CalcVolumeAndCapacity(Size)
-	local Wall  = ACF.ContainerArmor * ACF.MmToInch
 	local Shape = self.Shape or "Box"
 	local ShapeCalc = ACF.ContainerShapes[Shape]
-	local Volume, Area = ShapeCalc(Size, Wall)
+	local Volume = ShapeCalc(Size)
 
-	local Capacity  = Volume * ACF.gCmToKgIn
-	local EmptyMass = (Area * Wall) * ACF.InchToCmCu * ACF.SteelDensity
+	local Capacity = Volume * ACF.gCmToKgIn
 
-	return Volume, Capacity, EmptyMass
+	return Volume, Capacity
 end

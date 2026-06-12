@@ -40,19 +40,6 @@ local function GetWeaponClass(ToolData)
 	return Classes.GetGroup(Destiny, ToolData.Weapon)
 end
 
----Returns the mass of a hollow box given the current size and armor thickness expected for it.
----The size of the box will be calculated from projectile counts and current ammo configuration.
----The thickness of the empty box will be defined by the ACF.ContainerArmor global variable.
----@return number Mass The mass of the hollow box.
-local function GetEmptyMass()
-	local Armor          = ACF.ContainerArmor * ACF.MmToInch
-	local ExteriorVolume = BoxSize.x * BoxSize.y * BoxSize.z
-	local InteriorVolume = math.max(0, (BoxSize.x - 2 * Armor) * (BoxSize.y - 2 * Armor) * (BoxSize.z - 2 * Armor))
-
-	return math.Round((ExteriorVolume - InteriorVolume) * 0.13, 2)
-end
-
-
 ---Calculates the maximum count values for all axes based on round dimensions and packing
 ---@param CountY number Current Y count (for Z axis packing)
 ---@param CountZ number Current Z count (for Y axis packing)
@@ -369,11 +356,10 @@ local function AddCrateInformation(Base, ToolData)
 			Rounds = CountX * CountY * CountZ
 		end
 
-		local Empty     = GetEmptyMass()
 		local Load      = math.floor(BulletData.CartMass * Rounds)
-		local Mass      = ACF.GetProperMass(math.floor(Empty + Load))
+		local Mass      = ACF.GetProperMass(Load)
 
-		return CrateText:format(ACF.ContainerArmor, Mass, Rounds)
+		return CrateText:format(Mass, Rounds)
 	end)
 
 	if Ammo.OnCreateCrateInformation then

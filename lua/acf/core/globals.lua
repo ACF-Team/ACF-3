@@ -245,11 +245,6 @@ do -- ACF global vars
 
 	ACF.AmbientTemperature   = 288.15 -- Ambient temperature in kelvin (15°C @ sea level) from google search
 
-	-- Containers (Ammo, Fuel, Supply)
-	ACF.ContainerArmor       = 5 -- How many millimeters of armor all containers have
-	ACF.AmmoArmor            = ACF.ContainerArmor -- Backwards compatibility
-	ACF.FuelArmor            = ACF.ContainerArmor -- Backwards compatibility
-
 	-- Ammo
 	ACF.AmmoPadding          = 0.3 -- Ratio of wasted space to projectile case diameter
 	ACF.AmmoCaseScale        = 1 -- How much larger the diameter of the case is versus the projectile (necked cartridges, M829 is 1.4, .50 BMG is 1.6)
