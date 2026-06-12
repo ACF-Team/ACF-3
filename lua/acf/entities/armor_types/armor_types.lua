@@ -22,6 +22,58 @@ function Armor:OnLoaded()
     self.SpallMul    = 1e-4
 end
 
+-- Flesh
+local Armor = Types.Register("Flesh")
+function Armor:OnLoaded()
+    self.Name        = "Flesh"
+    self.Description = "Soft tissue found in crew"
+    self.Density     = 1.1e-3 -- https://www.sciencedirect.com/topics/immunology-and-microbiology/body-density
+    self.Cost        = 5e-6
+    self.HealthMul   = 0.3
+    self.KineticMul  = 0.1
+    self.ChemicalMul = 0.1
+    self.SpallMul    = 1.5
+end
+
+-- Diesel
+local Armor = Types.Register("Diesel")
+function Armor:OnLoaded()
+    self.Name        = "Diesel"
+    self.Description = "Diesel fuel, provides no real protection and poses a fire risk when penetrated."
+    self.Density     = 0.745e-3 -- lua/acf/entities/fuel_types/diesel.lua (0.745 kg/L)
+    self.Cost        = 2e-6
+    self.HealthMul   = 0.05
+    self.KineticMul  = 0.02
+    self.ChemicalMul = 0.02
+    self.SpallMul    = 1.5
+end
+
+-- Petrol
+local Armor = Types.Register("Petrol")
+function Armor:OnLoaded()
+    self.Name        = "Petrol"
+    self.Description = "Petrol fuel, provides no real protection and is highly flammable when penetrated."
+    self.Density     = 0.832e-3 -- lua/acf/entities/fuel_types/petrol.lua (0.832 kg/L)
+    self.Cost        = 2.2e-6
+    self.HealthMul   = 0.05
+    self.KineticMul  = 0.02
+    self.ChemicalMul = 0.02
+    self.SpallMul    = 2.0
+end
+
+-- Li-Ion
+local Armor = Types.Register("LiIon")
+function Armor:OnLoaded()
+    self.Name        = "Li-Ion Battery"
+    self.Description = "Lithium-ion battery cells, fragile and prone to thermal runaway when penetrated."
+    self.Density     = 3.89e-3 -- lua/acf/entities/fuel_types/electric.lua (3.89 kg/L)
+    self.Cost        = 5e-5
+    self.HealthMul   = 0.2
+    self.KineticMul  = 0.1
+    self.ChemicalMul = 0.1
+    self.SpallMul    = 1.8
+end
+
 -- Aluminum
 local Armor = Types.Register("Aluminum")
 function Armor:OnLoaded()

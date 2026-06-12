@@ -44,6 +44,7 @@ if CLIENT then
 		local MatHealth   = Base:AddLabel()
 		local MatKinetic  = Base:AddLabel()
 		local MatChemical = Base:AddLabel()
+		local MatCost     = Base:AddLabel()
 
 		function Materials:OnSelect(Index, _, Data)
 			if self.Selected == Data then return end
@@ -57,6 +58,7 @@ if CLIENT then
 			MatHealth:SetText(string.format("Health Multiplier: %gx", Data.HealthMul))
 			MatKinetic:SetText(string.format("Kinetic Multiplier: %gx", Data.KineticMul))
 			MatChemical:SetText(string.format("Chemical Multiplier: %gx", Data.ChemicalMul))
+			MatCost:SetText(string.format("Cost: %g points/cm^3", Data.Cost))
 
 			RunConsoleCommand("acfarmormesh_material", Data.ID)
 		end
