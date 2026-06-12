@@ -224,14 +224,6 @@ do	-- Actual registration for known things
 
 				return Cost
 			end
-
-			local phys = entity:GetPhysicsObject()
-
-			if IsValid(phys) then
-				return 0.1 + math.max(0.01, phys:GetMass() / 250)
-			else
-				return 1
-			end
 		end)
 
 		CostSystem.RegisterClassBulk("prop_physics", "armor")
