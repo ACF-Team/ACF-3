@@ -226,6 +226,7 @@ elseif SERVER then
 	-- that already exist at restore time still need their materials applied directly.
 	duplicator.RegisterEntityModifier("ACF_ArmorMesh", function(_, Entity, Data)
 		if not Data or not Data.Materials then return end
+		if Entity.ACF_PreventArmoring then return end
 
 		Entity.ACF_Volumetric_Materials = Data.Materials
 
@@ -248,6 +249,8 @@ elseif SERVER then
 		if Entity.ACF_Volumetric_Materials then return end
 
 		duplicator.ClearEntityModifier(Entity, "ACF_Armor")
+
+		if Entity.ACF_PreventArmoring then return end
 
 		local MeshData = Entity.ACF_Volumetric_Mesh
 		if not MeshData then return end
@@ -295,6 +298,11 @@ elseif SERVER then
 		if not IsValid(Entity) then return false end
 		if not ACF.Check(Entity) then return false end
 		if not Entity.ACF_Volumetric_Mesh then return false end
+
+		if Entity.ACF_PreventArmoring then
+			ACF.Utilities.Messages.SendChat(self:GetOwner(), "Error", "This entity's armor material cannot be changed.")
+			return false
+		end
 
 		local Dir       = (Trace.HitPos - Trace.StartPos):GetNormalized()
 		local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)

@@ -114,7 +114,11 @@ do
         Entity.ACF_Volumetric_Mesh = MeshData
 
         for ConvexID in ipairs(MeshData.Convexes) do
-            local Material = Entity.ACF_Volumetric_Materials and Entity.ACF_Volumetric_Materials[ConvexID] or "Default"
+            -- If painting is allowed for this entity (not ACF_PreventArmoring) and this convex has a saved player-painted material, use that.
+            -- Otherwise use the entity's fixed ConvexMaterial (e.g. crew = Flesh, engines = Aluminum), if set.
+            -- Otherwise default to RHA for ACF entities, or Default for generic props.
+            local Override = not Entity.ACF_PreventArmoring and Entity.ACF_Volumetric_Materials and Entity.ACF_Volumetric_Materials[ConvexID]
+            local Material  = Override or Entity.ConvexMaterial or (Entity.IsACFEntity and "RHA" or "Default")
             ACF.SetConvexMaterial(Entity, ConvexID, Material)
         end
     end
