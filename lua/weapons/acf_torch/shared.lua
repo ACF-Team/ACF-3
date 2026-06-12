@@ -9,6 +9,7 @@ local Damage  = ACF.Damage
 local Objects = Damage.Objects
 local Spark   = "ambient/energy/NewSpark0%s.wav"
 local Zap     = "weapons/physcannon/superphys_small_zap%s.wav"
+local RepairRate = 0.05 -- Fraction of a convex's max health repaired per attack tick
 
 SWEP.Author = "Lazermaniac"
 SWEP.Contact = "lazermaniac@gmail.com"
@@ -167,42 +168,33 @@ function SWEP:Think()
 
 	if CLIENT then return end
 
-	local Health, MaxHealth, Armor, MaxArmor = 0, 0, 0, 0
-	--local Trace = Owner:GetEyeTrace()
 	local TraceData = {start = Owner:GetShootPos(), endpos = Owner:GetShootPos() + Owner:GetAimVector() * 64, mask = MASK_SOLID, filter = {Owner}}
 	local Trace = util.TraceLine(TraceData)
 	local Entity = Trace.Entity
 
 	self.LastDistance = Trace.StartPos:DistToSqr(Trace.HitPos)
 	self.LastTrace = Trace
+	self.LastEntity = Entity
 
-	if ACF.Check(Entity) and self.LastDistance <= self.MaxDistance then
-		if Entity:IsPlayer() or Entity:IsNPC() or Entity:IsNextBot() then
-			Health = Entity:Health()
-			MaxHealth = Entity:GetMaxHealth()
+	local ConvexID, Health, MaxHealth = -1, 0, 0
+	local MeshData = ACF.Check(Entity) and Entity.ACF_Volumetric_Mesh
 
-			if isfunction(Entity.Armor) then
-				Armor = Entity:Armor()
-				MaxArmor = 100
-			end
-		else
-			Health = Entity.ACF.Health
-			MaxHealth = Entity.ACF.MaxHealth
-			Armor = Entity.ACF.Armour
-			MaxArmor = Entity.ACF.MaxArmour
+	if MeshData and self.LastDistance <= self.MaxDistance then
+		local Dir = (Trace.HitPos - Trace.StartPos):GetNormalized()
+		local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
+
+		if ConvexHit then
+			local Convex = MeshData.Convexes[ConvexHit.ConvexID]
+
+			ConvexID  = ConvexHit.ConvexID
+			Health    = Convex.Health
+			MaxHealth = Convex.MaxHealth
 		end
 	end
 
-	if Entity ~= self.LastEntity or Health ~= self.LastHealth or Armor ~= self.LastArmor then
-		self.LastEntity = Entity
-		self.LastHealth = Health
-		self.LastArmor = Armor
-
-		self:SetNWFloat("HP", Health)
-		self:SetNWFloat("MaxHP", MaxHealth)
-		self:SetNWFloat("Armour", Armor)
-		self:SetNWFloat("MaxArmour", MaxArmor)
-	end
+	self:SetNWInt("ConvexID", ConvexID)
+	self:SetNWFloat("ConvexHealth", Health)
+	self:SetNWFloat("ConvexMaxHealth", MaxHealth)
 
 	self:NextThink(Clock.CurTime + 0.05)
 end
@@ -258,33 +250,19 @@ function SWEP:PrimaryAttack()
 			self.SoundTimer = Time + 0.1
 		end
 	else
-		local OldHealth = Entity.ACF.Health
-		local MaxHealth = Entity.ACF.MaxHealth
+		local MeshData = Entity.ACF_Volumetric_Mesh
+		if not MeshData then return end
 
-		local Now = CurTime()
-		if Now - (self.LastUpdate or 0) > 0.5 then
-			self.LastUpdate = Now
-			if Entity.ACF_HealthUpdatesWireOverlay then
-				Entity:UpdateOverlay()
-			end
-		end
+		local Dir       = (Trace.HitPos - Trace.StartPos):GetNormalized()
+		local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
 
-		if OldHealth >= MaxHealth then return end
+		if not ConvexHit then return end
 
-		local OldArmor = Entity.ACF.Armour
-		local MaxArmor = Entity.ACF.MaxArmour
+		local Convex = MeshData.Convexes[ConvexHit.ConvexID]
 
-		local Health = math.min(OldHealth + (30 / MaxArmor), MaxHealth)
-		local Armor = MaxArmor * (0.5 + Health / MaxHealth * 0.5)
+		if Convex.Health >= Convex.MaxHealth then return end
 
-		Entity.ACF.Health = Health
-		Entity.ACF.Armour = Armor
-
-		Damage.Network(Entity, _, Health, MaxHealth) -- purely to update the damage material on props
-
-		if Entity.ACF_OnRepaired then
-			Entity:ACF_OnRepaired(OldArmor, OldHealth, Armor, Health)
-		end
+		Convex.Health = math.min(Convex.Health + Convex.MaxHealth * RepairRate, Convex.MaxHealth)
 
 		Sounds.SendSound(self, Spark:format(math.random(3, 5)), nil, nil, 1)
 		TeslaSpark(Trace.HitPos, 1)
@@ -339,11 +317,24 @@ function SWEP:SecondaryAttack()
 
 		Effects.CreateEffect("BloodImpact", EffectTable, true, true)
 	else
-		local DmgResult = self.DamageResult
-		local DmgInfo   = self.DamageInfo
-		local HitPos    = Trace.HitPos
+		local DmgResult  = self.DamageResult
+		local DmgInfo    = self.DamageInfo
+		local HitPos     = Trace.HitPos
+		local Dir        = (HitPos - Trace.StartPos):GetNormalized()
+		local ConvexHits = ACF.GetConvexHits(Entity, HitPos, Dir)
 
-		DmgResult:SetThickness(Entity.ACF.Armour)
+		if #ConvexHits == 0 then return end
+
+		local Thickness = 0
+		local Hits = {}
+
+		for _, Hit in ipairs(ConvexHits) do
+			Thickness = Thickness + Hit.GeoThick * Hit.ArmorType.ChemicalMul
+			Hits[#Hits + 1] = { ConvexID = Hit.ConvexID, Volume = Hit.GeoThick * 0.1 * DmgResult:GetArea() }
+		end
+
+		DmgResult:SetThickness(Thickness)
+		DmgInfo:SetConvexHits(Hits)
 
 		DmgInfo:SetAttacker(Owner)
 		DmgInfo:SetInflictor(self)
