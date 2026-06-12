@@ -86,6 +86,7 @@ local function UpdateFuelTank(Entity, Data, Class, FuelType)
 	Entity.ACF.Model = Model
 	Entity.ClassData = Class
 	Entity.Shape = Shape -- Store shape on entity for volume calculations
+	Entity.ConvexMaterial = FuelType.ArmorType or "RHA" -- Convex armor type defaults to this fuel's material
 
 	Entity:SetScaledModel(Model)
 	Entity:SetSize(Data.Size)
