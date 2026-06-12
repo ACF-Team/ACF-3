@@ -54,11 +54,11 @@ if CLIENT then
 
 			MatName:SetText(Data.Name)
 			MatDesc:SetText(Data.Description)
-			MatDensity:SetText(string.format("Density: %g g/cm^3", Data.Density * 1000))
+			MatDensity:SetText(string.format("Density: %g kg/m^3", Data.Density))
 			MatHealth:SetText(string.format("Health Multiplier: %gx", Data.HealthMul))
 			MatKinetic:SetText(string.format("Kinetic Multiplier: %gx", Data.KineticMul))
 			MatChemical:SetText(string.format("Chemical Multiplier: %gx", Data.ChemicalMul))
-			MatCost:SetText(string.format("Cost: %g points/cm^3", Data.Cost))
+			MatCost:SetText(string.format("Cost: %g points/m^3", Data.CostMul))
 
 			RunConsoleCommand("acfarmormesh_material", Data.ID)
 		end
@@ -177,14 +177,14 @@ if CLIENT then
 			local Volume    = Entity.ACF_Volumetric_Mesh.Convexes[HighlightID].Volume
 
 			local ArmorType  = ACF.Classes.ArmorTypes.Get(Material) or ACF.Classes.ArmorTypes.Get("Default")
-			local Mass       = Volume * ArmorType.Density
+			local Mass       = Volume * ArmorType.Density -- Volume is m^3, Density is kg/m^3
 			local NominalHit = ACF.GetConvexHit(Entity, Trace.HitPos, -Trace.HitNormal, true)
 			local Nominal    = NominalHit and NominalHit.GeoThick or 0
 
 			local EffKE = ConvexHit.GeoThick * ArmorType.KineticMul
 			local EffCE = ConvexHit.GeoThick * ArmorType.ChemicalMul
 
-			local Text = string.format("Mat: %s\nNominal (mm): %.2f\nEff (mm): %.2f (KE) %.2f (CE)\nHP: %.2f / %.2f\nVolume (cm^3): %.2f\nMass (kg): %.2f", Material, Nominal, EffKE, EffCE, Health, MaxHealth, Volume, Mass)
+			local Text = string.format("Mat: %s\nNominal (mm): %.2f\nEff (mm): %.2f (KE) %.2f (CE)\nHP: %.2f / %.2f\nVolume (m^3): %.4f\nMass (kg): %.2f", Material, Nominal, EffKE, EffCE, Health, MaxHealth, Volume, Mass)
 			AddWorldTip(Entity, Text, nil, Trace.HitPos)
 		end
 	end)

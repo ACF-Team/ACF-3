@@ -4,7 +4,7 @@ local ModelData = ACF.ModelData
 -- Note: Put this in console for good luck: hook.Run("ACF_OnLoadAddon")
 
 -- TODO: Move these into the globals file
-local CubicInchToCm3 = ACF.InchToCmCu
+local CubicInchToM3 = ACF.InchToMCu
 local HealthMul = ACF.HealthCoef
 local ArmorCoef = ACF.ArmorCoef
 
@@ -45,7 +45,7 @@ do
 
         Convex.Material  = ArmorType.ID
         -- print("SetConvexMaterial", Entity, ConvexID, Material, Convex.Material)
-        Convex.Mass      = Convex.Volume * ArmorType.Density
+        Convex.Mass      = Convex.Volume * ArmorType.Density -- Volume is m^3, Density is kg/m^3
         Convex.MaxHealth = Convex.Volume * ArmorType.Density * ArmorType.HealthMul * HealthMul
         Convex.Health    = Convex.MaxHealth
 
@@ -102,7 +102,7 @@ do
             MeshData.Convexes[#MeshData.Convexes + 1] = {
                 Tris      = Tris,
                 Normal    = NormSum:GetNormalized(),
-                Volume    = math.abs(Volume) / 6 * CubicInchToCm3, -- 1 in^3 = CubicInchToCm3 cm^3
+                Volume    = math.abs(Volume) / 6 * CubicInchToM3, -- 1 in^3 = CubicInchToM3 m^3
                 Mass      = 0,
                 Health    = 0,
                 MaxHealth = 0,

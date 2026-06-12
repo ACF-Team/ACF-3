@@ -195,6 +195,7 @@ do -- ACF global vars
 	ACF.InchToCm             = 2.54 -- Inches to centimeters
 	ACF.InchToCmSq           = 6.45 -- in² to cm²
 	ACF.InchToCmCu           = 16.387 -- in³ to cm³
+	ACF.InchToMCu            = 1.6387e-5 -- in³ to m³
 	ACF.NmToFtLb             = 0.73756 -- Newton meters to foot-pounds
 	ACF.KwToHp               = 1.341 -- Kilowatts to horsepower
 	ACF.LToGal               = 0.264172 -- Liters to gallons

@@ -95,7 +95,7 @@ function Damage.getBulletDamage(Bullet, Trace)
 			local Hits = {}
 			for _, Hit in ipairs(ConvexHits) do
 				Thickness = Thickness + Hit.GeoThick * Hit.ArmorType[MulField]
-				Hits[#Hits + 1] = { ConvexID = Hit.ConvexID, Volume = Hit.GeoThick * 0.1 * Bullet.ProjArea } -- (mm)(mm to cm)(cm^2) = cm^3
+				Hits[#Hits + 1] = { ConvexID = Hit.ConvexID, Volume = Hit.GeoThick * 0.1 * Bullet.ProjArea / 1e6 } -- (mm)(mm to cm)(cm^2) = cm^3, then cm^3 to m^3
 			end
 
 			Angle = 0 -- GeoThick already accounts for obliquity
