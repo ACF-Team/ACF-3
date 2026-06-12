@@ -21,6 +21,7 @@ local SkyGraceZone = 100
 local FlightTr     = { start = true, endpos = true, filter = true, mask = true }
 local GlobalFilter = ACF.GlobalFilter
 local AmmoTypes    = ACF.Classes.AmmoTypes
+local ArmorTypes   = ACF.Classes.ArmorTypes
 
 -- This will create, or update, the tracer effect on the clientside
 function Ballistics.BulletClient(Bullet, Type, Hit, HitPos)
@@ -376,7 +377,7 @@ do -- Terminal ballistics --------------------------
 		-- Determine this before ricochetting
 		if (HitRes.Kill or HitRes.Overkill > 0) and not Bullet.IsSpall and not Bullet.IsCookOff then
 			-- Penetrated or killed plate
-			Ballistics.DoSpall(Bullet, Trace, HitRes, Bullet.Flight:Length())
+			Ballistics.DoSpall(Bullet, Trace, HitRes, Bullet.Flight:Length(), DmgInfo)
 		end
 
 		if HitRes.Loss == 1 then
@@ -445,17 +446,31 @@ do -- Terminal ballistics --------------------------
 		return false
 	end
 
-	function Ballistics.DoSpall(Bullet, Trace, HitRes, Speed)
+	function Ballistics.DoSpall(Bullet, Trace, HitRes, Speed, DmgInfo)
 		-- Only ever called during overpenetration
 		local Energy = Bullet.Energy.Kinetic -- Energy the projectile carries (J)
 
-		local RemovedMass = HitRes.Damage * ACF.RHADensity -- Damage is used as a proxy for volume (cm^3) and RHA density is in kg/cm^3
+		-- Spall is generated from the convex the bullet exited through; its material determines the removed mass and how readily it fragments
+		local RemovedMass
+		local SpallMul   = 1
+		local MeshData   = Trace.Entity.ACF_Volumetric_Mesh
+		local ConvexHits = DmgInfo and DmgInfo:GetConvexHits()
+
+		if MeshData and ConvexHits and #ConvexHits > 0 then
+			local ExitHit   = ConvexHits[#ConvexHits]
+			local Convex    = MeshData.Convexes[ExitHit.ConvexID]
+			local ArmorType = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("Default")
+
+			RemovedMass = ExitHit.Volume * ArmorType.Density -- ExitHit.Volume is the actual penetration channel volume (cm^3)
+			SpallMul    = ArmorType.SpallMul
+		else
+			RemovedMass = HitRes.Damage * ACF.RHADensity -- Damage is used as a proxy for volume (cm^3) and RHA density is in kg/cm^3
+		end
+
 		local RemovedArea = Bullet.ProjArea -- Area of the spall (cm^2)
 
-		local FragFormEnergy = 100 -- Energy needed to form a fragment (J) (Might depend on the material?)
-		local FragTotalEnergy = Energy * 0.33 -- 25% of energy is used to form fragments (J) (Might depend on the material?)
-		local FragCount = math.floor(FragTotalEnergy / FragFormEnergy) -- Number of fragments formed
-		FragCount = math.Clamp(FragCount, 1, 30) -- Atleast 1, up to 30 fragments (let's not kill the server)
+		local FragsFormed = (Energy * 0.33 / 100) * SpallMul -- Roughly how willing the material is to spall
+		local FragCount = math.Clamp(math.floor(FragsFormed), 1, 30) -- Atleast 1, up to 30 fragments (let's not kill the server)
 
 		if FragCount < 1 then return end -- No fragments formed
 

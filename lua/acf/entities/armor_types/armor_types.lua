@@ -6,6 +6,7 @@ local Types     = ACF.Classes.ArmorTypes
 -- HealthMul  : multiplier on volume-derived health pool (toughness beyond density)
 -- KineticMul : RHA equivalent multiplier vs kinetic (AP) threats
 -- ChemicalMul: RHA equivalent multiplier vs chemical energy (HEAT/shaped charge) threats
+-- SpallMul   : multiplier on spall fragment mass produced when this material is penetrated
 
 -- Default special type. Does not set mass, but abysmal for armor usage
 local Armor = Types.Register("Default")
