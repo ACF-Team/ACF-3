@@ -14,6 +14,7 @@ local ArmorCoef = ACF.ArmorCoef
 local ArmorableClasses = {
     prop_physics = true,
     starfall_prop = true,
+    acf_missile = true,
 
     -- Vehicles
     prop_vehicle_prisoner_pod = true,
