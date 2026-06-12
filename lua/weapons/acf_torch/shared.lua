@@ -42,7 +42,8 @@ SWEP.DrawAmmo = false
 SWEP.DrawCrosshair = true
 SWEP.DrawWeaponInfoBox = false
 SWEP.BounceWeaponIcon = false
-SWEP.MaxDistance = 64 * 64 -- Squared distance
+SWEP.MaxDistance = 128 -- The torch's maximum reach, in units
+SWEP.RepairRadius = 48 -- Convexes within this many units of the repair point are repaired
 
 
 local function TeslaSpark(pos, magnitude)
@@ -91,6 +92,45 @@ function SWEP:Initialize()
 	self.LastTrace    = {}
 	self.DamageResult = Objects.DamageResult(math.pi * 2 ^ 2, 1)
 	self.DamageInfo   = Objects.DamageInfo(self, nil, DMG_PLASMA)
+end
+
+-- Shared setup for both attacks: plays the windup/firing animations and the client-side zap sound, then
+-- gates the server-side logic on the torch's last trace.
+-- Returns Owner, Entity, Trace if the attack should proceed, or nothing otherwise.
+function SWEP:BeginAttack(AttackKey, ZapCount, ZapPitch)
+	local Owner = self:GetOwner()
+
+	if Owner:KeyPressed(AttackKey) then
+		self:SetAnim("fire_windup", true, 3)
+	end
+	self:SetAnim("fire_loop", true, 2)
+	self:SetNextPrimaryFire(Clock.CurTime + 0.05)
+
+	if CLIENT then
+		Sounds.PlaySound(self, Zap:format(math.random(1, ZapCount)), nil, ZapPitch, 1)
+
+		return
+	end
+
+	if self.LastDistance > self.MaxDistance ^ 2 then return end
+
+	local Entity = self.LastEntity
+	local Trace  = self.LastTrace
+
+	if not ACF.Check(Entity) then return end
+
+	return Owner, Entity, Trace
+end
+
+-- Plays Sound on Entity, but at most once every 0.1 seconds.
+function SWEP:RateLimitedSound(Entity, Sound)
+	local Time = CurTime()
+	self.SoundTimer = self.SoundTimer or Time
+
+	if self.SoundTimer <= Time then
+		Sounds.SendSound(Entity, Sound, nil, nil, 1)
+		self.SoundTimer = Time + 0.1
+	end
 end
 
 function SWEP:SetAnim(anim, forceplay, animpriority)
@@ -168,7 +208,7 @@ function SWEP:Think()
 
 	if CLIENT then return end
 
-	local TraceData = {start = Owner:GetShootPos(), endpos = Owner:GetShootPos() + Owner:GetAimVector() * 64, mask = MASK_SOLID, filter = {Owner}}
+	local TraceData = {start = Owner:GetShootPos(), endpos = Owner:GetShootPos() + Owner:GetAimVector() * self.MaxDistance, mask = MASK_SOLID, filter = {Owner}}
 	local Trace = util.TraceLine(TraceData)
 	local Entity = Trace.Entity
 
@@ -179,7 +219,7 @@ function SWEP:Think()
 	local ConvexID, Health, MaxHealth = -1, 0, 0
 	local MeshData = ACF.Check(Entity) and Entity.ACF_Volumetric_Mesh
 
-	if MeshData and self.LastDistance <= self.MaxDistance then
+	if MeshData and self.LastDistance <= self.MaxDistance ^ 2 then
 		local Dir = (Trace.HitPos - Trace.StartPos):GetNormalized()
 		local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
 
@@ -200,26 +240,8 @@ function SWEP:Think()
 end
 
 function SWEP:PrimaryAttack()
-	local Owner = self:GetOwner()
-
-	if Owner:KeyPressed(IN_ATTACK) then
-		self:SetAnim("fire_windup", true, 3)
-	end
-	self:SetAnim("fire_loop", true, 2)
-	self:SetNextPrimaryFire(Clock.CurTime + 0.05)
-
-	if CLIENT then
-		Sounds.PlaySound(self, Zap:format(math.random(1, 3)), nil, 115, 1)
-
-		return
-	end
-
-	if self.LastDistance > self.MaxDistance then return end
-
-	local Entity = self.LastEntity
-	local Trace = self.LastTrace
-
-	if not ACF.Check(Entity) then return end
+	local Owner, Entity, Trace = self:BeginAttack(IN_ATTACK, 3, 115)
+	if not Owner then return end
 
 	if Entity:IsPlayer() or Entity:IsNPC() or Entity:IsNextBot() then
 		local Health = Entity:Health()
@@ -241,14 +263,7 @@ function SWEP:PrimaryAttack()
 
 		Effects.CreateEffect("thruster_ring", EffectTable, true, true)
 
-		-- Sound ratelimiting
-		local Time = CurTime()
-		self.SoundTimer = self.SoundTimer or Time
-
-		if self.SoundTimer <= Time then
-			Sounds.SendSound(self, "items/medshot4.wav", nil, nil, 1)
-			self.SoundTimer = Time + 0.1
-		end
+		self:RateLimitedSound(self, "items/medshot4.wav")
 	else
 		local MeshData = Entity.ACF_Volumetric_Mesh
 		if not MeshData then return end
@@ -258,47 +273,34 @@ function SWEP:PrimaryAttack()
 
 		if not ConvexHit then return end
 
-		local Convex = MeshData.Convexes[ConvexHit.ConvexID]
+		local Repaired = false
 
-		if Convex.Health >= Convex.MaxHealth then return end
+		for _, Ent in ipairs(ents.FindInSphere(Trace.HitPos, self.RepairRadius)) do
+			if not ACF.Check(Ent) then continue end
 
-		Convex.Health = math.min(Convex.Health + Convex.MaxHealth * RepairRate, Convex.MaxHealth)
+			local EntMeshData = Ent.ACF_Volumetric_Mesh
+			if not EntMeshData then continue end
+
+			for _, Convex in ipairs(EntMeshData.Convexes) do
+				if Convex.Health >= Convex.MaxHealth then continue end
+
+				Convex.Health = math.min(Convex.Health + Convex.MaxHealth * RepairRate, Convex.MaxHealth)
+				Repaired = true
+			end
+		end
+
+		if not Repaired then return end
 
 		Sounds.SendSound(self, Spark:format(math.random(3, 5)), nil, nil, 1)
 		TeslaSpark(Trace.HitPos, 1)
 
-		-- Sound ratelimiting
-		local Time = CurTime()
-		self.SoundTimer = self.SoundTimer or Time
-
-		if self.SoundTimer <= Time then
-			Sounds.SendSound(self, Spark:format(math.random(3, 5)), nil, nil, 1)
-			self.SoundTimer = Time + 0.1
-		end
+		self:RateLimitedSound(self, Spark:format(math.random(3, 5)))
 	end
 end
 
 function SWEP:SecondaryAttack()
-	local Owner = self:GetOwner()
-
-	if Owner:KeyPressed(IN_ATTACK2) then
-		self:SetAnim("fire_windup", true, 3)
-	end
-	self:SetAnim("fire_loop", true, 2)
-	self:SetNextPrimaryFire(Clock.CurTime + 0.05)
-
-	if CLIENT then
-		Sounds.PlaySound(self, Zap:format(math.random(1, 2)), nil, nil, 1)
-
-		return
-	end
-
-	if self.LastDistance > self.MaxDistance then return end
-
-	local Entity = self.LastEntity
-	local Trace = self.LastTrace
-
-	if not ACF.Check(Entity) then return end
+	local Owner, Entity, Trace = self:BeginAttack(IN_ATTACK2, 2, nil)
+	if not Owner then return end
 
 	if Entity:IsPlayer() or Entity:IsNPC() or Entity:IsNextBot() then
 		local damageInfo = DamageInfo()
@@ -357,14 +359,7 @@ function SWEP:SecondaryAttack()
 
 			Effects.CreateEffect("Sparks", EffectTable, true, true)
 
-			-- Sound ratelimiting
-			local Time = CurTime()
-			self.SoundTimer = self.SoundTimer or Time
-
-			if self.SoundTimer <= Time then
-				Sounds.SendSound(Entity, Zap:format(math.random(1, 4)), nil, nil, 1)
-				self.SoundTimer = Time + 0.1
-			end
+			self:RateLimitedSound(Entity, Zap:format(math.random(1, 4)))
 		end
 	end
 end
