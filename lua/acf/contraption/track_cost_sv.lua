@@ -208,8 +208,24 @@ end
 
 do	-- Actual registration for known things
 	do	-- Armor registration
+		local ArmorTypes = ACF.Classes.ArmorTypes
+
 		CostSystem.RegisterBulkOperation("armor", false, function(entity)
-			local phys	= entity:GetPhysicsObject()
+			local MeshData = entity.ACF_Volumetric_Mesh
+
+			if MeshData then
+				local Cost = 0
+
+				for _, Convex in ipairs(MeshData.Convexes) do
+					local ArmorType = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("Default")
+
+					Cost = Cost + Convex.Volume * ArmorType.Cost
+				end
+
+				return Cost
+			end
+
+			local phys = entity:GetPhysicsObject()
 
 			if IsValid(phys) then
 				return 0.1 + math.max(0.01, phys:GetMass() / 250)
