@@ -281,11 +281,20 @@ function SWEP:PrimaryAttack()
 			local EntMeshData = Ent.ACF_Volumetric_Mesh
 			if not EntMeshData then continue end
 
-			for _, Convex in ipairs(EntMeshData.Convexes) do
-				if Convex.Health >= Convex.MaxHealth then continue end
+			if Ent.IsACFEntity then
+				local EntACF = Ent.ACF
 
-				Convex.Health = math.min(Convex.Health + Convex.MaxHealth * RepairRate, Convex.MaxHealth)
-				Repaired = true
+				if EntACF.Health < EntACF.MaxHealth then
+					EntACF.Health = math.min(EntACF.Health + EntACF.MaxHealth * RepairRate, EntACF.MaxHealth)
+					Repaired = true
+				end
+			else
+				for _, Convex in ipairs(EntMeshData.Convexes) do
+					if Convex.Health < Convex.MaxHealth then
+						Convex.Health = math.min(Convex.Health + Convex.MaxHealth * RepairRate, Convex.MaxHealth)
+						Repaired = true
+					end
+				end
 			end
 		end
 
