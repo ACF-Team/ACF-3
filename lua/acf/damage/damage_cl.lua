@@ -8,6 +8,9 @@ local Materials = {
 	}),
 	CreateMaterial("ACF_Damaged3", "VertexLitGeneric", {
 		["$basetexture"] = "damaged/damaged3"
+	}),
+	CreateMaterial("ACF_Damaged4", "VertexLitGeneric", {
+		["$basetexture"] = "damaged/damaged4"
 	})
 }
 
@@ -18,8 +21,9 @@ local render_ModelMaterialOverride = render.ModelMaterialOverride
 local function GetMaterial(Percent)
 	if Percent > 0.7 then return Materials[1] end
 	if Percent > 0.3 then return Materials[2] end
+	if Percent > 0 then return Materials[3] end
 
-	return Materials[3]
+	return Materials[4]
 end
 
 local function Remove(Entity)
