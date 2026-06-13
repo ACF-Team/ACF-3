@@ -143,6 +143,18 @@ do
 
         -- TODO: Fix the error that forced me to do this...
         ProcessConvexes(entity, Mesh or {})
+
+        -- ACF entities track their total health as the sum of their convexes' health, separately from the
+        -- per-convex health that armorable props (e.g. prop_physics) take damage on directly.
+        if entity.IsACFEntity and entity.ACF then
+            local TotalHealth = 0
+            for _, Convex in ipairs(entity.ACF_Volumetric_Mesh.Convexes) do
+                TotalHealth = TotalHealth + Convex.Health
+            end
+
+            entity.ACF.MaxHealth = TotalHealth
+            entity.ACF.Health    = TotalHealth
+        end
     end
     ACF.ComputeVolumetricMesh = ComputeVolumetricMesh
 
