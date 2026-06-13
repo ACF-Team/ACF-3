@@ -3,65 +3,77 @@ local Damage    = ACF.Damage
 local Objects   = Damage.Objects
 local Effects   = ACF.Utilities.Effects
 local DamageCoef = ACF.DamageCoef
-local Queue = {} -- Queue[Entity] = Step; always broadcast
+local Queue = {} -- Queue[Entity] = { [ConvexID] = Step }; always broadcast
 local QueueTime = 0.5 -- Seconds to buffer damage updates before sending
 
 util.AddNetworkString("ACF_Damage")
+
+-- Writes a { {Entity, Convexes}, ... } batch in the wire format shared by SendQueue and the full-sync hook.
+local function WriteBatch(Batch)
+	net.WriteUInt(#Batch, 8)
+
+	for i = 1, #Batch do
+		local Entity, Convexes = Batch[i][1], Batch[i][2]
+
+		net.WriteUInt(Entity:EntIndex(), 13)
+		net.WriteUInt(table.Count(Convexes), 8)
+
+		for ConvexID, Step in pairs(Convexes) do
+			net.WriteUInt(ConvexID, 9)
+			net.WriteUInt(Step, 4)
+		end
+	end
+end
 
 local function SendQueue()
 	local Batch = {}
 
 	-- Validate the entities in the queue still exist
-	for Entity, Step in pairs(Queue) do
+	for Entity, Convexes in pairs(Queue) do
 		if IsValid(Entity) then
-			Batch[#Batch + 1] = {Entity, Step}
+			Batch[#Batch + 1] = {Entity, Convexes}
 		end
 	end
 
 	Queue = {}
 
-	local Count = #Batch
-
-	if Count == 0 then return end -- Nothing to send - Anything that was in the queue became invalid
+	if #Batch == 0 then return end -- Nothing to send - Anything that was in the queue became invalid
 
 	net.Start("ACF_Damage")
-	net.WriteUInt(Count, 8)
-
-	for i = 1, Count do
-		net.WriteUInt(Batch[i][1]:EntIndex(), 13)
-		net.WriteUInt(Batch[i][2], 4)
-	end
-
+	WriteBatch(Batch)
 	net.Broadcast()
 end
 
---- Helper function used to efficiently network visual damage updates on props.
+--- Helper function used to efficiently network visual damage updates on individual convexes.
 --- Updates are quantized to 10% health steps to reduce network traffic (you can't really tell the difference with smaller steps anyway)
---- @param Entity entity The entity to update damage on.
---- @param NewHealth? number The entity's new health.
---- @param MaxHealth? number The entity's maximum health.
-function Damage.Network(Entity, _, NewHealth, MaxHealth)
-	NewHealth = NewHealth or Entity.ACF.NewHealth or 0
-	MaxHealth = MaxHealth or Entity.ACF.MaxHealth or 0
+--- @param Entity entity The entity owning the convex.
+--- @param ConvexID number The convex's index into the entity's volumetric mesh.
+function Damage.NetworkConvex(Entity, ConvexID)
+	local MeshData = Entity.ACF_Volumetric_Mesh
+	local Convex    = MeshData and MeshData.Convexes[ConvexID]
 
-	local Value = NewHealth / MaxHealth
+	if not Convex then return end
+	if Convex.MaxHealth == 0 then return end
 
-	if Value ~= Value then return end -- NaN guard
-	if Value == 0     then return end -- Fully destroyed; entity removal handles client cleanup
+	local Value = Convex.Health / Convex.MaxHealth
+	local Step  = math.Round(Value * 10) -- Integer 0-10, snapped to nearest 10% boundary
 
-	local Step = math.Round(Value * 10) -- Integer 0-10, snapped to nearest 10% boundary
+	if Step == 10 and not Convex.LastDamageStep then return end -- Never visually damaged; nothing changed, nothing to send
+	if Convex.LastDamageStep == Step then return end
 
-	if Step == 10 and not Entity.ACF.LastDamageStep then return end -- Never visually damaged; nothing changed, nothing to send
-
-	if Entity.ACF.LastDamageStep == Step then return end
-
-	Entity.ACF.LastDamageStep = Step
+	Convex.LastDamageStep = Step
 
 	if not next(Queue) then
 		timer.Create("ACF_DamageQueue", QueueTime, 1, SendQueue)
 	end
 
-	Queue[Entity] = Step
+	local Convexes = Queue[Entity]
+	if not Convexes then
+		Convexes = {}
+		Queue[Entity] = Convexes
+	end
+
+	Convexes[ConvexID] = Step
 end
 
 --- Returns the penetration of a blast.
@@ -273,6 +285,8 @@ function Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 				local HealthLoss = (Hit.Volume / Convex.Volume) * Convex.MaxHealth
 
 				Convex.Health = math.max(0, Convex.Health - HealthLoss)
+
+				Damage.NetworkConvex(Entity, Hit.ConvexID)
 			end
 		end
 	end
@@ -331,33 +345,26 @@ hook.Add("ACF_OnLoadPlayer", "ACF Render Damage", function(Player)
 	local Batch = {}
 
 	for _, Entity in ents.Iterator() do
-		local Data = Entity.ACF
+		local MeshData = Entity.ACF_Volumetric_Mesh
+		if not MeshData then continue end
 
-		if not Data then continue end
+		local Convexes
+		for ConvexID, Convex in ipairs(MeshData.Convexes) do
+			local Step = Convex.LastDamageStep
+			if not Step or Step >= 10 then continue end
 
-		local MaxHealth = Data.MaxHealth
-		if not MaxHealth or MaxHealth == 0 then continue end
+			Convexes = Convexes or {}
+			Convexes[ConvexID] = Step
+		end
 
-		local Value = (Data.Health or 0) / MaxHealth
-		if Value <= 0 or Value ~= Value then continue end
-
-		local Step = math.Round(Value * 10)
-		if Step >= 10 then continue end
-
-		Batch[#Batch + 1] = {Entity, Step}
+		if Convexes then
+			Batch[#Batch + 1] = {Entity, Convexes}
+		end
 	end
 
-	local Count = #Batch
-
-	if Count == 0 then return end
+	if #Batch == 0 then return end
 
 	net.Start("ACF_Damage")
-	net.WriteUInt(Count, 8)
-
-	for i = 1, Count do
-		net.WriteUInt(Batch[i][1]:EntIndex(), 13)
-		net.WriteUInt(Batch[i][2], 4)
-	end
-
+	WriteBatch(Batch)
 	net.Send(Player)
 end)
