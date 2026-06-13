@@ -76,11 +76,9 @@ return {
                 -- Acquired by spawning a 1x1x1 cube on plain sandbox and running ACF.Activate on it
                 local Expected = {
                     Area      = 45749.315111603,
-                    Armour    = 1.7934974950143,
                     Ductility = 0,
                     Health    = 172.83458674576,
                     Mass      = 64,
-                    MaxArmour = 1.7934974950143,
                     MaxHealth = 172.83458674576,
                 }
                 roundValues( Expected )
@@ -102,11 +100,9 @@ return {
                 roundValues( Actual )
 
                 expect( Actual.Area ).to.equal( Expected.Area )
-                expect( Actual.Armour ).to.equal( Expected.Armour )
                 expect( Actual.Ductility ).to.equal( Expected.Ductility )
                 expect( Actual.Health ).to.equal( Expected.Health )
                 expect( Actual.Mass ).to.equal( Expected.Mass )
-                expect( Actual.MaxArmour ).to.equal( Expected.MaxArmour )
                 expect( Actual.MaxHealth ).to.equal( Expected.MaxHealth )
             end,
 

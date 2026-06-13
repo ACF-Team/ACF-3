@@ -312,7 +312,7 @@ if SERVER then
 						BaseArmor = BaseArmor + Hit.GeoThick * Hit.ArmorType.ChemicalMul
 					end
 				else
-					BaseArmor = Ent.GetArmor and Ent:GetArmor(TraceRes) or Ent.ACF and Ent.ACF.Armour or 0
+					BaseArmor = Ent.GetArmor and Ent:GetArmor(TraceRes) or 0
 				end
 
 				-- Enable damage if a valid entity is hit

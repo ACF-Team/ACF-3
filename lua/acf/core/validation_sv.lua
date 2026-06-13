@@ -199,8 +199,6 @@ function ACF.Activate(Entity)
 	-- Backwards compatibility placeholders. To remove later.
 	EntTbl.ACF.Health    = 1
 	EntTbl.ACF.MaxHealth = 1
-	EntTbl.ACF.Armour    = 1
-	EntTbl.ACF.MaxArmour = 1
 	EntTbl.ACF.Area      = 1
 
 	ACF.ComputeVolumetricMesh(Entity, true)

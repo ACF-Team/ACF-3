@@ -368,19 +368,14 @@ do	-- CFW Hooks
 	hook.Add("cfw.contraption.created", "ACF_CFW_CostTrack", function(Contraption)
 		-- print("cfw.contraption.created", Contraption)
 		Contraption.AmmoTypes = {} -- Index ammo types (Estimate of firepower)
-		Contraption.MaxNominal = 0 -- Track max nominal (Estimate of armor)
 
 		Contraption.CostObj	= Objects.Cost(Contraption)
 	end)
 
 	hook.Add("cfw.contraption.entityAdded", "ACF_CFW_CostTrack", function(Contraption, Entity)
 		-- print("cfw.contraption.entityAdded", Contraption, Entity)
-		if Entity.IsACFEntity then
-			if Entity.IsACFAmmoCrate then
-				Contraption.AmmoTypes[Entity.AmmoType] = true
-			end
-		elseif Entity.ACF then
-			Contraption.MaxNominal = math.max(Contraption.MaxNominal or 0, math.Round(Entity.ACF.Armour or 0))
+		if Entity.IsACFEntity and Entity.IsACFAmmoCrate then
+			Contraption.AmmoTypes[Entity.AmmoType] = true
 		end
 	end)
 

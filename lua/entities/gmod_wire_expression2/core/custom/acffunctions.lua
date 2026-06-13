@@ -222,17 +222,6 @@ e2function number entity:acfPropHealth()
 	return Health and Round(Health, 2) or 0
 end
 
--- Returns the current armor of an entity
-e2function number entity:acfPropArmor()
-	if not validPhysics(this) then return 0 end
-	if RestrictInfo(self, this) then return 0 end
-	if not ACF.Check(this) then return 0 end
-
-	local Armor = this.ACF.Armour
-
-	return Armor and Round(Armor, 2) or 0
-end
-
 -- Returns the max health of an entity
 e2function number entity:acfPropHealthMax()
 	if not validPhysics(this) then return 0 end
@@ -244,17 +233,6 @@ e2function number entity:acfPropHealthMax()
 	return MaxHealth and Round(MaxHealth, 2) or 0
 end
 
--- Returns the max armor of an entity
-e2function number entity:acfPropArmorMax()
-	if not validPhysics(this) then return 0 end
-	if RestrictInfo(self, this) then return 0 end
-	if not ACF.Check(this) then return 0 end
-
-	local MaxArmor = this.ACF.MaxArmour
-
-	return MaxArmor and Round(MaxArmor, 2) or 0
-end
-
 -- Returns the current health percentage of an entity
 e2function number entity:acfPropHealthPercent()
 	if not validPhysics(this) then return 0 end
@@ -264,17 +242,6 @@ e2function number entity:acfPropHealthPercent()
 	local PercHealth = this.ACF.Health / this.ACF.MaxHealth
 
 	return PercHealth and Round(PercHealth, 2) or 0
-end
-
--- Returns the current armor percentage of an entity
-e2function number entity:acfPropArmorPercent()
-	if not validPhysics(this) then return 0 end
-	if RestrictInfo(self, this) then return 0 end
-	if not ACF.Check(this) then return 0 end
-
-	local PercArmor = this.ACF.Armour / this.ACF.MaxArmour
-
-	return PercArmor and Round(PercArmor, 2) or 0
 end
 
 -- Returns the ductility of an entity
@@ -301,10 +268,10 @@ e2function number ranger:acfEffectiveArmor()
 	if RestrictInfo(self, this.Entity) then return 0 end
 	if not ACF.Check(this.Entity) then return 0 end
 
-	local Armor    = this.Entity.ACF.Armour
-	local HitAngle = ACF.GetHitAngle(this, this.HitPos - this.StartPos)
+	local Direction = (this.HitPos - this.StartPos):GetNormalized()
+	local ConvexHit = ACF.GetConvexHit(this.Entity, this.HitPos, Direction)
 
-	return Round(Armor / math.abs(math.cos(math.rad(HitAngle))), 2)
+	return ConvexHit and Round(ConvexHit.GeoThick, 2) or 0
 end
 
 __e2setcost(20)

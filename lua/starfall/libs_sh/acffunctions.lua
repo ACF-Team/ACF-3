@@ -872,22 +872,6 @@ if SERVER then
 		return Health and math.Round(Health, 2) or 0
 	end
 
-	--- Returns the current armor of an entity
-	-- @server
-	-- @return number The entity's armor
-	function ents_methods:acfPropArmor()
-		CheckType(self, ents_metatable)
-
-		local This = unwrap(self)
-
-		if not ACF.Check(This) then SF.Throw("Entity is not valid", 2) end
-		if RestrictInfo(This) then return 0 end
-
-		local Armor = This.ACF.Armour
-
-		return Armor and math.Round(Armor, 2) or 0
-	end
-
 	--- Returns the max health of an entity
 	-- @server
 	-- @return number The entity's max health
@@ -904,22 +888,6 @@ if SERVER then
 		return MaxHealth and math.Round(MaxHealth, 2) or 0
 	end
 
-	--- Returns the max armor of an entity
-	-- @server
-	-- @return number The entity's max armor
-	function ents_methods:acfPropArmorMax()
-		CheckType(self, ents_metatable)
-
-		local This = unwrap(self)
-
-		if not ACF.Check(This) then SF.Throw("Entity is not valid", 2) end
-		if RestrictInfo(This) then return 0 end
-
-		local MaxArmor = This.ACF.MaxArmour
-
-		return MaxArmor and math.Round(MaxArmor, 2) or 0
-	end
-
 	--- Returns the current health percentage of an entity
 	-- @server
 	-- @return number The entity's percentage of health
@@ -934,22 +902,6 @@ if SERVER then
 		local PercHealth = This.ACF.Health / This.ACF.MaxHealth
 
 		return PercHealth and math.Round(PercHealth, 2) or 0
-	end
-
-	--- Returns the current armor percentage of an entity
-	-- @server
-	-- @return number The entity's percentage of armor
-	function ents_methods:acfPropArmorPercent()
-		CheckType(self, ents_metatable)
-
-		local This = unwrap(self)
-
-		if not ACF.Check(This) then SF.Throw("Entity is not valid", 2) end
-		if RestrictInfo(This) then return 0 end
-
-		local PercArmor = This.ACF.Armour / This.ACF.MaxArmour
-
-		return PercArmor and math.Round(PercArmor, 2) or 0
 	end
 
 	--- Returns the ductility of an entity

@@ -321,8 +321,8 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 			HitAngle = ConvexHits[1].HitAngle
 		else
-			BlastThickness = HitEnt.ACF.Armour
-			FragThickness  = HitEnt.ACF.Armour
+			BlastThickness = 0
+			FragThickness  = 0
 			HitAngle       = ACF.GetHitAngle(TraceResult, Direction)
 		end
 

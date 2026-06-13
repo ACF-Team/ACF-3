@@ -1150,7 +1150,6 @@ do -- Metamethods
 			local NewHealth = math_max(0, Health - HitRes.Damage)
 
 			SelfTbl.ACF.Health = NewHealth
-			SelfTbl.ACF.Armour = SelfTbl.ACF.MaxArmour * (NewHealth / SelfTbl.ACF.MaxHealth)
 
 			SelfTbl.DamageScale = math_max((SelfTbl.ACF.Health / (SelfTbl.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
 			self:UpdateOverlay()
@@ -1161,8 +1160,6 @@ do -- Metamethods
 		function ENT:ACF_OnRepaired() -- Normally has OldArmor, OldHealth, Armor, and Health passed
 			local SelfTbl = ENTITY.GetTable(self)
 			SelfTbl.DamageScale = math_max((SelfTbl.ACF.Health / (SelfTbl.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
-
-			SelfTbl.ACF.Armour = SelfTbl.ACF.MaxArmour * (SelfTbl.ACF.Health / SelfTbl.ACF.MaxHealth)
 
 			self:UpdateOverlay()
 		end

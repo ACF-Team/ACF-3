@@ -101,7 +101,7 @@ function Damage.getBulletDamage(Bullet, Trace)
 			Angle = 0 -- GeoThick already accounts for obliquity
 			DmgInfo:SetConvexHits(Hits)
 		else
-			Thickness = Entity.ACF.Armour
+			Thickness = 0
 			Angle     = ACF.GetHitAngle(Trace, Bullet.Flight)
 		end
 
