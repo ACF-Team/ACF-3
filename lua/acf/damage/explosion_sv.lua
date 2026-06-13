@@ -293,6 +293,8 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		local Area          = min(EntArea / Sphere, 0.5) * MaxSphere
 		local AreaFraction  = Area / MaxSphere
 		local PowerFraction = Power * AreaFraction
+		local Feathering    = 1 - min(0.99, Distance / Radius) ^ 0.5
+		local BlastArea     = EntArea / HealthCoef * Feathering
 		local BlastResult, FragResult, Losses, Penetration
 
 		Debug.Line(Position, HitPos, 15, Red, true)
@@ -309,14 +311,16 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 			BlastHits, FragHits = {}, {}
 
 			for _, Hit in ipairs(ConvexHits) do
-				local BlastWeight = Hit.GeoThick * Hit.ArmorType.ChemicalMul
-				local FragWeight  = Hit.GeoThick * Hit.ArmorType.KineticMul
+				local GeoThick    = Hit.GeoThick
+				local BlastWeight = GeoThick * Hit.ArmorType.ChemicalMul
+				local FragWeight  = GeoThick * Hit.ArmorType.KineticMul
 
 				BlastThickness = BlastThickness + BlastWeight
 				FragThickness  = FragThickness + FragWeight
 
-				BlastHits[#BlastHits + 1] = { ConvexID = Hit.ConvexID, Weight = BlastWeight }
-				FragHits[#FragHits + 1]   = { ConvexID = Hit.ConvexID, Weight = FragWeight }
+				-- (mm)(mm to cm)(cm^2) = cm^3, then cm^3 to in^3
+				BlastHits[#BlastHits + 1] = { ConvexID = Hit.ConvexID, Volume = GeoThick * 0.1 * BlastArea / ACF.InchToCmCu }
+				FragHits[#FragHits + 1]   = { ConvexID = Hit.ConvexID, Volume = GeoThick * 0.1 * FragArea / ACF.InchToCmCu }
 			end
 
 			HitAngle = ConvexHits[1].HitAngle
@@ -327,8 +331,6 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		end
 
 		do -- Blast damage
-			local Feathering  = 1 - min(0.99, Distance / Radius) ^ 0.5
-			local BlastArea   = EntArea / HealthCoef * Feathering
 			local BlastEnergy = PowerFraction ^ 0.3 * BlastArea
 			local BlastPen    = Damage.getBlastPenetration(BlastEnergy, BlastArea)
 			local BlastDmg    = Objects.DamageResult(BlastArea, BlastPen, BlastThickness)
