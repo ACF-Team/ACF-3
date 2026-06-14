@@ -3,26 +3,6 @@ local Notify        = ACF.Utilities.Notify
 local Con = ACF.Contraption
 
 function ENT.ACF_OnVerifyClientData(ClientData)
-	-- Patch pre-new class system
-	if type(ClientData.BaseplateType) == "string" then
-		local OldBaseplateTypeString = ClientData.BaseplateType
-		local Type = ACF.Classes.GetTypeByName("ACF.Baseplates." .. OldBaseplateTypeString)
-		if not Type then
-			Type = ACF.Classes.GetTypeByName("ACF.Baseplates.GroundVehicle")
-		end
-
-		local BpData = {}
-		ClientData.BaseplateType = {
-			Type = ACF.Classes.GetTypeName(Type),
-			Data = BpData
-		}
-		if OldBaseplateTypeString == "Aircraft" then
-			BpData.GForceTicks = ClientData.GForceTicks
-		end
-		if OldBaseplateTypeString == "Recreational" then
-			BpData.ExplodeOnCollisions = ClientData.ExplodeOnCollisions
-		end
-	end
 	ClientData.Size = Vector(ClientData.Length, ClientData.Width, ClientData.Thickness)
 end
 
