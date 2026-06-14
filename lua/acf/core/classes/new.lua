@@ -3,8 +3,8 @@
 -- Base/Super/Parent class all refer to the same thing here.
 
 -- A class is created in this order:
---    Stage 1: The class table (holds ID, Parent, Children, OnInit) is initialized when DefineClass is called
---    Stage 2: The class metatable (makes inheritance and instantiation work) is initialized when the parent class initializes (see: InitializeClass)
+--    Stage 1: The class table (holds ID, OnInit) is initialized when DefineClass is called
+--    Stage 2: The class metatable (makes inheritance and instantiation work, holds __PARENT and __CHILDREN) is initialized when the parent class initializes (see: InitializeClass)
 --    Stage 3: The class table is indexed into Classes
 --    Stage 5: The class table's OnInit method is ran
 --    Stage 6: The children of this class are initialized (Stage 1-6) recursively
@@ -34,6 +34,7 @@ do
             __index = BaseClass, -- If I don't have it, check my super (inheritance)
             __tostring = function() return TypeName end,
             __CLASS_ID = FullyQualifiedName,
+            __CHILDREN = {}, -- A mapping from a child class' ID to its table
             -- Instantiation
             __call = function(self, ...)
                 local Instance    = {}
@@ -51,9 +52,8 @@ do
 
         -- Index and Initialize ourselves
         Classes[FullyQualifiedName] = NewClass
-        if BaseClass then BaseClass.Children[FullyQualifiedName] = NewClass end -- Register ourselves as a child of our parent
-        NewClass.Parent = BaseClass
-
+        if BaseClass then getmetatable(BaseClass).__CHILDREN[FullyQualifiedName] = NewClass end -- Register ourselves as a child of our parent
+        ClassMeta.__PARENT = BaseClass
         -- We should define GetType before calling the initializer
         local function GetType() return NewClass end
         NewClass.GetType = GetType
@@ -125,15 +125,29 @@ do
             setfenv(NewClass.OnInit, Environment)
 
             NewClass.OnInit()
+            ClassMeta.ON_CLASS_INHERITED = NewClass.ON_CLASS_INHERITED
+            NewClass.ON_CLASS_INHERITED  = nil
         end
         -- Just in case GetType is no longer the same function...
         if NewClass.GetType ~= GetType then error("Class defined 'GetType' method, which is reserved") end
+        -- This allows base classes to be aware when they initialize children.
+        -- It is recursive.
+        -- This is a bit of a weird method and you should only use it when you have to
+        local Ancestor = BaseClass
+        while Ancestor ~= nil do
+            local MT = getmetatable(Ancestor)
+            local ON_CLASS_INHERITED = MT and MT.ON_CLASS_INHERITED
+            if ON_CLASS_INHERITED then
+                ON_CLASS_INHERITED(NewClass)
+            end
+            Ancestor = MT and MT.__PARENT
+        end
 
         -- Initialize children waiting on us, the parent, to initialize
         if Queued[FullyQualifiedName] then
             for WaitingID, WaitingClass in pairs(Queued[FullyQualifiedName]) do
                 InitializeClass(WaitingID, WaitingClass, NewClass)
-                NewClass.Children[WaitingID] = WaitingClass
+                ClassMeta.__CHILDREN[WaitingID] = WaitingClass
             end
             Queued[FullyQualifiedName] = nil
         end
@@ -164,11 +178,7 @@ do
         end
 
         local BaseClass = Classes[BaseID]
-        local NewClass = Classes[ID] or {
-            ID = ID,
-            Parent = nil,
-            Children = {}
-        } -- This should allow for hot-reloading?
+        local NewClass = Classes[ID] or {} -- This should allow for hot-reloading?
         NewClass.OnInit = OnInit
 
         -- If we have a parent and they don't exist
@@ -210,6 +220,17 @@ function ACF.Classes.GetTypeFieldByName(Class, Name)
     return getmetatable(Class).__FIELDS.Lookup[Name]
 end
 
+-- Returns the base/parent class type, or nil if there is none
+function ACF.Classes.GetBaseClass(Class)
+    local MT = Class and getmetatable(Class)
+    return MT and MT.__PARENT
+end
+
+-- Returns the mapping of direct child IDs to their class tables
+function ACF.Classes.GetChildren(Class)
+    local MT = Class and getmetatable(Class)
+    return MT and MT.__CHILDREN or ReadOnlyTable
+end
 
 function ACF.Classes.GetSubtypes(ClassName)
     local Class = Classes[ClassName]
@@ -217,7 +238,7 @@ function ACF.Classes.GetSubtypes(ClassName)
 
     local Result = {}
     local function Collect(C)
-        for _, Child in pairs(C.Children) do
+        for _, Child in pairs(getmetatable(C).__CHILDREN) do
             Result[#Result + 1] = Child
             Collect(Child)
         end
@@ -231,7 +252,7 @@ function ACF.Classes.IsAssignableTo(ClassTypeA, ClassTypeB)
     local C = ClassTypeA
 
     while C ~= nil do
-        C = C.Parent
+        C = ACF.Classes.GetBaseClass(C)
         if C == ClassTypeB then
             return true
         end
@@ -243,4 +264,3 @@ end
 function ACF.Classes.IsAssignableFrom(ClassTypeA, ClassTypeB)
     return ACF.Classes.IsAssignableTo(ClassTypeB, ClassTypeA)
 end
-
