@@ -5,4 +5,4 @@ ENT.DoNotDuplicate    = true
 ENT.DisableDuplicator = true
 ENT.DoNotTrack        = true
 ENT.IsACFMissile         = true
-ENT.ConvexMaterial        = "Aluminum"
+ENT.ConvexMaterial        = "ComponentSteel"

@@ -4,6 +4,6 @@ ENT.PrintName     = "ACF Engine"
 ENT.WireDebugName = "ACF Engine"
 ENT.PluralName    = "ACF Engines"
 ENT.IsACFEngine   = true
-ENT.ConvexMaterial = "Aluminum"
+ENT.ConvexMaterial = "ComponentSteel"
 
 cleanup.Register("acf_engine")

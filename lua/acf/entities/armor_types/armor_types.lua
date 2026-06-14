@@ -103,6 +103,32 @@ function Armor:OnLoaded()
     self.SpallMul    = 1.0
 end
 
+-- Gun Steel
+local Armor = Types.Register("GunSteel")
+function Armor:OnLoaded()
+    self.Name        = "Gun Steel"
+    self.Description = "Steel used in gun construction, offers little protection on its own."
+    self.Density     = 7840 -- https://metalzenith.com/blogs/steel-properties/rha-steel-properties-and-key-applications-in-defense
+    self.CostMul     = 39.2
+    self.HealthMul   = 1.0
+    self.KineticMul  = 0.1
+    self.ChemicalMul = 0.1
+    self.SpallMul    = 1.0
+end
+
+-- Component Steel
+local Armor = Types.Register("ComponentSteel")
+function Armor:OnLoaded()
+    self.Name        = "Component Steel"
+    self.Description = "Steel used in component housings, as fragile as aluminum."
+    self.Density     = 2700 -- https://en.wikipedia.org/wiki/Aluminium
+    self.CostMul     = 17.9
+    self.HealthMul   = 0.2
+    self.KineticMul  = 0.5
+    self.ChemicalMul = 0.6
+    self.SpallMul    = 0.5
+end
+
 -- Rubber
 local Armor = Types.Register("Rubber")
 function Armor:OnLoaded()

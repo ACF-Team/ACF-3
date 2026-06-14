@@ -4,6 +4,6 @@ ENT.PrintName     = "ACF Gearbox"
 ENT.WireDebugName = "ACF Gearbox"
 ENT.PluralName    = "ACF Gearboxes"
 ENT.IsACFGearbox  = true
-ENT.ConvexMaterial = "Aluminum"
+ENT.ConvexMaterial = "ComponentSteel"
 
 cleanup.Register("acf_gearbox")

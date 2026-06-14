@@ -6,6 +6,6 @@ ENT.WireDebugName = "ACF Rack"
 ENT.PluralName    = "ACF Racks"
 ENT.IsACFRack        = true
 ENT.IsACFWeapon      = true
-ENT.ConvexMaterial    = "Aluminum"
+ENT.ConvexMaterial    = "ComponentSteel"
 
 cleanup.Register("acf_rack")

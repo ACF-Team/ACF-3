@@ -5,6 +5,6 @@ ENT.Author        = "Bubbus"
 ENT.WireDebugName = "ACF Radar"
 ENT.PluralName    = "ACF Radars"
 ENT.IsACFRadar       = true
-ENT.ConvexMaterial = "Aluminum"
+ENT.ConvexMaterial = "ComponentSteel"
 
 cleanup.Register("acf_radar")
