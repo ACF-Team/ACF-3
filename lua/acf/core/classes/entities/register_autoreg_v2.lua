@@ -195,9 +195,32 @@ local function PrepareSerializationFunctions(ENT, ClassName)
     end
 end
 
-function ACF.AutoRegisterV2(DefineFields)
+local function PrepareIsFlag(ENT)
+    local Pieces = string.Explode("_", ENT.ACF_ClassName)
+    local FlagName = "IsACF"
+    for i = 2, #Pieces do
+        local Piece = Pieces[i]
+        FlagName = FlagName .. Piece:sub(1, 1):upper() .. Piece:sub(2)
+    end
+    ENT[FlagName] = true
+end
+
+local function PrepareNames(ENT, SingleName, PluralName)
+    if not SingleName then return end
+    ENT.PrintName       = "ACF " .. SingleName
+    ENT.WireDebugName   = "ACF " .. SingleName
+    if PluralName then
+        ENT.PluralName      = "ACF " .. PluralName
+    else
+        ENT.PluralName      = "ACF " .. SingleName .. "s"
+    end
+end
+
+function ACF.AutoRegisterV2(DefineFields, SingleName, PluralName)
     ENT.IsACFEntity = true
+    PrepareNames(ENT, SingleName, PluralName)
     ClassNameTrick(ENT)
+    PrepareIsFlag(ENT)
     ClassFieldDefinitions(ENT, DefineFields)
 
     local ExpectedClass = ENT.ACF_ClassName
