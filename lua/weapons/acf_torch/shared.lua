@@ -217,9 +217,12 @@ function SWEP:Think()
 	self.LastEntity = Entity
 
 	local ConvexID, Health, MaxHealth = -1, 0, 0
+	local EntHealth, EntMaxHealth = 0, 0
 	local MeshData = ACF.Check(Entity) and Entity.ACF_Volumetric_Mesh
 
 	if MeshData and self.LastDistance <= self.MaxDistance ^ 2 then
+		EntHealth, EntMaxHealth = ACF.GetEntityHealth(Entity)
+
 		local Dir = (Trace.HitPos - Trace.StartPos):GetNormalized()
 		local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
 
@@ -235,6 +238,8 @@ function SWEP:Think()
 	self:SetNWInt("ConvexID", ConvexID)
 	self:SetNWFloat("ConvexHealth", Health)
 	self:SetNWFloat("ConvexMaxHealth", MaxHealth)
+	self:SetNWFloat("EntHealth", EntHealth)
+	self:SetNWFloat("EntMaxHealth", EntMaxHealth)
 
 	self:NextThink(Clock.CurTime + 0.05)
 end

@@ -268,3 +268,23 @@ end
 function ACF.GetConvexHit(Entity, HitPos, Direction, IncludeDead)
     return ACF.GetConvexHits(Entity, HitPos, Direction, IncludeDead)[1]
 end
+
+-- Returns an entity's total health and max health. ACF entities track this directly on their ACF table (damage is
+-- deferred to it), while armorable props take damage per convex, so their totals are summed from their convexes.
+function ACF.GetEntityHealth(Entity)
+    if Entity.IsACFEntity and Entity.ACF then
+        return Entity.ACF.Health or 0, Entity.ACF.MaxHealth or 0
+    end
+
+    local MeshData = Entity.ACF_Volumetric_Mesh
+    if not MeshData then return 0, 0 end
+
+    local Health, MaxHealth = 0, 0
+
+    for _, Convex in ipairs(MeshData.Convexes) do
+        Health    = Health + Convex.Health
+        MaxHealth = MaxHealth + Convex.MaxHealth
+    end
+
+    return Health, MaxHealth
+end

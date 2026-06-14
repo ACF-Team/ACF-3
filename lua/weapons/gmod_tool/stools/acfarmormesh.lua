@@ -97,6 +97,40 @@ if CLIENT then
 	ACF.CreateArmorMeshMenu = CreateArmorMeshMenu
 	TOOL.BuildCPanel = CreateArmorMeshMenu
 
+	-- "torchfont" is created by the cutting torch's clientside file; it always loads alongside this tool, and
+	-- DrawToolScreen only runs at render time, well after every file has loaded, so the font is guaranteed to exist.
+	local ScreenText = Color(224, 224, 255)
+	local ScreenBG   = Color(200, 200, 200)
+	local ScreenRed  = Color(200, 50, 50)
+	local ScreenBlack = Color(0, 0, 0)
+	local Center      = TEXT_ALIGN_CENTER
+
+	-- Draws the targeted entity's total health bar on the toolgun screen. Per-convex armor and health stats are
+	-- shown on the world tip instead, so only the total health bar is drawn here.
+	function TOOL:DrawToolScreen()
+		local Weapon    = self.Weapon
+		local Health    = math.Round(Weapon:GetNWFloat("EntHealth", 0), 1)
+		local MaxHealth = math.Round(Weapon:GetNWFloat("EntMaxHealth", 0), 1)
+
+		cam.Start2D()
+			render.Clear(0, 0, 0, 0)
+
+			surface.SetDrawColor(ScreenBlack)
+			surface.DrawRect(0, 0, 256, 256)
+
+			draw.SimpleTextOutlined("#tool.acfarmormesh.armor_stats", "torchfont", 128, 48, ScreenText, Center, Center, 4, ScreenBlack)
+
+			if MaxHealth > 0 then
+				draw.SimpleTextOutlined("#acf.menu.health", "torchfont", 128, 120, ScreenText, Center, Center, 4, ScreenBlack)
+				draw.RoundedBox(6, 10, 145, 236, 64, ScreenBG)
+				draw.RoundedBox(6, 15, 150, math.Clamp(Health / MaxHealth, 0, 1) * 226, 54, ScreenRed)
+				draw.SimpleTextOutlined(Health .. " / " .. MaxHealth, "torchfont", 128, 177, ScreenText, Center, Center, 4, ScreenBlack)
+			else
+				draw.SimpleTextOutlined("#acf.torch.no_target", "torchfont", 128, 140, ScreenText, Center, Center, 4, ScreenBlack)
+			end
+		cam.End2D()
+	end
+
 	local White = Color(255, 255, 255, Alpha)
 
 	-- Draws every convex of the mesh as a translucent quad: white normally, colored if highlighted.
@@ -274,11 +308,17 @@ elseif SERVER then
 
 		if IsValid(Entity) then ACF.Check(Entity) end
 
+		local EntHealth, EntMaxHealth = 0, 0
 		local ConvexHit
 		if IsValid(Entity) and Entity.ACF_Volumetric_Mesh then
+			EntHealth, EntMaxHealth = ACF.GetEntityHealth(Entity)
+
 			local Dir = (Trace.HitPos - Trace.StartPos):GetNormalized()
 			ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
 		end
+
+		Weapon:SetNWFloat("EntHealth", EntHealth)
+		Weapon:SetNWFloat("EntMaxHealth", EntMaxHealth)
 
 		if not ConvexHit then
 			Weapon:SetNWInt("ConvexID", -1)
