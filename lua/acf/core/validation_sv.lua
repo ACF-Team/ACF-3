@@ -155,6 +155,31 @@ function ACF.GetEntityType(Entity)
 	return "Prop"
 end
 
+--- Computes and caches the entity's surface area, used by explosions to determine blast/fragment exposure.
+--- @param Entity entity The entity to compute the area for
+--- @param PhysObj PhysObj The entity's physics object
+--- @return number # The entity's surface area, in cm²
+function ACF.UpdateArea(Entity, PhysObj)
+	local Area = PhysObj:GetSurfaceArea()
+
+	if Area then -- Normal collisions
+		local AreaMult = 0.52505066107 -- This seems to be a conversion from cm to grid units on the architectural scale (approx. 1 / 1.905)
+		Area = Area * ACF.InchToCmSq * AreaMult
+	elseif PhysObj:GetMesh() then -- Box collisions
+		local Size = Entity:OBBMaxs() - Entity:OBBMins()
+
+		Area = ((Size.x * Size.y) + (Size.x * Size.z) + (Size.y * Size.z)) * ACF.InchToCmSq
+	else -- Spherical collisions
+		local Radius = Entity:BoundingRadius()
+
+		Area = 4 * math.pi * Radius * Radius * ACF.InchToCmSq
+	end
+
+	Entity.ACF.Area = Area
+
+	return Area
+end
+
 -- Global Funcs ---------------------------------
 
 function ACF.Check(Entity, ForceUpdate) -- IsValid but for ACF
@@ -199,7 +224,7 @@ function ACF.Activate(Entity)
 	-- Backwards compatibility placeholders. To remove later.
 	EntTbl.ACF.Health    = 1
 	EntTbl.ACF.MaxHealth = 1
-	EntTbl.ACF.Area      = 1
 
+	ACF.UpdateArea(Entity, PhysObj)
 	ACF.ComputeVolumetricMesh(Entity, true)
 end
