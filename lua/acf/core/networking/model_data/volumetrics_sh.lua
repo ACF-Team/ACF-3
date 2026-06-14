@@ -47,7 +47,7 @@ do
         Convex.Material    = ArmorType.ID
         -- print("SetConvexMaterial", Entity, ConvexID, Material, Convex.Material)
         Convex.Mass        = Convex.Volume * CubicInchToM3 * ArmorType.Density -- Volume is in^3, Density is kg/m^3
-        Convex.MaxHealth   = Convex.Volume * CubicInchToM3 * ArmorType.Density * ArmorType.HealthMul * HealthMul
+        Convex.MaxHealth   = Convex.Volume * CubicInchToM3 * ArmorType.HealthMul * HealthMul -- HealthMul bakes in material density
         Convex.Health      = Convex.MaxHealth
         Convex.IsExplosive = ArmorType.IsExplosive or nil -- Reactive armor; see Ballistics.DoReactiveArmor
 

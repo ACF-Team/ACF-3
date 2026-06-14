@@ -136,7 +136,7 @@ do -- ACF global vars
 
 	ACF.BlastAreaCoef = 10 -- Multiplier used to scale HE blast area against an entity's surface area. Kept separate from the convex armor health coefficient.
 
-	ACF.DefineSetting("HealthCoef",           0.1,    "Health coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
+	ACF.DefineSetting("HealthCoef",           1,    "Health coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
 
 	ACF.DefineSetting("ArmorCoef",            1,      "Armor coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
 
