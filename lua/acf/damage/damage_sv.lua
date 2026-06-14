@@ -261,7 +261,7 @@ end
 -- @return The output of the DamageResult object.
 function Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 	local HitRes = DmgResult:Compute()
-	HitRes.Damage = HitRes.Damage * DamageCoef
+	HitRes.Damage = HitRes.Damage * DamageCoef -- Erroneous :(
 	HitRes.Kill = false
 
 	-- Mark contraption as in combat when taking damage
@@ -282,14 +282,15 @@ function Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 
 			for _, Hit in ipairs(ConvexHits) do
 				local Convex = MeshData.Convexes[Hit.ConvexID]
-				TotalLoss    = TotalLoss + (Hit.Volume / Convex.Volume) * Convex.MaxHealth
+				TotalLoss    = TotalLoss + (Hit.Volume / Convex.Volume) * Convex.MaxHealth * DamageCoef
 			end
 
 			EntACF.Health = math.max(0, EntACF.Health - TotalLoss)
 		else
 			for _, Hit in ipairs(ConvexHits) do
 				local Convex     = MeshData.Convexes[Hit.ConvexID]
-				local HealthLoss = (Hit.Volume / Convex.Volume) * Convex.MaxHealth
+				local HealthLoss = (Hit.Volume / Convex.Volume) * Convex.MaxHealth * DamageCoef
+				print(Hit.Volume, Convex.Volume)
 
 				Convex.Health = math.max(0, Convex.Health - HealthLoss)
 

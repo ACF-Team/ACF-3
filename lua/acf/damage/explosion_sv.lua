@@ -140,14 +140,6 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 	if not next(Found) then return end -- No targets found, nothing to do
 
-	local FragInfo     = Damage.getFragmentInfo(FillerMass, FragMass)
-	local MaxSphere    = 4 * pi * (Radius * InchToCm) ^ 2
-	local Fragments    = FragInfo.Count
-	local FragMassCalc = FragInfo.Mass
-	local BaseFragV    = FragInfo.Velocity
-	local FragArea     = FragInfo.Area
-	local FragCaliber  = FragInfo.Caliber
-
 	if not Filter then Filter = {} end
 
 	TraceData.start  = Position
@@ -157,9 +149,6 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 	DmgInfo:SetOrigin(Position)
 
-	if EventViewer.Enabled() then
-		EventViewer.AppendEvent(ExplosionName, "Damage.createExplosion Init", Position, FillerMass, FragMass, Filter, MaxSphere, Fragments)
-	end
 	-- Phase 1: Build sorted target list
 	-- Validate targets, sort by distance, cache target positions
 
@@ -194,6 +183,19 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 	-- Sort by distance (closest first)
 	Sort(TargetList, SortByDistSqr)
+
+	-- Per-explosion fragment constants, consumed per target in Phase 2
+	local FragInfo     = Damage.getFragmentInfo(FillerMass, FragMass)
+	local Fragments    = FragInfo.Count
+	local FragMassCalc = FragInfo.Mass
+	local BaseFragV    = FragInfo.Velocity
+	local FragArea     = FragInfo.Area
+	local FragCaliber  = FragInfo.Caliber
+
+	if EventViewer.Enabled() then
+		local MaxSphere = 4 * pi * (Radius * InchToCm) ^ 2
+		EventViewer.AppendEvent(ExplosionName, "Damage.createExplosion Init", Position, FillerMass, FragMass, Filter, MaxSphere, Fragments)
+	end
 
 	-- Phase 2: Process targets
 	-- Iterate through targets and check for occlusion
@@ -288,13 +290,21 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		local Delta         = HitPos - Position
 		local Distance      = Delta:Length()
 		local Direction     = Delta / Distance -- Normalize without second sqrt
-		local Sphere        = max(4 * pi * (Distance * InchToCm) ^ 2, 1)
+
+		-- Inverse-square spreading: the blast wavefront is a sphere whose area grows with distance.
+		-- The target catches the fraction of that wavefront its surface subtends (its solid angle),
+		-- capped at 0.5 since a surface can face at most a hemisphere of the blast.
+		local Sphere        = max(4 * pi * (Distance * InchToCm) ^ 2, 1) -- Wavefront area at the target (cm²)
 		local EntArea       = HitEnt.ACF.Area
-		local Area          = min(EntArea / Sphere, 0.5) * MaxSphere
-		local AreaFraction  = Area / MaxSphere
-		local PowerFraction = Power * AreaFraction
-		local Feathering    = 1 - min(0.99, Distance / Radius) ^ 0.5
-		local BlastArea     = EntArea / BlastAreaCoef * Feathering
+		local SolidAngle    = min(EntArea / Sphere, 0.5)                 -- Fraction of the wavefront caught
+		local PowerFraction = Power * SolidAngle                         -- Blast energy intercepted (kJ)
+
+		-- Hopkinson-Cranz cube-root scaling: the lethal radius already scales as filler^(1/3), so the
+		-- scaled distance is simply Distance/Radius. The deposited blast impulse decays linearly across
+		-- it and vanishes at the lethal radius (raise the exponent for a sharper near-field falloff).
+		local ScaledDist    = min(Distance / Radius, 1)
+		local Falloff       = 1 - ScaledDist
+		local BlastArea     = EntArea * BlastAreaCoef * Falloff
 		local BlastResult, FragResult, Losses, Penetration
 
 		Debug.Line(Position, HitPos, 15, Red, true)
@@ -302,7 +312,28 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		DmgInfo:SetHitPos(HitPos)
 		DmgInfo:SetHitGroup(TraceResult.HitGroup)
 
-		local ConvexHits = ACF.GetConvexHits(HitEnt, HitPos, Direction)
+		-- Measure armor face-on, along the surface normal at the impact point. The blast ray runs from
+		-- the detonation to a random point on the target, so it can strike at an arbitrarily oblique
+		-- angle; tracing thickness along it would inflate GeoThick by 1/cos(angle) and make penetration
+		-- swing with the random sample. Direction stays radial for energy, debris and shove below.
+		local SurfaceNormal = TraceResult.HitNormal
+		local ThickDir      = SurfaceNormal:IsZero() and Direction or -SurfaceNormal
+		local ConvexHits    = ACF.GetConvexHits(HitEnt, HitPos, ThickDir)
+
+		-- Penetration is computed up front so the convex loop can limit how deep each layer is gouged.
+		-- A blast/fragment spends penetration to cross each layer and only removes material to the depth
+		-- it actually reaches, so thicker armor is genuinely protective (a thick plate loses only a
+		-- shallow layer per hit) instead of cancelling out against volume-proportional convex health.
+		local BlastPen = Damage.getBlastPenetration(PowerFraction ^ 0.3 * BlastArea, BlastArea)
+
+		local FragHit  = floor(Fragments * SolidAngle)
+		local FragPen  = 0
+
+		if FragHit > 0 then
+			local Loss    = BaseFragV * Distance / Radius
+			local FragVel = max(BaseFragV - Loss, 0) * InchToMeter
+			FragPen       = ACF.Penetration(FragVel, FragMassCalc, FragCaliber)
+		end
 
 		local BlastThickness, FragThickness, HitAngle, BlastHits, FragHits
 
@@ -310,20 +341,33 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 			BlastThickness, FragThickness = 0, 0
 			BlastHits, FragHits = {}, {}
 
+			local BlastLeft = BlastPen -- RHA mm of penetration remaining as we pass through each layer
+			local FragLeft  = FragPen
+
 			for _, Hit in ipairs(ConvexHits) do
 				local GeoThick    = Hit.GeoThick
-				local BlastWeight = GeoThick * Hit.ArmorType.ChemicalMul
-				local FragWeight  = GeoThick * Hit.ArmorType.KineticMul
+				local ChemicalMul = Hit.ArmorType.ChemicalMul
+				local KineticMul  = Hit.ArmorType.KineticMul
+				local BlastWeight = GeoThick * ChemicalMul -- RHA mm this layer costs to cross
+				local FragWeight  = GeoThick * KineticMul
 
 				BlastThickness = BlastThickness + BlastWeight
 				FragThickness  = FragThickness + FragWeight
 
+				-- Geometric depth reached into this layer (mm), capped by the layer thickness and the
+				-- penetration left; crossing d mm of geometry costs d * mul of RHA penetration.
+				local BlastDepth = ChemicalMul > 0 and min(GeoThick, BlastLeft / ChemicalMul) or GeoThick
+				local FragDepth  = KineticMul  > 0 and min(GeoThick, FragLeft  / KineticMul)  or GeoThick
+
+				BlastLeft = max(BlastLeft - BlastWeight, 0)
+				FragLeft  = max(FragLeft  - FragWeight,  0)
+
 				-- (mm)(mm to cm)(cm^2) = cm^3, then cm^3 to in^3
-				BlastHits[#BlastHits + 1] = { ConvexID = Hit.ConvexID, Volume = GeoThick * 0.1 * BlastArea / ACF.InchToCmCu }
-				FragHits[#FragHits + 1]   = { ConvexID = Hit.ConvexID, Volume = GeoThick * 0.1 * FragArea / ACF.InchToCmCu }
+				if BlastDepth > 0 then BlastHits[#BlastHits + 1] = { ConvexID = Hit.ConvexID, Volume = BlastDepth * 0.1 * BlastArea / ACF.InchToCmCu } end
+				if FragDepth  > 0 then FragHits[#FragHits + 1]   = { ConvexID = Hit.ConvexID, Volume = FragDepth  * 0.1 * FragArea  / ACF.InchToCmCu } end
 			end
 
-			HitAngle = 0 -- GeoThick already accounts for obliquity
+			HitAngle = 0 -- GeoThick is measured face-on, so there is no obliquity to apply
 		else
 			BlastThickness = 0
 			FragThickness  = 0
@@ -331,9 +375,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		end
 
 		do -- Blast damage
-			local BlastEnergy = PowerFraction ^ 0.3 * BlastArea
-			local BlastPen    = Damage.getBlastPenetration(BlastEnergy, BlastArea)
-			local BlastDmg    = Objects.DamageResult(BlastArea, BlastPen, BlastThickness)
+			local BlastDmg = Objects.DamageResult(BlastArea, BlastPen, BlastThickness)
 
 			DmgInfo:SetType(DMG_BLAST)
 			if BlastHits then DmgInfo:SetConvexHits(BlastHits) end
@@ -344,13 +386,8 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		end
 
 		do -- Fragment damage
-			local FragHit = floor(Fragments * AreaFraction)
-
 			if FragHit > 0 then
-				local Loss     = BaseFragV * Distance / Radius
-				local FragVel  = max(BaseFragV - Loss, 0) * InchToMeter
-				local FragPen  = ACF.Penetration(FragVel, FragMassCalc, FragCaliber)
-				local FragDmg  = Objects.DamageResult(FragArea, FragPen, FragThickness, HitAngle, nil, Fragments)
+				local FragDmg = Objects.DamageResult(FragArea, FragPen, FragThickness, HitAngle, nil, Fragments)
 
 				DmgInfo:SetType(DMG_BULLET)
 				if FragHits then DmgInfo:SetConvexHits(FragHits) end
