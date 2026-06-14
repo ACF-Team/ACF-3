@@ -289,10 +289,12 @@ function SWEP:PrimaryAttack()
 					Repaired = true
 				end
 			else
-				for _, Convex in ipairs(EntMeshData.Convexes) do
+				for ConvexID, Convex in ipairs(EntMeshData.Convexes) do
 					if Convex.Health < Convex.MaxHealth then
 						Convex.Health = math.min(Convex.Health + Convex.MaxHealth * RepairRate, Convex.MaxHealth)
 						Repaired = true
+
+						Damage.NetworkConvex(Ent, ConvexID)
 					end
 				end
 			end
