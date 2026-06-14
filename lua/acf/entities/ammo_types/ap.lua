@@ -325,6 +325,21 @@ else
 		return math.Round(self:GetPenetration(Bullet, Speed), 2), math.Round(Speed, 2)
 	end
 
+	-- Default ammo menu graph: penetration over distance. Overridden by ammo types with bespoke behavior.
+	function Ammo:PlotAmmoGraph(Panel, _, BulletData)
+		local Colors  = ACF.GraphColors
+		local PenText = language.GetPhrase("acf.menu.ammo.penetration")
+
+		Panel:SetYRange(0, math.ceil(BulletData.MaxPen or 0) * 1.1)
+
+		Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.300m"), 300, self:GetRangedPenetration(BulletData, 300), Colors.Blue)
+		Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.800m"), 800, self:GetRangedPenetration(BulletData, 800), Colors.Blue)
+
+		Panel:PlotFunction(PenText, Colors.RedAlt, function(X)
+			return self:GetRangedPenetration(BulletData, X)
+		end)
+	end
+
 	function Ammo:OnCreateAmmoPreview(_, Setup, ToolData)
 		local Destiny = Classes[ToolData.Destiny or "Weapons"]
 		local Class = Classes.GetGroup(Destiny, ToolData.Weapon)

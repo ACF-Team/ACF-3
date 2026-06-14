@@ -462,6 +462,26 @@ else
 		Effects.CreateEffect("ACF_Ricochet", EffectTable)
 	end
 
+	-- Ammo menu graph: penetration over standoff distance.
+	function Ammo:PlotAmmoGraph(Panel, _, BulletData)
+		local Colors  = ACF.GraphColors
+		local PenText = language.GetPhrase("acf.menu.ammo.penetration")
+
+		local PassiveStandoffPen = self:GetPenetration(BulletData, BulletData.Standoff)
+		local BreakupDistPen     = self:GetPenetration(BulletData, BulletData.BreakupDist)
+
+		Panel:SetYRange(0, math.max(BreakupDistPen, PassiveStandoffPen) * 1.5)
+		Panel:SetXRange(0, BulletData.BreakupDist * 1000 * 2.5) -- HEAT doesn't care how long the shell has been flying for penetration, just the instant it detonates
+		Panel:SetXLabel("#acf.menu.ammo.standoff")
+
+		Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.passive"), BulletData.Standoff * 1000, PassiveStandoffPen, Colors.Blue)
+		Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.breakup"), BulletData.BreakupDist * 1000, BreakupDistPen, Colors.Red)
+
+		Panel:PlotFunction(PenText, Colors.RedAlt, function(X)
+			return self:GetPenetration(BulletData, X / 1000)
+		end)
+	end
+
 	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
 		local LinerAngle = Base:AddSlider("#acf.menu.ammo.liner_angle", BulletData.MinConeAng, 90, 1)
 		LinerAngle:SetClientData("LinerAngle", "OnValueChanged")
