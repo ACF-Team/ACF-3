@@ -380,6 +380,11 @@ do -- Terminal ballistics --------------------------
 			Ballistics.DoSpall(Bullet, Trace, HitRes, Bullet.Flight:Length(), DmgInfo)
 		end
 
+		-- Detonate any explosive reactive armor the round struck (guards on kinetic energy internally)
+		if not Bullet.IsSpall and not Bullet.IsCookOff then
+			Ballistics.DoReactiveArmor(Bullet, Trace, DmgInfo)
+		end
+
 		if HitRes.Loss == 1 then
 			-- If the there's more armor than penetration, the bullet ricochets
 			Ricochet, HitRes.Loss = Ballistics.CalculateRicochet(Bullet, Trace)
@@ -526,6 +531,46 @@ do -- Terminal ballistics --------------------------
 				Hide = true,
 				IsSpall = true,
 			})
+		end
+	end
+
+	-- Explosive Reactive Armor: when a round carrying enough kinetic energy passes through an explosive
+	-- armor convex, that convex detonates. The spent convex is zeroed out (becoming transparent to ballistics)
+	-- and its filler is set off as an HE blast at the impact point.
+	function Ballistics.DoReactiveArmor(Bullet, Trace, DmgInfo)
+		local Entity = Trace.Entity
+		if not IsValid(Entity) then return end
+
+		local MeshData = Entity.ACF_Volumetric_Mesh
+		if not MeshData or not MeshData.HasReactiveArmor then return end -- Nothing reactive on this entity; bail before any work
+
+		local ConvexHits = DmgInfo and DmgInfo.GetConvexHits and DmgInfo:GetConvexHits()
+		if not ConvexHits then return end
+
+		local KE = Bullet.Energy and Bullet.Energy.Kinetic or 0
+
+		for _, Hit in ipairs(ConvexHits) do
+			local Convex = MeshData.Convexes[Hit.ConvexID]
+			if not Convex or not Convex.IsExplosive or Convex.Detonated then continue end
+
+			local ArmorType = ArmorTypes.Get(Convex.Material)
+			if not ArmorType then continue end
+			if KE < (ArmorType.ExplosiveThreshold or math.huge) then continue end
+
+			-- Spend the convex; zero health makes it transparent to subsequent projectiles
+			Convex.Detonated = true
+			Convex.Health    = 0
+			Damage.NetworkConvex(Entity, Hit.ConvexID)
+
+			local Filler = Convex.Mass * (ArmorType.ExplosiveFiller or 0)
+			if Filler <= 0 then continue end
+
+			local FragMass  = math.max(Convex.Mass - Filler, Filler * 0.5)
+			local Position  = Trace.HitPos
+			local BlastInfo = Damage.Objects.DamageInfo(Bullet.Owner, Bullet.Gun)
+
+			Damage.createExplosion(Position, Filler, FragMass, { Entity }, BlastInfo)
+			Damage.explosionEffect(Position, nil, Filler)
 		end
 	end
 end

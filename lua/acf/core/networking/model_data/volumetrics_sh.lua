@@ -44,18 +44,22 @@ do
 
         local ArmorType = ArmorTypes.Get(Material) or ArmorTypes.Get("Default")
 
-        Convex.Material  = ArmorType.ID
+        Convex.Material    = ArmorType.ID
         -- print("SetConvexMaterial", Entity, ConvexID, Material, Convex.Material)
-        Convex.Mass      = Convex.Volume * CubicInchToM3 * ArmorType.Density -- Volume is in^3, Density is kg/m^3
-        Convex.MaxHealth = Convex.Volume * CubicInchToM3 * ArmorType.Density * ArmorType.HealthMul * HealthMul
-        Convex.Health    = Convex.MaxHealth
+        Convex.Mass        = Convex.Volume * CubicInchToM3 * ArmorType.Density -- Volume is in^3, Density is kg/m^3
+        Convex.MaxHealth   = Convex.Volume * CubicInchToM3 * ArmorType.Density * ArmorType.HealthMul * HealthMul
+        Convex.Health      = Convex.MaxHealth
+        Convex.IsExplosive = ArmorType.IsExplosive or nil -- Reactive armor; see Ballistics.DoReactiveArmor
 
-        local TotalMass = 0
+        local TotalMass    = 0
+        local HasReactive  = false
         for _, Conv in ipairs(MeshData.Convexes) do
             TotalMass = TotalMass + Conv.Mass
+            if Conv.IsExplosive then HasReactive = true end
         end
 
-        MeshData.TotalMass = TotalMass
+        MeshData.TotalMass         = TotalMass
+        MeshData.HasReactiveArmor  = HasReactive -- Lets ballistics skip the reactive-armor check entirely for normal entities
 
         if SERVER and ArmorType.ID ~= "Default" then
             local EntACF = Entity.ACF

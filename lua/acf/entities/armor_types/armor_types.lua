@@ -8,6 +8,11 @@ local Types     = ACF.Classes.ArmorTypes
 -- ChemicalMul: RHA equivalent multiplier vs chemical energy (HEAT/shaped charge) threats
 -- SpallMul   : multiplier on spall fragment mass produced when this material is penetrated
 
+-- Explosive Reactive Armor (optional, only set on reactive types):
+-- IsExplosive       : marks the material as reactive; convexes detonate when penetrated with enough kinetic energy
+-- ExplosiveThreshold: kinetic energy (KJ) a penetrating round must carry to set off the reactive charge
+-- ExplosiveFiller   : fraction of the convex's mass that detonates as HE filler when triggered
+
 -- Default special type. Does not set mass, but abysmal for armor usage
 local Armor = Types.Register("Default")
 function Armor:OnLoaded()
@@ -192,6 +197,10 @@ function Armor:OnLoaded()
     self.KineticMul  = 0.3
     self.ChemicalMul = 3.0
     self.SpallMul    = 0.2
+
+    self.IsExplosive        = true
+    self.ExplosiveThreshold = 100 -- KJ; sensitive, will trigger off autocannon-grade rounds and up
+    self.ExplosiveFiller    = 0.05
 end
 
 -- Heavy ERA
@@ -205,4 +214,8 @@ function Armor:OnLoaded()
     self.KineticMul  = 0.6
     self.ChemicalMul = 2.0
     self.SpallMul    = 0.3
+
+    self.IsExplosive        = true
+    self.ExplosiveThreshold = 500 -- KJ; needs a heavier penetrator to set off
+    self.ExplosiveFiller    = 0.08
 end
