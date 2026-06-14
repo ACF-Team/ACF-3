@@ -323,7 +323,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 				FragHits[#FragHits + 1]   = { ConvexID = Hit.ConvexID, Volume = GeoThick * 0.1 * FragArea / ACF.InchToCmCu }
 			end
 
-			HitAngle = ConvexHits[1].HitAngle
+			HitAngle = 0 -- GeoThick already accounts for obliquity
 		else
 			BlastThickness = 0
 			FragThickness  = 0

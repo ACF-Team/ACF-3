@@ -23,12 +23,12 @@ end
 
 function Ammo:GetDisplayData(Data)
 	local FragMass	= Data.ProjMass - Data.FillerMass
-	local Fragments	= math.max(math.floor((Data.FillerMass / FragMass) * ACF.HEFrag), 2)
+	local FragInfo	= ACF.Damage.getFragmentInfo(Data.FillerMass, FragMass) -- Single source of truth shared with the damage code
 	local Display   = {
 		BlastRadius = Data.FillerMass ^ 0.33 * 8,
-		Fragments   = Fragments,
-		FragMass    = FragMass / Fragments,
-		FragVel     = (Data.FillerMass * ACF.HEPower * 1000 / (FragMass / Fragments) / Fragments) ^ 0.5,
+		Fragments   = FragInfo.Count,
+		FragMass    = FragInfo.Mass,
+		FragVel     = FragInfo.Velocity * ACF.InchToMeter, -- in/s (sim units) to m/s for display
 	}
 
 	hook.Run("ACF_OnRequestDisplayData", self, Data, Display)

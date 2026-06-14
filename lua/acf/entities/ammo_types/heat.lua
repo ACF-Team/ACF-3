@@ -61,15 +61,15 @@ function Ammo:GetPenetration(Bullet, Standoff)
 end
 
 function Ammo:GetDisplayData(Data)
-	local Fragments  = math.max(math.floor((Data.BoomFillerMass / Data.CasingMass) * ACF.HEFrag), 2)
+	local FragInfo   = ACF.Damage.getFragmentInfo(Data.BoomFillerMass, Data.CasingMass) -- Single source of truth shared with the damage code
 	local Display    = {
 		BoomFillerMass = Data.BoomFillerMass,
 		MaxPen         = self:GetPenetration(Data, Data.Standoff, ACF.SteelDensity),
 		TotalFragMass  = Data.CasingMass,
 		BlastRadius    = Data.BoomFillerMass ^ 0.33 * 8,
-		Fragments      = Fragments,
-		FragMass       = Data.CasingMass / Fragments,
-		FragVel        = (Data.BoomFillerMass * ACF.HEPower * 1000 / Data.CasingMass) ^ 0.5,
+		Fragments      = FragInfo.Count,
+		FragMass       = FragInfo.Mass,
+		FragVel        = FragInfo.Velocity * ACF.InchToMeter, -- in/s (sim units) to m/s for display
 	}
 
 	hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
