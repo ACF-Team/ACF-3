@@ -194,7 +194,9 @@ end
 
 -- Returns a sorted list of { Pos, Normal, ConvexIndex, T } for every triangle the ray pierces.
 -- Verts are stored in local space, so Entity is required to transform them into world space.
-function ACF.RayIntersectMesh(Entity, Start, Direction, Length, IncludeDead)
+-- Filter (optional) is a per-entity set { [ConvexID] = true } of convexes to treat as transparent
+-- (e.g. already penetrated by the current projectile), in addition to dead convexes.
+function ACF.RayIntersectMesh(Entity, Start, Direction, Length, IncludeDead, Filter)
     local MeshData = Entity.ACF_Volumetric_Mesh
     if not MeshData then return {} end
 
@@ -204,6 +206,7 @@ function ACF.RayIntersectMesh(Entity, Start, Direction, Length, IncludeDead)
 
     for ConvexID, Convex in ipairs(MeshData.Convexes) do
         if Convex.Health <= 0 and not IncludeDead then continue end -- destroyed convex is transparent to projectiles
+        if Filter and Filter[ConvexID] then continue end -- explicitly filtered (already penetrated this flight)
 
         for _, Tri in ipairs(Convex.Tris) do
             local A = Entity:LocalToWorld(Verts[Tri[1]])
@@ -238,11 +241,12 @@ end
 -- Finds every convex entry/exit pair the ray passes through, in order, and returns damage-relevant data for each.
 -- Returns an empty table if the entity has no mesh or the ray misses all live convexes.
 -- GeoThick is geometric thickness in mm; multiply by ArmorType.KineticMul or .ChemicalMul as needed.
-function ACF.GetConvexHits(Entity, HitPos, Direction, IncludeDead)
+-- Filter (optional) is a per-entity set { [ConvexID] = true } of convexes to treat as transparent (already penetrated).
+function ACF.GetConvexHits(Entity, HitPos, Direction, IncludeDead, Filter)
     local MeshData = Entity.ACF_Volumetric_Mesh
     if not MeshData then return {} end
 
-    local Hits       = ACF.RayIntersectMesh(Entity, HitPos - Direction * 2, Direction, 10000, IncludeDead)
+    local Hits       = ACF.RayIntersectMesh(Entity, HitPos - Direction * 2, Direction, 10000, IncludeDead, Filter)
     local ArmorTypes = ACF.Classes.ArmorTypes
     local ConvexHits = {}
     local Entry
@@ -255,10 +259,13 @@ function ACF.GetConvexHits(Entity, HitPos, Direction, IncludeDead)
             local ArmorType = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("Default")
 
             ConvexHits[#ConvexHits + 1] = {
-                ConvexID  = Entry.ConvexID,
-                GeoThick  = (Hit.T - Entry.T) * 25.4 * ArmorCoef, -- inches to mm
-                ArmorType = ArmorType,
-                HitAngle  = math.deg(math.acos(math.min(1, math.max(-1, -Direction:Dot(Entry.Normal))))),
+                ConvexID    = Entry.ConvexID,
+                GeoThick    = (Hit.T - Entry.T) * 25.4 * ArmorCoef, -- inches to mm
+                ArmorType   = ArmorType,
+                HitAngle    = math.deg(math.acos(math.min(1, math.max(-1, -Direction:Dot(Entry.Normal))))),
+                EntryPos    = Entry.Pos,
+                ExitPos     = Hit.Pos,
+                EntryNormal = Entry.Normal,
             }
 
             Entry = nil
@@ -269,8 +276,8 @@ function ACF.GetConvexHits(Entity, HitPos, Direction, IncludeDead)
 end
 
 -- Convenience wrapper for ACF.GetConvexHits that returns only the first convex entry/exit pair (or nil if none).
-function ACF.GetConvexHit(Entity, HitPos, Direction, IncludeDead)
-    return ACF.GetConvexHits(Entity, HitPos, Direction, IncludeDead)[1]
+function ACF.GetConvexHit(Entity, HitPos, Direction, IncludeDead, Filter)
+    return ACF.GetConvexHits(Entity, HitPos, Direction, IncludeDead, Filter)[1]
 end
 
 -- Returns an entity's total health and max health. ACF entities track this directly on their ACF table (damage is

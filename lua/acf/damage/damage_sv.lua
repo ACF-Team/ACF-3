@@ -98,9 +98,14 @@ function Damage.getBulletDamage(Bullet, Trace)
 		local NormDir    = Bullet.Flight:GetNormalized()
 		local AmmoType   = ACF.Classes.AmmoTypes.Get(Bullet.Type)
 		local MulField   = (AmmoType and AmmoType.IsChemical) and "ChemicalMul" or "KineticMul"
-		local ConvexHits = ACF.GetConvexHits(Entity, Trace.HitPos, NormDir)
+
+		-- The ballistics layer resolves the impact to a single convex (Bullet.ConvexHit) so each convex
+		-- is damaged as its own event. Older/meshless callers (blasts) fall back to summing every live convex.
+		local ConvexHit  = Bullet.ConvexHit
+		local ConvexHits = ConvexHit and { ConvexHit } or ACF.GetConvexHits(Entity, Trace.HitPos, NormDir)
 
 		local Thickness, Angle
+		local HitPos = Trace.HitPos
 		if #ConvexHits > 0 then
 			Thickness = 0
 
@@ -112,6 +117,8 @@ function Damage.getBulletDamage(Bullet, Trace)
 
 			Angle = 0 -- GeoThick already accounts for obliquity
 			DmgInfo:SetConvexHits(Hits)
+
+			if ConvexHit then HitPos = ConvexHit.EntryPos end -- Land effects/decals on the struck convex's face
 		else
 			Thickness = 0
 			Angle     = ACF.GetHitAngle(Trace, Bullet.Flight)
@@ -127,7 +134,7 @@ function Damage.getBulletDamage(Bullet, Trace)
 		DmgInfo:SetInflictor(Bullet.Gun)
 		DmgInfo:SetType(DMG_BULLET)
 		DmgInfo:SetOrigin(Bullet.Pos)
-		DmgInfo:SetHitPos(Trace.HitPos)
+		DmgInfo:SetHitPos(HitPos)
 		DmgInfo:SetHitGroup(Trace.HitGroup)
 	end
 

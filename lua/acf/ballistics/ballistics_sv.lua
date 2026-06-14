@@ -228,6 +228,26 @@ function Ballistics.OnImpact(Bullet, Trace, Ammo, Type)
 	end
 end
 
+-- Marks a single convex of an entity as transparent to this bullet for the rest of its flight.
+-- Used when a projectile penetrates a convex so subsequent re-traces advance to the next one.
+function Ballistics.FilterConvex(Bullet, Entity, ConvexID)
+	local ConvexFilter = Bullet.ConvexFilter
+
+	if not ConvexFilter then
+		ConvexFilter = {}
+		Bullet.ConvexFilter = ConvexFilter
+	end
+
+	local EntFilter = ConvexFilter[Entity]
+
+	if not EntFilter then
+		EntFilter = {}
+		ConvexFilter[Entity] = EntFilter
+	end
+
+	EntFilter[ConvexID] = true
+end
+
 function Ballistics.TestFilter(Entity, Bullet)
 	if not IsValid(Entity) then return true end
 
@@ -334,6 +354,29 @@ function Ballistics.DoBulletsFlight(Bullet)
 				return
 			end
 
+			-- Resolve the impact against the first live, unfiltered convex along the flight path.
+			-- The physical trace only tells us which entity was struck; convexes that are dead or
+			-- already penetrated by this bullet are transparent. If none remain, the whole entity is
+			-- transparent so we filter it and retry, letting the trace pass through to the next target.
+			local ConvexHit
+			if Entity.ACF_Volumetric_Mesh then
+				local ConvexFilter = Bullet.ConvexFilter and Bullet.ConvexFilter[Entity]
+				ConvexHit = ACF.GetConvexHit(Entity, traceRes.HitPos, Bullet.Flight:GetNormalized(), false, ConvexFilter)
+
+				if not ConvexHit then
+					table.insert(Bullet.Filter, Entity)
+					timer.Simple(0, function()
+						Ballistics.DoBulletsFlight(Bullet)
+					end)
+
+					return
+				end
+			end
+
+			-- Stored on the bullet rather than the trace: the EventViewer networks the trace table, and a
+			-- convex hit carries its ArmorType (a class object with functions) which can't be serialized.
+			Bullet.ConvexHit = ConvexHit
+
 			local Type = Ballistics.GetImpactType(traceRes, Entity)
 
 			Ballistics.OnImpact(Bullet, traceRes, AmmoTypes.Get(Bullet.Type), Type)
@@ -348,8 +391,10 @@ do -- Terminal ballistics --------------------------
 		return Normal - (2 * Normal:Dot(HitNormal)) * HitNormal
 	end
 
-	function Ballistics.CalculateRicochet(Bullet, Trace)
-		local HitAngle = ACF.GetHitAngle(Trace, Bullet.Flight)
+	-- HitAngle (optional) overrides the angle derived from the physical trace; the per-convex impact
+	-- path passes the struck convex's entry angle so ricochets evaluate against the real convex face.
+	function Ballistics.CalculateRicochet(Bullet, Trace, HitAngle)
+		HitAngle = HitAngle or ACF.GetHitAngle(Trace, Bullet.Flight)
 		-- Ricochet distribution center
 		local sigmoidCenter = Bullet.DetonatorAngle or (Bullet.Ricochet - math.abs(Bullet.Speed / ACF.MeterToInch - Bullet.LimitVel) / 100)
 
@@ -374,6 +419,13 @@ do -- Terminal ballistics --------------------------
 		local HitRes   = Damage.dealDamage(Entity, DmgResult, DmgInfo)
 		local Ricochet = 0
 
+		-- When the impact was resolved against a specific convex, ricochet, knockback and effects
+		-- should use that convex's entry face/position instead of the entity's outer physical surface.
+		local ConvexHit  = Bullet.ConvexHit
+		local ImpactPos  = ConvexHit and ConvexHit.EntryPos or Trace.HitPos
+		local HitNormal  = ConvexHit and ConvexHit.EntryNormal or Trace.HitNormal
+		local HitAngle   = ConvexHit and ConvexHit.HitAngle or nil
+
 		-- Determine this before ricochetting
 		if (HitRes.Kill or (HitRes.Overkill and HitRes.Overkill > 0)) and not Bullet.IsSpall and not Bullet.IsCookOff then
 			-- Penetrated or killed plate
@@ -385,16 +437,22 @@ do -- Terminal ballistics --------------------------
 			Ballistics.DoReactiveArmor(Bullet, Trace, DmgInfo)
 		end
 
+		-- The round punched through the struck convex; mark it transparent so the flight loop's next
+		-- re-trace advances to the convex behind it instead of resolving against this one again.
+		if ConvexHit and HitRes.Overkill and HitRes.Overkill > 0 then
+			Ballistics.FilterConvex(Bullet, Entity, ConvexHit.ConvexID)
+		end
+
 		if HitRes.Loss == 1 then
 			-- If the there's more armor than penetration, the bullet ricochets
-			Ricochet, HitRes.Loss = Ballistics.CalculateRicochet(Bullet, Trace)
+			Ricochet, HitRes.Loss = Ballistics.CalculateRicochet(Bullet, Trace, HitAngle)
 		end
 
 		-- Transfer bullet momentum into target
 		if ACF.KEPush then
 			ACF.KEShove(
 				Entity,
-				Trace.HitPos,
+				ImpactPos,
 				-Bullet.Flight:GetNormalized(),
 				Energy.Kinetic * HitRes.Loss * 1000 * Bullet.ShovePower
 			)
@@ -409,9 +467,9 @@ do -- Terminal ballistics --------------------------
 
 		-- Apply the ricochet for the next bullet iteration if needed
 		if Ricochet > 0 and Bullet.Ricochets < 3 then
-			local Direction = Ballistics.GetRicochetVector(Bullet.Flight, Trace.HitNormal) + VectorRand() * 0.025
+			local Direction = Ballistics.GetRicochetVector(Bullet.Flight, HitNormal) + VectorRand() * 0.025
 			local Flight    = Direction:GetNormalized() * Speed * Ricochet * ACF.Scale
-			local Position  = Trace.HitPos
+			local Position  = ImpactPos
 
 			Bullet.Ricochets = Bullet.Ricochets + 1
 			Bullet.Flight    = Flight
@@ -485,12 +543,23 @@ do -- Terminal ballistics --------------------------
 		local FragSpeed = Speed * 0.25 				-- Speed of the fragments (u/s) (50% of the original speed)
 
 		local BaseCone = 10 * math.pow(FragSize, 1 / 3) -- Half angle of the spall cone (degrees) (Might depend on the material?)
-		local FragPos = Trace.HitPos
+		local FragPos = (Bullet.ConvexHit and Bullet.ConvexHit.ExitPos) or Trace.HitPos -- Spall originates at the convex the bullet exited through
 		local FragDirInit = Bullet.Flight:GetNormalized()
 
 		-- Filter what the bullet has travelled through + the hit entity itself if applicable
 		local Filter = table.Copy(Bullet.Filter)
 		if Trace.Entity:IsValid() then Filter[#Filter + 1] = Trace.Entity end
+
+		-- Inherit the parent's per-convex filter so fragments stay transparent to convexes the round already spent
+		local ConvexFilter
+		if Bullet.ConvexFilter then
+			ConvexFilter = {}
+			for Ent, Set in pairs(Bullet.ConvexFilter) do
+				local Copy = {}
+				for ID in pairs(Set) do Copy[ID] = true end
+				ConvexFilter[Ent] = Copy
+			end
+		end
 
 		-- Define a plane for the spread
 		local Right = FragDirInit:Cross(Vector(0, 0, 1)):GetNormalized()
@@ -528,6 +597,7 @@ do -- Terminal ballistics --------------------------
 				ShovePower = 0.2,
 				Flight = FragDir * FragSpeed,
 				Filter = Filter,
+				ConvexFilter = ConvexFilter,
 				Hide = true,
 				IsSpall = true,
 			})
@@ -566,7 +636,7 @@ do -- Terminal ballistics --------------------------
 			if Filler <= 0 then continue end
 
 			local FragMass  = math.max(Convex.Mass - Filler, Filler * 0.5)
-			local Position  = Trace.HitPos
+			local Position  = (Bullet.ConvexHit and Bullet.ConvexHit.EntryPos) or Trace.HitPos
 			local BlastInfo = Damage.Objects.DamageInfo(Bullet.Owner, Bullet.Gun)
 
 			Damage.createExplosion(Position, Filler, FragMass, { Entity }, BlastInfo)
