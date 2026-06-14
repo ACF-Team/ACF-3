@@ -203,5 +203,3 @@ function ENT:ACF_UpdateOverlayState(State)
 	State:AddNumber("Pitch", self.Pitch)
 	State:AddNumber("Yaw", self.Yaw)
 end
-
-ACF.Classes.Entities.AutoRegisterV1()
