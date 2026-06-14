@@ -1,6 +1,7 @@
 local hook      = hook
 local ACF       = ACF
 local Classes   = ACF.Classes
+local Damage    = ACF.Damage
 local AmmoTypes = Classes.AmmoTypes
 local BoxSize   = Vector()
 local Ammo, BulletData
@@ -489,20 +490,24 @@ local function AddGraph(Base, ToolData)
 				return Ammo:GetPenetration(BulletData, X / 1000)
 			end)
 		elseif ToolData.AmmoType == "HE" then
-			local BlastRadiusText = language.GetPhrase("acf.menu.ammo.blast_radius")
+			local BlastRadius = BulletData.BlastRadius -- Fragments reach zero velocity here; distance shares the same units
+			local FillerMass  = BulletData.FillerMass
+			local FragMass    = BulletData.ProjMass - FillerMass
 
-			Panel:SetYLabel(BlastRadiusText)
-			Panel:SetXLabel("")
+			local Radius = math.max(BlastRadius, 1)
+			local MaxPen = math.max(Damage.getFragmentPenetration(FillerMass, FragMass, BlastRadius, 0), 1)
 
-			Panel:SetYSpacing(10)
+			Panel:SetYLabel(PenetrationText)
+			Panel:SetXLabel("#acf.menu.ammo.distance")
 
-			Panel:SetXRange(0, 10)
-			Panel:SetYRange(0, BulletData.BlastRadius * 2)
+			Panel:SetXRange(0, Radius)
+			Panel:SetYRange(0, MaxPen * 1.1)
 
-			Panel:PlotLimitLine(BlastRadiusText, true, BulletData.BlastRadius, GraphRed)
+			Panel:SetXSpacing(Radius / 10)
+			Panel:SetYSpacing(MaxPen * 1.1 / 10)
 
-			Panel:PlotFunction(BlastRadiusText, GraphRed, function()
-				return BulletData.BlastRadius
+			Panel:PlotFunction(PenetrationText, GraphRedAlt, function(X)
+				return Damage.getFragmentPenetration(FillerMass, FragMass, BlastRadius, X)
 			end)
 		elseif ToolData.AmmoType == "SM" then
 			Panel:SetYLabel("#acf.menu.ammo.smoke_radius")

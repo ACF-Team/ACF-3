@@ -23,7 +23,6 @@ local ACFTrace   = ACF.trace
 
 -- ACF constants
 local HEPower    = ACF.HEPower
-local HEFrag     = ACF.HEFrag
 local InchToCm   = ACF.InchToCm
 local BlastAreaCoef = ACF.BlastAreaCoef
 local InchToMeter = ACF.InchToMeter
@@ -141,12 +140,13 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 	if not next(Found) then return end -- No targets found, nothing to do
 
+	local FragInfo     = Damage.getFragmentInfo(FillerMass, FragMass)
 	local MaxSphere    = 4 * pi * (Radius * InchToCm) ^ 2
-	local Fragments    = max(floor(FillerMass / FragMass * HEFrag ^ 0.5), 2)
-	local FragMassCalc = FragMass / Fragments
-	local BaseFragV    = (Power * 50000 / FragMassCalc / Fragments) ^ 0.5
-	local FragArea     = (FragMassCalc / 7.8) ^ 0.33
-	local FragCaliber  = 20 * (FragMassCalc / pi) ^ 0.5
+	local Fragments    = FragInfo.Count
+	local FragMassCalc = FragInfo.Mass
+	local BaseFragV    = FragInfo.Velocity
+	local FragArea     = FragInfo.Area
+	local FragCaliber  = FragInfo.Caliber
 
 	if not Filter then Filter = {} end
 
