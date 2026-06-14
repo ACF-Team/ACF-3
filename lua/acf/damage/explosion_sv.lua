@@ -25,7 +25,7 @@ local ACFTrace   = ACF.trace
 local HEPower    = ACF.HEPower
 local HEFrag     = ACF.HEFrag
 local InchToCm   = ACF.InchToCm
-local HealthCoef = ACF.HealthCoef
+local BlastAreaCoef = ACF.BlastAreaCoef
 local InchToMeter = ACF.InchToMeter
 
 -- Debugging
@@ -294,7 +294,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		local AreaFraction  = Area / MaxSphere
 		local PowerFraction = Power * AreaFraction
 		local Feathering    = 1 - min(0.99, Distance / Radius) ^ 0.5
-		local BlastArea     = EntArea / HealthCoef * Feathering
+		local BlastArea     = EntArea / BlastAreaCoef * Feathering
 		local BlastResult, FragResult, Losses, Penetration
 
 		Debug.Line(Position, HitPos, 15, Red, true)

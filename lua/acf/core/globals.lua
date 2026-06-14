@@ -134,6 +134,8 @@ do -- ACF global vars
 	ACF.DefineSetting("AllowBaseplateDamage", false,  "Non-ACF damage while driving baseplates has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("SquishyDamageMult",    1,      "Player/NPC damage multiplier has been set to a factor of %.2f.", ACF.FloatDataCallback(0.1, 2, 2))
 
+	ACF.BlastAreaCoef = 264.7 -- Divisor used to scale HE blast area against an entity's surface area. Kept separate from the convex armor health coefficient.
+
 	ACF.DefineSetting("HealthCoef",           0.1,    "Health coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
 
 	ACF.DefineSetting("ArmorCoef",            1,      "Armor coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
