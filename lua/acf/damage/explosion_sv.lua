@@ -127,6 +127,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 	local Power       = FillerMass * HEPower
 	local Radius      = Damage.getBlastRadius(FillerMass)
+	local RadiusScale = math.exp(max(Radius / Damage.getBlastRadius(1) - 1, 0))
 	local Found       = ents.FindInSphere(Position, Radius)
 
 	if EventViewer.Enabled() then
@@ -297,14 +298,14 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		local Sphere        = max(4 * pi * (Distance * InchToCm) ^ 2, 1) -- Wavefront area at the target (cm²)
 		local EntArea       = HitEnt.ACF.Area
 		local SolidAngle    = min(EntArea / Sphere, 0.5)                 -- Fraction of the wavefront caught
-		local PowerFraction = Power * SolidAngle                         -- Blast energy intercepted (kJ)
+		local PowerFraction = Power * SolidAngle * RadiusScale            -- Blast energy intercepted (kJ)
 
 		-- Hopkinson-Cranz cube-root scaling: the lethal radius already scales as filler^(1/3), so the
 		-- scaled distance is simply Distance/Radius. The deposited blast impulse decays linearly across
 		-- it and vanishes at the lethal radius (raise the exponent for a sharper near-field falloff).
 		local ScaledDist    = min(Distance / Radius, 1)
 		local Falloff       = 1 - ScaledDist
-		local BlastArea     = EntArea * BlastAreaCoef * Falloff
+		local BlastArea     = EntArea * BlastAreaCoef * Falloff * RadiusScale
 		local BlastResult, FragResult, Losses, Penetration
 
 		Debug.Line(Position, HitPos, 15, Red, true)
@@ -324,7 +325,9 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		-- A blast/fragment spends penetration to cross each layer and only removes material to the depth
 		-- it actually reaches, so thicker armor is genuinely protective (a thick plate loses only a
 		-- shallow layer per hit) instead of cancelling out against volume-proportional convex health.
-		local BlastPen = Damage.getBlastPenetration(PowerFraction ^ 0.3 * BlastArea, BlastArea)
+		-- Use intercepted power directly so splitting one large detonation into many small ones does
+		-- not gain extra total penetration from the old concave scaling curve.
+		local BlastPen = Damage.getBlastPenetration(PowerFraction * BlastArea, BlastArea)
 
 		local FragHit  = floor(Fragments * SolidAngle)
 		local FragPen  = 0
