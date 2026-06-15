@@ -104,15 +104,25 @@ function Damage.getBulletDamage(Bullet, Trace)
 		local ConvexHit  = Bullet.ConvexHit
 		local ConvexHits = ConvexHit and { ConvexHit } or ACF.GetConvexHits(Entity, Trace.HitPos, NormDir)
 
+		local Penetration = Bullet:GetPenetration()
 		local Thickness, Angle
 		local HitPos = Trace.HitPos
 		if #ConvexHits > 0 then
 			Thickness = 0
 
-			local Hits = {}
+			-- Penetration is spent sequentially as the round traverses each convex in hit order. Each convex
+			-- removes only the channel it was actually bored through, so a round that stalls partway (or never
+			-- penetrates) carves a shorter tunnel instead of always assuming a full-thickness penetration.
+			local Budget = Penetration
+			local Hits   = {}
 			for _, Hit in ipairs(ConvexHits) do
-				Thickness = Thickness + Hit.GeoThick * Hit.ArmorType[MulField]
-				Hits[#Hits + 1] = { ConvexID = Hit.ConvexID, Volume = Hit.GeoThick * 0.1 * Bullet.ProjArea / ACF.InchToCmCu } -- (mm)(mm to cm)(cm^2) = cm^3, then cm^3 to in^3
+				local Effective = Hit.GeoThick * Hit.ArmorType[MulField] -- Effective armor (RHA mm) this convex presents along the path
+				local Consumed  = math.min(Effective, Budget) -- Effective armor actually defeated before the round stalls
+				local Frac      = Effective > 0 and (Consumed / Effective) or 0 -- Fraction of this convex's geometric thickness traversed
+
+				Thickness = Thickness + Effective
+				Budget    = Budget - Consumed
+				Hits[#Hits + 1] = { ConvexID = Hit.ConvexID, Volume = Hit.GeoThick * Frac * 0.1 * Bullet.ProjArea / ACF.InchToCmCu } -- (mm)(mm to cm)(cm^2) = cm^3, then cm^3 to in^3
 			end
 
 			Angle = 0 -- GeoThick already accounts for obliquity
@@ -125,7 +135,7 @@ function Damage.getBulletDamage(Bullet, Trace)
 		end
 
 		DmgResult:SetArea(Bullet.ProjArea)
-		DmgResult:SetPenetration(Bullet:GetPenetration())
+		DmgResult:SetPenetration(Penetration)
 		DmgResult:SetThickness(Thickness)
 		DmgResult:SetAngle(Angle)
 		DmgResult:SetFactor(Thickness / Bullet.Diameter)
@@ -290,7 +300,7 @@ function Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 			for _, Hit in ipairs(ConvexHits) do
 				local Convex     = MeshData.Convexes[Hit.ConvexID]
 				local HealthLoss = (Hit.Volume / Convex.Volume) * Convex.MaxHealth * DamageCoef
-				print(Hit.Volume, Convex.Volume)
+				-- print(Hit.Volume, Convex.Volume)
 
 				Convex.Health = math.max(0, Convex.Health - HealthLoss)
 
