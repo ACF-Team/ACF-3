@@ -202,6 +202,7 @@ local ReadOnlyTable = setmetatable({}, nil)
 -- When I specify a class object, I will say "ClassType"
 -- When I specify a class instance, I will say "ClassInstance"
 function ACF.Classes.GetTypeByName(ClassName)
+    if not ClassName then return end
     return Classes[ClassName]
 end
 
@@ -249,6 +250,7 @@ end
 
 -- This checks if ClassA can be basically "down-casted" down to ClassB by going down its parent tree.
 function ACF.Classes.IsAssignableTo(ClassTypeA, ClassTypeB)
+    if ClassTypeA == ClassTypeB then return true end
     local C = ClassTypeA
 
     while C ~= nil do

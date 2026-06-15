@@ -4,6 +4,7 @@ Classes.Serialization = Classes.Serialization or {}
 local Serialization  = Classes.Serialization
 local GetTypeByName  = Classes.GetTypeByName
 local IsAssignableTo = Classes.IsAssignableTo
+local GetTypeName    = Classes.GetTypeName
 
 local function ParseType(TypeStr)
     if TypeStr:sub(-2) == "[]" then
@@ -53,9 +54,9 @@ local function SerializeValue(ElemType, Value)
         local ClassType = GetTypeByName(ElemType)
         if ClassType and Value then
             local ActualType = Value.GetType and Value:GetType() or ClassType
-            if ActualType == Value then return Value.ID end
+            if ActualType == Value then return GetTypeName(Value) end
             return {
-                Type = ActualType.ID,
+                Type = GetTypeName(ActualType),
                 Data = Serialization.Serialize(ActualType, Value)
             }
         end
@@ -74,15 +75,25 @@ local function DeserializeValue(ElemType, Raw, Options)
         local ClassType = GetTypeByName(ElemType)
         if ClassType then
             if type(Raw) == "string" then
-                local TypeObj = GetTypeByName(Raw)
-                if TypeObj and IsAssignableTo(TypeObj, ClassType) then
-                    return TypeObj()
+                local ActualType = GetTypeByName(Raw)
+                if ActualType and IsAssignableTo(ActualType, ClassType) and (not Options.OnlyAllowSubtypes or ActualType ~= ClassType) then
+                    return ActualType()
+                end
+
+                local Default = GetTypeByName(Options.InstantiateTypeForDefault)
+                if Default and IsAssignableTo(Default, ClassType) then
+                    return Default()
                 end
             elseif type(Raw) == "table" and Raw.Type then
                 -- Class instance: serialized as { Type, Data }
                 local ActualType = GetTypeByName(Raw.Type)
-                if ActualType and IsAssignableTo(ActualType, ClassType) then
+                if ActualType and IsAssignableTo(ActualType, ClassType) and (not Options.OnlyAllowSubtypes or ActualType ~= ClassType) then
                     return Serialization.DeserializePartial(ActualType, Raw.Data)
+                end
+
+                local Default = GetTypeByName(Options.InstantiateTypeForDefault)
+                if Default and IsAssignableTo(Default, ClassType) then
+                    return Default()
                 end
             end
         end
