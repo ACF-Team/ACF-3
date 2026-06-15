@@ -346,12 +346,12 @@ function Ballistics.DoBulletsFlight(Bullet)
 			local Entity = traceRes.Entity
 
 			if not Ballistics.TestFilter(Entity, Bullet) then
+				-- Retries the same trace immediately after adding the entity to the filter; important in case
+				-- something is embedded in something that shouldn't be hit. Retrying via timer would let
+				-- CalcBulletFlight advance Bullet.Pos first, skipping anything behind this entity this segment.
 				table.insert(Bullet.Filter, Entity)
-				timer.Simple(0, function()
-					Ballistics.DoBulletsFlight(Bullet) -- Retries the same trace after adding the entity to the filter; important in case something is embedded in something that shouldn't be hit
-				end)
 
-				return
+				return Ballistics.DoBulletsFlight(Bullet)
 			end
 
 			-- Resolve the impact against the first live, unfiltered convex along the flight path.
@@ -364,12 +364,12 @@ function Ballistics.DoBulletsFlight(Bullet)
 				ConvexHit = ACF.GetConvexHit(Entity, traceRes.HitPos, Bullet.Flight:GetNormalized(), false, ConvexFilter)
 
 				if not ConvexHit then
+					-- Re-trace immediately (not via timer) from the same position: deferring until the next
+					-- frame lets CalcBulletFlight advance Bullet.Pos to NextPos first, so the retry would start
+					-- mid-segment and skip any props sitting behind this transparent one in the current segment.
 					table.insert(Bullet.Filter, Entity)
-					timer.Simple(0, function()
-						Ballistics.DoBulletsFlight(Bullet)
-					end)
 
-					return
+					return Ballistics.DoBulletsFlight(Bullet)
 				end
 			end
 
