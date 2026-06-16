@@ -50,7 +50,7 @@ function Armor:OnLoaded()
     self.CostMul     = 2
     self.HealthMul   = 5
     self.KineticMul  = 0.1
-    self.ChemicalMul = 0.2
+    self.ChemicalMul = 0.3
     self.SpallMul    = 0.1
 end
 
@@ -142,10 +142,10 @@ function Armor:OnLoaded()
     self.Name        = "Rubber"
     self.Description = "Very cheap and light, but offers very little protection."
     self.Density     = 1500 -- * https://rubberandseal.com/what-is-the-density-of-rubber-sheets/
-    self.CostMul     = 11.6
-    self.HealthMul   = 500
-    self.KineticMul  = 0.2
-    self.ChemicalMul = 0.4
+    self.CostMul     = 12
+    self.HealthMul   = 350
+    self.KineticMul  = 0.15
+    self.ChemicalMul = 0.35
     self.SpallMul    = 0.1
 end
 

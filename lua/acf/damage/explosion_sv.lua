@@ -127,7 +127,11 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 	local Power       = FillerMass * HEPower
 	local Radius      = Damage.getBlastRadius(FillerMass)
-	local RadiusScale = math.exp((Radius / Damage.getBlastRadius(1) - 1) * 1.2)
+	local RadiusScale = math.exp((Radius / Damage.getBlastRadius(1) - 1) * 0.6)
+
+	-- Prevent runaway exponential scaling for huge explosions
+	RadiusScale = min(max(RadiusScale, 0.05), 5)
+
 	local Found       = ents.FindInSphere(Position, Radius)
 
 	if EventViewer.Enabled() then
@@ -298,7 +302,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		local Sphere        = max(4 * pi * (Distance * InchToCm) ^ 2, 1) -- Wavefront area at the target (cm²)
 		local EntArea       = HitEnt.ACF.Area
 		local SolidAngle    = min(EntArea / Sphere, 0.5)                 -- Fraction of the wavefront caught
-		local PowerFraction = Power * SolidAngle * RadiusScale            -- Blast energy intercepted (kJ)
+		local PowerFraction = Power * SolidAngle                         -- Blast energy intercepted (kJ)
 
 		-- Hopkinson-Cranz cube-root scaling: the lethal radius already scales as filler^(1/3), so the
 		-- scaled distance is simply Distance/Radius. The deposited blast impulse decays linearly across
