@@ -15,6 +15,7 @@ local Outputs = {
 	"Activated (Whether or not this unit can supply mass.)",
 	"Amount (Current mass stored, in kilograms)",
 	"Capacity (Total mass capacity, in kilograms)",
+	"Leaking (Whether or not the supply crate is leaking. 1 = Leaking, 0 = Not Leaking)",
 	"Entity (The supply entity itself.) [ENTITY]",
 }
 
