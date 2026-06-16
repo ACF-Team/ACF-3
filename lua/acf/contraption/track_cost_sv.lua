@@ -229,7 +229,6 @@ do	-- Actual registration for known things
 
 		CostSystem.RegisterClassBulk("prop_physics", "armor")
 		CostSystem.RegisterClassBulk("primitive_shape", "armor")
-		CostSystem.RegisterClassBulk("gmod_wire_gate", "armor")
 		CostSystem.RegisterClassBulk("acf_baseplate", "armor")
 	end
 
@@ -322,10 +321,14 @@ do	-- Actual cost functions
 
 						C = op(ent)
 
-						ClassCost = ClassCost + C
-
 						local BulkCostAmt = Breakdown[BulkCostAmtID] or 0
-						Breakdown[BulkCostAmtID] = BulkCostAmt + C
+
+						if C == nil then
+							ACF.Utilities.Messages.PrintLog("Warning", "Nil cost for entity: " .. tostring(ent))
+						else
+							ClassCost = ClassCost + C
+							Breakdown[BulkCostAmtID] = BulkCostAmt + C
+						end
 					end
 				else
 					for ent in pairs(entlist) do
@@ -336,7 +339,11 @@ do	-- Actual cost functions
 
 						C = ent:GetCost()
 
-						ClassCost = ClassCost + C
+						if C == nil then
+							ACF.Utilities.Messages.PrintLog("Warning", "Nil cost for entity: " .. tostring(ent))
+						else
+							ClassCost = ClassCost + C
+						end
 					end
 				end
 
