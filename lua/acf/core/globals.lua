@@ -140,7 +140,7 @@ do -- ACF global vars
 
 	ACF.DefineSetting("ArmorCoef",            1,      "Armor coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
 
-	ACF.DefineSetting("DamageCoef",           2,      "Damage coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
+	ACF.DefineSetting("DamageCoef",           400,      "Damage coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 1000, 2))
 
 	ACF.FuelRate = 15 -- Multiplier for fuel usage, 1.0 is approx real world
 	ACF.DefineSetting("FuelFactor",           1,      "Fuel rate multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("FuelRate", 0.01, 2, 2))
@@ -293,7 +293,7 @@ do -- ACF global vars
 		Copper		= 0.15,	-- Liner for HEAT cones
 		Tungsten	= 0.3,	-- Expensive
 		CompB		= 0.1,	-- Normal explosives
-		Octol		= 0.7,	-- Snowflakium, needs to be expensive as a balancing measure
+		Octol		= 0.4,	-- Snowflakium, needs to be expensive as a balancing measure
 
 		WP			= 0.01,	-- White phosphorus
 		SF			= 0.02,	-- Smoke filler

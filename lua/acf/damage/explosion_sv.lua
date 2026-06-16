@@ -127,7 +127,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 	local Power       = FillerMass * HEPower
 	local Radius      = Damage.getBlastRadius(FillerMass)
-	local RadiusScale = math.exp(max(Radius / Damage.getBlastRadius(1) - 1, 0))
+	local RadiusScale = math.exp((Radius / Damage.getBlastRadius(1) - 1) * 1.2)
 	local Found       = ents.FindInSphere(Position, Radius)
 
 	if EventViewer.Enabled() then
