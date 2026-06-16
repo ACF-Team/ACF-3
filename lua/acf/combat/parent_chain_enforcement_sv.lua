@@ -52,6 +52,11 @@ local function RefreshFamilyParentStates(Family)
             if IsValid(SecondEnt) then DetermineParentState(SecondEnt) end
         end
     end
+
+    -- Need to re validate the entire subtree if a sub-family is added or removed
+    for SubFamily in pairs(Family.subFamilies or {}) do
+        RefreshFamilyParentStates(SubFamily)
+    end
 end
 
 hook.Add("cfw.family.added", "acf_gun_family", function(Family, Ent)
@@ -63,6 +68,15 @@ hook.Add("cfw.family.subbed", "acf_gun_family", function(Family, Ent)
     if not IsValid(Ent) then return end -- CFW issue?
 
     if ApplyTo[Ent:GetClass()] ~= nil then DetermineParentState(Ent) end
+    RefreshFamilyParentStates(Family)
+end)
+
+-- Sub families being attached or detatched will not trigger the above hooks, so handle them too
+hook.Add("cfw.family.becameSubFamily", "acf_gun_family", function(Family)
+    RefreshFamilyParentStates(Family)
+end)
+
+hook.Add("cfw.family.becameRoot", "acf_gun_family", function(Family)
     RefreshFamilyParentStates(Family)
 end)
 
