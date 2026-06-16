@@ -5,6 +5,11 @@ ENT.WireDebugName   = "ACF Container"
 ENT.PluralName      = "ACF Containers"
 ENT.IsACFContainer  = true
 
+-- Register the container as a DefineClass base so AutoRegisterV2 entities (e.g. acf_supply)
+-- that derive from it can resolve their field-class inheritance. acf_container is not itself
+-- spawnable/auto-registered, so it gets defined here explicitly like the core base entities.
+ACF.Classes.DefineClass("acf_container", "acf_base_scalable", function() end)
+
 -- Shape model definitions
 local ShapeModels = {
 	Box      = "models/acf/core/s_fuel.mdl",
