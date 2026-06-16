@@ -226,5 +226,5 @@ function ACF.Activate(Entity)
 	EntTbl.ACF.MaxHealth = 1
 
 	ACF.UpdateArea(Entity, PhysObj)
-	ACF.ComputeVolumetricMesh(Entity, true)
+	ACF.ComputeVolumetricMesh(Entity)
 end
