@@ -67,14 +67,14 @@ do -- Piledrivers menu
 			return Value
 		end)
 
-		ClassName:TrackClientData("Caliber")
+		ClassName:TrackClientData("Caliber", "SetText")
 		ClassName:DefineSetter(function()
 			local Current = math.Round(Caliber:GetValue(), 2)
 
 			return language.GetPhrase("acf.menu.fun.piledrivers.class_name"):format(Current, Class.Name)
 		end)
 
-		ClassInfo:TrackClientData("Caliber")
+		ClassInfo:TrackClientData("Caliber", "SetText")
 		ClassInfo:DefineSetter(function()
 			if not BulletData then return "" end
 
@@ -89,7 +89,7 @@ do -- Piledrivers menu
 			return Info:format(Mass, FireRate, Total, Charge)
 		end)
 
-		ClassStats:TrackClientData("Caliber")
+		ClassStats:TrackClientData("Caliber", "SetText")
 		ClassStats:DefineSetter(function()
 			if not BulletData then return "" end
 
