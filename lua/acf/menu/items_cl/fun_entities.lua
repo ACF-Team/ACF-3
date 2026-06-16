@@ -2,18 +2,20 @@ local ACF     = ACF
 local Classes = ACF.Classes
 
 do -- Piledrivers menu
-	local Piledrivers = Classes.Piledrivers
-	local AmmoTypes   = Classes.AmmoTypes
+	local AmmoTypes = Classes.AmmoTypes
 	local Ammo, BulletData
 
 	local function CreateMenu(Menu)
-		local Entries  = Piledrivers.GetEntries()
-		local AmmoType = AmmoTypes.Get("HP")
+		local EntityClassDef = Classes.GetTypeByName("acf_piledriver")
+		local WeaponField    = Classes.GetTypeFieldByName(EntityClassDef, "Weapon")
+		local Class          = Classes.GetTypeByName(WeaponField.Options.InstantiateTypeForDefault)
+		local ClassID        = Classes.GetTypeName(Class)
+		local CaliberOpts    = Classes.GetTypeFieldByName(Class, "Caliber").Options
+		local AmmoType       = AmmoTypes.Get("HP")
 
 		Menu:AddTitle("#acf.menu.fun.piledrivers.settings")
 
-		local ClassList = Menu:AddComboBox()
-		local Caliber = Menu:AddSlider("#acf.menu.caliber", 0, 1, 2)
+		local Caliber = Menu:AddSlider("#acf.menu.caliber", CaliberOpts.Min, CaliberOpts.Max, CaliberOpts.Decimals)
 
 		local ClassBase = Menu:AddCollapsible("#acf.menu.fun.piledrivers.piledriver_info", nil, "icon16/monitor_edit.png")
 		local ClassName = ClassBase:AddTitle()
@@ -31,42 +33,33 @@ do -- Piledrivers menu
 
 		ACF.SetToolMode("acf_menu", "Spawner", "Weapon")
 
-		function ClassList:OnSelect(Index, _, Data)
-			if self.Selected == Data then return end
+		Ammo = AmmoType()
 
-			self.ListData.Index = Index
-			self.Selected = Data
-
-			local Bounds   = Data.Caliber
-			local Min, Max = Bounds.Min, Bounds.Max
-			local Current  = math.Clamp(ACF.GetClientNumber("Caliber", Min), Min, Max)
-
-			Ammo = AmmoType()
-
-			ClassDesc:SetText(Data.Description)
-
-			ClassPreview:UpdateModel(Data.Model)
-			ClassPreview:UpdateSettings(Data.Preview)
-
-			ACF.SetClientData("Weapon", Data.ID)
-			ACF.SetClientData("Caliber", Current, true)
-
-			Caliber:SetMinMax(Min, Max)
-		end
+		ClassDesc:SetText(Class.Description)
+		ClassPreview:UpdateModel(Class.Model)
+		ClassPreview:UpdateSettings(Class.Preview)
 
 		Caliber:SetClientData("Caliber", "OnValueChanged")
 		Caliber:DefineSetter(function(Panel, _, _, Value)
-			if not ClassList.Selected then return Value end
-
-			local Class  = ClassList.Selected
-			local Scale  = Value / Class.Caliber.Base
+			local Scale  = Value / Class.BaseCaliber
 			local Length = Class.Round.MaxLength * Scale
 
 			Ammo.SpikeLength = Length
 
 			ACF.SetClientData("Projectile", Length)
+			-- The entity's "Weapon" field is a nested class instance...
+			ACF.SetClientData("Weapon", { Type = ClassID, Data = { Caliber = Value } })
 
-			BulletData = Ammo:ClientConvert(ACF.GetAllClientData())
+			-- ...but the round pipeline keys off the class name, so the round preview gets a flat tool data.
+			BulletData = Ammo:ClientConvert({
+				Weapon     = ClassID,
+				Caliber    = Value,
+				Destiny    = "Piledrivers",
+				AmmoType   = "HP",
+				Projectile = Length,
+				Propellant = 0,
+				Tracer     = false,
+			})
 
 			Panel:SetValue(Value)
 			ClassPreview:SetModelScale(Scale, true)
@@ -74,24 +67,20 @@ do -- Piledrivers menu
 			return Value
 		end)
 
-		ClassName:TrackClientData("Weapon", "SetText")
 		ClassName:TrackClientData("Caliber")
 		ClassName:DefineSetter(function()
 			local Current = math.Round(Caliber:GetValue(), 2)
-			local Name    = ClassList.Selected.Name
 
-			return language.GetPhrase("acf.menu.fun.piledrivers.class_name"):format(Current, Name)
+			return language.GetPhrase("acf.menu.fun.piledrivers.class_name"):format(Current, Class.Name)
 		end)
 
-		ClassInfo:TrackClientData("Weapon", "SetText")
 		ClassInfo:TrackClientData("Caliber")
 		ClassInfo:DefineSetter(function()
 			if not BulletData then return "" end
 
 			local Info     = language.GetPhrase("acf.menu.fun.piledrivers.stats")
-			local Class    = ClassList.Selected
 			local Current  = math.Round(Caliber:GetValue(), 2)
-			local Scale    = Current / Class.Caliber.Base
+			local Scale    = Current / Class.BaseCaliber
 			local Mass     = Class.Mass * Scale
 			local FireRate = Class.Cyclic
 			local Total    = Class.MagSize
@@ -100,7 +89,6 @@ do -- Piledrivers menu
 			return Info:format(Mass, FireRate, Total, Charge)
 		end)
 
-		ClassStats:TrackClientData("Weapon", "SetText")
 		ClassStats:TrackClientData("Caliber")
 		ClassStats:DefineSetter(function()
 			if not BulletData then return "" end
@@ -114,7 +102,7 @@ do -- Piledrivers menu
 			return Stats:format(MaxPen, MuzzleVel, Length, Mass)
 		end)
 
-		ACF.LoadSortedList(ClassList, Entries, "Name", "Model")
+		Caliber:SetValue(math.Clamp(ACF.GetClientNumber("Caliber", CaliberOpts.Default or CaliberOpts.Min), CaliberOpts.Min, CaliberOpts.Max))
 	end
 
 	ACF.AddMenuItem(1, "#acf.menu.fun", "#acf.menu.fun.piledrivers", "pencil", CreateMenu)

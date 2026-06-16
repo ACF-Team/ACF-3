@@ -1,7 +1,6 @@
 local ACF       = ACF
 local Utilities = ACF.Utilities
 local Clock     = Utilities.Clock
-local hook      = hook
 
 function ENT:Disable()
     self.Charge       = 0
@@ -50,16 +49,4 @@ function ENT:Think()
     self.LastThink = Time
 
     return true
-end
-
-function ENT:OnRemove()
-    local Class = self.ClassData
-
-    if Class.OnLast then
-        Class.OnLast(self, Class)
-    end
-
-    hook.Run("ACF_OnEntityLast", "acf_piledriver", self, Class)
-
-    WireLib.Remove(self)
 end

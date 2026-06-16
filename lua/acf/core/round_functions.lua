@@ -1,10 +1,33 @@
 local ACF      = ACF
 local Classes  = ACF.Classes
 local math     = math
+local isstring = isstring
 local MM_TO_CM = ACF.MmToInch * ACF.InchToCm -- Millimeters to centimeters
 
 
-local function GetWeaponSpecs(ToolData)
+local function GetClassWeaponSpecs(Class, ToolData)
+	local Round = Class.Round
+	if not Round then return end
+
+	local Field   = Classes.GetTypeFieldByName(Class, "Caliber")
+	local Bounds  = Field and Field.Options or {}
+	local Base    = Class.BaseCaliber or Bounds.Default or 1
+	local Caliber = math.Clamp(tonumber(ToolData.Caliber) or Base, Bounds.Min or Base, Bounds.Max or Base)
+	local Scale   = Caliber / Base
+
+	return {
+		Caliber    = Caliber,
+		MaxLength  = Round.MaxLength * Scale,
+		PropLength = Round.PropLength * Scale,
+		ProjLength = Round.ProjLength and Round.ProjLength * Scale,
+		Efficiency = Round.Efficiency,
+	}
+end
+
+local function GetLegacyWeaponSpecs(ToolData)
+	local NewClass = isstring(ToolData.Weapon) and Classes.GetTypeByName(ToolData.Weapon)
+	if NewClass then return GetClassWeaponSpecs(NewClass, ToolData) end
+
 	local Source = Classes[ToolData.Destiny]
 	local Class  = Classes.GetGroup(Source, ToolData.Weapon)
 
@@ -45,7 +68,7 @@ local function GetWeaponSpecs(ToolData)
 end
 
 function ACF.RoundBaseGunpowder(ToolData, Data)
-	local Specs   = GetWeaponSpecs(ToolData)
+	local Specs   = GetLegacyWeaponSpecs(ToolData)
 	local GUIData = {}
 
 	if not Specs then return Data, GUIData end
@@ -133,8 +156,8 @@ function ACF.CalcArmor(Area, Ductility, Mass)
 	return (Mass * 1000 / Area / 0.78) / (1 + Ductility) ^ 0.5 * ACF.ArmorMod
 end
 
+-- TODO: Review all of this...
 local Weaponry = {
-	Piledrivers = Classes.Piledrivers,
 	Missiles    = Classes.Missiles,
 	Weapons     = Classes.Weapons,
 }

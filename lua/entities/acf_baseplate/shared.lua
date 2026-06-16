@@ -1,9 +1,5 @@
 DEFINE_BASECLASS "acf_base_scalable"
 
-ENT.PrintName      		= "ACF Baseplate"
-ENT.WireDebugName  		= "ACF Baseplate"
-ENT.PluralName     		= "ACF Baseplates"
-ENT.IsACFBaseplate 		= true
 ENT.ACF_Limit      		= 2
 ENT.ACF_PreventArmoring = false
 
@@ -15,7 +11,7 @@ ACF.AutoRegisterV2(function()
 	MENU_FIELD("Boolean", 					  	"DisableAltE",    			{Default = false})
 		 FIELD("Entity", 						"Seat",    					{AcceptableClasses = {prop_vehicle_prisoner_pod = true}})
 		 FIELD("Boolean", 					  	"AlreadyHasSeat",    		{Default = false})
-end)
+end, "Baseplate")
 
 ENT.ACF_StaticWireInputs = {
 	"Unflip (Triggers an unflip on the baseplate)",
