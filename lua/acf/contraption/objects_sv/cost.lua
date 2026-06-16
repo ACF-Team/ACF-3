@@ -65,10 +65,14 @@ do
 
 						C = op(ent)
 
-						ClassCost = ClassCost + C
-
 						local BulkCostAmt = Breakdown[BulkCostAmtID] or 0
-						Breakdown[BulkCostAmtID] = BulkCostAmt + C
+
+						if C == nil then
+							ACF.Utilities.Messages.PrintLog("Warning", "Nil cost for entity: " .. tostring(ent))
+						else
+							ClassCost = ClassCost + C
+							Breakdown[BulkCostAmtID] = BulkCostAmt + C
+						end
 					end
 				else
 					for ent in pairs(entlist) do
@@ -79,7 +83,11 @@ do
 
 						C = ent:GetCost()
 
-						ClassCost = ClassCost + C
+						if C == nil then
+							ACF.Utilities.Messages.PrintLog("Warning", "Nil cost for entity: " .. tostring(ent))
+						else
+							ClassCost = ClassCost + C
+						end
 					end
 				end
 			end
