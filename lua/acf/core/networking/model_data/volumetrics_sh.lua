@@ -30,7 +30,6 @@ local ArmorableClasses = {
     primitive_airfoil = true,
 }
 
--- TODO: Handle reinitializable classes
 do
     local ArmorTypes = ACF.Classes.ArmorTypes
 
