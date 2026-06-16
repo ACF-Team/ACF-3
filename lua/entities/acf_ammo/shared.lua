@@ -4,6 +4,6 @@ ENT.PrintName      = "ACF Ammo Crate"
 ENT.WireDebugName  = "ACF Ammo Crate"
 ENT.PluralName     = "ACF Ammo Crates"
 ENT.IsACFAmmoCrate = true
-ENT.ConvexMaterial = "ComponentSteel"
+ENT.ConvexMaterial = "Component"
 
 cleanup.Register("acf_ammo")

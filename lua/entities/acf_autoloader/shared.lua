@@ -7,7 +7,7 @@ ENT.ACF_Limit      = 2
 ENT.ACF_PreventArmoring = true
 
 ENT.IsACFAutoloader = true
-ENT.ConvexMaterial = "ComponentSteel"
+ENT.ConvexMaterial = "Component"
 
 -- Maps user var name to its type, whether it is client data and type specific arguments (all support defaults?)
 ENT.ACF_UserVars = {

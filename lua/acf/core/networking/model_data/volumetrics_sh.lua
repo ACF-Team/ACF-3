@@ -128,7 +128,7 @@ do
         end
     end
 
-    local function ComputeVolumetricMesh(entity, isReInit)
+    local function ComputeVolumetricMesh(entity)
         if not IsValid(entity) then return end
         if not entity.IsACFEntity and not ArmorableClasses[entity:GetClass()] then return end
 
