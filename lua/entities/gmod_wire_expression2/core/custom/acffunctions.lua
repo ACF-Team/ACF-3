@@ -167,7 +167,7 @@ e2function number entity:acfIsAmmo()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	return this.IsACFAmmoCrate and 1 or 0
+	return this.IsACFAmmo and 1 or 0
 end
 
 -- Returns 1 if the entity is an ACF fuel tank
@@ -175,7 +175,7 @@ e2function number entity:acfIsFuel()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	return this.IsACFFuelTank and 1 or 0
+	return this.IsACFFueltank and 1 or 0
 end
 
 -- Returns the capacity of an acf ammo crate or fuel tank

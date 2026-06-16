@@ -134,7 +134,7 @@ function ENT:Think()
 		-- Determine how much mass we can transfer to this target
 		local TransferMass = math.min(PerTargetBudget, Remaining)
 
-		if Target.IsACFAmmoCrate then
+		if Target.IsACFAmmo then
 			-- For ammo crates: only whole cartridges can be transferred
 			-- If we can't transfer enough mass for a full cartridge, build it up until we can
 

@@ -780,7 +780,7 @@ if SERVER then
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return false end
 
-		return This.IsACFAmmoCrate or false
+		return This.IsACFAmmo or false
 	end
 
 	--- Returns true if the entity is an ACF fuel tank
@@ -794,7 +794,7 @@ if SERVER then
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return false end
 
-		return This.IsACFFuelTank or false
+		return This.IsACFFueltank or false
 	end
 
 	--- Returns the capacity of an acf ammo crate or fuel tank
