@@ -469,7 +469,8 @@ do	-- Spawn and Update funcs
 		if not IsValid(Entity) then return Vector(), 0 end
 
 		local Family    = ENTITY.GetFamily(Entity)
-		local FamMass   = Family and Family:GetMass() or 0
+		if not Family then return Vector(), 0 end
+		local FamMass   = Family:GetMass() or 0
 		local Rotator   = Entity.Rotator or Entity
 		local MassPos   = Vector()
 		local TotalMass = FamMass
