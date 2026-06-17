@@ -23,13 +23,31 @@ if CLIENT then
 	language.Add("tool.acfarmormesh.right0", "Copy the material of the convex under your crosshair")
 	language.Add("tool.acfarmormesh.material_desc", "The material that will be applied to the convex under your crosshair.")
 	language.Add("tool.acfarmormesh.armor_stats", "ACF Stats")
+	language.Add("tool.acfarmormesh.class_filter", "Recursive Armor Class Filter")
+	language.Add("tool.acfarmormesh.class_filter_desc", "When enabled, entities of the selected classes will be excluded from recursive armor application.")
+	language.Add("tool.acfarmormesh.filter_acf_gearbox", "acf_gearbox")
+	language.Add("tool.acfarmormesh.filter_acf_fuel", "acf_fuel")
 
-	local SphereSearch = CreateClientConVar("acfarmormesh_sphere_search", 0, false, true, "", 0, 1)
-	local SphereRadius = CreateClientConVar("acfarmormesh_sphere_radius", 0, false, true, "", 0, 10000)
+	local SphereSearch  = CreateClientConVar("acfarmormesh_sphere_search", 0, false, true, "", 0, 1)
+	local SphereRadius  = CreateClientConVar("acfarmormesh_sphere_radius", 0, false, true, "", 0, 10000)
+	local ClassFilter = CreateClientConVar("acfarmormesh_class_filter", "{}", false, true)
+
+	local function GetClassFilter()
+		return util.JSONToTable(ClassFilter:GetString()) or {}
+	end
+
+	local function SetClassFilter(Class, Enabled)
+		local Filter = GetClassFilter()
+		Filter[Class] = Enabled or nil
+		RunConsoleCommand("acfarmormesh_class_filter", util.TableToJSON(Filter))
+	end
 
 	function TOOL:LeftClick(_) return true end
 	function TOOL:RightClick(_) return true end
-	function TOOL:Reload(Trace) return self:GetContraptionReadout(Trace, self:GetOwner():KeyDown(IN_SPEED)) end
+	function TOOL:Reload(Trace)
+		if self:GetOwner():KeyDown(IN_DUCK) then return true end
+		return self:GetContraptionReadout(Trace, self:GetOwner():KeyDown(IN_SPEED))
+	end
 
 	local function CreateArmorMeshMenu(Panel)
 		local ArmorTypes = ACF.Classes.ArmorTypes
@@ -92,6 +110,18 @@ if CLIENT then
 		end
 
 		SphereRadiusSlider:SetEnabled(SphereCheck:GetChecked())
+
+		local FilterSection = Menu:AddCollapsible("#tool.acfarmormesh.class_filter", false)
+		FilterSection:AddHelp("#tool.acfarmormesh.class_filter_desc")
+
+		local function AddFilterCheckBox(LangKey, Class)
+			local Check = FilterSection:AddCheckBox(LangKey)
+			Check:SetValue(GetClassFilter()[Class] or false)
+			function Check:OnChange(Val) SetClassFilter(Class, Val) end
+		end
+
+		AddFilterCheckBox("#tool.acfarmormesh.filter_acf_gearbox", "acf_gearbox")
+		AddFilterCheckBox("#tool.acfarmormesh.filter_acf_fuel", "acf_fuel")
 	end
 
 	ACF.CreateArmorMeshMenu = CreateArmorMeshMenu
@@ -299,6 +329,116 @@ elseif SERVER then
 		SaveConvexMaterials(Entity)
 	end)
 
+	local function GetFilteredClasses(Player)
+		return util.JSONToTable(Player:GetInfo("acfarmormesh_class_filter")) or {}
+	end
+
+	local function DoRecursiveArmorTrace(Tool, InitialTrace)
+		local Player     = Tool:GetOwner()
+		local Messages   = ACF.Utilities.Messages
+		local ArmorTypes = ACF.Classes.ArmorTypes
+		local Filter     = GetFilteredClasses(Player)
+		local Layers    = {}
+		local Dir       = (InitialTrace.HitPos - InitialTrace.StartPos):GetNormalized()
+		local Skipped   = {}  -- entities fully traversed, never hit again
+		local Processed = {}  -- [Entity] = { [ConvexID] = true }
+		local Current   = InitialTrace
+
+		for _ = 1, 30 do
+			local Entity = Current.Entity
+			if not IsValid(Entity) then break end
+
+			local Class = Entity:GetClass()
+
+			if Entity.IsACFEntity or Filter[Class] then
+				table.insert(Layers, {
+					Terminal = true,
+					Entity   = Entity,
+				})
+				break
+			end
+
+			if not Entity.ACF_Volumetric_Mesh then break end
+
+			local ConvexHit = ACF.GetConvexHit(Entity, Current.HitPos, Dir, true)
+			local NewStart
+
+			if ConvexHit then
+				local EntProcessed = Processed[Entity]
+
+				if EntProcessed and EntProcessed[ConvexHit.ConvexID] then
+					-- Ray has looped back to an already-recorded convex; entity is done.
+					Skipped[Entity] = true
+					NewStart = Current.HitPos + Dir * 0.5
+				else
+					if not EntProcessed then
+						EntProcessed = {}
+						Processed[Entity] = EntProcessed
+					end
+					EntProcessed[ConvexHit.ConvexID] = true
+
+					local Convex    = Entity.ACF_Volumetric_Mesh.Convexes[ConvexHit.ConvexID]
+					local ArmorType = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("Default")
+
+					table.insert(Layers, {
+						Terminal = false,
+						Entity   = Entity,
+						Material = Convex.Material,
+						GeoThick = ConvexHit.GeoThick,
+						EffKE    = ConvexHit.GeoThick * ArmorType.KineticMul,
+						EffCE    = ConvexHit.GeoThick * ArmorType.ChemicalMul,
+					})
+
+					-- Advance past this convex's exit face.
+					-- ACF uses 1 Source unit = 1 inch = 25.4 mm, so GeoThick (mm) / 25.4 = inches.
+					NewStart = Current.HitPos + Dir * (ConvexHit.GeoThick / 25.4 + 0.5)
+				end
+			else
+				Skipped[Entity] = true
+				NewStart = Current.HitPos + Dir * 0.5
+			end
+
+			Current = util.TraceLine({
+				start  = NewStart,
+				endpos = NewStart + Dir * 32768,
+				filter = function(Ent) return not Skipped[Ent] end,
+				mask   = MASK_SOLID,
+			})
+		end
+
+		if #Layers == 0 then
+			Messages.SendChat(Player, "Info", "No armor layers found along the trace.")
+			return true
+		end
+
+		local TotalEffKE, TotalEffCE = 0, 0
+
+		Messages.SendChat(Player, nil, "--- Recursive Armor Trace ---")
+
+		for Index, Layer in ipairs(Layers) do
+			local Ent    = Layer.Entity
+			local EntStr = string.format("%s [%d]", Ent:GetClass(), Ent:EntIndex())
+
+			if Layer.Terminal then
+				Messages.SendChat(Player, nil, string.format("End: %s", EntStr))
+			else
+				Messages.SendChat(Player, nil, string.format(
+					"L%d: %s | %s | %.1f mm KE | %.1f mm CE",
+					Index, EntStr, Layer.Material, Layer.EffKE, Layer.EffCE
+				))
+				TotalEffKE = TotalEffKE + Layer.EffKE
+				TotalEffCE = TotalEffCE + Layer.EffCE
+			end
+		end
+
+		Messages.SendChat(Player, nil, string.format(
+			"Total: %.1f mm effective (KE) | %.1f mm effective (CE)",
+			TotalEffKE, TotalEffCE
+		))
+
+		return true
+	end
+
 	-- Keeps the toolgun's NW vars in sync with the convex under the player's crosshair, for client-side display.
 	function TOOL:Think()
 		local Player = self:GetOwner()
@@ -378,6 +518,8 @@ elseif SERVER then
 	end
 
 	function TOOL:Reload(Trace)
+		print(self:GetOwner():KeyDown(IN_DUCK))
+		if self:GetOwner():KeyDown(IN_DUCK) then return DoRecursiveArmorTrace(self, Trace) end
 		return self:GetContraptionReadout(Trace, self:GetOwner():KeyDown(IN_SPEED))
 	end
 end
