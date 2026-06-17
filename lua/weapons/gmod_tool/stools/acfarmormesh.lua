@@ -22,7 +22,7 @@ if CLIENT then
 	language.Add("tool.acfarmormesh.material_desc", "The material that will be applied to the convex under your crosshair.")
 	language.Add("tool.acfarmormesh.armor_stats", "ACF Stats")
 	language.Add("tool.acfarmormesh.class_filter", "Recursive Armor Class Filter")
-	language.Add("tool.acfarmormesh.class_filter_desc", "When enabled, entities of the selected classes will be excluded from recursive armor application.")
+	language.Add("tool.acfarmormesh.class_filter_desc", "When enabled, entities of the selected classes will not stop the recursive armor trace.")
 	language.Add("tool.acfarmormesh.filter_acf_gearbox", "acf_gearbox")
 	language.Add("tool.acfarmormesh.filter_acf_fuel", "acf_fuel")
 	language.Add("tool.acfarmormesh.alpha", "Convex Overlay Alpha")
@@ -30,16 +30,24 @@ if CLIENT then
 	local SphereSearch  = CreateClientConVar("acfarmormesh_sphere_search", 0, false, true, "", 0, 1)
 	local SphereRadius  = CreateClientConVar("acfarmormesh_sphere_radius", 0, false, true, "", 0, 10000)
 	local AlphaConVar   = CreateClientConVar("acfarmormesh_alpha", 50, false, true, "", 0, 255)
-	local ClassFilter = CreateClientConVar("acfarmormesh_class_filter", "{}", false, true)
+	local ClassFilter = CreateClientConVar("acfarmormesh_class_filter", "", false, true)
 
 	local function GetClassFilter()
-		return util.JSONToTable(ClassFilter:GetString()) or {}
+		local Filter = {}
+		for Class in ClassFilter:GetString():gmatch("[^,]+") do
+			Filter[Class] = true
+		end
+		return Filter
 	end
 
 	local function SetClassFilter(Class, Enabled)
 		local Filter = GetClassFilter()
 		Filter[Class] = Enabled or nil
-		RunConsoleCommand("acfarmormesh_class_filter", util.TableToJSON(Filter))
+		local Parts = {}
+		for K in pairs(Filter) do
+			Parts[#Parts + 1] = K
+		end
+		RunConsoleCommand("acfarmormesh_class_filter", table.concat(Parts, ","))
 	end
 
 	function TOOL:LeftClick(_) return true end
@@ -328,7 +336,11 @@ elseif SERVER then
 	end)
 
 	local function GetFilteredClasses(Player)
-		return util.JSONToTable(Player:GetInfo("acfarmormesh_class_filter")) or {}
+		local Filter = {}
+		for Class in Player:GetInfo("acfarmormesh_class_filter"):gmatch("[^,]+") do
+			Filter[Class] = true
+		end
+		return Filter
 	end
 
 	local function DoRecursiveArmorTrace(Tool, InitialTrace)
@@ -348,7 +360,7 @@ elseif SERVER then
 
 			local Class = Entity:GetClass()
 
-			if Entity.IsACFEntity or Filter[Class] then
+			if Entity.IsACFEntity and not Filter[Class] then
 				table.insert(Layers, {
 					Terminal = true,
 					Entity   = Entity,
@@ -516,7 +528,6 @@ elseif SERVER then
 	end
 
 	function TOOL:Reload(Trace)
-		print(self:GetOwner():KeyDown(IN_DUCK))
 		if self:GetOwner():KeyDown(IN_DUCK) then return DoRecursiveArmorTrace(self, Trace) end
 		return self:GetContraptionReadout(Trace, self:GetOwner():KeyDown(IN_SPEED))
 	end
