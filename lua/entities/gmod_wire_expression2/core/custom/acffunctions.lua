@@ -244,6 +244,59 @@ e2function number entity:acfPropHealthPercent()
 	return PercHealth and Round(PercHealth, 2) or 0
 end
 
+-- Returns the current health of a specific convex of an entity
+e2function number entity:acfConvexHealth(number ConvexID)
+	if not validPhysics(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+
+	local MeshData = this.ACF_Volumetric_Mesh
+	if not MeshData then return 0 end
+
+	local Convex = MeshData.Convexes[floor(ConvexID)]
+	if not Convex then return 0 end
+
+	return Round(Convex.Health, 2)
+end
+
+-- Returns the max health of a specific convex of an entity
+e2function number entity:acfConvexHealthMax(number ConvexID)
+	if not validPhysics(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+
+	local MeshData = this.ACF_Volumetric_Mesh
+	if not MeshData then return 0 end
+
+	local Convex = MeshData.Convexes[floor(ConvexID)]
+	if not Convex then return 0 end
+
+	return Round(Convex.MaxHealth, 2)
+end
+
+-- Returns the health percentage of a specific convex of an entity
+e2function number entity:acfConvexHealthPercent(number ConvexID)
+	if not validPhysics(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+
+	local MeshData = this.ACF_Volumetric_Mesh
+	if not MeshData then return 0 end
+
+	local Convex = MeshData.Convexes[floor(ConvexID)]
+	if not Convex or Convex.MaxHealth == 0 then return 0 end
+
+	return Round(Convex.Health / Convex.MaxHealth, 2)
+end
+
+-- Returns the number of convexes of an entity
+e2function number entity:acfConvexCount()
+	if not validPhysics(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+
+	local MeshData = this.ACF_Volumetric_Mesh
+	if not MeshData then return 0 end
+
+	return #MeshData.Convexes
+end
+
 -- Returns the ductility of an entity
 e2function number entity:acfPropDuctility()
 	if not validPhysics(this) then return 0 end

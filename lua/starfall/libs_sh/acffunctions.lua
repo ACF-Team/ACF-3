@@ -920,6 +920,89 @@ if SERVER then
 		return Ductility and math.Round(Ductility * 100, 2) or 0
 	end
 
+	--- Returns the current health of a specific convex of an entity
+	-- @server
+	-- @param number convexid The convex ID
+	-- @return number The convex's current health
+	function ents_methods:acfConvexHealth(convexid)
+		CheckType(self, ents_metatable)
+		CheckLuaType(convexid, TYPE_NUMBER)
+
+		local This = unwrap(self)
+
+		if not IsValid(This) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return 0 end
+
+		local MeshData = This.ACF_Volumetric_Mesh
+		if not MeshData then return 0 end
+
+		local Convex = MeshData.Convexes[math.floor(convexid)]
+		if not Convex then return 0 end
+
+		return math.Round(Convex.Health, 2)
+	end
+
+	--- Returns the max health of a specific convex of an entity
+	-- @server
+	-- @param number convexid The convex ID
+	-- @return number The convex's max health
+	function ents_methods:acfConvexHealthMax(convexid)
+		CheckType(self, ents_metatable)
+		CheckLuaType(convexid, TYPE_NUMBER)
+
+		local This = unwrap(self)
+
+		if not IsValid(This) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return 0 end
+
+		local MeshData = This.ACF_Volumetric_Mesh
+		if not MeshData then return 0 end
+
+		local Convex = MeshData.Convexes[math.floor(convexid)]
+		if not Convex then return 0 end
+
+		return math.Round(Convex.MaxHealth, 2)
+	end
+
+	--- Returns the health percentage of a specific convex of an entity
+	-- @server
+	-- @param number convexid The convex ID
+	-- @return number The convex's health as a fraction of its max health
+	function ents_methods:acfConvexHealthPercent(convexid)
+		CheckType(self, ents_metatable)
+		CheckLuaType(convexid, TYPE_NUMBER)
+
+		local This = unwrap(self)
+
+		if not IsValid(This) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return 0 end
+
+		local MeshData = This.ACF_Volumetric_Mesh
+		if not MeshData then return 0 end
+
+		local Convex = MeshData.Convexes[math.floor(convexid)]
+		if not Convex or Convex.MaxHealth == 0 then return 0 end
+
+		return math.Round(Convex.Health / Convex.MaxHealth, 2)
+	end
+
+	--- Returns the number of convexes of an entity
+	-- @server
+	-- @return number The number of convexes
+	function ents_methods:acfConvexCount()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not IsValid(This) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return 0 end
+
+		local MeshData = This.ACF_Volumetric_Mesh
+		if not MeshData then return 0 end
+
+		return #MeshData.Convexes
+	end
+
 	--- Returns true if hitpos is on a clipped part of prop
 	-- @param Vector hitpos The world hit position we want to check
 	-- @server
