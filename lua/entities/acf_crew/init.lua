@@ -425,28 +425,7 @@ do
 		"Entity (The crew entity itself) [ENTITY]"
 	}
 
-	local function ConvertACEData(Data)
-		-- The Id field is used by ACE to store their own crew type
-
-		if Data.CrewTypeID == nil then
-			local ACE_Id = Data.Id
-			if ACE_Id ~= nil then
-				Data.CrewTypeID = Compatibility.Crew.CheckACECrewType(ACE_Id)
-			end
-		end
-
-		-- The ModelType field is used by ACE to store their own crew model
-		-- TODO: this seems unused, Craftian (?)   
-		--		- march
-		--  if Data.CrewModelID == nil then
-		--  	local ACE_ModelType = Data.ModelType
-		--  	if ACE_ModelType ~= nil then
-		--  		
-		--  	end
-		--  end
-	end
 	local function VerifyData(Data)
-		ConvertACEData(Data)
 		-- Default crew is a sitting commander that can replace others and be replaced
 		if Data.CrewTypeID == nil then Data.CrewTypeID = "Commander" end
 		if Data.CrewModelID == nil then Data.CrewModelID = "Sitting" end
@@ -622,11 +601,6 @@ do
 
 	-- Bare minimum arguments to reconstruct a crew
 	Entities.LegacyRegister("acf_crew", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "CrewPoseID", "ReplaceOthers", "ReplaceSelf", "UseAnimation", "CrewPriority")
-
-	-- Compatibility with ACE crew entities
-	Entities.LegacyRegister("ace_crewseat_driver", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "CrewPoseID", "ReplaceOthers", "ReplaceSelf", "UseAnimation", "CrewPriority")
-	Entities.LegacyRegister("ace_crewseat_gunner", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "CrewPoseID", "ReplaceOthers", "ReplaceSelf", "UseAnimation", "CrewPriority")
-	Entities.LegacyRegister("ace_crewseat_loader", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "CrewPoseID", "ReplaceOthers", "ReplaceSelf", "UseAnimation", "CrewPriority")
 
 	-- Necessary for e2/sf link related functionality
 	ACF.RegisterLinkSource("acf_gun", "Crew")

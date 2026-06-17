@@ -1,4 +1,3 @@
--- V1 -> V2 migration for acf_autoloader
 ACF.Classes.Entities.RegisterCompatPatch("acf_autoloader", 2026060901, function(Data)
 	local EntityMods = Data.EntityMods
 	if not EntityMods then return end

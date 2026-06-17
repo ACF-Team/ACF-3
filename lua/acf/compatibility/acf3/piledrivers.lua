@@ -1,4 +1,3 @@
--- V1 -> V2 migration for acf_piledriver
 ACF.Classes.Entities.RegisterCompatPatch("acf_piledriver", 2026061501, function(Data)
 	local UD = Data.ACF_UserData
 	if not UD then return end

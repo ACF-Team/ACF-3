@@ -2,6 +2,13 @@ local Classes  = ACF.Classes
 local Entities = Classes.Entities
 Entities.CompatPatches = Entities.CompatPatches or {}
 
+
+-- ACF-3 and ACF-2 compatibility patches should be defined in date order, as to allow building off of each patch.
+-- This works because ACF-3 is a direct fork of ACF-2 (with no breaking changes in ACF-2 as its no longer developed)
+-- so its a clean and straightforward series of changes.
+-- For ACE, they've done concurrent development alongside us. So ACE compat patches will need to run first.
+-- The format for ACF-2/3 patches should be YYYYmmDDrr (year 4 digit, month 2 digit, day 2 digit, revision 2 digit)
+-- For ACE patches, it should be incremental based on the classname, starting at -100000
 function Entities.RegisterCompatPatch(ClassName, Revision, Fn)
 	local List = Entities.CompatPatches[ClassName]
 	if not List then
