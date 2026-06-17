@@ -215,11 +215,6 @@ do -- Spawn and Update functions
 	end
 
 	Entities.LegacyRegister("acf_receiver", ACF.MakeReceiver, "Receiver")
-
-	-- Compatibility with ACE receiver entities
-	Entities.LegacyRegister("ace_rwr_dir", ACF.MakeReceiver, "Receiver")
-	Entities.LegacyRegister("ace_rwr_sphere", ACF.MakeReceiver, "Receiver")
-
 	------------------- Updating ---------------------
 
 	function ENT:Update(Data)
