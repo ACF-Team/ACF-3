@@ -1,11 +1,6 @@
 local ACF       = ACF
-local Utilities = ACF.Utilities
-local Classes   = ACF.Classes
 local WireLib   = WireLib
-local Entities  = Classes.Entities
-local WireIO    = Utilities.WireIO
 local Round     = math.Round
-local HookRun   = hook.Run
 
 ACF.AddInputAction("acf_supply", "Active", function(Entity, Value)
 	local Active = tobool(Value)

@@ -42,7 +42,6 @@ local Utilities   	 = ACF.Utilities
 local Notify      	 = Utilities.Notify
 local WireIO      	 = Utilities.WireIO
 
-local Compatibility  = ACF.Compatibility
 local Contraption 	 = ACF.Contraption
 local hook	   		 = hook
 local Classes		 = ACF.Classes
