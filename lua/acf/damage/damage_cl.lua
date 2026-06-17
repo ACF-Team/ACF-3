@@ -15,9 +15,9 @@ local Materials = {
 }
 
 local IsValid            = IsValid
+local EyePos             = EyePos
 local render_SetMaterial = render.SetMaterial
 local render_DrawQuad    = render.DrawQuad
-local render_DepthRange  = render.DepthRange
 
 local function GetMaterial(Percent)
 	if Percent > 0.7 then return Materials[1] end
@@ -51,7 +51,7 @@ end
 local function RenderDamage(bDrawingDepth, _, isDraw3DSkybox)
 	if bDrawingDepth or isDraw3DSkybox then return end
 
-	render_DepthRange(0, 0.75) -- Nudge the overlay slightly closer to the camera to avoid z-fighting with the model
+	local CameraPos = EyePos()
 
 	for Entity, Convexes in pairs(Damaged) do
 		if not IsValid(Entity) then
@@ -75,12 +75,15 @@ local function RenderDamage(bDrawingDepth, _, isDraw3DSkybox)
 				local B = Entity:LocalToWorld(Verts[Tri[2]])
 				local C = Entity:LocalToWorld(Verts[Tri[3]])
 
-				render_DrawQuad(A, B, C, C, Data.Color)
+				-- Push the triangle 0.1 units along its outward normal to avoid z-fighting with the model surface
+				local Normal = (B - A):Cross(C - A):GetNormalized()
+				if Normal:Dot(A - CameraPos) > 0 then Normal = -Normal end
+				Normal = Normal * 0.1
+
+				render_DrawQuad(A + Normal, B + Normal, C + Normal, C + Normal, Data.Color)
 			end
 		end
 	end
-
-	render_DepthRange(0, 1)
 end
 
 local function Add(Entity, ConvexID, Percent)
