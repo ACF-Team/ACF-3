@@ -523,7 +523,7 @@ do -- Default gearbox menus
 end
 
 do -- Default turret menus
-	local Turrets	= ACF.Classes.Turrets
+	local Classes	= ACF.Classes
 	local GraphBlue	= Color(65, 65, 200)
 	local GraphRed	= Color(200, 65, 65)
 
@@ -533,9 +533,8 @@ do -- Default turret menus
 		local Green		= Color(0, 255, 0)
 
 		function ACF.CreateTurretMenu(Data, Menu)
-			local TurretClass	= Turrets.Get("1-Turret")
-			ACF.SetClientData("Turret", Data.ID)
-			ACF.SetClientData("Destiny", "Turrets")
+			local TurretClass	= Classes.GetTypeByName("ACF.Turrets.Drive")
+			ACF.SetClientData("Turret", { Type = Classes.GetTypeName(Data), Data = {} })
 			ACF.SetClientData("PrimaryClass", "acf_turret")
 			ACF.SetClientData("SecondaryClass", "N/A")
 
@@ -791,11 +790,10 @@ do -- Default turret menus
 		}
 
 		function ACF.CreateTurretMotorMenu(Data, Menu)
-			local MotorClass	= Turrets.Get("2-Motor")
-			local TurretClass	= Turrets.Get("1-Turret")
+			local MotorClass	= Classes.GetTypeByName("ACF.Turrets.Motor")
+			local TurretClass	= Classes.GetTypeByName("ACF.Turrets.Drive")
 
-			ACF.SetClientData("Motor", Data.ID)
-			ACF.SetClientData("Destiny", "TurretMotors")
+			ACF.SetClientData("Motor", { Type = Classes.GetTypeName(Data), Data = {} })
 			ACF.SetClientData("PrimaryClass", "acf_turret_motor")
 			ACF.SetClientData("SecondaryClass", "N/A")
 
@@ -992,14 +990,13 @@ do -- Default turret menus
 				MotorInfo:UpdateSim()
 			end
 
-			ACF.LoadSortedList(TurretType, Turrets.GetItemEntries("1-Turret"), "ID")
+			ACF.LoadSortedList(TurretType, Classes.GetChildren(Classes.GetTypeByName("ACF.Turrets.Drive")), "ID")
 		end
 	end
 
 	do	-- Turret Gyroscopes
 		function ACF.CreateTurretGyroMenu(Data, Menu)
-			ACF.SetClientData("Gyro", Data.ID)
-			ACF.SetClientData("Destiny", "TurretGyros")
+			ACF.SetClientData("Gyro", { Type = Classes.GetTypeName(Data), Data = {} })
 			ACF.SetClientData("PrimaryClass", "acf_turret_gyro")
 			ACF.SetClientData("SecondaryClass", "N/A")
 
@@ -1018,8 +1015,7 @@ do -- Default turret menus
 
 	do	-- Turret Computers
 		function ACF.CreateTurretComputerMenu(Data, Menu)
-			ACF.SetClientData("Computer", Data.ID)
-			ACF.SetClientData("Destiny", "TurretComputers")
+			ACF.SetClientData("Computer", { Type = Classes.GetTypeName(Data), Data = {} })
 			ACF.SetClientData("PrimaryClass", "acf_turret_computer")
 			ACF.SetClientData("SecondaryClass", "N/A")
 
