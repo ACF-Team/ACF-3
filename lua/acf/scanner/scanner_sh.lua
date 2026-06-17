@@ -442,6 +442,8 @@ if SERVER then
 end
 
 if CLIENT then
+    local acf_scanner_show_clips = CreateClientConVar("acf_scanner_show_clips", "0", true, false, "Show clip visualization in the ACF scanner.")
+
     local TEXT_ALIGN_TOP = TEXT_ALIGN_TOP
     local TEXT_ALIGN_LEFT = TEXT_ALIGN_LEFT
     local TEXT_ALIGN_RIGHT = TEXT_ALIGN_RIGHT
@@ -1476,7 +1478,9 @@ if CLIENT then
                             drawPhysMesh(ent, scanDef.color)
                         end
 
-                        VisualizeClips(ent)
+                        if acf_scanner_show_clips:GetBool() then
+                            VisualizeClips(ent)
+                        end
                     end
                 end
             end
@@ -1489,7 +1493,9 @@ if CLIENT then
                         drawBounds(ent, baseplateC)
                     end
 
-                    VisualizeClips(ent)
+                    if acf_scanner_show_clips:GetBool() then
+                        VisualizeClips(ent)
+                    end
                 end
             end
 

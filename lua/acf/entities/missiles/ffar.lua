@@ -34,7 +34,7 @@ Missiles.RegisterItem("40mmFFAR", "FFAR", {
 		Model           = "models/missiles/ffar_40mm.mdl",
 		RackModel       = "models/missiles/ffar_40mm_closed.mdl",
 		MaxLength       = 60,
-		Armor           = 2,
+		Armor           = 1,
 		ProjLength      = 25,
 		PropLength      = 35,
 		Thrust          = 150000, -- in kg*in/s^2
@@ -75,7 +75,7 @@ Missiles.RegisterItem("57mmFFAR", "FFAR", {
 		Model           = "models/missiles/ffar_70mm.mdl",
 		RackModel       = "models/missiles/ffar_70mm_closed.mdl",
 		MaxLength       = 85,
-		Armor           = 2,
+		Armor           = 1,
 		ProjLength      = 35,
 		PropLength      = 50,
 		Thrust          = 113000, -- in kg*in/s^2
@@ -116,7 +116,7 @@ Missiles.RegisterItem("70mmFFAR", "FFAR", {
 		Model           = "models/missiles/ffar_70mm.mdl",
 		RackModel       = "models/missiles/ffar_70mm_closed.mdl",
 		MaxLength       = 106,
-		Armor           = 2,
+		Armor           = 1,
 		ProjLength      = 66,
 		PropLength      = 40,
 		Thrust          = 128500, -- in kg*in/s^2 -- Why was old thrust 1565m/s
@@ -157,7 +157,7 @@ Missiles.RegisterItem("80mmFFAR", "FFAR", {
 		Model           = "models/missiles/ffar_70mm.mdl",
 		RackModel       = "models/missiles/ffar_70mm_closed.mdl",
 		MaxLength       = 127,
-		Armor           = 2,
+		Armor           = 1,
 		ProjLength      = 76,
 		PropLength      = 51,
 		Thrust          = 290000, -- in kg*in/s^2
@@ -198,7 +198,7 @@ Missiles.RegisterItem("Zuni ASR", "FFAR", {
 		Model           = "models/ghosteh/zuni.mdl",
 		RackModel       = "models/ghosteh/zuni_folded.mdl",
 		MaxLength       = 200,
-		Armor           = 2,
+		Armor           = 1,
 		ProjLength      = 90,
 		PropLength      = 110,
 		Thrust          = 663000, -- in kg*in/s^2

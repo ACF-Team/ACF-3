@@ -28,7 +28,7 @@ return function(State)
         return PostOrbit
     end
 
-    function UpdateCamera(ply)
+    function ActivateCamera(ply)
         State.CamOffset = State.MyController["GetCam" .. State.Mode .. "Offset"]()
         State.CamOrbit = State.MyController["GetCam" .. State.Mode .. "Orbit"]()
         State.CamParent = State.MyController["GetCam" .. State.Mode .. "Parent"]()
@@ -40,6 +40,12 @@ return function(State)
         net.SendToServer(ply)
     end
 
+    -- Receive camera filter from server (sent on vehicle entry alongside ACF_Controller_Active)
+    net.Receive("ACF_Controller_CamInfo", function()
+        local Temp = net.ReadTable()
+        if #Temp > 0 then State.MyFilter = Temp end
+    end)
+
     hook.Add("KeyPress", "ACFControllerCamMode", function(ply, key)
         if not IsValid(ply) or ply ~= LocalPlayer() then return end
         if not IsFirstTimePredicted() then return end
@@ -48,7 +54,7 @@ return function(State)
         if key == IN_DUCK then
             State.Mode = State.Mode + 1
             if State.Mode > State.MyController:GetCamCount() then State.Mode = 1 end
-            UpdateCamera(ply)
+            ActivateCamera(ply)
         end
     end)
 
@@ -76,7 +82,8 @@ return function(State)
             State.LastCamAng = State.CamAng
             net.Start("ACF_Controller_CamData", true)
             net.WriteUInt(State.MyController:EntIndex(), MAX_EDICT_BITS)
-            net.WriteAngle(State.CamAng)
+            net.WriteFloat(State.CamAng.pitch)
+            net.WriteFloat(State.CamAng.yaw)
             net.SendToServer()
         end
     end)
@@ -121,10 +128,11 @@ return function(State)
             angles = State.CamAng,
             fov = State.FOV,
             drawviewer = true,
+            znear = math.Remap(math.Clamp(State.FOV, 0, 90), 0, 90, 120, 5)
         }
 
         return View
     end)
 
-    return UpdateCamera
+    return ActivateCamera
 end

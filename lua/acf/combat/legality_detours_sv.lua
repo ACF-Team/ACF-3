@@ -721,7 +721,7 @@ end
 
 -- TARGET  : Constraints between world <---> ACF contraptions
 local function ConstraintDetours()
-    local function DetermineValidConstraint_WorldCheck(Entity1, Entity2, Type, DoNotify)
+    local function DetermineValidConstraint_WorldCheck(Entity1, Entity2, Type, DoNotify, NoCollideState)
         if PreCheck() then return true end
         -- Early exit. This will result in these functions being called a 2nd time in the actual constraint creators,
         -- but if we dont do this check here, we'd be both wasting time and potentially get nasty side effects (this runs
@@ -749,6 +749,10 @@ local function ConstraintDetours()
         if not Contraption then return true end -- We don't care about non-contraptions.
 
         if not Contraption:ACF_IsACFContraption() then return true end -- We don't care about non-ACF contraptions.
+
+        -- Final chance: if NoCollideState is passed, then only return false if NoCollideState is true (kind of a hack)
+        -- This should probably be rewritten to use something that requires less to be passed around but w/e
+        if NoCollideState ~= nil and NoCollideState == false or NoCollideState == 0 then return true end
 
         -- Ok, something tried to use a detoured constraint an ACF contraption to the world. Block it
         if DoNotify then
@@ -808,7 +812,7 @@ local function ConstraintDetours()
 
         local Entity1, Entity2   = PhysObj1:GetEntity(), PhysObj2:GetEntity()
         if CheckAction == ONLY_CHECK_WORLD then
-            if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "", false) then
+            if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "", false, Constraint.NoCollide) then
                 -- Remove the constraint.
                 Constraint:Remove()
                 if PostAction then
@@ -863,9 +867,9 @@ local function ConstraintDetours()
     end)
 
     do
-        local Func Func = Detours.New("constraint.AdvBallsocket", function(Entity1, Entity2, ...)
-            if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "adv ballsocket", true) then return false end
-            return Func(Entity1, Entity2, ...)
+        local Func Func = Detours.New("constraint.AdvBallsocket", function(Entity1, Entity2, Bone1, Bone2, LocalPos1, LocalPos2, ForceLimit, TorqueLimit, XMin, YMin, ZMin, XMax, YMax, ZMax, XFric, YFric, ZFric, OnlyRotation, NoCollide, ...)
+            if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "adv ballsocket", true, NoCollide or false --[[important we dont pass nil here so it checks!]]) then return false end
+            return Func(Entity1, Entity2, Bone1, Bone2, LocalPos1, LocalPos2, ForceLimit, TorqueLimit, XMin, YMin, ZMin, XMax, YMax, ZMax, XFric, YFric, ZFric, OnlyRotation, NoCollide, ...)
         end)
     end
     do

@@ -14,32 +14,6 @@ max armor of around 22mm
 
 Right click to use the supply Crate (Must be out of combat)'),
 
-('eaglite_spg-9', 'Eaglite SPG-9', 44.49, 2.33, 'Light Tank', 'Tracked', 'eaglitetankette', 'Simple tank Destroyer
-
-~574mm of pen
-
-Flank, Support, Backlines. Go where ever to poke holes in tanks!
-
-60~ km/h
-
-max armor of around 22mm
-
-~12mm everywhere else'),
-
-('eaglite_rocketeer', 'Eaglite Rocketeer', 76.49, 2.7, 'Light Tank', 'Tracked', 'eaglitetankette', '57mm Rocket pod ontop, Flank em all!
-
-117mm pen HEAT
-
-Flankers delight, Fast firing Rocket Pod 
-
-Dont let your big backpack get shot!
-
-60~ km/h
-
-max armor 22mm
-
-~12mm everywhere else'),
-
 ('eaglite_raider_apc', 'Eaglite Raider APC', 27.28, 1.87, 'APC', 'Tracked', 'eaglitetankette', 'Two seated "APC" with a MG
 
 Recon vehicle optimized for shock-troop style flanking operations and light tank-hunting
