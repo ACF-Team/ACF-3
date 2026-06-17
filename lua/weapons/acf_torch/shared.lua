@@ -9,7 +9,6 @@ local Damage  = ACF.Damage
 local Objects = Damage.Objects
 local Spark   = "ambient/energy/NewSpark0%s.wav"
 local Zap     = "weapons/physcannon/superphys_small_zap%s.wav"
-local RepairRate = 0.05 -- Fraction of a convex's max health repaired per attack tick
 
 SWEP.Author = "Lazermaniac"
 SWEP.Contact = "lazermaniac@gmail.com"
@@ -105,6 +104,7 @@ function SWEP:BeginAttack(AttackKey, ZapCount, ZapPitch)
 	end
 	self:SetAnim("fire_loop", true, 2)
 	self:SetNextPrimaryFire(Clock.CurTime + 0.05)
+	self:SetNextSecondaryFire(Clock.CurTime + 0.05)
 
 	if CLIENT then
 		Sounds.PlaySound(self, Zap:format(math.random(1, ZapCount)), nil, ZapPitch, 1)
@@ -273,42 +273,39 @@ function SWEP:PrimaryAttack()
 		local MeshData = Entity.ACF_Volumetric_Mesh
 		if not MeshData then return end
 
-		local Dir       = (Trace.HitPos - Trace.StartPos):GetNormalized()
-		local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
+		local DmgResult = self.DamageResult
+		local DmgInfo   = self.DamageInfo
+		local HitPos    = Trace.HitPos
+		local Dir       = (HitPos - Trace.StartPos):GetNormalized()
 
-		if not ConvexHit then return end
+		if not ACF.GetConvexHit(Entity, HitPos, Dir, true) then return end
 
-		local Repaired = false
+		DmgInfo:SetAttacker(Owner)
+		DmgInfo:SetInflictor(self)
+		DmgInfo:SetOrigin(Trace.StartPos)
+		DmgInfo:SetHitPos(HitPos)
+		DmgInfo:SetHitGroup(Trace.HitGroup)
 
-		for _, Ent in ipairs(ents.FindInSphere(Trace.HitPos, self.RepairRadius)) do
+		local Healed = false
+
+		for _, Ent in ipairs(ents.FindInSphere(HitPos, self.RepairRadius)) do
 			if not ACF.Check(Ent) then continue end
 
 			local EntMeshData = Ent.ACF_Volumetric_Mesh
 			if not EntMeshData then continue end
 
-			if Ent.IsACFEntity then
-				local EntACF = Ent.ACF
+			local ConvexHit = ACF.GetConvexHit(Ent, HitPos, Dir, true)
+			if not ConvexHit then continue end
 
-				if EntACF.Health < EntACF.MaxHealth then
-					EntACF.Health = math.min(EntACF.Health + EntACF.MaxHealth * RepairRate, EntACF.MaxHealth)
-					Repaired = true
-				end
-			else
-				for ConvexID, Convex in ipairs(EntMeshData.Convexes) do
-					if Convex.Health < Convex.MaxHealth then
-						Convex.Health = math.min(Convex.Health + Convex.MaxHealth * RepairRate, Convex.MaxHealth)
-						Repaired = true
-
-						Damage.NetworkConvex(Ent, ConvexID)
-					end
-				end
-			end
+			DmgInfo:SetConvexHits({ { ConvexID = ConvexHit.ConvexID, Volume = -(ConvexHit.GeoThick * 0.1 * DmgResult:GetArea() / ACF.InchToCmCu) } })
+			Damage.doPropDamage(Ent, DmgResult, DmgInfo)
+			Healed = true
 		end
 
-		if not Repaired then return end
+		if not Healed then return end
 
 		Sounds.SendSound(self, Spark:format(math.random(3, 5)), nil, nil, 1)
-		TeslaSpark(Trace.HitPos, 1)
+		TeslaSpark(HitPos, 1)
 
 		self:RateLimitedSound(self, Spark:format(math.random(3, 5)))
 	end
@@ -323,7 +320,7 @@ function SWEP:SecondaryAttack()
 		damageInfo:SetDamage(1)
 		damageInfo:SetAttacker(Owner)
 		damageInfo:SetInflictor(self)
-		damageInfo:SetDamageType(DMG_DISSOLVE) -- Applies combine ball death effect
+		damageInfo:SetDamageType(DMG_BULLET)
 		damageInfo:SetDamagePosition(Trace.HitPos)
 		Entity:TakeDamageInfo(damageInfo)
 
@@ -335,47 +332,38 @@ function SWEP:SecondaryAttack()
 
 		Effects.CreateEffect("BloodImpact", EffectTable, true, true)
 	else
-		local DmgResult  = self.DamageResult
-		local DmgInfo    = self.DamageInfo
-		local HitPos     = Trace.HitPos
-		local Dir        = (HitPos - Trace.StartPos):GetNormalized()
-		local ConvexHits = ACF.GetConvexHits(Entity, HitPos, Dir)
+		local MeshData = Entity.ACF_Volumetric_Mesh
+		if not MeshData then return end
 
-		if #ConvexHits == 0 then return end
+		local DmgResult = self.DamageResult
+		local DmgInfo   = self.DamageInfo
+		local HitPos    = Trace.HitPos
+		local Dir       = (HitPos - Trace.StartPos):GetNormalized()
+		local ConvexHit = ACF.GetConvexHit(Entity, HitPos, Dir, true)
 
-		local Thickness = 0
-		local Hits = {}
+		if not ConvexHit then return end
 
-		for _, Hit in ipairs(ConvexHits) do
-			Thickness = Thickness + Hit.GeoThick * Hit.ArmorType.ChemicalMul
-			Hits[#Hits + 1] = { ConvexID = Hit.ConvexID, Volume = Hit.GeoThick * 0.1 * DmgResult:GetArea() / ACF.InchToCmCu } -- (mm)(mm to cm)(cm^2) = cm^3, then cm^3 to in^3
-		end
-
-		DmgResult:SetThickness(Thickness)
-		DmgInfo:SetConvexHits(Hits)
+		DmgResult:SetThickness(ConvexHit.GeoThick * ConvexHit.ArmorType.ChemicalMul)
 
 		DmgInfo:SetAttacker(Owner)
 		DmgInfo:SetInflictor(self)
 		DmgInfo:SetOrigin(Trace.StartPos)
 		DmgInfo:SetHitPos(HitPos)
 		DmgInfo:SetHitGroup(Trace.HitGroup)
+		DmgInfo:SetConvexHits({ { ConvexID = ConvexHit.ConvexID, Volume = ConvexHit.GeoThick * 0.1 * DmgResult:GetArea() / ACF.InchToCmCu } })
 
-		local HitRes = Damage.dealDamage(Entity, DmgResult, self.DamageInfo)
+		Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 
-		if HitRes.Kill then
-			ACF.APKill(Entity, Trace.Normal, 1, DmgInfo)
-		else
-			local EffectTable = {
-				Magnitude = 1,
-				Radius = 1,
-				Scale = 1,
-				Start = HitPos,
-				Origin = HitPos,
-			}
+		local EffectTable = {
+			Magnitude = 1,
+			Radius = 1,
+			Scale = 1,
+			Start = HitPos,
+			Origin = HitPos,
+		}
 
-			Effects.CreateEffect("Sparks", EffectTable, true, true)
+		Effects.CreateEffect("Sparks", EffectTable, true, true)
 
-			self:RateLimitedSound(Entity, Zap:format(math.random(1, 4)))
-		end
+		self:RateLimitedSound(Entity, Zap:format(math.random(1, 4)))
 	end
 end

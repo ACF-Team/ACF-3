@@ -287,21 +287,21 @@ function Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 		if Entity.IsACFEntity then
 			-- ACF entities defer convex damage to the entity's total health rather than depleting the convexes themselves.
 			-- In the future, this should be replaced with a per convex damage system. This is for some backwards compatibility.
-			local EntACF    = Entity.ACF
-			local TotalLoss = 0
+			local EntACF      = Entity.ACF
+			local TotalChange = 0
 
 			for _, Hit in ipairs(ConvexHits) do
 				local Convex = MeshData.Convexes[Hit.ConvexID]
-				TotalLoss    = TotalLoss + (Hit.Volume / Convex.Volume) * DamageCoef
+				TotalChange  = TotalChange + (Hit.Volume / Convex.Volume) * DamageCoef
 			end
 
-			EntACF.Health = math.max(0, EntACF.Health - TotalLoss)
+			EntACF.Health = math.Clamp(EntACF.Health - TotalChange, 0, EntACF.MaxHealth)
 		else
 			for _, Hit in ipairs(ConvexHits) do
-				local Convex     = MeshData.Convexes[Hit.ConvexID]
-				local HealthLoss = (Hit.Volume / Convex.Volume) * DamageCoef
+				local Convex       = MeshData.Convexes[Hit.ConvexID]
+				local HealthChange = (Hit.Volume / Convex.Volume) * DamageCoef
 
-				Convex.Health = math.max(0, Convex.Health - HealthLoss)
+				Convex.Health = math.Clamp(Convex.Health - HealthChange, 0, Convex.MaxHealth)
 
 				Damage.NetworkConvex(Entity, Hit.ConvexID)
 			end
