@@ -14,8 +14,6 @@ TOOL.Information = {
 
 TOOL.ClientConVar["material"] = "RHA"
 
-local Alpha = 50
-
 if CLIENT then
 	language.Add("tool.acfarmormesh.name", "ACF Armor Mesh")
 	language.Add("tool.acfarmormesh.desc", "Applies armor materials to individual convexes of an ACF volumetric mesh")
@@ -27,9 +25,11 @@ if CLIENT then
 	language.Add("tool.acfarmormesh.class_filter_desc", "When enabled, entities of the selected classes will be excluded from recursive armor application.")
 	language.Add("tool.acfarmormesh.filter_acf_gearbox", "acf_gearbox")
 	language.Add("tool.acfarmormesh.filter_acf_fuel", "acf_fuel")
+	language.Add("tool.acfarmormesh.alpha", "Convex Overlay Alpha")
 
 	local SphereSearch  = CreateClientConVar("acfarmormesh_sphere_search", 0, false, true, "", 0, 1)
 	local SphereRadius  = CreateClientConVar("acfarmormesh_sphere_radius", 0, false, true, "", 0, 10000)
+	local AlphaConVar   = CreateClientConVar("acfarmormesh_alpha", 50, false, true, "", 0, 255)
 	local ClassFilter = CreateClientConVar("acfarmormesh_class_filter", "{}", false, true)
 
 	local function GetClassFilter()
@@ -111,6 +111,9 @@ if CLIENT then
 
 		SphereRadiusSlider:SetEnabled(SphereCheck:GetChecked())
 
+		local AlphaSlider = Menu:AddSlider("#tool.acfarmormesh.alpha", 0, 255, 0)
+		AlphaSlider:SetConVar("acfarmormesh_alpha")
+
 		local FilterSection = Menu:AddCollapsible("#tool.acfarmormesh.class_filter", false)
 		FilterSection:AddHelp("#tool.acfarmormesh.class_filter_desc")
 
@@ -161,7 +164,7 @@ if CLIENT then
 		cam.End2D()
 	end
 
-	local White = Color(255, 255, 255, Alpha)
+	local White = Color(255, 255, 255, 50)
 
 	-- Draws every convex of the mesh as a translucent quad: white normally, colored if highlighted.
 	-- Runs every frame instead of using debugoverlay so the visualization doesn't flicker.
@@ -171,6 +174,8 @@ if CLIENT then
 
 		local Verts = MeshData.Verts
 
+		White.a = AlphaConVar:GetInt()
+
 		render.SetColorMaterial()
 
 		for Index, Convex in ipairs(MeshData.Convexes) do
@@ -179,7 +184,7 @@ if CLIENT then
 
 			if IsHighlighted then
 				Col = HSVToColor((Index * 47) % 360, 1, 1)
-				Col.a = 120
+				Col.a = AlphaConVar:GetInt()
 			else
 				Col = White
 			end
@@ -215,7 +220,7 @@ if CLIENT then
 	-- stops being the target.
 	local HiddenEntity
 
-	hook.Add("PostDrawOpaqueRenderables", "ACF_ArmorMesh_Visualizer", function(bDrawingDepth, _, bDrawingSkybox)
+	hook.Add("PostDrawTranslucentRenderables", "ACF_ArmorMesh_Visualizer", function(bDrawingDepth, bDrawingSkybox, _)
 		if bDrawingDepth or bDrawingSkybox then return end
 
 		local _, Weapon, Trace, Entity = GetMeshTraceTarget()
