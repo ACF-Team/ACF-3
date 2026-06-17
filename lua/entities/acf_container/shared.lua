@@ -22,8 +22,9 @@ local ShapeModels = {
 local ShapeCalculations = {
 	-- Cuboid/Box shape
 	Box = function(Size, Wall)
-		local sx, sy, sz = Size.x, Size.y, Size.z
+		local sx, sy, sz     = Size.x, Size.y, Size.z
 		local InteriorVolume = math.max(0, (sx - 2 * Wall) * (sy - 2 * Wall) * (sz - 2 * Wall))
+
 		local Area = 2 * (sx * sy + sx * sz + sy * sz)
 
 		return InteriorVolume, Area
@@ -39,7 +40,7 @@ local ShapeCalculations = {
 		local bi = math.max(0, b - Wall)
 		local ci = math.max(0, c - Wall)
 
-		-- Volume of ellipsoid: (4/3) * π * a * b * c
+		-- Volume of ellipsoid: (4/3) * pi * a * b * c
 		local InteriorVolume = (4 / 3) * math.pi * ai * bi * ci
 
 		-- Surface area approximation using Knud Thomsen's formula
@@ -60,15 +61,15 @@ local ShapeCalculations = {
 		local bi = math.max(0, b - Wall)
 		local hi = math.max(0, h - 2 * Wall)
 
-		-- Volume of elliptical cylinder: π * a * b * h
+		-- Volume of elliptical cylinder: pi * a * b * h
 		local InteriorVolume = math.pi * ai * bi * hi
 
 		-- Surface area approximation using Ramanujan's formula for ellipse perimeter
-		local h_ellipse = math.pow((a - b) / (a + b), 2)
-		local Perimeter = math.pi * (a + b) * (1 + (3 * h_ellipse) / (10 + math.sqrt(4 - 3 * h_ellipse)))
+		local h_ellipse   = math.pow((a - b) / (a + b), 2)
+		local Perimeter   = math.pi * (a + b) * (1 + (3 * h_ellipse) / (10 + math.sqrt(4 - 3 * h_ellipse)))
 		local LateralArea = Perimeter * h
-		local EndArea = math.pi * a * b
-		local Area = LateralArea + 2 * EndArea
+		local EndArea     = math.pi * a * b
+		local Area        = LateralArea + 2 * EndArea
 
 		return InteriorVolume, Area
 	end,
