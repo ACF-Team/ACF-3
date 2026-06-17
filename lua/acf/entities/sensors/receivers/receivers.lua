@@ -1,18 +1,14 @@
-local ACF     = ACF
-local Sensors = ACF.Classes.Sensors
-local Trace   = ACF.trace
+local ACF             = ACF
+local Classes         = ACF.Classes
+local Countermeasures = ACF.Classes.Countermeasures
+local Trace           = ACF.trace
 
-Sensors.Register("WARN-Receiver", {
-	Name		= "Warning Receiver",
-	SpawnModel  = "icon16/error.png",
-	Entity		= "acf_receiver",
-	CreateMenu	= ACF.CreateReceiverMenu,
-	LimitConVar	= {
-		Name = "_acf_receiver",
-		Amount = 4,
-		Text = "Maximum amount of ACF receivers a player can create."
-	},
-})
+Classes.DefineClass("ACF.Sensors.Receiver.Warning", "ACF.Sensors.Receiver", function()
+	CLASS.Name       = "Warning Receiver"
+	CLASS.ID         = "WARN-Receiver"
+	CLASS.Entity     = "acf_receiver"
+	CLASS.SpawnModel = "icon16/error.png"
+end)
 
 do -- Laser Receiver
 	local function ReceiveSource(Receiver)
@@ -43,7 +39,7 @@ do -- Laser Receiver
 		return Lasers
 	end
 
-	local TraceData	  = { start = true, endpos = true, mask = MASK_SOLID }
+	local TraceData = { start = true, endpos = true, mask = MASK_SOLID }
 	local function CheckLOS(Receiver, Source, Start, End)
 		TraceData.start = Start
 		TraceData.endpos = End
@@ -54,32 +50,29 @@ do -- Laser Receiver
 		return not Trace(TraceData).Hit
 	end
 
-	Sensors.RegisterItem("LAS-Receiver", "WARN-Receiver", {
-		Name		= "Laser Warning Receiver",
-		Description	= "An optical unit designed to detect laser sources and give a precise direction.",
-		Model		= "models/bluemetaknight/laser_detector.mdl",
+	Classes.DefineClass("ACF.Sensors.Receiver.Warning.Laser", "ACF.Sensors.Receiver.Warning", function()
+		CLASS.Name        = "Laser Warning Receiver"
+		CLASS.ID          = "LAS-Receiver"
+		CLASS.Description  = "An optical unit designed to detect laser sources and give a precise direction."
+		CLASS.Model       = "models/bluemetaknight/laser_detector.mdl"
 
-		Mass		= 25,
-		Health		= 10,
-		Armor		= 10,
-		Offset 		= Vector(0, 0, 3),
+		CLASS.Mass        = 25
+		CLASS.Health      = 10
+		CLASS.Armor       = 10
+		CLASS.Offset      = Vector(0, 0, 3)
 
-		ThinkDelay	= 0.25,
-		Divisor		= 2.5, -- Divisor (pre-floor) and then multiplier to give a choppy angle
-		Cone		= math.cos(2.5 / 90),
+		CLASS.ThinkDelay  = 0.25
+		CLASS.Divisor     = 2.5 -- Divisor (pre-floor) and then multiplier to give a choppy angle
+		CLASS.Cone        = math.cos(2.5 / 90)
 
-		Detect		= ReceiveSource,
-		CheckLOS	= CheckLOS,
+		CLASS.Detect      = ReceiveSource
+		CLASS.CheckLOS    = CheckLOS
 
-		Preview = {
-			FOV = 145,
-		},
-	})
+		CLASS.Preview     = { FOV = 145 }
+	end)
 end
 
 do -- Radar Receiver
-	local Countermeasures = ACF.Classes.Countermeasures
-
 	-- ACF.ActiveRadars for radars, need to check for direction and range for these
 	local ValidMissileRadars = {
 		["Active Radar"] = true
@@ -120,24 +113,23 @@ do -- Radar Receiver
 		return not Trace(TraceData).Hit
 	end
 
-	Sensors.RegisterItem("RAD-Receiver", "WARN-Receiver", {
-		Name		= "Radar Warning Receiver",
-		Description	= "An unit designed to detect radar sources and give a vague direction.",
-		Model		= "models/jaanus/wiretool/wiretool_siren.mdl",
+	Classes.DefineClass("ACF.Sensors.Receiver.Warning.Radar", "ACF.Sensors.Receiver.Warning", function()
+		CLASS.Name        = "Radar Warning Receiver"
+		CLASS.ID          = "RAD-Receiver"
+		CLASS.Description  = "An unit designed to detect radar sources and give a vague direction."
+		CLASS.Model       = "models/jaanus/wiretool/wiretool_siren.mdl"
 
-		Mass		= 25,
-		Health		= 10,
-		Armor		= 10,
-		Offset 		= Vector(0, 0, 6),
+		CLASS.Mass        = 25
+		CLASS.Health      = 10
+		CLASS.Armor       = 10
+		CLASS.Offset      = Vector(0, 0, 6)
 
-		ThinkDelay	= 0.5,
-		Divisor		= 30, -- Divisor (pre-floor) and then multiplier to give a choppy angle
+		CLASS.ThinkDelay  = 0.5
+		CLASS.Divisor     = 30 -- Divisor (pre-floor) and then multiplier to give a choppy angle
 
-		Detect		= ReceiveSource,
-		CheckLOS	= CheckLOS,
+		CLASS.Detect      = ReceiveSource
+		CLASS.CheckLOS    = CheckLOS
 
-		Preview = {
-			FOV = 145,
-		},
-	})
+		CLASS.Preview     = { FOV = 145 }
+	end)
 end

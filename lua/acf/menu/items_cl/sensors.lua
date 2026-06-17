@@ -1,15 +1,32 @@
-local ACF = ACF
-local Sensors = ACF.Classes.Sensors
+local ACF     = ACF
+local Classes = ACF.Classes
+
+local GroupBases = { "ACF.Sensors.Radar", "ACF.Sensors.Receiver" }
+
+local function GetGroups()
+	local Groups = {}
+
+	for _, BaseName in ipairs(GroupBases) do
+		local Base = Classes.GetTypeByName(BaseName)
+		if not Base then continue end
+
+		for _, Group in pairs(Classes.GetChildren(Base)) do
+			Groups[#Groups + 1] = Group
+		end
+	end
+
+	return Groups
+end
 
 local function CreateMenu(Menu)
-	local Entries = Sensors.GetEntries()
+	local Groups = GetGroups()
 
 	ACF.SetClientData("PrimaryClass", "N/A")
 	ACF.SetClientData("SecondaryClass", "N/A")
 
 	ACF.SetToolMode("acf_menu", "Spawner", "Sensor")
 
-	if not next(Entries) then
+	if not next(Groups) then
 		Menu:AddTitle("#acf.menu.sensors.none_registered")
 		Menu:AddLabel("#acf.menu.sensors.none_registered_desc")
 		return
@@ -35,9 +52,7 @@ local function CreateMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		ACF.SetClientData("SensorClass", Data.ID)
-
-		ACF.LoadSortedList(SensorList, Data.Items, "ID", "Model")
+		ACF.LoadSortedList(SensorList, Classes.GetChildren(Data), "ID", "Model")
 	end
 
 	function SensorList:OnSelect(Index, _, Data)
@@ -46,9 +61,10 @@ local function CreateMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		local ClassData = SensorClass.Selected
+		local Group = SensorClass.Selected
 
-		ACF.SetClientData("Sensor", Data.ID)
+		ACF.SetClientData("PrimaryClass", Group.Entity)
+		ACF.SetClientData("Sensor", { Type = Classes.GetTypeName(Data), Data = {} })
 
 		SensorName:SetText(Data.Name)
 		SensorDesc:SetText(Data.Description or "#acf.menu.no_description_provided")
@@ -59,16 +75,14 @@ local function CreateMenu(Menu)
 		Menu:ClearTemporal(Base)
 		Menu:StartTemporal(Base)
 
-		local CustomMenu = Data.CreateMenu or ClassData.CreateMenu
-
-		if CustomMenu then
-			CustomMenu(Data, Base)
+		if Group.CreateMenu then
+			Group.CreateMenu(Base, Data)
 		end
 
 		Menu:EndTemporal(Base)
 	end
 
-	ACF.LoadSortedList(SensorClass, Entries, "ID", "SpawnModel")
+	ACF.LoadSortedList(SensorClass, Groups, "ID", "SpawnModel")
 end
 
 ACF.AddMenuItem(401, "#acf.menu.entities", "#acf.menu.sensors", "transmit", CreateMenu)

@@ -4,6 +4,7 @@ AddCSLuaFile("shared.lua")
 include("shared.lua")
 
 local ACF = ACF
+local Classes		= ACF.Classes
 local Contraption	= ACF.Contraption
 
 ACF.RegisterClassLink("acf_radar", "acf_rack", function(Radar, Target)
@@ -297,127 +298,38 @@ ACF.AddInputAction("acf_radar", "Active", function(Entity, Value)
 	SetActive(Entity, tobool(Value))
 end)
 
+-- Radars must be turned off before they can be reconfigured.
+hook.Add("ACF_PreUpdateEntity", "ACF Radar Update Guard", function(Class, Entity)
+	if Class ~= "acf_radar" then return end
+	if Entity.Active then return false, "Turn off the radar before updating it!" end
+end)
+
+ACF.RegisterLinkSource("acf_radar", "Weapons")
+
+--===============================================================================================--
+-- Spawning and Updating
 --===============================================================================================--
 
-do -- Spawn and Update functions
-	local Classes  = ACF.Classes
-	local WireIO   = ACF.Utilities.WireIO
-	local Entities = Classes.Entities
-	local Sensors  = Classes.Sensors
-	local Inputs   = { "Active (If set to a non-zero value, attempts to start the radar activation.)" }
+local DefaultType = "ACF.Sensors.Radar.Targeting.SmallDirectional"
 
-	local Outputs = {
-		"Scanning (Returns 1 if the radar is currently scanning.)",
-		"Detected (Returns the amount of targets detected by the radar.)",
-		"ClosestDistance (Returns the distance in inches of the closest target detected by the radar.)",
-		"IDs (Returns a list of IDs from all the detected targets.) [ARRAY]",
-		"Owner (Returns a list of owner names from all the detected targets.) [ARRAY]",
-		"Position (Returns a list of position vectors from all the detected targets.) [ARRAY]",
-		"Velocity (Returns a list of velocity vectors from all the detected targets.) [ARRAY]",
-		"Distance (Returns a list of distances from all the detected targets.) [ARRAY]",
-		"Size (Returns a list of diameters, in mm, of all the detected targets.) [ARRAY]",
-		"Think Delay (Returns the amount of time in seconds between each scan.)",
-		"Entity (The radar itself.) [ENTITY]"
-	}
+do -- Spawning
+	function ENT:ACF_PreSpawn(_, _, _, Data)
+		self.ACF = {}
 
-	local function VerifyData(Data)
-		if not Data.Radar then
-			Data.Radar = Data.Sensor or Data.Id
-		end
+		local Sensor = Data and Data.Sensor
+		local Class  = Classes.GetTypeByName(Sensor and Sensor.Type or DefaultType) or Classes.GetTypeByName(DefaultType)
 
-		local Class = Classes.GetGroup(Sensors, Data.Radar)
-
-		if not Class or Class.Entity ~= "acf_radar" then
-			Data.Radar = "SmallDIR-TGT"
-
-			Class = Classes.GetGroup(Sensors, "SmallDIR-TGT")
-		end
-
-		do -- External verifications
-			if Class.VerifyData then
-				Class.VerifyData(Data, Class)
-			end
-
-			hook.Run("ACF_OnVerifyData", "acf_radar", Data, Class)
-		end
+		Contraption.SetModel(self, Class.Model)
 	end
 
-	local function UpdateRadar(Entity, Data, Class, Radar)
-		local Tick  = engine.TickInterval()
-		local Delay = Radar.ThinkDelay
-
-		Entity.ACF = Entity.ACF or {}
-
-		Contraption.SetModel(Entity, Radar.Model)
-
-		Entity:PhysicsInit(SOLID_VPHYSICS)
-		Entity:SetMoveType(MOVETYPE_VPHYSICS)
-
-		local OriginAttach = Entity:LookupAttachment(Radar.Origin)
-		local AttachData = Entity:GetAttachment(OriginAttach)
-
-		-- Storing all the relevant information on the entity for duping
-		for _, V in ipairs(Entity.DataStore) do
-			Entity[V] = Data[V]
-		end
-
-		Entity.Name         = Radar.Name
-		Entity.ShortName    = Radar.ID
-		Entity.EntType      = Class.Name
-		Entity.ClassType    = Class.ID
-		Entity.ClassData    = Class
-		Entity.SoundPath    = Class.Sound or ACF.DefaultRadarSound
-		Entity.DefaultSound = Entity.SoundPath
-		Entity.ConeDegs     = Radar.ViewCone
-		Entity.Range        = Radar.Range
-		Entity.SwitchDelay  = Radar.SwitchDelay
-		Entity.ThinkDelay   = math.Round(Delay / Tick) * Tick -- Uses a timer, so has to be tied to CurTime/tickrate
-		Entity.GetDetected  = Radar.Detect or Class.Detect
-		Entity.Origin       = AttachData and Entity:WorldToLocal(AttachData.Pos) or Vector()
-
-		WireIO.SetupInputs(Entity, Inputs, Data, Class, Radar)
-		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Radar)
-
-		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
-
-		WireLib.TriggerOutput(Entity, "Think Delay", Entity.ThinkDelay)
-
-		ACF.Activate(Entity, true)
-
-		Contraption.SetMass(Entity, Radar.Mass)
-	end
-
-	function ACF.MakeRadar(Player, Pos, Angle, Data)
-		VerifyData(Data)
-
-		local Class = Classes.GetGroup(Sensors, Data.Radar)
-		local RadarData = Class.Lookup[Data.Radar]
-		local Limit = Class.LimitConVar.Name
-
-		if not Player:CheckLimit(Limit) then return false end
-
-		local CanSpawn = hook.Run("ACF_PreSpawnEntity", "acf_radar", Player, Data, Class, RadarData)
-		if CanSpawn == false then return false end
-
-		local Radar = ents.Create("acf_radar")
-
-		if not IsValid(Radar) then return end
-
-		Radar:SetAngles(Angle)
-		Radar:SetPos(Pos)
-		Radar:Spawn()
-
-		Player:AddCleanup("acf_radar", Radar)
-		Player:AddCount(Limit, Radar)
-
-		Radar.Active      = false
-		Radar.Scanning    = false
-		Radar.TargetCount = 0
-		Radar.Damage	  = 0
-		Radar.Weapons     = {}
-		Radar.Targets     = {}
-		Radar.DataStore   = Entities.GetArguments("acf_radar")
-		Radar.TargetInfo  = {
+	function ENT:ACF_OnSpawn()
+		self.Active      = false
+		self.Scanning    = false
+		self.TargetCount = 0
+		self.Damage      = 0
+		self.Weapons     = {}
+		self.Targets     = {}
+		self.TargetInfo  = {
 			ID = {},
 			Owner = {},
 			Position = {},
@@ -426,63 +338,57 @@ do -- Spawn and Update functions
 			Size = {}
 		}
 
-		UpdateRadar(Radar, Data, Class, RadarData)
+		TimerCreate("ACF Radar Clock " .. self:EntIndex(), 3, 0, function()
+			if not IsValid(self) then return end
 
-		if Class.OnSpawn then
-			Class.OnSpawn(Radar, Data, Class, RadarData)
-		end
-
-		hook.Run("ACF_OnSpawnEntity", "acf_radar", Radar, Data, Class, RadarData)
-
-		duplicator.ClearEntityModifier(Radar, "mass")
-
-		TimerCreate("ACF Radar Clock " .. Radar:EntIndex(), 3, 0, function()
-			if not IsValid(Radar) then return end
-
-			CheckDistantLinks(Radar, "Weapons")
+			CheckDistantLinks(self, "Weapons")
 		end)
-
-		-- Radars should be active by default
-		Radar:TriggerInput("Active", 1)
-
-		return Radar
 	end
 
-	Entities.LegacyRegister("acf_missileradar", ACF.MakeRadar, "Radar") -- Backwards compatibility
-	Entities.LegacyRegister("acf_radar", ACF.MakeRadar, "Radar")
+	function ENT:ACF_PostSpawn()
+		WireLib.TriggerOutput(self, "Entity", self)
 
-	ACF.RegisterLinkSource("acf_radar", "Weapons")
+		-- Radars should be active by default
+		self:TriggerInput("Active", 1)
+	end
+end
 
-	------------------- Updating ---------------------
+do -- Updating
+	function ENT:ACF_PostUpdateEntityData()
+		local Sensor = self:ACF_GetUserVar("Sensor")
+		local Class  = Sensor:GetType()
+		local Group  = Classes.GetBaseClass(Class)
+		local Tick   = engine.TickInterval()
+		local Delay  = Sensor.ThinkDelay
 
-	function ENT:Update(Data)
-		if self.Active then return false, "Turn off the radar before updating it!" end
+		Contraption.SetModel(self, Sensor.Model)
 
-		VerifyData(Data)
+		self:PhysicsInit(SOLID_VPHYSICS)
+		self:SetMoveType(MOVETYPE_VPHYSICS)
 
-		local Class    = Classes.GetGroup(Sensors, Data.Radar)
-		local Radar    = Class.Lookup[Data.Radar]
-		local OldClass = self.ClassData
+		local OriginAttach = self:LookupAttachment(Sensor.Origin)
+		local AttachData   = self:GetAttachment(OriginAttach)
 
-		if OldClass.OnLast then
-			OldClass.OnLast(self, OldClass)
-		end
+		self.Name         = Sensor.Name
+		self.ShortName    = Sensor.ID
+		self.EntType      = Group.Name
+		self.ClassType    = Group.ID
+		self.SoundPath    = Sensor.Sound or ACF.DefaultRadarSound
+		self.DefaultSound = self.SoundPath
+		self.ConeDegs     = Sensor.ViewCone
+		self.Range        = Sensor.Range
+		self.SwitchDelay  = Sensor.SwitchDelay
+		self.ThinkDelay   = math.Round(Delay / Tick) * Tick -- Uses a timer, so has to be tied to CurTime/tickrate
+		self.GetDetected  = Sensor.Detect
+		self.Origin       = AttachData and self:WorldToLocal(AttachData.Pos) or Vector()
 
-		hook.Run("ACF_OnEntityLast", "acf_radar", self, OldClass)
+		self:SetNWString("WireName", "ACF " .. self.Name)
 
-		ACF.SaveEntity(self)
+		WireLib.TriggerOutput(self, "Think Delay", self.ThinkDelay)
 
-		UpdateRadar(self, Data, Class, Radar)
+		-- ACF.Activate(self, true) is invoked automatically by ACF_UpdateEntityData after this.
 
-		ACF.RestoreEntity(self)
-
-		if Class.OnUpdate then
-			Class.OnUpdate(self, Data, Class, Radar)
-		end
-
-		hook.Run("ACF_OnUpdateEntity", "acf_radar", self, Data, Class, Radar)
-
-		return true, "Radar updated successfully!"
+		Contraption.SetMass(self, Sensor.Mass)
 	end
 end
 
@@ -510,7 +416,7 @@ function ENT:GetCost()
 
 	if selftbl.ClassType == "AM-Radar" then Scalar = 0.5 end
 
-	if selftbl.Range then	-- 
+	if selftbl.Range then	--
 		Cost = 10 * (selftbl.Range / 4096)
 	else -- ConeDegs
 		Cost = selftbl.ConeDegs
@@ -551,15 +457,7 @@ function ENT:ACF_UpdateOverlayState(State)
 end
 
 function ENT:OnRemove()
-	local OldClass = self.ClassData
-
-	if OldClass.OnLast then
-		OldClass.OnLast(self, OldClass)
-	end
-
-	hook.Run("ACF_OnEntityLast", "acf_radar", self, OldClass)
-
-	for Weapon in pairs(self.Weapons) do
+	for Weapon in pairs(self.Weapons or {}) do
 		self:Unlink(Weapon)
 	end
 
@@ -568,8 +466,6 @@ function ENT:OnRemove()
 	end
 
 	timer.Remove("ACF Radar Clock " .. self:EntIndex())
-
-	WireLib.Remove(self)
 end
 
 do	-- Overlay/networking

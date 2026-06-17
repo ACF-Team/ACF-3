@@ -1,10 +1,10 @@
-
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
 local ACF = ACF
+local Classes		= ACF.Classes
 local Contraption	= ACF.Contraption
 
 --===============================================================================================--
@@ -16,7 +16,6 @@ local Sounds      = ACF.Utilities.Sounds
 local TimerExists = timer.Exists
 local TimerCreate = timer.Create
 local TimerRemove = timer.Remove
-local hook        = hook
 
 local function ResetOutputs(Entity)
 	if not Entity.Detected then return end
@@ -92,157 +91,67 @@ local function SetActive(Entity, Bool)
 end
 
 --===============================================================================================--
+-- Spawning and Updating
+--===============================================================================================--
 
-do -- Spawn and Update functions
-	local Classes  = ACF.Classes
-	local WireIO   = ACF.Utilities.WireIO
-	local Entities = Classes.Entities
-	local Sensors  = Classes.Sensors
+local DefaultType = "ACF.Sensors.Receiver.Warning.Laser"
 
-	local Outputs = {
-		"Detected (Returns 1 if something is detected.)",
-		"Direction (The direction to a source.) [VECTOR]",
-		"Angle (The direction to a source.) [ANGLE]",
-		"Entity (The receiver itself.) [ENTITY]"
-	}
+do -- Spawning
+	function ENT:ACF_PreSpawn(_, _, _, Data)
+		self.ACF = {}
 
-	local function VerifyData(Data)
-		if not Data.Receiver then
-			Data.Receiver = Data.Sensor or Data.Id
-		end
+		local Sensor = Data and Data.Sensor
+		local Class  = Classes.GetTypeByName(Sensor and Sensor.Type or DefaultType) or Classes.GetTypeByName(DefaultType)
 
-		local Class = Classes.GetGroup(Sensors, Data.Receiver)
-
-		if not Class or Class.Entity ~= "acf_receiver" then
-			Data.Receiver = "LAS-Receiver"
-
-			Class = Classes.GetGroup(Sensors, "LAS-Receiver")
-		end
-
-		do -- External verifications
-			if Class.VerifyData then
-				Class.VerifyData(Data, Class)
-			end
-
-			hook.Run("ACF_OnVerifyData", "acf_receiver", Data, Class)
-		end
+		Contraption.SetModel(self, Class.Model)
 	end
 
-	local function UpdateReceiver(Entity, Data, Class, Receiver)
-		local Tick  = engine.TickInterval()
-		local Delay = Receiver.ThinkDelay
-
-		Entity.ACF = Entity.ACF or {}
-
-		Contraption.SetModel(Entity, Receiver.Model)
-
-		Entity:PhysicsInit(SOLID_VPHYSICS)
-		Entity:SetMoveType(MOVETYPE_VPHYSICS)
-
-		-- Storing all the relevant information on the entity for duping
-		for _, V in ipairs(Entity.DataStore) do
-			Entity[V] = Data[V]
-		end
-
-		Entity.Name         = Receiver.Name
-		Entity.ShortName    = Receiver.Name
-		Entity.EntType      = Class.Name
-		Entity.ClassType    = Class.ID
-		Entity.ClassData    = Class
-		Entity.SoundPath    = Class.Sound or ACF.DefaultRadarSound -- customizable sound?
-		Entity.DefaultSound = Entity.SoundPath
-		Entity.ThinkDelay   = math.Round(Delay / Tick) * Tick -- Uses a timer, so has to be tied to CurTime/tickrate
-		Entity.GetSources	= Receiver.Detect or Class.Detect
-		Entity.CheckLOS		= Receiver.CheckLOS
-		Entity.Origin       = Receiver.Offset
-		Entity.TimerID 		= "ACF Receiver Clock " .. Entity:EntIndex()
-		Entity.Divisor		= Receiver.Divisor
-		Entity.Cone			= Receiver.Cone
-
-		Entity.ForcedHealth	= Receiver.Health
-		Entity.ForcedArmor	= Receiver.Armor
-
-		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Receiver)
-
-		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
-
-		WireLib.TriggerOutput(Entity, "Think Delay", Entity.ThinkDelay)
-
-		ACF.Activate(Entity, true)
-
-		Contraption.SetMass(Entity, Receiver.Mass)
+	function ENT:ACF_OnSpawn()
+		self.Damage = 0
 	end
 
-	function ACF.MakeReceiver(Player, Pos, Ang, Data)
-		VerifyData(Data)
+	function ENT:ACF_PostSpawn()
+		WireLib.TriggerOutput(self, "Entity", self)
 
-		local Class = Classes.GetGroup(Sensors, Data.Receiver)
-		local ReceiverData = Class.Lookup[Data.Receiver]
-		local Limit = Class.LimitConVar.Name
-
-		if not Player:CheckLimit(Limit) then return false end
-
-		local CanSpawn = hook.Run("ACF_PreSpawnEntity", "acf_receiver", Player, Data, Class, ReceiverData)
-		if CanSpawn == false then return false end
-
-		local Receiver = ents.Create("acf_receiver")
-
-		if not IsValid(Receiver) then return end
-
-		Receiver:SetAngles(Ang)
-		Receiver:SetPos(Pos)
-		Receiver:Spawn()
-
-		Player:AddCleanup("acf_receiver", Receiver)
-		Player:AddCount(Limit, Receiver)
-
-		Receiver.DataStore   = Entities.GetArguments("acf_receiver")
-		Receiver.Damage		 = 0
-
-		UpdateReceiver(Receiver, Data, Class, ReceiverData)
-
-		if Class.OnSpawn then
-			Class.OnSpawn(Receiver, Data, Class, ReceiverData)
-		end
-
-		hook.Run("ACF_OnSpawnEntity", "acf_receiver", Receiver, Data, Class, ReceiverData)
-
-		duplicator.ClearEntityModifier(Receiver, "mass")
-
-		SetActive(Receiver, true)
-
-		return Receiver
+		SetActive(self, true)
 	end
+end
 
-	Entities.LegacyRegister("acf_receiver", ACF.MakeReceiver, "Receiver")
-	------------------- Updating ---------------------
+do -- Updating
+	function ENT:ACF_PostUpdateEntityData()
+		local Sensor = self:ACF_GetUserVar("Sensor")
+		local Class  = Sensor:GetType()
+		local Group  = Classes.GetBaseClass(Class)
+		local Tick   = engine.TickInterval()
+		local Delay  = Sensor.ThinkDelay
 
-	function ENT:Update(Data)
-		VerifyData(Data)
+		Contraption.SetModel(self, Sensor.Model)
 
-		local Class    = Classes.GetGroup(Sensors, Data.Receiver)
-		local Receiver = Class.Lookup[Data.Receiver]
-		local OldClass = self.ClassData
+		self:PhysicsInit(SOLID_VPHYSICS)
+		self:SetMoveType(MOVETYPE_VPHYSICS)
 
-		if OldClass.OnLast then
-			OldClass.OnLast(self, OldClass)
-		end
+		self.Name         = Sensor.Name
+		self.ShortName    = Sensor.Name
+		self.EntType      = Group.Name
+		self.ClassType    = Group.ID
+		self.SoundPath    = Sensor.Sound or ACF.DefaultRadarSound -- customizable sound?
+		self.DefaultSound = self.SoundPath
+		self.ThinkDelay   = math.Round(Delay / Tick) * Tick -- Uses a timer, so has to be tied to CurTime/tickrate
+		self.GetSources   = Sensor.Detect
+		self.CheckLOS     = Sensor.CheckLOS
+		self.Origin       = Sensor.Offset
+		self.TimerID      = "ACF Receiver Clock " .. self:EntIndex()
+		self.Divisor      = Sensor.Divisor
+		self.Cone         = Sensor.Cone
 
-		hook.Run("ACF_OnEntityLast", "acf_receiver", self, OldClass)
+		self.ForcedHealth = Sensor.Health
+		self.ForcedArmor  = Sensor.Armor
 
-		ACF.SaveEntity(self)
+		self:SetNWString("WireName", "ACF " .. self.Name)
 
-		UpdateReceiver(self, Data, Class, Receiver)
+		-- ACF.Activate(self, true) is invoked automatically by ACF_UpdateEntityData after this.
 
-		ACF.RestoreEntity(self)
-
-		if Class.OnUpdate then
-			Class.OnUpdate(self, Data, Class, Receiver)
-		end
-
-		hook.Run("ACF_OnUpdateEntity", "acf_receiver", self, Data, Class, Receiver)
-
-		return true, "Receiver updated successfully!"
+		Contraption.SetMass(self, Sensor.Mass)
 	end
 end
 
@@ -303,15 +212,5 @@ function ENT:ACF_UpdateOverlayState(State)
 end
 
 function ENT:OnRemove()
-	local OldClass = self.ClassData
-
-	if OldClass.OnLast then
-		OldClass.OnLast(self, OldClass)
-	end
-
-	hook.Run("ACF_OnEntityLast", "acf_receiver", self, OldClass)
-
 	TimerRemove(self.TimerID)
-
-	WireLib.Remove(self)
 end
