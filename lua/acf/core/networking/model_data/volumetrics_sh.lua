@@ -118,11 +118,15 @@ do
         Entity.ACF_Volumetric_Mesh = MeshData
 
         for ConvexID in ipairs(MeshData.Convexes) do
-            -- If painting is allowed for this entity (not ACF_PreventArmoring) and this convex has a saved player-painted material, use that.
-            -- Otherwise use the entity's fixed ConvexMaterial (e.g. crew = Flesh, engines = Aluminum), if set.
-            -- Otherwise default to RHA for ACF entities, or Default for generic props.
-            local Override = not Entity.ACF_PreventArmoring and Entity.ACF_Volumetric_Materials and Entity.ACF_Volumetric_Materials[ConvexID]
-            local Material  = Override or Entity.ConvexMaterial or (Entity.IsACFEntity and "RHA" or "Default")
+            -- Priority: per-convex painted material > global material override > fixed ConvexMaterial > entity-type default.
+            -- ACF_Volumetric_Material_Override covers entities converted from the old uniform-RHA system where the
+            -- convex count may change after initialization (e.g. hollow cube primitives start solid, reinitialize hollow).
+            local Material
+            if not Entity.ACF_PreventArmoring then
+                Material = (Entity.ACF_Volumetric_Materials and Entity.ACF_Volumetric_Materials[ConvexID])
+                or Entity.ACF_Volumetric_Material_Override
+            end
+            Material = Material or Entity.ConvexMaterial or (Entity.IsACFEntity and "RHA" or "Default")
             ACF.SetConvexMaterial(Entity, ConvexID, Material)
         end
     end

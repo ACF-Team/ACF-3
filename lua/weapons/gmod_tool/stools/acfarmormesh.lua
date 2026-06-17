@@ -306,27 +306,20 @@ elseif SERVER then
 	end)
 
 	-- Backwards compatibility: entities duplicated with the old armor system's "ACF_Armor" entity modifier
-	-- were always RHA. Convert them to the new per-convex material system, then clear the deprecated
-	-- modifier so this conversion only happens once.
+	-- were always uniformly RHA. Set ACF_Volumetric_Material_Override so ProcessConvexes applies RHA to all
+	-- convexes regardless of count (hollow cube primitives reinitialize from 1 convex to 6, so per-convex
+	-- data set at this point would be incomplete). The override is runtime-only; if the entity is re-duplicated
+	-- it goes through the normal pipeline with whatever ACF_Volumetric_Materials is set at that time.
 	duplicator.RegisterEntityModifier("ACF_Armor", function(_, Entity, Data)
 		if not Data then return end
 		if Entity.ACF_Volumetric_Materials then return end
+		if Entity.ACF_Volumetric_Material_Override then return end
 
 		duplicator.ClearEntityModifier(Entity, "ACF_Armor")
 
 		if Entity.ACF_PreventArmoring then return end
 
-		local MeshData = Entity.ACF_Volumetric_Mesh
-		if not MeshData then return end
-
-		local Materials = {}
-		for ConvexID in ipairs(MeshData.Convexes) do
-			Materials[ConvexID] = "RHA"
-			ACF.SetConvexMaterial(Entity, ConvexID, "RHA")
-		end
-
-		Entity.ACF_Volumetric_Materials = Materials
-		SaveConvexMaterials(Entity)
+		Entity.ACF_Volumetric_Material_Override = "RHA"
 	end)
 
 	local function GetFilteredClasses(Player)
