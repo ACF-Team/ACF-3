@@ -63,8 +63,8 @@ function ACF.KillChildProps(Entity, BlastPos, Energy, DoNotExplode)
 			Children[Ent] = nil -- ignoring stuff like holos, wiremod components, etc.
 		else
 			Ent:SetParent()
-
-			if Ent.IsExplosive and not Ent.Exploding and not DoNotExplode then
+			local ACF_IsExplosive = Ent.ACF_IsExplosive
+			if ACF_IsExplosive and ACF_IsExplosive(Ent) and not Ent.Exploding and not DoNotExplode then
 				Explosives[Ent] = true
 				Children[Ent] 	= nil
 			else

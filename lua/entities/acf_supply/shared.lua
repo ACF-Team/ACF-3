@@ -2,12 +2,7 @@ DEFINE_BASECLASS("acf_container")
 
 ENT.ACF_Limit = 4
 
-ACF.AutoRegisterV2(function()
-	MENU_FIELD("String", "SupplyShape", {Default = "Box"})
-	MENU_FIELD("Number", "SupplySizeX", {Min = ACF.ContainerMinSize or 6, Max = ACF.ContainerMaxSize or 96, Default = 24, Decimals = 0})
-	MENU_FIELD("Number", "SupplySizeY", {Min = ACF.ContainerMinSize or 6, Max = ACF.ContainerMaxSize or 96, Default = 24, Decimals = 0})
-	MENU_FIELD("Number", "SupplySizeZ", {Min = ACF.ContainerMinSize or 6, Max = ACF.ContainerMaxSize or 96, Default = 24, Decimals = 0})
-end, "Supply Crate", "Supply Crates")
+ACF.AutoRegisterV2(function() end, "Supply Crate")
 
 ENT.ACF_StaticWireInputs = {
 	"Active (If set to a non-zero value, it will allow this unit to supply mass.)",

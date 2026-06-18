@@ -84,9 +84,9 @@ end
 
 function ENT:ACF_Activate(Recalc)
 	local Wall  = ACF.ContainerArmor * ACF.MmToInch
-	local Shape = self.Shape or "Box"
-	local ShapeCalc = ACF.ContainerShapes[Shape]
-	local Size  = self.Size or (self.GetOriginalSize and self:GetOriginalSize())
+	local Shape = self:ACF_GetUserVar("Shape")
+	local ShapeCalc = Shape.ShapeCalculation
+	local Size  = self:ACF_GetUserVar("Size") or (self.GetOriginalSize and self:GetOriginalSize())
 
 	if not ShapeCalc or not Size then return end
 
@@ -111,36 +111,20 @@ function ENT:ACF_Activate(Recalc)
 	self.ACF.Type      = "Prop"
 end
 
-function ENT:OnResized(Size)
+function ENT:ACF_OnResized(Size)
 	local Wall = ACF.ContainerArmor * ACF.MmToInch
-	local Shape = self.Shape or "Box"
-	local _, SurfaceArea = ACF.ContainerShapes[Shape](Size, Wall)
+	local Shape = self:ACF_GetUserVar("Shape")
+	local _, SurfaceArea = Shape.ShapeCalculation(Size, Wall)
 
 	self.EmptyMass = (SurfaceArea * Wall) * ACF.InchToCmCu * ACF.SteelDensity
-end
-
-function ENT:VerifySize(Data, SizeKeyX, SizeKeyY, SizeKeyZ, DefaultSize)
-	-- Size already provided
-	if isvector(Data.Size) then return Data.Size end
-
-	-- Build size from individual components
-	local Min = ACF.ContainerMinSize or 6
-	local Max = ACF.ContainerMaxSize or 96
-	local Def = DefaultSize or (Min + Max) / 2
-
-	local X = Clamp(ACF.CheckNumber(Data[SizeKeyX], Def), Min, Max)
-	local Y = Clamp(ACF.CheckNumber(Data[SizeKeyY], Def), Min, Max)
-	local Z = Clamp(ACF.CheckNumber(Data[SizeKeyZ], Def), Min, Max)
-
-	return Vector(X, Y, Z)
 end
 
 -- Calculate volume, capacity, and empty mass from size
 -- Returns: Volume (cu in), Capacity (liters), EmptyMass (kg)
 function ENT:CalcVolumeAndCapacity(Size)
 	local Wall  = ACF.ContainerArmor * ACF.MmToInch
-	local Shape = self.Shape or "Box"
-	local ShapeCalc = ACF.ContainerShapes[Shape]
+	local Shape = self:ACF_GetUserVar("Shape")
+	local ShapeCalc = Shape.ShapeCalculation
 	local Volume, Area = ShapeCalc(Size, Wall)
 
 	local Capacity  = Volume * ACF.gCmToKgIn

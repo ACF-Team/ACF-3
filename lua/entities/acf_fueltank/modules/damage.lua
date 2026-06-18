@@ -8,12 +8,16 @@ local HookRun = hook.Run
 
 --- Handles damage to fuel tanks
 --- Determines if tank should explode or leak based on damage
+
+function ENT:ACF_IsExplosive()
+	return self:ACF_GetUserVar("FuelType").IsExplosive or self:ACF_GetUserVar("FuelTankType").IsExplosive
+end
+
 function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	local HitRes    = Damage.doPropDamage(self, DmgResult, DmgInfo)
 	local Inflictor = DmgInfo:GetInflictor()
-	local NoExplode = self.FuelType == "Diesel"
 
-	if self.Exploding or NoExplode or not self.IsExplosive then return HitRes end
+	if self.Exploding or not self:ACF_IsExplosive() then return HitRes end
 
 	local Attacker  = DmgInfo:GetAttacker()
 
@@ -104,6 +108,3 @@ function ENT:Think()
 	-- Stop thinking when not leaking
 	return false
 end
-
-
-

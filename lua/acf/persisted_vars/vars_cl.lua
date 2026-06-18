@@ -11,17 +11,5 @@ ACF.PersistClientData("CrateProjectilesX", 3)
 ACF.PersistClientData("CrateProjectilesY", 3)
 ACF.PersistClientData("CrateProjectilesZ", 3)
 
--- Fuel tank size and shape
-ACF.PersistClientData("FuelSizeX", 24)
-ACF.PersistClientData("FuelSizeY", 24)
-ACF.PersistClientData("FuelSizeZ", 24)
-ACF.PersistClientData("FuelShape", "Box")
-
--- Supply crate size and shape
-ACF.PersistClientData("SupplySizeX", 24)
-ACF.PersistClientData("SupplySizeY", 24)
-ACF.PersistClientData("SupplySizeZ", 24)
-ACF.PersistClientData("SupplyShape", "Box")
-
 -- Gearbox
 ACF.PersistClientData("GearboxLegacyRatio", false)

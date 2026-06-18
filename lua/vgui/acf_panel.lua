@@ -423,6 +423,38 @@ function PANEL:AddSlider(Title, Min, Max, Decimals)
 	return Panel
 end
 
+function PANEL:AddSizeSliders(Key, Min, Max, Default, OnChange, Labels)
+	local Stored  = ACF.GetClientData(Key)
+	local Current = isvector(Stored) and Vector(Stored:Unpack()) or Vector(Default:Unpack())
+
+	ACF.SetClientData(Key, Current, true)
+
+	Labels = Labels or {"Length", "Width", "Height"}
+
+	local Axes    = {"x", "y", "z"}
+	local Sliders = {}
+
+	for I = 1, 3 do
+		local Axis   = Axes[I]
+		local Slider = self:AddSlider(Labels[I], Min, Max, 0)
+
+		Slider:SetValue(Current[Axis])
+
+		Slider.OnValueChanged = function(_, Value)
+			local Rounded = math.Round(Value)
+
+			Current[Axis] = Rounded
+			ACF.SetClientData(Key, Current, true)
+
+			if OnChange then OnChange(Current) end
+		end
+
+		Sliders[I] = Slider
+	end
+
+	return Sliders[1], Sliders[2], Sliders[3], Current
+end
+
 function PANEL:AddListView()
 	local Panel = self:AddPanel("DListView")
 	Panel:SetMultiSelect(false)
@@ -962,7 +994,10 @@ function PANEL:AddModelPreview(Model, Rotate, GhostEntClass)
 
 		self.ModelScale = Scale
 
+		-- BoxSize is the model's bounding box, only set once a model is loaded. Bail if a scale
+		-- comes in before the preview has a model (e.g. a slider moves before UpdateModel runs).
 		local BoxSize = self.BoxSize
+		if not BoxSize then return end
 		local BaseCamDistance = 1.2 * math.max(BoxSize.x, math.max(BoxSize.y, BoxSize.z))
 		self.CamDistance = BaseCamDistance + math.max(Scale.x, math.max(Scale.y, Scale.z))
 

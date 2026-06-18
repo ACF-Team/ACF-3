@@ -21,7 +21,7 @@ do
 	ACF.RegisterClassLink("acf_engine", "acf_fueltank", function(Engine, Target)
 		if Engine.FuelTanks[Target] then return false, "This engine is already linked to this fuel tank!" end
 		if Target.Engines[Engine] then return false, "This engine is already linked to this fuel tank!" end
-		if not Engine.FuelTypes[Target.FuelType] then return false, "Cannot link because fuel type is incompatible." end
+		if not Engine.FuelTypes[Target:ACF_GetUserVar("FuelType"):GetType()] then return false, "Cannot link because fuel type is incompatible." end
 		if Target.NoLinks then return false, "This fuel tank doesn't allow linking." end
 		if Engine:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This fuel tank is too far away from this engine." end
 
@@ -327,7 +327,7 @@ do -- Spawn and Update functions
 		Entity.Inertia          = Engine.FlywheelMass * math.pi ^ 2
 		Entity.IsElectric       = Engine.IsElectric
 		Entity.IsTrans          = Engine.IsTrans -- driveshaft outputs to the side
-		Entity.FuelTypes        = Engine.Fuel or { Petrol = true }
+		Entity.FuelTypes        = Engine.Fuel or { ["ACF.FuelTypes.Petrol"] = true }
 		Entity.FuelType         = next(Engine.Fuel)
 		Entity.EngineType       = Type.ID
 		Entity.Efficiency       = Type.Efficiency
