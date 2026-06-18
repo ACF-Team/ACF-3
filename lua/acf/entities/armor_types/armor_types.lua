@@ -213,7 +213,7 @@ function Armor:OnLoaded()
     self.Density     = 10000 -- * https://below-the-turret-ring.blogspot.com/2016/04/explosive-reactive-armor-some-history.html
     self.CostMul     = 47.1
     self.HealthMul   = 600
-    self.KineticMul  = 0.6
+    self.KineticMul  = 1.33
     self.ChemicalMul = 2.0
     self.SpallMul    = 0.2
 
