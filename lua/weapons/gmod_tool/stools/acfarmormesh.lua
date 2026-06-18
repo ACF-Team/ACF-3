@@ -348,11 +348,11 @@ elseif SERVER then
 		local Messages   = ACF.Utilities.Messages
 		local ArmorTypes = ACF.Classes.ArmorTypes
 		local Filter     = GetFilteredClasses(Player)
-		local Layers    = {}
-		local Dir       = (InitialTrace.HitPos - InitialTrace.StartPos):GetNormalized()
-		local Skipped   = {}  -- entities fully traversed, never hit again
-		local Processed = {}  -- [Entity] = { [ConvexID] = true }
-		local Current   = InitialTrace
+		local Layers     = {}
+		local Dir        = (InitialTrace.HitPos - InitialTrace.StartPos):GetNormalized()
+		local Skipped    = {}  -- entities fully traversed, never hit again
+		local Processed  = {}  -- [Entity] = { [ConvexID] = true }
+		local Current    = InitialTrace
 
 		for _ = 1, 30 do
 			local Entity = Current.Entity
@@ -370,50 +370,41 @@ elseif SERVER then
 
 			if not Entity.ACF_Volumetric_Mesh then break end
 
-			local ConvexHit = ACF.GetConvexHit(Entity, Current.HitPos, Dir, true)
-			local NewStart
-
-			if ConvexHit then
-				local EntProcessed = Processed[Entity]
-
-				if EntProcessed and EntProcessed[ConvexHit.ConvexID] then
-					-- Ray has looped back to an already-recorded convex; entity is done.
-					Skipped[Entity] = true
-					NewStart = Current.HitPos + Dir * 0.5
-				else
-					if not EntProcessed then
-						EntProcessed = {}
-						Processed[Entity] = EntProcessed
-					end
-					EntProcessed[ConvexHit.ConvexID] = true
-
-					local Convex    = Entity.ACF_Volumetric_Mesh.Convexes[ConvexHit.ConvexID]
-					local ArmorType = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("Default")
-
-					table.insert(Layers, {
-						Terminal = false,
-						Entity   = Entity,
-						Material = Convex.Material,
-						GeoThick = ConvexHit.GeoThick,
-						EffKE    = ConvexHit.GeoThick * ArmorType.KineticMul,
-						EffCE    = ConvexHit.GeoThick * ArmorType.ChemicalMul,
-					})
-
-					-- Advance past this convex's exit face.
-					-- ACF uses 1 Source unit = 1 inch = 25.4 mm, so GeoThick (mm) / 25.4 = inches.
-					NewStart = Current.HitPos + Dir * (ConvexHit.GeoThick / 25.4 + 0.5)
-				end
-			else
-				Skipped[Entity] = true
-				NewStart = Current.HitPos + Dir * 0.5
+			local EntProcessed = Processed[Entity]
+			if not EntProcessed then
+				EntProcessed = {}
+				Processed[Entity] = EntProcessed
 			end
 
-			Current = util.TraceLine({
-				start  = NewStart,
-				endpos = NewStart + Dir * 32768,
-				filter = function(Ent) return not Skipped[Ent] end,
-				mask   = MASK_SOLID,
-			})
+			-- Pass the accumulated filter so each call returns the next unprocessed convex
+			-- without advancing the ray start between convexes of the same entity.
+			local ConvexHit = ACF.GetConvexHit(Entity, Current.HitPos, Dir, true, EntProcessed)
+
+			if ConvexHit then
+				EntProcessed[ConvexHit.ConvexID] = true
+
+				local Convex    = Entity.ACF_Volumetric_Mesh.Convexes[ConvexHit.ConvexID]
+				local ArmorType = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("Default")
+
+				table.insert(Layers, {
+					Terminal = false,
+					Entity   = Entity,
+					Material = Convex.Material,
+					GeoThick = ConvexHit.GeoThick,
+					EffKE    = ConvexHit.GeoThick * ArmorType.KineticMul,
+					EffCE    = ConvexHit.GeoThick * ArmorType.ChemicalMul,
+				})
+				-- Don't advance Current; loop again to find the next convex in this entity.
+			else
+				-- Entity is exhausted; skip it and trace to the next entity from the same position.
+				Skipped[Entity] = true
+				Current = util.TraceLine({
+					start  = Current.HitPos,
+					endpos = Current.HitPos + Dir * 32768,
+					filter = function(Ent) return not Skipped[Ent] end,
+					mask   = MASK_SOLID,
+				})
+			end
 		end
 
 		if #Layers == 0 then
