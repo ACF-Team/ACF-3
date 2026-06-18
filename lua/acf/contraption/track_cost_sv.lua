@@ -233,6 +233,7 @@ do	-- Actual registration for known things
 		CostSystem.RegisterClassBulk("primitive_ladder", "armor")
 		CostSystem.RegisterClassBulk("primitive_rail_slider", "armor")
 		CostSystem.RegisterClassBulk("primitive_airfoil", "armor")
+		CostSystem.RegisterClassBulk("starfall_prop", "armor")
 		CostSystem.RegisterClassBulk("acf_baseplate", "armor")
 	end
 
