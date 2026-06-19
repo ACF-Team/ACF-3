@@ -10,8 +10,10 @@ local Materials = {
 		["$basetexture"] = "damaged/damaged3"
 	}),
 	CreateMaterial("ACF_Damaged4", "VertexLitGeneric", {
-		["$basetexture"] = "damaged/damaged4"
-	})
+		["$basetexture"] = "models/props_wasteland/metal_tram001a",
+		["$color2"]     = "255 255 255",
+		["$blendmodulatortexture"] = "damaged/damaged4"
+	}),
 }
 
 local IsValid            = IsValid
@@ -64,6 +66,7 @@ local function RenderDamage(bDrawingDepth, _, isDraw3DSkybox)
 
 		local Verts = MeshData.Verts
 
+		render.SetColorMaterial() -- Stops flashing
 		for ConvexID, Data in pairs(Convexes) do
 			local Convex = MeshData.Convexes[ConvexID]
 			if not Convex then continue end
