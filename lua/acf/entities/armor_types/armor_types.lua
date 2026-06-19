@@ -162,25 +162,12 @@ function Armor:OnLoaded()
     self.SpallMul    = 0.3
 end
 
--- Tungsten
-local Armor = Types.Register("Tungsten")
-function Armor:OnLoaded()
-    self.Name        = "Tungsten"
-    self.Description = "Extremely expensive and dense for equivalently good protection."
-    self.Density     = 19250 -- https://en.wikipedia.org/wiki/Tungsten
-    self.CostMul     = 72.2
-    self.HealthMul   = 1347.5
-    self.KineticMul  = 1.4
-    self.ChemicalMul = 1.2
-    self.SpallMul    = 0.8
-end
-
 -- DU
 local Armor = Types.Register("DU")
 function Armor:OnLoaded()
     self.Name        = "Depleted Uranium"
     self.Description = "Expensive and dense with high protection."
-    self.Density     = 18700 -- https://pubmed.ncbi.nlm.nih.gov/11218253/
+    self.Density     = 19050 -- https://en.wikipedia.org/wiki/Uranium
     self.CostMul     = 69.3
     self.HealthMul   = 1683
     self.KineticMul  = 1.3
