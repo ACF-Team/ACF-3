@@ -1,0 +1,7 @@
+-- Insert pack
+INSERT INTO PackData (packid, packname, author, contact)
+VALUES ('t-34-85', 'T-34-85', 'Corporal the First', 'corporalthefirst_50450');
+
+-- Insert dupes using the string packid
+INSERT INTO DupeData (path, name, cost, weight, type, mobility, packid, description) VALUES
+('t-34-85', 'T-34-85', 245.02, 33.3, 'MBT', 'Tracked', 't-34-85', 'The T-34-85 was a direct upgrade over the T-34-76. The T-34-85 kept the hull relatively the same while completely changing the turret. ');
