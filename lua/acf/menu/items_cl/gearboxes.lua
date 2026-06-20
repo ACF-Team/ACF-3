@@ -1,10 +1,14 @@
-local ACF = ACF
-local Gearboxes = ACF.Classes.Gearboxes
-local Current = {}
-local StatsText = language.GetPhrase("acf.menu.gearboxes.stats")
+local ACF        = ACF
+local Gearboxes  = ACF.Classes.Gearboxes
+local ModelData  = ACF.ModelData
+local ArmorTypes = ACF.Classes.ArmorTypes
+local Current    = {}
+local StatsText  = language.GetPhrase("acf.menu.gearboxes.stats")
 
 local function SetStatsText(GearboxStats)
-	local Mass, Torque, TorqueRating = ACF.GetGearboxStats(Current.Mass, Current.Scale, Current.MaxTorque, Current.GearCount)
+	local _, Torque, TorqueRating = ACF.GetGearboxStats(Current.Mass, Current.Scale, Current.MaxTorque, Current.GearCount)
+	local Volume = Current.Model and ModelData.GetModelVolume(Current.Model, Current.Scale or 1)
+	local Mass   = Volume and math.Round(Volume * ACF.InchToMCu * ArmorTypes.Get("Component").Density) or 0
 
 	GearboxStats:SetText(StatsText:format(ACF.GetProperMass(Mass), TorqueRating * ACF.TorqueMult, Torque * ACF.TorqueMult))
 end
@@ -84,9 +88,10 @@ CreateSubMenu = function(Menu, Entries, UseLegacyRatios)
 		GearboxName:SetText(Data.Name)
 		GearboxDesc:SetText(Data.Description)
 
-		Current.Mass = Data.Mass
+		Current.Mass      = Data.Mass
+		Current.Model     = Data.Model
 		Current.MaxTorque = Data.MaxTorque
-		Current.Scale = Current.Scale or 1
+		Current.Scale     = Current.Scale or 1
 		Current.GearCount = Data.Class.CanSetGears and Current.GearCount or Data.Class.Gears.Max or 3
 
 		SetStatsText(GearboxStats)
