@@ -147,6 +147,7 @@ do -- ACF global vars
 
 	ACF.MinimumArmor         = 0.01     -- Minimum possible armor that can be given to an entity
 	ACF.MaximumArmor         = 5000  -- Maximum possible armor that can be given to an entity
+	ACF.MaxExplosiveConvexVolume = 10000 -- Maximum convex volume (in^3) that can be assigned an explosive armor material
 	ACF.MinDuctility         = -80   -- The minimum amount of ductility that can be set on an entity
 	ACF.MaxDuctility         = 80    -- The maximum amount of ductility that can be set on an entity
 	ACF.MinimumMass          = 0.1   -- The minimum amount of mass that can be set on an entity

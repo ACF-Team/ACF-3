@@ -34,7 +34,7 @@ do
     local ArmorTypes = ACF.Classes.ArmorTypes
 
     -- Sets the material of a convex, recalculating its mass, health pool, and the entity's aggregates.
-    function ACF.SetConvexMaterial(Entity, ConvexID, Material)
+    function ACF.SetConvexMaterial(Entity, ConvexID, Material, Player)
         local MeshData = Entity.ACF_Volumetric_Mesh
         if not MeshData then return end
 
@@ -42,6 +42,13 @@ do
         if not Convex then return end
 
         local ArmorType = ArmorTypes.Get(Material) or ArmorTypes.Get("Default")
+
+        if ArmorType.IsExplosive and Convex.Volume > ACF.MaxExplosiveConvexVolume then
+            if SERVER and IsValid(Player) then
+                ACF.Utilities.Messages.SendChat(Player, "Error", "Convex " .. ConvexID .. " is too large for an explosive material (limit: " .. ACF.MaxExplosiveConvexVolume .. " in³).")
+            end
+            return false
+        end
 
         Convex.Material    = ArmorType.ID
         -- print("SetConvexMaterial", Entity, ConvexID, Material, Convex.Material)
