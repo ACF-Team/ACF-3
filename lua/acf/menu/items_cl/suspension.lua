@@ -73,7 +73,7 @@ function ACF.CreateSuspensionToolMenuHeadless(Menu)
                 Dampening:SetConVar("acf_sus_tool_damping")
                 Dampening:SetTooltip("How much energy the elastic loses. The larger the number, the less bouncy the elastic.")
 
-                local RelativeDampening = SpringSpecific:AddSlider("Relative Damping", 0, 1)
+                local RelativeDampening = SpringSpecific:AddSlider("Relative Damping", 0, 1, 2)
                 RelativeDampening:SetConVar("acf_sus_tool_relativedamping")
                 RelativeDampening:SetTooltip("The amount of energy the elastic loses proportional to the relative velocity of the two objects the elastic is attached to.")
             end
