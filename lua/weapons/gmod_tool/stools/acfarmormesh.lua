@@ -10,6 +10,7 @@ TOOL.ConfigName = ""
 TOOL.Information = {
 	{ name = "left0", stage = 0 },
 	{ name = "right0", stage = 0 },
+	{ name = "reload0", stage = 0 },
 }
 
 TOOL.ClientConVar["material"] = "RHA"
@@ -19,6 +20,7 @@ if CLIENT then
 	language.Add("tool.acfarmormesh.desc", "Applies armor materials to individual convexes of an ACF volumetric mesh")
 	language.Add("tool.acfarmormesh.left0", "Apply the selected material to the convex under your crosshair (Shift: apply to all convexes)")
 	language.Add("tool.acfarmormesh.right0", "Copy the material of the convex under your crosshair")
+	language.Add("tool.acfarmormesh.reload0", "Show contraption readout (Shift: show cost breakdown, Ctrl: recursive armor trace)")
 	language.Add("tool.acfarmormesh.material_desc", "The material that will be applied to the convex under your crosshair.")
 	language.Add("tool.acfarmormesh.armor_stats", "ACF Stats")
 	language.Add("tool.acfarmormesh.class_filter", "Recursive Armor Class Filter")
