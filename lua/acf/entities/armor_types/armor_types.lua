@@ -88,7 +88,7 @@ function Armor:OnLoaded()
     self.Name        = "Aluminum"
     self.Description = "Decent protection for its price and density."
     self.Density     = 2700 -- https://en.wikipedia.org/wiki/Aluminium
-    self.CostMul     = 17.9
+    self.CostMul     = 30
     self.HealthMul   = 216
     self.KineticMul  = 0.5
     self.ChemicalMul = 0.6
@@ -155,10 +155,10 @@ function Armor:OnLoaded()
     self.Name        = "Textolite"
     self.Description = "Layered fibrous laminate material. Not much protection, but is cheap and light."
     self.Density     = 1800 -- * http://www.china-anza.com/2-1-7-textolite-3025.html
-    self.CostMul     = 14.7
-    self.HealthMul   = 180
+    self.CostMul     = 35
+    self.HealthMul   = 250
     self.KineticMul  = 0.4
-    self.ChemicalMul = 0.5
+    self.ChemicalMul = 1.3
     self.SpallMul    = 0.3
 end
 
