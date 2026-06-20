@@ -81,7 +81,7 @@ end
 -- @param Area The area of the blast in cm2.
 -- @return The penetration of the blast in RHA mm.
 function Damage.getBlastPenetration(Energy, Area)
-	return Energy / Area * 0.25 -- NOTE: 0.25 is what ACF.KEtoRHA used to be set at.
+	return Energy / Area * 0.005 -- Emperically derived
 end
 
 --- Helper function used to generate DamageResult and DamageInfo objects from projectile information.

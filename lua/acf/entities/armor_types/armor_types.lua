@@ -189,7 +189,7 @@ function Armor:OnLoaded()
 
     self.IsExplosive        = true
     self.ExplosiveThreshold = 100 -- KJ; sensitive, will trigger off autocannon-grade rounds and up
-    self.ExplosiveFiller    = 0.005
+    self.ExplosiveFiller    = 0.01
 end
 
 -- Heavy ERA

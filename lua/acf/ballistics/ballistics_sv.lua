@@ -633,9 +633,10 @@ do -- Terminal ballistics --------------------------
 			Damage.NetworkConvex(Entity, Hit.ConvexID)
 
 			local Filler = Convex.Mass * (ArmorType.ExplosiveFiller or 0)
+			-- print("Filler", 	Filler)
 			if Filler <= 0 then continue end
 
-			local FragMass  = math.max(Convex.Mass - Filler, Filler * 0.5)
+			local FragMass  = math.max(Convex.Mass - Filler)
 			local Position  = (Bullet.ConvexHit and Bullet.ConvexHit.EntryPos) or Trace.HitPos
 			local BlastInfo = Damage.Objects.DamageInfo(Bullet.Owner, Bullet.Gun)
 

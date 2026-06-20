@@ -31,6 +31,8 @@ local InchToMeter = ACF.InchToMeter
 local White      = Color(255, 255, 255)
 local Red        = Color(255, 0, 0)
 local Green      = Color(0, 255, 0)
+local Yellow     = Color(255, 255, 0)
+local BlastColor = Color(255, 180, 50, 20)
 
 -- Trace data
 local TraceResult = {}
@@ -132,6 +134,8 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 	-- Prevent runaway exponential scaling for huge explosions
 	RadiusScale = min(max(RadiusScale, 0.05), 5)
 
+	Debug.Sphere(Position, Radius, 15, BlastColor, true)
+
 	local Found       = ents.FindInSphere(Position, Radius)
 
 	if EventViewer.Enabled() then
@@ -171,6 +175,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 			local Data = {
 				Entity      = Entity,
+				RandomPos   = RandomPos,
 				TraceEndPos = TraceEndPos,
 				DistSqr     = DistSqr,
 				Processed   = false,
@@ -218,6 +223,8 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 		local Entity = Data.Entity
 
+		Debug.Cross(Data.RandomPos, 8, 15, Yellow, true)
+
 		TraceData.endpos = Data.TraceEndPos
 
 		ACFTrace(TraceData)
@@ -225,7 +232,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		if TraceResult.HitWorld then
 			-- Hit world - this entity is permanently blocked from this angle
 			-- Don't mark as processed - give another chance if we happen to hit it while tracing towards another target
-			Debug.Line(Position, Data.TraceEndPos, 15, Green, true)
+			Debug.Line(Position, TraceResult.HitPos, 15, Green, true)
 
 			continue
 		end
@@ -249,6 +256,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 					BlockerData = {
 						Entity      = HitEnt,
+						RandomPos   = RandomPos,
 						TraceEndPos = TraceEndPos,
 						DistSqr     = DistSqr,
 						Processed   = false,
@@ -299,10 +307,10 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		-- Inverse-square spreading: the blast wavefront is a sphere whose area grows with distance.
 		-- The target catches the fraction of that wavefront its surface subtends (its solid angle),
 		-- capped at 0.5 since a surface can face at most a hemisphere of the blast.
-		local Sphere        = max(4 * pi * (Distance * InchToCm) ^ 2, 1) -- Wavefront area at the target (cm²)
+		local Sphere        = 4 * pi * (Distance * InchToCm) ^ 2          -- Wavefront area at the target (cm²)
 		local EntArea       = HitEnt.ACF.Area
-		local SolidAngle    = min(EntArea / Sphere, 0.5)                 -- Fraction of the wavefront caught
-		local PowerFraction = Power * SolidAngle                         -- Blast energy intercepted (kJ)
+		local SolidAngle    = min(EntArea / Sphere, 0.5)                  -- Fraction of the wavefront caught
+		local PowerFraction = Power * SolidAngle                          -- Blast energy intercepted (kJ)
 
 		-- Hopkinson-Cranz cube-root scaling: the lethal radius already scales as filler^(1/3), so the
 		-- scaled distance is simply Distance/Radius. The deposited blast impulse decays linearly across
@@ -312,7 +320,8 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		local BlastArea     = EntArea * BlastAreaCoef * Falloff * RadiusScale
 		local BlastResult, FragResult, Losses, Penetration
 
-		Debug.Line(Position, HitPos, 15, Red, true)
+		Debug.Line(Position, Data.RandomPos, 15, Red, true)
+		Debug.Line(Data.RandomPos, Data.TraceEndPos, 15, Red, true)
 
 		DmgInfo:SetHitPos(HitPos)
 		DmgInfo:SetHitGroup(TraceResult.HitGroup)
@@ -390,6 +399,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 			BlastResult = Damage.dealDamage(HitEnt, BlastDmg, DmgInfo)
 			Losses      = BlastResult.Loss * 0.5
 			Penetration = BlastPen > BlastThickness
+			print(Penetration, HitEnt, BlastPen, BlastThickness)
 		end
 
 		do -- Fragment damage
