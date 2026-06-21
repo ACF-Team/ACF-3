@@ -2,7 +2,8 @@ local ACF       = ACF
 local Damage    = ACF.Damage
 local Objects   = Damage.Objects
 local Effects   = ACF.Utilities.Effects
-local DamageCoef = ACF.DamageCoef
+local DamageCoef      = ACF.DamageCoef
+local DamageBlastCoef = ACF.DamageBlastCoef
 local Queue = {} -- Queue[Entity] = { [ConvexID] = Step }; always broadcast
 local QueueTime = 0.5 -- Seconds to buffer damage updates before sending
 
@@ -270,8 +271,11 @@ end
 -- @param DmgInfo A DamageInfo object.
 -- @return The output of the DamageResult object.
 function Damage.doPropDamage(Entity, DmgResult, DmgInfo)
+	local IsBlast = DmgInfo and DmgInfo:GetType() == DMG_BLAST
+	local Coef    = IsBlast and DamageBlastCoef or DamageCoef
+
 	local HitRes = DmgResult:Compute()
-	HitRes.Damage = HitRes.Damage * DamageCoef -- Erroneous :(
+	HitRes.Damage = HitRes.Damage * Coef -- Erroneous :(
 	HitRes.Kill = false
 
 	-- Mark contraption as in combat when taking damage
@@ -291,17 +295,17 @@ function Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 			local TotalChange = 0
 
 			for _, Hit in ipairs(ConvexHits) do
-				TotalChange  = TotalChange + Hit.Volume * DamageCoef
+				TotalChange  = TotalChange + Hit.Volume * Coef
 			end
 
 			EntACF.Health = math.Clamp(EntACF.Health - TotalChange, 0, EntACF.MaxHealth)
 		else
 			for _, Hit in ipairs(ConvexHits) do
 				local Convex       = MeshData.Convexes[Hit.ConvexID]
-				local HealthChange = Hit.Volume * DamageCoef
+				local HealthChange = Hit.Volume * Coef
 
 				Convex.Health = math.Clamp(Convex.Health - HealthChange, 0, Convex.MaxHealth)
-				-- print(HealthChange, DamageCoef)
+				-- print(HealthChange, Coef)
 
 				Damage.NetworkConvex(Entity, Hit.ConvexID)
 			end

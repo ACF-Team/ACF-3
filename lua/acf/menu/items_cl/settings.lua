@@ -181,6 +181,7 @@ do -- Serverside settings
 		Base:AddSlider("#acf.menu.settings.general.armor_factor"):             LinkToServerData("ArmorCoef")
 		Base:AddSlider("#acf.menu.settings.general.health_factor"):            LinkToServerData("HealthCoef")
 		Base:AddSlider("#acf.menu.settings.general.damage_factor"):            LinkToServerData("DamageCoef")
+		Base:AddSlider("#acf.menu.settings.general.blast_damage_factor"):      LinkToServerData("DamageBlastCoef")
 		Base:AddSlider("#acf.menu.settings.general.fuel_factor"):              LinkToServerData("FuelFactor")
 		Base:AddSlider("#acf.menu.settings.general.max_driveshaft_angle"):     LinkToServerData("MaxDriveshaftAngle")
 
