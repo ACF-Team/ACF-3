@@ -1,17 +1,6 @@
 local ACF     = ACF
 local Classes = ACF.Classes
 
--- Group ID -> menu builder. The builders live in util_cl.lua; resolve lazily at
--- menu-open time so load order doesn't matter.
-local function GetGroupMenu(GroupID)
-	return ({
-		["1-Turret"]   = ACF.CreateTurretMenu,
-		["2-Motor"]    = ACF.CreateTurretMotorMenu,
-		["3-Gyro"]     = ACF.CreateTurretGyroMenu,
-		["4-Computer"] = ACF.CreateTurretComputerMenu,
-	})[GroupID]
-end
-
 -- The turret "classes" (Turrets, Motors, Gyroscopes, Computers) are the direct
 -- children of the component root; each class' own children are its items.
 local function GetGroups()
@@ -79,7 +68,7 @@ local function CreateMenu(Menu)
 		Menu:ClearTemporal(Base)
 		Menu:StartTemporal(Base)
 
-		local CustomMenu = GetGroupMenu(ClassData.ID)
+		local CustomMenu = ClassData.CreateMenu
 
 		if CustomMenu then
 			CustomMenu(Data, Base)

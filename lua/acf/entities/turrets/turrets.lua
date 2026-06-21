@@ -44,7 +44,7 @@ do	-- Turret drives
 		CLASS.Entity      = "acf_turret"
 
 		CLASS.WillUseSmallModel = WillUseSmallModel
-
+		CLASS.CreateMenu = ACF.CreateTurretMenu
 		CLASS.GetMass = function(Data, Size)
 			return math.Round(math.max(Data.Mass * (Size / Data.Size.Base), 5) ^ 1.5, 1)
 		end
@@ -368,6 +368,8 @@ do	-- Turret motors
 		CLASS.Description = "#acf.descs.motors"
 		CLASS.Entity      = "acf_turret_motor"
 
+		CLASS.CreateMenu  = ACF.CreateTurretMotorMenu
+
 		CLASS.GetTorque = function(Data, CompSize)
 			local SizePerc = (CompSize - Data.ScaleLimit.Min) / (Data.ScaleLimit.Max - Data.ScaleLimit.Min)
 			return math.Round((Data.Torque.Min * (1 - SizePerc)) + (Data.Torque.Max * SizePerc))
@@ -463,6 +465,8 @@ do	-- Turret gyroscopes
 		CLASS.SpawnModel  = "models/bull/various/gyroscope.mdl"
 		CLASS.Description = "#acf.descs.gyros"
 		CLASS.Entity      = "acf_turret_gyro"
+
+		CLASS.CreateMenu  = ACF.CreateTurretGyroMenu
 	end)
 
 	do	-- Gyro
@@ -509,6 +513,8 @@ do	-- Turret computers
 		CLASS.SpawnModel  = "models/acf/core/t_computer.mdl"
 		CLASS.Description = "#acf.descs.computers"
 		CLASS.Entity      = "acf_turret_computer"
+
+		CLASS.CreateMenu  = ACF.CreateTurretComputerMenu
 	end)
 
 	--[[
