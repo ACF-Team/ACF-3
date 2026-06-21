@@ -291,15 +291,14 @@ function Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 			local TotalChange = 0
 
 			for _, Hit in ipairs(ConvexHits) do
-				local Convex = MeshData.Convexes[Hit.ConvexID]
-				TotalChange  = TotalChange + (Hit.Volume / Convex.Volume) * DamageCoef
+				TotalChange  = TotalChange + Hit.Volume * DamageCoef
 			end
 
 			EntACF.Health = math.Clamp(EntACF.Health - TotalChange, 0, EntACF.MaxHealth)
 		else
 			for _, Hit in ipairs(ConvexHits) do
 				local Convex       = MeshData.Convexes[Hit.ConvexID]
-				local HealthChange = (Hit.Volume / Convex.Volume) * DamageCoef
+				local HealthChange = Hit.Volume * DamageCoef
 
 				Convex.Health = math.Clamp(Convex.Health - HealthChange, 0, Convex.MaxHealth)
 
