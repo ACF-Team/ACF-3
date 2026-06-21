@@ -131,8 +131,8 @@ function Armor:OnLoaded()
     self.Density     = 2700 -- https://en.wikipedia.org/wiki/Aluminium
     self.CostMul     = 17.9
     self.HealthMul   = 54
-    self.KineticMul  = 0.5
-    self.ChemicalMul = 0.5
+    self.KineticMul  = 0.1
+    self.ChemicalMul = 0.1
     self.SpallMul    = 1
 end
 
