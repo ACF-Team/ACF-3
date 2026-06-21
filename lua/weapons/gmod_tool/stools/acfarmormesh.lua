@@ -25,8 +25,6 @@ if CLIENT then
 	language.Add("tool.acfarmormesh.armor_stats", "ACF Stats")
 	language.Add("tool.acfarmormesh.class_filter", "Recursive Armor Class Filter")
 	language.Add("tool.acfarmormesh.class_filter_desc", "When enabled, entities of the selected classes will not stop the recursive armor trace.")
-	language.Add("tool.acfarmormesh.filter_acf_gearbox", "acf_gearbox")
-	language.Add("tool.acfarmormesh.filter_acf_fuel", "acf_fuel")
 	language.Add("tool.acfarmormesh.alpha", "Convex Overlay Alpha")
 
 	local SphereSearch  = CreateClientConVar("acfarmormesh_sphere_search", 0, false, true, "", 0, 1)
@@ -127,14 +125,17 @@ if CLIENT then
 		local FilterSection = Menu:AddCollapsible("#tool.acfarmormesh.class_filter", false)
 		FilterSection:AddHelp("#tool.acfarmormesh.class_filter_desc")
 
-		local function AddFilterCheckBox(LangKey, Class)
-			local Check = FilterSection:AddCheckBox(LangKey)
+		local function AddFilterCheckBox(Class)
+			local Check = FilterSection:AddCheckBox(Class)
 			Check:SetValue(GetClassFilter()[Class] or false)
 			function Check:OnChange(Val) SetClassFilter(Class, Val) end
 		end
 
-		AddFilterCheckBox("#tool.acfarmormesh.filter_acf_gearbox", "acf_gearbox")
-		AddFilterCheckBox("#tool.acfarmormesh.filter_acf_fuel", "acf_fuel")
+		AddFilterCheckBox("acf_gearbox")
+		AddFilterCheckBox("acf_fueltank")
+		AddFilterCheckBox("acf_missile")
+		AddFilterCheckBox("acf_rack")
+		AddFilterCheckBox("acf_turret")
 	end
 
 	ACF.CreateArmorMeshMenu = CreateArmorMeshMenu
