@@ -301,6 +301,7 @@ function Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 				local HealthChange = Hit.Volume * DamageCoef
 
 				Convex.Health = math.Clamp(Convex.Health - HealthChange, 0, Convex.MaxHealth)
+				-- print(HealthChange, DamageCoef)
 
 				Damage.NetworkConvex(Entity, Hit.ConvexID)
 			end
