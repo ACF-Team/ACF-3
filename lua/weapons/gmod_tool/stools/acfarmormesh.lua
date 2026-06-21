@@ -26,11 +26,14 @@ if CLIENT then
 	language.Add("tool.acfarmormesh.class_filter", "Recursive Armor Class Filter")
 	language.Add("tool.acfarmormesh.class_filter_desc", "When enabled, entities of the selected classes will not stop the recursive armor trace.")
 	language.Add("tool.acfarmormesh.alpha", "Convex Overlay Alpha")
+	language.Add("tool.acfarmormesh.ignore_elevation", "Ignore camera elevation")
+	language.Add("tool.acfarmormesh.ignore_elevation_desc", "When enabled, the recursive armor trace fires horizontally toward the hit point, as if the camera had no pitch angle.")
 
-	local SphereSearch  = CreateClientConVar("acfarmormesh_sphere_search", 0, false, true, "", 0, 1)
-	local SphereRadius  = CreateClientConVar("acfarmormesh_sphere_radius", 0, false, true, "", 0, 10000)
-	local AlphaConVar   = CreateClientConVar("acfarmormesh_alpha", 50, false, true, "", 0, 255)
-	local ClassFilter = CreateClientConVar("acfarmormesh_class_filter", "", false, true)
+	local SphereSearch      = CreateClientConVar("acfarmormesh_sphere_search", 0, false, true, "", 0, 1)
+	local SphereRadius      = CreateClientConVar("acfarmormesh_sphere_radius", 0, false, true, "", 0, 10000)
+	local AlphaConVar       = CreateClientConVar("acfarmormesh_alpha", 50, false, true, "", 0, 255)
+	local ClassFilter       = CreateClientConVar("acfarmormesh_class_filter", "", false, true)
+	CreateClientConVar("acfarmormesh_ignore_elevation", 0, false, true, "", 0, 1)
 
 	local function GetClassFilter()
 		local Filter = {}
@@ -121,6 +124,9 @@ if CLIENT then
 
 		local AlphaSlider = Menu:AddSlider("#tool.acfarmormesh.alpha", 0, 255, 0)
 		AlphaSlider:SetConVar("acfarmormesh_alpha")
+
+		Menu:AddCheckBox("#tool.acfarmormesh.ignore_elevation", "acfarmormesh_ignore_elevation")
+		Menu:AddHelp("#tool.acfarmormesh.ignore_elevation_desc")
 
 		local FilterSection = Menu:AddCollapsible("#tool.acfarmormesh.class_filter", false)
 		FilterSection:AddHelp("#tool.acfarmormesh.class_filter_desc")
@@ -354,6 +360,13 @@ elseif SERVER then
 		local Filter     = GetFilteredClasses(Player)
 		local Layers     = {}
 		local Dir        = (InitialTrace.HitPos - InitialTrace.StartPos):GetNormalized()
+
+		if tobool(Tool:GetClientInfo("ignore_elevation")) then
+			local Ang = Dir:Angle()
+			Ang.p = 0
+			Dir = Ang:Forward()
+		end
+
 		local Skipped    = {}  -- entities fully traversed, never hit again
 		local Processed  = {}  -- [Entity] = { [ConvexID] = true }
 		local Current    = InitialTrace
