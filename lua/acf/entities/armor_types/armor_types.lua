@@ -35,8 +35,8 @@ function Armor:OnLoaded()
     self.Density     = 1100 -- https://www.sciencedirect.com/topics/immunology-and-microbiology/body-density
     self.CostMul     = 5
     self.HealthMul   = 33
-    self.KineticMul  = 0.1
-    self.ChemicalMul = 0.1
+    self.KineticMul  = 0.03
+    self.ChemicalMul = 0.03
     self.SpallMul    = 0.2
 end
 
