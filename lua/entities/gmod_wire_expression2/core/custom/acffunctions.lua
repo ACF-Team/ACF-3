@@ -297,17 +297,6 @@ e2function number entity:acfConvexCount()
 	return #MeshData.Convexes
 end
 
--- Returns the ductility of an entity
-e2function number entity:acfPropDuctility()
-	if not validPhysics(this) then return 0 end
-	if RestrictInfo(self, this) then return 0 end
-	if not ACF.Check(this) then return 0 end
-
-	local Ductility = this.ACF.Ductility
-
-	return Ductility and Ductility * 100 or 0
-end
-
 __e2setcost(10)
 
 -- Returns the effective armor given an armor value and hit angle

@@ -904,22 +904,6 @@ if SERVER then
 		return PercHealth and math.Round(PercHealth, 2) or 0
 	end
 
-	--- Returns the ductility of an entity
-	-- @server
-	-- @return number The entity's ductility
-	function ents_methods:acfPropDuctility()
-		CheckType(self, ents_metatable)
-
-		local This = unwrap(self)
-
-		if not ACF.Check(This) then SF.Throw("Entity is not valid", 2) end
-		if RestrictInfo(This) then return 0 end
-
-		local Ductility = This.ACF.Ductility
-
-		return Ductility and math.Round(Ductility * 100, 2) or 0
-	end
-
 	--- Returns the current health of a specific convex of an entity
 	-- @server
 	-- @param number convexid The convex ID

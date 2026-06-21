@@ -85,10 +85,9 @@ Chapter:AddInstruction("ShowToolgun", {Tool = language.GetPhrase("tool.acfarmorp
 
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Using the ACF armor properties tool, you can set the armor properties of an entity."}))
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Please see the help text for thickness and ductility shown in the menu."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Please see the help text for thickness shown in the menu."}))
 
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "ArmorMenuCPanel", SliderName = "#tool.acfarmorprop.thickness", Value = 100}):DelayByLength()
-Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "ArmorMenuCPanel", SliderName = "#tool.acfarmorprop.ductility", Value = 40}):DelayByLength()
 
 Chapter:AddInstruction("Caption", {
     Text = "Armor: 10mm\nHP: 100\nMass: 1000kg",
