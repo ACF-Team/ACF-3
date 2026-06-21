@@ -87,7 +87,8 @@ local function PrepareSpawnFunctions(ENT, ClassName)
             ENT.ACF_OnVerifyClientData(ClientData)
         end
 
-        local CanUpdate, Reason = hook.Run("ACF_PreUpdateEntity", ClassName, self, ClientData)
+        local HookArgs  = ENT.ACF_GetHookArguments and ENT.ACF_GetHookArguments(ClientData)
+        local CanUpdate, Reason = hook.Run("ACF_PreUpdateEntity", ClassName, self, ClientData, HookArgs)
         if CanUpdate == false then return CanUpdate, Reason end
 
         if self.ACF_PreUpdateEntityData then self:ACF_PreUpdateEntityData(ClientData) end
@@ -106,26 +107,20 @@ local function PrepareSpawnFunctions(ENT, ClassName)
             self.ACF_LiveData = Serialization.DeserializePartial(ClassDef, ClientData)
         end
 
-        if self.ACF_OnUpdateEntityData then self:ACF_OnUpdateEntityData() end
-        hook.Run("ACF_OnUpdateEntity", ClassName, self, ClientData)
+        hook.Run("ACF_OnUpdateEntity", ClassName, self, ClientData, HookArgs)
         ACF.RestoreEntity(self)
 
-        local UpdateFeedback = ""
-
         if self.ACF_PostUpdateEntityData then
-            local PostUpdateResult = self:ACF_PostUpdateEntityData(ClientData)
-            UpdateFeedback = isstring(PostUpdateResult) and PostUpdateResult or ""
+            self:ACF_PostUpdateEntityData(ClientData)
         end
-
         ACF.Activate(self, true)
-
-        return true, (self.PrintName or ClassName) .. " updated successfully!" .. UpdateFeedback
+        return true, (self.PrintName or ClassName) .. " updated successfully!"
     end
 
     local function DoSpawn(Player, Pos, Angle, ClientData, IsMenuSpawn)
         if IsValid(Player) and not Player:CheckLimit("_" .. ClassName) then return end
 
-        local CanSpawn  = hook.Run("ACF_PreSpawnEntity", ClassName, Player, ClientData)
+        local CanSpawn  = hook.Run("ACF_PreSpawnEntity", ClassName, Player, ClientData, HookArgs)
         if CanSpawn == false then return end
 
         local Entity = ents.Create(ClassName)
@@ -133,8 +128,6 @@ local function PrepareSpawnFunctions(ENT, ClassName)
 
         Entity:SetPos(Pos)
         Entity:SetAngles(Angle)
-
-        Entity.ACF = {}
 
         if Entity.ACF_PreSpawn then Entity:ACF_PreSpawn(Player, Pos, Angle, ClientData) end
 
@@ -147,7 +140,7 @@ local function PrepareSpawnFunctions(ENT, ClassName)
         end
 
         if Entity.ACF_OnSpawn then Entity:ACF_OnSpawn(Player, Pos, Angle, ClientData) end
-        hook.Run("ACF_OnSpawnEntity", ClassName, Entity, ClientData, HookArgs)
+        hook.Run("ACF_OnSpawnEntity", ClassName, Entity, ClientData)
 
         Entity:ACF_UpdateEntityData(ClientData)
 
@@ -155,7 +148,6 @@ local function PrepareSpawnFunctions(ENT, ClassName)
         if IsMenuSpawn and Entity.ACF_PostMenuSpawn then Entity:ACF_PostMenuSpawn() end
 
         Entity.ACF_UserData = ClientData or {} -- to allow entity fetching later
-
         return Entity
     end
 
@@ -193,12 +185,10 @@ local function PrepareSerializationFunctions(ENT, ClassName)
 
     function ENT:OnRemove(IsFullUpdate)
         local ACF_OnEntityLast = self.ACF_OnEntityLast
-
         if ACF_OnEntityLast then ACF_OnEntityLast(self) end
         hook.Run("ACF_OnEntityLast", ClassName, self)
 
         if OrigOnRemove then OrigOnRemove(self, IsFullUpdate) end
-
         if SERVER then
             WireLib.Remove(self)
         end

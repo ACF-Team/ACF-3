@@ -357,7 +357,7 @@ do --MARK: Ammo rendering
 		end
 	end
 
-	function ENT:ACF_OnResized( _ )
+	function ENT:OnResized( _ )
 		self.HasData = nil
 		self.DisplayAmmo = nil
 		self.TargetDisplayAmmo = nil

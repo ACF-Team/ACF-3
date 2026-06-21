@@ -1,148 +1,197 @@
 local ACF         = ACF
+local Clamp       = math.Clamp
+local HookRun     = hook.Run
 local Classes     = ACF.Classes
+local Utilities   = ACF.Utilities
+local WireIO      = Utilities.WireIO
+local Entities    = Classes.Entities
+local FuelTanks   = Classes.FuelTanks
+local FuelTypes   = Classes.FuelTypes
 local ActiveTanks = ACF.FuelTanks
 
-local DefaultTank = "ACF.FuelTanks.ScalableFuelTank"
-local DefaultShape = "ACF.ContainerShapes.Box"
 
-do -- Spawning
-	-- ClientData values may be an FQN string (menu) or a serialized {Type=...} table (dupe).
-	local function ResolveType(Value, Default)
-		local Name = istable(Value) and Value.Type or Value
-		return Classes.GetTypeByName(Name) or Classes.GetTypeByName(Default)
+local Inputs = {
+	"Active (If set to a non-zero value, it'll allow engines to consume fuel from this fuel tank.)",
+}
+
+local Outputs = {
+	"Activated (Whether or not this fuel tank is able to be used by an engine.)",
+	"Fuel (Amount of fuel currently in the tank, in liters or kWh)",
+	"Capacity (Total amount of fuel the tank can hold, in liters or kWh)",
+	"Leaking (Returns 1 if the fuel tank is currently losing fuel.)",
+	"Entity (The fuel tank itself.) [ENTITY]"
+}
+
+local function VerifyData(Data)
+	-- Build size from FuelSizeX/Y/Z
+	local Class = FuelTanks.Get("FTS_S")
+	local Min, Max = ACF.ContainerMinSize, ACF.ContainerMaxSize
+
+	-- ACF-3/ACE backwards compatibility. Fuel size was saved as Size for a while in ACF-3, and ACE still saves it as SizeId.
+	if (isvector(Data.Size) or isvector(Data.SizeId)) and (not Data.FuelSizeX or not Data.FuelSizeY or not Data.FuelSizeZ) then
+		local SizeData = isvector(Data.SizeId) and "SizeId" or "Size"
+		Data.FuelSizeX = Clamp(ACF.CheckNumber(Data[SizeData][1], 24), Min, Max)
+		Data.FuelSizeY = Clamp(ACF.CheckNumber(Data[SizeData][2], 24), Min, Max)
+		Data.FuelSizeZ = Clamp(ACF.CheckNumber(Data[SizeData][3], 24), Min, Max)
+
+		Data.Size = Vector(Data.FuelSizeX, Data.FuelSizeY, Data.FuelSizeZ)
+
+		if isstring(Data.FuelTank) then
+			Data.FuelShape = Data.FuelTank == "Drum" and "Cylinder" or "Box"
+		end
+	-- Pre-scalable ACF-3 backwards compatibility for boxes. The X and Y values are swapped on purpose to match old tank models.
+	elseif isstring(Data.FuelTank) and string.StartsWith(Data.FuelTank, "Tank_") then
+		local TankSize = string.Split(string.TrimLeft(Data.FuelTank, "Tank_"), "x")
+		local X = Clamp(ACF.CheckNumber(tonumber(TankSize[2]) * 10, 24), Min, Max)
+		local Y = Clamp(ACF.CheckNumber(tonumber(TankSize[1]) * 10, 24), Min, Max)
+		local Z = Clamp(ACF.CheckNumber(tonumber(TankSize[3]) * 10, 24), Min, Max)
+
+		Data.Size = Vector(X, Y, Z)
+	-- Pre-scalable ACF-3 backwards compatibility for fuel drums.
+	elseif isstring(Data.FuelTank) and Data.FuelTank == "Fuel_Drum" then
+		Data.FuelShape = "Cylinder"
+		Data.Size = Vector(28, 28, 45)
+	else
+		local X = Clamp(ACF.CheckNumber(Data.FuelSizeX, 24), Min, Max)
+		local Y = Clamp(ACF.CheckNumber(Data.FuelSizeY, 24), Min, Max)
+		local Z = Clamp(ACF.CheckNumber(Data.FuelSizeZ, 24), Min, Max)
+
+		Data.Size = Vector(X, Y, Z)
 	end
 
-	function ENT:ACF_PreSpawn(_, _, _, ClientData)
-		local ShapeClass = ResolveType(ClientData.Shape, DefaultShape)
+	-- Ensure shape is set
+	if not Data.FuelShape then Data.FuelShape = "Box" end
 
-		self:SetScaledModel(ShapeClass.Model)
+	-- Making sure to provide a valid fuel type
+	if not FuelTypes.Get(Data.FuelType) then Data.FuelType = "Petrol" end
 
-		local TankClass = ResolveType(ClientData.FuelTank, DefaultTank)
-
-		self:SetMaterial(TankClass.Material)
-	end
-
-	function ENT:ACF_OnSpawn()
-		self.Engines       = {}
-		self.Leaking       = 0
-		self.LastThink     = 0
-		self.LastAmount    = 0
-		self.LastActivated = 0
-
-		duplicator.ClearEntityModifier(self, "mass")
-	end
-
-	function ENT:ACF_PostSpawn(_, _, _, ClientData)
-		local TankClass = ResolveType(ClientData.FuelTank, DefaultTank)
-
-		if TankClass.OnSpawn then
-			TankClass.OnSpawn(self, ClientData, TankClass)
+	do -- External verifications
+		if Class.VerifyData then
+			Class.VerifyData(Data, Class)
 		end
 
-		-- Fuel tanks should be active by default
-		self:TriggerInput("Active", 1)
-
-		ActiveTanks[self] = true
+		HookRun("ACF_OnVerifyData", "acf_fueltank", Data, Class)
 	end
 end
 
-do -- Updating
-	function ENT:ACF_OnEntityLast()
-		local Class = self.ClassData
+local function UpdateFuelTank(Entity, Data, Class, FuelType)
+	-- If updating, keep the same fuel level
+	local Percentage = Entity.Capacity and Entity.Amount / Entity.Capacity or 1
 
-		if Class and Class.OnLast then
-			Class.OnLast(self, Class)
-		end
+	-- Determine shape and model
+	local Shape = Data.FuelShape or "Box"
+	local Model = ACF.ContainerShapeModels[Shape]
+
+	Entity.ACF = Entity.ACF or {}
+	Entity.ACF.Model = Model
+	Entity.ClassData = Class
+	Entity.Shape = Shape -- Store shape on entity for volume calculations
+
+	Entity:SetScaledModel(Model)
+	Entity:SetSize(Data.Size)
+	Entity:SetMaterial(Class.Material or "")
+
+	-- Storing all the relevant information on the entity for duping
+	for _, V in ipairs(Entity.DataStore) do
+		Entity[V] = Data[V]
 	end
 
-	function ENT:ACF_OnUpdateEntityData()
-		-- If updating, keep the same fuel level
-		local Percentage = self.Capacity and self.Amount / self.Capacity or 1
+	-- Calculate volume and capacity using base class method (uses Entity.Shape)
+	local _, Capacity, EmptyMass = Entity:CalcVolumeAndCapacity(Data.Size)
 
-		-- Determine shape and model
-		local Shape = self:ACF_GetUserVar("Shape")
-		local Model = Shape.Model
+	Entity.Name        = Entity.FuelType .. " Tank"
+	Entity.ShortName   = Entity.FuelType
+	Entity.EntType     = Class.Name
+	Entity.FuelDensity = FuelType.Density
+	Entity.Capacity    = Capacity -- Internal volume available for fuel in liters
+	Entity.EmptyMass   = EmptyMass
+	Entity.IsExplosive = Class.IsExplosive
+	Entity.NoLinks     = Class.Unlinkable
 
-		local FuelTypeInstance  = self:ACF_GetUserVar("FuelType")
-		local FuelTypeClass		= FuelTypeInstance and FuelTypeInstance:GetType() or Classes.GetTypeByName(DefaultTank)
-		local FuelTypeName		= Classes.GetTypeName(FuelTypeClass)
+	WireIO.SetupInputs(Entity, Inputs, Data, Class, FuelType)
+	WireIO.SetupOutputs(Entity, Outputs, Data, Class, FuelType)
 
-		local FuelTankInstance  = self:ACF_GetUserVar("FuelTank")
-		local FuelTankClass		= FuelTankInstance and FuelTankInstance:GetType() or Classes.GetTypeByName(DefaultTank)
+	Entity.WireAmountName = "Fuel" -- Use "Fuel" output instead of "Amount"
 
-		local TankSize  = self:ACF_GetUserVar("Size")
-
-		self.ACF.Model = Model
-		self:SetScaledModel(Model)
-		self:SetSize(TankSize)
-		self:SetMaterial(FuelTankClass.Material or "")
-
-		-- Calculate volume and capacity using base class method (uses Entity.Shape)
-		local _, Capacity, EmptyMass = self:CalcVolumeAndCapacity(TankSize)
-
-		self.Name        = FuelTypeClass.Name .. " Tank"
-		self.ShortName   = FuelTypeClass.ShortName
-		self.EntType     = FuelTypeName
-		self.FuelDensity = FuelTypeClass.Density
-		self.Capacity    = Capacity -- Internal volume available for fuel in liters
-		self.EmptyMass   = EmptyMass
-		self.NoLinks     = FuelTypeName.Unlinkable
-
-		self.WireAmountName = "Fuel" -- Use "Fuel" output instead of "Amount"
-
-		if FuelTypeName == "ACF.FuelTypes.Electric" then
-			self.Name     = "Electric Battery"
-			self.Liters   = self.Capacity -- Batteries capacity is different from internal volume
-			self.Capacity = self.Capacity * ACF.LiIonED
-			self.UnitMass = FuelTypeClass.Density / ACF.LiIonED -- kg per kWh
-		else
-			self.UnitMass = FuelTypeClass.Density -- kg per liter
-		end
-
-		self:SetNWString("WireName", "ACF " .. self.Name)
-
-		self.Amount = Percentage * self.Capacity
-
-		self:UpdateMass(true)
-
-		WireLib.TriggerOutput(self, "Fuel", self.Amount)
-		WireLib.TriggerOutput(self, "Capacity", self.Capacity)
-
-		if FuelTypeClass.OnUpdate then
-			FuelTypeClass.OnUpdate(self, Data, Class)
-		end
+	if Entity.FuelType == "Electric" then
+		Entity.Name     = "Electric Battery"
+		Entity.Liters   = Entity.Capacity -- Batteries capacity is different from internal volume
+		Entity.Capacity = Entity.Capacity * ACF.LiIonED
+		Entity.UnitMass = FuelType.Density / ACF.LiIonED -- kg per kWh
+	else
+		Entity.UnitMass = FuelType.Density -- kg per liter
 	end
 
-	function ENT:ACF_PostUpdateEntityData()
-		local Feedback = ""
+	Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 
-		if next(self.Engines) then
-			local Fuel    = Classes.GetTypeName(self:ACF_GetUserVar("FuelType"):GetType())
-			local NoLinks = self.NoLinks
-			local Count, Total = 0, 0
+	Entity.Amount = Percentage * Entity.Capacity
 
-			for Engine in pairs(self.Engines) do
-				if NoLinks or not Engine.FuelTypes[Fuel] then
-					self:Unlink(Engine)
+	ACF.Activate(Entity, true)
 
-					Count = Count + 1
-				end
+	Entity:UpdateMass(true)
 
-				Total = Total + 1
-			end
-
-			if Count == Total then
-				Feedback = "\nUnlinked from all engines due to fuel type or model change."
-			elseif Count > 0 then
-				local Text = "\nUnlinked from %s out of %s engines due to fuel type or model change."
-
-				Feedback = Text:format(Count, Total)
-			end
-		end
-
-		return Feedback
-	end
+	WireLib.TriggerOutput(Entity, "Fuel", Entity.Amount)
+	WireLib.TriggerOutput(Entity, "Capacity", Entity.Capacity)
 end
+
+function ACF.MakeFuelTank(Player, Pos, Angle, Data)
+	VerifyData(Data)
+
+	local Class    = FuelTanks.Get("FTS_S")
+	local FuelType = FuelTypes.Get(Data.FuelType)
+	local Limit    = Class.LimitConVar.Name
+
+	-- Determine model based on shape
+	local Shape = Data.FuelShape or "Box"
+	local Model = ACF.ContainerShapeModels[Shape]
+
+	if not Player:CheckLimit(Limit) then return end
+
+	local CanSpawn = HookRun("ACF_PreSpawnEntity", "acf_fueltank", Player, Data, Class)
+
+	if CanSpawn == false then return end
+
+	local Tank = ents.Create("acf_fueltank")
+
+	if not IsValid(Tank) then return end
+
+	Tank.ACF = Tank.ACF or {}
+
+	Tank:SetScaledModel(Model)
+	Tank:SetMaterial(Class.Material)
+	Tank:SetAngles(Angle)
+	Tank:SetPos(Pos)
+	Tank:Spawn()
+
+	Player:AddCleanup("acf_fueltank", Tank)
+	Player:AddCount(Limit, Tank)
+
+	Tank.Engines       = {}
+	Tank.Leaking       = 0
+	Tank.LastThink     = 0
+	Tank.LastAmount    = 0
+	Tank.LastActivated = 0
+	Tank.DataStore     = Entities.GetArguments("acf_fueltank")
+
+	duplicator.ClearEntityModifier(Tank, "mass")
+
+	UpdateFuelTank(Tank, Data, Class, FuelType)
+
+	if Class.OnSpawn then
+		Class.OnSpawn(Tank, Data, Class)
+	end
+
+	HookRun("ACF_OnSpawnEntity", "acf_fueltank", Tank, Data, Class)
+
+	-- Fuel tanks should be active by default
+	Tank:TriggerInput("Active", 1)
+
+	ActiveTanks[Tank] = true
+
+	return Tank
+end
+
+Entities.LegacyRegister("acf_fueltank", ACF.MakeFuelTank, "FuelTank", "FuelType", "FuelShape", "FuelSizeX", "FuelSizeY", "FuelSizeZ", "Size")
 
 ACF.RegisterLinkSource("acf_fueltank", "Engines")
 
@@ -152,6 +201,65 @@ ACF.AddInputAction("acf_fueltank", "Active", function(Entity, Value)
 
 	WireLib.TriggerOutput(Entity, "Activated", Entity.Active and 1 or 0)
 end)
+
+
+function ENT:Update(Data)
+	VerifyData(Data)
+
+	local Class    = FuelTanks.Get("FTS_S")
+	local FuelType = FuelTypes.Get(Data.FuelType)
+	local OldClass = self.ClassData
+	local Feedback = ""
+
+	local CanUpdate, Reason = HookRun("ACF_PreUpdateEntity", "acf_fueltank", self, Data, Class)
+
+	if CanUpdate == false then return CanUpdate, Reason end
+
+	if OldClass.OnLast then
+		OldClass.OnLast(self, OldClass)
+	end
+
+	HookRun("ACF_OnEntityLast", "acf_fueltank", self, OldClass)
+
+	ACF.SaveEntity(self)
+
+	UpdateFuelTank(self, Data, Class, FuelType)
+
+	ACF.RestoreEntity(self)
+
+	if Class.OnUpdate then
+		Class.OnUpdate(self, Data, Class)
+	end
+
+	HookRun("ACF_OnUpdateEntity", "acf_fueltank", self, Data, Class)
+
+	if next(self.Engines) then
+		local Fuel    = self.FuelType
+		local NoLinks = self.NoLinks
+		local Count, Total = 0, 0
+
+		for Engine in pairs(self.Engines) do
+			if NoLinks or not Engine.FuelTypes[Fuel] then
+				self:Unlink(Engine)
+
+				Count = Count + 1
+			end
+
+			Total = Total + 1
+		end
+
+		if Count == Total then
+			Feedback = "\nUnlinked from all engines due to fuel type or model change."
+		elseif Count > 0 then
+			local Text = "\nUnlinked from %s out of %s engines due to fuel type or model change."
+
+			Feedback = Text:format(Count, Total)
+		end
+	end
+
+	return true, "Fuel tank updated successfully!" .. Feedback
+end
+
 
 do -- Overlay text
 	function ENT:ACF_UpdateOverlayState(State)
@@ -165,11 +273,13 @@ do -- Overlay text
 			State:AddWarning("WARNING: Leaking!")
 		end
 
-		local FuelTypeInstance = self:ACF_GetUserVar("FuelType")
-		State:AddKeyValue("Fuel Type", FuelTypeInstance.Name)
+		local FuelTypeID = self.FuelType
+		local FuelType = Classes.FuelTypes.Get(FuelTypeID)
 
-		if FuelTypeInstance and FuelTypeInstance.FuelTankOverlay then
-			FuelInfo = FuelTypeInstance.FuelTankOverlay(self.Amount, State)
+		State:AddKeyValue("Fuel Type", FuelTypeID)
+
+		if FuelType and FuelType.FuelTankOverlay then
+			FuelInfo = FuelType.FuelTankOverlay(self.Amount, State)
 		else
 			local FuelAmount = math.Round(self.Amount, 2)
 			local FuelCapacity = math.Round(self.Capacity, 2)
@@ -180,11 +290,24 @@ do -- Overlay text
 end
 
 function ENT:OnRemove()
+	local Class = self.ClassData
+
+	if Class.OnLast then
+		Class.OnLast(self, Class)
+	end
+
+	HookRun("ACF_OnEntityLast", "acf_fueltank", self, Class)
+
 	for Engine in pairs(self.Engines) do
 		self:Unlink(Engine)
 	end
 
 	ActiveTanks[self] = nil
+
+	-- Call base class OnRemove for WireLib cleanup
+	if self.BaseClass.OnRemove then
+		self.BaseClass.OnRemove(self)
+	end
 end
 
 do	-- NET SURFER 2.0

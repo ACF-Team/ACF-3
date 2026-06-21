@@ -23,7 +23,7 @@ function ENT:Update()
 	self.HitBoxes = ACF.GetHitboxes(self:GetModel(), self:GetScale())
 end
 
-function ENT:ACF_OnResized(_, Scale)
+function ENT:OnResized(_, Scale)
 	self.HitBoxes = ACF.GetHitboxes(self:GetModel(), Scale)
 end
 

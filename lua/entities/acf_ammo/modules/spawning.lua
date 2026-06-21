@@ -386,8 +386,6 @@ do -- Spawn/Update/Remove
 		Entity:UpdateMass(true)
 	end
 
-	function ENT:ACF_IsExplosive() return true end
-
 	function ACF.MakeAmmo(Player, Pos, Ang, Data)
 		if not Player:CheckLimit("_acf_ammo") then return end
 
@@ -426,6 +424,7 @@ do -- Spawn/Update/Remove
 		Crate:SetPos(Pos)
 		Crate:Spawn()
 
+		Crate.IsExplosive = true
 		Crate.Weapons     = {}
 		Crate.DataStore	  = Entities.GetArguments("acf_ammo")
 
@@ -563,7 +562,7 @@ do -- Spawn/Update/Remove
 		end
 	end
 
-	function ENT:ACF_OnResized(Size)
+	function ENT:OnResized(Size)
 		local A = ACF.ContainerArmor * ACF.MmToInch
 		local ExteriorVolume = Size.x * Size.y * Size.z
 		local InteriorVolume = math.max(0, (Size.x - 2 * A) * (Size.y - 2 * A) * (Size.z - 2 * A))

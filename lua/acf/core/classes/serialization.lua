@@ -13,48 +13,13 @@ local function ParseType(TypeStr)
     return TypeStr, false
 end
 
-local function ValidateNumericalPiece(Value, Default, Min, Max, Decimals)
-    local N = tonumber(Value)
-    if N == nil then return Default end
-    if Min ~= nil then N = math.max(N, Min) end
-    if Max ~= nil then N = math.min(N, Max) end
-    if Decimals ~= nil then N = math.Round(N, Decimals) end
-    return N
-end
-
 local function ValidateNumber(Value, Options)
-    return ValidateNumericalPiece(Value, Options.Default, Options.Min, Options.Max, Options.Decimals)
-end
-
-local function NumberOrX3OptionInput(OptionInput)
-    if OptionInput == nil then return nil, nil, nil end
-
-    if type(OptionInput) == "number" then
-        return OptionInput, OptionInput, OptionInput
-    else -- assume vector/angle
-        return OptionInput:Unpack()
-    end
-end
-
-local function ValidatePiecewiseX3(X, Y, Z, Options)
-    local DefaultX, DefaultY, DefaultZ      = NumberOrX3OptionInput(Options.Default)
-    local MinX, MinY, MinZ                  = NumberOrX3OptionInput(Options.Min)
-    local MaxX, MaxY, MaxZ                  = NumberOrX3OptionInput(Options.Max)
-    local DecimalsX, DecimalsY, DecimalsZ   = NumberOrX3OptionInput(Options.Decimals)
-
-    return  ValidateNumericalPiece(X, DefaultX, MinX, MaxX, DecimalsX),
-            ValidateNumericalPiece(Y, DefaultY, MinY, MaxY, DecimalsY),
-            ValidateNumericalPiece(Z, DefaultZ, MinZ, MaxZ, DecimalsZ)
-end
-
-local function ValidateVector(Value, Options)
-    local X, Y, Z = Value:Unpack()
-    return Vector(ValidatePiecewiseX3(X, Y, Z, Options))
-end
-
-local function ValidateAngle(Value, Options)
-    local X, Y, Z = Value:Unpack()
-    return Angle(ValidatePiecewiseX3(X, Y, Z, Options))
+    local N = tonumber(Value)
+    if N == nil then return Options.Default end
+    if Options.Min ~= nil then N = math.max(N, Options.Min) end
+    if Options.Max ~= nil then N = math.min(N, Options.Max) end
+    if Options.Decimals ~= nil then N = math.Round(N, Options.Decimals) end
+    return N
 end
 
 local function ValidateBoolean(Value, Options)
@@ -79,10 +44,6 @@ end
 local function SerializeValue(ElemType, Value)
     if ElemType == "Number" then
         return tonumber(Value)
-    elseif ElemType == "Vector" then
-        return Vector(Value:Unpack())
-    elseif ElemType == "Angle" then
-        return Angle(Value:Unpack())
     elseif ElemType == "Boolean" then
         return Value == true
     elseif ElemType == "String" then
@@ -106,10 +67,6 @@ end
 local function DeserializeValue(ElemType, Raw, Options)
     if ElemType == "Number" then
         return ValidateNumber(Raw, Options)
-    elseif ElemType == "Vector" then
-        return ValidateVector(Raw, Options)
-    elseif ElemType == "Angle" then
-        return ValidateAngle(Raw, Options)
     elseif ElemType == "Boolean" then
         return ValidateBoolean(Raw, Options)
     elseif ElemType == "String" then
@@ -142,32 +99,6 @@ local function DeserializeValue(ElemType, Raw, Options)
         end
         return nil
     end
-end
-
--- Builds a default value for a scalar field (Number/Vector/Angle/Boolean/String) from its Options.
--- Used when a field is entirely absent from the incoming data, since the Validate* helpers expect a
--- present (if partial) raw value. Returns nil for class/array/entity fields and when no Default is set.
-local function ScalarDefault(ElemType, Options)
-    local Default = Options.Default
-    if Default == nil then return nil end
-
-    if ElemType == "Number" then
-        return tonumber(Default)
-    elseif ElemType == "Vector" then
-        if isvector(Default) then return Vector(Default:Unpack()) end
-        local N = tonumber(Default)
-        return N and Vector(N, N, N) or nil
-    elseif ElemType == "Angle" then
-        if isangle(Default) then return Angle(Default:Unpack()) end
-        local N = tonumber(Default)
-        return N and Angle(N, N, N) or nil
-    elseif ElemType == "Boolean" then
-        return Default == true
-    elseif ElemType == "String" then
-        return tostring(Default)
-    end
-
-    return nil
 end
 
 -- Serialize a LiveData class instance into a flat table (ACF_UserData)
@@ -238,9 +169,6 @@ function Serialization.DeserializeInto(Class, Instance, Data)
         elseif Options.InstantiateTypeForDefault and Instance[Field.Name] == nil then
             local DefaultType = GetTypeByName(Options.InstantiateTypeForDefault)
             Instance[Field.Name] = DefaultType and DefaultType() or nil
-        elseif Instance[Field.Name] == nil then
-            local Fallback = ScalarDefault(ElemType, Options)
-            if Fallback ~= nil then Instance[Field.Name] = Fallback end
         end
     end
 
@@ -286,9 +214,6 @@ function Serialization.DeserializePartial(Class, Data)
         elseif Options.InstantiateTypeForDefault then
             local DefaultType = GetTypeByName(Options.InstantiateTypeForDefault)
             Instance[Field.Name] = DefaultType and DefaultType() or nil
-        else
-            local Fallback = ScalarDefault(ElemType, Options)
-            if Fallback ~= nil then Instance[Field.Name] = Fallback end
         end
     end
 

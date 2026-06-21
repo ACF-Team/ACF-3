@@ -45,8 +45,6 @@ end
 ---The thickness of the empty box will be defined by the ACF.ContainerArmor global variable.
 ---@return number Mass The mass of the hollow box.
 local function GetEmptyMass()
-	if not isvector(BoxSize) then return 0 end
-
 	local Armor          = ACF.ContainerArmor * ACF.MmToInch
 	local ExteriorVolume = BoxSize.x * BoxSize.y * BoxSize.z
 	local InteriorVolume = math.max(0, (BoxSize.x - 2 * Armor) * (BoxSize.y - 2 * Armor) * (BoxSize.z - 2 * Armor))
@@ -153,18 +151,12 @@ local function UpdateBoxSizeFromProjectileCounts(ToolData, BulletData)
 	local Shape  = ACF.GetClientString("AmmoShape", "Box")
 
 	if Class and BulletData then
-		local NewSize
 		if Shape == "Cylinder" then
 			-- For drums: X = rounds per ring, Z = layers
-			NewSize = ACF.GetDrumCrateSizeFromProjectileCounts(CountX, CountZ, Class, ToolData, BulletData)
+			BoxSize = ACF.GetDrumCrateSizeFromProjectileCounts(CountX, CountZ, Class, ToolData, BulletData)
 		else
-			NewSize = ACF.GetCrateSizeFromProjectileCounts(CountX, CountY, CountZ, Class, ToolData, BulletData)
+			BoxSize = ACF.GetCrateSizeFromProjectileCounts(CountX, CountY, CountZ, Class, ToolData, BulletData)
 		end
-
-		-- Keep the previous valid size if the calculation couldn't resolve one (avoids nil BoxSize)
-		if isvector(NewSize) then BoxSize = NewSize end
-		if not isvector(BoxSize) then return end
-
 		-- Set the ammo size client data so it gets sent to the server
 		ACF.SetClientData("AmmoSizeX", BoxSize.x)
 		ACF.SetClientData("AmmoSizeY", BoxSize.y)
@@ -803,18 +795,13 @@ function ACF.CreateAmmoMenu(Menu)
 				local CountZ = ACF.GetClientNumber("CrateProjectilesZ", 3)
 				local Shape = ACF.GetClientString("AmmoShape", "Box")
 
-				local NewSize
 				if Shape == "Cylinder" then
-					NewSize = ACF.GetDrumCrateSizeFromProjectileCounts(CountX, CountZ, Class, ToolData, BulletData)
+					BoxSize = ACF.GetDrumCrateSizeFromProjectileCounts(CountX, CountZ, Class, ToolData, BulletData)
 				else
-					NewSize = ACF.GetCrateSizeFromProjectileCounts(CountX, CountY, CountZ, Class, ToolData, BulletData)
+					BoxSize = ACF.GetCrateSizeFromProjectileCounts(CountX, CountY, CountZ, Class, ToolData, BulletData)
 				end
-
-				if isvector(NewSize) then BoxSize = NewSize end
 			end
 		end
-
-		if not isvector(BoxSize) then return "" end
 
 		local Shape = ACF.GetClientString("AmmoShape", "Box")
 		if Shape == "Cylinder" then
@@ -853,24 +840,25 @@ function ACF.CreateAmmoMenu(Menu)
 	Title:DefineSetter(UpdateTitle)
 	Title:SetText("")
 
-	-- Initialize BoxSize and projectile counts so BoxSize holds a valid Vector before first use
+	-- Initialize BoxSize and projectile counts
+	--[[
 	local function InitializeBoxSize()
 		local ToolData = ACF.GetAllClientData()
-		local Class    = GetWeaponClass(ToolData)
+		local Class = GetWeaponClass(ToolData)
 
-		if not Class then return end
+		if Class then
+			local Ammo = ACF.Classes.AmmoTypes.Get(ToolData.AmmoType)
 
-		local CurrentAmmo = ACF.Classes.AmmoTypes.Get(ToolData.AmmoType)
+			if Ammo then
+				local BulletData = Ammo:ClientConvert(ToolData)
 
-		if not CurrentAmmo then return end
-
-		local BulletData = CurrentAmmo:ClientConvert(ToolData)
-
-		-- Always calculate from current projectile counts to ensure consistency.
-		-- This prevents old Size values from overriding the user's projectile count settings.
-		UpdateBoxSizeFromProjectileCounts(ToolData, BulletData)
+				-- Always calculate from current projectile counts to ensure consistency
+				-- This prevents old Size values from overriding the user's projectile count settings
+				UpdateBoxSizeFromProjectileCounts(ToolData, BulletData)
+			end
+		end
 	end
-
+	]]--
 	function List:LoadEntries(Class)
 		ACF.LoadSortedList(self, GetAmmoList(Class), "Name", "SpawnIcon")
 
@@ -878,7 +866,7 @@ function ACF.CreateAmmoMenu(Menu)
 		UpdateShapeSelector(Menu)
 
 		-- Initialize box size when entries are loaded
-		timer.Simple(0, InitializeBoxSize)
+		--timer.Simple(0, InitializeBoxSize)
 	end
 
 	function List:OnSelect(Index, _, Data)

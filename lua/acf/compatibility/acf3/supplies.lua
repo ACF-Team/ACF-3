@@ -1,14 +1,12 @@
 ACF.Classes.Entities.RegisterCompatPatch("acf_supply", 2026061601, function(Data)
 	if Data.ACF_UserData then return end
 
-	local ShapeMap = {
-		Box      = "ACF.ContainerShapes.Box",
-		Sphere   = "ACF.ContainerShapes.Sphere",
-		Cylinder = "ACF.ContainerShapes.Cylinder",
-	}
+	local Old = Data.Data or {}
 
 	Data.ACF_UserData = {
-		Shape = ShapeMap[Data.SupplyShape] or "ACF.ContainerShapes.Box",
-		Size  = Data.Size,
+		SupplyShape = Old.SupplyShape or Data.SupplyShape,
+		SupplySizeX = Old.SupplySizeX or Data.SupplySizeX,
+		SupplySizeY = Old.SupplySizeY or Data.SupplySizeY,
+		SupplySizeZ = Old.SupplySizeZ or Data.SupplySizeZ,
 	}
 end)

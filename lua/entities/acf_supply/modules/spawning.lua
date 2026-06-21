@@ -1,5 +1,4 @@
 local ACF       = ACF
-local Classes   = ACF.Classes
 local WireLib   = WireLib
 local Round     = math.Round
 
@@ -17,15 +16,23 @@ ACF.AddInputAction("acf_supply", "Active", function(Entity, Value)
 	end
 end)
 
+-- Runs on raw client/dupe data before serialization (replaces the legacy VerifyData).
+function ENT.ACF_OnVerifyClientData(ClientData)
+	if not ClientData.SupplyShape or not ACF.ContainerShapeModels[ClientData.SupplyShape] then
+		ClientData.SupplyShape = "Box"
+	end
+end
+
 do -- Spawning
 	function ENT:ACF_PreSpawn(_, _, _, ClientData)
 		self.ACF = {}
 
-		-- ClientData.Shape is the raw FQN string; the "Shape" field defaults to Box server-side.
-		local ShapeClass = Classes.GetTypeByName(ClientData.Shape) or Classes.GetTypeByName("ACF.ContainerShapes.Box")
-		local Model      = ShapeClass.Model or ACF.ContainerShapeModels.Box
+		local Shape = ClientData.SupplyShape
+		if not ACF.ContainerShapeModels[Shape] then Shape = "Box" end
 
-		self.Shape     = ShapeClass.Name
+		local Model = ACF.ContainerShapeModels[Shape]
+
+		self.Shape     = Shape
 		self.ACF.Model = Model
 
 		self:SetMaterial("phoenix_storms/Future_vents")
@@ -45,14 +52,20 @@ end
 
 do -- Updating
 	function ENT:ACF_PostUpdateEntityData()
-		local Shape     = self:ACF_GetUserVar("Shape")
-		local ShapeName = (Shape and Shape.Name) or "Box"
-		local Model     = (Shape and Shape.Model) or ACF.ContainerShapeModels[ShapeName] or ACF.ContainerShapeModels.Box
+		local Shape = self:ACF_GetUserVar("SupplyShape")
+		if not ACF.ContainerShapeModels[Shape] then Shape = "Box" end
 
-		self.Shape     = ShapeName
+		local Model = ACF.ContainerShapeModels[Shape]
+
+		self.Shape     = Shape
 		self.ACF.Model = Model
 		self:SetScaledModel(Model)
-		local Size = self:ACF_GetUserVar("Size")
+
+		local Size = Vector(
+			self:ACF_GetUserVar("SupplySizeX") or 24,
+			self:ACF_GetUserVar("SupplySizeY") or 24,
+			self:ACF_GetUserVar("SupplySizeZ") or 24
+		)
 
 		self:SetSize(Size)
 
