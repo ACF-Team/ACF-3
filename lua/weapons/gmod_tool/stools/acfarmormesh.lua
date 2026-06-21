@@ -133,6 +133,7 @@ if CLIENT then
 
 		AddFilterCheckBox("acf_gearbox")
 		AddFilterCheckBox("acf_fueltank")
+		AddFilterCheckBox("acf_gun")
 		AddFilterCheckBox("acf_missile")
 		AddFilterCheckBox("acf_rack")
 		AddFilterCheckBox("acf_turret")
