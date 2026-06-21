@@ -20,4 +20,17 @@ do
         Split.ACF_LastDamageAttacker = Previous.ACF_LastDamageAttacker
         Split.ACF_LastDamageInflictor = Previous.ACF_LastDamageInflictor
     end)
+
+    -- When contraptions merge, carry forward the most recent damage info
+    hook.Add("cfw.contraption.merged", "ACF_KillTracking_TrackContraptionMerges", function(absorbed, into)
+        if (absorbed.ACF_LastDamageTime or 0) > (into.ACF_LastDamageTime or 0) then
+            into.ACF_LastDamageTime = absorbed.ACF_LastDamageTime
+            into.ACF_LastDamageAttacker = absorbed.ACF_LastDamageAttacker
+            into.ACF_LastDamageInflictor = absorbed.ACF_LastDamageInflictor
+        end
+
+        if (absorbed.ACF_LastNotifyDeathTime or 0) > (into.ACF_LastNotifyDeathTime or 0) then
+            into.ACF_LastNotifyDeathTime = absorbed.ACF_LastNotifyDeathTime
+        end
+    end)
 end

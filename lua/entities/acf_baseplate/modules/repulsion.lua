@@ -7,6 +7,34 @@ local ENTITY          = FindMetaTable("Entity")
 local VECTOR          = FindMetaTable("Vector")
 local PHYSOBJ         = FindMetaTable("PhysObj")
 
+local COLLISION_SCALE = 15000
+local MOMENTUM_SCALE = 1
+local TOTAL_SCALE = 1
+
+local zero_vec = Vector(0, 0, 0)
+
+-- Bounding sphere enclosing the family of a baseplate.
+local function GetFamilyBoundingSphere(Ent, EntTable)
+	-- Rate limit for optimization
+	if Clock.CurTime > (EntTable.FamilyBoundsDelay or 0) then
+		EntTable.FamilyBoundsDelay = Clock.CurTime + 3 + math.Rand(-1, 1)
+
+		-- I don't know why family isn't valid sometimes... oh well.
+		local Family = Ent:GetFamily()
+		if Family then
+			local Verts = Family:GetOBB()
+			local MinCorner, MaxCorner = Verts[1], Verts[8]
+			EntTable.FamilyBoundsLocalPos = ENTITY.WorldToLocal(Ent, (MinCorner + MaxCorner) * 0.5)
+			EntTable.FamilyBoundsRadius   = VECTOR.Distance(MinCorner, MaxCorner) * 0.5
+		end
+	end
+
+	local LocalPos = EntTable.FamilyBoundsLocalPos or zero_vec
+	local Radius = EntTable.FamilyBoundsRadius or 0
+
+	return ENTITY.LocalToWorld(Ent, LocalPos), Radius
+end
+
 local function GetBaseplateProperties(Ent, Self, SelfPos, SelfRadius)
 	if Ent == Self then return false end
 
@@ -19,11 +47,7 @@ local function GetBaseplateProperties(Ent, Self, SelfPos, SelfRadius)
 	if not IsPhysObjValid(Physics) then return false end
 
 	local EntTable  = ENTITY.GetTable(Ent)
-
-	local EntX, EntY = VECTOR.Unpack(EntTable.Size)
-
-	local Pos         = PHYSOBJ.GetPos(Physics)
-	local Radius      = math.sqrt((EntX / 2) ^ 2 + (EntY / 2) ^ 2)
+	local Pos, Radius = GetFamilyBoundingSphere(Ent, EntTable)
 
 	if Self and not util.IsSphereIntersectingSphere(SelfPos, SelfRadius, Pos, Radius) then
 		return false
@@ -68,28 +92,36 @@ hook.Add("Think", "ACF_Baseplate_Collision_Simulation", function()
 			if not Contraption1 or not Contraption2 then continue end
 			if Contraption1 == Contraption2 then continue end
 
-			if not ACF.DoesContraptionHavePlayers(Contraption1) or not ACF.DoesContraptionHavePlayers(Contraption2) then continue end
+			-- if not ACF.DoesContraptionHavePlayers(Contraption1) or not ACF.DoesContraptionHavePlayers(Contraption2) then continue end
 			-- Final chance for addons to handle it. If something returns false, we continue.
 			if hook.Run("ACF_OnBaseplateRepulsion", BP1, BP2) == false then continue end
 
 			local IntersectionDistance, IntersectionDirection, IntersectionCenter = CalculateSphereIntersection(Pos1, Radius1, Pos2, Radius2)
-
 			if IntersectionDistance > 0 then continue end
 
-			local CollisionForce1 = ((Vel1 / 4) + ( IntersectionDirection * IntersectionDistance * 150)) * 100
-			local CollisionForce2 = ((Vel2 / 4) + (-IntersectionDirection * IntersectionDistance * 150)) * 100
+			-- Velocity orthogonal to the collision direction is irrelevant...
+			local VelAlongNormal = VECTOR.Dot(Vel2 - Vel1, IntersectionDirection)
 
-			local BP1Force = CollisionForce1 * math.Clamp(PhysMass1 / TotalMass1, 0, 1)
-			local BP2Force = CollisionForce2 * math.Clamp(PhysMass2 / TotalMass2, 0, 1)
+			-- Compute the impulse needed to preserve the momentum of the system along the direction of the collision
+			-- If they're moving away from each other, ignore.
+			-- J = m * deltaV = m(v' - v) -> v' = v + J / m
+			-- Newton's third law guarantees equal and opposite forces -> Equal and opposite impulses over short time -> J_a = -J_b = J
+			-- v'_a = v_a + J_a / m_a = v_a + J / m_a
+			-- v'_b = v_b + J_b / m_b = v_b - J / m_b
+			-- Assuming a perfectly inelastic collision, v'_a = v'_b = v'
+			-- v_a + J / m_a = v_b - J / m_b -> J(1/m_a + 1/m_b) = v_b - v_a -> J = (v_b - v_a) / (1/m_a + 1/m_b)
+			local ImpulseMagnitude = (VelAlongNormal < 0) and (-VelAlongNormal / (1 / TotalMass1 + 1 / TotalMass2)) or 0
 
-			local BP1LinImpulse, BP1AngImpulse = PHYSOBJ.CalculateForceOffset(Physics1, BP1Force, IntersectionCenter)
-			PHYSOBJ.ApplyForceCenter(Physics1, BP1LinImpulse)
-			PHYSOBJ.ApplyTorqueCenter(Physics1, PHYSOBJ.LocalToWorldVector(Physics1, BP1AngImpulse * 2)) -- Are you sure this was a good idea?
+			local CollisionForce1 = (-IntersectionDirection * ImpulseMagnitude * MOMENTUM_SCALE) + (IntersectionDirection * IntersectionDistance * COLLISION_SCALE)
+			local CollisionForce2 = ( IntersectionDirection * ImpulseMagnitude * MOMENTUM_SCALE) + (-IntersectionDirection * IntersectionDistance * COLLISION_SCALE)
+
+			local BP1Force = CollisionForce1 * math.Clamp(PhysMass1 / TotalMass1, 0, 1) * TOTAL_SCALE
+			local BP2Force = CollisionForce2 * math.Clamp(PhysMass2 / TotalMass2, 0, 1) * TOTAL_SCALE
+
+			PHYSOBJ.ApplyForceOffset(Physics1, BP1Force, IntersectionCenter)
 			BP1:PlayBaseplateRepulsionSound(Vel1)
 
-			local BP2LinImpulse, BP2AngImpulse = PHYSOBJ.CalculateForceOffset(Physics2, BP2Force, IntersectionCenter)
-			PHYSOBJ.ApplyForceCenter(Physics2, BP2LinImpulse)
-			PHYSOBJ.ApplyTorqueCenter(Physics2, PHYSOBJ.LocalToWorldVector(Physics2, BP2AngImpulse * 2)) -- Are you sure this was a good idea?
+			PHYSOBJ.ApplyForceOffset(Physics2, BP2Force, IntersectionCenter)
 			BP2:PlayBaseplateRepulsionSound(Vel2)
 		end
 	end

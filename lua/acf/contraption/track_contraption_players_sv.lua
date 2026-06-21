@@ -25,7 +25,7 @@ function ResetTime(Entity)
 end
 
 -- CFW hooks to initialize state and handle splitting
-hook.Add("cfw.contraption.created", "ACF_CFW_TrackPlayersInContraptions", function(Contraption)
+hook.Add("cfw.contraption.init", "ACF_CFW_TrackPlayersInContraptions", function(Contraption)
     Contraption.ACF_TrackPlayers = {}
 end)
 
@@ -73,6 +73,15 @@ hook.Add("cfw.contraption.split", "ACF_CFW_TrackPlayersInContraptions", function
     print("    Table Address : " .. tostring(ChildContraption))
     print("    Player Count  : " .. table.Count(ChildContraption.ACF_TrackPlayers))
 ]]
+end)
+
+-- Transfer player tracking when contraptions merge
+hook.Add("cfw.contraption.merged", "ACF_CFW_TrackPlayersInContraptions", function(absorbed, into)
+    if not absorbed.ACF_TrackPlayers then return end
+
+    for player in pairs(absorbed.ACF_TrackPlayers) do
+        into.ACF_TrackPlayers[player] = true
+    end
 end)
 
 -- Engine hooks to track players entering vehicles

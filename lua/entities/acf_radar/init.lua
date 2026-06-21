@@ -51,6 +51,9 @@ local TimerExists = timer.Exists
 local TimerCreate = timer.Create
 local TimerRemove = timer.Remove
 local hook        = hook
+local CurTime     = CurTime
+
+local EntSizeCacheTime = 1 -- Seconds a contraption's detected size is cached before being recalculated
 
 -- TODO: Optimize this so the entries are only cleared when the target is no longer detected by the radar
 local function ClearTargets(Entity)
@@ -144,6 +147,27 @@ local function GetEntityOwner(Owner, Entity)
 	return EntOwner
 end
 
+-- Returns an entity's detected size, in inches, for radar reporting purposes.
+-- Contraption sizes are derived from their AABB, cached on the contraption itself and rate limitted.
+-- Missiles return their caliber instead
+local function GetEntSize(Ent)
+	if Ent.IsACFMissile then
+		return math.Round((Ent.Caliber or 0) / ACF.InchToMm)
+	end
+
+	local EntContraption = Ent:CFW_GetContraption()
+	if not EntContraption then return 0 end
+
+	if not EntContraption.ACF_RadarSizeTime or CurTime() > EntContraption.ACF_RadarSizeTime + EntSizeCacheTime then
+		local Mins, Maxs = EntContraption:GetAABB()
+
+		EntContraption.ACF_RadarSize = math.Round((Maxs - Mins):Length())
+		EntContraption.ACF_RadarSizeTime = CurTime()
+	end
+
+	return EntContraption.ACF_RadarSize
+end
+
 local function ScanForEntities(Entity)
 	ClearTargets(Entity)
 
@@ -182,14 +206,7 @@ local function ScanForEntities(Entity)
 
 			local EntDist = Origin:Distance(EntPos)
 
-			local EntSize = 0
-			if Ent.IsACFMissile then
-				EntSize = (Ent.Caliber or 0) / ACF.InchToMm
-			elseif Ent:CFW_GetContraption() then
-				local Mins, Maxs, _ = Ent:CFW_GetContraption():GetAABB()
-				EntSize = (Maxs - Mins):Length()
-			end
-			EntSize = math.Round(EntSize) -- Round to nearest inch
+			local EntSize = GetEntSize(Ent)
 
 			Targets[Ent] = {
 				Index = Index,
@@ -198,6 +215,7 @@ local function ScanForEntities(Entity)
 				Velocity = EntVel,
 				Distance = EntDist,
 				Spread   = EntSpread,
+				Size = EntSize
 			}
 
 			IDs[Count] = Index

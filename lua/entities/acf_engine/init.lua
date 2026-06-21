@@ -696,6 +696,45 @@ hook.Add("cfw.contraption.entityRemoved", "ACF_Engine_ContraptionChecks", functi
 	end
 end)
 
+-- Transfer engine data when contraptions merge
+hook.Add("cfw.contraption.merged", "ACF_Engine_ContraptionChecks", function(absorbed, into)
+	if not absorbed.Engines then return end
+
+	into.Engines = into.Engines or {}
+
+	for eng in pairs(absorbed.Engines) do
+		into.Engines[eng] = true
+	end
+
+	into.HasEngines   = next(into.Engines) and true or nil
+	into.TotalEngines = into.HasEngines and table.Count(into.Engines) or 0
+end)
+
+-- Rebuild engine indexes when contraptions split
+hook.Add("cfw.contraption.split", "ACF_Engine_ContraptionChecks", function(parent, child)
+	child.Engines = {}
+
+	for ent in pairs(child.ents) do
+		if ent:GetClass() == "acf_engine" then
+			child.Engines[ent] = true
+		end
+	end
+
+	child.HasEngines   = next(child.Engines) and true or nil
+	child.TotalEngines = child.HasEngines and table.Count(child.Engines) or 0
+
+	parent.Engines = {}
+
+	for ent in pairs(parent.ents) do
+		if ent:GetClass() == "acf_engine" then
+			parent.Engines[ent] = true
+		end
+	end
+
+	parent.HasEngines   = next(parent.Engines) and true or nil
+	parent.TotalEngines = parent.HasEngines and table.Count(parent.Engines) or 0
+end)
+
 -- specialized calcmassratio for engines
 function ENT:CalcMassRatio(SelfTbl)
 	SelfTbl        = SelfTbl or ENTITY.GetTable(self)

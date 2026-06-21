@@ -380,7 +380,7 @@ do -- Terminal ballistics --------------------------
 		end
 
 		if HitRes.Loss == 1 then
-			-- If the there's more armor than penetration, the bullet ricochets
+			-- If there's more armor than penetration, the bullet ricochets
 			Ricochet, HitRes.Loss = Ballistics.CalculateRicochet(Bullet, Trace)
 		end
 

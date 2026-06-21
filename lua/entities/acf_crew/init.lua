@@ -166,17 +166,21 @@ local function iterScan(crew, reps)
 	return sum / count
 end
 
+--- Warns the crew and unlinks it from all of its current targets
+local function UnlinkAllTargets(crew, title, message)
+	Notify.EntityWarning(crew, title, message)
+
+	if next(crew.Targets) then
+		for Target in pairs(crew.Targets) do
+			crew:Unlink(Target)
+		end
+	end
+end
+
 function ENT:CFW_PreParentedTo(OldParent, _)
 	-- Force unlinks if OldParent is valid
 	if IsValid(OldParent) and not self:IsMarkedForDeletion() then
-		Notify.EntityWarning(self, "Crew parent has changed", "This crew member was reparented. All links have been removed, please relink.")
-		if next(self.Targets) then
-			for Target in pairs(self.Targets) do
-				self:Unlink(Target)
-			end
-		end
-		self:CFW_Unindex_Crew(self:CFW_GetContraption())
-		self:CFW_Index_Crew(self:CFW_GetContraption())
+		UnlinkAllTargets(self, "Crew parent has changed", "This crew member was reparented. All links have been removed, please relink.")
 	end
 end
 
@@ -644,21 +648,22 @@ do
 
 		HookRun("ACF_OnEntityLast", "acf_crew", self)
 
-		-- Unlink crews if their type changes
-		if self.CrewTypeID ~= Data.CrewTypeID then
-			Notify.EntityWarning(self, "Crew occupation has changed", "This crew member's occupation was changed. All links have been removed, please relink.")
-			if next(self.Targets) then
-				for Target in pairs(self.Targets) do
-					self:Unlink(Target)
-				end
-			end
-			self:CFW_Unindex_Crew(self:CFW_GetContraption())
-			self:CFW_Index_Crew(self:CFW_GetContraption())
+		-- Unlink crews and reindex if their occupation changes (CrewsByType/CrewsByPriority buckets are keyed on these)
+		local TypeChanged = self.CrewTypeID ~= Data.CrewTypeID
+		local CrewContraption = self:CFW_GetContraption()
+
+		if TypeChanged then
+			UnlinkAllTargets(self, "Crew occupation has changed", "This crew member's occupation was changed. All links have been removed, please relink.")
+			self:CFW_Index_Crew(CrewContraption, nil)
 		end
 
 		ACF.SaveEntity(self)
 
 		UpdateCrew(self, Data, CrewModel, CrewType)
+
+		if TypeChanged then
+			self:CFW_Index_Crew(CrewContraption, true)
+		end
 
 		ACF.RestoreEntity(self)
 
@@ -885,36 +890,21 @@ end
 
 -- CFW Integration
 do
-	function ENT:CFW_Index_Crew(Contraption)
-		-- Index crew
+	--- Indexes or unindexes the crew within a Contraption's crew lookup tables.
+	--- Pass true for Value to index the crew, or nil to unindex it.
+	function ENT:CFW_Index_Crew(Contraption, Value)
 		if Contraption == nil then return end
 
 		Contraption.Crews = Contraption.Crews or {}
-		Contraption.Crews[self] = true
+		Contraption.Crews[self] = Value
 
 		Contraption.CrewsByType = Contraption.CrewsByType or {}
 		Contraption.CrewsByType[self.CrewTypeID] = Contraption.CrewsByType[self.CrewTypeID] or {}
-		Contraption.CrewsByType[self.CrewTypeID][self] = true
+		Contraption.CrewsByType[self.CrewTypeID][self] = Value
 
 		Contraption.CrewsByPriority = Contraption.CrewsByPriority or {}
 		Contraption.CrewsByPriority[self.CrewPriority] = Contraption.CrewsByPriority[self.CrewPriority] or {}
-		Contraption.CrewsByPriority[self.CrewPriority][self] = true
-	end
-
-	function ENT:CFW_Unindex_Crew(Contraption)
-		-- Unindex crew
-		if Contraption == nil then return end
-
-		Contraption.Crews = Contraption.Crews or {}
-		Contraption.Crews[self] = nil
-
-		Contraption.CrewsByType = Contraption.CrewsByType or {}
-		Contraption.CrewsByType[self.CrewTypeID] = Contraption.CrewsByType[self.CrewTypeID] or {}
-		Contraption.CrewsByType[self.CrewTypeID][self] = nil
-
-		Contraption.CrewsByPriority = Contraption.CrewsByPriority or {}
-		Contraption.CrewsByPriority[self.CrewPriority] = Contraption.CrewsByPriority[self.CrewPriority] or {}
-		Contraption.CrewsByPriority[self.CrewPriority][self] = nil
+		Contraption.CrewsByPriority[self.CrewPriority][self] = Value
 	end
 
 	-- All this is leveraging CFW to get O(1)/O(#crew) operations for crew.
@@ -922,7 +912,7 @@ do
 		Contraption.RemainingLinks = Contraption.RemainingLinks or {}
 		if Ent:GetClass() == "acf_crew" then
 			-- Index crew
-			Ent:CFW_Index_Crew(Contraption, Ent)
+			Ent:CFW_Index_Crew(Contraption, true)
 
 			-- Propagate links waiting on CFW from crew to Contraption
 			if Ent.RemainingLinks then
@@ -954,7 +944,7 @@ do
 		Contraption.RemainingLinks = Contraption.RemainingLinks or {}
 		if Ent:GetClass() == "acf_crew" then
 			-- Unindex crew
-			Ent:CFW_Unindex_Crew(Contraption)
+			Ent:CFW_Index_Crew(Contraption, nil)
 
 			-- Unpropagate links waiting on CFW from crew to Contraption
 			if Ent.RemainingLinks then
@@ -972,6 +962,39 @@ do
 				end
 				Contraption.RemainingLinks[Ent] = nil
 			end
+		end
+	end)
+
+	-- Transfer crew data when contraptions merge
+	hook.Add("cfw.contraption.merged", "ACF_CFWCrewMerge", function(absorbed, into)
+		if absorbed.Crews then
+			for crew in pairs(absorbed.Crews) do
+				crew:CFW_Index_Crew(into, true)
+			end
+		end
+
+		if absorbed.RemainingLinks then
+			into.RemainingLinks = into.RemainingLinks or {}
+			for target, waiters in pairs(absorbed.RemainingLinks) do
+				into.RemainingLinks[target] = into.RemainingLinks[target] or {}
+				for waiter in pairs(waiters) do
+					into.RemainingLinks[target][waiter] = true
+				end
+			end
+		end
+	end)
+
+	-- Rebuild crew indexes when contraptions split
+	hook.Add("cfw.contraption.split", "ACF_CFWCrewSplit", function(parent, child)
+		parent.Crews, parent.CrewsByType, parent.CrewsByPriority = {}, {}, {}
+		child.Crews,  child.CrewsByType,  child.CrewsByPriority  = {}, {}, {}
+
+		for ent in pairs(parent.ents) do
+			if ent:GetClass() == "acf_crew" then ent:CFW_Index_Crew(parent, true) end
+		end
+
+		for ent in pairs(child.ents) do
+			if ent:GetClass() == "acf_crew" then ent:CFW_Index_Crew(child, true) end
 		end
 	end)
 end
@@ -1106,8 +1129,6 @@ do
 				local result, err = self:Link(ActualEnt)
 				if not result then Notify.EntityWarning(Ent, "ACF Crew:PostEntityPaste failure", err) end
 			end
-
-			self.RemainingLinks = RLs
 
 			EntMods.CrewTargets = nil
 		end
