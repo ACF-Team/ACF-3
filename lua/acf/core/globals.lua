@@ -140,7 +140,7 @@ do -- ACF global vars
 
 	ACF.DefineSetting("ArmorCoef",            1,      "Armor coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
 
-	ACF.DefineSetting("DamageCoef",           0.001,      "Damage coefficient has been set to %.3f.", ACF.FloatDataCallback(0.001, 1000, 2))
+	ACF.DefineSetting("DamageCoef",           0.01,      "Damage coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 1000, 2))
 
 	ACF.FuelRate = 15 -- Multiplier for fuel usage, 1.0 is approx real world
 	ACF.DefineSetting("FuelFactor",           1,      "Fuel rate multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("FuelRate", 0.01, 2, 2))
