@@ -66,11 +66,10 @@ Classes.DefineClass("ACF.Ammunition.HP", "ACF.Ammunition.AP", function()
 		end
 	end
 
-	if SERVER then
-		local Entities = Classes.Entities
-		local Conversion	= ACF.PointConversion
+	MENU_FIELD("Number", "HollowRatio", {Default = 0})
 
-		Entities.AddArguments("acf_ammo", "HollowRatio") -- Adding extra info to ammo crates
+	if SERVER then
+		local Conversion	= ACF.PointConversion
 
 		function CLASS:GetCost(BulletData)
 			local RemovedMass	= BulletData.CavVol * ACF.SteelDensity

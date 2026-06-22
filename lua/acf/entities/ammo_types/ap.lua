@@ -184,12 +184,13 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function()
 		end
 	end
 
+	MENU_FIELD("Number", "Projectile", 	{Default = 0})
+	MENU_FIELD("Number", "Propellant", 	{Default = 0})
+	MENU_FIELD("Number", "Tracer", 		{Default = 0})
+
 	if SERVER then
 		local Ballistics = ACF.Ballistics
-		local Entities   = Classes.Entities
 		local Conversion	= ACF.PointConversion
-
-		Entities.AddArguments("acf_ammo", "Projectile", "Propellant", "Tracer") -- Adding extra info to ammo crates
 
 		function CLASS:OnLast(Entity)
 			Entity.Projectile = nil

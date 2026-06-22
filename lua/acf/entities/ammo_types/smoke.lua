@@ -98,12 +98,12 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function()
 		end
 	end
 
+	MENU_FIELD("Number", "FillerRatio", {Default = 0})
+	MENU_FIELD("Number", "SmokeWPRatio", {Default = 0})
+
 	if SERVER then
 		local Ballistics = ACF.Ballistics
-		local Entities   = Classes.Entities
 		local Conversion	= ACF.PointConversion
-
-		Entities.AddArguments("acf_ammo", "FillerRatio", "SmokeWPRatio") -- Adding extra info to ammo crates
 
 		function CLASS:GetCost(BulletData)
 			return ((BulletData.ProjMass - BulletData.FillerMass - BulletData.WPMass) * Conversion.Steel * 0.75) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.SF) + (BulletData.WPMass * Conversion.WP)

@@ -201,13 +201,13 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function()
 		end
 	end
 
+	MENU_FIELD("Number", "LinerAngle", {Default = 0})
+	MENU_FIELD("Number", "StandoffRatio", {Default = 0})
+
 	if SERVER then
 		local Ballistics = ACF.Ballistics
-		local Entities   = Classes.Entities
 		local Objects    = Damage.Objects
 		local Conversion	= ACF.PointConversion
-
-		Entities.AddArguments("acf_ammo", "LinerAngle", "StandoffRatio") -- Adding extra info to ammo crates
 
 		function CLASS:GetCost(BulletData)
 			return (BulletData.CasingMass * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.CompB) + (BulletData.LinerMass * Conversion.Copper)

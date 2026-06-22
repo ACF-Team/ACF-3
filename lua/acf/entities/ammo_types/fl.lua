@@ -97,16 +97,16 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
 		end
 	end
 
+	MENU_FIELD("Number", "Flechettes", {Default = 0})
+	MENU_FIELD("Number", "Spread", {Default = 0})
+
 	if SERVER then
 		local Ballistics = ACF.Ballistics
-		local Entities   = Classes.Entities
 		local Conversion	= ACF.PointConversion
 
 		function CLASS:GetCost(BulletData)
 			return (BulletData.ProjMass * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant)
 		end
-
-		Entities.AddArguments("acf_ammo", "Flechettes", "Spread") -- Adding extra info to ammo crates
 
 		function CLASS:OnLast(Entity)
 			BASE.OnLast(self, Entity)
