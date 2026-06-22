@@ -1,6 +1,5 @@
 local ACF       = ACF
 local Classes   = ACF.Classes
-local Entities  = Classes.Entities
 local Guidances = Classes.Guidances
 local Fuzes     = Classes.Fuzes
 

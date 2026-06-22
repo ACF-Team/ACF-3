@@ -1,5 +1,3 @@
-local Guidances = ACF.Classes.Guidances
-local Guidance  = Guidances.Register("Radio (SACLOS)", "Radio (MCLOS)")
 local Classes 	= ACF.Classes
 Classes.DefineClass("ACF.Missiles.Guidance.RadioSACLOS", "ACF.Missiles.Guidance.RadioMCLOS", function()
 	if CLIENT then
