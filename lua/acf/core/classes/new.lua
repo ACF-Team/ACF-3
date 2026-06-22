@@ -30,6 +30,7 @@ do
     local function InitializeClass(FullyQualifiedName, NewClass, BaseClass)
         local TypeName = string.format("Type (%s)", FullyQualifiedName)
 
+        local InstantiateFields
         local ClassMeta = {
             __index = BaseClass, -- If I don't have it, check my super (inheritance)
             __tostring = function() return TypeName end,
@@ -44,6 +45,7 @@ do
                     __index = self, -- Instances should use their class' static methods/variables if they dont have them set
                     __tostring = function(self) return self.ToString and self:ToString() or Stringified end, -- Avoid ambiguity/shadowing of self and the instance
                 })
+                InstantiateFields(self) -- run field instantiators first
                 if self.new then self.new(Instance, ...) end -- Constructor if applicable
                 return Instance
             end
@@ -66,6 +68,25 @@ do
                 local Copy = table.Copy(Field)
                 table.insert(ClassMeta.__FIELDS.List, Copy)
                 ClassMeta.__FIELDS.Lookup[Field.Name] = Copy
+            end
+        end
+
+        function InstantiateFields(Instance)
+            for _, Field in ipairs(ClassMeta.__FIELDS.List) do
+                -- Check default of field def
+                local Options = Field.Options
+                -- This can either be a type name, a factory, or a value
+                -- factories are used for things like table data if we ever store that or userdata like vectors/angles
+                if Options.InstantiateTypeForDefault then
+                    local Type = ACF.Classes.GetTypeByName(Options.InstantiateTypeForDefault)
+                    if ACF.Classes.IsAssignableTo(Type, ACF.Classes.GetTypeByName(Field.Type)) then
+                        Instance[Field.Name] = Type()
+                    end
+                elseif Options.DefaultFactory then
+                    Instance[Field.Name] = Options.DefaultFactory()
+                elseif Options.Default then
+                    Instance[Field.Name] = Default
+                end
             end
         end
 
@@ -125,8 +146,8 @@ do
             setfenv(NewClass.OnInit, Environment)
 
             NewClass.OnInit()
-            ClassMeta.ON_CLASS_INHERITED = NewClass.ON_CLASS_INHERITED
-            NewClass.ON_CLASS_INHERITED  = nil
+            ClassMeta.__inherited = NewClass.__inherited
+            NewClass.__inherited  = nil
         end
         -- Just in case GetType is no longer the same function...
         if NewClass.GetType ~= GetType then error("Class defined 'GetType' method, which is reserved") end
@@ -136,9 +157,9 @@ do
         local Ancestor = BaseClass
         while Ancestor ~= nil do
             local MT = getmetatable(Ancestor)
-            local ON_CLASS_INHERITED = MT and MT.ON_CLASS_INHERITED
-            if ON_CLASS_INHERITED then
-                ON_CLASS_INHERITED(NewClass)
+            local __inherited = MT and MT.__inherited
+            if __inherited then
+                __inherited(NewClass)
             end
             Ancestor = MT and MT.__PARENT
         end
