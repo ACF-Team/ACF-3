@@ -3,7 +3,7 @@ DEFINE_BASECLASS("acf_container")
 ENT.ACF_Limit = 32
 
 ACF.AutoRegisterV2(function()
-	MENU_FIELD("ACF.Guns.BaseGun", 			"Weapon",            	{OnlyAllowSubtypes = true, InstantiateTypeForDefault = "ACF.Guns.Cannon"})
+	MENU_FIELD("ACF.Weapons.BaseWeapon", 	"Weapon",            	{OnlyAllowSubtypes = true, InstantiateTypeForDefault = "ACF.Guns.Cannon"})
 	MENU_FIELD("ACF.Ammunition.BaseAmmo", 	"AmmoType",          	{OnlyAllowSubtypes = true, InstantiateTypeForDefault = "ACF.Ammunition.AP"})
 	MENU_FIELD("Number", 					"AmmoStage",         	{Min = ACF.AmmoStageMin or 1, Max = ACF.AmmoStageMax or 5, Default = 1, Decimals = 0})
 	MENU_FIELD("Number", 					"CrateProjectilesX", 	{Min = 1, Default = 3, Decimals = 0})

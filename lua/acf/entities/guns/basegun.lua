@@ -1,6 +1,6 @@
 local Classes = ACF.Classes
 
-Classes.DefineClass("ACF.Guns.BaseGun", function()
+Classes.DefineClass("ACF.Guns.BaseGun", "ACF.Weapons.BaseWeapon", function()
 	CLASS.Cleanup 		= "acf_gun"
 	CLASS.IsScalable 	= false
 
