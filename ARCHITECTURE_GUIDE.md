@@ -103,7 +103,7 @@ end
 local Ammo = AmmoTypes.Register("HE", "APHE")  -- Second arg is base class
 
 function Ammo:OnLoaded()
-    Ammo.BaseClass.OnLoaded(self)  -- Call parent
+    BASE.OnLoaded(self)  -- Call parent
 
     self.Name        = "High Explosive"
     self.Description = "Explodes on impact."
