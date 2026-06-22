@@ -2,22 +2,19 @@ local Missiles = ACF.Classes.Missiles
 
 local Classes = ACF.Classes
 Classes.DefineClass("ACF.Missiles.AirToAir", "ACF.Missiles.BaseMissile", function()
-	CLASS.ID = "AAM"
-end)
-
-Missiles.Register("AAM", {
-	Name		= "Air-To-Air Missiles",
-	Description	= "Missiles specialized for air-to-air flight. They have varying range, but are agile, can be radar-guided, and withstand difficult launch angles well.",
-	Sound		= "acf_missiles/missiles/missile_rocket.mp3",
-	Effect		= "Rocket Motor",
-	Spread		= 1,
-	Blacklist	= { "AP", "APHE", "HEAT", "HP", "FL", "SM" },
-	LimitConVar = {
+	CLASS.Name			= "Air-To-Air Missiles"
+	CLASS.ID 			= "AAM"
+	CLASS.Description	= "Missiles specialized for air-to-air flight. They have varying range, but are agile, can be radar-guided, and withstand difficult launch angles well."
+	CLASS.Sound			= "acf_missiles/missiles/missile_rocket.mp3"
+	CLASS.Effect		= "Rocket Motor"
+	CLASS.Spread		= 1
+	CLASS.Blacklist		= { "AP", "APHE", "HEAT", "HP", "FL", "SM" }
+	CLASS.LimitConVar 	= {
 		Name = "_acfm_aam",
 		Amount = 8,
 		Text = "Maximum number of air-to-air missiles that can be loaded at once. Differentiates from the acf_rack limit."
 	}
-})
+end)
 
 Missiles.RegisterItem("AIM-9 AAM", "AAM", {
 	Name		= "AIM-9 Sidewinder",

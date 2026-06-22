@@ -1,23 +1,18 @@
-local Missiles = ACF.Classes.Missiles
-
 local Classes = ACF.Classes
 Classes.DefineClass("ACF.Missiles.GuidedBomb", "ACF.Missiles.BaseMissile", function()
-	CLASS.ID = "GBU"
-end)
-
-Missiles.Register("GBU", {
-	Name		= "Guided Bomb Units",
-	Description	= "Similar to a regular bomb, but able to be guided in flight to a vector coordinate. Most useful versus hard, unmoving targets.",
-	Sound		= "acf_missiles/fx/clunk.mp3",
-	NoThrust	= true,
-	Spread		= 1,
-	Blacklist	= {"AP", "APHE", "HP", "FL"},
-	LimitConVar = {
+	CLASS.Name			= "Guided Bomb Units"
+	CLASS.ID 			= "GBU"
+	CLASS.Description	= "Similar to a regular bomb, but able to be guided in flight to a vector coordinate. Most useful versus hard, unmoving targets."
+	CLASS.Sound			= "acf_missiles/fx/clunk.mp3"
+	CLASS.NoThrust		= true
+	CLASS.Spread		= 1
+	CLASS.Blacklist		= {"AP", "APHE", "HP", "FL"}
+	CLASS.LimitConVar 	= {
 		Name = "_acfm_gbu",
 		Amount = 8,
 		Text = "Maximum number of guided bomb units that can be loaded at once. Differentiates from the acf_rack limit."
 	}
-})
+end)
 
 Missiles.RegisterItem("WalleyeGBU", "GBU", {
 	Name		= "AGM-62 Walleye",

@@ -1,23 +1,18 @@
-local Missiles = ACF.Classes.Missiles
-
 local Classes = ACF.Classes
 Classes.DefineClass("ACF.Missiles.UnguidedRocket", "ACF.Missiles.BaseMissile", function()
-	CLASS.ID = "UAR"
-end)
-
-Missiles.Register("UAR", {
-	Name		= "Unguided Aerial Rockets",
-	Description	= "Rockets which fit in racks, useful for rocket artillery.",
-	Sound		= "acf_missiles/missiles/missile_rocket.mp3",
-	Effect		= "Rocket Motor",
-	Spread		= 0.2,
-	Blacklist	= { "AP", "APHE", "HP", "FL", "SM" },
-	LimitConVar = {
+	CLASS.Name			= "Unguided Aerial Rockets"
+	CLASS.ID 			= "UAR"
+	CLASS.Description	= "Rockets which fit in racks, useful for rocket artillery."
+	CLASS.Sound			= "acf_missiles/missiles/missile_rocket.mp3"
+	CLASS.Effect		= "Rocket Motor"
+	CLASS.Spread		= 0.2
+	CLASS.Blacklist		= { "AP", "APHE", "HP", "FL", "SM" }
+	CLASS.LimitConVar 	= {
 		Name = "_acfm_uam",
 		Amount = 20,
 		Text = "Maximum number of unguided aerial rockets that can be loaded at once. Differentiates from the acf_rack limit."
 	}
-})
+end)
 
 Missiles.RegisterItem("RS82 ASR", "UAR", {
 	Name		= "RS-82 Rocket",

@@ -1,23 +1,18 @@
-local Missiles = ACF.Classes.Missiles
-
 local Classes = ACF.Classes
 Classes.DefineClass("ACF.Missiles.FreeFallingBomb", "ACF.Missiles.BaseMissile", function()
-	CLASS.ID = "BOMB"
-end)
-
-Missiles.Register("BOMB", {
-	Name		= "Free Falling Bombs",
-	Description	= "Despite their lack of guidance and sophistication, they are exceptionally destructive on impact relative to their weight.",
-	Sound		= "acf_missiles/fx/clunk.mp3",
-	NoThrust	= true,
-	Spread		= 1,
-	Blacklist	= { "AP", "APHE", "HP", "FL" },
-	LimitConVar = {
+	CLASS.Name			= "Free Falling Bombs"
+	CLASS.ID 			= "BOMB"
+	CLASS.Description	= "Despite their lack of guidance and sophistication, they are exceptionally destructive on impact relative to their weight."
+	CLASS.Sound			= "acf_missiles/fx/clunk.mp3"
+	CLASS.NoThrust		= true
+	CLASS.Spread		= 1
+	CLASS.Blacklist		= { "AP", "APHE", "HP", "FL" }
+	CLASS.LimitConVar 	= {
 		Name = "_acfm_bomb",
 		Amount = 8,
 		Text = "Maximum number of free-falling bombs that can be loaded at once. Differentiates from the acf_rack limit."
 	}
-})
+end)
 
 Missiles.RegisterItem("50kgBOMB", "BOMB", {
 	Name		= "50kg Free Falling Bomb",

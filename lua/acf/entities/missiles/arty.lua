@@ -1,23 +1,18 @@
-local Missiles = ACF.Classes.Missiles
-
 local Classes = ACF.Classes
 Classes.DefineClass("ACF.Missiles.Artillery", "ACF.Missiles.BaseMissile", function()
-	CLASS.ID = "ARTY"
-end)
-
-Missiles.Register("ARTY", {
-	Name		= "Artillery Rockets",
-	Description	= "Artillery rockets provide massive HE delivery over a broad area, with arcing ballistic trajectories and limited guidance.",
-	Sound		= "acf_missiles/missiles/missile_rocket.mp3",
-	Effect		= "Rocket Motor",
-	Spread		= 1,
-	Blacklist	= { "AP", "APHE", "HP", "FL", "SM" },
-	LimitConVar = {
+	CLASS.Name			= "Artillery Rockets"
+	CLASS.ID 			= "ARTY"
+	CLASS.Description	= "Artillery rockets provide massive HE delivery over a broad area, with arcing ballistic trajectories and limited guidance."
+	CLASS.Sound			= "acf_missiles/missiles/missile_rocket.mp3"
+	CLASS.Effect		= "Rocket Motor"
+	CLASS.Spread		= 1
+	CLASS.Blacklist		= { "AP", "APHE", "HP", "FL", "SM" }
+	CLASS.LimitConVar 	= {
 		Name = "_acfm_arty",
 		Amount = 12,
 		Text = "Maximum number of artillery rockets that can be loaded at once. Differentiates from the acf_rack limit."
 	}
-})
+end)
 
 Missiles.RegisterItem("Type 63 RA", "ARTY", {
 	Name		= "Type 63 Rocket",

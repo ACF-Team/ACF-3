@@ -1,23 +1,18 @@
-local Missiles = ACF.Classes.Missiles
-
 local Classes = ACF.Classes
 Classes.DefineClass("ACF.Missiles.SurfaceToAir", "ACF.Missiles.BaseMissile", function()
-	CLASS.ID = "SAM"
-end)
-
-Missiles.Register("SAM", {
-	Name		= "Surface-To-Air Missiles",
-	Description	= "Missiles specialized for surface-to-air operation, and well suited to lower altitude operation against ground attack aircraft.",
-	Sound		= "acf_missiles/missiles/missile_rocket.mp3",
-	Effect		= "Rocket Motor",
-	Spread		= 1,
-	Blacklist	= { "AP", "APHE", "HEAT", "HP", "FL", "SM" },
-	LimitConVar = {
+	CLASS.Name			= "Surface-To-Air Missiles"
+	CLASS.ID 			= "SAM"
+	CLASS.Description	= "Missiles specialized for surface-to-air operation, and well suited to lower altitude operation against ground attack aircraft."
+	CLASS.Sound			= "acf_missiles/missiles/missile_rocket.mp3"
+	CLASS.Effect		= "Rocket Motor"
+	CLASS.Spread		= 1
+	CLASS.Blacklist		= { "AP", "APHE", "HEAT", "HP", "FL", "SM" }
+	CLASS.LimitConVar	= {
 		Name = "_acfm_sam",
 		Amount = 8,
 		Text = "Maximum number of surface-to-air missiles that can be loaded at once. Differentiates from the acf_rack limit."
 	}
-})
+end)
 
 Missiles.RegisterItem("FIM-92 SAM", "SAM", {
 	Name		= "FIM-92 Stinger",

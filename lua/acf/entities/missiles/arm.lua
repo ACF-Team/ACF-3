@@ -1,9 +1,7 @@
-local Missiles = ACF.Classes.Missiles
-
 local Classes = ACF.Classes
 Classes.DefineClass("ACF.Missiles.AntiRadiation", "ACF.Missiles.BaseMissile", function()
-	CLASS.ID 			= "ARM"
 	CLASS.Name			= "Anti-Radiation Missiles"
+	CLASS.ID 			= "ARM"
 	CLASS.Description	= "Missiles specialized for Suppression of Enemy Air Defenses."
 	CLASS.Sound			= "acf_missiles/missiles/missile_rocket.mp3"
 	CLASS.Effect		= "Rocket Motor ATGM"

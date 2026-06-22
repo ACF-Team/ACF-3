@@ -1,23 +1,18 @@
-local Missiles = ACF.Classes.Missiles
-
 local Classes = ACF.Classes
 Classes.DefineClass("ACF.Missiles.GlidingBomb", "ACF.Missiles.BaseMissile", function()
-	CLASS.ID = "GBOMB"
-end)
-
-Missiles.Register("GBOMB", {
-	Name		= "Gliding Bombs",
-	Description	= "Similar to regular free falling bombs, gliding bombs are capable of travelling longer distances.",
-	Sound		= "acf_missiles/fx/clunk.mp3",
-	NoThrust	= true,
-	Spread		= 1,
-	Blacklist	= { "AP", "APHE", "HP", "FL" },
-	LimitConVar = {
+	CLASS.Name			= "Gliding Bombs"
+	CLASS.ID 			= "GBOMB"
+	CLASS.Description	= "Similar to regular free falling bombs, gliding bombs are capable of travelling longer distances."
+	CLASS.Sound			= "acf_missiles/fx/clunk.mp3"
+	CLASS.NoThrust		= true
+	CLASS.Spread		= 1
+	CLASS.Blacklist		= { "AP", "APHE", "HP", "FL" }
+	CLASS.LimitConVar 	= {
 		Name = "_acfm_gbomb",
 		Amount = 8,
 		Text = "Maximum number of gliding bombs that can be loaded at once. Differentiates from the acf_rack limit."
 	}
-})
+end)
 
 Missiles.RegisterItem("100kgGBOMB", "GBOMB", {
 	Name		= "100kg Glide Bomb",

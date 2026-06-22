@@ -1,23 +1,18 @@
-local Missiles = ACF.Classes.Missiles
-
 local Classes = ACF.Classes
 Classes.DefineClass("ACF.Missiles.FoldingFinRocket", "ACF.Missiles.BaseMissile", function()
-	CLASS.ID = "FFAR"
-end)
-
-Missiles.Register("FFAR", {
-	Name		= "Folding-Fin Aerial Rockets",
-	Description	= "Small rockets which fit in tubes or pods. Rapid-firing and versatile.",
-	Sound		= "acf_missiles/missiles/missile_rocket.mp3",
-	Effect		= "Rocket Motor",
-	Spread		= 1,
-	Blacklist	= { "AP", "APHE", "HP", "FL" },
-	LimitConVar = {
+	CLASS.Name			= "Folding-Fin Aerial Rockets"
+	CLASS.ID 			= "FFAR"
+	CLASS.Description	= "Small rockets which fit in tubes or pods. Rapid-firing and versatile."
+	CLASS.Sound			= "acf_missiles/missiles/missile_rocket.mp3"
+	CLASS.Effect		= "Rocket Motor"
+	CLASS.Spread		= 1
+	CLASS.Blacklist		= { "AP", "APHE", "HP", "FL" }
+	CLASS.LimitConVar 	= {
 		Name = "_acfm_ffar",
 		Amount = 64,
 		Text = "Maximum number of folding-fin aerial rockets missiles that can be loaded at once. Differentiates from the acf_rack limit."
 	}
-})
+end)
 
 Missiles.RegisterItem("40mmFFAR", "FFAR", {
 	Name		= "40mm Pod Rocket",

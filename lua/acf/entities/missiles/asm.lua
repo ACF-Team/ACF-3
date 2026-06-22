@@ -1,23 +1,18 @@
-local Missiles = ACF.Classes.Missiles
-
 local Classes = ACF.Classes
 Classes.DefineClass("ACF.Missiles.AntiTankGuided", "ACF.Missiles.BaseMissile", function()
-	CLASS.ID = "ATGM"
-end)
-
-Missiles.Register("ATGM", {
-	Name		= "Anti-Tank Guided Missiles",
-	Description	= "Missiles specialized on destroying heavily armored vehicles.",
-	Sound		= "acf_missiles/missiles/missile_rocket.mp3",
-	Effect		= "Rocket Motor ATGM",
-	Spread		= 1,
-	Blacklist	= { "AP", "APHE", "HP", "FL", "SM" },
-	LimitConVar = {
+	CLASS.Name			= "Anti-Tank Guided Missiles"
+	CLASS.ID 			= "ATGM"
+	CLASS.Description	= "Missiles specialized on destroying heavily armored vehicles."
+	CLASS.Sound			= "acf_missiles/missiles/missile_rocket.mp3"
+	CLASS.Effect		= "Rocket Motor ATGM"
+	CLASS.Spread		= 1
+	CLASS.Blacklist		= { "AP", "APHE", "HP", "FL", "SM" }
+	CLASS.LimitConVar 	= {
 		Name = "_acfm_asm",
 		Amount = 8,
 		Text = "Maximum number of anti-tank guided missiles that can be loaded at once. Differentiates from the acf_rack limit."
 	}
-})
+end)
 
 Missiles.RegisterItem("AT-3 ASM", "ATGM", {
 	Name		= "9M14 Malyutka",
