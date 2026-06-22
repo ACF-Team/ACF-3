@@ -3,6 +3,14 @@ local ACF       = ACF
 local Classes   = ACF.Classes
 local AmmoTypes = Classes.AmmoTypes
 local BoxSize   = Vector()
+
+-- The crate keeps its drum/box UI logic keyed on the short "AmmoShape" client data, but the entity's
+-- inherited "Shape" field wants a ContainerShapes class FQN. This maps one to the other so the menu
+-- can write the field directly (the compat patch handles old dupes).
+local SHAPE_FQN = {
+	Box      = "ACF.ContainerShapes.Box",
+	Cylinder = "ACF.ContainerShapes.Cylinder",
+}
 local Ammo, BulletData
 local GhostData = {Secondary = {
 	Model = "models/holograms/hq_rcube_thin.mdl",
@@ -638,6 +646,7 @@ local function UpdateShapeSelector(Menu)
 		-- Force shape to Crate if it was set to Drum
 		if ACF.GetClientString("AmmoShape", "Box") == "Cylinder" then
 			ACF.SetClientData("AmmoShape", "Box")
+			ACF.SetClientData("Shape", SHAPE_FQN.Box)
 			ShapeList:ChooseOptionID(1)
 
 			-- Reset slider visibility and labels for crate mode
@@ -677,6 +686,7 @@ function ACF.CreateAmmoMenu(Menu)
 	-- Set default shape
 	local DefaultShape = ACF.GetClientString("AmmoShape", "Box")
 	ACF.SetClientData("AmmoShape", DefaultShape, true)
+	ACF.SetClientData("Shape", SHAPE_FQN[DefaultShape] or SHAPE_FQN.Box, true)
 
 	-- Select the correct shape in the combo box (1 = Box, 2 = Cylinder)
 	ShapeList:ChooseOptionID(DefaultShape == "Cylinder" and 2 or 1)
@@ -716,6 +726,7 @@ function ACF.CreateAmmoMenu(Menu)
 	-- Handle shape selection changes
 	function ShapeList:OnSelect(_, _, Data)
 		ACF.SetClientData("AmmoShape", Data)
+		ACF.SetClientData("Shape", SHAPE_FQN[Data] or SHAPE_FQN.Box)
 
 		if Data == "Cylinder" then
 			-- For drums: X = rounds per ring, Y is hidden, Z = layers

@@ -1,27 +1,14 @@
 local ACF          = ACF
 local Classes      = ACF.Classes
 local Utilities    = ACF.Utilities
-local WireIO       = Utilities.WireIO
 local Notify       = Utilities.Notify
 local WireLib      = WireLib
-local Entities     = Classes.Entities
 local AmmoTypes    = Classes.AmmoTypes
 local Weapons      = Classes.Weapons
 local ActiveCrates = ACF.AmmoCrates
 local HookRun      = hook.Run
 local Clamp        = math.Clamp
 local Floor        = math.floor
-
-
-local Inputs = {
-	"Load (If set to a non-zero value, it'll allow weapons to use rounds from this ammo crate.)",
-}
-
-local Outputs = {
-	"Loading (Whether or not weapons can use rounds from this crate.)",
-	"Ammo (Rounds left in this ammo crate.)",
-	"Entity (The ammo crate itself.) [ENTITY]",
-}
 
 do -- IO
 	WireLib.AddInputAlias("Active", "Load")
@@ -34,7 +21,19 @@ do -- IO
 	end)
 end
 
+-- Box crates use a thin hologram cube; drums use the cylinder shape model.
+local function GetAmmoModel(ShapeClass)
+	if ShapeClass and ShapeClass.IsDrum then
+		return ShapeClass.Model or "models/acf/core/s_fuel_cyl.mdl"
+	end
+
+	return "models/holograms/hq_rcube_thin.mdl"
+end
+
 do -- Spawn/Update/Remove
+	-- Validates/normalises the raw client/dupe data (replaces the legacy VerifyData). Resolves the
+	-- weapon group + ammo type from the still-legacy grouped classes, and translates AmmoShape into
+	-- the inherited container Shape field.
 	local function VerifyData(Data)
 		if not isvector(Data.Size) then
 			local X = ACF.CheckNumber(Data.AmmoSizeX or Data.CrateSizeX, 24)
@@ -124,7 +123,8 @@ do -- Spawn/Update/Remove
 		local Bullet = Ammo:ServerConvert(Data)
 
 		-- Check if this is an ammo drum (cylinder shape)
-		local IsDrum = Data.AmmoShape == "Cylinder"
+		local ShapeClass = Entity:ACF_GetUserVar("Shape")
+		local IsDrum     = ShapeClass and ShapeClass.IsDrum
 
 		if IsDrum then
 			local roundSize = ACF.GetRoundProperties(Class, Data, Bullet)
@@ -223,7 +223,8 @@ do -- Spawn/Update/Remove
 			ExtraData.NeedsRotation = NeedsRotation
 
 			-- Drum-specific data
-			ExtraData.IsDrum = Entity.Shape == "Cylinder"
+			local ShapeClass = Entity:ACF_GetUserVar("Shape")
+			ExtraData.IsDrum = ShapeClass and ShapeClass.IsDrum or false
 			if ExtraData.IsDrum then
 				ExtraData.RoundsPerRing = Entity.CrateProjectilesX
 				ExtraData.DrumLayers = Entity.CrateProjectilesZ
@@ -329,25 +330,24 @@ do -- Spawn/Update/Remove
 
 		Ammo:Network(Entity, Entity.BulletData)
 
-		for _, V in ipairs(Entity.DataStore) do
-			Entity[V] = Data[V]
-		end
+		-- Runtime fields the rest of the entity / other modules read (legacy copied these via DataStore).
+		Entity.Weapon            = Data.Weapon
+		Entity.AmmoType          = Data.AmmoType
+		Entity.CrateProjectilesX = Data.CrateProjectilesX
+		Entity.CrateProjectilesY = Data.CrateProjectilesY
+		Entity.CrateProjectilesZ = Data.CrateProjectilesZ
 
 		Entity.Name       = Name or WeaponName .. " " .. Ammo.Name
 		Entity.ShortName  = ShortName or WeaponShort .. " " .. Ammo.ID
 		Entity.EntType    = "Ammo Crate"
 		Entity.ClassData  = Class
-		Entity.Shape      = Data.AmmoShape or "Box"
 		Entity.Class      = Class.ID
 		Entity.WeaponData = Weapon
 		Entity.Caliber    = Caliber
 		Entity.AmmoStage  = Data.AmmoStage
 		Entity.UnitMass   = Entity.BulletData.CartMass
 
-		WireIO.SetupInputs(Entity, Inputs, Data, Class, Weapon, Ammo)
-		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Weapon, Ammo)
-
-			Entity.WireAmountName = "Ammo"
+		Entity.WireAmountName = "Ammo"
 
 		Entity:SetNWString("WireName", "ACF " .. (WireName or WeaponName .. " Ammo Crate"))
 
@@ -363,7 +363,7 @@ do -- Spawn/Update/Remove
 
 		NetworkAmmoData(Entity)
 
-		if next(Entity.Weapons) then
+		if Entity.Weapons and next(Entity.Weapons) then
 			local Unloaded
 
 			for K in pairs(Entity.Weapons) do
@@ -379,167 +379,93 @@ do -- Spawn/Update/Remove
 			end
 		end
 
-		ACF.Activate(Entity, true)
-
 		Entity.ACF.Model = Entity:GetModel()
 
 		Entity:UpdateMass(true)
 	end
 
-	function ACF.MakeAmmo(Player, Pos, Ang, Data)
-		if not Player:CheckLimit("_acf_ammo") then return end
+	-- Lifecycle: validation (runs for menu spawns and dupe pastes)
+	function ENT.ACF_OnVerifyClientData(ClientData)
+		VerifyData(ClientData)
+	end
 
-		VerifyData(Data)
+	function ENT:ACF_PreSpawn(_, _, _, ClientData)
+		self.ACF         = {}
+		self.Weapons     = {}
+		self.IsExplosive = true
 
+		local ShapeClass = Classes.GetTypeByName(ClientData.Shape)
+		local Model      = GetAmmoModel(ShapeClass)
+
+		self.ACF.Model = Model
+		self:SetMaterial("phoenix_storms/Future_vents")
+		self:SetScaledModel(Model)
+	end
+
+	function ENT:ACF_OnSpawn()
+		ActiveCrates[self] = true
+	end
+
+	function ENT:ACF_PostSpawn()
+		self:TriggerInput("Load", 1)
+	end
+
+	function ENT:ACF_PostUpdateEntityData(ClientData)
+		self.ACF = self.ACF or {}
+
+		-- Snapshot for unlink-on-change (runtime fields still hold the previous config here).
+		local OldWeapon  = self.Weapon
+		local OldCaliber = self.Caliber
+
+		-- ClientData has been fully validated by ACF_OnVerifyClientData (it also carries the ammo
+		-- round parameters - projectile/propellant/tracer - needed by Ammo:ServerConvert, which a
+		-- dupe's serialized field set would not).
+		local Data   = ClientData
 		local Source = Classes[Data.Destiny]
 		local Class  = Classes.GetGroup(Source, Data.Weapon)
 		local Weapon = Source.GetItem(Class.ID, Data.Weapon)
 		local Ammo   = AmmoTypes.Get(Data.AmmoType)
 
-		-- Select model based on ammo shape
-		local Model
-		if Data.AmmoShape == "Cylinder" then
-			Model = ACF.ContainerShapeModels.Cylinder or "models/acf/core/s_fuel_cyl.mdl"
-		else
-			Model = "models/holograms/hq_rcube_thin.mdl"
-		end
-
-		local CanSpawn = HookRun("ACF_PreSpawnEntity", "acf_ammo", Player, Data, Class, Weapon, Ammo)
-
-		if CanSpawn == false then return false end
-
-		local Crate = ents.Create("acf_ammo")
-
-		if not IsValid(Crate) then return end
-
-		Player:AddCleanup("acf_ammo", Crate)
-		Player:AddCount("_acf_ammo", Crate)
-
-		Crate.ACF       = Crate.ACF or {}
-		Crate.ACF.Model = Model
-
-		Crate:SetMaterial("phoenix_storms/Future_vents")
-		Crate:SetScaledModel(Model)
-		Crate:SetAngles(Ang)
-		Crate:SetPos(Pos)
-		Crate:Spawn()
-
-		Crate.IsExplosive = true
-		Crate.Weapons     = {}
-		Crate.DataStore	  = Entities.GetArguments("acf_ammo")
-
-		UpdateCrate(Crate, Data, Class, Weapon, Ammo)
-
-		if Class.OnSpawn then
-			Class.OnSpawn(Crate, Data, Class, Weapon, Ammo)
-		end
-
-		HookRun("ACF_OnSpawnEntity", "acf_ammo", Crate, Data, Class, Weapon, Ammo)
-
-		if Data.Offset then
-			local Position = Crate:LocalToWorld(Data.Offset)
-
-			ACF.SaveEntity(Crate)
-
-			Crate:SetPos(Position)
-
-			ACF.RestoreEntity(Crate)
-
-			if Data.BuildDupeInfo then
-				Data.BuildDupeInfo.PosReset = Position
-			end
-		end
-
-		Crate:TriggerInput("Load", 1)
-
-		ActiveCrates[Crate] = true
-
-		return Crate
-	end
-
-	function ENT:Update(Data)
-		VerifyData(Data)
-
-		local Source     = Classes[Data.Destiny]
-		local Class      = Classes.GetGroup(Source, Data.Weapon)
-		local Weapon     = Source.GetItem(Class.ID, Data.Weapon)
-		local Caliber    = Weapon and Weapon.Caliber or Data.Caliber
-		local OldClass   = self.ClassData
-		local OldWeapon  = self.Weapon
-		local OldCaliber = self.Caliber
-		local OldShape   = self.Shape
-		local Ammo       = AmmoTypes.Get(Data.AmmoType)
-		local Blacklist  = Ammo.Blacklist
-		local Extra      = ""
-
-		local CanUpdate, Reason = HookRun("ACF_PreUpdateEntity", "acf_ammo", self, Data, Class, Weapon, Ammo)
-		if CanUpdate == false then return CanUpdate, Reason end
-
-		if OldClass.OnLast then
-			OldClass.OnLast(self, OldClass)
-		end
-
-		HookRun("ACF_OnEntityLast", "acf_ammo", self, OldClass)
-
-		ACF.SaveEntity(self)
-
-		-- Update model if shape changed
-		local NewShape = Data.AmmoShape or "Box"
-		if NewShape ~= OldShape then
-			local Model
-			if NewShape == "Cylinder" then
-				Model = ACF.ContainerShapeModels.Cylinder or "models/acf/core/s_fuel_cyl.mdl"
-			else
-				Model = "models/holograms/hq_rcube_thin.mdl"
-			end
-			self.ACF.Model = Model
-			self:SetScaledModel(Model)
-		end
+		-- Refresh the model from the shape (handles shape changes on update).
+		local Model = GetAmmoModel(self:ACF_GetUserVar("Shape"))
+		self.ACF.Model = Model
+		self:SetScaledModel(Model)
 
 		UpdateCrate(self, Data, Class, Weapon, Ammo)
 
-		ACF.RestoreEntity(self)
+		-- Persist the clamped projectile counts back into the serialized field set.
+		self:ACF_SetUserVar("CrateProjectilesX", Data.CrateProjectilesX)
+		self:ACF_SetUserVar("CrateProjectilesY", Data.CrateProjectilesY)
+		self:ACF_SetUserVar("CrateProjectilesZ", Data.CrateProjectilesZ)
 
-		if Class.OnUpdate then
-			Class.OnUpdate(self, Data, Class, Weapon, Ammo)
-		end
-
-		HookRun("ACF_OnUpdateEntity", "acf_ammo", self, Data, Class, Weapon, Ammo)
-
-		if Data.Weapon ~= OldWeapon or Caliber ~= OldCaliber or self.Unlinkable then
-			for Entity in pairs(self.Weapons) do
-				self:Unlink(Entity)
-			end
-
-			Extra = " All weapons have been unlinked."
-		else
-			local Count = 0
-			for Entity in pairs(self.Weapons) do
-				if Blacklist[Entity.Class] then
-					self:Unlink(Entity)
-
-					Entity:Unload()
-
-					Count = Count + 1
+		-- Unlink weapons that can no longer use this crate (legacy ENT:Update tail).
+		if self.Weapons and next(self.Weapons) then
+			if Data.Weapon ~= OldWeapon or self.Caliber ~= OldCaliber or self.Unlinkable then
+				for W in pairs(self.Weapons) do
+					self:Unlink(W)
+				end
+			else
+				local Blacklist = Ammo.Blacklist
+				for W in pairs(self.Weapons) do
+					if Blacklist[W.Class] then
+						self:Unlink(W)
+						W:Unload()
+					end
 				end
 			end
-
-			if Count > 0 then
-				Extra = " Unlinked " .. Count .. " weapons from this crate."
-			end
 		end
-
-		return true, "Crate updated successfully." .. Extra
 	end
 
-	function ENT:OnRemove()
+	-- Remove-only teardown. Captured by AutoRegisterV2 as OrigOnRemove; the generated OnRemove still
+	-- runs ACF_OnEntityLast + WireLib cleanup around this.
+	function ENT:OnRemove(IsFullUpdate)
+		if IsFullUpdate then return end
+
 		local Class = self.ClassData
 
-		if Class.OnLast then
+		if Class and Class.OnLast then
 			Class.OnLast(self, Class)
 		end
-
-		HookRun("ACF_OnEntityLast", "acf_ammo", self, Class)
 
 		ActiveCrates[self] = nil
 
@@ -553,12 +479,10 @@ do -- Spawn/Update/Remove
 			self:Detonate()
 		end
 
-		for K in pairs(self.Weapons) do
-			self:Unlink(K)
-		end
-
-		if self.BaseClass.OnRemove then
-			self.BaseClass.OnRemove(self)
+		if self.Weapons then
+			for K in pairs(self.Weapons) do
+				self:Unlink(K)
+			end
 		end
 	end
 
@@ -572,8 +496,6 @@ do -- Spawn/Update/Remove
 
 		self.EmptyMass = Mass
 	end
-
-	Entities.LegacyRegister("acf_ammo", ACF.MakeAmmo, "Weapon", "Caliber", "AmmoType", "AmmoShape", "Size", "AmmoStage", "CrateProjectilesX", "CrateProjectilesY", "CrateProjectilesZ")
 
 	ACF.RegisterLinkSource("acf_ammo", "Weapons")
 end
@@ -598,10 +520,6 @@ do -- Overlay
 		local CountX = self.CrateProjectilesX
 		local CountY = self.CrateProjectilesY
 		local CountZ = self.CrateProjectilesZ
-
-		if AmmoInfo and AmmoInfo ~= "" then
-			AmmoInfo = AmmoInfo
-		end
 
 		State:AddDivider()
 		State:AddSize("Storage (in projectiles)", CountX, CountY, CountZ)

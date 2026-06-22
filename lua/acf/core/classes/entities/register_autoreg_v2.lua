@@ -165,13 +165,22 @@ local function PrepareSerializationFunctions(ENT, ClassName)
     local OrigPreEntityCopy   = ENT.PreEntityCopy
     local OrigPostEntityPaste = ENT.PostEntityPaste
     local OrigOnRemove        = ENT.OnRemove
+    -- Capture THIS entity's own base by name. We must NOT use self.BaseClass here: self is always the
+    -- leaf entity, so self.BaseClass is the leaf's base at every level of the chain. If the base is
+    -- itself an AutoRegisterV2 entity (e.g. the acf_container family), that base's generated method
+    -- would call self.BaseClass again -> the same base -> infinite recursion (stack overflow on
+    -- PostEntityPaste, which also breaks parenting). Resolving each level's own base by name walks the
+    -- chain correctly and terminates at base_gmodentity.
+    local BaseClassName       = ENT.Base or "base_gmodentity"
 
     function ENT:PreEntityCopy()
         if self.ACF_LiveData then
             self.ACF_UserData = ACF.Classes.Serialization.Serialize(ClassDef, self.ACF_LiveData)
         end
         if OrigPreEntityCopy then OrigPreEntityCopy(self) end
-        self.BaseClass.PreEntityCopy(self)
+
+        local Base = baseclass.Get(BaseClassName)
+        if Base and Base.PreEntityCopy then Base.PreEntityCopy(self) end
     end
 
     function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
@@ -180,7 +189,9 @@ local function PrepareSerializationFunctions(ENT, ClassName)
             ACF.Classes.Serialization.ResolveEntities(ClassDef, self.ACF_LiveData, Data, CreatedEntities, self)
         end
         if OrigPostEntityPaste then OrigPostEntityPaste(self, Player, Ent, CreatedEntities) end
-        self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
+
+        local Base = baseclass.Get(BaseClassName)
+        if Base and Base.PostEntityPaste then Base.PostEntityPaste(self, Player, Ent, CreatedEntities) end
     end
 
     function ENT:OnRemove(IsFullUpdate)
