@@ -1,69 +1,67 @@
 
-local ACF     = ACF
 local Classes = ACF.Classes
-local Clock   = ACF.Utilities.Clock
-local Fuzes   = Classes.Fuzes
-local Fuze    = Fuzes.Register("Timed", "Contact")
+Classes.DefineClass("ACF.Missiles.Fuze.Timed", "ACF.Missiles.Fuze.Contact", function()
+	local BASE = BASE
 
-Fuze.MinTime = 1
-Fuze.MaxTime = 30
+	CLASS.MinTime = 1
+	CLASS.MaxTime = 30
 
-function Fuze:OnFirst(Entity, Data)
-	Fuze.BaseClass.OnFirst(self, Entity, Data)
+	MENU_FIELD("Number", "FuzeTimer", {Default = 0})
 
-	self.Timer = Data.FuzeTimer
-end
+	function CLASS:OnFirst(Entity, Data)
+		BASE.OnFirst(self, Entity, Data)
 
-function Fuze:WriteDisplayConfig(State)
-	Fuze.BaseClass.WriteDisplayConfig(self, State)
-	State:AddSubKeyValue("Timer",  math.Round(self.Timer, 2) .. " s")
-end
-
-if CLIENT then
-	Fuze.Description = "This fuze triggers upon direct contact, or when the timer ends. Delay in seconds."
-
-	function Fuze:AddMenuControls(Base, ToolData, ...)
-		Fuze.BaseClass.AddMenuControls(self, Base, ToolData, ...)
-
-		local Timer = Base:AddSlider("Fuze Timer", self.MinTime, self.MaxTime, 2)
-		Timer:SetClientData("FuzeTimer", "OnValueChanged")
-		Timer:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
+		self.Timer = Data.FuzeTimer
 	end
-else
-	local Entities = Classes.Entities
 
-	Entities.AddArguments("acf_ammo", "FuzeTimer") -- Adding extra info to ammo crates
+	function CLASS:WriteDisplayConfig(State)
+		BASE.WriteDisplayConfig(self, State)
+		State:AddSubKeyValue("Timer",  math.Round(self.Timer, 2) .. " s")
+	end
 
-	function Fuze:VerifyData(EntClass, Data, ...)
-		Fuze.BaseClass.VerifyData(self, EntClass, Data, ...)
+	if CLIENT then
+		CLASS.Description = "This fuze triggers upon direct contact, or when the timer ends. Delay in seconds."
 
-		local Timer = Data.FuzeTimer
-		local Args = Data.FuzeArgs
+		function CLASS:AddMenuControls(Base, ToolData, ...)
+			BASE.AddMenuControls(self, Base, ToolData, ...)
 
-		if not ACF.CheckNumber(Timer) and Args then
-			Timer = ACF.CheckNumber(Args.TM) or 0
+			local Timer = Base:AddSlider("Fuze Timer", self.MinTime, self.MaxTime, 2)
+			Timer:SetClientData("FuzeTimer", "OnValueChanged")
+			Timer:DefineSetter(function(Panel, _, _, Value)
+				Panel:SetValue(Value)
 
-			Args.TM = nil
+				return Value
+			end)
+		end
+	else
+		function CLASS:VerifyData(EntClass, Data, ...)
+			BASE.VerifyData(self, EntClass, Data, ...)
+
+			local Timer = Data.FuzeTimer
+			local Args = Data.FuzeArgs
+
+			if not ACF.CheckNumber(Timer) and Args then
+				Timer = ACF.CheckNumber(Args.TM) or 0
+
+				Args.TM = nil
+			end
+
+			Data.FuzeTimer = math.Clamp(Timer or 0, self.MinTime, self.MaxTime)
 		end
 
-		Data.FuzeTimer = math.Clamp(Timer or 0, self.MinTime, self.MaxTime)
+		function CLASS:IsOnTime()
+			return Clock.CurTime - self.TimeStarted >= self.Timer
+		end
+
+		function CLASS:GetDetonate()
+			return self:IsArmed() and self:IsOnTime()
+		end
+
+		function CLASS:OnLast(Entity)
+			BASE.OnLast(self, Entity)
+
+			Entity.FuzeTimer = nil
+		end
 	end
 
-	function Fuze:IsOnTime()
-		return Clock.CurTime - self.TimeStarted >= self.Timer
-	end
-
-	function Fuze:GetDetonate()
-		return self:IsArmed() and self:IsOnTime()
-	end
-
-	function Fuze:OnLast(Entity)
-		Fuze.BaseClass.OnLast(self, Entity)
-
-		Entity.FuzeTimer = nil
-	end
-end
+end)
