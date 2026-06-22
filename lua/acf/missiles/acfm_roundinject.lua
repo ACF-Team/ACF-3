@@ -245,8 +245,6 @@ else
 		Entity.Fuze          = nil
 	end)
 
-	Entities.AddArguments("acf_ammo", "Guidance", "Fuze") -- Adding extra info to ammo crates
-
 	ACF.RegisterAdditionalOverlay("acf_ammo", "Missile Info", function(Crate, State)
 		if not Crate.IsMissileAmmo then return end
 
