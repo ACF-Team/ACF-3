@@ -4,40 +4,9 @@ local ModelData = ACF.ModelData
 
 DEFINE_BASECLASS("Panel")
 
--- Panels don't have a CallOnRemove function
--- This roughly replicates the same behavior
-local function AddOnRemove(Panel, Parent)
-	local OldRemove = Panel.Remove
-
-	function Panel:Remove()
-		Parent:EndTemporal(self)
-		Parent:ClearTemporal(self)
-
-		Parent.Items[self] = nil
-
-		for TempParent in pairs(self.TempParents) do
-			TempParent.TempItems[self] = nil
-		end
-
-		if self == Parent.LastItem then
-			Parent.LastItem = self.PrevItem
-		end
-
-		if IsValid(self.PrevItem) then
-			self.PrevItem.NextItem = self.NextItem
-		end
-
-		if IsValid(self.NextItem) then
-			self.NextItem.PrevItem = self.PrevItem
-		end
-
-		OldRemove(self)
-	end
-end
-
 function PANEL:Init()
 	self.Items = {}
-	self.TempItems = {}
+	self.TemporalChildren = {}
 end
 
 function PANEL:ClearAll()
@@ -51,36 +20,30 @@ end
 function PANEL:ClearTemporal(Panel)
 	local Target = IsValid(Panel) and Panel or self
 
-	if not Target.TempItems then return end
+	if not Target.TemporalChildren then return end
 
-	for K in pairs(Target.TempItems) do
-		K:Remove()
+	for K in pairs(Target.TemporalChildren) do
+		if IsValid(K) then
+			K:Remove()
+		end
 	end
-end
 
-local TemporalPanels = {}
+	Target.TemporalChildren = {}
+end
 
 function PANEL:StartTemporal(Panel)
 	local Target = IsValid(Panel) and Panel or self
 
-	if not Target.TempItems then
-		Target.TempItems = {}
+	if not Target.TemporalChildren then
+		Target.TemporalChildren = {}
 	end
 
-	TemporalPanels[Target] = true
+	Target.InTemporal = true
 end
 
 function PANEL:EndTemporal(Panel)
 	local Target = IsValid(Panel) and Panel or self
-
-	TemporalPanels[Target] = nil
-end
-
-function PANEL:ClearAllTemporal()
-	for Panel in pairs(TemporalPanels) do
-		self:EndTemporal(Panel)
-		self:ClearTemporal(Panel)
-	end
+	Target.InTemporal = false
 end
 
 function PANEL:AddPanel(Name)
@@ -94,32 +57,13 @@ function PANEL:AddPanel(Name)
 	Panel:DockMargin(0, 0, 0, 10)
 	Panel:InvalidateParent()
 	Panel:InvalidateLayout()
-	Panel.TempParents = {}
 
 	self:InvalidateLayout()
 	self.Items[Panel] = true
 
-	local LastItem = self.LastItem
-
-	if IsValid(LastItem) then
-		LastItem.NextItem = Panel
-
-		Panel.PrevItem = LastItem
-
-		for Temp in pairs(LastItem.TempParents) do
-			Panel.TempParents[Temp] = true
-			Temp.TempItems[Panel] = true
-		end
+	if self.InTemporal then
+		self.TemporalChildren[Panel] = true
 	end
-
-	self.LastItem = Panel
-
-	for Temp in pairs(TemporalPanels) do
-		Panel.TempParents[Temp] = true
-		Temp.TempItems[Panel] = true
-	end
-
-	AddOnRemove(Panel, self)
 
 	return Panel
 end

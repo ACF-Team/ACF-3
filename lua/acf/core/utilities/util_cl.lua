@@ -142,7 +142,7 @@ do -- Panel helpers
 		if GlobalID then
 			Menu = ACF[GlobalID]
 
-			-- MARCH: Adjusted this to remove the old panel and recreate it, rather than calling ClearAllTemporal/ClearAll
+			-- MARCH: Adjusted this to remove the old panel and recreate it, rather than calling ClearAll
 			-- Because otherwise auto-refresh doesn't work.
 			-- If that breaks something else sorry, but we need something that allows auto-refresh to work so don't just revert this
 			if IsValid(Menu) then

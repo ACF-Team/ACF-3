@@ -528,7 +528,7 @@ do	-- Turret computers
 		Classes.DefineClass("ACF.Turrets.Computer.Direct", "ACF.Turrets.Computer", function()
 			CLASS.Name        = "Direct Ballistics Computer"
 			CLASS.ID          = "DIR-BalComp"
-			CLASS.Description  = "#acf.descs.computers.direct"
+			CLASS.Description = "#acf.descs.computers.direct"
 			CLASS.Model       = "models/acf/core/t_computer.mdl"
 
 			CLASS.Preview = {
