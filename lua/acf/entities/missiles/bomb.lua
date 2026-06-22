@@ -26,7 +26,7 @@ Classes.DefineClass("ACF.Missiles.FreeFallingBomb.50kg", "ACF.Missiles.FreeFalli
 	CLASS.ReloadTime	= 10
 	CLASS.Offset		= Vector(-6, 0, 0)
 	CLASS.Racks			= { ["1xRK_small"] = true, ["1xRK"] = true, ["2xRK"] = true, ["4xRK"] = true }
-	CLASS.Guidance		= { Dumb = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { Contact = true, Optical = true}
 	CLASS.Agility		= 1
@@ -67,7 +67,7 @@ Classes.DefineClass("ACF.Missiles.FreeFallingBomb.100kg", "ACF.Missiles.FreeFall
 	CLASS.ReloadTime	= 15
 	CLASS.Offset		= Vector(-6, 0, 0)
 	CLASS.Racks			= { ["1xRK_small"] = true, ["1xRK"] = true, ["2xRK"] = true, ["4xRK"] = true }
-	CLASS.Guidance		= { Dumb = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { Contact = true, Optical = true}
 	CLASS.Agility		= 1
@@ -108,7 +108,7 @@ Classes.DefineClass("ACF.Missiles.FreeFallingBomb.250kg", "ACF.Missiles.FreeFall
 	CLASS.ReloadTime	= 25
 	CLASS.Offset		= Vector(-14, 0, 0)
 	CLASS.Racks			= { ["1xRK"] = true, ["2xRK"] = true, ["3xRK"] = true, ["4xRK"] = true }
-	CLASS.Guidance		= { Dumb = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { Contact = true, Optical = true}
 	CLASS.Agility		= 1
@@ -149,7 +149,7 @@ Classes.DefineClass("ACF.Missiles.FreeFallingBomb.500kg", "ACF.Missiles.FreeFall
 	CLASS.ReloadTime	= 40
 	CLASS.Offset		= Vector(-14, 0, 0)
 	CLASS.Racks			= { ["1xRK"] = true, ["2xRK"] = true, ["4xRK"] = true }
-	CLASS.Guidance		= { Dumb = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { Contact = true, Optical = true}
 	CLASS.Agility		= 1
@@ -190,7 +190,7 @@ Classes.DefineClass("ACF.Missiles.FreeFallingBomb.1000kg", "ACF.Missiles.FreeFal
 	CLASS.ReloadTime	= 60
 	CLASS.Offset		= Vector(-10, 0, 0)
 	CLASS.Racks			= { ["1xRK"] = true, ["2xRK"] = true }
-	CLASS.Guidance		= { Dumb = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { Contact = true, Optical = true}
 	CLASS.Agility		= 1

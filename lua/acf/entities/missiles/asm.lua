@@ -27,7 +27,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.AT-3", "ACF.Missiles.AntiTankGu
 	CLASS.ExhaustPos	= Vector(-16)
 	CLASS.Racks			= { ["1xAT3RKS"] = true, ["1xAT3RK"] = true, ["1xRK_small"] = true, ["4xRK"] = true }
 	CLASS.Navigation	= "Chase"
-	CLASS.Guidance		= { Dumb = true, ["Wire (MCLOS)"] = true, ["Wire (SACLOS)"] = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["Wire (MCLOS)"] = true, ["ACF.Missiles.Guidance.WireSACLOS"] = true }
 	CLASS.Fuzes			= { Contact = true }
 	CLASS.SkinIndex		= { HEAT = 0, HE = 1 }
 	CLASS.Agility		= 0.0005
@@ -70,7 +70,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.BGM-71E", "ACF.Missiles.AntiTan
 	CLASS.ReloadTime	= 20
 	CLASS.Offset		= Vector(-17.5, 0, 0)
 	CLASS.Racks			= { ["1x BGM-71E"] = true, ["2x BGM-71E"] = true, ["4x BGM-71E"] = true }
-	CLASS.Guidance		= { Dumb = true, ["Wire (SACLOS)"] = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.WireSACLOS"] = true }
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { Contact = true }
 	CLASS.Agility		= 0.00024
@@ -114,7 +114,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.AGM-114", "ACF.Missiles.AntiTan
 	CLASS.ReloadTime	= 30
 	CLASS.ExhaustPos	= Vector(-29)
 	CLASS.Racks			= { ["1xRK"] = true, ["1xRK_small"] = true, ["2x AGM-114"] = true, ["4x AGM-114"] = true }
-	CLASS.Guidance		= { Dumb = true, Laser = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.Laser"] = true }
 	CLASS.Navigation	= "PN"
 	CLASS.Fuzes			= { Contact = true }
 	CLASS.ViewCone		= 40
@@ -174,7 +174,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.Ataka", "ACF.Missiles.AntiTankG
 	CLASS.ReloadTime	= 25
 	CLASS.ExhaustPos	= Vector(-40)
 	CLASS.Racks			= { ["1x Ataka"] = true, ["1xRK"] = true, ["2xRK"] = true, ["4xRK"] = true }
-	CLASS.Guidance		= { Dumb = true, ["Radio (SACLOS)"] = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.RadioSACLOS"] = true }
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { Contact = true }
 	CLASS.ViewCone		= 45
@@ -220,7 +220,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.9M133", "ACF.Missiles.AntiTankG
 	CLASS.ReloadTime	= 25
 	CLASS.ExhaustPos	= Vector(-29.1, 0, 0)
 	CLASS.Racks			= { ["1x Kornet"] = true }
-	CLASS.Guidance		= { Dumb = true, Laser = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.Laser"] = true }
 	CLASS.Navigation	= "PN"
 	CLASS.Fuzes			= { Contact = true }
 	CLASS.ViewCone		= 20
@@ -277,7 +277,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.AT-2", "ACF.Missiles.AntiTankGu
 	CLASS.ReloadTime	= 15
 	CLASS.ExhaustPos	= Vector(-22)
 	CLASS.Racks			= { ["1xRK_small"] = true, ["1xRK"] = true, ["2xRK"] = true }
-	CLASS.Guidance		= { Dumb = true, ["Radio (MCLOS)"] = true, ["Radio (SACLOS)"] = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.RadioMCLOS"] = true, ["ACF.Missiles.Guidance.RadioSACLOS"] = true }
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { Contact = true }
 	CLASS.ViewCone		= 90

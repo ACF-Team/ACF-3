@@ -27,7 +27,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.RS82", "ACF.Missiles.UnguidedRo
 	CLASS.Year			= 1933
 	CLASS.ExhaustPos	= Vector(-12)
 	CLASS.Racks			= { ["1xRK_small"] = true, ["1xRK"] = true, ["2xRK"] = true, ["4xRK"] = true }
-	CLASS.Guidance		= { Dumb = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { Contact = true, Timed = true }
 	CLASS.Agility		= 1
@@ -82,7 +82,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.HVAR", "ACF.Missiles.UnguidedRo
 	CLASS.Year			= 1933
 	CLASS.ExhaustPos	= Vector(-33)
 	CLASS.Racks			= { ["1xRK_small"] = true, ["1xRK"] = true, ["2xRK"] = true, ["3xUARRK"] = true, ["4xRK"] = true }
-	CLASS.Guidance		= { Dumb = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { Contact = true, Timed = true }
 	CLASS.Agility		= 1
@@ -126,7 +126,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.SPG-9", "ACF.Missiles.UnguidedR
 	CLASS.ReloadTime	= 6
 	CLASS.ExhaustPos	= Vector(-1)
 	CLASS.Racks			= { ["1x SPG9"] = true }
-	CLASS.Guidance		= { Dumb = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { Contact = true }
 	CLASS.Agility		= 1
@@ -170,7 +170,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.S-24", "ACF.Missiles.UnguidedRo
 	CLASS.Year			= 1960
 	CLASS.ExhaustPos	= Vector(-43)
 	CLASS.Racks			= { ["1xRK"] = true, ["2xRK"] = true, ["4xRK"] = true }
-	CLASS.Guidance		= { Dumb = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { Contact = true, Timed = true }
 	CLASS.SkinIndex		= { HEAT = 0, HE = 1 }
@@ -211,7 +211,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.RW61", "ACF.Missiles.UnguidedRo
 	CLASS.ReloadTime	= 40
 	CLASS.ExhaustPos	= Vector(-32.5)
 	CLASS.Racks			= { ["380mmRW61"] = true }
-	CLASS.Guidance		= { Dumb = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { Contact = true, Optical = true }
 	CLASS.Agility		= 1

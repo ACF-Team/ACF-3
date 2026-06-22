@@ -25,7 +25,7 @@ Classes.DefineClass("ACF.Missiles.Artillery.Type63", "ACF.Missiles.Artillery", f
 	CLASS.ReloadTime	= 10
 	CLASS.ExhaustPos  	= Vector(-24)
 	CLASS.Racks			= { ["1xRK_small"] = true, ["1xRK"] = true, ["2xRK"] = true, ["4xRK"] = true, ["6xUARRK"] = true }
-	CLASS.Guidance		= { Dumb = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Navigation  	= "Chase"
 	CLASS.Fuzes			= { Contact = true, Timed = true, Optical = true, Altitude = true, Cluster = true }
 	CLASS.ViewCone		= 180
@@ -67,7 +67,7 @@ Classes.DefineClass("ACF.Missiles.Artillery.SAKR-10", "ACF.Missiles.Artillery", 
 	CLASS.ReloadTime	= 20
 	CLASS.ExhaustPos  	= Vector(-44)
 	CLASS.Racks			= { ["1xRK"] = true, ["2xRK"] = true, ["4xRK"] = true, ["6xUARRK"] = true }
-	CLASS.Guidance		= { Dumb = true, Laser = true, ["GPS Guided"] = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.Laser"] = true, ["ACF.Missiles.Guidance.GPSGuided"] = true }
 	CLASS.Navigation  	= "Chase"
 	CLASS.Fuzes			= { Contact = true, Timed = true, Optical = true, Altitude = true }
 	CLASS.Agility		= 0.001
@@ -110,7 +110,7 @@ Classes.DefineClass("ACF.Missiles.Artillery.SS-40", "ACF.Missiles.Artillery", fu
 	CLASS.ReloadTime	= 30
 	CLASS.ExhaustPos 	= Vector(-70)
 	CLASS.Racks			= { ["1xRK"] = true, ["2xRK"] = true, ["4xRK"] = true, ["6xUARRK"] = true }
-	CLASS.Guidance		= { Dumb = true, Laser = true, ["GPS Guided"] = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.Laser"] = true, ["ACF.Missiles.Guidance.GPSGuided"] = true }
 	CLASS.Navigation  	= "PN"
 	CLASS.Fuzes			= { Contact = true, Timed = true, Optical = true, Altitude = true }
 	CLASS.Agility		= 0.004

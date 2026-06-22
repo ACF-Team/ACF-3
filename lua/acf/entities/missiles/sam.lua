@@ -25,7 +25,7 @@ Classes.DefineClass("ACF.Missiles.SurfaceToAir.FIM-92", "ACF.Missiles.SurfaceToA
 	CLASS.ReloadTime	= 10
 	CLASS.ExhaustPos	= Vector(-29)
 	CLASS.Racks			= { ["1x FIM-92"] = true, ["2x FIM-92"] = true, ["4x FIM-92"] = true }
-	CLASS.Guidance		= { Dumb = true, Infrared = true, ["Anti-missile"] = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.Infrared"] = true, ["Anti-missile"] = true }
 	CLASS.Navigation	= "PN"
 	CLASS.Fuzes			= { Contact = true, Radio = true }
 	CLASS.SeekCone		= 7.5
@@ -67,7 +67,7 @@ Classes.DefineClass("ACF.Missiles.SurfaceToAir.Strela-1", "ACF.Missiles.SurfaceT
 	CLASS.ReloadTime	= 25
 	CLASS.ExhaustPos	= Vector(-44)
 	CLASS.Racks			= { ["1x Strela-1"] = true, ["2x Strela-1"] = true, ["4x Strela-1"] = true }
-	CLASS.Guidance		= { Dumb = true, Infrared = true, ["Anti-missile"] = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.Infrared"] = true, ["Anti-missile"] = true }
 	CLASS.Navigation	= "APN"
 	CLASS.Fuzes			= { Contact = true, Radio = true }
 	CLASS.SeekCone		= 20

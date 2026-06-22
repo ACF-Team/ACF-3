@@ -5,9 +5,9 @@ local Countermeasure  = Countermeasures.Register("Flare")
 function Countermeasure:OnLoaded()
 	self.Name = self.ID -- Workaround
 	self.AppliesTo = {
-		Infrared = true,
-		["Active Radar"] = true,
-		["Semi-Active Radar"] = true,
+		["ACF.Missiles.Guidance.Infrared"] = true,
+		["ACF.Missiles.Guidance.ActiveRadar"] = true,
+		["ACF.Missiles.Guidance.SemiActiveRadar"] = true,
 	}
 end
 

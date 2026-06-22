@@ -25,7 +25,7 @@ Classes.DefineClass("ACF.Missiles.FoldingFinRocket.40mm", "ACF.Missiles.FoldingF
 	CLASS.ReloadTime	= 2
 	CLASS.ExhaustPos	= Vector(-12)
 	CLASS.Racks			= { ["40mm7xPOD"] = true }
-	CLASS.Guidance		= { Dumb = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { Contact = true, Timed = true }
 	CLASS.Agility		= 1
@@ -67,7 +67,7 @@ Classes.DefineClass("ACF.Missiles.FoldingFinRocket.57mm", "ACF.Missiles.FoldingF
 	CLASS.ExhaustPos	= Vector(-12)
 	CLASS.Racks			= { ["57mm32xPOD"] = true , ["57mm16xPOD"] = true}
 	CLASS.Navigation	= "Chase"
-	CLASS.Guidance		= { Dumb = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Fuzes			= { Contact = true, Timed = true }
 	CLASS.Agility		= 1
 	CLASS.ArmDelay		= 0.1
@@ -107,7 +107,7 @@ Classes.DefineClass("ACF.Missiles.FoldingFinRocket.70mm", "ACF.Missiles.FoldingF
 	CLASS.ReloadTime	= 5
 	CLASS.ExhaustPos	= Vector(-21)
 	CLASS.Racks			= { ["70mm7xPOD"] = true, ["70mm19xPOD"] = true }
-	CLASS.Guidance		= { Dumb = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { Contact = true, Timed = true }
 	CLASS.Agility		= 0.05
@@ -149,7 +149,7 @@ Classes.DefineClass("ACF.Missiles.FoldingFinRocket.80mm", "ACF.Missiles.FoldingF
 	CLASS.ExhaustPos	= Vector(-21)
 	CLASS.Racks			= { ["80mm20xPOD"] = true }
 	CLASS.Navigation	= "Chase"
-	CLASS.Guidance		= { Dumb = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Fuzes			= { Contact = true, Timed = true }
 	CLASS.Agility		= 0.05
 	CLASS.ArmDelay		= 0.1
@@ -189,7 +189,7 @@ Classes.DefineClass("ACF.Missiles.FoldingFinRocket.Zuni", "ACF.Missiles.FoldingF
 	CLASS.ReloadTime	= 5
 	CLASS.ExhaustPos	= Vector(-45)
 	CLASS.Racks			= { ["127mm4xPOD"] = true }
-	CLASS.Guidance		= { Dumb = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { Contact = true, Timed = true, Optical = true, Radio = true, Altitude = true }
 	CLASS.Agility		= 0.05

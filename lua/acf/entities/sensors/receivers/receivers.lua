@@ -75,7 +75,7 @@ end
 do -- Radar Receiver
 	-- ACF.ActiveRadars for radars, need to check for direction and range for these
 	local ValidMissileRadars = {
-		["Active Radar"] = true
+		["ACF.Missiles.Guidance.ActiveRadar"] = true
 	}
 
 	local function ReceiveSource(Receiver)

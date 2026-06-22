@@ -25,7 +25,7 @@ Classes.DefineClass("ACF.Missiles.GuidedBomb.Walleye", "ACF.Missiles.GuidedBomb"
 	CLASS.Diameter		= 16.4 * ACF.InchToMm -- in mm
 	CLASS.ReloadTime	= 30
 	CLASS.Racks			= { ["1xRK"] = true, ["2xRK"] = true }
-	CLASS.Guidance		= { Dumb = true, ["Radio (MCLOS)"] = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.RadioMCLOS"] = true }
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { Contact = true, Timed = true, Optical = true, Altitude = true }
 	CLASS.SeekCone		= 90
@@ -68,7 +68,7 @@ Classes.DefineClass("ACF.Missiles.GuidedBomb.227kg", "ACF.Missiles.GuidedBomb", 
 	CLASS.ReloadTime	= 25
 	CLASS.Offset		= Vector(12, 0, 0)
 	CLASS.Racks			= { ["1xRK"] = true, ["2xRK"] = true, ["3xRK"] = true, ["4xRK"] = true }
-	CLASS.Guidance		= { Dumb = true, Laser = true, ["GPS Guided"] = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.Laser"] = true, ["ACF.Missiles.Guidance.GPSGuided"] = true }
 	CLASS.Navigation	= "PN"
 	CLASS.Fuzes			= { Contact = true, Timed = true, Optical = true, Altitude = true }
 	CLASS.SeekCone		= 60
@@ -127,7 +127,7 @@ Classes.DefineClass("ACF.Missiles.GuidedBomb.454kg", "ACF.Missiles.GuidedBomb", 
 	CLASS.Diameter		= 11.5 * ACF.InchToMm -- in mm
 	CLASS.ReloadTime	= 40
 	CLASS.Racks			= { ["1xRK"] = true, ["2xRK"] = true, ["3xRK"] = true, ["4xRK"] = true }
-	CLASS.Guidance		= { Dumb = true, Laser = true, ["GPS Guided"] = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.Laser"] = true, ["ACF.Missiles.Guidance.GPSGuided"] = true }
 	CLASS.Navigation	= "PN"
 	CLASS.Fuzes			= { Contact = true, Timed = true, Optical = true, Altitude = true }
 	CLASS.SeekCone		= 60
@@ -186,7 +186,7 @@ Classes.DefineClass("ACF.Missiles.GuidedBomb.909kg", "ACF.Missiles.GuidedBomb", 
 	CLASS.ReloadTime	= 60
 	CLASS.Offset		= Vector(15, 0, 0)
 	CLASS.Racks			= { ["1xRK"] = true, ["2xRK"] = true, ["4xRK"] = true }
-	CLASS.Guidance		= { Dumb = true, Laser = true, ["GPS Guided"] = true }
+	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.Laser"] = true, ["ACF.Missiles.Guidance.GPSGuided"] = true }
 	CLASS.Navigation	= "PN"
 	CLASS.Fuzes			= { Contact = true, Timed = true, Optical = true, Altitude = true }
 	CLASS.SeekCone		= 60
