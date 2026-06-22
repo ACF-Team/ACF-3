@@ -1,5 +1,10 @@
 local Missiles = ACF.Classes.Missiles
 
+local Classes = ACF.Classes
+Classes.DefineClass("ACF.Missiles.Artillery", "ACF.Missiles.BaseMissile", function()
+	CLASS.ID = "ARTY"
+end)
+
 Missiles.Register("ARTY", {
 	Name		= "Artillery Rockets",
 	Description	= "Artillery rockets provide massive HE delivery over a broad area, with arcing ballistic trajectories and limited guidance.",

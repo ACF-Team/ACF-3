@@ -1,5 +1,10 @@
 local Missiles = ACF.Classes.Missiles
 
+local Classes = ACF.Classes
+Classes.DefineClass("ACF.Missiles.GuidedBomb", "ACF.Missiles.BaseMissile", function()
+	CLASS.ID = "GBU"
+end)
+
 Missiles.Register("GBU", {
 	Name		= "Guided Bomb Units",
 	Description	= "Similar to a regular bomb, but able to be guided in flight to a vector coordinate. Most useful versus hard, unmoving targets.",

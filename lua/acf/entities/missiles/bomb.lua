@@ -1,5 +1,10 @@
 local Missiles = ACF.Classes.Missiles
 
+local Classes = ACF.Classes
+Classes.DefineClass("ACF.Missiles.FreeFallingBomb", "ACF.Missiles.BaseMissile", function()
+	CLASS.ID = "BOMB"
+end)
+
 Missiles.Register("BOMB", {
 	Name		= "Free Falling Bombs",
 	Description	= "Despite their lack of guidance and sophistication, they are exceptionally destructive on impact relative to their weight.",

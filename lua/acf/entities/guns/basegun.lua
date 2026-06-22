@@ -41,4 +41,8 @@ Classes.DefineClass("ACF.Guns.BaseScalableGun", "ACF.Guns.BaseGun", function()
 		local Limits = self.CaliberLimits
 		self.Caliber = math.Clamp(self.Caliber or 0, Limits.Min, Limits.Max)
 	end
+
+	function CLASS:WeaponEquals(Other)
+		return BASE.WeaponEquals(self, Other) and self.Caliber == Other.Caliber
+	end
 end)

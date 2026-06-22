@@ -1,5 +1,10 @@
 local Missiles = ACF.Classes.Missiles
 
+local Classes = ACF.Classes
+Classes.DefineClass("ACF.Missiles.AirToAir", "ACF.Missiles.BaseMissile", function()
+	CLASS.ID = "AAM"
+end)
+
 Missiles.Register("AAM", {
 	Name		= "Air-To-Air Missiles",
 	Description	= "Missiles specialized for air-to-air flight. They have varying range, but are agile, can be radar-guided, and withstand difficult launch angles well.",

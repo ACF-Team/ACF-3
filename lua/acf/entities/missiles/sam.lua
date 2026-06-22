@@ -1,5 +1,10 @@
 local Missiles = ACF.Classes.Missiles
 
+local Classes = ACF.Classes
+Classes.DefineClass("ACF.Missiles.SurfaceToAir", "ACF.Missiles.BaseMissile", function()
+	CLASS.ID = "SAM"
+end)
+
 Missiles.Register("SAM", {
 	Name		= "Surface-To-Air Missiles",
 	Description	= "Missiles specialized for surface-to-air operation, and well suited to lower altitude operation against ground attack aircraft.",

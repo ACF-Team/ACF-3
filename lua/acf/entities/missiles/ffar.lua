@@ -1,5 +1,10 @@
 local Missiles = ACF.Classes.Missiles
 
+local Classes = ACF.Classes
+Classes.DefineClass("ACF.Missiles.FoldingFinRocket", "ACF.Missiles.BaseMissile", function()
+	CLASS.ID = "FFAR"
+end)
+
 Missiles.Register("FFAR", {
 	Name		= "Folding-Fin Aerial Rockets",
 	Description	= "Small rockets which fit in tubes or pods. Rapid-firing and versatile.",

@@ -1,5 +1,10 @@
 local Missiles = ACF.Classes.Missiles
 
+local Classes = ACF.Classes
+Classes.DefineClass("ACF.Missiles.AntiTankGuided", "ACF.Missiles.BaseMissile", function()
+	CLASS.ID = "ATGM"
+end)
+
 Missiles.Register("ATGM", {
 	Name		= "Anti-Tank Guided Missiles",
 	Description	= "Missiles specialized on destroying heavily armored vehicles.",

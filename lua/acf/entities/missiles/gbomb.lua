@@ -1,5 +1,10 @@
 local Missiles = ACF.Classes.Missiles
 
+local Classes = ACF.Classes
+Classes.DefineClass("ACF.Missiles.GlidingBomb", "ACF.Missiles.BaseMissile", function()
+	CLASS.ID = "GBOMB"
+end)
+
 Missiles.Register("GBOMB", {
 	Name		= "Gliding Bombs",
 	Description	= "Similar to regular free falling bombs, gliding bombs are capable of travelling longer distances.",
