@@ -36,11 +36,11 @@ ACF.Classes.DefineClass("ACF.Guns.LightAutocannon", "ACF.Guns.BaseScalableGun", 
 		Min = 250,
 		Max = 100,
 	}
-	CLASS.CLASS.MagReload 	= {
+	CLASS.MagReload 	= {
 		Min = 6,
 		Max = 12,
 	}
-	CLASS.CLASS.Cyclic 		= {
+	CLASS.Cyclic 		= {
 		Min = 600,
 		Max = 400,
 	}
