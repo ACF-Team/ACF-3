@@ -13,8 +13,11 @@
 -- A class has initialized <-> Classes[ID] = ClassTable
 -- A class is waiting on its parent to initialize <-> Queued[BaseID][ID] = ClassTable
 
-local Classes = ACF.Classes.Registry or {} --- A mapping from a class' ID to its table
-ACF.Classes.Registry = Classes
+local Classes = ACF.Classes
+
+local ClassRegistry = Classes.Registry or {} --- A mapping from a class' ID to its table
+Classes.Registry = ClassRegistry
+
 
 local Queued = {} -- A mapping from a class' ID to a (mapping from its children's IDs to their tables)
 
@@ -53,7 +56,7 @@ do
         setmetatable(NewClass, ClassMeta)
 
         -- Index and Initialize ourselves
-        Classes[FullyQualifiedName] = NewClass
+        ClassRegistry[FullyQualifiedName] = NewClass
         if BaseClass then getmetatable(BaseClass).__CHILDREN[FullyQualifiedName] = NewClass end -- Register ourselves as a child of our parent
         ClassMeta.__PARENT = BaseClass
         -- We should define GetType before calling the initializer
@@ -78,8 +81,8 @@ do
                 -- This can either be a type name, a factory, or a value
                 -- factories are used for things like table data if we ever store that or userdata like vectors/angles
                 if Options.InstantiateTypeForDefault then
-                    local Type = ACF.Classes.GetTypeByName(Options.InstantiateTypeForDefault)
-                    if ACF.Classes.IsAssignableTo(Type, ACF.Classes.GetTypeByName(Field.Type)) then
+                    local Type = Classes.GetTypeByName(Options.InstantiateTypeForDefault)
+                    if Classes.IsAssignableTo(Type, Classes.GetTypeByName(Field.Type)) then
                         Instance[Field.Name] = Type()
                     end
                 elseif Options.DefaultFactory then
@@ -198,8 +201,8 @@ do
             end
         end
 
-        local BaseClass = Classes[BaseID]
-        local NewClass = Classes[ID] or {} -- This should allow for hot-reloading?
+        local BaseClass = ClassRegistry[BaseID]
+        local NewClass = ClassRegistry[ID] or {} -- This should allow for hot-reloading?
         NewClass.OnInit = OnInit
 
         -- If we have a parent and they don't exist
@@ -214,7 +217,7 @@ do
         return NewClass
     end
 
-    ACF.Classes.DefineClass = DefineClass
+    Classes.DefineClass = DefineClass
 end
 
 local ReadOnlyTable = setmetatable({}, nil)
@@ -222,41 +225,41 @@ local ReadOnlyTable = setmetatable({}, nil)
 -- NOTE: When I specify a name, I will say "ClassName".
 -- When I specify a class object, I will say "ClassType"
 -- When I specify a class instance, I will say "ClassInstance"
-function ACF.Classes.GetTypeByName(ClassName)
+function Classes.GetTypeByName(ClassName)
     if not ClassName then return end
-    return Classes[ClassName]
+    return ClassRegistry[ClassName]
 end
 
-function ACF.Classes.GetTypeName(Class)
+function Classes.GetTypeName(Class)
     return Class and getmetatable(Class).__CLASS_ID or "none"
 end
 
 -- Returns a contiguous read-only array of fields
-function ACF.Classes.GetTypeFields(Class)
+function Classes.GetTypeFields(Class)
     return Class and getmetatable(Class).__FIELDS.List or ReadOnlyTable
 end
 
 -- Looks up a field on a class by name
-function ACF.Classes.GetTypeFieldByName(Class, Name)
+function Classes.GetTypeFieldByName(Class, Name)
     if Class == nil then return nil end
     return getmetatable(Class).__FIELDS.Lookup[Name]
 end
 
 -- Returns the base/parent class type, or nil if there is none
-function ACF.Classes.GetBaseClass(Class)
+function Classes.GetBaseClass(Class)
     local MT = Class and getmetatable(Class)
     return MT and MT.__PARENT
 end
 
 -- Returns the mapping of direct child IDs to their class tables
-function ACF.Classes.GetChildren(Class)
+function Classes.GetChildren(Class)
     local MT = Class and getmetatable(Class)
     return MT and MT.__CHILDREN or ReadOnlyTable
 end
 
-function ACF.Classes.GetSubtypes(ClassName)
-    local Class = Classes[ClassName]
-    if not Class then return {} end
+function Classes.GetSubtypes(ClassName)
+    local Class = ClassRegistry[ClassName]
+    if not Class then return ReadOnlyTable end
 
     local Result = {}
     local function Collect(C)
@@ -269,13 +272,29 @@ function ACF.Classes.GetSubtypes(ClassName)
     return Result
 end
 
+function Classes.GetSubtypeByName(BaseClassName, WantedClassName)
+    local Class = ClassRegistry[BaseClassName]
+    if not Class then return nil end
+
+    for _, Child in pairs(Classes.GetChildren(Class)) do
+        if Classes.GetTypeName(Child) == WantedClassName then
+            return Child
+        end
+
+        local Check = Classes.GetSubtypeByName(Classes.GetTypeName(Child), WantedClassName)
+        if Check then return Check end
+    end
+
+    return nil
+end
+
 -- This checks if ClassA can be basically "down-casted" down to ClassB by going down its parent tree.
-function ACF.Classes.IsAssignableTo(ClassTypeA, ClassTypeB)
+function Classes.IsAssignableTo(ClassTypeA, ClassTypeB)
     if ClassTypeA == ClassTypeB then return true end
     local C = ClassTypeA
 
     while C ~= nil do
-        C = ACF.Classes.GetBaseClass(C)
+        C = Classes.GetBaseClass(C)
         if C == ClassTypeB then
             return true
         end
@@ -284,6 +303,6 @@ function ACF.Classes.IsAssignableTo(ClassTypeA, ClassTypeB)
     return false
 end
 
-function ACF.Classes.IsAssignableFrom(ClassTypeA, ClassTypeB)
-    return ACF.Classes.IsAssignableTo(ClassTypeB, ClassTypeA)
+function Classes.IsAssignableFrom(ClassTypeA, ClassTypeB)
+    return Classes.IsAssignableTo(ClassTypeB, ClassTypeA)
 end
