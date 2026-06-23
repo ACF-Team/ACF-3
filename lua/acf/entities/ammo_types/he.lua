@@ -80,7 +80,7 @@ Classes.DefineClass("ACF.Ammunition.HE", "ACF.Ammunition.APHE", function()
 		function CLASS:Network(Entity, BulletData)
 			BASE.Network(self, Entity, BulletData)
 
-			Entity:SetNW2String("AmmoType", "HE")
+			Entity:SetNW2String("AmmoType", "ACF.Ammunition.HE")
 		end
 
 		function CLASS:UpdateCrateOverlay(BulletData, State)

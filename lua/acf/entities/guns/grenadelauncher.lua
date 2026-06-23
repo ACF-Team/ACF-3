@@ -7,7 +7,7 @@ ACF.Classes.DefineClass("ACF.Guns.GrenadeLauncher", "ACF.Guns.BaseScalableGun", 
 	CLASS.Sound       		= "acf_base/weapons/grenadelauncher.mp3"
 	CLASS.Model       		= "models/launcher/40mmgl.mdl"
 	CLASS.MuzzleFlash 		= "gl_muzzleflash_noscale"
-	CLASS.DefaultAmmo 		= "HE"
+	CLASS.DefaultAmmo 		= "ACF.Ammunition.HE"
 	CLASS.IsBelted			= true
 	CLASS.IsAutomatic 		= true
 	CLASS.Mass				= 101

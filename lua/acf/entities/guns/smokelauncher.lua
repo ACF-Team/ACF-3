@@ -8,7 +8,7 @@ ACF.Classes.DefineClass("ACF.Guns.SmokeLauncher", "ACF.Guns.BaseScalableGun", fu
 	CLASS.Model       	= "models/launcher/40mmsl.mdl"
 	CLASS.MuzzleFlash 	= "gl_muzzleflash_noscale"
 	CLASS.Cleanup     	= "acf_smokelauncher"
-	CLASS.DefaultAmmo 	= "SM"
+	CLASS.DefaultAmmo 	= "ACF.Ammunition.SM"
 	CLASS.IsBoxed     	= true
 	CLASS.Spread      	= 0.32
 	CLASS.Mass        	= 3.77

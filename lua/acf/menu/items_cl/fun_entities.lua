@@ -11,7 +11,7 @@ do -- Piledrivers menu
 		local Class          = Classes.GetTypeByName(WeaponField.Options.InstantiateTypeForDefault)
 		local ClassID        = Classes.GetTypeName(Class)
 		local CaliberOpts    = Classes.GetTypeFieldByName(Class, "Caliber").Options
-		local AmmoType       = AmmoTypes.Get("HP")
+		local AmmoType       = AmmoTypes.Get("ACF.Ammunition.HP")
 
 		Menu:AddTitle("#acf.menu.fun.piledrivers.settings")
 
@@ -27,7 +27,7 @@ do -- Piledrivers menu
 		ACF.SetClientData("PrimaryClass", "acf_piledriver")
 		ACF.SetClientData("SecondaryClass", "N/A")
 		ACF.SetClientData("Destiny", "Piledrivers")
-		ACF.SetClientData("AmmoType", "HP")
+		ACF.SetClientData("AmmoType", "ACF.Ammunition.HP")
 		ACF.SetClientData("Propellant", 0)
 		ACF.SetClientData("Tracer", false)
 
@@ -55,7 +55,7 @@ do -- Piledrivers menu
 				Weapon     = ClassID,
 				Caliber    = Value,
 				Destiny    = "Piledrivers",
-				AmmoType   = "HP",
+				AmmoType   = "ACF.Ammunition.HP",
 				Projectile = Length,
 				Propellant = 0,
 				Tracer     = false,

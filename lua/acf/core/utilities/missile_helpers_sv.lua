@@ -17,7 +17,7 @@ local function ResetHEAT(BulletData)
 	local PenMul = BulletData.PenMul or ACF.GetGunValue(BulletData, "PenMul") or 1
 
 	if not BulletData.SlugMV then -- heat needs to calculate slug mv on the fly
-		local Ammo = AmmoTypes.Get("HEAT")
+		local Ammo = AmmoTypes.Get("ACF.Ammunition.HEAT")
 
 		BulletData.SlugMV = Ammo:CalcSlugMV(BulletData, BulletData.FillerMass)
 	end
@@ -30,7 +30,7 @@ end
 -- Resets the velocity of the bullet based on its current state on the serverside only.
 -- This will de-sync the clientside effect!
 function ACF.ResetBulletVelocity(BulletData)
-	if BulletData.Type == "HEAT" then
+	if BulletData.Type == "ACF.Ammunition.HEAT" then
 		return ResetHEAT(BulletData)
 	end
 

@@ -18,7 +18,7 @@ do -- Spawning
     end
 
     function ENT:ACF_OnSpawn(_)
-        local AmmoType = AmmoTypes.Get("HP")
+        local AmmoType = AmmoTypes.Get("ACF.Ammunition.HP")
 
         self.RoundData    = AmmoType()
         self.LastThink    = Clock.CurTime
@@ -70,7 +70,7 @@ do -- Updating
                 Weapon     = Classes.GetTypeName(Class),
                 Caliber    = Caliber,
                 Destiny    = "Piledrivers",
-                AmmoType   = "HP",
+                AmmoType   = "ACF.Ammunition.HP",
                 Projectile = self.SpikeLength,
                 Propellant = 0,
             }

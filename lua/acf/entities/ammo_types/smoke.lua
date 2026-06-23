@@ -128,7 +128,7 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function()
 		function CLASS:Network(Entity, BulletData)
 			BASE.Network(self, Entity, BulletData)
 
-			Entity:SetNW2String("AmmoType", "SM")
+			Entity:SetNW2String("AmmoType", "ACF.Ammunition.SM")
 			Entity:SetNW2Float("FillerMass", BulletData.FillerMass)
 			Entity:SetNW2Float("WPMass", BulletData.WPMass)
 		end

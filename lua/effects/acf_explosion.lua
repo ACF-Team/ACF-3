@@ -45,7 +45,7 @@ function EFFECT:Init(Data)
 
 		if Radius > 1 and (IsValid(Entity) or Impact.HitWorld) then
 			local Size = Radius * 0.66
-			local Type = GetIndex("HE")
+			local Type = GetIndex("ACF.Ammunition.HE")
 			if Type then
 				util.DecalEx(GetDecal(Type), Entity, Impact.HitPos, HitNormal, White, Size, Size)
 			end

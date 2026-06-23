@@ -935,7 +935,7 @@ do -- Metamethods --------------------------------
 
 			-- Set in air if GLATGM is used
 			local GLATGM = AmmoType:Create(self, BulletData)
-			if IsValid(GLATGM) and AmmoType.ID == "GLATGM" then
+			if IsValid(GLATGM) and AmmoType.ID == "ACF.Ammunition.GLATGM" then
 				WireLib.TriggerOutput(self, "In Air", 1)
 				GLATGM:CallOnRemove("GunResetInAir", function()
 					if IsValid(self) then WireLib.TriggerOutput(self, "In Air", 0) end

@@ -413,7 +413,7 @@ end
 
 local function AddPenetrationTable(Base, ToolData)
 	--HE and Smoke do not support this.
-	if ToolData.AmmoType == "SM" or ToolData.AmmoType == "HE" then return end
+	if ToolData.AmmoType == "ACF.Ammunition.SM" or ToolData.AmmoType == "ACF.Ammunition.HE" then return end
 
 	-- Setup of penetration statistics table.
 	local PenTable = Base:AddTable(5, 6)
@@ -435,7 +435,7 @@ local function AddPenetrationTable(Base, ToolData)
 			local Penetration, Velocity = Ammo:GetRangedPenetration(BulletData, range)
 
 			-- Chemical rounds require different functions for penetration.
-			if ToolData.AmmoType == "HEAT" or ToolData.AmmoType == "HEATFS" then
+			if ToolData.AmmoType == "ACF.Ammunition.HEAT" or ToolData.AmmoType == "ACF.Ammunition.HEATFS" then
 				Penetration = Ammo:GetPenetration(BulletData, BulletData.Standoff)
 			end
 
@@ -491,7 +491,7 @@ local function AddGraph(Base, ToolData)
 
 		local Ammo = AmmoTypes.Get(ToolData.AmmoType)
 
-		if ToolData.AmmoType == "HEAT" or ToolData.AmmoType == "HEATFS" then
+		if ToolData.AmmoType == "ACF.Ammunition.HEAT" or ToolData.AmmoType == "ACF.Ammunition.HEATFS" then
 			local PassiveStandoffPen = Ammo:GetPenetration(BulletData, BulletData.Standoff)
 			local BreakupDistPen = Ammo:GetPenetration(BulletData, BulletData.BreakupDist)
 
@@ -510,7 +510,7 @@ local function AddGraph(Base, ToolData)
 			Panel:PlotFunction(PenetrationText, GraphRedAlt, function(X)
 				return Ammo:GetPenetration(BulletData, X / 1000)
 			end)
-		elseif ToolData.AmmoType == "HE" then
+		elseif ToolData.AmmoType == "ACF.Ammunition.HE" then
 			local BlastRadiusText = language.GetPhrase("acf.menu.ammo.blast_radius")
 
 			Panel:SetYLabel(BlastRadiusText)
@@ -526,7 +526,7 @@ local function AddGraph(Base, ToolData)
 			Panel:PlotFunction(BlastRadiusText, GraphRed, function()
 				return BulletData.BlastRadius
 			end)
-		elseif ToolData.AmmoType == "SM" then
+		elseif ToolData.AmmoType == "ACF.Ammunition.SM" then
 			Panel:SetYLabel("#acf.menu.ammo.smoke_radius")
 			Panel:SetXLabel("#acf.menu.ammo.time")
 

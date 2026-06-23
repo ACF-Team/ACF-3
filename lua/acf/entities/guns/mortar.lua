@@ -6,7 +6,7 @@ ACF.Classes.DefineClass("ACF.Guns.Mortar", "ACF.Guns.BaseScalableGun", function(
 	CLASS.Sound       	= "acf_base/weapons/mortar_new.mp3"
 	CLASS.Model			= "models/mortar/mortar_120mm.mdl"
 	CLASS.MuzzleFlash 	= "mortar_muzzleflash_noscale"
-	CLASS.DefaultAmmo 	= "HE"
+	CLASS.DefaultAmmo 	= "ACF.Ammunition.HE"
 	CLASS.Spread      	= 0.72
 	CLASS.Mass        	= 459
 	CLASS.ScaleFactor 	= 0.84 -- Corrective factor to account for improperly scaled base models

@@ -124,7 +124,7 @@ Classes.DefineClass("ACF.Ammunition.HEATFS", "ACF.Ammunition.HEAT", function()
 		function CLASS:Network(Entity, BulletData)
 			BASE.Network(self, Entity, BulletData)
 
-			Entity:SetNW2String("AmmoType", "HEATFS")
+			Entity:SetNW2String("AmmoType", "ACF.Ammunition.HEATFS")
 		end
 	else
 		ACF.RegisterAmmoDecal("ACF.Ammunition.HEATFS", "damage/heat_pen", "damage/heat_rico", function(Caliber) return Caliber * 0.1667 end)

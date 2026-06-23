@@ -344,9 +344,9 @@ ACF.AddInputAction("acf_missile", "Detonate", function(Entity, Value)
 
 	if Value ~= 0 then
 		local BulletData = Entity.BulletData
-		if BulletData.Type == "HEAT" then
-			BulletData.Type = "HE"
-			Entity:SetNW2String("AmmoType", "HE")
+		if BulletData.Type == "ACF.Ammunition.HEAT" then
+			BulletData.Type = "ACF.Ammunition.HE"
+			Entity:SetNW2String("AmmoType", "ACF.Ammunition.HE")
 		end
 		Entity:Detonate(true)
 	end
@@ -654,7 +654,7 @@ function ENT:Detonate(Destroyed)
 
 	local Bullet = Ballistics.CreateBullet(BulletData)
 
-	if BulletData.Type ~= "HEAT" then
+	if BulletData.Type ~= "ACF.Ammunition.HEAT" then
 		ACF.DoReplicatedPropHit(self, Bullet)
 	end
 end
@@ -726,10 +726,10 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	if HitRes.Kill then
 		local BulletData = self.BulletData
 
-		if BulletData.Type == "HEAT" then
-			BulletData.Type = "HE"
+		if BulletData.Type == "ACF.Ammunition.HEAT" then
+			BulletData.Type = "ACF.Ammunition.HE"
 
-			self:SetNW2String("AmmoType", "HE")
+			self:SetNW2String("AmmoType", "ACF.Ammunition.HE")
 		end
 		DetonateMissile(self, Owner)
 
@@ -740,10 +740,10 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 
 		-- The missile should detonate when it gets penetrated.
 		if DmgResult.Penetration > self.ForcedArmor then
-			if BulletData.Type == "HEAT" then
-				BulletData.Type = "HE"
+			if BulletData.Type == "ACF.Ammunition.HEAT" then
+				BulletData.Type = "ACF.Ammunition.HE"
 
-				self:SetNW2String("AmmoType", "HE")
+				self:SetNW2String("AmmoType", "ACF.Ammunition.HE")
 			end
 			DetonateMissile(self, Owner)
 
