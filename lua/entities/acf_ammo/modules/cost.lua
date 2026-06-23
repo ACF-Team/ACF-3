@@ -5,7 +5,7 @@ function ENT:GetCost()
 
 	--PrintTable(selftbl.BulletData)
 
-	--print(selftbl.Capacity, selftbl.BulletData.Type)
+	--print(selftbl.Capacity, selftbl.BulletData.AmmoType)
 
 	if selftbl.IsMissileAmmo then
 		local Cost	= selftbl.Capacity * selftbl.RoundData:GetCost(selftbl.BulletData)

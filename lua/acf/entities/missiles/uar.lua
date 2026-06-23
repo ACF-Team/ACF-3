@@ -35,7 +35,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.RS82", "ACF.Missiles.UnguidedRo
 	CLASS.Bodygroups	= {
 		warhead = {
 			DataSource = function(Entity)
-				return Entity.BulletData and Entity.BulletData.Type
+				return Entity.BulletData and Entity.BulletData.AmmoType
 			end,
 			HE = {
 				OnRack = "HE.smd",

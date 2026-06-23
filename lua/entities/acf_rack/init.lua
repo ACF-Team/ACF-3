@@ -102,7 +102,7 @@ do
 		end
 
 		-- Check space behind breech
-		if ACF.LegalChecks and self.BulletData and self.BulletData.Type ~= "Empty" and self.ClassData.BreechConfigs then
+		if ACF.LegalChecks and self.BulletData --[[ useless? and self.BulletData.AmmoType ~= "Empty"]] and self.ClassData.BreechConfigs then
 			local IdName      = self.BulletData.WeaponType
 			local IdGroup     = Classes.GetGroup(Classes.Missiles, IdName)
 			local IdClass     = IdGroup.Lookup[IdName]
@@ -1146,7 +1146,7 @@ do -- Misc -------------------------------------
 
 		self:SetState(self.Jammed and "Jammed" or Point.State)
 
-		WireLib.TriggerOutput(self, "Ammo Type", BulletData.Type)
+		WireLib.TriggerOutput(self, "Ammo Type", BulletData.AmmoType)
 		WireLib.TriggerOutput(self, "Current Index", Index)
 		WireLib.TriggerOutput(self, "Reload Time", Reload)
 		WireLib.TriggerOutput(self, "Missile", Missile)

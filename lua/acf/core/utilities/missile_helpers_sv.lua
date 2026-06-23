@@ -29,7 +29,7 @@ end
 -- Resets the velocity of the bullet based on its current state on the serverside only.
 -- This will de-sync the clientside effect!
 function ACF.ResetBulletVelocity(BulletData)
-	if BulletData.Type == "ACF.Ammunition.HEAT" then
+	if BulletData.AmmoType == "ACF.Ammunition.HEAT" then
 		return ResetHEAT(BulletData)
 	end
 

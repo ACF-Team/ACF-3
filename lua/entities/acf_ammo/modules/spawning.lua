@@ -501,7 +501,7 @@ end
 do -- Overlay
 	function ENT:ACF_UpdateOverlayState(State)
 		local Tracer = self.BulletData.Tracer ~= 0 and "-T" or ""
-		local AmmoType = self.BulletData.Type .. Tracer
+		local AmmoType = self.BulletData.AmmoType .. Tracer
 
 		if next(self.Weapons) then
 			if self:CanConsume() then

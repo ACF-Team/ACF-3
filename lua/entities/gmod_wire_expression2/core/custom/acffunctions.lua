@@ -989,7 +989,7 @@ e2function number entity:acfSpread()
 
 	local Spread = (this.GetSpread and this:GetSpread()) or this.Spread or 0
 
-	if this.BulletData and this.BulletData.Type == "ACF.Ammunition.FL" then
+	if this.BulletData and this.BulletData.AmmoType == "ACF.Ammunition.FL" then
 		return Spread + (this.BulletData.FlechetteSpread or 0)
 	end
 
@@ -1055,7 +1055,7 @@ e2function string entity:acfAmmoType()
 
 	local BulletData = this.BulletData
 
-	return BulletData and BulletData.Type or ""
+	return BulletData and BulletData.AmmoType or ""
 end
 
 -- Returns the caliber of an ammo
@@ -1160,7 +1160,7 @@ e2function number entity:acfPenetration()
 	if RestrictInfo(self, this) then return 0 end
 
 	local BulletData = this.BulletData
-	local AmmoType   = BulletData and Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.Type)
+	local AmmoType   = BulletData and Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.AmmoType)
 
 	if not AmmoType then return 0 end
 
@@ -1176,7 +1176,7 @@ e2function number entity:acfBlastRadius()
 	if RestrictInfo(self, this) then return 0 end
 
 	local BulletData = this.BulletData
-	local AmmoType   = BulletData and Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.Type)
+	local AmmoType   = BulletData and Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.AmmoType)
 
 	if not AmmoType then return 0 end
 

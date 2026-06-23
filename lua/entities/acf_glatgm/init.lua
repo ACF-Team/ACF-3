@@ -167,8 +167,8 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 
 		-- We give it a chance to explode when it gets penetrated aswell.
 		if math.random() > 0.55 * Ratio then
-			if BulletData.Type == "ACF.Ammunition.GLATGM" then
-				BulletData.Type = "ACF.Ammunition.HE"
+			if BulletData.AmmoType == "ACF.Ammunition.GLATGM" then
+				BulletData.AmmoType = "ACF.Ammunition.HE"
 				self:SetNW2String("AmmoType", "ACF.Ammunition.HE")
 			end
 			DetonateMissile(self, Owner)
@@ -183,8 +183,8 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 
 		-- Any Damage to the liner.
 		-- For sake of consistency and reducing of RNG on damage
-		if BulletData.Type == "ACF.Ammunition.GLATGM" and 0.95 > Ratio then
-			BulletData.Type = "ACF.Ammunition.HE"
+		if BulletData.AmmoType == "ACF.Ammunition.GLATGM" and 0.95 > Ratio then
+			BulletData.AmmoType = "ACF.Ammunition.HE"
 
 			self:SetNW2String("AmmoType", "ACF.Ammunition.HE")
 		end
@@ -304,7 +304,7 @@ function ENT:Detonate()
 
 	local Bullet = Ballistics.CreateBullet(BulletData)
 
-	if BulletData.Type ~= "ACF.Ammunition.GLATGM" then
+	if BulletData.AmmoType ~= "ACF.Ammunition.GLATGM" then
 		ACF.DoReplicatedPropHit(self, Bullet)
 	end
 

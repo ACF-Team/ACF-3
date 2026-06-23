@@ -162,24 +162,6 @@ local Weaponry = {
 	Weapons     = Classes.Weapons,
 }
 
--- In case you might want to add more
-function ACF.AddWeaponrySource(Class)
-	if not Class then return end
-	if not Classes[Class] then return end
-
-	Weaponry[Class] = Classes[Class]
-end
-
-function ACF.GetWeaponrySources()
-	local Result = {}
-
-	for K, V in pairs(Weaponry) do
-		Result[K] = V
-	end
-
-	return Result
-end
-
 function ACF.FindWeaponrySource(ID)
 	if not ID then return end
 

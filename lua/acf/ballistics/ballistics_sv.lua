@@ -163,7 +163,7 @@ function Ballistics.CreateBullet(BulletData)
 		EventViewer.AppendEvent(GetEventViewerName(Index), "Ballistics.CreateBullet", Bullet)
 	end
 
-	Bullet.TypeDef = ACF.Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", Bullet.Type)
+	Bullet.TypeDef = ACF.Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", Bullet.AmmoType)
 
 	-- TODO: Make bullets use a metatable instead
 	function Bullet:GetPenetration()

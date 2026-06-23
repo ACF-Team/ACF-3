@@ -1966,7 +1966,7 @@ if SERVER then
 
 		local Spread = (This.GetSpread and This:GetSpread()) or This.Spread or 0
 
-		if This.BulletData and This.BulletData.Type == "ACF.Ammunition.FL" then -- TODO: Replace this hardcoded bit
+		if This.BulletData and This.BulletData.AmmoType == "ACF.Ammunition.FL" then -- TODO: Replace this hardcoded bit
 			return Spread + (This.BulletData.FlechetteSpread or 0)
 		end
 
@@ -2161,7 +2161,7 @@ if SERVER then
 
 		local BulletData = This.BulletData
 
-		return BulletData and BulletData.Type or ""
+		return BulletData and BulletData.AmmoType or ""
 	end
 
 	--- Returns the caliber of an ammo or gun
@@ -2331,7 +2331,7 @@ if SERVER then
 		if RestrictInfo(This) then return 0 end
 
 		local BulletData = This.BulletData
-		local AmmoType   = BulletData and Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.Type)
+		local AmmoType   = BulletData and Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.AmmoType)
 
 		if not AmmoType then return 0 end
 
@@ -2353,7 +2353,7 @@ if SERVER then
 		if RestrictInfo(This) then return 0 end
 
 		local BulletData = This.BulletData
-		local AmmoType   = BulletData and Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.Type)
+		local AmmoType   = BulletData and Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.AmmoType)
 
 		if not AmmoType then return 0 end
 

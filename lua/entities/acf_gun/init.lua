@@ -900,7 +900,7 @@ do -- Metamethods --------------------------------
 
 			local Velocity = ENTITY.GetVelocity(ENTITY.GetAncestor(self))
 			local BulletData = SelfTbl.BulletData
-			local AmmoType = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.Type)
+			local AmmoType = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.AmmoType)
 
 			if BulletData.CanFuze and SelfTbl.SetFuze then
 				local Variance = 0.00005 * math.Rand(-1, 1) * (math.max(0, 50 - SelfTbl.Caliber) + 30)
@@ -1092,7 +1092,7 @@ do -- Metamethods --------------------------------
 				SelfTbl.BulletData   = BulletData
 				SelfTbl.NextFire 	  = Clock.CurTime + Time
 
-				WireLib.TriggerOutput(self, "Ammo Type", BulletData.Type)
+				WireLib.TriggerOutput(self, "Ammo Type", BulletData.AmmoType)
 				WireLib.TriggerOutput(self, "Shots Left", SelfTbl.CurrentShot)
 
 				ENTITY.SetNW2Int(self, "Length", SelfTbl.BulletData.PropLength + SelfTbl.BulletData.ProjLength)
@@ -1278,7 +1278,7 @@ do -- Metamethods --------------------------------
 		function ENT:ACF_UpdateOverlayState(State)
 			local SelfTbl = ENTITY.GetTable(self)
 
-			local AmmoType  = SelfTbl.BulletData.Type .. (SelfTbl.BulletData.Tracer ~= 0 and "-T" or "")
+			local AmmoType  = SelfTbl.BulletData.AmmoType .. (SelfTbl.BulletData.Tracer ~= 0 and "-T" or "")
 			local Firerate  = math.floor(60 / SelfTbl.ReloadTime)
 			local CrateAmmo = 0
 			if next(SelfTbl.OverlayErrors) then
