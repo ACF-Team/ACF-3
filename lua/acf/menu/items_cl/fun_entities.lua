@@ -2,7 +2,6 @@ local ACF     = ACF
 local Classes = ACF.Classes
 
 do -- Piledrivers menu
-	local AmmoTypes = Classes.AmmoTypes
 	local Ammo, BulletData
 
 	local function CreateMenu(Menu)
@@ -11,7 +10,7 @@ do -- Piledrivers menu
 		local Class          = Classes.GetTypeByName(WeaponField.Options.InstantiateTypeForDefault)
 		local ClassID        = Classes.GetTypeName(Class)
 		local CaliberOpts    = Classes.GetTypeFieldByName(Class, "Caliber").Options
-		local AmmoType       = AmmoTypes.Get("ACF.Ammunition.HP")
+		local AmmoType       = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", "ACF.Ammunition.HP")
 
 		Menu:AddTitle("#acf.menu.fun.piledrivers.settings")
 

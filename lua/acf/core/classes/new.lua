@@ -26,7 +26,10 @@ local READ_ONLY_MT = {__newindex = function() end}
 local UpdateFlattenedChildrenLookupRecursive function UpdateFlattenedChildrenLookupRecursive(BaseClass, FullyQualifiedName, NewClass)
     local MT = getmetatable(BaseClass)
     if not MT then return end
-
+    if not MT.__CHILDREN_FLATTENED[FullyQualifiedName] then
+        MT.__CHILDREN_FLATTENED_CONTIGUOUS[#MT.__CHILDREN_FLATTENED_CONTIGUOUS + 1] = NewClass
+        MT.__CHILDREN_NAMES_CONTIGUOUS[#MT.__CHILDREN_NAMES_CONTIGUOUS + 1] = FullyQualifiedName
+    end
     MT.__CHILDREN_FLATTENED[FullyQualifiedName] = NewClass
     local P = MT.__index
     if not P then return end
@@ -49,7 +52,10 @@ do
             __tostring = function() return TypeName end,
             __CLASS_ID = FullyQualifiedName,
             __CHILDREN = {},            -- A mapping from a child class' ID to its table
+            -- The tables below are for optimizations...
             __CHILDREN_FLATTENED = {},  -- The same as above but flattened hierarchy
+            __CHILDREN_FLATTENED_CONTIGUOUS = {},  -- The same as above but an array
+            __CHILDREN_NAMES_CONTIGUOUS = {},  -- The same as above but the names
             -- Instantiation
             __call = function(self, ...)
                 local Instance    = {}
@@ -275,6 +281,20 @@ function Classes.GetSubtypes(ClassName)
     local Class = ClassRegistry[ClassName]
     if not Class then return ReadOnlyTable end
     return getmetatable(Class).__CHILDREN_FLATTENED
+end
+
+-- Returns a contiguous array of flattened-hierarchy child IDs to their class tables
+function Classes.GetSubtypesAsList(ClassName)
+    local Class = ClassRegistry[ClassName]
+    if not Class then return ReadOnlyTable end
+    return getmetatable(Class).__CHILDREN_FLATTENED_CONTIGUOUS
+end
+
+-- Returns a contiguous array of flattened-hierarchy child IDs to their class tables
+function Classes.GetSubtypeFQNs(ClassName)
+    local Class = ClassRegistry[ClassName]
+    if not Class then return ReadOnlyTable end
+    return getmetatable(Class).__CHILDREN_NAMES_CONTIGUOUS
 end
 
 function Classes.GetSubtypeByName(BaseClassName, WantedClassName)

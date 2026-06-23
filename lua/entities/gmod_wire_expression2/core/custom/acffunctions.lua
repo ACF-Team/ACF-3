@@ -12,7 +12,7 @@ E2Lib.RegisterExtension("acf", true)
 --===============================================================================================--
 
 local ACF       = ACF
-local AmmoTypes = ACF.Classes.AmmoTypes
+local Classes   = ACF.Classes
 local Clock     = ACF.Utilities.Clock
 local Notify    = ACF.Utilities.Notify
 local match     = string.match
@@ -1160,7 +1160,7 @@ e2function number entity:acfPenetration()
 	if RestrictInfo(self, this) then return 0 end
 
 	local BulletData = this.BulletData
-	local AmmoType   = BulletData and AmmoTypes.Get(BulletData.Type)
+	local AmmoType   = BulletData and Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.Type)
 
 	if not AmmoType then return 0 end
 
@@ -1176,7 +1176,7 @@ e2function number entity:acfBlastRadius()
 	if RestrictInfo(self, this) then return 0 end
 
 	local BulletData = this.BulletData
-	local AmmoType   = BulletData and AmmoTypes.Get(BulletData.Type)
+	local AmmoType   = BulletData and Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.Type)
 
 	if not AmmoType then return 0 end
 

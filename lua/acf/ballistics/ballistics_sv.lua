@@ -20,7 +20,6 @@ local IndexLimit   = 2000
 local SkyGraceZone = 100
 local FlightTr     = { start = true, endpos = true, filter = true, mask = true }
 local GlobalFilter = ACF.GlobalFilter
-local AmmoTypes    = ACF.Classes.AmmoTypes
 
 -- This will create, or update, the tracer effect on the clientside
 function Ballistics.BulletClient(Bullet, Type, Hit, HitPos)
@@ -164,11 +163,11 @@ function Ballistics.CreateBullet(BulletData)
 		EventViewer.AppendEvent(GetEventViewerName(Index), "Ballistics.CreateBullet", Bullet)
 	end
 
+	Bullet.TypeDef = ACF.Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", Bullet.Type)
+
 	-- TODO: Make bullets use a metatable instead
 	function Bullet:GetPenetration()
-		local Ammo = ACF.Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", Bullet.Type)
-
-		return Ammo:GetPenetration(self)
+		return Bullet.TypeDef:GetPenetration(self)
 	end
 
 	if not next(Bullets) then
@@ -298,7 +297,7 @@ function Ballistics.DoBulletsFlight(Bullet)
 
 				Ballistics.BulletClient(Bullet, "Update", 1, Bullet.Pos)
 
-				AmmoTypes.Get(Bullet.Type):OnFlightEnd(Bullet, traceRes)
+				Bullet.TypeDef:OnFlightEnd(Bullet, traceRes)
 				if EventViewer.Enabled() then
 					EventViewer.AppendEvent(GetEventViewerName(Bullet.Index), "Ballistics.DoBulletsFlight.Fuze")
 				end
@@ -335,7 +334,7 @@ function Ballistics.DoBulletsFlight(Bullet)
 
 			local Type = Ballistics.GetImpactType(traceRes, Entity)
 
-			Ballistics.OnImpact(Bullet, traceRes, AmmoTypes.Get(Bullet.Type), Type)
+			Ballistics.OnImpact(Bullet, traceRes, Bullet.TypeDef, Type)
 		end
 	end
 end

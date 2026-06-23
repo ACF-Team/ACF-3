@@ -22,7 +22,6 @@ local ACF               = ACF
 local math              = math
 local match             = string.match
 local Classes           = ACF.Classes
-local AmmoTypes         = Classes.AmmoTypes
 local Engines           = Classes.Engines
 local Entities          = Classes.Entities
 local FuelTanks         = Classes.FuelTanks
@@ -268,11 +267,11 @@ end
 -- @server
 -- @return table The list of ammo types
 function acf_library.listAllAmmoTypes()
-	local List   = AmmoTypes.GetList()
+	local List   = Classes.GetSubtypeFQNs("ACF.Ammunition.BaseAmmo")
 	local Result = {}
 
 	for K, V in ipairs(List) do
-		Result[K] = V.ID
+		Result[K] = V
 	end
 
 	return Result
@@ -431,7 +430,7 @@ end
 function acf_library.getAmmoTypeSpecs(id)
 	CheckLuaType(id, TYPE_STRING)
 
-	local Ammo = AmmoTypes.Get(id)
+	local Ammo = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", id)
 
 	if not Ammo then SF.Throw("Invalid ammo type ID, not found.", 2) end
 
@@ -2324,7 +2323,7 @@ if SERVER then
 		if RestrictInfo(This) then return 0 end
 
 		local BulletData = This.BulletData
-		local AmmoType   = BulletData and AmmoTypes.Get(BulletData.Type)
+		local AmmoType   = BulletData and Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.Type)
 
 		if not AmmoType then return 0 end
 
@@ -2346,7 +2345,7 @@ if SERVER then
 		if RestrictInfo(This) then return 0 end
 
 		local BulletData = This.BulletData
-		local AmmoType   = BulletData and AmmoTypes.Get(BulletData.Type)
+		local AmmoType   = BulletData and Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.Type)
 
 		if not AmmoType then return 0 end
 

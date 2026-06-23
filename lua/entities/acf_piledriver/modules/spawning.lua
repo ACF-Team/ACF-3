@@ -3,7 +3,6 @@ local Classes     = ACF.Classes
 local Contraption = ACF.Contraption
 local Utilities   = ACF.Utilities
 local Clock       = Utilities.Clock
-local AmmoTypes   = Classes.AmmoTypes
 
 local DefaultType = "ACF.Piledrivers.Piledriver"
 
@@ -18,7 +17,7 @@ do -- Spawning
     end
 
     function ENT:ACF_OnSpawn(_)
-        local AmmoType = AmmoTypes.Get("ACF.Ammunition.HP")
+        local AmmoType = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", "ACF.Ammunition.HP")
 
         self.RoundData    = AmmoType()
         self.LastThink    = Clock.CurTime

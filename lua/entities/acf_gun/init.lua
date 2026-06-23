@@ -18,7 +18,6 @@ local ACF         	= ACF
 local Compatibility = ACF.Compatibility
 local Contraption 	= ACF.Contraption
 local Classes     	= ACF.Classes
-local AmmoTypes   	= Classes.AmmoTypes
 local Utilities   	= ACF.Utilities
 local Clock       	= Utilities.Clock
 local Sounds      	= Utilities.Sounds
@@ -899,7 +898,7 @@ do -- Metamethods --------------------------------
 
 			local Velocity = ENTITY.GetVelocity(ENTITY.GetAncestor(self))
 			local BulletData = SelfTbl.BulletData
-			local AmmoType = AmmoTypes.Get(BulletData.Type)
+			local AmmoType = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.Type)
 
 			if BulletData.CanFuze and SelfTbl.SetFuze then
 				local Variance = 0.00005 * math.Rand(-1, 1) * (math.max(0, 50 - SelfTbl.Caliber) + 30)

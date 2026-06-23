@@ -1,7 +1,6 @@
 local hook      = hook
 local ACF       = ACF
 local Classes   = ACF.Classes
-local AmmoTypes = Classes.AmmoTypes
 local BoxSize   = Vector()
 
 -- The crate keeps its drum/box UI logic keyed on the short "AmmoShape" client data, but the entity's
@@ -26,7 +25,7 @@ local GraphRedAlt = Color(255, 65, 65)
 ---@param Class string The ammo type ID that will be checked.
 ---@return table<string, table> Result The ammo type objects said weapon class can use.
 local function GetAmmoList(Class)
-	local Entries = AmmoTypes.GetEntries()
+	local Entries = Classes.GetSubtypes("ACF.Ammunition.BaseAmmo")
 	local Result  = {}
 
 	for K, V in pairs(Entries) do
@@ -489,7 +488,7 @@ local function AddGraph(Base, ToolData)
 		Graph:SetXSpacing(100)
 		Graph:SetYSpacing(50)
 
-		local Ammo = AmmoTypes.Get(ToolData.AmmoType)
+		local Ammo = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", oolData.AmmoType)
 
 		if ToolData.AmmoType == "ACF.Ammunition.HEAT" or ToolData.AmmoType == "ACF.Ammunition.HEATFS" then
 			local PassiveStandoffPen = Ammo:GetPenetration(BulletData, BulletData.Standoff)
@@ -748,7 +747,7 @@ function ACF.CreateAmmoMenu(Menu)
 		local ToolData = ACF.GetAllClientData()
 		local Class = GetWeaponClass(ToolData)
 		if Class then
-			local CurrentAmmo = ACF.Classes.AmmoTypes.Get(ToolData.AmmoType)
+			local CurrentAmmo = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", ToolData.AmmoType)
 			if CurrentAmmo then
 				local BulletData = CurrentAmmo:ClientConvert(ToolData)
 				UpdateProjectileCountLimits(ToolData, BulletData)
@@ -798,7 +797,7 @@ function ACF.CreateAmmoMenu(Menu)
 		local ToolData = ACF.GetAllClientData()
 		local Class = GetWeaponClass(ToolData)
 		if Class then
-			local CurrentAmmo = ACF.Classes.AmmoTypes.Get(ToolData.AmmoType)
+			local CurrentAmmo = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", ToolData.AmmoType)
 			if CurrentAmmo then
 				local BulletData = CurrentAmmo:ClientConvert(ToolData)
 				local CountX = ACF.GetClientNumber("CrateProjectilesX", 3)
@@ -858,7 +857,7 @@ function ACF.CreateAmmoMenu(Menu)
 		local Class = GetWeaponClass(ToolData)
 
 		if Class then
-			local Ammo = ACF.Classes.AmmoTypes.Get(ToolData.AmmoType)
+			local Ammo = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", ToolData.AmmoType)
 
 			if Ammo then
 				local BulletData = Ammo:ClientConvert(ToolData)

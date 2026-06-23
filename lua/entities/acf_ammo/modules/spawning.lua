@@ -3,7 +3,6 @@ local Classes      = ACF.Classes
 local Utilities    = ACF.Utilities
 local Notify       = Utilities.Notify
 local WireLib      = WireLib
-local AmmoTypes    = Classes.AmmoTypes
 local Weapons      = Classes.Weapons
 local ActiveCrates = ACF.AmmoCrates
 local HookRun      = hook.Run
@@ -93,12 +92,12 @@ do -- Spawn/Update/Remove
 				end
 			end
 
-			local Ammo = AmmoTypes.Get(Data.AmmoType)
+			local Ammo = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", Data.AmmoType)
 
 			if not Ammo or Ammo.Blacklist[Class.ID] then
 				Data.AmmoType = Class.DefaultAmmo or "ACF.Ammunition.AP"
 
-				Ammo = AmmoTypes.Get(Data.AmmoType)
+				Ammo = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", Data.AmmoType)
 			end
 
 			if not isnumber(Data.AmmoStage) then
@@ -424,7 +423,7 @@ do -- Spawn/Update/Remove
 		local Source = Classes[Data.Destiny]
 		local Class  = Classes.GetGroup(Source, Data.Weapon)
 		local Weapon = Source.GetItem(Class.ID, Data.Weapon)
-		local Ammo   = AmmoTypes.Get(Data.AmmoType)
+		local Ammo   = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", Data.AmmoType)
 
 		-- Refresh the model from the shape (handles shape changes on update).
 		local Model = GetAmmoModel(self:ACF_GetUserVar("Shape"))

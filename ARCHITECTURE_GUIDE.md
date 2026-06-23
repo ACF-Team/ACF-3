@@ -49,7 +49,6 @@ lua/acf/entities/ammo_types/
 -- Becomes table structure
 ACF.Core.Utilities
 ACF.Damage
-ACF.Entities.AmmoTypes
 ```
 
 **Keep the root table clean:**
