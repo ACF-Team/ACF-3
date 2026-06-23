@@ -101,8 +101,8 @@ do
                     end
                 elseif Options.DefaultFactory then
                     Instance[Field.Name] = Options.DefaultFactory()
-                elseif Options.Default then
-                    Instance[Field.Name] = Default
+                elseif Options.Default ~= nil then
+                    Instance[Field.Name] = Options.Default
                 end
             end
         end
