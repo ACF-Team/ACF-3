@@ -103,7 +103,7 @@ do
 
 		-- Check space behind breech
 		if ACF.LegalChecks and self.BulletData and self.BulletData.Type ~= "Empty" and self.ClassData.BreechConfigs then
-			local IdName      = self.BulletData.Id
+			local IdName      = self.BulletData.WeaponType
 			local IdGroup     = Classes.GetGroup(Classes.Missiles, IdName)
 			local IdClass     = IdGroup.Lookup[IdName]
 
@@ -670,7 +670,7 @@ do -- Entity Overlay ----------------------------
 		local Delay  = math.Round(self.FireDelay, 2)
 		local Reload = math.Round(self.ReloadTime, 2)
 		local Bullet = self.BulletData
-		local Ammo   = (Bullet.Id and (Bullet.Id .. " ") or "") .. Bullet.Type
+		local Ammo   = (Bullet.WeaponType and (Bullet.WeaponType .. " ") or "") .. Bullet.Type
 		local Status = self.State
 
 		local Error = false
@@ -804,8 +804,8 @@ do -- Loading ----------------------------------
 	local NO_OFFSET = Vector()
 
 	local function GetMissileAngPos(BulletData, Point)
-		local Class    = Classes.GetGroup(Missiles, BulletData.Id)
-		local Data     = Class and Class.Lookup[BulletData.Id]
+		local Class    = Classes.GetGroup(Missiles, BulletData.WeaponType)
+		local Data     = Class and Class.Lookup[BulletData.WeaponType]
 		local Offset   = Data and Data.Offset or NO_OFFSET
 		local Position = Point.Position
 
@@ -869,7 +869,7 @@ do -- Loading ----------------------------------
 
 		local LimitConVar, Owner
 		if IsValid(Crate) and Crate.BulletData then
-			local IdName      = Crate.BulletData.Id
+			local IdName      = Crate.BulletData.WeaponType
 			local IdGroup     = Classes.GetGroup(Classes.Missiles, IdName)
 			local IdClass     = IdGroup.Lookup[IdName]
 			self:SetNWString("ACF_MissileClass", IdName)

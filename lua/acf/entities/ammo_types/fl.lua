@@ -125,8 +125,8 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
 			local FlechetteData = {
 				Caliber    = Caliber,
 				Diameter   = Caliber,
-				Id         = BulletData.Id,
-				Type       = "ACF.Ammunition.AP",
+				WeaponType = BulletData.WeaponType,
+				AmmoType   = "ACF.Ammunition.AP",
 				Owner      = BulletData.Owner,
 				Entity     = BulletData.Entity,
 				Crate      = BulletData.Crate,
@@ -185,8 +185,8 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
 
 		function CLASS:UpdateCrateOverlay(BulletData, State)
 			local Data	  = self:GetDisplayData(BulletData)
-			local Destiny = ACF.FindWeaponrySource(BulletData.Id)
-			local Class   = Classes.GetGroup(Destiny, BulletData.Id)
+			local Destiny = ACF.FindWeaponrySource(BulletData.WeaponType)
+			local Class   = Classes.GetGroup(Destiny, BulletData.WeaponType)
 			local Spread  = Class and Class.Spread * ACF.GunInaccuracyScale or 0
 
 			State:AddNumber("Muzzle Velocity", BulletData.MuzzleVel, " m/s")

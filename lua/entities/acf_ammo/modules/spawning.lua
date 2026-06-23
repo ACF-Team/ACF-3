@@ -532,8 +532,8 @@ do -- Overlay
 		local Caliber = math.Round(BulletData.Caliber * 10, 2)
 		local Length  = math.Round(BulletData.ProjLength + BulletData.PropLength, 2)
 		if self.IsMissileAmmo then
-			local Class    	= Classes.GetGroup(Classes.Missiles, BulletData.Id)
-			local Weapon    = Class and Class.Lookup[BulletData.Id]
+			local Class    	= Classes.GetGroup(Classes.Missiles, BulletData.WeaponType)
+			local Weapon    = Class and Class.Lookup[BulletData.WeaponType]
 			local Round 	= Weapon and Weapon.Round
 			Length = Round.ActualLength * ACF.InchToCm
 		end

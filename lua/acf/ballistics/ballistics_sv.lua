@@ -491,7 +491,7 @@ do -- Terminal ballistics --------------------------
 			Ballistics.CreateBullet({
 				Caliber    = FragSize,
 				Diameter   = FragSize,
-				-- Id         = Bullet.Id,
+				-- WeaponType = Bullet.WeaponType,
 				Type       = "ACF.Ammunition.AP",
 				Owner      = Bullet.Owner,
 				Entity     = Bullet.Entity,

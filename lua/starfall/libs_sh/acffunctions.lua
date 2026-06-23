@@ -2091,7 +2091,7 @@ if SERVER then
 
 		local BulletData = This.BulletData
 
-		return BulletData and BulletData.Id or ""
+		return BulletData and BulletData.WeaponType or ""
 	end
 
 	--- Returns the BulletData table of the ammo in an ACF ammo crate

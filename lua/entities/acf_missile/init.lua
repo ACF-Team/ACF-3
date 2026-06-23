@@ -357,8 +357,8 @@ end)
 -- TODO: Make ACF Missiles compliant with ACF legal checks. How to deal with SetNoDraw and SetNotSolid tho
 function ACF.MakeMissile(Player, Pos, Ang, Rack, MountPoint, Crate)
 	local BulletData = Crate.BulletData
-	local Class      = Classes.GetGroup(Missiles, BulletData.Id)
-	local Data       = Class.Lookup[BulletData.Id]
+	local Class      = Classes.GetGroup(Missiles, BulletData.WeaponType)
+	local Data       = Class.Lookup[BulletData.WeaponType]
 	local Round      = Data.Round
 	local Length     = Data.Length
 	local Caliber    = Data.Caliber

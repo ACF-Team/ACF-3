@@ -1045,7 +1045,7 @@ e2function string entity:acfRoundType()
 
 	local BulletData = this.BulletData
 
-	return BulletData and BulletData.Id or ""
+	return BulletData and BulletData.WeaponType or ""
 end
 
 -- Returns the type of ammo in a crate or gun

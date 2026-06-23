@@ -212,8 +212,8 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function()
 
 			local Data = self:BaseConvert(ToolData)
 
-			Data.Id = ToolData.Weapon
-			Data.Type = ToolData.AmmoType
+			Data.WeaponType = ToolData.Weapon
+			Data.AmmoType   = ToolData.AmmoType
 
 			return Data
 		end
