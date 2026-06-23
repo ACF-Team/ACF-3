@@ -23,6 +23,16 @@ local Queued = {} -- A mapping from a class' ID to a (mapping from its children'
 
 local READ_ONLY_MT = {__newindex = function() end}
 
+local UpdateFlattenedChildrenLookupRecursive function UpdateFlattenedChildrenLookupRecursive(BaseClass, FullyQualifiedName, NewClass)
+    local MT = getmetatable(BaseClass)
+    if not MT then return end
+
+    MT.__CHILDREN_FLATTENED[FullyQualifiedName] = NewClass
+    local P = MT.__index
+    if not P then return end
+    UpdateFlattenedChildrenLookupRecursive(P, FullyQualifiedName, NewClass)
+end
+
 do
     --- Initializes a class by adding its metatable and running callbacks/hooks.
     --- Recursively initializes children waiting on this class
@@ -38,7 +48,8 @@ do
             __index = BaseClass, -- If I don't have it, check my super (inheritance)
             __tostring = function() return TypeName end,
             __CLASS_ID = FullyQualifiedName,
-            __CHILDREN = {}, -- A mapping from a child class' ID to its table
+            __CHILDREN = {},            -- A mapping from a child class' ID to its table
+            __CHILDREN_FLATTENED = {},  -- The same as above but flattened hierarchy
             -- Instantiation
             __call = function(self, ...)
                 local Instance    = {}
@@ -57,7 +68,10 @@ do
 
         -- Index and Initialize ourselves
         ClassRegistry[FullyQualifiedName] = NewClass
-        if BaseClass then getmetatable(BaseClass).__CHILDREN[FullyQualifiedName] = NewClass end -- Register ourselves as a child of our parent
+        if BaseClass then
+            getmetatable(BaseClass).__CHILDREN[FullyQualifiedName] = NewClass
+            UpdateFlattenedChildrenLookupRecursive(BaseClass, FullyQualifiedName, NewClass)
+        end -- Register ourselves as a child of our parent
         ClassMeta.__PARENT = BaseClass
         -- We should define GetType before calling the initializer
         local function GetType() return NewClass end
@@ -257,35 +271,18 @@ function Classes.GetChildren(Class)
     return MT and MT.__CHILDREN or ReadOnlyTable
 end
 
+-- Returns the mapping of flattened-hierarchy child IDs to their class tables
 function Classes.GetSubtypes(ClassName)
     local Class = ClassRegistry[ClassName]
     if not Class then return ReadOnlyTable end
-
-    local Result = {}
-    local function Collect(C)
-        for _, Child in pairs(getmetatable(C).__CHILDREN) do
-            Result[#Result + 1] = Child
-            Collect(Child)
-        end
-    end
-    Collect(Class)
-    return Result
+    return getmetatable(Class).__CHILDREN_FLATTENED
 end
 
 function Classes.GetSubtypeByName(BaseClassName, WantedClassName)
     local Class = ClassRegistry[BaseClassName]
     if not Class then return nil end
 
-    for _, Child in pairs(Classes.GetChildren(Class)) do
-        if Classes.GetTypeName(Child) == WantedClassName then
-            return Child
-        end
-
-        local Check = Classes.GetSubtypeByName(Classes.GetTypeName(Child), WantedClassName)
-        if Check then return Check end
-    end
-
-    return nil
+    return getmetatable(Class).__CHILDREN_FLATTENED[WantedClassName] or nil
 end
 
 -- This checks if ClassA can be basically "down-casted" down to ClassB by going down its parent tree.
