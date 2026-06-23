@@ -12,6 +12,33 @@ TOOL.Information = {
 local Alpha = 50
 local NetTag = "ACF_MeshDebug_ServerConvexes"
 
+local function GetConvexVertices(Entity, Verts, Convex)
+	local Unique = {}
+	local WorldVerts = {}
+
+	for _, Tri in ipairs(Convex.Tris) do
+		for i = 1, 3 do
+			local Pos = Verts[Tri[i]]
+			local Key = Pos.x .. " " .. Pos.y .. " " .. Pos.z
+
+			if not Unique[Key] then
+				Unique[Key] = true
+				WorldVerts[#WorldVerts + 1] = Entity:LocalToWorld(Pos)
+			end
+		end
+	end
+
+	if #WorldVerts == 0 then return end
+
+	local Center = Vector(0, 0, 0)
+	for _, Vertex in ipairs(WorldVerts) do
+		Center = Center + Vertex
+	end
+	Center = Center / #WorldVerts
+
+	return WorldVerts, Center
+end
+
 if CLIENT then
 	local NextRequest = 0
 	local RequestedEnt
@@ -52,27 +79,28 @@ if CLIENT then
 		end
 	end
 
-	-- Uses the local-space AABB center of each convex as a stable label anchor between realms.
-	local function GetConvexCenter(Entity, Verts, Convex)
-		local Min, Max
+	-- Draws the unique convex vertices so client and server geometry can be compared directly.
+	local function DrawConvexVertices(Entity, HighlightID)
+		local MeshData = Entity.ACF_Volumetric_Mesh
+		if not MeshData then return end
 
-		for _, Tri in ipairs(Convex.Tris) do
-			for i = 1, 3 do
-				local Pos = Verts[Tri[i]]
+		for Index, Convex in ipairs(MeshData.Convexes) do
+			local Vertices = GetConvexVertices(Entity, MeshData.Verts, Convex)
+			if Vertices then
+				local IsHighlighted = Index == HighlightID
+				local Col = HSVToColor((Index * 47) % 360, 1, 1)
+				Col.a = IsHighlighted and 255 or 180
 
-				if not Min then
-					Min = Pos
-					Max = Pos
-				else
-					Min = Vector(math.min(Min.x, Pos.x), math.min(Min.y, Pos.y), math.min(Min.z, Pos.z))
-					Max = Vector(math.max(Max.x, Pos.x), math.max(Max.y, Pos.y), math.max(Max.z, Pos.z))
+				for _, Pos in ipairs(Vertices) do
+					render.DrawSphere(Pos, 0.6, 8, 8, Col)
 				end
 			end
 		end
+	end
 
-		if not Min then return end
-
-		return Entity:LocalToWorld((Min + Max) * 0.5)
+	local function GetConvexCenter(Entity, Verts, Convex)
+		local _, Center = GetConvexVertices(Entity, Verts, Convex)
+		return Center
 	end
 
 	local function DrawConvexIndices(Entity, HighlightID)
@@ -104,6 +132,20 @@ if CLIENT then
 		end
 
 		cam.IgnoreZ(false)
+	end
+
+	local function DrawServerConvexVertices(Entity)
+		local Data = ServerConvexCache[Entity:EntIndex()]
+		if not Data or Data.Expire < CurTime() then return end
+
+		local Col = Color(255, 180, 80, 180)
+		for _, Convex in ipairs(Data.Convexes) do
+			if Convex.Verts then
+				for _, Pos in ipairs(Convex.Verts) do
+					render.DrawSphere(Pos, 0.6, 8, 8, Col)
+				end
+			end
+		end
 	end
 
 	local function DrawServerConvexIndices(Entity)
@@ -158,9 +200,17 @@ if CLIENT then
 		local Convexes = {}
 
 		for i = 1, Count do
+			local VertCount = net.ReadUInt(16)
+			local Vertices = {}
+
+			for v = 1, VertCount do
+				Vertices[v] = net.ReadVector()
+			end
+
 			Convexes[i] = {
 				ID = net.ReadUInt(16),
-				Pos = net.ReadVector()
+				Pos = net.ReadVector(),
+				Verts = Vertices,
 			}
 		end
 
@@ -211,34 +261,14 @@ if CLIENT then
 		local HighlightID = ConvexHit and ConvexHit.ConvexID
 
 		DrawConvexes(Entity, HighlightID)
+		DrawConvexVertices(Entity, HighlightID)
 		DrawConvexIndices(Entity, HighlightID)
+		DrawServerConvexVertices(Entity)
 		DrawServerConvexIndices(Entity)
 		RequestServerConvexes(Entity)
 	end)
 elseif SERVER then
 	util.AddNetworkString(NetTag)
-
-	local function GetConvexCenter(Entity, Verts, Convex)
-		local Min, Max
-
-		for _, Tri in ipairs(Convex.Tris) do
-			for i = 1, 3 do
-				local Pos = Verts[Tri[i]]
-
-				if not Min then
-					Min = Pos
-					Max = Pos
-				else
-					Min = Vector(math.min(Min.x, Pos.x), math.min(Min.y, Pos.y), math.min(Min.z, Pos.z))
-					Max = Vector(math.max(Max.x, Pos.x), math.max(Max.y, Pos.y), math.max(Max.z, Pos.z))
-				end
-			end
-		end
-
-		if not Min then return end
-
-		return Entity:LocalToWorld((Min + Max) * 0.5)
-	end
 
 	net.Receive(NetTag, function(_, Player)
 		if not IsValid(Player) then return end
@@ -263,7 +293,12 @@ elseif SERVER then
 			net.WriteUInt(#Convexes, 16)
 
 			for Index, Convex in ipairs(Convexes) do
-				local Pos = GetConvexCenter(Entity, Verts, Convex)
+				local Vertices, Pos = GetConvexVertices(Entity, Verts, Convex)
+
+				net.WriteUInt(#Vertices, 16)
+				for _, Vertex in ipairs(Vertices) do
+					net.WriteVector(Vertex)
+				end
 
 				net.WriteUInt(Index, 16)
 				net.WriteVector(Pos or Entity:GetPos())
