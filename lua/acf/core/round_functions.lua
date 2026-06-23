@@ -156,20 +156,12 @@ function ACF.CalcArmor(Area, Ductility, Mass)
 	return (Mass * 1000 / Area / 0.78) / (1 + Ductility) ^ 0.5 * ACF.ArmorMod
 end
 
--- TODO: Review all of this...
-local Weaponry = {
-	Missiles    = Classes.Missiles,
-	Weapons     = Classes.Weapons,
-}
-
 function ACF.GetWeaponBlacklist(Whitelist)
 	local Result = {}
 
-	for _, Source in pairs(Weaponry) do
-		for ID in pairs(Source.GetEntries()) do
-			if not Whitelist[ID] then
-				Result[ID] = true
-			end
+	for _, TypeFQN in ipairs(Classes.GetSubtypeFQNs("ACF.Weapons.BaseWeapon")) do
+		if not Whitelist[TypeFQN] then
+			Result[TypeFQN] = true
 		end
 	end
 
