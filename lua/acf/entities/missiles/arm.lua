@@ -6,7 +6,7 @@ Classes.DefineClass("ACF.Missiles.AntiRadiation", "ACF.Missiles.BaseMissile", fu
 	CLASS.Sound			= "acf_missiles/missiles/missile_rocket.mp3"
 	CLASS.Effect		= "Rocket Motor ATGM"
 	CLASS.Spread		= 1
-	CLASS.Blacklist		= { "AP", "APHE", "HP", "FL", "SM" }
+	CLASS.Blacklist		= { "ACF.Ammunition.AP", "ACF.Ammunition.APHE", "ACF.Ammunition.HP", "ACF.Ammunition.FL", "ACF.Ammunition.SM" }
 	CLASS.LimitConVar 	= {
 		Name = "_acfm_arm",
 		Amount = 8,

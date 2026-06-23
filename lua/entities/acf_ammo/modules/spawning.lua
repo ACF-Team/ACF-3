@@ -96,7 +96,7 @@ do -- Spawn/Update/Remove
 			local Ammo = AmmoTypes.Get(Data.AmmoType)
 
 			if not Ammo or Ammo.Blacklist[Class.ID] then
-				Data.AmmoType = Class.DefaultAmmo or "AP"
+				Data.AmmoType = Class.DefaultAmmo or "ACF.Ammunition.AP"
 
 				Ammo = AmmoTypes.Get(Data.AmmoType)
 			end

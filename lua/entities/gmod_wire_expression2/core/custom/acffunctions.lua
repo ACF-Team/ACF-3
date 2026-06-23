@@ -989,7 +989,7 @@ e2function number entity:acfSpread()
 
 	local Spread = (this.GetSpread and this:GetSpread()) or this.Spread or 0
 
-	if this.BulletData and this.BulletData.Type == "FL" then
+	if this.BulletData and this.BulletData.Type == "ACF.Ammunition.FL" then
 		return Spread + (this.BulletData.FlechetteSpread or 0)
 	end
 

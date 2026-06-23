@@ -61,10 +61,10 @@ Classes.DefineClass("ACF.Ammunition.APDS", "ACF.Ammunition.AP", function()
 		function CLASS:Network(Entity, BulletData)
 			BASE.Network(self, Entity, BulletData)
 
-			Entity:SetNW2String("AmmoType", "APDS")
+			Entity:SetNW2String("AmmoType", "ACF.Ammunition.APDS")
 		end
 	else
-		ACF.RegisterAmmoDecal("APDS", "damage/apcr_pen", "damage/apcr_rico")
+		ACF.RegisterAmmoDecal("ACF.Ammunition.APDS", "damage/apcr_pen", "damage/apcr_rico")
 	end
 
 end)

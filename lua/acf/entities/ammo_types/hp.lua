@@ -100,7 +100,7 @@ Classes.DefineClass("ACF.Ammunition.HP", "ACF.Ammunition.AP", function()
 			State:AddNumber("Imparted Energy", Data.MaxKETransfert, " kJ")
 		end
 	else
-		ACF.RegisterAmmoDecal("HP", "damage/ap_pen", "damage/ap_rico")
+		ACF.RegisterAmmoDecal("ACF.Ammunition.HP", "damage/ap_pen", "damage/ap_rico")
 
 		function CLASS:OnCreateAmmoControls(Base, ToolData, BulletData)
 			local HollowRatio = Base:AddSlider("#acf.menu.ammo.hollow_ratio", 0, 1, 2)

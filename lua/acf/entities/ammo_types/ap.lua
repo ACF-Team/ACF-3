@@ -219,7 +219,7 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function()
 		end
 
 		function CLASS:Network(Entity, BulletData)
-			Entity:SetNW2String("AmmoType", "AP")
+			Entity:SetNW2String("AmmoType", "ACF.Ammunition.AP")
 			Entity:SetNW2Float("Caliber", BulletData.Diameter)
 			Entity:SetNW2Float("ProjMass", BulletData.ProjMass)
 			Entity:SetNW2Float("PropMass", BulletData.PropMass)
@@ -293,7 +293,7 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function()
 	else
 		local Effects = ACF.Utilities.Effects
 
-		ACF.RegisterAmmoDecal("AP", "damage/ap_pen", "damage/ap_rico")
+		ACF.RegisterAmmoDecal("ACF.Ammunition.AP", "damage/ap_pen", "damage/ap_rico")
 
 		local DecalIndex = ACF.GetAmmoDecalIndex
 

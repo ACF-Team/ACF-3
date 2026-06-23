@@ -169,7 +169,7 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function()
 	else
 		local Effects = ACF.Utilities.Effects
 
-		ACF.RegisterAmmoDecal("SM", "damage/he_pen", "damage/he_rico")
+		ACF.RegisterAmmoDecal("ACF.Ammunition.SM", "damage/he_pen", "damage/he_rico")
 
 		function CLASS:ImpactEffect(_, Bullet)
 			local Crate = Bullet.Crate

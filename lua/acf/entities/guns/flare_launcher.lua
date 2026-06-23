@@ -15,8 +15,8 @@ ACF.Classes.DefineClass("ACF.Guns.FlareLauncher", "ACF.Guns.BaseGun", function()
 	}
 	CLASS.Sound       	= "acf_missiles/missiles/flare_launch.mp3"
 	CLASS.Cleanup     	= "acf_flarelauncher"
-	CLASS.Blacklist   	= { "AP", "APHE", "FL", "HE", "HEAT", "HP", "SM" }
-	CLASS.DefaultAmmo 	= "FLR"
+	CLASS.Blacklist   	= { "ACF.Ammunition.AP", "ACF.Ammunition.APHE", "ACF.Ammunition.FL", "ACF.Ammunition.HE", "ACF.Ammunition.HEAT", "ACF.Ammunition.HP", "ACF.Ammunition.SM" }
+	CLASS.DefaultAmmo 	= "ACF.Ammunition.FLR"
 	CLASS.LimitConVar 	= {
 		Name = "_acf_flarelauncher",
 		Amount = 4,

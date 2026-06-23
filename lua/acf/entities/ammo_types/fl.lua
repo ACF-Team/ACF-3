@@ -126,7 +126,7 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
 				Caliber    = Caliber,
 				Diameter   = Caliber,
 				Id         = BulletData.Id,
-				Type       = "AP",
+				Type       = "ACF.Ammunition.AP",
 				Owner      = BulletData.Owner,
 				Entity     = BulletData.Entity,
 				Crate      = BulletData.Crate,
@@ -177,7 +177,7 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
 
 			local FlechetteCaliber = math.Round(BulletData.FlechetteCaliber, 2)
 
-			Entity:SetNW2String("AmmoType", "FL")
+			Entity:SetNW2String("AmmoType", "ACF.Ammunition.FL")
 			Entity:SetNW2Float("Caliber", FlechetteCaliber)
 			Entity:SetNW2Float("ProjMass", BulletData.FlechetteMass)
 			Entity:SetNW2Float("DragCoef", BulletData.FlechetteDragCoef)
@@ -197,7 +197,7 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
 			State:AddNumber("Max Spread", BulletData.FlechetteSpread + Spread, " degrees")
 		end
 	else
-		ACF.RegisterAmmoDecal("FL", "damage/ap_pen", "damage/ap_rico")
+		ACF.RegisterAmmoDecal("ACF.Ammunition.FL", "damage/ap_pen", "damage/ap_rico")
 
 		function CLASS:GetRangedPenetration(Bullet, Range)
 			local Speed = ACF.GetRangedSpeed(Bullet.MuzzleVel, Bullet.FlechetteDragCoef, Range) * ACF.InchToMeter

@@ -127,7 +127,7 @@ Classes.DefineClass("ACF.Ammunition.HEATFS", "ACF.Ammunition.HEAT", function()
 			Entity:SetNW2String("AmmoType", "HEATFS")
 		end
 	else
-		ACF.RegisterAmmoDecal("HEATFS", "damage/heat_pen", "damage/heat_rico", function(Caliber) return Caliber * 0.1667 end)
+		ACF.RegisterAmmoDecal("ACF.Ammunition.HEATFS", "damage/heat_pen", "damage/heat_rico", function(Caliber) return Caliber * 0.1667 end)
 
 		function CLASS:OnCreateAmmoControls(Base, ToolData, BulletData)
 			local LinerAngle = Base:AddSlider("#acf.menu.ammo.liner_angle", BulletData.MinConeAng, 90, 1)

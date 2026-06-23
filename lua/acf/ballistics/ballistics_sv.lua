@@ -493,7 +493,7 @@ do -- Terminal ballistics --------------------------
 				Caliber    = FragSize,
 				Diameter   = FragSize,
 				-- Id         = Bullet.Id,
-				Type       = "AP",
+				Type       = "ACF.Ammunition.AP",
 				Owner      = Bullet.Owner,
 				Entity     = Bullet.Entity,
 				-- Crate      = Bullet.Crate,

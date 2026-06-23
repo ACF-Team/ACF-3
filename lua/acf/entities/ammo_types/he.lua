@@ -110,7 +110,7 @@ Classes.DefineClass("ACF.Ammunition.HE", "ACF.Ammunition.APHE", function()
 			return false
 		end
 	else
-		ACF.RegisterAmmoDecal("HE", "damage/he_pen", "damage/he_rico")
+		ACF.RegisterAmmoDecal("ACF.Ammunition.HE", "damage/he_pen", "damage/he_rico")
 
 		function CLASS:OnCreateAmmoInformation(Base, ToolData, BulletData)
 			local RoundStats = Base:AddLabel()

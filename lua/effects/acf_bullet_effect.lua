@@ -71,7 +71,7 @@ function EFFECT:Init(Data)
 			FillerMass    = Crate:GetNW2Float("FillerMass"),
 			WPMass        = Crate:GetNW2Float("WPMass"),
 			DragCoef      = Crate:GetNW2Float("DragCoef", 1),
-			AmmoType      = Crate:GetNW2String("AmmoType", "AP"),
+			AmmoType      = Crate:GetNW2String("AmmoType", "ACF.Ammunition.AP"),
 			Tracer        = Tracer and ParticleEmitter(Origin) or nil,
 			Color         = Tracer and Crate:GetColor() or nil,
 			Accel         = Crate:GetNW2Vector("Accel", ACF.Gravity),

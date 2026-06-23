@@ -94,7 +94,7 @@ Classes.DefineClass("ACF.Ammunition.FLR", "ACF.Ammunition.AP", function()
 		function CLASS:Network(Entity, BulletData)
 			BASE.Network(self, Entity, BulletData)
 
-			Entity:SetNW2String("AmmoType", "FLR")
+			Entity:SetNW2String("AmmoType", "ACF.Ammunition.FLR")
 			Entity:SetNW2Float("FillerMass", BulletData.FillerMass)
 		end
 
@@ -124,7 +124,7 @@ Classes.DefineClass("ACF.Ammunition.FLR", "ACF.Ammunition.AP", function()
 			return false
 		end
 	else
-		ACF.RegisterAmmoDecal("FLR", "damage/ap_pen", "damage/ap_rico")
+		ACF.RegisterAmmoDecal("ACF.Ammunition.FLR", "damage/ap_pen", "damage/ap_rico")
 
 		function CLASS:ImpactEffect()
 		end

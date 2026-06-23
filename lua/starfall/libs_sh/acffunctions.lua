@@ -1959,7 +1959,7 @@ if SERVER then
 
 		local Spread = (This.GetSpread and This:GetSpread()) or This.Spread or 0
 
-		if This.BulletData and This.BulletData.Type == "FL" then -- TODO: Replace this hardcoded bit
+		if This.BulletData and This.BulletData.Type == "ACF.Ammunition.FL" then -- TODO: Replace this hardcoded bit
 			return Spread + (This.BulletData.FlechetteSpread or 0)
 		end
 

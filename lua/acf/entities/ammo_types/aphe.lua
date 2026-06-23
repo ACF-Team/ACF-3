@@ -110,7 +110,7 @@ Classes.DefineClass("ACF.Ammunition.APHE", "ACF.Ammunition.AP", function()
 		function CLASS:Network(Entity, BulletData)
 			BASE.Network(self, Entity, BulletData)
 
-			Entity:SetNW2String("AmmoType", "APHE")
+			Entity:SetNW2String("AmmoType", "ACF.Ammunition.APHE")
 			Entity:SetNW2Float("FillerMass", BulletData.FillerMass)
 		end
 
@@ -139,7 +139,7 @@ Classes.DefineClass("ACF.Ammunition.APHE", "ACF.Ammunition.AP", function()
 			BASE.OnFlightEnd(self, Bullet, Trace)
 		end
 	else
-		ACF.RegisterAmmoDecal("APHE", "damage/ap_pen", "damage/ap_rico")
+		ACF.RegisterAmmoDecal("ACF.Ammunition.APHE", "damage/ap_pen", "damage/ap_rico")
 
 		function CLASS:ImpactEffect(_, Bullet)
 			local Position  = Bullet.SimPos

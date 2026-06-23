@@ -392,7 +392,7 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function()
 		end
 
 	else
-		ACF.RegisterAmmoDecal("HEAT", "damage/heat_pen", "damage/heat_rico", function(Caliber) return Caliber * 0.1667 end)
+		ACF.RegisterAmmoDecal("ACF.Ammunition.HEAT", "damage/heat_pen", "damage/heat_rico", function(Caliber) return Caliber * 0.1667 end)
 		local DecalIndex = ACF.GetAmmoDecalIndex
 		local Effects    = ACF.Utilities.Effects
 

@@ -47,7 +47,7 @@ Classes.DefineClass("ACF.Ammunition.GLATGM", "ACF.Ammunition.HEATFS", function()
 		function CLASS:Network(Entity, BulletData)
 			BASE.Network(self, Entity, BulletData)
 
-			Entity:SetNW2String("AmmoType", "GLATGM")
+			Entity:SetNW2String("AmmoType", "ACF.Ammunition.GLATGM")
 		end
 
 		function CLASS:UpdateCrateOverlay(BulletData, State)
@@ -75,7 +75,7 @@ Classes.DefineClass("ACF.Ammunition.GLATGM", "ACF.Ammunition.HEATFS", function()
 			Effects.CreateEffect("ACF_GLATGMExplosion", EffectTable)
 		end
 	else
-		ACF.RegisterAmmoDecal("GLATGM", "damage/heat_pen", "damage/heat_rico", function(Caliber) return Caliber * 0.1667 end)
+		ACF.RegisterAmmoDecal("ACF.Ammunition.GLATGM", "damage/heat_pen", "damage/heat_rico", function(Caliber) return Caliber * 0.1667 end)
 
 		function CLASS:PenetrationEffect(Effect, Bullet)
 			local Detonated = Bullet.Detonated
