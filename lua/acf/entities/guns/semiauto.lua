@@ -44,10 +44,6 @@ ACF.Classes.DefineClass("ACF.Guns.SemiautomaticCannon", "ACF.Guns.BaseScalableGu
 	CLASS.CostScalar	= 0.55
 end)
 
-Weapons.Register("SA", {
-
-})
-
 ACF.SetCustomAttachment("models/autocannon/semiautocannon_45mm.mdl", "muzzle", Vector(79.2), Angle(0, 0, 180))
 
 ACF.AddHitboxes("models/autocannon/semiautocannon_45mm.mdl", {

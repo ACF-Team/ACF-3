@@ -166,7 +166,7 @@ function Ballistics.CreateBullet(BulletData)
 
 	-- TODO: Make bullets use a metatable instead
 	function Bullet:GetPenetration()
-		local Ammo = AmmoTypes.Get(Bullet.Type)
+		local Ammo = ACF.Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", Bullet.Type)
 
 		return Ammo:GetPenetration(self)
 	end

@@ -2,13 +2,13 @@ local ACF     = ACF
 local Classes = ACF.Classes
 Classes.DefineClass("ACF.Missiles.Fuze.Altitude", "ACF.Missiles.Fuze.Contact", function()
 	if CLIENT then
-		Fuze.Description = "This fuze tracks the guidance module's target and detonates once it crosses the altitude of the target position."
+		CLASS.Description = "This fuze tracks the guidance module's target and detonates once it crosses the altitude of the target position."
 	else
-		function Fuze:GetCost()
+		function CLASS:GetCost()
 			return 0.1
 		end
 
-		function Fuze:GetDetonate(Missile, Guidance)
+		function CLASS:GetDetonate(Missile, Guidance)
 			if not self:IsArmed() or not Guidance then return false end
 
 			local GuidanceResult = Guidance:GetGuidance(Missile)

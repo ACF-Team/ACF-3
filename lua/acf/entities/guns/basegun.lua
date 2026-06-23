@@ -16,7 +16,7 @@ Classes.DefineClass("ACF.Guns.BaseGun", "ACF.Weapons.BaseWeapon", function()
 		Classes.AddSboxLimit(NewClass.LimitConvar)
 
 		if NewClass.MuzzleFlash then
-			PrecacheParticleSystem(Group.MuzzleFlash)
+			PrecacheParticleSystem(NewClass.MuzzleFlash)
 		end
 	end
 

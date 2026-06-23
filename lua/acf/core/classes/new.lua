@@ -164,7 +164,6 @@ do
 
             NewClass.OnInit()
             ClassMeta.__inherited = NewClass.__inherited
-            NewClass.__inherited  = nil
         end
         -- Just in case GetType is no longer the same function...
         if NewClass.GetType ~= GetType then error("Class defined 'GetType' method, which is reserved") end

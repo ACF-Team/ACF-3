@@ -1,3 +1,5 @@
+local Classes = ACF.Classes
+
 Classes.DefineClass("ACF.Ammunition.BaseAmmo", function()
 
 end)
