@@ -35,7 +35,7 @@ function EFFECT:Init(Data)
 			-- NOTE: Wiki documents level tops out at 180, but seems to fall off past 127
 			Sounds.PlaySound(GunPos, Sound, math.Clamp(SoundPressure, 75, 127), Pitch, Volume)
 
-			if not (Class == "MG" or Class == "RAC") then
+			if not (Class == "ACF.Guns.Machinegun" or Class == "ACF.Guns.RotaryAutocannon") then
 				Sounds.PlaySound(GunPos, Sound, math.Clamp(SoundPressure, 75, 127), Pitch, Volume)
 
 				if SoundPressure > 127 then

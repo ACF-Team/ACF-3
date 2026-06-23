@@ -220,7 +220,7 @@ do -- Random timer crew stuff
 		local SelfTbl  = ENTITY.GetTable(self)
 
 		if SelfTbl.IsBelted then return end -- Filter out belt feds (usually used as secondaries)
-		if SelfTbl.Weapon == "SL" then return end -- Skip for smoke launchers
+		if SelfTbl.Weapon == "ACF.Guns.SmokeLauncher" then return end -- Skip for smoke launchers
 
 		local BreechRef = SelfTbl.BreechReference
 		if not IsValid(BreechRef) then return false end
@@ -290,9 +290,8 @@ do -- Spawn and Update functions --------------------------------
 		end
 
 		if not Class then
-			Class = Weapons.Get("C")
-			Data.Destiny = "Weapons"
-			Data.Weapon  = "C"
+			Class = Weapons.Get("ACF.Guns.Cannon")
+			Data.Weapon  = "ACF.Guns.Cannon"
 			Data.Caliber = 50
 		end
 
