@@ -9,8 +9,10 @@ Classes.DefineClass("ACF.Ammunition.HP", "ACF.Ammunition.AP", function()
 	CLASS.Bodygroup   = 0 -- Use AP bodygroup (no specific HP variant)
 	CLASS.Description = "#acf.descs.ammo.hp"
 	CLASS.Blacklist = ACF.GetWeaponBlacklist({
-		MG = true,
+		["ACF.Guns.Machinegun"] = true,
 	})
+
+	MENU_FIELD("Number", "HollowRatio", {Default = 0})
 
 	function CLASS:GetDisplayData(Data)
 		local Display = BASE.GetDisplayData(self, Data)
@@ -65,8 +67,6 @@ Classes.DefineClass("ACF.Ammunition.HP", "ACF.Ammunition.AP", function()
 			ToolData.HollowRatio = 0.5
 		end
 	end
-
-	MENU_FIELD("Number", "HollowRatio", {Default = 0})
 
 	if SERVER then
 		local Conversion	= ACF.PointConversion

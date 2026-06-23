@@ -9,11 +9,10 @@ Classes.DefineClass("ACF.Ammunition.APFSDS", "ACF.Ammunition.AP", function()
 	CLASS.Bodygroup   = 4 -- APFSDS bodygroup index
 	CLASS.Description = "#acf.descs.ammo.apfsds"
 	CLASS.Blacklist = ACF.GetWeaponBlacklist({
-		C = true,
-		AC = true,
-		AL = true,
-		SA = true,
-		SC = true,
+		["ACF.Guns.Cannon"] = true,
+		["ACF.Guns.Autocannon"] = true,
+		["ACF.Guns.SemiautomaticCannon"] = true,
+		["ACF.Guns.ShortBarrelledCannon"] = true,
 	})
 
 	-- Long rod penetrators are different, so we'll use Lanz Odermatt Penetration Equation with them

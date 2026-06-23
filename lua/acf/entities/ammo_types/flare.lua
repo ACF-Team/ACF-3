@@ -8,8 +8,8 @@ Classes.DefineClass("ACF.Ammunition.FLR", "ACF.Ammunition.AP", function()
 	CLASS.SpawnIcon   = "acf/icons/shell_flare.png"
 	CLASS.Description = "A countermeasure for infrared guided munitions."
 	CLASS.Blacklist = ACF.GetWeaponBlacklist({
-		SL = true,
-		FGL = true,
+		["ACF.Guns.SmokeLauncher"] = true,
+		["ACF.Guns.FlareLauncher"] = true,
 	})
 
 	function CLASS:GetDisplayData(Data)

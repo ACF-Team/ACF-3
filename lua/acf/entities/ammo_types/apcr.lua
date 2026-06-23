@@ -9,13 +9,12 @@ Classes.DefineClass("ACF.Ammunition.APCR", "ACF.Ammunition.AP", function()
 	CLASS.Bodygroup   = 2 -- APCR bodygroup index
 	CLASS.Description = "#acf.descs.ammo.apcr"
 	CLASS.Blacklist = ACF.GetWeaponBlacklist({
-		C = true,
-		AL = true,
-		AC = true,
-		SA = true,
-		SC = true,
-		LAC = true,
-		RAC = true,
+		["ACF.Guns.Cannon"] = true,
+		["ACF.Guns.Autocannon"] = true,
+		["ACF.Guns.SemiautomaticCannon"] = true,
+		["ACF.Guns.ShortBarrelledCannon"] = true,
+		["ACF.Guns.LightAutocannon"] = true,
+		["ACF.Guns.RotaryAutocannon"] = true,
 	})
 
 	function CLASS:UpdateRoundData(ToolData, Data, GUIData)

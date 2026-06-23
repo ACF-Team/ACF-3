@@ -13,12 +13,15 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function()
 	CLASS.MortarBodygroup = 3 -- HEAT mortar submodel
 	CLASS.Description = "#acf.descs.ammo.heat"
 	CLASS.Blacklist = {
-		AC = true,
-		MG = true,
-		SL = true,
-		LAC = true,
-		RAC = true,
+		["ACF.Guns.Autocannon"] = true,
+		["ACF.Guns.Machinegun"] = true,
+		["ACF.Guns.SmokeLauncher"] = true,
+		["ACF.Guns.LightAutocannon"] = true,
+		["ACF.Guns.RotaryAutocannon"] = true,
 	}
+
+	MENU_FIELD("Number", "LinerAngle", {Default = 0})
+	MENU_FIELD("Number", "StandoffRatio", {Default = 0})
 
 	function CLASS:ConeCalc(ConeAngle, Radius)
 		local Height     = Radius / math.tan(math.rad(ConeAngle))
@@ -200,9 +203,6 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function()
 			ToolData.LinerAngle = 90
 		end
 	end
-
-	MENU_FIELD("Number", "LinerAngle", {Default = 0})
-	MENU_FIELD("Number", "StandoffRatio", {Default = 0})
 
 	if SERVER then
 		local Ballistics = ACF.Ballistics

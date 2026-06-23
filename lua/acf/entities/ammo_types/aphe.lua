@@ -11,12 +11,14 @@ Classes.DefineClass("ACF.Ammunition.APHE", "ACF.Ammunition.AP", function()
 	CLASS.Bodygroup   = 1 -- APHE bodygroup index
 	CLASS.Description = "#acf.descs.ammo.aphe"
 	CLASS.Blacklist = {
-		GL = true,
-		MG = true,
-		MO = true,
-		SL = true,
-		RAC = true,
+		["ACF.Guns.GrenadeLauncher"] = true,
+		["ACF.Guns.Machinegun"] = true,
+		["ACF.Guns.Mortar"] = true,
+		["ACF.Guns.SmokeLauncher"] = true,
+		["ACF.Guns.RotaryAutocannon"] = true,
 	}
+
+	MENU_FIELD("Number", "FillerRatio", {Default = 0})
 
 	function CLASS:GetPenetration(Bullet, Speed)
 		if not isnumber(Speed) then
@@ -84,8 +86,6 @@ Classes.DefineClass("ACF.Ammunition.APHE", "ACF.Ammunition.AP", function()
 			ToolData.FillerRatio = 1
 		end
 	end
-
-	MENU_FIELD("Number", "FillerRatio", {Default = 0})
 
 	if SERVER then
 		local Objects  = Damage.Objects

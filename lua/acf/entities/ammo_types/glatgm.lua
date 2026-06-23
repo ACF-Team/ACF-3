@@ -9,10 +9,9 @@ Classes.DefineClass("ACF.Ammunition.GLATGM", "ACF.Ammunition.HEATFS", function()
 	CLASS.SpawnIcon   = "acf/icons/shell_glatgm.png"
 	CLASS.Description = "A missile fired from a gun. While slower than a traditional shell, it makes up for that with guidance."
 	CLASS.Blacklist = ACF.GetWeaponBlacklist({
-		C = true,
-		AL = true,
-		HW = true,
-		SC = true,
+		["ACF.Guns.Cannon"] = true,
+		["ACF.Guns.Howitzer"] = true,
+		["ACF.Guns.ShortBarrelledCannon"] = true,
 	})
 
 	CLASS.MaxStandoffRatio = .4

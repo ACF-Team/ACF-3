@@ -10,15 +10,18 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
 	CLASS.FlightBodygroup = 4 -- APFSDS bodygroup for flight (dart-shaped flechettes)
 	CLASS.Description     = "#acf.descs.ammo.fl"
 	CLASS.Blacklist = {
-		AC = true,
-		GL = true,
-		MG = true,
-		MO = true,
-		SA = true,
-		SL = true,
-		LAC = true,
-		RAC = true,
+		["ACF.Guns.Autocannon"] = true,
+		["ACF.Guns.GrenadeLauncher"] = true,
+		["ACF.Guns.Machinegun"] = true,
+		["ACF.Guns.Mortar"] = true,
+		["ACF.Guns.SemiautomaticCannon"] = true,
+		["ACF.Guns.SmokeLauncher"] = true,
+		["ACF.Guns.LightAutocannon"] = true,
+		["ACF.Guns.RotaryAutocannon"] = true,
 	}
+
+	MENU_FIELD("Number", "Flechettes", {Default = 0})
+	MENU_FIELD("Number", "Spread", {Default = 0})
 
 	-- Packing function to get the rough caliber of a flechette
 	-- based on the caliber of the full round and the amount of them
@@ -96,9 +99,6 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
 			ToolData.Spread = ACF.CheckNumber(ToolData.RoundData6, 0)
 		end
 	end
-
-	MENU_FIELD("Number", "Flechettes", {Default = 0})
-	MENU_FIELD("Number", "Spread", {Default = 0})
 
 	if SERVER then
 		local Ballistics = ACF.Ballistics

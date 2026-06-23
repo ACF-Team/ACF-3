@@ -9,11 +9,10 @@ Classes.DefineClass("ACF.Ammunition.HEATFS", "ACF.Ammunition.HEAT", function()
 	CLASS.Bodygroup   = 9 -- HEATFS bodygroup index
 	CLASS.Description = "#acf.descs.ammo.heatfs"
 	CLASS.Blacklist = ACF.GetWeaponBlacklist({
-		C = true,
-		M = true,
-		AL = true,
-		HW = true,
-		SC = true
+		["ACF.Guns.Cannon"] = true,
+		["ACF.Guns.Mortar"] = true, -- This was just M before... made it mortar, not sure if intentional but I doubt it
+		["ACF.Guns.Howitzer"] = true,
+		["ACF.Guns.ShortBarrelledCannon"] = true
 	})
 
 	CLASS.MaxStandoffRatio = 0.75

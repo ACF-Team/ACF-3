@@ -9,8 +9,8 @@ Classes.DefineClass("ACF.Ammunition.HE", "ACF.Ammunition.APHE", function()
 	CLASS.MortarBodygroup = 0 -- HE mortar submodel
 	CLASS.Description = "#acf.descs.ammo.he"
 	CLASS.Blacklist = {
-		MG = true,
-		RAC = true,
+		["ACF.Guns.Machinegun"] = true,
+		["ACF.Guns.RotaryAutocannon"] = true,
 	}
 
 	function CLASS:GetPenetration()

@@ -6,9 +6,9 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function()
 	CLASS.SpawnIcon   = "acf/icons/shell_ap.png"
 	CLASS.Description = "#acf.descs.ammo.ap"
 	CLASS.Blacklist = {
-		GL = true,
-		MO = true,
-		SL = true,
+		["ACF.Guns.GrenadeLauncher"] = true,
+		["ACF.Guns.Mortar"] = true,
+		["ACF.Guns.SmokeLauncher"] = true,
 	}
 
 	-- Model definitions (FlightModel defaults to MenuModel, MenuModel defaults to CrateModel)
@@ -16,6 +16,10 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function()
 	CLASS.MenuModel   = "models/acf/munitions/projectile.mdl"
 	CLASS.Bodygroup   = 0 -- Bodygroup index for crate and menu models
 	CLASS.MenuFOV     = 60 -- Default FOV for menu preview
+
+	MENU_FIELD("Number", "Projectile", 	{Default = 0})
+	MENU_FIELD("Number", "Propellant", 	{Default = 0})
+	MENU_FIELD("Number", "Tracer", 		{Default = 0})
 
 	--- Default crate model path - used to detect ammo types with custom models
 	local DefaultCrateModel = "models/acf/munitions/cartridge.mdl"
@@ -183,10 +187,6 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function()
 			ToolData.Tracer = Data10 and tobool(tonumber(Data10)) or false -- Haha "0.00" is true but 0 isn't
 		end
 	end
-
-	MENU_FIELD("Number", "Projectile", 	{Default = 0})
-	MENU_FIELD("Number", "Propellant", 	{Default = 0})
-	MENU_FIELD("Number", "Tracer", 		{Default = 0})
 
 	if SERVER then
 		local Ballistics = ACF.Ballistics

@@ -10,14 +10,16 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function()
 	CLASS.MortarBodygroup = 1 -- Smoke mortar submodel
 	CLASS.Description = "#acf.descs.ammo.sm"
 	CLASS.Blacklist = {
-		AC = true,
-		AL = true,
-		GL = true,
-		MG = true,
-		SA = true,
-		LAC = true,
-		RAC = true,
+		["ACF.Guns.Autocannon"] = true,
+		["ACF.Guns.GrenadeLauncher"] = true,
+		["ACF.Guns.Machinegun"] = true,
+		["ACF.Guns.SemiautomaticCannon"] = true,
+		["ACF.Guns.LightAutocannon"] = true,
+		["ACF.Guns.RotaryAutocannon"] = true,
 	}
+
+	MENU_FIELD("Number", "FillerRatio", {Default = 0})
+	MENU_FIELD("Number", "SmokeWPRatio", {Default = 0})
 
 	function CLASS:GetPenetration()
 		return 0
@@ -97,9 +99,6 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function()
 			ToolData.SmokeWPRatio = 0.5
 		end
 	end
-
-	MENU_FIELD("Number", "FillerRatio", {Default = 0})
-	MENU_FIELD("Number", "SmokeWPRatio", {Default = 0})
 
 	if SERVER then
 		local Ballistics = ACF.Ballistics
