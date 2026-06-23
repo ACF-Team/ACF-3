@@ -3,7 +3,6 @@ local Classes      = ACF.Classes
 local Utilities    = ACF.Utilities
 local Notify       = Utilities.Notify
 local WireLib      = WireLib
-local Weapons      = Classes.Weapons
 local ActiveCrates = ACF.AmmoCrates
 local HookRun      = hook.Run
 local Clamp        = math.Clamp
@@ -51,7 +50,7 @@ do -- Spawn/Update/Remove
 			Size.z = Clamp(Size.z, Min, ACF.AmmoMaxWidth)
 
 			if not isstring(Data.Destiny) then
-				Data.Destiny = ACF.FindWeaponrySource(Data.Weapon) or "Weapons"
+				Data.Destiny = ACF.FindWeaponrySource(Data.Weapon) or "Weapons" -- TODO GET RID OF DESTINY OH MY GOD
 			end
 
 			local Source = Classes[Data.Destiny]
@@ -72,9 +71,9 @@ do -- Spawn/Update/Remove
 
 			-- No class exists!
 			if not Class then
-				Class = Weapons.Get("C")
-				Data.Destiny = "Weapons"
-				Data.Weapon  = "C"
+				Class = Classes.GetSubtypeByName("ACF.Weapons.BaseWeapon", "ACF.Guns.Cannon")
+				Data.Destiny = "Weapons" -- TODO GET RID OF DESTINY OH MY GOD
+				Data.Weapon  = "ACF.Guns.Cannon"
 				Data.Caliber = Data.caliber or 50
 			end
 

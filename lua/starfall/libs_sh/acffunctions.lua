@@ -1,3 +1,11 @@
+-- This entire file needs to change a bit for the class rework,
+-- we likely will have to break some user expectations so those should be
+-- done at the end and documented properly
+-- Breaking changes so far:
+--[[
+	- Ammo types now return their fully qualified names and not their previous short identifiers. Ie. APHE -> ACF.Ammunition.APHE
+]]
+
 -- [ To Do ] --
 
 -- #general

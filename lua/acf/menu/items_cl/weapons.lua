@@ -1,5 +1,5 @@
 local ACF       = ACF
-local Weapons   = ACF.Classes.Weapons
+local Classes   = ACF.Classes
 local ModelData = ACF.ModelData
 local Current   = {}
 local CreateControl, IsScalable
@@ -189,7 +189,7 @@ local function GetMass(_, Caliber, Class, Weapon)
 end
 
 local function CreateMenu(Menu)
-	local Entries = Weapons.GetEntries()
+	local Entries = Classes.GetSubtypes("ACF.Guns.BaseGun") -- This menu name is a lie!!! It only has guns (we probably should fix that, but thats more effort than its worth right now)
 
 	Menu:AddTitle("#acf.menu.weapons.settings")
 
@@ -216,8 +216,6 @@ local function CreateMenu(Menu)
 	-- Configuring the ACF Spawner tool
 	ACF.SetClientData("PrimaryClass", "acf_gun") -- Left click will create an acf_gun entity
 	ACF.SetClientData("SecondaryClass", "acf_ammo") -- Right click will create an acf_ammo entity
-	ACF.SetClientData("Destiny", "Weapons") -- The information of these entities will come from ACF.Classes.Weapons
-
 	ACF.SetToolMode("acf_menu", "Spawner", "Weapon") -- The ACF Menu tool will be set to spawner stage, weapon operation
 
 	function ClassList:OnSelect(Index, _, Data)

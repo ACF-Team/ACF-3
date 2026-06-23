@@ -273,7 +273,7 @@ do -- Spawn and Update functions --------------------------------
 			Data.Weapon = Data.Id
 		end
 
-		local Class = Classes.GetGroup(Weapons, Data.Weapon)
+		local Class = Classes.GetSubtypeByName("ACF.Weapons.BaseWeapon", Data.Weapon)
 
 		-- Backwards compatibility for pre-scalable guns
 		if not Class then
@@ -283,7 +283,7 @@ do -- Spawn and Update functions --------------------------------
 				Data.Weapon  = AliasData.ID
 				Data.Caliber = AliasData.Caliber or Data.Caliber
 
-				Class = Classes.GetGroup(Weapons, Data.Weapon)
+				Class = Classes.GetSubtypeByName("ACF.Weapons.BaseWeapon", Data.Weapon)
 			end
 		end
 

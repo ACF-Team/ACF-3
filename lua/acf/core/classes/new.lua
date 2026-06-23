@@ -277,6 +277,8 @@ function Classes.GetChildren(Class)
 end
 
 -- Returns the mapping of flattened-hierarchy child IDs to their class tables
+-- If the class name does not exist, a read only table is returned.
+-- This can serve as a replacement for Namespace.GetEntries.
 function Classes.GetSubtypes(ClassName)
     local Class = ClassRegistry[ClassName]
     if not Class then return ReadOnlyTable end
@@ -284,19 +286,29 @@ function Classes.GetSubtypes(ClassName)
 end
 
 -- Returns a contiguous array of flattened-hierarchy child IDs to their class tables
+-- If the class name does not exist, a read only table is returned.
+-- This can serve as a replacement for Namespace.GetList.
 function Classes.GetSubtypesAsList(ClassName)
     local Class = ClassRegistry[ClassName]
     if not Class then return ReadOnlyTable end
     return getmetatable(Class).__CHILDREN_FLATTENED_CONTIGUOUS
 end
 
--- Returns a contiguous array of flattened-hierarchy child IDs to their class tables
+-- Returns a contiguous array of flattened-hierarchy child IDs to their class tables.
+-- If the class name does not exist, a read only table is returned.
+-- This can serve as a replacement for Namespace.GetList, where the list was only used
+-- to create a list of Type.ID's (where ID is no longer guaranteed) and should be faster
+-- than iterating through GetSubtypesAsList and calling GetTypeName.
+-- (FQN == Fully Qualified Name)
 function Classes.GetSubtypeFQNs(ClassName)
     local Class = ClassRegistry[ClassName]
     if not Class then return ReadOnlyTable end
     return getmetatable(Class).__CHILDREN_NAMES_CONTIGUOUS
 end
 
+-- Returns a subtype of BaseClassName with the fully qualified name of WantedClassName.
+-- If one does not exist, then nil is returned.
+-- This can serve as a replacement for Namespace.Get.
 function Classes.GetSubtypeByName(BaseClassName, WantedClassName)
     local Class = ClassRegistry[BaseClassName]
     if not Class then return nil end

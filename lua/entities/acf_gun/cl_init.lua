@@ -1,6 +1,6 @@
 local ACF   = ACF
 local Clock = ACF.Utilities.Clock
-local Weapons = ACF.Classes.Weapons
+local Classes = ACF.Classes
 local Queued	= {}
 
 include("shared.lua")
@@ -128,7 +128,7 @@ do	-- Overlay/networking for that
 
 		local Length = self:GetNW2Float("Length", 0)
 		local Class = self:GetNWString("ACF_Class")
-		local ClassData = Weapons.Get(Class)
+		local ClassData = Classes.GetSubtypeByName("ACF.Weapons.BaseWeapon", Class)
 		if not ClassData then return end
 
 		if ClassData.BreechConfigs and Length > 0 then
