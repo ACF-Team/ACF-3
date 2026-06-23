@@ -13,7 +13,7 @@ Classes.DefineClass("ACF.Missiles.BaseMissile", "ACF.Weapons.BaseWeapon", functi
         end
 
         if NewClass.LimitConVar then
-            Classes.AddSboxLimit(Data.LimitConVar)
+            Classes.AddSboxLimit(NewClass.LimitConVar)
         end
     end
 
