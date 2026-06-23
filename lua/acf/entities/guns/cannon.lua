@@ -2,7 +2,7 @@ local ACF = ACF
 
 ACF.Classes.DefineClass("ACF.Guns.Cannon", "ACF.Guns.BaseScalableGun", function()
 	CLASS.Name        	= "Cannon"
-	Class.ID		  	= "C"
+	CLASS.ID		  	= "C"
 	CLASS.Description 	= "#acf.descs.weapons.c"
 	CLASS.Model       	= "models/tankgun_new/tankgun_100mm.mdl"
 	CLASS.Sound       	= "acf_base/weapons/cannon_new.mp3"
