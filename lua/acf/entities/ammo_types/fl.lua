@@ -185,8 +185,7 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
 
 		function CLASS:UpdateCrateOverlay(BulletData, State)
 			local Data	  = self:GetDisplayData(BulletData)
-			local Destiny = ACF.FindWeaponrySource(BulletData.WeaponType)
-			local Class   = Classes.GetGroup(Destiny, BulletData.WeaponType)
+			local Class   = Classes.GetSubtypeByName("ACF.Weapons.BaseWeapon", BulletData.WeaponType)
 			local Spread  = Class and Class.Spread * ACF.GunInaccuracyScale or 0
 
 			State:AddNumber("Muzzle Velocity", BulletData.MuzzleVel, " m/s")

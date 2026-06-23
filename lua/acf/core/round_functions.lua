@@ -162,16 +162,6 @@ local Weaponry = {
 	Weapons     = Classes.Weapons,
 }
 
-function ACF.FindWeaponrySource(ID)
-	if not ID then return end
-
-	for Key, Source in pairs(Weaponry) do
-		if Classes.GetGroup(Source, ID) then
-			return Key, Source
-		end
-	end
-end
-
 function ACF.GetWeaponBlacklist(Whitelist)
 	local Result = {}
 

@@ -49,12 +49,7 @@ do -- Spawn/Update/Remove
 			Size.y = Clamp(Size.y, Min, ACF.AmmoMaxWidth)
 			Size.z = Clamp(Size.z, Min, ACF.AmmoMaxWidth)
 
-			if not isstring(Data.Destiny) then
-				Data.Destiny = ACF.FindWeaponrySource(Data.Weapon) or "Weapons" -- TODO GET RID OF DESTINY OH MY GOD
-			end
-
-			local Source = Classes[Data.Destiny]
-			local Class = Classes.GetGroup(Source, Data.Weapon)
+			local Class = Classes.GetSubtypeByName("ACF.Weapons.BaseWeapon", Data.Weapon)
 
 			-- Compatibility layer for pre-scalable guns
 			if not Class then
@@ -65,7 +60,7 @@ do -- Spawn/Update/Remove
 					Data.Weapon = AliasData.ID
 					Data.Caliber = AliasData.Caliber or Data.Caliber
 
-					Class = Classes.GetGroup(Source, Data.Weapon)
+					Class = Classes.GetSubtypeByName("ACF.Weapons.BaseWeapon", Data.Weapon)
 				end
 			end
 
@@ -78,7 +73,7 @@ do -- Spawn/Update/Remove
 			end
 
 			do
-				local Weapon = Source.GetItem(Class.ID, Data.Weapon)
+				local Weapon = Classes.GetSubtypeByName("ACF.Weapons.BaseWeapon", Data.Weapon)
 				if Weapon then
 					if Class.IsScalable then
 						local Bounds  = Class.Caliber
