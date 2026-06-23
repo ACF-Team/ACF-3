@@ -3,6 +3,7 @@ local ACF     = ACF
 ACF.Classes.DefineClass("ACF.Guns.Howitzer", "ACF.Guns.BaseScalableGun", function()
 	CLASS.Name        	= "Howitzer"
 	CLASS.ID 			= "HW"
+	CLASS.IsWeapon		= true
 	CLASS.Description 	= "#acf.descs.weapons.hw"
 	CLASS.Sound       	= "acf_base/weapons/howitzer_new2.mp3"
 	CLASS.Model       	= "models/howitzer/howitzer_105mm.mdl"

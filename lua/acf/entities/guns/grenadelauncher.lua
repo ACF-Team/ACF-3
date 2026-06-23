@@ -3,6 +3,7 @@ local ACF     = ACF
 ACF.Classes.DefineClass("ACF.Guns.GrenadeLauncher", "ACF.Guns.BaseScalableGun", function()
 	CLASS.Name       		= "Grenade Launcher"
 	CLASS.ID				= "GL"
+	CLASS.IsWeapon			= true
 	CLASS.Description 		= "#acf.descs.weapons.gl"
 	CLASS.Sound       		= "acf_base/weapons/grenadelauncher.mp3"
 	CLASS.Model       		= "models/launcher/40mmgl.mdl"

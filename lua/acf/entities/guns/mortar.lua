@@ -2,6 +2,7 @@ local ACF     = ACF
 ACF.Classes.DefineClass("ACF.Guns.Mortar", "ACF.Guns.BaseScalableGun", function()
 	CLASS.Name        	= "Mortar"
 	CLASS.ID 			= "MO"
+	CLASS.IsWeapon		= true
 	CLASS.Description 	= "#acf.descs.weapons.mo"
 	CLASS.Sound       	= "acf_base/weapons/mortar_new.mp3"
 	CLASS.Model			= "models/mortar/mortar_120mm.mdl"

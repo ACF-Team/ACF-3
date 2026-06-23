@@ -3,6 +3,7 @@ local ACF     = ACF
 ACF.Classes.DefineClass("ACF.Guns.SmokeLauncher", "ACF.Guns.BaseScalableGun", function()
 	CLASS.Name        	= "Smoke Launcher"
 	CLASS.ID 			= "SL"
+	CLASS.IsWeapon		= true
 	CLASS.Description 	= "#acf.descs.weapons.sl"
 	CLASS.Sound       	= "acf_base/weapons/smoke_launch.mp3"
 	CLASS.Model       	= "models/launcher/40mmsl.mdl"

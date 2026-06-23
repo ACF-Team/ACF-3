@@ -3,6 +3,7 @@ local ACF     = ACF
 ACF.Classes.DefineClass("ACF.Guns.SemiautomaticCannon", "ACF.Guns.BaseScalableGun", function()
 	CLASS.Name        	= "Semiautomatic Cannon"
 	CLASS.ID 			= "SA"
+	CLASS.IsWeapon		= true
 	CLASS.Description 	= "#acf.descs.weapons.sa"
 	CLASS.Model       	= "models/autocannon/semiautocannon_45mm.mdl"
 	CLASS.Sound       	= "acf_base/weapons/sa_fire1.mp3"

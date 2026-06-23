@@ -3,6 +3,7 @@ local ACF     = ACF
 ACF.Classes.DefineClass("ACF.Guns.ShortBarrelledCannon", "ACF.Guns.BaseScalableGun", function()
 	CLASS.Name       	= "Short-Barrelled Cannon"
 	CLASS.ID 			= "SC"
+	CLASS.IsWeapon		= true
 	CLASS.Description 	= "#acf.descs.weapons.sc"
 	CLASS.Model       	= "models/tankgun/tankgun_short_100mm.mdl"
 	CLASS.Sound       	= "acf_base/weapons/cannon_new.mp3"

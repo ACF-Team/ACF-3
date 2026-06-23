@@ -269,6 +269,8 @@ do -- Spawn and Update functions --------------------------------
 	}
 
 	local function VerifyData(Data)
+		-- TODO: Classes.Weapon migration
+		-- This is entirely broken now
 		if not isstring(Data.Weapon) then
 			Data.Weapon = Data.Id
 		end

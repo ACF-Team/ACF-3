@@ -1,8 +1,13 @@
 local Classes = ACF.Classes
 
 Classes.DefineClass("ACF.Guns.BaseGun", "ACF.Weapons.BaseWeapon", function()
-	CLASS.Cleanup 		= "acf_gun"
-	CLASS.IsScalable 	= false
+	CLASS.Cleanup 			= "acf_gun"
+	CLASS.IsScalable 		= false
+	-- Marks the class as a weapon in menu/usercode (used to be done with group classes)
+	CLASS.IsWeapon      	= false
+	-- Marks the class as a weapon option that can be chosen (non-applicable with scalables)
+	CLASS.IsWeaponOption	= false
+	-- TODO: Review if these ^^ two flags are really the best idea...
 
 	function CLASS.__inherited(NewClass)
 		if not NewClass.LimitConvar then

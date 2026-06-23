@@ -3,6 +3,7 @@ local ACF     = ACF
 ACF.Classes.DefineClass("ACF.Guns.FlareLauncher", "ACF.Guns.BaseGun", function()
 	CLASS.Name        	= "Flare Launcher"
 	CLASS.ID          	= "FGL"
+	CLASS.IsWeapon		= true
 	CLASS.Model       	= "models/missiles/blackjellypod.mdl"
 	CLASS.Description 	= "Flare Launchers can fire flares much more rapidly than other launchers, but can't load any other ammo types."
 	CLASS.MuzzleFlash 	= "gl_muzzleflash_noscale"
@@ -25,21 +26,22 @@ ACF.Classes.DefineClass("ACF.Guns.FlareLauncher", "ACF.Guns.BaseGun", function()
 end)
 
 ACF.Classes.DefineClass("ACF.Guns.40mmFlareLauncher", "ACF.Guns.FlareLauncher", function()
-	CLASS.Name			= "40mm Flare Launcher"
-	CLASS.ID			= "40mmFGL"
-	CLASS.Description	= "Put on an all-American fireworks show with this flare launcher: high fire rate, low distraction rate. Fill the air with flare. Careful of your reload time."
-	CLASS.Model			= "models/missiles/blackjellypod.mdl"
-	CLASS.Caliber		= 40
-	CLASS.Mass			= 75
-	CLASS.Year			= 1970
-	CLASS.MagSize		= 30
-	CLASS.MagReload		= 10
-	CLASS.Cyclic		= 300
-	CLASS.Round 		= {
-		MaxLength  = 9,
-		PropLength = 0.025,
+	CLASS.Name				= "40mm Flare Launcher"
+	CLASS.ID				= "40mmFGL"
+	CLASS.IsWeaponOption	= true
+	CLASS.Description		= "Put on an all-American fireworks show with this flare launcher: high fire rate, low distraction rate. Fill the air with flare. Careful of your reload time."
+	CLASS.Model				= "models/missiles/blackjellypod.mdl"
+	CLASS.Caliber			= 40
+	CLASS.Mass				= 75
+	CLASS.Year				= 1970
+	CLASS.MagSize			= 30
+	CLASS.MagReload			= 10
+	CLASS.Cyclic			= 300
+	CLASS.Round 			= {
+		MaxLength  				= 9,
+		PropLength 				= 0.025,
 	}
-	CLASS.Preview 		= {
+	CLASS.Preview 			= {
 		FOV = 115,
 	}
 end)
