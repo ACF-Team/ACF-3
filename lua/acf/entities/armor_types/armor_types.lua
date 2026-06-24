@@ -170,8 +170,8 @@ function Armor:OnLoaded()
     self.Density     = 19050 -- https://en.wikipedia.org/wiki/Uranium
     self.CostMul     = 69.3
     self.HealthMul   = 1683
-    self.KineticMul  = 1.3
-    self.ChemicalMul = 1.1
+    self.KineticMul  = 1.8
+    self.ChemicalMul = 1.3
     self.SpallMul    = 1.3
 end
 
