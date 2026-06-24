@@ -47,10 +47,12 @@ if CLIENT then
 	local ScanRT_Size   = 512
 	local ScanRT = GetRenderTarget("ACF_ArmorScan_BG", ScanRT_Size, ScanRT_Size)
 	local ScanRTMat
-	if ScanRT then
-		ScanRTMat = CreateMaterial("ACF_ArmorScan_BG_Mat", "UnlitGeneric", { ["$nolod"] = "1" })
+
+	-- TODO: What hook could fix this?
+	timer.Simple(0, function()
+		ScanRTMat = CreateMaterial("ACF_ArmorScan_BG_Mat", "UnlitGeneric")
 		ScanRTMat:SetTexture("$basetexture", ScanRT)
-	end
+	end)
 
 	local function GetClassFilter()
 		local Filter = {}
@@ -388,6 +390,17 @@ if CLIENT then
 		return self:GetContraptionReadout(Trace, false)
 	end
 
+	-- In singleplayer, TOOL:Reload only fires serverside; the server nets Ctrl key state here so
+	-- the client can run the clientside-only trace functions.
+	net.Receive("ACF_ArmorMesh_Reload", function()
+		local Shift = net.ReadBool()
+		local Tool  = LocalPlayer():GetTool("acfarmormesh")
+		if not Tool then return end
+		local Trace = LocalPlayer():GetEyeTrace()
+		if Shift then return DoArmorScan(Tool, Trace) end
+		return DoRecursiveArmorTrace(Tool, Trace)
+	end)
+
 	local function CreateArmorMeshMenu(Panel)
 		local ArmorTypes = ACF.Classes.ArmorTypes
 		local Menu = ACF.InitMenuBase(Panel, "ArmorMeshMenu", "acf_reload_armor_mesh_menu")
@@ -650,20 +663,18 @@ if CLIENT then
 		local FOV  = math.deg(2 * math.atan(Half / ScanViewParams.CameraDistance))
 
 		render.PushRenderTarget(ScanRT)
-		Ply:SetNoDraw(true)
 		render.RenderView({
 			origin        = ScanViewParams.Origin,
 			angles        = ScanViewParams.Angles,
 			x = 0, y = 0, w = ScanRT_Size, h = ScanRT_Size,
 			drawviewmodel = false,
 			fov           = FOV,
-			znear         = 1,
-			zfar          = 30000,
 		})
-		Ply:SetNoDraw(false)
 		render.PopRenderTarget()
 	end)
 elseif SERVER then
+	util.AddNetworkString("ACF_ArmorMesh_Reload")
+
 	-- Stores the entity's convex materials as an entity modifier so they persist through duplication.
 	local function SaveConvexMaterials(Entity)
 		duplicator.StoreEntityModifier(Entity, "ACF_ArmorMesh", { Materials = Entity.ACF_Volumetric_Materials })
@@ -796,7 +807,14 @@ elseif SERVER then
 	function TOOL:Reload(Trace)
 		local Owner = self:GetOwner()
 		local Ctrl, Shift = Owner:KeyDown(IN_DUCK), Owner:KeyDown(IN_SPEED)
-		if Ctrl then return false end
+		if Ctrl then
+			-- DoRecursiveArmorTrace and DoArmorScan are clientside-only; in singleplayer TOOL:Reload
+			-- is only called serverside, so we net the key state so the client can handle it.
+			net.Start("ACF_ArmorMesh_Reload")
+				net.WriteBool(Shift)
+			net.Send(Owner)
+			return false
+		end
 		if Shift then return self:GetContraptionReadout(Trace, true) end
 		return self:GetContraptionReadout(Trace, false)
 	end
