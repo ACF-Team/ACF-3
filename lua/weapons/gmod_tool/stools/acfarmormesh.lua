@@ -53,10 +53,109 @@ if CLIENT then
 		RunConsoleCommand("acfarmormesh_class_filter", table.concat(Parts, ","))
 	end
 
+	local function DoRecursiveArmorTrace(Tool, InitialTrace)
+		local Messages   = ACF.Utilities.Messages
+		local ArmorTypes = ACF.Classes.ArmorTypes
+		local Filter     = GetClassFilter()
+		local Layers     = {}
+		local Dir        = (InitialTrace.HitPos - InitialTrace.StartPos):GetNormalized()
+
+		if tobool(Tool:GetClientInfo("ignore_elevation")) then
+			local Ang = Dir:Angle()
+			Ang.p = 0
+			Dir = Ang:Forward()
+		end
+
+		local Skipped   = {}
+		local Processed = {}
+		local Current   = InitialTrace
+
+		for _ = 1, 30 do
+			local Entity = Current.Entity
+			if not IsValid(Entity) then break end
+
+			local Class = Entity:GetClass()
+
+			if Entity.IsACFEntity and not Filter[Class] then
+				table.insert(Layers, {
+					Terminal = true,
+					Entity   = Entity,
+				})
+				break
+			end
+
+			if not Entity.ACF_Volumetric_Mesh then break end
+
+			local EntProcessed = Processed[Entity]
+			if not EntProcessed then
+				EntProcessed = {}
+				Processed[Entity] = EntProcessed
+			end
+
+			local ConvexHit = ACF.GetConvexHit(Entity, Current.HitPos, Dir, true, EntProcessed)
+
+			if ConvexHit then
+				EntProcessed[ConvexHit.ConvexID] = true
+
+				local Convex    = Entity.ACF_Volumetric_Mesh.Convexes[ConvexHit.ConvexID]
+				local ArmorType = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("Default")
+
+				table.insert(Layers, {
+					Terminal = false,
+					Entity   = Entity,
+					Material = Convex.Material,
+					GeoThick = ConvexHit.GeoThick,
+					EffKE    = ConvexHit.GeoThick * ArmorType.KineticMul,
+					EffCE    = ConvexHit.GeoThick * ArmorType.ChemicalMul,
+				})
+			else
+				Skipped[Entity] = true
+				Current = util.TraceLine({
+					start  = Current.HitPos,
+					endpos = Current.HitPos + Dir * 32768,
+					filter = function(Ent) return not Skipped[Ent] end,
+					mask   = MASK_SOLID,
+				})
+			end
+		end
+
+		if #Layers == 0 then
+			Messages.PrintChat("Info", "No armor layers found along the trace.")
+			return true
+		end
+
+		local TotalEffKE, TotalEffCE = 0, 0
+
+		Messages.PrintChat("Normal", "--- Recursive Armor Trace ---")
+
+		for Index, Layer in ipairs(Layers) do
+			local Ent    = Layer.Entity
+			local EntStr = string.format("%s [%d]", Ent:GetClass(), Ent:EntIndex())
+
+			if Layer.Terminal then
+				Messages.PrintChat("Normal", string.format("End: %s", EntStr))
+			else
+				Messages.PrintChat("Normal", string.format(
+					"L%d: %s | %s | %.1f mm KE | %.1f mm CE",
+					Index, EntStr, Layer.Material, Layer.EffKE, Layer.EffCE
+				))
+				TotalEffKE = TotalEffKE + Layer.EffKE
+				TotalEffCE = TotalEffCE + Layer.EffCE
+			end
+		end
+
+		Messages.PrintChat("Normal", string.format(
+			"Total: %.1f mm effective (KE) | %.1f mm effective (CE)",
+			TotalEffKE, TotalEffCE
+		))
+
+		return true
+	end
+
 	function TOOL:LeftClick(_) return true end
 	function TOOL:RightClick(_) return true end
 	function TOOL:Reload(Trace)
-		if self:GetOwner():KeyDown(IN_DUCK) then return true end
+		if self:GetOwner():KeyDown(IN_DUCK) then return DoRecursiveArmorTrace(self, Trace) end
 		return self:GetContraptionReadout(Trace, self:GetOwner():KeyDown(IN_SPEED))
 	end
 
@@ -345,118 +444,6 @@ elseif SERVER then
 		Entity.ACF_Volumetric_Material_Override = "RHA"
 	end)
 
-	local function GetFilteredClasses(Player)
-		local Filter = {}
-		for Class in Player:GetInfo("acfarmormesh_class_filter"):gmatch("[^,]+") do
-			Filter[Class] = true
-		end
-		return Filter
-	end
-
-	local function DoRecursiveArmorTrace(Tool, InitialTrace)
-		local Player     = Tool:GetOwner()
-		local Messages   = ACF.Utilities.Messages
-		local ArmorTypes = ACF.Classes.ArmorTypes
-		local Filter     = GetFilteredClasses(Player)
-		local Layers     = {}
-		local Dir        = (InitialTrace.HitPos - InitialTrace.StartPos):GetNormalized()
-
-		if tobool(Tool:GetClientInfo("ignore_elevation")) then
-			local Ang = Dir:Angle()
-			Ang.p = 0
-			Dir = Ang:Forward()
-		end
-
-		local Skipped    = {}  -- entities fully traversed, never hit again
-		local Processed  = {}  -- [Entity] = { [ConvexID] = true }
-		local Current    = InitialTrace
-
-		for _ = 1, 30 do
-			local Entity = Current.Entity
-			if not IsValid(Entity) then break end
-
-			local Class = Entity:GetClass()
-
-			if Entity.IsACFEntity and not Filter[Class] then
-				table.insert(Layers, {
-					Terminal = true,
-					Entity   = Entity,
-				})
-				break
-			end
-
-			if not Entity.ACF_Volumetric_Mesh then break end
-
-			local EntProcessed = Processed[Entity]
-			if not EntProcessed then
-				EntProcessed = {}
-				Processed[Entity] = EntProcessed
-			end
-
-			-- Pass the accumulated filter so each call returns the next unprocessed convex
-			-- without advancing the ray start between convexes of the same entity.
-			local ConvexHit = ACF.GetConvexHit(Entity, Current.HitPos, Dir, true, EntProcessed)
-
-			if ConvexHit then
-				EntProcessed[ConvexHit.ConvexID] = true
-
-				local Convex    = Entity.ACF_Volumetric_Mesh.Convexes[ConvexHit.ConvexID]
-				local ArmorType = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("Default")
-
-				table.insert(Layers, {
-					Terminal = false,
-					Entity   = Entity,
-					Material = Convex.Material,
-					GeoThick = ConvexHit.GeoThick,
-					EffKE    = ConvexHit.GeoThick * ArmorType.KineticMul,
-					EffCE    = ConvexHit.GeoThick * ArmorType.ChemicalMul,
-				})
-				-- Don't advance Current; loop again to find the next convex in this entity.
-			else
-				-- Entity is exhausted; skip it and trace to the next entity from the same position.
-				Skipped[Entity] = true
-				Current = util.TraceLine({
-					start  = Current.HitPos,
-					endpos = Current.HitPos + Dir * 32768,
-					filter = function(Ent) return not Skipped[Ent] end,
-					mask   = MASK_SOLID,
-				})
-			end
-		end
-
-		if #Layers == 0 then
-			Messages.SendChat(Player, "Info", "No armor layers found along the trace.")
-			return true
-		end
-
-		local TotalEffKE, TotalEffCE = 0, 0
-
-		Messages.SendChat(Player, nil, "--- Recursive Armor Trace ---")
-
-		for Index, Layer in ipairs(Layers) do
-			local Ent    = Layer.Entity
-			local EntStr = string.format("%s [%d]", Ent:GetClass(), Ent:EntIndex())
-
-			if Layer.Terminal then
-				Messages.SendChat(Player, nil, string.format("End: %s", EntStr))
-			else
-				Messages.SendChat(Player, nil, string.format(
-					"L%d: %s | %s | %.1f mm KE | %.1f mm CE",
-					Index, EntStr, Layer.Material, Layer.EffKE, Layer.EffCE
-				))
-				TotalEffKE = TotalEffKE + Layer.EffKE
-				TotalEffCE = TotalEffCE + Layer.EffCE
-			end
-		end
-
-		Messages.SendChat(Player, nil, string.format(
-			"Total: %.1f mm effective (KE) | %.1f mm effective (CE)",
-			TotalEffKE, TotalEffCE
-		))
-
-		return true
-	end
-
 	-- Keeps the toolgun's NW vars in sync with the convex under the player's crosshair, for client-side display.
 	function TOOL:Think()
 		local Player = self:GetOwner()
@@ -545,7 +532,6 @@ elseif SERVER then
 	end
 
 	function TOOL:Reload(Trace)
-		if self:GetOwner():KeyDown(IN_DUCK) then return DoRecursiveArmorTrace(self, Trace) end
 		return self:GetContraptionReadout(Trace, self:GetOwner():KeyDown(IN_SPEED))
 	end
 end
