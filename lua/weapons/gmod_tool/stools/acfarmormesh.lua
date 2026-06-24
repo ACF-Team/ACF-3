@@ -183,8 +183,7 @@ if CLIENT then
 	local function OpenArmorScanPanel(Resolution, Cells, MaxKE, MaxCE)
 		if IsValid(ScanPanel) then ScanPanel:Remove() end
 
-		local CellPx     = math.max(2, math.floor(512 / Resolution))
-		local ActualGrid = CellPx * Resolution
+		local ActualGrid = math.max(2, math.floor(512 / Resolution)) * Resolution
 		local FrameW     = ActualGrid + 40
 		local FrameH     = ActualGrid + 130
 
@@ -193,8 +192,10 @@ if CLIENT then
 		ScanPanel:SetSize(FrameW, FrameH)
 		ScanPanel:Center()
 		ScanPanel:MakePopup()
+		ScanPanel:SetSizable(true)
 
-		local ShowKE = true
+		local ShowKE   = true
+		local QueryPen = 0
 		local CursorX, CursorY, HoverCell
 
 		local Grid = ScanPanel:Add("DPanel")
@@ -209,16 +210,28 @@ if CLIENT then
 				surface.DrawTexturedRect(0, 0, W, H)
 			end
 
-			local Max = ShowKE and MaxKE or MaxCE
+			local Max    = ShowKE and MaxKE or MaxCE
+			local CellPx = W / Resolution
 			for I = 1, #Cells do
 				local Row = math.floor((I - 1) / Resolution)
 				local Col = (I - 1) % Resolution
 				local Val = ShowKE and Cells[I].KE or Cells[I].CE
 				if Val > 0 then
-					local T    = Max > 0 and (math.log(Val + 1) / math.log(Max + 1)) or 0
-					local Col2 = HSVToColor((1 - T) * 120, 1, 1)
+					local Hue
+					if QueryPen > 0 then
+						local Scale = math.max(QueryPen * 0.5, 50)
+						local T = math.tanh((Val - QueryPen) / Scale)
+						Hue = (1 - T) * 60  -- [-1,1] → [120°,0°] = green → yellow → red
+					else
+						Hue = (1 - (Max > 0 and math.log(Val + 1) / math.log(Max + 1) or 0)) * 120
+					end
+					local Col2  = HSVToColor(Hue, 1, 1)
+					local X0    = math.floor(Col * CellPx)
+					local Y0    = math.floor(Row * CellPx)
+					local X1    = math.floor((Col + 1) * CellPx)
+					local Y1    = math.floor((Row + 1) * CellPx)
 					surface.SetDrawColor(Col2.r, Col2.g, Col2.b, 180)
-					surface.DrawRect(Col * CellPx, Row * CellPx, CellPx, CellPx)
+					surface.DrawRect(X0, Y0, X1 - X0, Y1 - Y0)
 				end
 			end
 
@@ -244,6 +257,7 @@ if CLIENT then
 
 		function Grid:OnCursorMoved(X, Y)
 			CursorX, CursorY = X, Y
+			local CellPx = self:GetWide() / Resolution
 			local C = math.floor(X / CellPx)
 			local R = math.floor(Y / CellPx)
 			local I = R * Resolution + C + 1
@@ -277,10 +291,31 @@ if CLIENT then
 		CEBtn:SetSize(BtnW, BtnH)
 		function CEBtn:DoClick() ShowKE = false end
 
-		local MaxLabel = ScanPanel:Add("DLabel")
-		MaxLabel:SetPos(20 + BtnW * 2 + 20, BtnY + 4)
-		MaxLabel:SetSize(ActualGrid - BtnW * 2 - 20, 20)
-		MaxLabel:SetText(string.format("Max KE: %.1f mm  |  Max CE: %.1f mm", MaxKE, MaxCE))
+		local PenSlider = ScanPanel:Add("DNumSlider")
+		PenSlider:SetPos(20 + BtnW * 2 + 16, BtnY)
+		PenSlider:SetSize(ActualGrid - BtnW * 2 - 16, BtnH)
+		PenSlider:SetText("Pen (mm)")
+		PenSlider:SetMin(0)
+		PenSlider:SetMax(1000)
+		PenSlider:SetDecimals(0)
+		PenSlider:SetValue(0)
+		PenSlider.Label:SetDark(true)
+		function PenSlider:OnValueChanged(Val) QueryPen = Val end
+
+		local OldLayout = ScanPanel.PerformLayout
+		function ScanPanel:PerformLayout(W, H)
+			if OldLayout then OldLayout(self, W, H) end
+			local SqSize  = math.min(W - 40, H - 130)
+			local BtnYPos = 54 + SqSize + 28
+			Grid:SetPos(20, 54)
+			Grid:SetSize(SqSize, SqSize)
+			InfoLabel:SetPos(20, 54 + SqSize + 4)
+			InfoLabel:SetSize(SqSize, 20)
+			KEBtn:SetPos(20, BtnYPos)
+			CEBtn:SetPos(20 + BtnW + 8, BtnYPos)
+			PenSlider:SetPos(20 + BtnW * 2 + 16, BtnYPos)
+			PenSlider:SetSize(SqSize - BtnW * 2 - 16, BtnH)
+		end
 	end
 
 	local function DoArmorScan(Tool, InitialTrace)
