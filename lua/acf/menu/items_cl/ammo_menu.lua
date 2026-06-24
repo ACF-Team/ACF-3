@@ -488,7 +488,7 @@ local function AddGraph(Base, ToolData)
 		Graph:SetXSpacing(100)
 		Graph:SetYSpacing(50)
 
-		local Ammo = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", oolData.AmmoType)
+		local Ammo = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", ToolData.AmmoType)()
 
 		if ToolData.AmmoType == "ACF.Ammunition.HEAT" or ToolData.AmmoType == "ACF.Ammunition.HEATFS" then
 			local PassiveStandoffPen = Ammo:GetPenetration(BulletData, BulletData.Standoff)
@@ -887,7 +887,7 @@ function ACF.CreateAmmoMenu(Menu)
 
 		Ammo = Data
 
-		ACF.SetClientData("AmmoType", Data.ID)
+		ACF.SetClientData("AmmoType", Classes.GetTypeName(Data:GetType()))
 		Title:SetText(UpdateTitle())
 		Desc:SetText(Data.Description)
 
