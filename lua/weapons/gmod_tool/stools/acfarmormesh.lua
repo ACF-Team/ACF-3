@@ -21,18 +21,6 @@ if CLIENT then
 	language.Add("tool.acfarmormesh.left0", "Apply the selected material to the convex under your crosshair (Shift: apply to all convexes)")
 	language.Add("tool.acfarmormesh.right0", "Copy the material of the convex under your crosshair")
 	language.Add("tool.acfarmormesh.reload0", "Show contraption readout (Shift: cost breakdown, Ctrl: recursive armor trace, Ctrl+Shift: orthographic armor scan)")
-	language.Add("tool.acfarmormesh.material_desc", "The material that will be applied to the convex under your crosshair.")
-	language.Add("tool.acfarmormesh.armor_stats", "ACF Stats")
-	language.Add("tool.acfarmormesh.class_filter", "Recursive Armor Class Filter")
-	language.Add("tool.acfarmormesh.class_filter_desc", "When enabled, entities of the selected classes will not stop the recursive armor trace.")
-	language.Add("tool.acfarmormesh.alpha", "Convex Overlay Alpha")
-	language.Add("tool.acfarmormesh.ignore_elevation", "Ignore camera elevation")
-	language.Add("tool.acfarmormesh.ignore_elevation_desc", "When enabled, the recursive armor trace fires horizontally toward the hit point, as if the camera had no pitch angle.")
-	language.Add("tool.acfarmormesh.armor_scan", "Orthographic Armor Scan")
-	language.Add("tool.acfarmormesh.scan_resolution", "Scan Resolution")
-	language.Add("tool.acfarmormesh.scan_resolution_desc", "Number of cells per side in the orthographic scan grid.")
-	language.Add("tool.acfarmormesh.scan_size", "Scan Area Size (in)")
-	language.Add("tool.acfarmormesh.scan_size_desc", "Total side length of the scan area in world inches.")
 
 	local SphereSearch      = CreateClientConVar("acfarmormesh_sphere_search", 0, false, true, "", 0, 1)
 	local SphereRadius      = CreateClientConVar("acfarmormesh_sphere_radius", 0, false, true, "", 0, 10000)
@@ -432,7 +420,7 @@ if CLIENT then
 
 		local Materials = Menu:AddComboBox()
 
-		Menu:AddHelp("#tool.acfarmormesh.material_desc")
+		Menu:AddHelp("The material that will be applied to the convex under your crosshair.")
 
 		local Base = Menu:AddCollapsible("Material Info", true)
 		local MatName     = Base:AddTitle()
@@ -488,24 +476,24 @@ if CLIENT then
 
 		SphereRadiusSlider:SetEnabled(SphereCheck:GetChecked())
 
-		local AlphaSlider = Menu:AddSlider("#tool.acfarmormesh.alpha", 0, 255, 0)
+		local AlphaSlider = Menu:AddSlider("Convex Overlay Alpha", 0, 255, 0)
 		AlphaSlider:SetConVar("acfarmormesh_alpha")
 
-		Menu:AddCheckBox("#tool.acfarmormesh.ignore_elevation", "acfarmormesh_ignore_elevation")
-		Menu:AddHelp("#tool.acfarmormesh.ignore_elevation_desc")
+		Menu:AddCheckBox("Ignore camera elevation", "acfarmormesh_ignore_elevation")
+		Menu:AddHelp("When enabled, the recursive armor trace fires horizontally toward the hit point, as if the camera had no pitch angle.")
 
-		local ScanSection = Menu:AddCollapsible("#tool.acfarmormesh.armor_scan", false)
+		local ScanSection = Menu:AddCollapsible("Orthographic Armor Scan", false)
 
-		local ScanResolutionSlider = ScanSection:AddSlider("#tool.acfarmormesh.scan_resolution", 4, 64, 0)
+		local ScanResolutionSlider = ScanSection:AddSlider("Scan Resolution", 4, 64, 0)
 		ScanResolutionSlider:SetConVar("acfarmormesh_scan_resolution")
-		ScanSection:AddHelp("#tool.acfarmormesh.scan_resolution_desc")
+		ScanSection:AddHelp("Number of cells per side in the orthographic scan grid.")
 
-		local ScanSizeSlider = ScanSection:AddSlider("#tool.acfarmormesh.scan_size", 10, 10000, 0)
+		local ScanSizeSlider = ScanSection:AddSlider("Scan Area Size (in)", 10, 10000, 0)
 		ScanSizeSlider:SetConVar("acfarmormesh_scan_size")
-		ScanSection:AddHelp("#tool.acfarmormesh.scan_size_desc")
+		ScanSection:AddHelp("Total side length of the scan area in world inches.")
 
-		local FilterSection = Menu:AddCollapsible("#tool.acfarmormesh.class_filter", false)
-		FilterSection:AddHelp("#tool.acfarmormesh.class_filter_desc")
+		local FilterSection = Menu:AddCollapsible("Recursive Armor Class Filter", false)
+		FilterSection:AddHelp("When enabled, entities of the selected classes will not stop the recursive armor trace.")
 
 		local function AddFilterCheckBox(Class)
 			local Check = FilterSection:AddCheckBox(Class)
@@ -545,7 +533,7 @@ if CLIENT then
 			surface.SetDrawColor(ScreenBlack)
 			surface.DrawRect(0, 0, 256, 256)
 
-			draw.SimpleTextOutlined("#tool.acfarmormesh.armor_stats", "torchfont", 128, 48, ScreenText, Center, Center, 4, ScreenBlack)
+			draw.SimpleTextOutlined("ACF Stats", "torchfont", 128, 48, ScreenText, Center, Center, 4, ScreenBlack)
 
 			if MaxHealth > 0 then
 				draw.SimpleTextOutlined("#acf.menu.health", "torchfont", 128, 120, ScreenText, Center, Center, 4, ScreenBlack)
