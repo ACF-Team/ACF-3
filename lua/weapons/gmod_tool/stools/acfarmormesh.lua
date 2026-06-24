@@ -48,12 +48,6 @@ if CLIENT then
 	local ScanRT = GetRenderTarget("ACF_ArmorScan_BG", ScanRT_Size, ScanRT_Size)
 	local ScanRTMat
 
-	-- TODO: What hook could fix this?
-	timer.Simple(0, function()
-		ScanRTMat = CreateMaterial("ACF_ArmorScan_BG_Mat", "UnlitGeneric")
-		ScanRTMat:SetTexture("$basetexture", ScanRT)
-	end)
-
 	local function GetClassFilter()
 		local Filter = {}
 		for Class in ClassFilter:GetString():gmatch("[^,]+") do
@@ -206,11 +200,13 @@ if CLIENT then
 		Grid:SetMouseInputEnabled(true)
 
 		function Grid:Paint(W, H)
-			if ScanRTMat then
-				surface.SetMaterial(ScanRTMat)
-				surface.SetDrawColor(180, 180, 180, 255)
-				surface.DrawTexturedRect(0, 0, W, H)
+			if not ScanRTMat then
+				ScanRTMat = CreateMaterial("ACF_ArmorScan_BG_Mat", "UnlitGeneric")
+				ScanRTMat:SetTexture("$basetexture", ScanRT)
 			end
+			surface.SetMaterial(ScanRTMat)
+			surface.SetDrawColor(180, 180, 180, 255)
+			surface.DrawTexturedRect(0, 0, W, H)
 
 			local Max    = ShowKE and MaxKE or MaxCE
 			local CellPx = W / Resolution
