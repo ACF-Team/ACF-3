@@ -190,8 +190,9 @@ if CLIENT then
 		ScanPanel:MakePopup()
 		ScanPanel:SetSizable(true)
 
-		local ShowKE   = true
-		local QueryPen = 0
+		local ShowKE      = true
+		local QueryPen    = 100
+		local OverlayAlpha = 50
 		local CursorX, CursorY, HoverCell
 
 		local Grid = ScanPanel:Add("DPanel")
@@ -226,7 +227,7 @@ if CLIENT then
 					local Y0    = math.floor(Row * CellPx)
 					local X1    = math.floor((Col + 1) * CellPx)
 					local Y1    = math.floor((Row + 1) * CellPx)
-					surface.SetDrawColor(Col2.r, Col2.g, Col2.b, 180)
+					surface.SetDrawColor(Col2.r, Col2.g, Col2.b, math.Round(OverlayAlpha / 100 * 255))
 					surface.DrawRect(X0, Y0, X1 - X0, Y1 - Y0)
 				end
 			end
@@ -289,20 +290,32 @@ if CLIENT then
 
 		local PenSlider = ScanPanel:Add("DNumSlider")
 		PenSlider:SetPos(20 + BtnW * 2 + 16, BtnY)
-		PenSlider:SetSize(ActualGrid - BtnW * 2 - 16, BtnH)
+		PenSlider:SetSize((ActualGrid - BtnW * 2 - 24) / 2, BtnH)
 		PenSlider:SetText("Pen (mm)")
 		PenSlider:SetMin(0)
 		PenSlider:SetMax(1000)
 		PenSlider:SetDecimals(0)
-		PenSlider:SetValue(0)
+		PenSlider:SetValue(QueryPen)
 		PenSlider.Label:SetDark(true)
 		function PenSlider:OnValueChanged(Val) QueryPen = Val end
+
+		local AlphaSlider = ScanPanel:Add("DNumSlider")
+		AlphaSlider:SetPos(20 + BtnW * 2 + 16 + (ActualGrid - BtnW * 2 - 24) / 2 + 8, BtnY)
+		AlphaSlider:SetSize((ActualGrid - BtnW * 2 - 24) / 2, BtnH)
+		AlphaSlider:SetText("Transparency (%)")
+		AlphaSlider:SetMin(0)
+		AlphaSlider:SetMax(100)
+		AlphaSlider:SetDecimals(0)
+		AlphaSlider:SetValue(OverlayAlpha)
+		AlphaSlider.Label:SetDark(true)
+		function AlphaSlider:OnValueChanged(Val) OverlayAlpha = Val end
 
 		local OldLayout = ScanPanel.PerformLayout
 		function ScanPanel:PerformLayout(W, H)
 			if OldLayout then OldLayout(self, W, H) end
 			local SqSize  = math.min(W - 40, H - 130)
 			local BtnYPos = 54 + SqSize + 28
+			local SliderW = (SqSize - BtnW * 2 - 24) / 2
 			Grid:SetPos(20, 54)
 			Grid:SetSize(SqSize, SqSize)
 			InfoLabel:SetPos(20, 54 + SqSize + 4)
@@ -310,7 +323,9 @@ if CLIENT then
 			KEBtn:SetPos(20, BtnYPos)
 			CEBtn:SetPos(20 + BtnW + 8, BtnYPos)
 			PenSlider:SetPos(20 + BtnW * 2 + 16, BtnYPos)
-			PenSlider:SetSize(SqSize - BtnW * 2 - 16, BtnH)
+			PenSlider:SetSize(SliderW, BtnH)
+			AlphaSlider:SetPos(20 + BtnW * 2 + 16 + SliderW + 8, BtnYPos)
+			AlphaSlider:SetSize(SliderW, BtnH)
 		end
 	end
 
