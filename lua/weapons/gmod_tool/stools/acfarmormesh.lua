@@ -190,14 +190,75 @@ if CLIENT then
 		ScanPanel:MakePopup()
 		ScanPanel:SetSizable(true)
 
-		local ShowKE      = true
-		local QueryPen    = 100
+		local ShowKE       = true
+		local QueryPen     = 100
 		local OverlayAlpha = 50
 		local CursorX, CursorY, HoverCell
 
+		local BtnW = 60
+
+		-- Controls panel must be docked before Grid so FILL gets remaining space
+		local ControlsPanel = ScanPanel:Add("DPanel")
+		ControlsPanel:Dock(BOTTOM)
+		ControlsPanel:SetTall(58)
+		ControlsPanel:SetPaintBackground(false)
+		ControlsPanel:DockPadding(0, 4, 0, 4)
+
+		local InfoLabel = ControlsPanel:Add("DLabel")
+		InfoLabel:Dock(TOP)
+		InfoLabel:SetTall(20)
+		InfoLabel:SetText("")
+
+		local BtnRow = ControlsPanel:Add("DPanel")
+		BtnRow:Dock(FILL)
+		BtnRow:DockMargin(0, 4, 0, 0)
+		BtnRow:SetPaintBackground(false)
+
+		local KEBtn = BtnRow:Add("DButton")
+		KEBtn:SetText("KE")
+		KEBtn:Dock(LEFT)
+		KEBtn:SetWide(BtnW)
+		function KEBtn:DoClick() ShowKE = true end
+
+		local CEBtn = BtnRow:Add("DButton")
+		CEBtn:SetText("CE")
+		CEBtn:Dock(LEFT)
+		CEBtn:SetWide(BtnW)
+		CEBtn:DockMargin(8, 0, 0, 0)
+		function CEBtn:DoClick() ShowKE = false end
+
+		local SlidersPanel = BtnRow:Add("DPanel")
+		SlidersPanel:Dock(FILL)
+		SlidersPanel:DockMargin(8, 0, 0, 0)
+		SlidersPanel:SetPaintBackground(false)
+
+		local PenSlider = SlidersPanel:Add("DNumSlider")
+		PenSlider:SetText("Pen (mm)")
+		PenSlider:SetMin(0)
+		PenSlider:SetMax(1000)
+		PenSlider:SetDecimals(0)
+		PenSlider:SetValue(QueryPen)
+		PenSlider.Label:SetDark(true)
+		function PenSlider:OnValueChanged(Val) QueryPen = Val end
+
+		local AlphaSlider = SlidersPanel:Add("DNumSlider")
+		AlphaSlider:SetText("Transparency (%)")
+		AlphaSlider:SetMin(0)
+		AlphaSlider:SetMax(100)
+		AlphaSlider:SetDecimals(0)
+		AlphaSlider:SetValue(OverlayAlpha)
+		AlphaSlider.Label:SetDark(true)
+		function AlphaSlider:OnValueChanged(Val) OverlayAlpha = Val end
+
+		function SlidersPanel:PerformLayout(W, H)
+			local SliderW = (W - 8) / 2
+			PenSlider:SetPos(0, 0)
+			PenSlider:SetSize(SliderW, H)
+			AlphaSlider:SetPos(SliderW + 8, 0)
+			AlphaSlider:SetSize(W - SliderW - 8, H)
+		end
+
 		local Grid = ScanPanel:Add("DPanel")
-		Grid:SetPos(20, 54)
-		Grid:SetSize(ActualGrid, ActualGrid)
 		Grid:SetMouseInputEnabled(true)
 
 		function Grid:Paint(W, H)
@@ -247,11 +308,6 @@ if CLIENT then
 			end
 		end
 
-		local InfoLabel = ScanPanel:Add("DLabel")
-		InfoLabel:SetPos(20, ActualGrid + 58)
-		InfoLabel:SetSize(ActualGrid, 20)
-		InfoLabel:SetText("")
-
 		function Grid:OnCursorMoved(X, Y)
 			CursorX, CursorY = X, Y
 			local CellPx = self:GetWide() / Resolution
@@ -272,60 +328,13 @@ if CLIENT then
 			InfoLabel:SetText("")
 		end
 
-		local BtnY = ActualGrid + 82
-		local BtnW = 60
-		local BtnH = 26
-
-		local KEBtn = ScanPanel:Add("DButton")
-		KEBtn:SetText("KE")
-		KEBtn:SetPos(20, BtnY)
-		KEBtn:SetSize(BtnW, BtnH)
-		function KEBtn:DoClick() ShowKE = true end
-
-		local CEBtn = ScanPanel:Add("DButton")
-		CEBtn:SetText("CE")
-		CEBtn:SetPos(20 + BtnW + 8, BtnY)
-		CEBtn:SetSize(BtnW, BtnH)
-		function CEBtn:DoClick() ShowKE = false end
-
-		local PenSlider = ScanPanel:Add("DNumSlider")
-		PenSlider:SetPos(20 + BtnW * 2 + 16, BtnY)
-		PenSlider:SetSize((ActualGrid - BtnW * 2 - 24) / 2, BtnH)
-		PenSlider:SetText("Pen (mm)")
-		PenSlider:SetMin(0)
-		PenSlider:SetMax(1000)
-		PenSlider:SetDecimals(0)
-		PenSlider:SetValue(QueryPen)
-		PenSlider.Label:SetDark(true)
-		function PenSlider:OnValueChanged(Val) QueryPen = Val end
-
-		local AlphaSlider = ScanPanel:Add("DNumSlider")
-		AlphaSlider:SetPos(20 + BtnW * 2 + 16 + (ActualGrid - BtnW * 2 - 24) / 2 + 8, BtnY)
-		AlphaSlider:SetSize((ActualGrid - BtnW * 2 - 24) / 2, BtnH)
-		AlphaSlider:SetText("Transparency (%)")
-		AlphaSlider:SetMin(0)
-		AlphaSlider:SetMax(100)
-		AlphaSlider:SetDecimals(0)
-		AlphaSlider:SetValue(OverlayAlpha)
-		AlphaSlider.Label:SetDark(true)
-		function AlphaSlider:OnValueChanged(Val) OverlayAlpha = Val end
-
 		local OldLayout = ScanPanel.PerformLayout
 		function ScanPanel:PerformLayout(W, H)
 			if OldLayout then OldLayout(self, W, H) end
-			local SqSize  = math.min(W - 40, H - 130)
-			local BtnYPos = 54 + SqSize + 28
-			local SliderW = (SqSize - BtnW * 2 - 24) / 2
-			Grid:SetPos(20, 54)
+			local _, CtrlY = ControlsPanel:GetPos()
+			local SqSize   = math.min(W, CtrlY - 24)
+			Grid:SetPos(0, 24)
 			Grid:SetSize(SqSize, SqSize)
-			InfoLabel:SetPos(20, 54 + SqSize + 4)
-			InfoLabel:SetSize(SqSize, 20)
-			KEBtn:SetPos(20, BtnYPos)
-			CEBtn:SetPos(20 + BtnW + 8, BtnYPos)
-			PenSlider:SetPos(20 + BtnW * 2 + 16, BtnYPos)
-			PenSlider:SetSize(SliderW, BtnH)
-			AlphaSlider:SetPos(20 + BtnW * 2 + 16 + SliderW + 8, BtnYPos)
-			AlphaSlider:SetSize(SliderW, BtnH)
 		end
 	end
 
@@ -670,7 +679,6 @@ if CLIENT then
 		ScanRTPending = false
 
 		local Half = ScanViewParams.ScanSize * 0.5
-		local Ply  = LocalPlayer()
 		local FOV  = math.deg(2 * math.atan(Half / ScanViewParams.CameraDistance))
 
 		render.PushRenderTarget(ScanRT)
