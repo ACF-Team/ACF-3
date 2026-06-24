@@ -20,7 +20,7 @@ if CLIENT then
 	language.Add("tool.acfarmormesh.desc", "Applies armor materials to individual convexes of an ACF volumetric mesh")
 	language.Add("tool.acfarmormesh.left0", "Apply the selected material to the convex under your crosshair (Shift: apply to all convexes)")
 	language.Add("tool.acfarmormesh.right0", "Copy the material of the convex under your crosshair")
-	language.Add("tool.acfarmormesh.reload0", "Show contraption readout (Shift: show cost breakdown, Ctrl: recursive armor trace)")
+	language.Add("tool.acfarmormesh.reload0", "Show contraption readout (Shift: cost breakdown, Ctrl: recursive armor trace, Ctrl+Shift: orthographic armor scan)")
 	language.Add("tool.acfarmormesh.material_desc", "The material that will be applied to the convex under your crosshair.")
 	language.Add("tool.acfarmormesh.armor_stats", "ACF Stats")
 	language.Add("tool.acfarmormesh.class_filter", "Recursive Armor Class Filter")
@@ -28,12 +28,29 @@ if CLIENT then
 	language.Add("tool.acfarmormesh.alpha", "Convex Overlay Alpha")
 	language.Add("tool.acfarmormesh.ignore_elevation", "Ignore camera elevation")
 	language.Add("tool.acfarmormesh.ignore_elevation_desc", "When enabled, the recursive armor trace fires horizontally toward the hit point, as if the camera had no pitch angle.")
+	language.Add("tool.acfarmormesh.armor_scan", "Orthographic Armor Scan")
+	language.Add("tool.acfarmormesh.scan_resolution", "Scan Resolution")
+	language.Add("tool.acfarmormesh.scan_resolution_desc", "Number of cells per side in the orthographic scan grid.")
+	language.Add("tool.acfarmormesh.scan_size", "Scan Area Size (in)")
+	language.Add("tool.acfarmormesh.scan_size_desc", "Total side length of the scan area in world inches.")
 
 	local SphereSearch      = CreateClientConVar("acfarmormesh_sphere_search", 0, false, true, "", 0, 1)
 	local SphereRadius      = CreateClientConVar("acfarmormesh_sphere_radius", 0, false, true, "", 0, 10000)
 	local AlphaConVar       = CreateClientConVar("acfarmormesh_alpha", 50, false, true, "", 0, 255)
 	local ClassFilter       = CreateClientConVar("acfarmormesh_class_filter", "", false, true)
 	CreateClientConVar("acfarmormesh_ignore_elevation", 0, false, true, "", 0, 1)
+	CreateClientConVar("acfarmormesh_scan_resolution", 16, false, true, "", 4, 64)
+	CreateClientConVar("acfarmormesh_scan_size", 160, false, true, "", 10, 10000)
+
+	local ScanViewParams
+	local ScanRTPending = false
+	local ScanRT_Size   = 512
+	local ScanRT = GetRenderTarget("ACF_ArmorScan_BG", ScanRT_Size, ScanRT_Size)
+	local ScanRTMat
+	if ScanRT then
+		ScanRTMat = CreateMaterial("ACF_ArmorScan_BG_Mat", "UnlitGeneric", { ["$nolod"] = "1" })
+		ScanRTMat:SetTexture("$basetexture", ScanRT)
+	end
 
 	local function GetClassFilter()
 		local Filter = {}
@@ -53,22 +70,22 @@ if CLIENT then
 		RunConsoleCommand("acfarmormesh_class_filter", table.concat(Parts, ","))
 	end
 
-	local function DoRecursiveArmorTrace(Tool, InitialTrace)
-		local Messages   = ACF.Utilities.Messages
-		local ArmorTypes = ACF.Classes.ArmorTypes
-		local Filter     = GetClassFilter()
-		local Layers     = {}
-		local Dir        = (InitialTrace.HitPos - InitialTrace.StartPos):GetNormalized()
-
+	local function GetTraceDir(Tool, Trace)
+		local Dir = (Trace.HitPos - Trace.StartPos):GetNormalized()
 		if tobool(Tool:GetClientInfo("ignore_elevation")) then
 			local Ang = Dir:Angle()
 			Ang.p = 0
 			Dir = Ang:Forward()
 		end
+		return Dir
+	end
 
-		local Skipped   = {}
-		local Processed = {}
-		local Current   = InitialTrace
+	local function GetArmorLayers(StartTrace, Dir, Filter)
+		local ArmorTypes = ACF.Classes.ArmorTypes
+		local Layers     = {}
+		local Skipped    = {}
+		local Processed  = {}
+		local Current    = StartTrace
 
 		for _ = 1, 30 do
 			local Entity = Current.Entity
@@ -77,10 +94,7 @@ if CLIENT then
 			local Class = Entity:GetClass()
 
 			if Entity.IsACFEntity and not Filter[Class] then
-				table.insert(Layers, {
-					Terminal = true,
-					Entity   = Entity,
-				})
+				table.insert(Layers, { Terminal = true, Entity = Entity })
 				break
 			end
 
@@ -88,7 +102,7 @@ if CLIENT then
 
 			local EntProcessed = Processed[Entity]
 			if not EntProcessed then
-				EntProcessed = {}
+				EntProcessed      = {}
 				Processed[Entity] = EntProcessed
 			end
 
@@ -119,12 +133,26 @@ if CLIENT then
 			end
 		end
 
+		local TotalKE, TotalCE = 0, 0
+		for _, Layer in ipairs(Layers) do
+			if not Layer.Terminal then
+				TotalKE = TotalKE + Layer.EffKE
+				TotalCE = TotalCE + Layer.EffCE
+			end
+		end
+
+		return Layers, TotalKE, TotalCE
+	end
+
+	local function DoRecursiveArmorTrace(Tool, InitialTrace)
+		local Messages                 = ACF.Utilities.Messages
+		local Dir                      = GetTraceDir(Tool, InitialTrace)
+		local Layers, TotalKE, TotalCE = GetArmorLayers(InitialTrace, Dir, GetClassFilter())
+
 		if #Layers == 0 then
 			Messages.PrintChat("Info", "No armor layers found along the trace.")
 			return true
 		end
-
-		local TotalEffKE, TotalEffCE = 0, 0
 
 		Messages.PrintChat("Normal", "--- Recursive Armor Trace ---")
 
@@ -139,24 +167,192 @@ if CLIENT then
 					"L%d: %s | %s | %.1f mm KE | %.1f mm CE",
 					Index, EntStr, Layer.Material, Layer.EffKE, Layer.EffCE
 				))
-				TotalEffKE = TotalEffKE + Layer.EffKE
-				TotalEffCE = TotalEffCE + Layer.EffCE
 			end
 		end
 
 		Messages.PrintChat("Normal", string.format(
 			"Total: %.1f mm effective (KE) | %.1f mm effective (CE)",
-			TotalEffKE, TotalEffCE
+			TotalKE, TotalCE
 		))
 
 		return true
 	end
 
+	local ScanPanel
+
+	local function OpenArmorScanPanel(Resolution, Cells, MaxKE, MaxCE)
+		if IsValid(ScanPanel) then ScanPanel:Remove() end
+
+		local CellPx     = math.max(2, math.floor(512 / Resolution))
+		local ActualGrid = CellPx * Resolution
+		local FrameW     = ActualGrid + 40
+		local FrameH     = ActualGrid + 130
+
+		ScanPanel = vgui.Create("DFrame")
+		ScanPanel:SetTitle("Armor Scan (" .. Resolution .. "x" .. Resolution .. ")")
+		ScanPanel:SetSize(FrameW, FrameH)
+		ScanPanel:Center()
+		ScanPanel:MakePopup()
+
+		local ShowKE = true
+		local CursorX, CursorY, HoverCell
+
+		local Grid = ScanPanel:Add("DPanel")
+		Grid:SetPos(20, 54)
+		Grid:SetSize(ActualGrid, ActualGrid)
+		Grid:SetMouseInputEnabled(true)
+
+		function Grid:Paint(W, H)
+			if ScanRTMat then
+				surface.SetMaterial(ScanRTMat)
+				surface.SetDrawColor(180, 180, 180, 255)
+				surface.DrawTexturedRect(0, 0, W, H)
+			end
+
+			local Max = ShowKE and MaxKE or MaxCE
+			for I = 1, #Cells do
+				local Row = math.floor((I - 1) / Resolution)
+				local Col = (I - 1) % Resolution
+				local Val = ShowKE and Cells[I].KE or Cells[I].CE
+				if Val > 0 then
+					local T    = Max > 0 and (math.log(Val + 1) / math.log(Max + 1)) or 0
+					local Col2 = HSVToColor((1 - T) * 120, 1, 1)
+					surface.SetDrawColor(Col2.r, Col2.g, Col2.b, 180)
+					surface.DrawRect(Col * CellPx, Row * CellPx, CellPx, CellPx)
+				end
+			end
+
+			if HoverCell then
+				local Val   = ShowKE and HoverCell.KE or HoverCell.CE
+				local Label = string.format("%.1f mm", Val)
+				surface.SetFont("DermaDefault")
+				local TW, TH = surface.GetTextSize(Label)
+				local TipX = math.min(CursorX + 10, W - TW - 8)
+				local TipY = math.min(CursorY + 10, H - TH - 4)
+				surface.SetDrawColor(20, 20, 20, 220)
+				surface.DrawRect(TipX - 4, TipY - 2, TW + 8, TH + 4)
+				surface.SetTextColor(255, 255, 255, 255)
+				surface.SetTextPos(TipX, TipY)
+				surface.DrawText(Label)
+			end
+		end
+
+		local InfoLabel = ScanPanel:Add("DLabel")
+		InfoLabel:SetPos(20, ActualGrid + 58)
+		InfoLabel:SetSize(ActualGrid, 20)
+		InfoLabel:SetText("")
+
+		function Grid:OnCursorMoved(X, Y)
+			CursorX, CursorY = X, Y
+			local C = math.floor(X / CellPx)
+			local R = math.floor(Y / CellPx)
+			local I = R * Resolution + C + 1
+			HoverCell = Cells[I]
+			if HoverCell then
+				InfoLabel:SetText(string.format(
+					"Cell (%d, %d)  —  KE: %.1f mm  |  CE: %.1f mm",
+					C + 1, R + 1, HoverCell.KE, HoverCell.CE
+				))
+			end
+		end
+
+		function Grid:OnCursorExited()
+			HoverCell = nil
+			InfoLabel:SetText("")
+		end
+
+		local BtnY = ActualGrid + 82
+		local BtnW = 60
+		local BtnH = 26
+
+		local KEBtn = ScanPanel:Add("DButton")
+		KEBtn:SetText("KE")
+		KEBtn:SetPos(20, BtnY)
+		KEBtn:SetSize(BtnW, BtnH)
+		function KEBtn:DoClick() ShowKE = true end
+
+		local CEBtn = ScanPanel:Add("DButton")
+		CEBtn:SetText("CE")
+		CEBtn:SetPos(20 + BtnW + 8, BtnY)
+		CEBtn:SetSize(BtnW, BtnH)
+		function CEBtn:DoClick() ShowKE = false end
+
+		local MaxLabel = ScanPanel:Add("DLabel")
+		MaxLabel:SetPos(20 + BtnW * 2 + 20, BtnY + 4)
+		MaxLabel:SetSize(ActualGrid - BtnW * 2 - 20, 20)
+		MaxLabel:SetText(string.format("Max KE: %.1f mm  |  Max CE: %.1f mm", MaxKE, MaxCE))
+	end
+
+	local function DoArmorScan(Tool, InitialTrace)
+		local Messages   = ACF.Utilities.Messages
+		local Filter     = GetClassFilter()
+		local Resolution = math.Clamp(math.floor(Tool:GetClientNumber("scan_resolution")), 4, 64)
+		local ScanSize   = math.Clamp(Tool:GetClientNumber("scan_size"), 10, 10000)
+		local CellSize   = ScanSize / Resolution
+		local Dir        = GetTraceDir(Tool, InitialTrace)
+
+		local WorldUp = math.abs(Dir:Dot(Vector(0, 0, 1))) < 0.99 and Vector(0, 0, 1) or Vector(0, 1, 0)
+		local Right   = Dir:Cross(WorldUp):GetNormalized()
+		local Up      = Right:Cross(Dir):GetNormalized()
+
+		local HitPos = InitialTrace.HitPos
+
+		local BackTrace = util.TraceLine({
+			start  = HitPos,
+			endpos = HitPos - Dir * 2048,
+			filter = LocalPlayer(),
+			mask   = MASK_SOLID,
+		})
+		local CameraDistance = math.max(50, math.min(500, (BackTrace.HitPos - HitPos):Length() - 16))
+		local CameraPos      = HitPos - Dir * CameraDistance
+
+		Messages.PrintChat("Info", string.format(
+			"Running armor scan (%dx%d, %.0f in wide)...", Resolution, Resolution, ScanSize
+		))
+
+		local Cells        = {}
+		local MaxKE, MaxCE = 0, 0
+
+		for Row = 0, Resolution - 1 do
+			for Col = 0, Resolution - 1 do
+				local OffRight = (Col - (Resolution - 1) * 0.5) * CellSize
+				local OffUp    = ((Resolution - 1 - Row) - (Resolution - 1) * 0.5) * CellSize
+
+				local Target = HitPos + Right * OffRight + Up * OffUp
+				local RayDir = (Target - CameraPos):GetNormalized()
+
+				local StartTrace = util.TraceLine({
+					start  = CameraPos,
+					endpos = CameraPos + RayDir * 65536,
+					filter = LocalPlayer(),
+					mask   = MASK_SOLID,
+				})
+
+				local _, TotalKE, TotalCE = GetArmorLayers(StartTrace, RayDir, Filter)
+
+				if TotalKE > MaxKE then MaxKE = TotalKE end
+				if TotalCE > MaxCE then MaxCE = TotalCE end
+
+				Cells[#Cells + 1] = { KE = TotalKE, CE = TotalCE }
+			end
+		end
+
+		ScanViewParams = { Origin = CameraPos, Angles = Dir:Angle(), ScanSize = ScanSize, CameraDistance = CameraDistance }
+		ScanRTPending  = true
+		OpenArmorScanPanel(Resolution, Cells, MaxKE, MaxCE)
+
+		return false -- suppress toolgun effect so it doesn't appear in the RT capture
+	end
+
 	function TOOL:LeftClick(_) return true end
 	function TOOL:RightClick(_) return true end
 	function TOOL:Reload(Trace)
-		if self:GetOwner():KeyDown(IN_DUCK) then return DoRecursiveArmorTrace(self, Trace) end
-		return self:GetContraptionReadout(Trace, self:GetOwner():KeyDown(IN_SPEED))
+		local Owner       = self:GetOwner()
+		local Ctrl, Shift = Owner:KeyDown(IN_DUCK), Owner:KeyDown(IN_SPEED)
+		if Ctrl and Shift then return DoArmorScan(self, Trace) end
+		if Ctrl then return DoRecursiveArmorTrace(self, Trace) end
+		if Shift then return self:GetContraptionReadout(Trace, true) end
+		return self:GetContraptionReadout(Trace, false)
 	end
 
 	local function CreateArmorMeshMenu(Panel)
@@ -226,6 +422,16 @@ if CLIENT then
 
 		Menu:AddCheckBox("#tool.acfarmormesh.ignore_elevation", "acfarmormesh_ignore_elevation")
 		Menu:AddHelp("#tool.acfarmormesh.ignore_elevation_desc")
+
+		local ScanSection = Menu:AddCollapsible("#tool.acfarmormesh.armor_scan", false)
+
+		local ScanResolutionSlider = ScanSection:AddSlider("#tool.acfarmormesh.scan_resolution", 4, 64, 0)
+		ScanResolutionSlider:SetConVar("acfarmormesh_scan_resolution")
+		ScanSection:AddHelp("#tool.acfarmormesh.scan_resolution_desc")
+
+		local ScanSizeSlider = ScanSection:AddSlider("#tool.acfarmormesh.scan_size", 10, 10000, 0)
+		ScanSizeSlider:SetConVar("acfarmormesh_scan_size")
+		ScanSection:AddHelp("#tool.acfarmormesh.scan_size_desc")
 
 		local FilterSection = Menu:AddCollapsible("#tool.acfarmormesh.class_filter", false)
 		FilterSection:AddHelp("#tool.acfarmormesh.class_filter_desc")
@@ -401,6 +607,29 @@ if CLIENT then
 		render.DrawSphere(Pos, Radius, 20, 20, GreenSphere)
 		render.DrawWireframeSphere(Pos, Radius, 20, 20, GreenFrame, true)
 	end)
+
+	hook.Add("PostRender", "ACF_ArmorScan_BG", function()
+		if not ScanRTPending or not ScanViewParams or not ScanRT then return end
+		ScanRTPending = false
+
+		local Half = ScanViewParams.ScanSize * 0.5
+		local Ply  = LocalPlayer()
+		local FOV  = math.deg(2 * math.atan(Half / ScanViewParams.CameraDistance))
+
+		render.PushRenderTarget(ScanRT)
+		Ply:SetNoDraw(true)
+		render.RenderView({
+			origin        = ScanViewParams.Origin,
+			angles        = ScanViewParams.Angles,
+			x = 0, y = 0, w = ScanRT_Size, h = ScanRT_Size,
+			drawviewmodel = false,
+			fov           = FOV,
+			znear         = 1,
+			zfar          = 30000,
+		})
+		Ply:SetNoDraw(false)
+		render.PopRenderTarget()
+	end)
 elseif SERVER then
 	-- Stores the entity's convex materials as an entity modifier so they persist through duplication.
 	local function SaveConvexMaterials(Entity)
@@ -532,7 +761,11 @@ elseif SERVER then
 	end
 
 	function TOOL:Reload(Trace)
-		return self:GetContraptionReadout(Trace, self:GetOwner():KeyDown(IN_SPEED))
+		local Owner = self:GetOwner()
+		local Ctrl, Shift = Owner:KeyDown(IN_DUCK), Owner:KeyDown(IN_SPEED)
+		if Ctrl then return false end
+		if Shift then return self:GetContraptionReadout(Trace, true) end
+		return self:GetContraptionReadout(Trace, false)
 	end
 end
 
