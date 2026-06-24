@@ -282,92 +282,10 @@ do	-- Actual cost functions
 	end
 
 	--- Computes cost and breakdown given a list of entities
-	--- This is a near exact copy of the Cost object's Compute function, be sure to mirror any changes between them
 	function CostSystem.CalcCostsFromEnts(Ents)
 		if not next(Ents) then ACF.DumpStack("Attempted to compute cost without ent list") return 0, {} end
 
-		local EntsByClass	= {}
-
-		for _, ent in pairs(Ents) do
-			local Class = ent:GetClass()
-
-			if not EntsByClass[Class] then EntsByClass[Class] = {} end
-
-			EntsByClass[Class][ent] = true
-		end
-
-		local Cost			= 0
-		local Breakdown		= {}
-		local PostCalc		= {}
-
-		for class, entlist in pairs(EntsByClass) do
-			local C				= 0
-			local ClassCost 	= 0
-			local identifier	= CostSystem.CalcBulk[class]
-			local ignore		= false
-
-			if CostSystem.PostBulkOperations[identifier] then	-- Gather all of the entities that have post-calc costs
-				if not PostCalc[identifier] then PostCalc[identifier] = {} end
-
-				for ent in pairs(entlist) do
-					if not IsValid(ent) then continue end
-					table.insert(PostCalc[identifier], ent)
-				end
-			else
-				if CostSystem.CostSingle[class] then	-- Gather all of the entities with static costs, and just add it all together
-					ClassCost = (table.Count(entlist) * CostSystem.CostSingle[class])
-				elseif CostSystem.BulkOperations[identifier] then	-- Gather all of the entities with specific bulk costs, and run them individually
-					local op = CostSystem.BulkOperations[identifier]
-
-					local BulkCostAmtID = "**" .. string.upper(identifier)
-
-					for ent in pairs(entlist) do
-						if not IsValid(ent) then continue end
-
-						C = op(ent)
-
-						local BulkCostAmt = Breakdown[BulkCostAmtID] or 0
-
-						if C == nil then
-							ACF.Utilities.Messages.PrintLog("Warning", "Nil cost for entity: " .. tostring(ent))
-						else
-							ClassCost = ClassCost + C
-							Breakdown[BulkCostAmtID] = BulkCostAmt + C
-						end
-					end
-				else
-					for ent in pairs(entlist) do
-						if not IsValid(ent) then continue end
-						if not ent.GetCost then ignore = true break end
-
-						if not CostSystem.MainFilter[class] then CostSystem.RegisterClass(class) end
-
-						C = ent:GetCost()
-
-						if C == nil then
-							ACF.Utilities.Messages.PrintLog("Warning", "Nil cost for entity: " .. tostring(ent))
-						else
-							ClassCost = ClassCost + C
-						end
-					end
-				end
-
-				Cost = Cost + ClassCost
-				if not ignore then Breakdown[class] = ClassCost end
-			end
-		end
-
-		for identifier, entlist in pairs(PostCalc) do
-			local op = CostSystem.PostBulkOperations[identifier]
-
-			local C = op(entlist)
-
-			Cost = Cost + C
-
-			Breakdown["**" .. string.upper(identifier)] = C
-		end
-
-		return Cost, Breakdown
+		return CostSystem.CalcCostsFromContraption(ACF.EntitiesToPseudoContraption(Ents))
 	end
 end
 

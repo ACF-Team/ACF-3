@@ -838,59 +838,39 @@ do -- Contraption Readout
 	local Contraption = ACF.Contraption
 	local Messages    = ACF.Utilities.Messages
 
-	-- Emulates the stuff done by ACF.CalcMassRatio except with a given set of entities
+	-- Filters a raw entity list into a pseudo-contraption and delegates tally/mass work to CalcMassRatioFromContraption.
+	-- Owner tracking stays here because it has no equivalent in the shared contraption path.
 	local function ProcessList(Entities)
-		local SeenConstraints, Owners, SeenOwners = {}, {}, {}
-		local OwnerNum, Power, Fuel, PhysNum, ParNum, ConNum, OtherNum, Total, PhysTotal = 0, 0, 0, 0, 0, 0, 0, 0, 0
+		local ValidEnts  = {}
+		local ValidCount = 0
+		local OtherNum   = 0
+		local SeenOwners = {}
+		local Owners     = {}
+		local OwnerNum   = 0
 
 		for _, Ent in ipairs(Entities) do
 			if not ACF.Check(Ent) then
-				if not Ent:IsWeapon() then OtherNum = OtherNum + 1 end -- We don't want to count weapon entities
-			elseif not (Ent:IsPlayer() or Ent:IsNPC() or Ent:IsNextBot()) then -- These will pass the ACF check, but we don't want them either
-				local Owner   = Ent:CPPIGetOwner() or game.GetWorld()
-				local PhysObj = Ent.ACF.PhysObj
-				local Class   = Ent:GetClass()
-				local Mass    = PhysObj:GetMass()
-				local IsPhys  = false
+				if not Ent:IsWeapon() then OtherNum = OtherNum + 1 end
+			elseif not (Ent:IsPlayer() or Ent:IsNPC() or Ent:IsNextBot()) then
+				ValidCount            = ValidCount + 1
+				ValidEnts[ValidCount] = Ent
+
+				local Owner = Ent:CPPIGetOwner() or game.GetWorld()
 
 				if (IsValid(Owner) or Owner:IsWorld()) and not SeenOwners[Owner] then
-					local Name = Owner:GetName()
-					OwnerNum = OwnerNum + 1
-					Owners[OwnerNum] = Name ~= "" and Name or "World"
-					SeenOwners[Owner] = true
+					local Name           = Owner:GetName()
+					OwnerNum             = OwnerNum + 1
+					Owners[OwnerNum]     = Name ~= "" and Name or "World"
+					SeenOwners[Owner]    = true
 				end
-
-				if Class == "acf_engine" then Power = Power + Ent.PeakPower * ACF.KwToHp
-				elseif Class == "acf_fueltank" then Fuel = Fuel + Ent.Capacity end
-
-				-- If it has any valid constraint then it's a physical entity
-				for _, Con in pairs(Ent.Constraints or {}) do
-					if IsValid(Con) and Con.Type ~= "NoCollide" then -- Nocollides don't count
-						IsPhys = true
-						if not SeenConstraints[Con] then
-							SeenConstraints[Con] = true
-							ConNum = ConNum + 1
-						end
-					end
-				end
-
-				-- If it has no valid constraints but also no valid parent, then it's a physical entity
-				if not (IsPhys or IsValid(Ent:GetParent())) then IsPhys = true end
-
-				if IsPhys then
-					PhysTotal = PhysTotal + Mass
-					PhysNum = PhysNum + 1
-				else
-					ParNum = ParNum + 1
-				end
-
-				Total = Total + Mass
 			end
 		end
 
+		local PseudoCon = ACF.EntitiesToPseudoContraption(ValidEnts)
+		local Power, Fuel, PhysNum, ParNum, ConNum, ExtraOther, Total, PhysTotal = Contraption.CalcMassRatioFromContraption(PseudoCon, true)
 		local Name = next(Owners) and table.concat(Owners, ", ") or "None"
 
-		return Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum, Total, PhysTotal
+		return Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum + ExtraOther, Total, PhysTotal
 	end
 
 	local Modes = {
