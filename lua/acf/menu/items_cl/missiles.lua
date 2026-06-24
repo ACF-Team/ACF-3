@@ -102,7 +102,7 @@ local function CreateMenu(Menu)
 
 		ACF.LoadSortedList(MissileList, Data.Items, "Caliber", "Model")
 
-		AmmoList:LoadEntries(Data.ID)
+		AmmoList:LoadEntries(Data:GetType())
 	end
 
 	function MissileList:OnSelect(Index, _, Data)

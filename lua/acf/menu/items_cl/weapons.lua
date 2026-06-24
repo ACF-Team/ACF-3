@@ -18,7 +18,7 @@ local function UpdatePreview(Base, Data)
 	Preview:UpdateSettings(Data.Preview)
 
 	-- Set scale to 1 if Weapon exists (non scaled lmao), or relative caliber otherwise
-	local Scale   = Weapon and 1 or (Caliber / Class.Caliber.Base * (Class.ScaleFactor or 1))
+	local Scale   = Weapon and 1 or (Caliber / Class.CaliberLimits.Base * (Class.ScaleFactor or 1))
 	local Preview = Base.Preview
 
 	Preview:SetModelScale(Scale, true)
@@ -38,10 +38,10 @@ local function UpdateControl(Base)
 	end
 
 	if IsScalable then
-		local Bounds  = Class.Caliber
+		local Bounds  = Class.CaliberLimits
 		local Caliber = ACF.GetClientNumber("Caliber", Bounds.Base)
 
-		ACF.SetClientData("Weapon", Class.ID)
+		ACF.SetClientData("Weapon", Classes.GetTypeName(Class:GetType()))
 		ACF.SetClientData("Caliber", Caliber, true)
 
 		Base.Slider:SetMinMax(Bounds.Min, Bounds.Max)
@@ -67,7 +67,7 @@ CreateControl = function(Base)
 	end
 
 	if IsScalable then -- Scalable
-		local Bounds = Current.Class.Caliber
+		local Bounds = Current.Class.CaliberLimits
 		-- Set default caliber value before creating the slider to prevent nil value errors
 		local DefaultCaliber = ACF.GetClientNumber("Caliber", Bounds.Base)
 		ACF.SetClientData("Caliber", DefaultCaliber, true)
@@ -104,7 +104,7 @@ CreateControl = function(Base)
 			Current.Weapon  = Data
 			Current.Caliber = Data.Caliber
 
-			ACF.SetClientData("Weapon", Data.ID)
+			ACF.SetClientData("Weapon", Classes.GetTypeName(Data:GetType()))
 			ACF.SetClientData("Caliber", Data.Caliber)
 
 			Title:SetText(Data.Name)
@@ -182,14 +182,21 @@ local function GetMass(_, Caliber, Class, Weapon)
 		return 0
 	end
 
-	local Scale  = Caliber / Class.Caliber.Base
+	local Scale  = Caliber / Class.CaliberLimits.Base
 	local Scaled = ModelData.GetModelVolume(Model, Scale)
 
 	return math.Round(Class.Mass * Scaled / Base)
 end
 
 local function CreateMenu(Menu)
-	local Entries = Classes.GetSubtypes("ACF.Guns.BaseGun") -- This menu name is a lie!!! It only has guns (we probably should fix that, but thats more effort than its worth right now)
+	local Subtypes = Classes.GetSubtypes("ACF.Guns.BaseGun") -- This menu name is a lie!!! It only has guns (we probably should fix that, but thats more effort than its worth right now)
+	local Entries = {}
+
+	for ID, Type in pairs(Subtypes) do
+		if Type.IsWeapon and not Type.IsWeaponOption then
+			Entries[ID] = Type
+		end
+	end
 
 	Menu:AddTitle("#acf.menu.weapons.settings")
 
@@ -230,7 +237,7 @@ local function CreateMenu(Menu)
 
 		ClassDesc:SetText(Data.Description)
 
-		AmmoList:LoadEntries(Data.ID)
+		AmmoList:LoadEntries(Data:GetType())
 
 		BreechIndex:Clear()
 		if Data.BreechConfigs then

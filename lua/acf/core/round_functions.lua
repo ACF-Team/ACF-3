@@ -11,7 +11,7 @@ local function GetClassWeaponSpecs(Class, ToolData)
 
 	local Field   = Classes.GetTypeFieldByName(Class, "Caliber")
 	local Bounds  = Field and Field.Options or {}
-	local Base    = Class.BaseCaliber or Bounds.Default or 1
+	local Base    = Class.CaliberLimits and Class.CaliberLimits.Base or 1
 	local Caliber = math.Clamp(tonumber(ToolData.Caliber) or Base, Bounds.Min or Base, Bounds.Max or Base)
 	local Scale   = Caliber / Base
 
@@ -28,9 +28,7 @@ local function GetLegacyWeaponSpecs(ToolData)
 	local NewClass = isstring(ToolData.Weapon) and Classes.GetTypeByName(ToolData.Weapon)
 	if NewClass then return GetClassWeaponSpecs(NewClass, ToolData) end
 
-	local Source = Classes[ToolData.Destiny]
-	local Class  = Classes.GetGroup(Source, ToolData.Weapon)
-
+	local Class = ACF.Classes.GetSubtypeByName("ACF.Weapons.BaseWeapon", ToolData.Weapon)
 	if not Class then return end
 
 	local Result = {
@@ -51,7 +49,7 @@ local function GetLegacyWeaponSpecs(ToolData)
 		Result.ProjLength = Round.ProjLength
 		Result.Efficiency = Round.Efficiency
 	else
-		local Bounds  = Class.Caliber
+		local Bounds  = Class.CaliberLimits
 		local Round   = Class.Round
 		local Caliber = math.Clamp(ToolData.Caliber or Bounds.Base, Bounds.Min, Bounds.Max)
 		local Scale   = Caliber / Bounds.Base
@@ -218,7 +216,7 @@ function ACF.GetWeaponValue(Key, Caliber, Class, Weapon)
 	if not istable(Values) then return Values end
 	if not isnumber(Caliber) then return end
 
-	local Bounds  = Class.Caliber
+	local Bounds  = Class.CaliberLimits
 	local Percent = (Caliber - Bounds.Min) / (Bounds.Max - Bounds.Min)
 
 	return Lerp(Percent, Values.Min, Values.Max)

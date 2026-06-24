@@ -24,13 +24,13 @@ local GraphRedAlt = Color(255, 65, 65)
 ---Gets a key-value table of all the ammo type objects a given weapon class can make use of.
 ---@param Class string The ammo type ID that will be checked.
 ---@return table<string, table> Result The ammo type objects said weapon class can use.
-local function GetAmmoList(Class)
+local function GetAmmoList(WeaponType)
 	local Entries = Classes.GetSubtypes("ACF.Ammunition.BaseAmmo")
 	local Result  = {}
 
 	for K, V in pairs(Entries) do
 		if V.Unlistable then continue end
-		if V.Blacklist[Class] then continue end
+		if V.Blacklist[Classes.GetTypeName(WeaponType)] then continue end
 
 		Result[K] = V
 	end
@@ -869,8 +869,8 @@ function ACF.CreateAmmoMenu(Menu)
 		end
 	end
 	]]--
-	function List:LoadEntries(Class)
-		ACF.LoadSortedList(self, GetAmmoList(Class), "Name", "SpawnIcon")
+	function List:LoadEntries(WeaponType)
+		ACF.LoadSortedList(self, GetAmmoList(WeaponType), "Name", "SpawnIcon")
 
 		-- Update shape selector visibility based on whether weapon is automatic
 		UpdateShapeSelector(Menu)
