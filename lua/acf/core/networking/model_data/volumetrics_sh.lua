@@ -202,6 +202,100 @@ do
     end)
 end
 
+-- Networking: sends per-entity convex materials to clients when they look at a new contraption.
+do
+    local ArmorTypes         = ACF.Classes.ArmorTypes
+    local ArmorTypeByIndex   = {} -- index (1-based int) -> armor type ID string
+    local ArmorTypeIndexByID = {} -- armor type ID string -> index (1-based int)
+    local MAX_CONVEXES       = 5  -- bits for the convex count field
+    local MAX_MATERIALS      = 5  -- bits for the material index field
+
+    -- Built once after all armor types are registered; neither table changes after this.
+    hook.Add("ACF_OnLoadAddon", "ACF_BuildArmorTypeIndex", function()
+        local List = ArmorTypes.GetList()
+        table.sort(List, function(A, B) return A.ID < B.ID end)
+
+        for I, Entry in ipairs(List) do
+            ArmorTypeByIndex[I]       = Entry.ID
+            ArmorTypeIndexByID[Entry.ID] = I
+        end
+    end)
+
+    if SERVER then
+        util.AddNetworkString("ACF_EntityMaterials")
+        util.AddNetworkString("ACF_ContraptionMaterials_Request")
+
+        -- Tracks the last-seen contraption/entity per player to avoid redundant sends.
+        local PlayerLastToken = {}
+
+        hook.Add("PlayerDisconnected", "ACF_ClearPlayerLastToken", function(Player)
+            PlayerLastToken[Player] = nil
+        end)
+
+        -- Sends the convex materials of a single entity to a player.
+        -- Writes a uint5 convex count followed by a uint5 armor type index per convex.
+        function ACF.NetworkEntityMaterials(Entity, Player)
+            local MeshData = Entity.ACF_Volumetric_Mesh
+            if not MeshData then return end
+
+            local Convexes = MeshData.Convexes
+            local Count    = math.min(#Convexes, 31)
+
+            net.Start("ACF_EntityMaterials")
+            net.WriteUInt(Entity:EntIndex(), MAX_EDICT_BITS)
+            net.WriteUInt(Count, MAX_CONVEXES)
+            for I = 1, Count do
+                local Material = Convexes[I].Material or "Default"
+                net.WriteUInt(ArmorTypeIndexByID[Material] or ArmorTypeIndexByID["Default"] or 1, MAX_MATERIALS)
+            end
+            net.Send(Player)
+        end
+
+        net.Receive("ACF_ContraptionMaterials_Request", function(_, Player)
+            local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
+            local Ent      = Entity(EntIndex)
+            if not IsValid(Ent) then return end
+
+            local Contraption = Ent:CFW_GetContraption()
+            local Token       = Contraption or Ent
+
+            if PlayerLastToken[Player] == Token then return end
+            PlayerLastToken[Player] = Token
+
+            if Contraption then
+                for ContraptionEnt in pairs(Contraption.ents) do
+                    ACF.NetworkEntityMaterials(ContraptionEnt, Player)
+                end
+            else
+                ACF.NetworkEntityMaterials(Ent, Player)
+            end
+        end)
+    end
+
+    if CLIENT then
+        hook.Add("ACF_RenderContext_LookAtChanged", "ACF_NetworkContraptionMaterials", function(_, New)
+            if not IsValid(New) then return end
+            net.Start("ACF_ContraptionMaterials_Request")
+            net.WriteUInt(New:EntIndex(), MAX_EDICT_BITS)
+            net.SendToServer()
+        end)
+
+        net.Receive("ACF_EntityMaterials", function()
+            local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
+            local Count    = net.ReadUInt(MAX_CONVEXES)
+            local Ent      = Entity(EntIndex)
+            local Valid    = IsValid(Ent)
+
+            for I = 1, Count do
+                local MatIndex = net.ReadUInt(MAX_MATERIALS)
+                if Valid then
+                    ACF.SetConvexMaterial(Ent, I, ArmorTypeByIndex[MatIndex] or "Default")
+                end
+            end
+        end)
+    end
+end
+
 -- Returns a sorted list of { Pos, Normal, ConvexIndex, T } for every triangle the ray pierces.
 -- Verts are stored in local space, so Entity is required to transform them into world space.
 -- Filter (optional) is a per-entity set { [ConvexID] = true } of convexes to treat as transparent
