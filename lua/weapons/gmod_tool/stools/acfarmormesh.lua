@@ -41,6 +41,8 @@ if CLIENT then
 	CreateClientConVar("acfarmormesh_ignore_elevation", 0, false, true, "", 0, 1)
 	CreateClientConVar("acfarmormesh_scan_resolution", 16, false, true, "", 4, 64)
 	CreateClientConVar("acfarmormesh_scan_size", 160, false, true, "", 10, 10000)
+	local ScanPen           = CreateClientConVar("acfarmormesh_scan_pen", 100, false, true, "", 0, 1500)
+	local ScanTransparency  = CreateClientConVar("acfarmormesh_scan_transparency", 50, false, true, "", 0, 100)
 
 	local ScanViewParams
 	local ScanRTPending = false
@@ -189,8 +191,8 @@ if CLIENT then
 		ScanPanel:SetSizable(true)
 
 		local ShowKE       = true
-		local QueryPen     = 100
-		local OverlayAlpha = 50
+		local QueryPen     = ScanPen:GetInt()
+		local OverlayAlpha = ScanTransparency:GetInt()
 		local CursorX, CursorY, HoverCell
 
 		local BtnW = 60
@@ -233,11 +235,14 @@ if CLIENT then
 		local PenSlider = SlidersPanel:Add("DNumSlider")
 		PenSlider:SetText("Pen (mm)")
 		PenSlider:SetMin(0)
-		PenSlider:SetMax(1000)
+		PenSlider:SetMax(1500)
 		PenSlider:SetDecimals(0)
 		PenSlider:SetValue(QueryPen)
 		PenSlider.Label:SetDark(true)
-		function PenSlider:OnValueChanged(Val) QueryPen = Val end
+		function PenSlider:OnValueChanged(Val)
+			QueryPen = Val
+			RunConsoleCommand("acfarmormesh_scan_pen", Val)
+		end
 
 		local AlphaSlider = SlidersPanel:Add("DNumSlider")
 		AlphaSlider:SetText("Transparency (%)")
@@ -246,7 +251,10 @@ if CLIENT then
 		AlphaSlider:SetDecimals(0)
 		AlphaSlider:SetValue(OverlayAlpha)
 		AlphaSlider.Label:SetDark(true)
-		function AlphaSlider:OnValueChanged(Val) OverlayAlpha = Val end
+		function AlphaSlider:OnValueChanged(Val)
+			OverlayAlpha = Val
+			RunConsoleCommand("acfarmormesh_scan_transparency", Val)
+		end
 
 		function SlidersPanel:PerformLayout(W, H)
 			local SliderW = (W - 8) / 2
