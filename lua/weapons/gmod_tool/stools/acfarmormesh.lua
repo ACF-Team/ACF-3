@@ -219,9 +219,7 @@ if CLIENT then
 				if Val > 0 then
 					local Hue
 					if QueryPen > 0 then
-						local Scale = math.max(QueryPen * 0.5, 50)
-						local T = math.tanh((Val - QueryPen) / Scale)
-						Hue = (1 - T) * 60  -- [-1,1] → [120°,0°] = green → yellow → red
+						Hue = Val < QueryPen and 120 or 0  -- green = penetrable, red = impenetrable
 					else
 						Hue = (1 - (Max > 0 and math.log(Val + 1) / math.log(Max + 1) or 0)) * 120
 					end
