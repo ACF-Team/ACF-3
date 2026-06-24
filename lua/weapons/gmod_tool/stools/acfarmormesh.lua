@@ -180,12 +180,10 @@ if CLIENT then
 		if IsValid(ScanPanel) then ScanPanel:Remove() end
 
 		local ActualGrid = math.max(2, math.floor(512 / Resolution)) * Resolution
-		local FrameW     = ActualGrid + 40
-		local FrameH     = ActualGrid + 130
 
 		ScanPanel = vgui.Create("DFrame")
 		ScanPanel:SetTitle("Armor Scan (" .. Resolution .. "x" .. Resolution .. ")")
-		ScanPanel:SetSize(FrameW, FrameH)
+		ScanPanel:SetSize(ActualGrid, ActualGrid + 82)
 		ScanPanel:Center()
 		ScanPanel:MakePopup()
 		ScanPanel:SetSizable(true)
@@ -259,6 +257,7 @@ if CLIENT then
 		end
 
 		local Grid = ScanPanel:Add("DPanel")
+		Grid:Dock(FILL)
 		Grid:SetMouseInputEnabled(true)
 
 		function Grid:Paint(W, H)
@@ -328,13 +327,11 @@ if CLIENT then
 			InfoLabel:SetText("")
 		end
 
-		local OldLayout = ScanPanel.PerformLayout
-		function ScanPanel:PerformLayout(W, H)
-			if OldLayout then OldLayout(self, W, H) end
-			local _, CtrlY = ControlsPanel:GetPos()
-			local SqSize   = math.min(W, CtrlY - 24)
-			Grid:SetPos(0, 24)
-			Grid:SetSize(SqSize, SqSize)
+		function ScanPanel:OnSizeChanged(W, H)
+			local Overhead = 24 + ControlsPanel:GetTall()
+			if H ~= W + Overhead then
+				self:SetSize(W, W + Overhead)
+			end
 		end
 	end
 
