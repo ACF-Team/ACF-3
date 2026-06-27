@@ -1,6 +1,6 @@
 -- Please see lua\acf\menu\tool_functions.lua for more information on how this ACF tool works
 local ACF        = ACF
-local Entities   = ACF.Classes.Entities
+local Entities   = ACF.Entities
 local Messages   = ACF.Utilities.Messages
 local CopiedData = {}
 local Disabled   = {}

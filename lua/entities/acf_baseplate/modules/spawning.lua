@@ -2,12 +2,10 @@ local ACF      		= ACF
 local Notify        = ACF.Utilities.Notify
 local Con = ACF.Contraption
 
-function ENT.ACF_OnVerifyClientData(ClientData)
-	ClientData.Size = Vector(ClientData.Length, ClientData.Width, ClientData.Thickness)
-end
-
-function ENT:ACF_PostUpdateEntityData(ClientData)
-	self:SetSize(ClientData.Size)
+function ENT:ACF_PostUpdateEntityData()
+	self.BaseplateSize = Vector(self:ACF_GetUserVar("Length"), self:ACF_GetUserVar("Width"), self:ACF_GetUserVar("Thickness"))
+	self:SetSize(self.BaseplateSize)
+	print(self.BaseplateSize, self:GetSize())
 	local BPTypeInst = self:ACF_GetUserVar("BaseplateType")
 	if BPTypeInst and BPTypeInst.OnInitialize then
 		BPTypeInst:OnInitialize(self)

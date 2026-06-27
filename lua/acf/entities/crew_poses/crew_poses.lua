@@ -1,33 +1,34 @@
 local ACF     = ACF
-local CrewPoses = ACF.Classes.CrewPoses
+local Classes = ACF.Classes
 
+Classes.DefineClass("ACF.CrewPoses.BaseCrewPose", function() end)
 
-CrewPoses.Register("walk_camera", {
-	Name = "Camera Walk",
-	Position = Vector(0, -6, 1),
-	Angle = Angle(0, 90, 0),
-})
+Classes.DefineClass("ACF.CrewPoses.WalkCamera", "ACF.CrewPoses.BaseCrewPose", function()
+	CLASS.Name = "Camera Walk"
+	CLASS.Position = Vector(0, -6, 1)
+	CLASS.Angle = Angle(0, 90, 0)
+end)
 
-CrewPoses.Register("walk_dual", {
-	Name = "Dual Walk",
-	Position = Vector(0, -6, 1),
-	Angle = Angle(0, 90, 0),
-})
+Classes.DefineClass("ACF.CrewPoses.WalkDual", "ACF.CrewPoses.BaseCrewPose", function()
+	CLASS.Name = "Dual Walk"
+	CLASS.Position = Vector(0, -6, 1)
+	CLASS.Angle = Angle(0, 90, 0)
+end)
 
-CrewPoses.Register("walk_all", {
-	Name = "All Walk",
-	Position = Vector(0, -6, 1),
-	Angle = Angle(0, 90, 0),
-})
+Classes.DefineClass("ACF.CrewPoses.WalkAll", "ACF.CrewPoses.BaseCrewPose", function()
+	CLASS.Name = "All Walk"
+	CLASS.Position = Vector(0, -6, 1)
+	CLASS.Angle = Angle(0, 90, 0)
+end)
 
-CrewPoses.Register("sit_rollercoaster", {
-	Name = "Rollercoaster Sit",
-	Position = Vector(0, -20, 20),
-	Angle = Angle(0, 90, 0),
-})
+Classes.DefineClass("ACF.CrewPoses.SitRollercoaster", "ACF.CrewPoses.BaseCrewPose", function()
+	CLASS.Name = "Rollercoaster Sit"
+	CLASS.Position = Vector(0, -20, 20)
+	CLASS.Angle = Angle(0, 90, 0)
+end)
 
-CrewPoses.Register("sit_camera", {
-	Name = "Camera Sit",
-	Position = Vector(0, -20, 16),
-	Angle = Angle(0, 90, 0),
-})
+Classes.DefineClass("ACF.CrewPoses.SitCamera", "ACF.CrewPoses.BaseCrewPose", function()
+	CLASS.Name = "Camera Sit"
+	CLASS.Position = Vector(0, -20, 16)
+	CLASS.Angle = Angle(0, 90, 0)
+end)

@@ -1,68 +1,66 @@
 local ACF     = ACF
-local Engines = ACF.Classes.Engines
-
-
-Engines.Register("V2", {
-	Name = "V-Twin Engine",
-})
+local Classes = ACF.Classes
+Classes.DefineClass("ACF.Engines.V2", "ACF.Engines.BaseEngine", function()
+	CLASS.Name = "V-Twin Engine"
+end)
 
 do -- Petrol Engines
-	Engines.RegisterItem("0.6-V2", "V2", {
-		Name		 = "600cc V-Twin",
-		Description	 = "#acf.descs.engines.v2.0_6",
-		Model		 = "models/engines/v-twins2.mdl",
-		Sound		 = "acf_base/engines/vtwin_small.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "GenericPetrol",
-		Mass		 = 30,
-		Torque		 = 62,
-		FlywheelMass = 0.01,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.0.6-V2", "ACF.Engines.V2", function()
+		CLASS.Name		 = "600cc V-Twin"
+		CLASS.Description	 = "#acf.descs.engines.v2.0_6"
+		CLASS.Model		 = "models/engines/v-twins2.mdl"
+		CLASS.Sound		 = "acf_base/engines/vtwin_small.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
+		CLASS.Mass		 = 30
+		CLASS.Torque		 = 62
+		CLASS.FlywheelMass = 0.01
+		CLASS.RPM = {
 			Idle	= 900,
 			Limit	= 7000,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 115,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("1.2-V2", "V2", {
-		Name		 = "1200cc V-Twin",
-		Description	 = "#acf.descs.engines.v2.1_2",
-		Model		 = "models/engines/v-twinm2.mdl",
-		Sound		 = "acf_base/engines/vtwin_medium.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "GenericPetrol",
-		Mass		 = 50,
-		Torque		 = 106,
-		FlywheelMass = 0.02,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.1.2-V2", "ACF.Engines.V2", function()
+		CLASS.Name		 = "1200cc V-Twin"
+		CLASS.Description	 = "#acf.descs.engines.v2.1_2"
+		CLASS.Model		 = "models/engines/v-twinm2.mdl"
+		CLASS.Sound		 = "acf_base/engines/vtwin_medium.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
+		CLASS.Mass		 = 50
+		CLASS.Torque		 = 106
+		CLASS.FlywheelMass = 0.02
+		CLASS.RPM = {
 			Idle	= 725,
 			Limit	= 6250,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 115,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("2.4-V2", "V2", {
-		Name		 = "2400cc V-Twin",
-		Description	 = "#acf.descs.engines.v2.2_4",
-		Model		 = "models/engines/v-twinl2.mdl",
-		Sound		 = "acf_base/engines/vtwin_large.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "GenericPetrol",
-		Mass		 = 100,
-		Torque		 = 200,
-		FlywheelMass = 0.075,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.2.4-V2", "ACF.Engines.V2", function()
+		CLASS.Name		 = "2400cc V-Twin"
+		CLASS.Description	 = "#acf.descs.engines.v2.2_4"
+		CLASS.Model		 = "models/engines/v-twinl2.mdl"
+		CLASS.Sound		 = "acf_base/engines/vtwin_large.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
+		CLASS.Mass		 = 100
+		CLASS.Torque		 = 200
+		CLASS.FlywheelMass = 0.075
+		CLASS.RPM = {
 			Idle	= 900,
 			Limit	= 6000,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 115,
-		},
-	})
+		}
+	end)
 end
 
 ACF.SetCustomAttachment("models/engines/v-twinl2.mdl", "driveshaft", Vector(), Angle(0, 90, 90))

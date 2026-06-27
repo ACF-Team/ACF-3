@@ -1,8 +1,8 @@
 
 if CLIENT then return end
 
-local Classes    = ACF.Classes
-local Entities   = Classes.Entities
+local Entities   = ACF.Entities or {}
+ACF.Entities = Entities
 
 do -- Spawning and updating
 	local undo = undo
@@ -19,7 +19,7 @@ do -- Spawning and updating
 	function Entities.Spawn(Class, Player, Position, Angles, Data, NoUndo)
 		if not isstring(Class) then return false end
 
-		local Entity = hook.Run("ACF_TemporaryHook_InstantiateEntity", Class, Player, Position, Angles, Data)
+		local Entity = Entities.DoSpawnInternal(Class, Player, Position, Angles, Data)
 		if not IsValid(Entity) then return false, "The spawn function for " .. Class .. " didn't return an entity." end
 
 		Entity:CPPISetOwner(Player)

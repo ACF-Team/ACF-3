@@ -1,5 +1,5 @@
 local Classes  = ACF.Classes
-local Entities = Classes.Entities
+local Entities = ACF.Entities
 
 local Defaults = {
 	acf_radar    = "ACF.Sensors.Radar.Targeting.SmallDirectional",

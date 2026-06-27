@@ -2,7 +2,7 @@ DEFINE_BASECLASS("acf_container")
 
 ENT.ACF_Limit = 4
 
-ACF.AutoRegisterV2(function()
+ACF.Entities.AutoRegisterV2(function()
 	MENU_FIELD("Number", "SupplySizeX", {Min = ACF.ContainerMinSize or 6, Max = ACF.ContainerMaxSize or 96, Default = 24, Decimals = 0})
 	MENU_FIELD("Number", "SupplySizeY", {Min = ACF.ContainerMinSize or 6, Max = ACF.ContainerMaxSize or 96, Default = 24, Decimals = 0})
 	MENU_FIELD("Number", "SupplySizeZ", {Min = ACF.ContainerMinSize or 6, Max = ACF.ContainerMaxSize or 96, Default = 24, Decimals = 0})

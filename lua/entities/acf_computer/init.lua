@@ -4,7 +4,6 @@ AddCSLuaFile("cl_init.lua")
 
 include("shared.lua")
 
-local hook      = hook
 local ACF       = ACF
 local Contraption	= ACF.Contraption
 local Damage    = ACF.Damage
@@ -92,35 +91,46 @@ end
 
 do -- Spawn and update function
 	local Classes    = ACF.Classes
-	local WireIO     = Utilities.WireIO
-	local Components = Classes.Components
-	local Entities   = Classes.Entities
 	local Inputs     = {}
 	local Outputs    = { "Entity (The computer itself.) [ENTITY]" }
 
-	local function VerifyData(Data)
-		if not Data.Computer then
-			Data.Computer = Data.Component or Data.Id
-		end
+	ENT.ACF_StaticWireInputs  = Inputs
+	ENT.ACF_StaticWireOutputs = Outputs
 
-		local Class = Classes.GetGroup(Components, Data.Computer)
+	-- Components are V2 classes (ACF.Components.*) with no CLASS.ID; addressed by FQN suffix.
+	local function GetComponentClass(ID)
+		local Direct = Classes.GetSubtypeByName("ACF.Components.BaseComponent", ID)
+		if Direct then return Direct end
 
-		if not Class or Class.Entity ~= "acf_computer" then
-			Data.Computer = "CPR-LSR"
-
-			Class = Classes.GetGroup(Components, "CPR-LSR")
-		end
-
-		do -- External verifications
-			if Class.VerifyData then
-				Class.VerifyData(Data, Class)
-			end
-
-			hook.Run("ACF_OnVerifyData", "acf_computer", Data, Class)
+		for _, Class in ipairs(Classes.GetSubtypesAsList("ACF.Components.BaseComponent")) do
+			if Classes.GetTypeName(Class):match("[^.]+$") == ID then return Class end
 		end
 	end
 
-	local function UpdateComputer(Entity, Data, Class, Computer)
+	local function ComponentShortID(Class)
+		return Classes.GetTypeName(Class):match("[^.]+$")
+	end
+
+	-- Resolve the component class and run its class-level verify (runs on raw client/dupe data).
+	function ENT.ACF_OnVerifyClientData(ClientData)
+		-- The shared components menu writes the selected item to "Component"; the entity field is "Computer".
+		ClientData.Computer = ClientData.Computer or ClientData.Component
+
+		local ID = ClientData.Computer
+		if istable(ID) then ID = ID.Type end
+
+		local Class = GetComponentClass(ID) or Classes.GetTypeByName("ACF.Components.LaserGuidanceComputer")
+		if Class and Class.VerifyData then Class.VerifyData(ClientData, Class) end
+	end
+
+	function ENT.ACF_CheckSpawnLimit(Player)
+		return Player:CheckLimit("_acf_computer")
+	end
+
+	local function UpdateComputer(Entity)
+		local Computer = Entity:GetComputer()
+		local Class    = Classes.GetBaseClass(Computer:GetType())
+
 		Entity.ACF = Entity.ACF or {}
 
 		Contraption.SetModel(Entity, Computer.Model)
@@ -128,149 +138,80 @@ do -- Spawn and update function
 		Entity:PhysicsInit(SOLID_VPHYSICS)
 		Entity:SetMoveType(MOVETYPE_VPHYSICS)
 
-		if Entity.OnLast then
-			Entity:OnLast()
-		end
+		local ComputerID = ComponentShortID(Computer)
 
-		-- Storing all the relevant information on the entity for duping
-		for _, V in ipairs(Entity.DataStore) do
-			Entity[V] = Data[V]
-		end
-
+		-- The component item inherits its group's handlers, so a single lookup covers both.
+		Entity.Computer     = ComputerID
 		Entity.Name         = Computer.Name
-		Entity.ShortName    = Entity.Computer
-		Entity.EntType      = Class.Name
+		Entity.ShortName    = ComputerID
+		Entity.EntType      = Class and Class.Name or Computer.Name
 		Entity.ClassData    = Class
-		Entity.OnUpdate     = Computer.OnUpdate or Class.OnUpdate
-		Entity.OnLast       = Computer.OnLast or Class.OnLast
-		Entity.OverlayTitle = Computer.OnOverlayTitle or Class.OnOverlayTitle
-		Entity.OverlayBody  = Computer.OnOverlayBody or Class.OnOverlayBody
-		Entity.OnDamaged    = Computer.OnDamaged or Class.OnDamaged
-		Entity.OnEnabled    = Computer.OnEnabled or Class.OnEnabled
-		Entity.OnDisabled   = Computer.OnDisabled or Class.OnDisabled
-		Entity.OnThink      = Computer.OnThink or Class.OnThink
+		Entity.OnUpdate     = Computer.OnUpdate
+		Entity.OnLast       = Computer.OnLast
+		Entity.OverlayTitle = Computer.OnOverlayTitle
+		Entity.OverlayBody  = Computer.OnOverlayBody
+		Entity.OnDamaged    = Computer.OnDamaged
+		Entity.OnEnabled    = Computer.OnEnabled
+		Entity.OnDisabled   = Computer.OnDisabled
+		Entity.OnThink      = Computer.OnThink
 
-		WireIO.SetupInputs(Entity, Inputs, Data, Class, Computer)
-		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Computer)
+		-- Wire IO is (re)built by AutoRegisterV2's ACF_SetupWireFunctions after this runs (see ACF_SetupWireIO).
 
 		Entity:SetNWString("WireName", "ACF " .. Computer.Name)
-		Entity:SetNW2String("ID", Entity.Computer)
+		Entity:SetNW2String("ID", ComputerID)
 
 		ACF.Activate(Entity, true)
 
 		Contraption.SetMass(Entity, Computer.Mass)
 
-		if Entity.OnUpdate then
-			Entity:OnUpdate(Data, Class, Computer)
+		if Entity.OnUpdate then Entity:OnUpdate(nil, Class, Computer) end
+		if Entity.OnDamaged then Entity:OnDamaged() end
+	end
+
+	-- Dynamic wire IO contributed by the selected component (was the ACF_OnSetup* hooks).
+	function ENT:ACF_SetupWireIO(WireInputs, WireOutputs)
+		local Computer = self:GetComputer()
+		if not Computer then return end
+
+		if Computer.Inputs then
+			for _, Input in ipairs(Computer.Inputs) do WireInputs[#WireInputs + 1] = Input end
 		end
 
-		if Entity.OnDamaged then
-			Entity:OnDamaged()
+		if Computer.Outputs then
+			for _, Output in ipairs(Computer.Outputs) do WireOutputs[#WireOutputs + 1] = Output end
 		end
 	end
 
-	hook.Add("ACF_OnSetupInputs", "ACF Computer Inputs", function(Entity, List, _, _, Computer)
-		if Entity:GetClass() ~= "acf_computer" then return end
-		if not Computer.Inputs then return end
+	function ENT:ACF_PreSpawn()
+		self.ACF     = {}
+		self.Weapons = {}
 
-		local Count = #List
+		duplicator.ClearEntityModifier(self, "mass")
+	end
 
-		for I, Input in ipairs(Computer.Inputs) do
-			List[Count + I] = Input
-		end
-	end)
+	-- Runs before each reconfigure (and on remove) while the OLD component config is live.
+	function ENT:ACF_OnEntityLast()
+		if self.OnLast then self:OnLast() end
+	end
 
-	hook.Add("ACF_OnSetupOutputs", "ACF Computer Outputs", function(Entity, List, _, _, Computer)
-		if Entity:GetClass() ~= "acf_computer" then return end
-		if not Computer.Outputs then return end
+	function ENT:ACF_PostUpdateEntityData()
+		UpdateComputer(self)
+	end
 
-		local Count = #List
+	function ENT:ACF_PostSpawn()
+		local Computer = self:GetComputer()
+		local Class    = Classes.GetBaseClass(Computer:GetType())
 
-		for I, Output in ipairs(Computer.Outputs) do
-			List[Count + I] = Output
-		end
-	end)
+		if Class and Class.OnSpawn then Class.OnSpawn(self, nil, Class, Computer) end
 
-	-------------------------------------------------------------------------------
+		timer.Create("ACF Computer Clock " .. self:EntIndex(), 3, 0, function()
+			if not IsValid(self) then return end
 
-	function ACF.MakeComputer(Player, Pos, Angle, Data)
-		VerifyData(Data)
-
-		local Class = Classes.GetGroup(Components, Data.Computer)
-		local Computer = Class.Lookup[Data.Computer]
-		local Limit = Class.LimitConVar.Name
-
-		if not Player:CheckLimit(Limit) then return false end
-
-		local CanSpawn = hook.Run("ACF_PreSpawnEntity", "acf_computer", Player, Data, Class, Computer)
-		if CanSpawn == false then return false end
-
-		local Entity = ents.Create("acf_computer")
-
-		if not IsValid(Entity) then return end
-
-		Entity:SetAngles(Angle)
-		Entity:SetPos(Pos)
-		Entity:Spawn()
-
-		Player:AddCleanup("acf_computer", Entity)
-		Player:AddCount(Limit, Entity)
-
-		Entity.Weapons   = {}
-		Entity.DataStore = Entities.GetArguments("acf_computer")
-
-		UpdateComputer(Entity, Data, Class, Computer)
-
-		if Class.OnSpawn then
-			Class.OnSpawn(Entity, Data, Class, Computer)
-		end
-
-		hook.Run("ACF_OnSpawnEntity", "acf_computer", Entity, Data, Class, Computer)
-
-		duplicator.ClearEntityModifier(Entity, "mass")
-
-		timer.Create("ACF Computer Clock " .. Entity:EntIndex(), 3, 0, function()
-			if not IsValid(Entity) then return end
-
-			CheckDistantLinks(Entity, "Weapons")
+			CheckDistantLinks(self, "Weapons")
 		end)
-
-		return Entity
 	end
-
-	Entities.LegacyRegister("acf_computer", ACF.MakeComputer, "Computer")
 
 	ACF.RegisterLinkSource("acf_computer", "Weapons")
-
-	------------------- Updating ---------------------
-
-	function ENT:Update(Data)
-		VerifyData(Data)
-
-		local Class    = Classes.GetGroup(Components, Data.Computer)
-		local Computer = Class.Lookup[Data.Computer]
-		local OldClass = self.ClassData
-
-		if OldClass.OnLast then
-			OldClass.OnLast(self, OldClass)
-		end
-
-		hook.Run("ACF_OnEntityLast", "acf_computer", self, OldClass)
-
-		ACF.SaveEntity(self)
-
-		UpdateComputer(self, Data, Class, Computer)
-
-		ACF.RestoreEntity(self)
-
-		if Class.OnUpdate then
-			Class.OnUpdate(self, Data, Class, Computer)
-		end
-
-		hook.Run("ACF_OnUpdateEntity", "acf_computer", self, Data, Class, Computer)
-
-		return true, "Computer updated successfully!"
-	end
 end
 
 function ENT:ACF_OnDamage(DmgResult, DmgInfo)
@@ -329,11 +270,10 @@ function ENT:PreEntityCopy()
 		duplicator.StoreEntityModifier(self, "ACFWeapons", Entities)
 	end
 
-	-- wire dupe info
-	self.BaseClass.PreEntityCopy(self)
+	-- AutoRegisterV2 wraps this as the original PreEntityCopy and handles the wire/base dupe info.
 end
 
-function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+function ENT:PostEntityPaste(_, Ent, CreatedEntities)
 	local EntMods = Ent.EntityMods
 
 	if EntMods.ACFWeapons then
@@ -344,28 +284,17 @@ function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
 		EntMods.ACFWeapons = nil
 	end
 
-	-- Wire dupe info
-	self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
+	-- AutoRegisterV2 wraps this as the original PostEntityPaste and handles the wire/base dupe info.
 end
 
-function ENT:OnRemove()
-	local OldClass = self.ClassData
-
-	if OldClass.OnLast then
-		OldClass.OnLast(self, OldClass)
-	end
-
-	hook.Run("ACF_OnEntityLast", "acf_computer", self, OldClass)
+-- Remove-only teardown. Captured by AutoRegisterV2 as OrigOnRemove; the generated OnRemove runs
+-- ACF_OnEntityLast (which fires the component's OnLast) + WireLib cleanup around this.
+function ENT:OnRemove(IsFullUpdate)
+	if IsFullUpdate then return end
 
 	for Weapon in pairs(self.Weapons) do
 		self:Unlink(Weapon)
 	end
 
-	if self.OnLast then
-		self:OnLast()
-	end
-
 	timer.Remove("ACF Computer Clock " .. self:EntIndex())
-
-	WireLib.Remove(self)
 end

@@ -1,5 +1,6 @@
 
 local ACF       = ACF
+local Classes   = ACF.Classes
 local Bullets   = ACF.BulletEffect
 local Clock     = ACF.Utilities.Clock
 

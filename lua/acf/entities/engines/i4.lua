@@ -1,127 +1,126 @@
 local ACF     = ACF
-local Engines = ACF.Classes.Engines
+local Classes = ACF.Classes
 
-
-Engines.Register("I4", {
-	Name = "Inline 4 Engine",
-})
+Classes.DefineClass("ACF.Engines.I4", "ACF.Engines.BaseEngine", function()
+	CLASS.Name = "Inline 4 Engine"
+end)
 
 do -- Petrol Engines
-	Engines.RegisterItem("1.5-I4", "I4", {
-		Name		 = "1.5L I4 Petrol",
-		Description	 = "#acf.descs.engines.i4.1_5",
-		Model		 = "models/engines/inline4s.mdl",
-		Sound		 = "acf_base/engines/i4_petrolsmall2.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "GenericPetrol",
-		Mass		 = 50,
-		Torque		 = 119,
-		FlywheelMass = 0.06,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.1.5-I4", "ACF.Engines.I4", function()
+		CLASS.Name		 = "1.5L I4 Petrol"
+		CLASS.Description	 = "#acf.descs.engines.i4.1_5"
+		CLASS.Model		 = "models/engines/inline4s.mdl"
+		CLASS.Sound		 = "acf_base/engines/i4_petrolsmall2.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
+		CLASS.Mass		 = 50
+		CLASS.Torque		 = 119
+		CLASS.FlywheelMass = 0.06
+		CLASS.RPM = {
 			Idle	= 900,
 			Limit	= 8000,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 120,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("3.7-I4", "I4", {
-		Name		 = "3.7L I4 Petrol",
-		Description	 = "#acf.descs.engines.i4.3_7",
-		Model		 = "models/engines/inline4m.mdl",
-		Sound		 = "acf_base/engines/i4_petrolmedium2.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "GenericPetrol",
-		Mass		 = 200,
-		Torque		 = 305,
-		FlywheelMass = 0.2,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.3.7-I4", "ACF.Engines.I4", function()
+		CLASS.Name		 = "3.7L I4 Petrol"
+		CLASS.Description	 = "#acf.descs.engines.i4.3_7"
+		CLASS.Model		 = "models/engines/inline4m.mdl"
+		CLASS.Sound		 = "acf_base/engines/i4_petrolmedium2.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
+		CLASS.Mass		 = 200
+		CLASS.Torque		 = 305
+		CLASS.FlywheelMass = 0.2
+		CLASS.RPM = {
 			Idle	= 900,
 			Limit	= 6500
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 120,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("16.0-I4", "I4", {
-		Name		 = "16.0L I4 Petrol",
-		Description	 = "#acf.descs.engines.i4.16_0",
-		Model		 = "models/engines/inline4l.mdl",
-		Sound		 = "acf_base/engines/i4_petrollarge.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "GenericPetrol",
-		Mass		 = 600,
-		Torque		 = 1165,
-		FlywheelMass = 4,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.16.0-I4", "ACF.Engines.I4", function()
+		CLASS.Name		 = "16.0L I4 Petrol"
+		CLASS.Description	 = "#acf.descs.engines.i4.16_0"
+		CLASS.Model		 = "models/engines/inline4l.mdl"
+		CLASS.Sound		 = "acf_base/engines/i4_petrollarge.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
+		CLASS.Mass		 = 600
+		CLASS.Torque		 = 1165
+		CLASS.FlywheelMass = 4
+		CLASS.RPM = {
 			Idle	= 500,
 			Limit	= 3400,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 120,
-		},
-	})
+		}
+	end)
 end
 
 do -- Diesel Engines
-	Engines.RegisterItem("1.6-I4", "I4", {
-		Name		 = "1.6L I4 Diesel",
-		Description	 = "#acf.descs.engines.i4.1_6",
-		Model		 = "models/engines/inline4s.mdl",
-		Sound		 = "acf_base/engines/i4_diesel2.wav",
-		Fuel		 = { Diesel = true },
-		Type		 = "GenericDiesel",
-		Mass		 = 90,
-		Torque		 = 184,
-		FlywheelMass = 0.2,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.1.6-I4", "ACF.Engines.I4", function()
+		CLASS.Name		 = "1.6L I4 Diesel"
+		CLASS.Description	 = "#acf.descs.engines.i4.1_6"
+		CLASS.Model		 = "models/engines/inline4s.mdl"
+		CLASS.Sound		 = "acf_base/engines/i4_diesel2.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
+		CLASS.Mass		 = 90
+		CLASS.Torque		 = 184
+		CLASS.FlywheelMass = 0.2
+		CLASS.RPM = {
 			Idle	= 650,
 			Limit	= 5000,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 120,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("3.1-I4", "I4", {
-		Name		 = "3.1L I4 Diesel",
-		Description	 = "#acf.descs.engines.i4.3_1",
-		Model		 = "models/engines/inline4m.mdl",
-		Sound		 = "acf_base/engines/i4_dieselmedium.wav",
-		Fuel		 = { Diesel = true },
-		Type		 = "GenericDiesel",
-		Mass		 = 250,
-		Torque		 = 510,
-		FlywheelMass = 1,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.3.1-I4", "ACF.Engines.I4", function()
+		CLASS.Name		 = "3.1L I4 Diesel"
+		CLASS.Description	 = "#acf.descs.engines.i4.3_1"
+		CLASS.Model		 = "models/engines/inline4m.mdl"
+		CLASS.Sound		 = "acf_base/engines/i4_dieselmedium.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
+		CLASS.Mass		 = 250
+		CLASS.Torque		 = 510
+		CLASS.FlywheelMass = 1
+		CLASS.RPM = {
 			Idle	= 500,
 			Limit	= 4000,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 120,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("15.0-I4", "I4", {
-		Name		 = "15.0L I4 Diesel",
-		Description	 = "#acf.descs.engines.i4.15_0",
-		Model		 = "models/engines/inline4l.mdl",
-		Sound		 = "acf_base/engines/i4_diesellarge.wav",
-		Fuel		 = { Diesel = true },
-		Type		 = "GenericDiesel",
-		Mass		 = 800,
-		Torque		 = 2060,
-		FlywheelMass = 5,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.15.0-I4", "ACF.Engines.I4", function()
+		CLASS.Name		 = "15.0L I4 Diesel"
+		CLASS.Description	 = "#acf.descs.engines.i4.15_0"
+		CLASS.Model		 = "models/engines/inline4l.mdl"
+		CLASS.Sound		 = "acf_base/engines/i4_diesellarge.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
+		CLASS.Mass		 = 800
+		CLASS.Torque		 = 2060
+		CLASS.FlywheelMass = 5
+		CLASS.RPM = {
 			Idle	= 450,
 			Limit	= 2100,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 120,
-		},
-	})
+		}
+	end)
 end
 
 ACF.SetCustomAttachment("models/engines/inline4l.mdl", "driveshaft", Vector(-15, 0, 10), Angle(0, 180, 90))

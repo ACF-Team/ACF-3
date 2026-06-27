@@ -8,7 +8,7 @@ ENT.ACF_PreventArmoring = true
 
 ENT.IsACFAutoloader = true
 
-ACF.AutoRegisterV2(function()
+ACF.Entities.AutoRegisterV2(function()
 	MENU_FIELD("Number", "AutoloaderCaliber", { Min = ACF.MinAutoloaderCaliber, Max = ACF.MaxAutoloaderCaliber, Default = 1, Decimals = 2 })
 	MENU_FIELD("Number", "AutoloaderLength",  { Min = ACF.MinAutoloaderLength,  Max = ACF.MaxAutoloaderLength,  Default = 1, Decimals = 2 })
 	LINKED_ENTITY_FIELD("Gun",        { AcceptableClasses = { acf_gun = true, acf_rack = true } })

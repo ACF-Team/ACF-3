@@ -1,5 +1,5 @@
 local ACF       = ACF
-local Gearboxes = ACF.Classes.Gearboxes
+local Classes   = ACF.Classes
 
 -- Weight
 local Gear3SW = 60
@@ -28,17 +28,17 @@ local function InitGearbox(Gearbox)
 	Gearbox:ChangeDrive(1)
 end
 
-Gearboxes.Register("Auto", {
-	Name		= "Automatic",
-	CreateMenu	= ACF.AutomaticGearboxMenu,
-	CanSetGears = true,
-	Gears = {
+Classes.DefineClass("ACF.Gearboxes.Auto", "ACF.Gearboxes.BaseGearbox", function()
+	CLASS.Name			= "Automatic"
+	CLASS.CreateMenu	= ACF.AutomaticGearboxMenu
+	CLASS.CanSetGears 	= true
+	CLASS.Gears 		= {
 		Min	= 0,
 		Max	= 10,
-	},
-	OnSpawn = InitGearbox,
-	OnUpdate = InitGearbox,
-	VerifyData = function(Data, Class)
+	}
+	CLASS.OnSpawn = InitGearbox
+	CLASS.OnUpdate = InitGearbox
+	CLASS.VerifyData = function(Data, Class)
 		do -- Shift point table verification
 			local Points = Data.ShiftPoints
 			local Mult = Data.ShiftUnit or 1
@@ -90,20 +90,20 @@ Gearboxes.Register("Auto", {
 
 			Data.Reverse = math.Clamp(Reverse, ACF.MinGearRatio, ACF.MaxGearRatio)
 		end
-	end,
-	SetupInputs = function(_, List)
+	end
+	CLASS.SetupInputs = function(_, List)
 		local Count = #List
 
 		List[Count + 1] = "Hold Gear (If set to a non-zero value, it'll prevent the gearbox from shifting gears.)"
 		List[Count + 2] = "Shift Speed Scale (Scales the speeds set for the automatic shifting.)"
-	end,
-	OnLast = function(Gearbox)
+	end
+	CLASS.OnLast = function(Gearbox)
 		Gearbox.Automatic  = nil
 		Gearbox.ShiftScale = nil
 		Gearbox.Drive      = nil
 		Gearbox.Hold       = nil
-	end,
-	WriteGearOverlay = function(Gearbox, State)
+	end
+	CLASS.WriteGearOverlay = function(Gearbox, State)
 		local GearText  = ", Upshift @ %s kph / %s mph"
 		local Points    = Gearbox.ShiftPoints
 		local Gears     = Gearbox.Gears
@@ -118,45 +118,45 @@ Gearboxes.Register("Auto", {
 
 		local Reverse = ACF.ConvertGearRatio(Gears[Gearbox.GearCount], Gearbox.GearboxLegacyRatio)
 		State:AddGearRatio("Reverse Gear", Reverse, "", Gearbox.GearboxLegacyRatio, true)
-	end,
-})
+	end
+end)
 
 do -- Scalable Gearboxes
-	Gearboxes.RegisterItem("Auto-L", "Auto", {
-		Name			= "Automatic, Inline",
-		Description		= "An inline gearbox capable of automatically shifting gears based on speed.",
-		Model			= "models/engines/linear_s.mdl",
-		Mass			= Gear3SW,
-		Switch			= ShiftS,
-		MaxTorque		= Gear3ST,
-		CanDualClutch	= true,
-		Preview = {
+	Classes.DefineClass("ACF.Gearboxes.Auto-L", "ACF.Gearboxes.Auto", function()
+		CLASS.Name			= "Automatic, Inline"
+		CLASS.Description		= "An inline gearbox capable of automatically shifting gears based on speed."
+		CLASS.Model			= "models/engines/linear_s.mdl"
+		CLASS.Mass			= Gear3SW
+		CLASS.Switch			= ShiftS
+		CLASS.MaxTorque		= Gear3ST
+		CLASS.CanDualClutch	= true
+		CLASS.Preview = {
 			FOV = 125,
-		},
-	})
+		}
+	end)
 
-	Gearboxes.RegisterItem("Auto-T", "Auto", {
-		Name			= "Automatic, Transaxial",
-		Description		= "A transaxial gearbox capable of automatically shifting gears based on speed.",
-		Model			= "models/engines/transaxial_s.mdl",
-		Mass			= Gear3SW,
-		Switch			= ShiftS,
-		MaxTorque		= Gear3ST,
-		CanDualClutch	= true,
-		Preview = {
+	Classes.DefineClass("ACF.Gearboxes.Auto-T", "ACF.Gearboxes.Auto", function()
+		CLASS.Name			= "Automatic, Transaxial"
+		CLASS.Description		= "A transaxial gearbox capable of automatically shifting gears based on speed."
+		CLASS.Model			= "models/engines/transaxial_s.mdl"
+		CLASS.Mass			= Gear3SW
+		CLASS.Switch			= ShiftS
+		CLASS.MaxTorque		= Gear3ST
+		CLASS.CanDualClutch	= true
+		CLASS.Preview = {
 			FOV = 85,
-		},
-	})
+		}
+	end)
 
-	Gearboxes.RegisterItem("Auto-ST", "Auto", {
-		Name		= "Automatic, Straight",
-		Description	= "A straight-through gearbox capable of automatically shifting gears based on speed.",
-		Model		= "models/engines/t5small.mdl",
-		Mass		= math.floor(Gear3SW * StWB),
-		Switch		= ShiftS,
-		MaxTorque	= math.floor(Gear3ST * StTB),
-		Preview = {
+	Classes.DefineClass("ACF.Gearboxes.Auto-ST", "ACF.Gearboxes.Auto", function()
+		CLASS.Name		= "Automatic, Straight"
+		CLASS.Description	= "A straight-through gearbox capable of automatically shifting gears based on speed."
+		CLASS.Model		= "models/engines/t5small.mdl"
+		CLASS.Mass		= math.floor(Gear3SW * StWB)
+		CLASS.Switch		= ShiftS
+		CLASS.MaxTorque	= math.floor(Gear3ST * StTB)
+		CLASS.Preview = {
 			FOV = 105,
-		},
-	})
+		}
+	end)
 end

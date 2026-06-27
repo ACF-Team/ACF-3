@@ -1,4 +1,4 @@
-ACF.Classes.Entities.RegisterCompatPatch("acf_piledriver", 2026061501, function(Data)
+ACF.Entities.RegisterCompatPatch("acf_piledriver", 2026061501, function(Data)
 	local UD = Data.ACF_UserData
 	if not UD then return end
 	if type(UD.Weapon) == "table" and UD.Weapon.Type then return end -- Already V2

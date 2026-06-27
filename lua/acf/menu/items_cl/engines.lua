@@ -1,14 +1,20 @@
 local ACF         = ACF
 local Classes     = ACF.Classes
-local EngineTypes = Classes.EngineTypes
-local FuelTypes   = Classes.FuelTypes
-local Engines     = Classes.Engines
 local TankSize    = Vector()
 local HPColor     = Color(255, 65, 65)
 local TorqueColor = Color(65, 65, 255)
 local IdleColor   = Color(127, 0, 0)
 
+local ENGINE_BASE     = "ACF.Engines.BaseEngine"
+local ENGINETYPE_BASE = "ACF.EngineTypes.BaseEngineType"
+local FUELTYPE_BASE   = "ACF.FuelTypes.FuelType"
+
 local GetType = Classes.GetTypeByName
+
+-- Engine types and fuel types are V2 classes addressed by FQN (the engine class' Type field and the
+-- keys of its Fuel set are both FQNs since the engine defs were migrated).
+local function GetEngineType(FQN) return Classes.GetSubtypeByName(ENGINETYPE_BASE, FQN) end
+local function GetFuelType(FQN)   return Classes.GetSubtypeByName(FUELTYPE_BASE, FQN) end
 
 local acf_menu_multiplytorquemult = CreateClientConVar("acf_menu_multiplytorquemult", "0", true, false, "If true, engine power/torque elements in the menu & overlay will be multiplied by the internal torque multiplier.\nIt should be noted that the torque multiplier is a temporary stopgap for internal code issues, and will be removed in a future mobility update.")
 
@@ -23,7 +29,7 @@ local function UpdateEngineStats(Label, Data)
 	local Mass       = ACF.GetProperMass(Data.Mass)
 	local Torque     = math.Round(Data.Torque * GetTorqueMult())
 	local TorqueFeet = math.Round(Data.Torque * GetTorqueMult() * ACF.NmToFtLb)
-	local Type       = EngineTypes.Get(Data.Type)
+	local Type       = GetEngineType(Data.Type)
 	local Efficiency = Type.Efficiency
 	local FuelList   = ""
 
@@ -32,7 +38,7 @@ local function UpdateEngineStats(Label, Data)
 	local ConsumptionText = language.GetPhrase("acf.menu.engines.consumption_stats")
 
 	for K in pairs(Data.Fuel) do
-		local Fuel = FuelTypes.Get(K)
+		local Fuel = GetFuelType(K)
 
 		if not Fuel then continue end
 
@@ -57,8 +63,9 @@ local function UpdateEngineStats(Label, Data)
 end
 
 local function CreateMenu(Menu)
-	local EngineEntries = Engines.GetEntries()
-	-- local FuelEntries   = FuelTanks.GetEntries()
+	-- Engine "classes" are the direct children of the base engine (V8, I4, SP, ...); their items are the
+	-- concrete engines under each.
+	local EngineEntries = Classes.GetChildren(GetType(ENGINE_BASE))
 
 	Menu:AddTitle("#acf.menu.engines.settings")
 
@@ -193,9 +200,7 @@ local function CreateMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		ACF.SetClientData("EngineClass", Data.ID)
-
-		ACF.LoadSortedList(EngineList, Data.Items, "Mass")
+		ACF.LoadSortedList(EngineList, Classes.GetChildren(Data), "Mass")
 	end
 
 	function EngineList:OnSelect(Index, _, Data)
@@ -207,7 +212,7 @@ local function CreateMenu(Menu)
 		local ClassData = EngineClass.Selected
 		local ClassDesc = ClassData.Description
 
-		ACF.SetClientData("Engine", Data.ID)
+		ACF.SetClientData("Engine", Classes.GetTypeName(Data))
 
 		EngineName:SetText(Data.Name)
 		EngineDesc:SetText((ClassDesc and (language.GetPhrase(ClassDesc) .. "\n\n") or "") .. language.GetPhrase(Data.Description))
@@ -254,7 +259,7 @@ local function CreateMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		ACF.SetClientData("FuelType", Data.ID)
+		ACF.SetClientData("FuelType", Classes.GetTypeName(Data))
 
 		self:UpdateFuelText()
 	end
@@ -289,7 +294,7 @@ local function CreateMenu(Menu)
 		FuelInfo:SetText(FuelText)
 	end
 
-	ACF.LoadSortedList(EngineClass, EngineEntries, "ID")
+	ACF.LoadSortedList(EngineClass, EngineEntries, "Name")
 end
 
 ACF.AddMenuItem(201, "#acf.menu.entities", "#acf.menu.engines", "car", CreateMenu)

@@ -1,5 +1,5 @@
 local ACF       = ACF
-local Gearboxes = ACF.Classes.Gearboxes
+local Classes   = ACF.Classes
 
 -- Weight
 local CSW = 5
@@ -10,27 +10,27 @@ local CST = 3000
 -- General description
 local CDesc = "A standalone clutch for when a full size gearbox is unnecessary or too long."
 
-Gearboxes.Register("Clutch", {
-	Name		= "Clutch",
-	CreateMenu	= ACF.ManualGearboxMenu,
-	Gears = {
+Classes.DefineClass("ACF.Gearboxes.Clutch", "ACF.Gearboxes.BaseGearbox", function()
+	CLASS.Name		= "Clutch"
+	CLASS.CreateMenu	= ACF.ManualGearboxMenu
+	CLASS.Gears = {
 		Min	= 0,
 		Max	= 1,
 	}
-})
+end)
 
 do -- Scalable Clutch
-	Gearboxes.RegisterItem("Clutch-S", "Clutch", {
-		Name		= "Clutch, Straight",
-		Description	= CDesc,
-		Model		= "models/engines/flywheelclutchs.mdl",
-		Mass		= CSW,
-		Switch		= 0.15,
-		MaxTorque	= CST,
-		Preview = {
+	Classes.DefineClass("ACF.Gearboxes.Clutch-S", "ACF.Gearboxes.Clutch", function()
+		CLASS.Name		= "Clutch, Straight"
+		CLASS.Description	= CDesc
+		CLASS.Model		= "models/engines/flywheelclutchs.mdl"
+		CLASS.Mass		= CSW
+		CLASS.Switch		= 0.15
+		CLASS.MaxTorque	= CST
+		CLASS.Preview = {
 			FOV = 115,
-		},
-	})
+		}
+	end)
 end
 
 ACF.SetCustomAttachments("models/engines/flywheelclutchs.mdl", {

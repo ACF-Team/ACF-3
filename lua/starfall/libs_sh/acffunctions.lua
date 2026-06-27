@@ -31,8 +31,7 @@ local math              = math
 local match             = string.match
 local Classes           = ACF.Classes
 local Engines           = Classes.Engines
-local Entities          = Classes.Entities
-local FuelTanks         = Classes.FuelTanks
+local Entities          = ACF.Entities
 local FuelTypes         = Classes.FuelTypes
 local Gearboxes         = Classes.Gearboxes
 local Weapons           = Classes.Weapons
@@ -318,39 +317,6 @@ function acf_library.listAllEngines()
 	return Result
 end
 
---- Returns a list of every registered ACF fuel tank class
--- @shared
--- @return table The list of fuel tank classes
-function acf_library.listAllFuelTankClasses()
-	local List   = FuelTanks.GetList()
-	local Result = {}
-
-	for K, V in ipairs(List) do
-		Result[K] = V.ID
-	end
-
-	return Result
-end
-
---- Returns a list of every registered ACF fuel tank
--- @shared
--- @return table The list of fuel tanks
-function acf_library.listAllFuelTanks()
-	local List   = FuelTanks.GetList()
-	local Result = {}
-	local Count  = 0
-
-	for _, Class in ipairs(List) do
-		for _, Tank in ipairs(Class.Items) do
-			Count = Count + 1
-
-			Result[Count] = Tank.ID
-		end
-	end
-
-	return Result
-end
-
 --- Returns a list of every registered ACF fuel type
 -- @shared
 -- @return table The list of fuel types
@@ -473,36 +439,6 @@ function acf_library.getEngineSpecs(id)
 	local Engine = Engines.GetItem(Class.ID, id)
 
 	return WrapTable(Engine, Ignored)
-end
-
---- Returns the specifications of an ACF fuel tank class
--- @param string id The ID of the fuel tank class you want to get the information from
--- @shared
--- @return table The specifications of the fuel tank class
-function acf_library.getFuelTankClassSpecs(id)
-	CheckLuaType(id, TYPE_STRING)
-
-	local Class = FuelTanks.Get(id)
-
-	if not Class then SF.Throw("Invalid fuel tank class ID, not found.", 2) end
-
-	return WrapTable(Class, Ignored)
-end
-
---- Returns the specifications of an ACF fuel tank
--- @param string id The ID of the fuel tank you want to get the information from
--- @shared
--- @return table The specifications of the fuel tank
-function acf_library.getFuelTankSpecs(id)
-	CheckLuaType(id, TYPE_STRING)
-
-	local Class = Classes.GetGroup(FuelTanks, id)
-
-	if not Class then SF.Throw("Invalid fuel tank ID, not found.", 2) end
-
-	local FuelTank = FuelTanks.GetItem(Class.ID, id)
-
-	return WrapTable(FuelTank, Ignored)
 end
 
 --- Returns the specifications of an ACF fuel type

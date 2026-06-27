@@ -6,7 +6,7 @@ ENT.PluralName    = "ACF Ground Loaders"
 ENT.IsACFGroundloader = true
 ENT.ACF_Limit     = 2
 
-ACF.AutoRegisterV2(function()
+ACF.Entities.AutoRegisterV2(function()
 	LINKED_ENTITY_ARRAY_FIELD("LinkedAmmoCrates", { AcceptableClasses = { acf_ammo = true } })
 end)
 

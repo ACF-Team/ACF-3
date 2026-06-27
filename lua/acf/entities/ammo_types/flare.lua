@@ -12,6 +12,8 @@ Classes.DefineClass("ACF.Ammunition.FLR", "ACF.Ammunition.AP", function()
 		["ACF.Guns.FlareLauncher"] = true,
 	})
 
+	MENU_FIELD("Number", "FillerRatio", {Default = 0})
+
 	function CLASS:GetDisplayData(Data)
 		local Display = {
 			MaxPen         = 0,
@@ -25,13 +27,13 @@ Classes.DefineClass("ACF.Ammunition.FLR", "ACF.Ammunition.AP", function()
 		return Display
 	end
 
-	function CLASS:UpdateRoundData(ToolData, Data, GUIData)
+	function CLASS:UpdateRoundData(Data, GUIData)
 		GUIData = GUIData or Data
 
-		ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
+		ACF.UpdateRoundSpecs(self, Data, GUIData)
 
 		local FreeVol   = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)
-		local FillerVol = FreeVol * ToolData.FillerRatio
+		local FillerVol = FreeVol * self.FillerRatio
 		Data.FillerMass	= FillerVol * ACF.HEDensity
 		Data.ProjMass	= math.max(GUIData.ProjVolume - FillerVol, 0) * ACF.SteelDensity + Data.FillerMass
 		Data.MuzzleVel	= ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
@@ -39,15 +41,15 @@ Classes.DefineClass("ACF.Ammunition.FLR", "ACF.Ammunition.AP", function()
 		Data.BurnTime	= Data.FillerMass / Data.BurnRate
 		Data.CartMass	= Data.PropMass + Data.ProjMass
 
-		hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
+		hook.Run("ACF_OnUpdateRound", self, self, Data, GUIData)
 
 		for K, V in pairs(self:GetDisplayData(Data)) do
 			GUIData[K] = V
 		end
 	end
 
-	function CLASS:BaseConvert(ToolData)
-		local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, {})
+	function CLASS:BaseConvert()
+		local Data, GUIData = ACF.RoundBaseGunpowder(self, {})
 
 		GUIData.MinFillerVol = 0
 
@@ -58,19 +60,15 @@ Classes.DefineClass("ACF.Ammunition.FLR", "ACF.Ammunition.AP", function()
 		Data.BurnRate		= Data.ProjArea * ACF.FlareBurnMultiplier
 		Data.DistractChance	= (2 / math.pi) * math.atan(Data.ProjArea * ACF.FlareDistractMultiplier)	* 0.5 -- Reduced effectiveness 50% -red
 
-		self:UpdateRoundData(ToolData, Data, GUIData)
+		self:UpdateRoundData(Data, GUIData)
 
 		return Data, GUIData
 	end
 
-	function CLASS:VerifyData(ToolData)
-		BASE.VerifyData(self, ToolData)
+	function CLASS:VerifyData()
+		BASE.VerifyData(self)
 
-		if not ToolData.FillerRatio then
-			local Data5 = ToolData.RoundData5
-
-			ToolData.FillerRatio = Data5 and tonumber(Data5) or 0
-		end
+		if not isnumber(self.FillerRatio) then self.FillerRatio = 0 end
 	end
 
 	if SERVER then
@@ -133,15 +131,15 @@ Classes.DefineClass("ACF.Ammunition.FLR", "ACF.Ammunition.AP", function()
 			return false
 		end
 
-		function CLASS:OnCreateAmmoControls(Base, ToolData, BulletData)
+		function CLASS:OnCreateAmmoControls(Base, _, BulletData)
 			local FillerRatio = Base:AddSlider("Filler Ratio", 0, 1, 2)
 			FillerRatio:SetClientData("FillerRatio", "OnValueChanged")
 			FillerRatio:DefineSetter(function(_, _, Key, Value)
 				if Key == "FillerRatio" then
-					ToolData.FillerRatio = math.Round(Value, 2)
+					self.FillerRatio = math.Round(Value, 2)
 				end
 
-				self:UpdateRoundData(ToolData, BulletData)
+				self:UpdateRoundData(BulletData)
 
 				return BulletData.FillerVol
 			end)
@@ -153,13 +151,13 @@ Classes.DefineClass("ACF.Ammunition.FLR", "ACF.Ammunition.AP", function()
 			Label:TrackClientData("FillerRatio")
 		end
 
-		function CLASS:OnCreateAmmoInformation(Base, ToolData, BulletData)
+		function CLASS:OnCreateAmmoInformation(Base, _, BulletData)
 			local RoundStats = Base:AddLabel()
 			RoundStats:TrackClientData("Projectile", "SetText")
 			RoundStats:TrackClientData("Propellant")
 			RoundStats:TrackClientData("FillerRatio")
 			RoundStats:DefineSetter(function()
-				self:UpdateRoundData(ToolData, BulletData)
+				self:UpdateRoundData(BulletData)
 
 				local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s\nFlare Filler Mass : %s"
 				local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
@@ -173,7 +171,7 @@ Classes.DefineClass("ACF.Ammunition.FLR", "ACF.Ammunition.AP", function()
 			local FillerStats = Base:AddLabel()
 			FillerStats:TrackClientData("FillerRatio", "SetText")
 			FillerStats:DefineSetter(function()
-				self:UpdateRoundData(ToolData, BulletData)
+				self:UpdateRoundData(BulletData)
 
 				local Text		= "Burn Rate : %s/s\nBurn Duration : %s s\nDistraction Chance : %s"
 				local Rate		= ACF.GetProperMass(BulletData.BurnRate)

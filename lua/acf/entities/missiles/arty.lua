@@ -24,7 +24,7 @@ Classes.DefineClass("ACF.Missiles.Artillery.Type63", "ACF.Missiles.Artillery", f
 	CLASS.Year			= 1960
 	CLASS.ReloadTime	= 10
 	CLASS.ExhaustPos  	= Vector(-24)
-	CLASS.Racks			= { ["1xRK_small"] = true, ["1xRK"] = true, ["2xRK"] = true, ["4xRK"] = true, ["6xUARRK"] = true }
+	CLASS.Racks			= { ["ACF.Racks.1xRK_small"] = true, ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true, ["ACF.Racks.4xRK"] = true, ["ACF.Racks.6xUARRK"] = true }
 	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Navigation  	= "Chase"
 	CLASS.Fuzes			= { Contact = true, Timed = true, Optical = true, Altitude = true, Cluster = true }
@@ -66,7 +66,7 @@ Classes.DefineClass("ACF.Missiles.Artillery.SAKR-10", "ACF.Missiles.Artillery", 
 	CLASS.Year			= 1980
 	CLASS.ReloadTime	= 20
 	CLASS.ExhaustPos  	= Vector(-44)
-	CLASS.Racks			= { ["1xRK"] = true, ["2xRK"] = true, ["4xRK"] = true, ["6xUARRK"] = true }
+	CLASS.Racks			= { ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true, ["ACF.Racks.4xRK"] = true, ["ACF.Racks.6xUARRK"] = true }
 	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.Laser"] = true, ["ACF.Missiles.Guidance.GPSGuided"] = true }
 	CLASS.Navigation  	= "Chase"
 	CLASS.Fuzes			= { Contact = true, Timed = true, Optical = true, Altitude = true }
@@ -109,7 +109,7 @@ Classes.DefineClass("ACF.Missiles.Artillery.SS-40", "ACF.Missiles.Artillery", fu
 	CLASS.Year			= 1983
 	CLASS.ReloadTime	= 30
 	CLASS.ExhaustPos 	= Vector(-70)
-	CLASS.Racks			= { ["1xRK"] = true, ["2xRK"] = true, ["4xRK"] = true, ["6xUARRK"] = true }
+	CLASS.Racks			= { ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true, ["ACF.Racks.4xRK"] = true, ["ACF.Racks.6xUARRK"] = true }
 	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.Laser"] = true, ["ACF.Missiles.Guidance.GPSGuided"] = true }
 	CLASS.Navigation  	= "PN"
 	CLASS.Fuzes			= { Contact = true, Timed = true, Optical = true, Altitude = true }

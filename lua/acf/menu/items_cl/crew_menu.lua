@@ -1,7 +1,15 @@
 local ACF		= ACF
-local CrewTypes = ACF.Classes.CrewTypes
-local CrewModels = ACF.Classes.CrewModels
-local CrewPoses = ACF.Classes.CrewPoses
+local Classes	= ACF.Classes
+local GetType	= Classes.GetTypeByName
+
+local CREWTYPE_BASE  = "ACF.CrewTypes.BaseCrewType"
+local CREWMODEL_BASE = "ACF.CrewModels.BaseCrewModel"
+local CREWPOSE_BASE  = "ACF.CrewPoses.BaseCrewPose"
+
+-- Crew classes are V2 (ACF.CrewTypes.*, etc.); the entity addresses them by short id (the FQN suffix).
+local function ShortID(Class)
+	return Classes.GetTypeName(Class):match("[^.]+$")
+end
 
 local table_empty = {}
 
@@ -220,7 +228,7 @@ local function CreateMenu(Menu)
 		self.ListData.Index	= Index
 		self.Selected		= Data
 
-		ACF.SetClientData("CrewPoseID", Data.ID)
+		ACF.SetClientData("CrewPoseID", ShortID(Data))
 	end
 
 	local _, _, PlayerModelBodygroups = Base:AddTextEntry("Bodygroups")
@@ -304,9 +312,9 @@ local function CreateMenu(Menu)
 
 		ExtraNotes:SetText(Data.ExtraNotes or "#acf.menu.crew.no_extra_notes")
 
-		if CrewModel.Selected and CrewJob.Selected then Pose:SetText(language.GetPhrase("acf.menu.crew.model_efficiency"):format(CrewModel.Selected.BaseErgoScores[CrewJob.Selected.ID] or 1)) end
+		if CrewModel.Selected and CrewJob.Selected then Pose:SetText(language.GetPhrase("acf.menu.crew.model_efficiency"):format(CrewModel.Selected.BaseErgoScores[ShortID(CrewJob.Selected)] or 1)) end
 
-		ACF.SetClientData("CrewTypeID", Data.ID)
+		ACF.SetClientData("CrewTypeID", ShortID(Data))
 	end
 
 	function CrewModel:OnSelect(Index, _, Data)
@@ -320,14 +328,14 @@ local function CreateMenu(Menu)
 		CrewPreview:UpdateModel(Data.Model)
 		CrewPreview:UpdateSettings(Data.Preview)
 
-		if CrewModel.Selected and CrewJob.Selected then Pose:SetText(language.GetPhrase("acf.menu.crew.model_efficiency"):format(CrewModel.Selected.BaseErgoScores[CrewJob.Selected.ID] or 1)) end
+		if CrewModel.Selected and CrewJob.Selected then Pose:SetText(language.GetPhrase("acf.menu.crew.model_efficiency"):format(CrewModel.Selected.BaseErgoScores[ShortID(CrewJob.Selected)] or 1)) end
 
-		ACF.SetClientData("CrewModelID", Data.ID)
+		ACF.SetClientData("CrewModelID", ShortID(Data))
 	end
 
-	ACF.LoadSortedList(PlayerPose, CrewPoses.GetEntries(), "Name")
-	ACF.LoadSortedList(CrewJob, CrewTypes.GetEntries(), "ID", "Icon")
-	ACF.LoadSortedList(CrewModel, CrewModels.GetEntries(), "ID")
+	ACF.LoadSortedList(PlayerPose, Classes.GetChildren(GetType(CREWPOSE_BASE)), "Name")
+	ACF.LoadSortedList(CrewJob, Classes.GetChildren(GetType(CREWTYPE_BASE)), "Name", "Icon")
+	ACF.LoadSortedList(CrewModel, Classes.GetChildren(GetType(CREWMODEL_BASE)), "Name")
 end
 
 ACF.AddMenuItem(61, "#acf.menu.entities", "#acf.menu.crew", "user_female", CreateMenu)

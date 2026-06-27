@@ -24,7 +24,7 @@ Classes.DefineClass("ACF.Missiles.SurfaceToAir.FIM-92", "ACF.Missiles.SurfaceToA
 	CLASS.Year			= 1978
 	CLASS.ReloadTime	= 10
 	CLASS.ExhaustPos	= Vector(-29)
-	CLASS.Racks			= { ["1x FIM-92"] = true, ["2x FIM-92"] = true, ["4x FIM-92"] = true }
+	CLASS.Racks			= { ["ACF.Racks.1xFIM-92"] = true, ["ACF.Racks.2xFIM-92"] = true, ["ACF.Racks.4xFIM-92"] = true }
 	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.Infrared"] = true, ["Anti-missile"] = true }
 	CLASS.Navigation	= "PN"
 	CLASS.Fuzes			= { Contact = true, Radio = true }
@@ -66,7 +66,7 @@ Classes.DefineClass("ACF.Missiles.SurfaceToAir.Strela-1", "ACF.Missiles.SurfaceT
 	CLASS.Year			= 1960
 	CLASS.ReloadTime	= 25
 	CLASS.ExhaustPos	= Vector(-44)
-	CLASS.Racks			= { ["1x Strela-1"] = true, ["2x Strela-1"] = true, ["4x Strela-1"] = true }
+	CLASS.Racks			= { ["ACF.Racks.1xStrela-1"] = true, ["ACF.Racks.2xStrela-1"] = true, ["ACF.Racks.4xStrela-1"] = true }
 	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.Infrared"] = true, ["Anti-missile"] = true }
 	CLASS.Navigation	= "APN"
 	CLASS.Fuzes			= { Contact = true, Radio = true }

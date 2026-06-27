@@ -17,20 +17,20 @@ Classes.DefineClass("ACF.Ammunition.HEATFS", "ACF.Ammunition.HEAT", function()
 
 	CLASS.MaxStandoffRatio = 0.75
 
-	function CLASS:UpdateRoundData(ToolData, Data, GUIData)
+	function CLASS:UpdateRoundData(Data, GUIData)
 		GUIData = GUIData or Data
 
-		ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
+		ACF.UpdateRoundSpecs(self, Data, GUIData)
 
 		local CapLength       = GUIData.MinProjLength * 0.5
 		local BodyLength      = Data.ProjLength - CapLength
 		local FreeVol, FreeLength, FreeRadius = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, BodyLength)
-		local Standoff        = (CapLength + FreeLength * ToolData.StandoffRatio) * 1e-2 * ACF.HEATStandOffMul-- cm to m
-		local WarheadVol      = FreeVol * (1 - ToolData.StandoffRatio)
-		local WarheadLength   = FreeLength * (1 - ToolData.StandoffRatio)
+		local Standoff        = (CapLength + FreeLength * self.StandoffRatio) * 1e-2 * ACF.HEATStandOffMul-- cm to m
+		local WarheadVol      = FreeVol * (1 - self.StandoffRatio)
+		local WarheadLength   = FreeLength * (1 - self.StandoffRatio)
 		local WarheadDiameter = 2 * FreeRadius
 		local MinConeAng      = math.deg(math.atan(FreeRadius / WarheadLength))
-		local LinerAngle      = math.Clamp(ToolData.LinerAngle, MinConeAng, 90) -- Cone angle is angle between cone walls, not between a wall and the center line
+		local LinerAngle      = math.Clamp(self.LinerAngle, MinConeAng, 90) -- Cone angle is angle between cone walls, not between a wall and the center line
 		local LinerMass, ConeVol, ConeLength = self:ConeCalc(LinerAngle, FreeRadius)
 
 		-- Charge length increases jet velocity, but with diminishing returns. All explosive sorrounding the cone has 100% effectiveness,
@@ -81,11 +81,11 @@ Classes.DefineClass("ACF.Ammunition.HEATFS", "ACF.Ammunition.HEAT", function()
 		Data.DragCoef		= Data.ProjArea * 0.0001 / Data.ProjMass
 		Data.CartMass		= Data.PropMass + Data.ProjMass
 
-		hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
+		hook.Run("ACF_OnUpdateRound", self, self, Data, GUIData)
 
 		-- Recalculate the standoff for missiles
 		if Data.MissileStandoff then
-			Data.Standoff = (FreeLength * ToolData.StandoffRatio + Data.MissileStandoff) * 1e-2 * ACF.HEATStandOffMul
+			Data.Standoff = (FreeLength * self.StandoffRatio + Data.MissileStandoff) * 1e-2 * ACF.HEATStandOffMul
 		end
 		-- God weeped when this spaghetto was written (for missile roundinject)
 		if Data.FillerMul or Data.LinerMassMul then
@@ -128,16 +128,16 @@ Classes.DefineClass("ACF.Ammunition.HEATFS", "ACF.Ammunition.HEAT", function()
 	else
 		ACF.RegisterAmmoDecal("ACF.Ammunition.HEATFS", "damage/heat_pen", "damage/heat_rico", function(Caliber) return Caliber * 0.1667 end)
 
-		function CLASS:OnCreateAmmoControls(Base, ToolData, BulletData)
+		function CLASS:OnCreateAmmoControls(Base, _, BulletData)
 			local LinerAngle = Base:AddSlider("#acf.menu.ammo.liner_angle", BulletData.MinConeAng, 90, 1)
 			LinerAngle:SetClientData("LinerAngle", "OnValueChanged")
 			LinerAngle:TrackClientData("Projectile")
 			LinerAngle:DefineSetter(function(Panel, _, Key, Value)
 				if Key == "LinerAngle" then
-					ToolData.LinerAngle = math.Round(Value, 2)
+					self.LinerAngle = math.Round(Value, 2)
 				end
 
-				self:UpdateRoundData(ToolData, BulletData)
+				self:UpdateRoundData(BulletData)
 
 				Panel:SetMin(BulletData.MinConeAng)
 				Panel:SetValue(BulletData.ConeAng)
@@ -148,11 +148,11 @@ Classes.DefineClass("ACF.Ammunition.HEATFS", "ACF.Ammunition.HEAT", function()
 			local StandoffRatio = Base:AddSlider("#acf.menu.ammo.standoff_ratio", 0, 0.75, 2)
 			StandoffRatio:SetClientData("StandoffRatio", "OnValueChanged")
 			StandoffRatio:DefineSetter(function(_, _, _, Value)
-				ToolData.StandoffRatio = math.Round(Value, 2)
+				self.StandoffRatio = math.Round(Value, 2)
 
-				self:UpdateRoundData(ToolData, BulletData)
+				self:UpdateRoundData(BulletData)
 
-				return ToolData.StandoffRatio
+				return self.StandoffRatio
 			end)
 		end
 	end

@@ -26,7 +26,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.RS82", "ACF.Missiles.UnguidedRo
 	CLASS.Offset		= Vector(1, 0, 0)
 	CLASS.Year			= 1933
 	CLASS.ExhaustPos	= Vector(-12)
-	CLASS.Racks			= { ["1xRK_small"] = true, ["1xRK"] = true, ["2xRK"] = true, ["4xRK"] = true }
+	CLASS.Racks			= { ["ACF.Racks.1xRK_small"] = true, ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true, ["ACF.Racks.4xRK"] = true }
 	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { Contact = true, Timed = true }
@@ -81,7 +81,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.HVAR", "ACF.Missiles.UnguidedRo
 	CLASS.Offset		= Vector(2, 0, 0)
 	CLASS.Year			= 1933
 	CLASS.ExhaustPos	= Vector(-33)
-	CLASS.Racks			= { ["1xRK_small"] = true, ["1xRK"] = true, ["2xRK"] = true, ["3xUARRK"] = true, ["4xRK"] = true }
+	CLASS.Racks			= { ["ACF.Racks.1xRK_small"] = true, ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true, ["ACF.Racks.3xUARRK"] = true, ["ACF.Racks.4xRK"] = true }
 	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { Contact = true, Timed = true }
@@ -125,7 +125,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.SPG-9", "ACF.Missiles.UnguidedR
 	CLASS.Year			= 1962
 	CLASS.ReloadTime	= 6
 	CLASS.ExhaustPos	= Vector(-1)
-	CLASS.Racks			= { ["1x SPG9"] = true }
+	CLASS.Racks			= { ["ACF.Racks.1xSPG9"] = true }
 	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { Contact = true }
@@ -169,7 +169,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.S-24", "ACF.Missiles.UnguidedRo
 	CLASS.ReloadTime	= 20
 	CLASS.Year			= 1960
 	CLASS.ExhaustPos	= Vector(-43)
-	CLASS.Racks			= { ["1xRK"] = true, ["2xRK"] = true, ["4xRK"] = true }
+	CLASS.Racks			= { ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true, ["ACF.Racks.4xRK"] = true }
 	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { Contact = true, Timed = true }
@@ -210,7 +210,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.RW61", "ACF.Missiles.UnguidedRo
 	CLASS.Year			= 1960
 	CLASS.ReloadTime	= 40
 	CLASS.ExhaustPos	= Vector(-32.5)
-	CLASS.Racks			= { ["380mmRW61"] = true }
+	CLASS.Racks			= { ["ACF.Racks.380mmRW61"] = true }
 	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { Contact = true, Optical = true }

@@ -1,5 +1,6 @@
 local ACF             = ACF
-local Countermeasures = ACF.Classes.Countermeasures
+local Countermeasures = ACF.Countermeasures or {}
+ACF.Countermeasures = Countermeasures
 local Bullets         = ACF.Ballistics.Bullets
 local Missiles        = ACF.ActiveMissiles
 

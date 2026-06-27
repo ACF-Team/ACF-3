@@ -1,12 +1,9 @@
 DEFINE_BASECLASS("acf_base_simple")
 
-ENT.PrintName     = "ACF Controller"
-ENT.WireDebugName = "ACF Controller"
-ENT.PluralName    = "ACF Controllers"
-ENT.IsACFController = true
 ENT.ACF_InvisibleToBallistics = true
 
-cleanup.Register("acf_controller")
+-- The controller has no serialized config fields; it's driven entirely by NetworkVars (see below).
+ACF.Entities.AutoRegisterV2(function() end, "Controller", "Controllers")
 
 ENT.Editable = true
 function ENT:SetupDataTables()

@@ -47,15 +47,15 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
 		return Display
 	end
 
-	function CLASS:UpdateRoundData(ToolData, Data, GUIData)
+	function CLASS:UpdateRoundData(Data, GUIData)
 		GUIData = GUIData or Data
 
-		ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
+		ACF.UpdateRoundSpecs(self, Data, GUIData)
 
-		local Flechettes = math.Clamp(ToolData.Flechettes, Data.MinFlechettes, Data.MaxFlechettes)
+		local Flechettes = math.Clamp(self.Flechettes, Data.MinFlechettes, Data.MaxFlechettes)
 
 		Data.Flechettes		   = Flechettes
-		Data.FlechetteSpread   = math.Clamp(ToolData.Spread, Data.MinSpread, Data.MaxSpread)
+		Data.FlechetteSpread   = math.Clamp(self.Spread, Data.MinSpread, Data.MaxSpread)
 		Data.FlechetteCaliber  = self:GetFlechetteCaliber(Data.Caliber, Flechettes)
 		Data.FlechetteArea	   = math.pi * (Data.FlechetteCaliber * 0.5) ^ 2 -- area of a single flechette
 		Data.FlechetteMass	   = Data.FlechetteArea * Data.ProjLength * ACF.SteelDensity -- volume of single flechette * density of steel
@@ -65,15 +65,15 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
 		Data.MuzzleVel		   = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
 		Data.CartMass		   = Data.PropMass + Data.ProjMass
 
-		hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
+		hook.Run("ACF_OnUpdateRound", self, self, Data, GUIData)
 
 		for K, V in pairs(self:GetDisplayData(Data)) do
 			GUIData[K] = V
 		end
 	end
 
-	function CLASS:BaseConvert(ToolData)
-		local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, { LengthAdj = 0.5 })
+	function CLASS:BaseConvert()
+		local Data, GUIData = ACF.RoundBaseGunpowder(self, { LengthAdj = 0.5 })
 
 		Data.MaxFlechettes = math.Clamp(math.floor(Data.Caliber * 4), 12, 64)
 		Data.MinFlechettes = math.min(12, Data.MaxFlechettes) --force bigger guns to have higher min count
@@ -83,21 +83,16 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
 		Data.LimitVel	   = 500 --Most efficient penetration speed in m/s
 		Data.Ricochet	   = 75 --Base ricochet angle
 
-		self:UpdateRoundData(ToolData, Data, GUIData)
+		self:UpdateRoundData(Data, GUIData)
 
 		return Data, GUIData
 	end
 
-	function CLASS:VerifyData(ToolData)
-		BASE.VerifyData(self, ToolData)
+	function CLASS:VerifyData()
+		BASE.VerifyData(self)
 
-		if not isnumber(ToolData.Flechettes) then
-			ToolData.Flechettes = ACF.CheckNumber(ToolData.RoundData5, 0)
-		end
-
-		if not isnumber(ToolData.Spread) then
-			ToolData.Spread = ACF.CheckNumber(ToolData.RoundData6, 0)
-		end
+		if not isnumber(self.Flechettes) then self.Flechettes = 0 end
+		if not isnumber(self.Spread) then self.Spread = 0 end
 	end
 
 	if SERVER then
@@ -204,13 +199,13 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
 			return math.Round(self:GetPenetration(Bullet, Speed), 2), math.Round(Speed, 2)
 		end
 
-		function CLASS:OnCreateAmmoControls(Base, ToolData, BulletData)
+		function CLASS:OnCreateAmmoControls(Base, _, BulletData)
 			local Flechettes = Base:AddSlider("#acf.menu.ammo.flechette_amount", BulletData.MinFlechettes, BulletData.MaxFlechettes)
 			Flechettes:SetClientData("Flechettes", "OnValueChanged")
 			Flechettes:DefineSetter(function(Panel, _, _, Value)
-				ToolData.Flechettes = math.floor(Value)
+				self.Flechettes = math.floor(Value)
 
-				Ammo:UpdateRoundData(ToolData, BulletData)
+				self:UpdateRoundData(BulletData)
 
 				Panel:SetValue(BulletData.Flechettes)
 
@@ -220,9 +215,9 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
 			local Spread = Base:AddSlider("#acf.menu.ammo.flechette_spread", BulletData.MinSpread, BulletData.MaxSpread, 2)
 			Spread:SetClientData("Spread", "OnValueChanged")
 			Spread:DefineSetter(function(Panel, _, _, Value)
-				ToolData.Spread = Value
+				self.Spread = Value
 
-				Ammo:UpdateRoundData(ToolData, BulletData)
+				self:UpdateRoundData(BulletData)
 
 				Panel:SetValue(BulletData.FlechetteSpread)
 
@@ -236,13 +231,13 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
 			Label:TrackClientData("Flechettes")
 		end
 
-		function CLASS:OnCreateAmmoInformation(Menu, ToolData, BulletData)
+		function CLASS:OnCreateAmmoInformation(Menu, _, BulletData)
 			local RoundStats = Menu:AddLabel()
 			RoundStats:TrackClientData("Projectile", "SetText")
 			RoundStats:TrackClientData("Propellant")
 			RoundStats:TrackClientData("Flechettes")
 			RoundStats:DefineSetter(function()
-				self:UpdateRoundData(ToolData, BulletData)
+				self:UpdateRoundData(BulletData)
 
 				local Text		= language.GetPhrase("acf.menu.ammo.round_stats_fl")
 				local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
@@ -258,7 +253,7 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
 			PenStats:TrackClientData("Propellant")
 			PenStats:TrackClientData("Flechettes")
 			PenStats:DefineSetter(function()
-				self:UpdateRoundData(ToolData, BulletData)
+				self:UpdateRoundData(BulletData)
 
 				local Text	   = language.GetPhrase("acf.menu.ammo.pen_stats_ap")
 				local MaxPen   = math.Round(BulletData.MaxPen, 2)

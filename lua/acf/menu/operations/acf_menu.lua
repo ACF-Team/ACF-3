@@ -2,7 +2,7 @@
 local ACF = ACF
 
 do -- Generic Spawner/Linker operation creator
-	local Entities   = ACF.Classes.Entities
+	local Entities   = ACF.Entities
 	local Messages   = ACF.Utilities.Messages
 	local SpawnText  = "Spawn a new %s or update an existing one."
 	local Green      = Color(0, 255, 0)

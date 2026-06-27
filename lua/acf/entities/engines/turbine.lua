@@ -1,285 +1,284 @@
 local ACF     = ACF
-local Engines = ACF.Classes.Engines
+local Classes = ACF.Classes
 
-
-Engines.Register("GT", {
-	Name		= "Gas Turbine",
-	Description	= "#acf.descs.engines.gt"
-})
+Classes.DefineClass("ACF.Engines.GT", "ACF.Engines.BaseEngine", function()
+	CLASS.Name = "Gas Turbine"
+	CLASS.Description	= "#acf.descs.engines.gt"
+end)
 
 do -- Forward-facing Gas Turbines
-	Engines.RegisterItem("Turbine-Small", "GT", {
-		Name		 = "Small Gas Turbine",
-		Description	 = "#acf.descs.engines.gt.small",
-		Model		 = "models/engines/gasturbine_s.mdl",
-		Sound		 = "acf_base/engines/turbine_small.wav",
-		Fuel		 = { Petrol = true, Diesel = true },
-		Type		 = "Turbine",
-		Mass		 = 200,
-		Torque		 = 589,
-		FlywheelMass = 2.9,
-		IsElectric	 = true,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.Turbine-Small", "ACF.Engines.GT", function()
+		CLASS.Name		 = "Small Gas Turbine"
+		CLASS.Description	 = "#acf.descs.engines.gt.small"
+		CLASS.Model		 = "models/engines/gasturbine_s.mdl"
+		CLASS.Sound		 = "acf_base/engines/turbine_small.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true, ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.Turbine"
+		CLASS.Mass		 = 200
+		CLASS.Torque		 = 589
+		CLASS.FlywheelMass = 2.9
+		CLASS.IsElectric	 = true
+		CLASS.RPM = {
 			Idle	 = 1400,
 			Limit	 = 14000,
 			Override = 4167,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 100,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("Turbine-Medium", "GT", {
-		Name		 = "Medium Gas Turbine",
-		Description	 = "#acf.descs.engines.gt.medium",
-		Model		 = "models/engines/gasturbine_m.mdl",
-		Sound		 = "acf_base/engines/turbine_medium.wav",
-		Fuel		 = { Petrol = true, Diesel = true },
-		Type		 = "Turbine",
-		Mass		 = 400,
-		Torque		 = 1312,
-		FlywheelMass = 4.3,
-		IsElectric	 = true,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.Turbine-Medium", "ACF.Engines.GT", function()
+		CLASS.Name		 = "Medium Gas Turbine"
+		CLASS.Description	 = "#acf.descs.engines.gt.medium"
+		CLASS.Model		 = "models/engines/gasturbine_m.mdl"
+		CLASS.Sound		 = "acf_base/engines/turbine_medium.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true, ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.Turbine"
+		CLASS.Mass		 = 400
+		CLASS.Torque		 = 1312
+		CLASS.FlywheelMass = 4.3
+		CLASS.IsElectric	 = true
+		CLASS.RPM = {
 			Idle	 = 1800,
 			Limit	 = 12000,
 			Override = 5000,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 100,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("Turbine-Large", "GT", {
-		Name		 = "Large Gas Turbine",
-		Description	 = "#acf.descs.engines.gt.large",
-		Model		 = "models/engines/gasturbine_l.mdl",
-		Sound		 = "acf_base/engines/turbine_large.wav",
-		Fuel		 = { Petrol = true, Diesel = true },
-		Type		 = "Turbine",
-		Mass		 = 1100,
-		Torque		 = 2500,
-		FlywheelMass = 10.5,
-		IsElectric	 = true,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.Turbine-Large", "ACF.Engines.GT", function()
+		CLASS.Name		 = "Large Gas Turbine"
+		CLASS.Description	 = "#acf.descs.engines.gt.large"
+		CLASS.Model		 = "models/engines/gasturbine_l.mdl"
+		CLASS.Sound		 = "acf_base/engines/turbine_large.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true, ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.Turbine"
+		CLASS.Mass		 = 1100
+		CLASS.Torque		 = 2500
+		CLASS.FlywheelMass = 10.5
+		CLASS.IsElectric	 = true
+		CLASS.RPM = {
 			Idle	 = 2000,
 			Limit	 = 13000,
 			Override = 5625,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 100,
-		},
-	})
+		}
+	end)
 end
 
 do -- Transaxial Gas Turbines
-	Engines.RegisterItem("Turbine-Small-Trans", "GT", {
-		Name		 = "Small Transaxial Gas Turbine",
-		Description	 = "#acf.descs.engines.gt.small_trans",
-		Model		 = "models/engines/turbine_s.mdl",
-		Sound		 = "acf_base/engines/turbine_small.wav",
-		Fuel		 = { Petrol = true, Diesel = true },
-		Type		 = "Turbine",
-		Mass		 = 160,
-		Torque		 = 387,
-		FlywheelMass = 2.3,
-		IsElectric	 = true,
-		IsTrans		 = true,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.Turbine-Small-Trans", "ACF.Engines.GT", function()
+		CLASS.Name		 = "Small Transaxial Gas Turbine"
+		CLASS.Description	 = "#acf.descs.engines.gt.small_trans"
+		CLASS.Model		 = "models/engines/turbine_s.mdl"
+		CLASS.Sound		 = "acf_base/engines/turbine_small.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true, ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.Turbine"
+		CLASS.Mass		 = 160
+		CLASS.Torque		 = 387
+		CLASS.FlywheelMass = 2.3
+		CLASS.IsElectric	 = true
+		CLASS.IsTrans		 = true
+		CLASS.RPM = {
 			Idle	 = 1400,
 			Limit	 = 12000,
 			Override = 4167,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 75,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("Turbine-Medium-Trans", "GT", {
-		Name		 = "Medium Transaxial Gas Turbine",
-		Description	 = "#acf.descs.engines.gt.medium_trans",
-		Model		 = "models/engines/turbine_m.mdl",
-		Sound		 = "acf_base/engines/turbine_medium.wav",
-		Fuel		 = { Petrol = true, Diesel = true },
-		Type		 = "Turbine",
-		Mass		 = 320,
-		Torque		 = 750,
-		FlywheelMass = 3.4,
-		IsElectric	 = true,
-		IsTrans		 = true,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.Turbine-Medium-Trans", "ACF.Engines.GT", function()
+		CLASS.Name		 = "Medium Transaxial Gas Turbine"
+		CLASS.Description	 = "#acf.descs.engines.gt.medium_trans"
+		CLASS.Model		 = "models/engines/turbine_m.mdl"
+		CLASS.Sound		 = "acf_base/engines/turbine_medium.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true, ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.Turbine"
+		CLASS.Mass		 = 320
+		CLASS.Torque		 = 750
+		CLASS.FlywheelMass = 3.4
+		CLASS.IsElectric	 = true
+		CLASS.IsTrans		 = true
+		CLASS.RPM = {
 			Idle	 = 1800,
 			Limit	 = 12000,
 			Override = 5000,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 75,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("Turbine-Large-Trans", "GT", {
-		Name		 = "Large Transaxial Gas Turbine",
-		Description	 = "#acf.descs.engines.gt.large_trans",
-		Model		 = "models/engines/turbine_l.mdl",
-		Sound		 = "acf_base/engines/turbine_large.wav",
-		Fuel		 = { Petrol = true, Diesel = true },
-		Type		 = "Turbine",
-		Mass		 = 880,
-		Torque		 = 1710,
-		FlywheelMass = 8.4,
-		IsElectric	 = true,
-		IsTrans		 = true,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.Turbine-Large-Trans", "ACF.Engines.GT", function()
+		CLASS.Name		 = "Large Transaxial Gas Turbine"
+		CLASS.Description	 = "#acf.descs.engines.gt.large_trans"
+		CLASS.Model		 = "models/engines/turbine_l.mdl"
+		CLASS.Sound		 = "acf_base/engines/turbine_large.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true, ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.Turbine"
+		CLASS.Mass		 = 880
+		CLASS.Torque		 = 1710
+		CLASS.FlywheelMass = 8.4
+		CLASS.IsElectric	 = true
+		CLASS.IsTrans		 = true
+		CLASS.RPM = {
 			Idle	 = 2000,
 			Limit	 = 10000,
 			Override = 5625,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 75,
-		},
-	})
+		}
+	end)
 end
 
-Engines.Register("GGT", {
-	Name		= "Ground Gas Turbine",
-	Description	= "#acf.descs.engines.ggt"
-})
+Classes.DefineClass("ACF.Engines.GGT", "ACF.Engines.BaseEngine", function()
+	CLASS.Name = "Ground Gas Turbine"
+	CLASS.Description	= "#acf.descs.engines.ggt"
+end)
 
 do -- Forward-facing Ground Gas Turbines
-	Engines.RegisterItem("Turbine-Ground-Small", "GGT", {
-		Name		 = "Small Ground Gas Turbine",
-		Description	 = "#acf.descs.engines.ggt.small",
-		Model		 = "models/engines/gasturbine_s.mdl",
-		Sound		 = "acf_base/engines/turbine_small.wav",
-		Fuel		 = { Petrol = true, Diesel = true },
-		Type		 = "Turbine",
-		Mass		 = 220,
-		Torque		 = 1860,
-		FlywheelMass = 35.5,
-		IsElectric	 = true,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.Turbine-Ground-Small", "ACF.Engines.GGT", function()
+		CLASS.Name		 = "Small Ground Gas Turbine"
+		CLASS.Description	 = "#acf.descs.engines.ggt.small"
+		CLASS.Model		 = "models/engines/gasturbine_s.mdl"
+		CLASS.Sound		 = "acf_base/engines/turbine_small.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true, ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.Turbine"
+		CLASS.Mass		 = 220
+		CLASS.Torque		 = 1860
+		CLASS.FlywheelMass = 35.5
+		CLASS.IsElectric	 = true
+		CLASS.RPM = {
 			Idle	 = 450,
 			Limit	 = 4000,
 			Override = 1200,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 100,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("Turbine-Ground-Medium", "GGT", {
-		Name		 = "Medium Ground Gas Turbine",
-		Description	 = "#acf.descs.engines.ggt.medium",
-		Model		 = "models/engines/gasturbine_m.mdl",
-		Sound		 = "acf_base/engines/turbine_medium.wav",
-		Fuel		 = { Petrol = true, Diesel = true },
-		Type		 = "Turbine",
-		Mass		 = 440,
-		Torque		 = 3540,
-		FlywheelMass = 38.7,
-		IsElectric	 = true,
-		Pitch		 = 1.15,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.Turbine-Ground-Medium", "ACF.Engines.GGT", function()
+		CLASS.Name		 = "Medium Ground Gas Turbine"
+		CLASS.Description	 = "#acf.descs.engines.ggt.medium"
+		CLASS.Model		 = "models/engines/gasturbine_m.mdl"
+		CLASS.Sound		 = "acf_base/engines/turbine_medium.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true, ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.Turbine"
+		CLASS.Mass		 = 440
+		CLASS.Torque		 = 3540
+		CLASS.FlywheelMass = 38.7
+		CLASS.IsElectric	 = true
+		CLASS.Pitch		 = 1.15
+		CLASS.RPM = {
 			Idle	 = 600,
 			Limit	 = 4000,
 			Override = 1200,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 100,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("Turbine-Ground-Large", "GGT", {
-		Name		 = "Large Ground Gas Turbine",
-		Description	 = "#acf.descs.engines.ggt.large",
-		Model		 = "models/engines/gasturbine_l.mdl",
-		Sound		 = "acf_base/engines/turbine_large.wav",
-		Fuel		 = { Petrol = true, Diesel = true },
-		Type		 = "Turbine",
-		Mass		 = 1300,
-		Torque		 = 9000,
-		FlywheelMass = 168,
-		IsElectric	 = true,
-		Pitch		 = 1.35,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.Turbine-Ground-Large", "ACF.Engines.GGT", function()
+		CLASS.Name		 = "Large Ground Gas Turbine"
+		CLASS.Description	 = "#acf.descs.engines.ggt.large"
+		CLASS.Model		 = "models/engines/gasturbine_l.mdl"
+		CLASS.Sound		 = "acf_base/engines/turbine_large.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true, ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.Turbine"
+		CLASS.Mass		 = 1300
+		CLASS.Torque		 = 9000
+		CLASS.FlywheelMass = 168
+		CLASS.IsElectric	 = true
+		CLASS.Pitch		 = 1.35
+		CLASS.RPM = {
 			Idle	 = 650,
 			Limit	 = 3250,
 			Override = 1000,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 100,
-		},
-	})
+		}
+	end)
 end
 
 do -- Transaxial Ground Gas Turbines
-	Engines.RegisterItem("Turbine-Small-Ground-Trans", "GGT", {
-		Name		 = "Small Transaxial Ground Gas Turbine",
-		Description	 = "#acf.descs.engines.ggt.small_trans",
-		Model		 = "models/engines/turbine_s.mdl",
-		Sound		 = "acf_base/engines/turbine_small.wav",
-		Fuel		 = { Petrol = true, Diesel = true },
-		Type		 = "Turbine",
-		Mass		 = 200,
-		Torque		 = 1040,
-		FlywheelMass = 20.7,
-		IsElectric	 = true,
-		IsTrans		 = true,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.Turbine-Small-Ground-Trans", "ACF.Engines.GGT", function()
+		CLASS.Name		 = "Small Transaxial Ground Gas Turbine"
+		CLASS.Description	 = "#acf.descs.engines.ggt.small_trans"
+		CLASS.Model		 = "models/engines/turbine_s.mdl"
+		CLASS.Sound		 = "acf_base/engines/turbine_small.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true, ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.Turbine"
+		CLASS.Mass		 = 200
+		CLASS.Torque		 = 1040
+		CLASS.FlywheelMass = 20.7
+		CLASS.IsElectric	 = true
+		CLASS.IsTrans		 = true
+		CLASS.RPM = {
 			Idle	 = 450,
 			Limit	 = 4000,
 			Override = 1200,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 75,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("Turbine-Medium-Ground-Trans", "GGT", {
-		Name		 = "Medium Transaxial Ground Gas Turbine",
-		Description	 = "#acf.descs.engines.ggt.medium_trans",
-		Model		 = "models/engines/turbine_m.mdl",
-		Sound		 = "acf_base/engines/turbine_medium.wav",
-		Fuel		 = { Petrol = true, Diesel = true },
-		Type		 = "Turbine",
-		Mass		 = 480,
-		Torque		 = 1123,
-		FlywheelMass = 23.7,
-		IsElectric	 = true,
-		IsTrans		 = true,
-		Pitch		 = 1.15,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.Turbine-Medium-Ground-Trans", "ACF.Engines.GGT", function()
+		CLASS.Name		 = "Medium Transaxial Ground Gas Turbine"
+		CLASS.Description	 = "#acf.descs.engines.ggt.medium_trans"
+		CLASS.Model		 = "models/engines/turbine_m.mdl"
+		CLASS.Sound		 = "acf_base/engines/turbine_medium.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true, ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.Turbine"
+		CLASS.Mass		 = 480
+		CLASS.Torque		 = 1123
+		CLASS.FlywheelMass = 23.7
+		CLASS.IsElectric	 = true
+		CLASS.IsTrans		 = true
+		CLASS.Pitch		 = 1.15
+		CLASS.RPM = {
 			Idle	 = 600,
 			Limit	 = 4000,
 			Override = 1200,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 75,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("Turbine-Large-Ground-Trans", "GGT", {
-		Name		 = "Large Transaxial Ground Gas Turbine",
-		Description	 = "#acf.descs.engines.ggt.large_trans",
-		Model		 = "models/engines/turbine_l.mdl",
-		Sound		 = "acf_base/engines/turbine_large.wav",
-		Fuel		 = { Petrol = true, Diesel = true },
-		Type		 = "Turbine",
-		Mass		 = 1100,
-		Torque		 = 4600,
-		FlywheelMass = 75.6,
-		IsElectric	 = true,
-		IsTrans		 = true,
-		Pitch		 = 1.35,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.Turbine-Large-Ground-Trans", "ACF.Engines.GGT", function()
+		CLASS.Name		 = "Large Transaxial Ground Gas Turbine"
+		CLASS.Description	 = "#acf.descs.engines.ggt.large_trans"
+		CLASS.Model		 = "models/engines/turbine_l.mdl"
+		CLASS.Sound		 = "acf_base/engines/turbine_large.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true, ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.Turbine"
+		CLASS.Mass		 = 1100
+		CLASS.Torque		 = 4600
+		CLASS.FlywheelMass = 75.6
+		CLASS.IsElectric	 = true
+		CLASS.IsTrans		 = true
+		CLASS.Pitch		 = 1.35
+		CLASS.RPM = {
 			Idle	 = 650,
 			Limit	 = 3250,
 			Override = 1000,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 75,
-		},
-	})
+		}
+	end)
 end
 
 ACF.SetCustomAttachment("models/engines/turbine_l.mdl", "driveshaft", Vector(0, -15), Angle(0, -90))

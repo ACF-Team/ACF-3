@@ -1,5 +1,5 @@
 local Classes  = ACF.Classes
-local Entities = Classes.Entities
+local Entities = ACF.Entities
 
 -- Legacy turret components stored their selection as a flat item-id string on a
 -- dupe key (e.g. "Turret"/"Motor", or "Id" on much older dupes), with any tunables

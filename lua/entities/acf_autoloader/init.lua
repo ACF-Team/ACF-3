@@ -14,8 +14,8 @@ util.AddNetworkString("ACF_Autoloader_Links")
 -- Converts shell scale to model scale
 local RefSize = Vector(43.233333587646, 7.2349619865417, 7.2349619865417)
 
-function ENT.ACF_OnVerifyClientData(ClientData)
-	ClientData.AutoloaderSize = Vector(ClientData.AutoloaderLength / RefSize.x * 10, ClientData.AutoloaderCaliber / RefSize.y, ClientData.AutoloaderCaliber / RefSize.z) / ACF.InchToMm
+function ENT:ACF_PreUpdateEntityData()
+	self.AutoloaderSize = Vector(self:ACF_GetUserVar("AutoloaderLength") / RefSize.x * 10, self:ACF_GetUserVar("AutoloaderCaliber") / RefSize.y, self:ACF_GetUserVar("AutoloaderCaliber") / RefSize.z) / ACF.InchToMm
 end
 
 function ENT:ACF_PreSpawn()
@@ -33,11 +33,11 @@ function ENT:ACF_PreSpawn()
 	self.OverlayWarnings = {}
 end
 
-function ENT:ACF_PostUpdateEntityData(ClientData)
-	self:SetScale(ClientData.AutoloaderSize)
+function ENT:ACF_PostUpdateEntityData()
+	self:SetScale(self.AutoloaderSize)
 
 	-- Mass is proportional to volume of the shell
-	local R, H = ClientData.AutoloaderSize.y, ClientData.AutoloaderSize.x
+	local R, H = self.AutoloaderSize.y, self.AutoloaderSize.x
 	local Volume = math.pi * R * R * H
 	ACF.Contraption.SetMass(self, Volume * 250)
 
@@ -125,10 +125,9 @@ ACF.RegisterClassLinkCheck("acf_autoloader", "acf_ammo", function(This, Ammo)
 	local Caliber = BulletData.Caliber
 	local Length = BulletData.ProjLength + BulletData.PropLength
 	if Ammo.IsMissileAmmo then
-		local Class    	= Classes.GetGroup(Classes.Missiles, BulletData.WeaponType)
-		local Weapon    = Class and Class.Lookup[BulletData.WeaponType]
+		local Weapon    = Classes.GetSubtypeByName("ACF.Missiles.BaseMissile", BulletData.WeaponType)
 		local Round 	= Weapon and Weapon.Round
-		Length = Round.ActualLength * ACF.InchToCm
+		if Round then Length = Round.ActualLength * ACF.InchToCm end
 	end
 
 	if BulletData and (Caliber - 0.01) > This:ACF_GetUserVar("AutoloaderCaliber") / 10 then return false, "Ammo is too wide for this autoloader." end

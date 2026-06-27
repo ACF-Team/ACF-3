@@ -10,7 +10,7 @@ end
 -- Migrates legacy ACF-3 supply crates (flat SupplyShape / SupplySizeX/Y/Z dupe keys) onto the
 -- AutoRegisterV2 serialized field set. The size keys are unchanged; only the shape needs to be
 -- promoted from a string ID to the new Shape class field.
-ACF.Classes.Entities.RegisterCompatPatch("acf_supply", 2026061601, function(Data)
+ACF.Entities.RegisterCompatPatch("acf_supply", 2026061601, function(Data)
 	if Data.ACF_UserData then return end
 
 	local Old = Data.Data or {}

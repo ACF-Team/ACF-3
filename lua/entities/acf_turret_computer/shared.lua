@@ -2,7 +2,7 @@ DEFINE_BASECLASS("acf_base_simple")
 
 ENT.ACF_Limit = 4
 
-ACF.AutoRegisterV2(function()
+ACF.Entities.AutoRegisterV2(function()
 	MENU_FIELD("ACF.Turrets.Computer", "Computer", {
 		InstantiateTypeForDefault = "ACF.Turrets.Computer.Direct",
 		OnlyAllowSubtypes         = true,

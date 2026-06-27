@@ -2,7 +2,7 @@ DEFINE_BASECLASS("acf_container")
 
 ENT.ACF_Limit = 32
 
-ACF.AutoRegisterV2(function()
+ACF.Entities.AutoRegisterV2(function()
 	MENU_FIELD("ACF.FuelTypes.FuelType", "FuelType",  {OnlyAllowSubtypes = true, InstantiateTypeForDefault = "ACF.FuelTypes.Petrol"})
 	MENU_FIELD("Number",                 "FuelSizeX", {Min = ACF.ContainerMinSize or 6, Max = ACF.ContainerMaxSize or 96, Default = 24, Decimals = 0})
 	MENU_FIELD("Number",                 "FuelSizeY", {Min = ACF.ContainerMinSize or 6, Max = ACF.ContainerMaxSize or 96, Default = 24, Decimals = 0})

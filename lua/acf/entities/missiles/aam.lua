@@ -25,7 +25,7 @@ Classes.DefineClass("ACF.Missiles.AirToAir.AIM-9", "ACF.Missiles.AirToAir", func
 	CLASS.Diameter		= 101.6 -- in mm
 	CLASS.ReloadTime	= 10
 	CLASS.ExhaustPos  	= Vector(-42)
-	CLASS.Racks			= { ["1xRK_small"] = true, ["1xRK"] = true, ["2xRK"] = true, ["4xRK"] = true }
+	CLASS.Racks			= { ["ACF.Racks.1xRK_small"] = true, ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true, ["ACF.Racks.4xRK"] = true }
 	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.Infrared"] = true, ["ACF.Missiles.Guidance.SemiActiveRadar"] = true }
 	CLASS.Navigation  	= "APN"
 	CLASS.Fuzes			= { Contact = true, Radio = true }
@@ -68,7 +68,7 @@ Classes.DefineClass("ACF.Missiles.AirToAir.AIM-120", "ACF.Missiles.AirToAir", fu
 	CLASS.Diameter		= 154.5 -- in mm
 	CLASS.ReloadTime	= 25
 	CLASS.ExhaustPos  	= Vector(-66)
-	CLASS.Racks			= { ["1xRK"] = true, ["2xRK"] = true, ["4xRK"] = true }
+	CLASS.Racks			= { ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true, ["ACF.Racks.4xRK"] = true }
 	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.SemiActiveRadar"] = true, ["ACF.Missiles.Guidance.ActiveRadar"] = true }
 	CLASS.Navigation  	= "APN"
 	CLASS.Fuzes			= { Contact = true, Radio = true }
@@ -111,7 +111,7 @@ Classes.DefineClass("ACF.Missiles.AirToAir.AIM-7", "ACF.Missiles.AirToAir", func
 	CLASS.Diameter    	= 203.2 -- in mm
 	CLASS.ReloadTime  	= 28
 	CLASS.ExhaustPos  	= Vector(-70)
-	CLASS.Racks       	= { ["1xRK"] = true, ["2xRK"] = true }
+	CLASS.Racks       	= { ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true }
 	CLASS.Guidance    	= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.SemiActiveRadar"] = true, ["ACF.Missiles.Guidance.RadioMCLOS"] = true }
 	CLASS.Navigation  	= "APN"
 	CLASS.Fuzes       	= { Contact = true, Radio = true }
@@ -154,7 +154,7 @@ Classes.DefineClass("ACF.Missiles.AirToAir.AIM-54", "ACF.Missiles.AirToAir", fun
 	CLASS.Diameter		= 330 -- in mm
 	CLASS.ReloadTime	= 40
 	CLASS.ExhaustPos  	= Vector(-60)
-	CLASS.Racks			= { ["1xRK"] = true, ["2xRK"] = true }
+	CLASS.Racks			= { ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true }
 	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.SemiActiveRadar"] = true, ["ACF.Missiles.Guidance.ActiveRadar"] = true }
 	CLASS.Navigation  	= "APN"
 	CLASS.Fuzes			= { Contact = true, Radio = true }

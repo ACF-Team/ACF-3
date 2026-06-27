@@ -2,7 +2,7 @@ DEFINE_BASECLASS("acf_container")
 
 ENT.ACF_Limit = 32
 
-ACF.AutoRegisterV2(function()
+ACF.Entities.AutoRegisterV2(function()
 	MENU_FIELD("ACF.Weapons.BaseWeapon", 	"Weapon",            	{OnlyAllowSubtypes = true, InstantiateTypeForDefault = "ACF.Guns.Cannon"})
 	MENU_FIELD("ACF.Ammunition.BaseAmmo", 	"AmmoType",          	{OnlyAllowSubtypes = true, InstantiateTypeForDefault = "ACF.Ammunition.AP"})
 	MENU_FIELD("Number", 					"AmmoStage",         	{Min = ACF.AmmoStageMin or 1, Max = ACF.AmmoStageMax or 5, Default = 1, Decimals = 0})
@@ -15,6 +15,11 @@ ACF.AutoRegisterV2(function()
 		self.AmmoType:VerifyData()
 	end
 end, "Ammo Crate", "Ammo Crates")
+
+-- Returns the weapon instance this crate is configured to feed.
+function ENT:GetWeapon()
+	return self:ACF_GetUserVar("Weapon")
+end
 
 ENT.ACF_StaticWireInputs = {
 	"Load (If set to a non-zero value, it'll allow weapons to use rounds from this ammo crate.)",

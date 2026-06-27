@@ -7,7 +7,6 @@ include("shared.lua")
 
 local ACF         	 = ACF
 local Contraption 	 = ACF.Contraption
-local Compatibility  = ACF.Compatibility
 local Mobility    	 = ACF.Mobility
 local MobilityObj 	 = Mobility.Objects
 local Utilities   	 = ACF.Utilities
@@ -46,132 +45,70 @@ local function CalcWheel(Entity, Link, Wheel, SelfWorld)
 end
 
 do -- Spawn and Update functions -----------------------
-	local Classes   = ACF.Classes
-	local WireIO    = Utilities.WireIO
-	local Gearboxes = Classes.Gearboxes
-	local Entities  = Classes.Entities
+	local Classes = ACF.Classes
 
-	local Inputs = {
-		"Gear (Changes the current gear to the given value.)",
-		"Gear Up (Attempts to shift up the current gear.)",
-		"Gear Down (Attempts to shift down the current gear.)",
-	}
-	local Outputs = {
-		"Current Gear (Returns the gear currently in use.)",
-		"Ratio (Returns the current gear ratio, based on the current gear and final drive.)",
-		"Entity (The gearbox itself.) [ENTITY]"
-	}
+	-- Gearbox classes are identified by FQN; derive the legacy short id (e.g. "Manual-T") by stripping
+	-- the namespace prefix.
+	local function ShortName(Class)
+		local Name = Classes.GetTypeName(Class):gsub("^ACF%.Gearboxes%.", "")
+		return Name
+	end
 
-	local function VerifyData(Data)
-		if not Data.Gearbox then
-			Data.Gearbox = Data.Id or "2Gear-T"
+	-- Assembles the menu's flat Gear1..N / FinalDrive (Gear0) keys into the serialized Gears array,
+	-- applying the optional legacy-ratio conversion. The class' own VerifyData (automatic shift points,
+	-- CVT min/max RPM) runs afterwards. Runs on raw client/dupe data before serialization.
+	function ENT.ACF_OnVerifyClientData(ClientData)
+		local ID = ClientData.Gearbox
+		if istable(ID) then ID = ID.Type end
+
+		local Class = Classes.GetSubtypeByName("ACF.Gearboxes.BaseGearbox", ID)
+			or Classes.GetTypeByName("ACF.Gearboxes.2Gear-T")
+
+		local MaxGears = Class.CanSetGears and (Class.MaxGear or ClientData.GearAmount or Class.Gears.Max) or Class.Gears.Max
+		local ToLegacy = tobool(ClientData.GearboxConvertRatio)
+		ClientData.GearboxConvertRatio = false -- one-shot; don't reconvert on dupes
+
+		-- Pre-scalable gearboxes stored inverted ratios; the compat patch flags those dupes here since the
+		-- V2 classes no longer carry InvertGearRatios. One-shot (not a declared field).
+		local Invert = Class.InvertGearRatios or ClientData.InvertGearRatios
+		ClientData.InvertGearRatios = nil
+
+		local Gears = istable(ClientData.Gears) and ClientData.Gears or {}
+
+		for I = 1, MaxGears do
+			local Gear = ACF.CheckNumber(Gears[I])
+
+			if not Gear then
+				Gear = ACF.CheckNumber(ClientData["Gear" .. I], I * 0.1)
+				ClientData["Gear" .. I] = nil
+			end
+
+			-- Invert pre-scalable gear ratios (compat only; never set on V2 gearboxes).
+			if Invert and Gear ~= 0 and abs(Gear) < 1 then
+				Gear = math.Round(1 / Gear, 2)
+			end
+
+			Gears[I] = ACF.ConvertGearRatio(Gear, ToLegacy)
 		end
 
-		local Class = Classes.GetGroup(Gearboxes, Data.Gearbox)
+		for I = MaxGears + 1, #Gears do Gears[I] = nil end
 
-		-- Backwards compatibility for pre-scalable gearboxes
-		if not Class then
-			local AliasData = Compatibility.Gearboxes.CheckGroupItem(Data.Gearbox)
+		ClientData.Gears = Gears
 
-			if AliasData then
-				Data.Gearbox = AliasData.ID
-
-				if AliasData.Overrides then
-					for K, V in pairs(AliasData.Overrides) do
-						Data[K] = V
-					end
-				end
-
-				local GroupID = Compatibility.Gearboxes.CheckGroup(AliasData.GroupID) or AliasData.GroupID
-				Class = Classes.GetGroup(Gearboxes, GroupID)
-			end
+		local Final = ACF.CheckNumber(ClientData.FinalDrive)
+		if not Final then
+			Final = ACF.CheckNumber(ClientData.Gear0, 1)
+			ClientData.Gear0 = nil
 		end
 
-		if not Class then
-			Data.Gearbox = "2Gear-T"
-			Class = Classes.GetGroup(Gearboxes, "2Gear-T")
+		if Invert and Final ~= 0 and abs(Final) < 1 then
+			Final = math.Round(1 / Final, 2)
 		end
 
-		local Gearbox = Gearboxes.GetItem(Class.ID, Data.Gearbox)
+		ClientData.FinalDrive = ACF.ConvertGearRatio(Final, ToLegacy)
 
-		do -- Scale verification
-			local GearboxScale = Gearbox and Gearbox.Scale or Data.GearboxScale
-
-			if GearboxScale then
-				Data.GearboxScale = Clamp(GearboxScale, ACF.GearboxMinSize, ACF.GearboxMaxSize)
-			end
-		end
-
-		-- If the previous dupe didn't specify, assume the gearbox is not legacy (false)
-		Data.GearboxLegacyRatio = tobool(Data.GearboxLegacyRatio)
-
-		-- Set by the menu and meant to be turned off so it's not repeatedly set in dupes
-		local ShouldConvertToLegacy = tobool(Data.GearboxConvertRatio)
-		if ShouldConvertToLegacy then Data.GearboxConvertRatio = false end
-
-		do -- Gears table verification
-			local Gears = Data.Gears
-
-			if not istable(Gears) then
-				Gears = { [0] = 0 }
-
-				Data.Gears = Gears
-			else
-				Gears[0] = 0
-			end
-
-			if Data.GearAmount then
-				Data.GearAmount = Clamp(math.Round(Data.GearAmount), Class.Gears.Min, Class.Gears.Max)
-			end
-
-			local MaxGears = Class.CanSetGears and (Gearbox.MaxGear or Data.GearAmount) or Class.Gears.Max
-
-			for I = 1, MaxGears do
-				local Gear = ACF.CheckNumber(Gears[I])
-
-				if not Gear then
-					Gear = ACF.CheckNumber(Data["Gear" .. I], I * 0.1)
-
-					Data["Gear" .. I] = nil
-				end
-
-				-- Invert pre-scalable gear ratios (and try not to reconvert them infinitely)
-				if Gearbox.InvertGearRatios and Gear ~= 0 and abs(Gear) < 1 then
-					Gear = math.Round(1 / Gear, 2)
-				end
-
-				local Gear = ACF.ConvertGearRatio(Gear, ShouldConvertToLegacy)
-
-				Gears[I] = Clamp(Gear, ACF.MinGearRatio, ACF.MaxGearRatio)
-			end
-		end
-
-		do -- Final drive verification
-			local Final = ACF.CheckNumber(Data.FinalDrive)
-
-			if not Final then
-				Final = ACF.CheckNumber(Data.Gear0, 1)
-
-				Data.Gear0 = nil
-			end
-
-			-- Invert pre-scalable gear ratios (and try not to reconvert them infinitely)
-			if Gearbox.InvertGearRatios and Final ~= 0 and abs(Final) < 1 then
-				Final = math.Round(1 / Final, 2)
-			end
-
-			local Final = ACF.ConvertGearRatio(Final, ShouldConvertToLegacy)
-
-			Data.FinalDrive = Clamp(Final, ACF.MinGearRatio, ACF.MaxGearRatio)
-		end
-
-		do -- External verifications
-			if Class.VerifyData then
-				Class.VerifyData(Data, Class)
-			end
-
-			hook.Run("ACF_OnVerifyData", "acf_gearbox", Data, Class)
-		end
+		-- Class-specific verification (automatic ShiftPoints/Reverse, CVT MinRPM/MaxRPM).
+		if Class.VerifyData then Class.VerifyData(ClientData, Class) end
 	end
 
 	local function GetMass(Model, PhysObj, Class, Gearbox, ScaledMass)
@@ -187,10 +124,11 @@ do -- Spawn and Update functions -----------------------
 	local vector_left    = Vector(0, -1, 0)
 	local vector_right   = Vector(0, 1, 0)
 
-	local function UpdateGearbox(Entity, Data, Class, Gearbox)
+	local function UpdateGearbox(Entity, Gearbox)
+		local Class         = Classes.GetBaseClass(Gearbox:GetType()) -- the group (for EntType/ClassData)
 		local CanDualClutch = Gearbox.CanDualClutch
-		local Scale = Data.GearboxScale or 1
-		local MaxGear = Class.CanSetGears and (Gearbox.MaxGear or Data.GearAmount) or Class.Gears.Max
+		local Scale         = Entity:ACF_GetUserVar("GearboxScale") or 1
+		local MaxGear       = Gearbox.CanSetGears and (Gearbox.MaxGear or Entity:ACF_GetUserVar("GearAmount")) or Gearbox.Gears.Max
 		local ScaledMass, _, TorqueRating = ACF.GetGearboxStats(Gearbox.Mass, Scale, Gearbox.MaxTorque, MaxGear)
 
 		Entity.ACF = Entity.ACF or {}
@@ -198,27 +136,42 @@ do -- Spawn and Update functions -----------------------
 		Entity:SetScaledModel(Gearbox.Model)
 		Entity:SetScale(Scale)
 
-		-- Storing all the relevant information on the entity for duping
-		for _, V in ipairs(Entity.DataStore) do
-			Entity[V] = Data[V]
-		end
+		-- Reconstruct the runtime gear/shift tables from the serialized 1-based arrays, carrying the legacy
+		-- [0] sentinel slots. The gearbox class' OnSpawn/OnUpdate may extend these (e.g. automatic appends
+		-- the reverse gear at GearCount).
+		local Gears  = { [0] = 0 }
+		local Shifts = { [0] = -1 }
+
+		for I, V in ipairs(Entity:ACF_GetUserVar("Gears") or {}) do Gears[I] = V end
+		for I, V in ipairs(Entity:ACF_GetUserVar("ShiftPoints") or {}) do Shifts[I] = V end
+
+		Entity.Gears              = Gears
+		Entity.ShiftPoints        = Shifts
+		Entity.FinalDrive         = Entity:ACF_GetUserVar("FinalDrive")
+		Entity.Reverse            = Entity:ACF_GetUserVar("Reverse")
+		Entity.MinRPM             = Entity:ACF_GetUserVar("MinRPM")
+		Entity.MaxRPM             = Entity:ACF_GetUserVar("MaxRPM")
+		Entity.GearboxScale       = Scale
+		Entity.GearAmount         = MaxGear
+		Entity.GearboxLegacyRatio = Entity:ACF_GetUserVar("GearboxLegacyRatio")
 
 		Entity.Name         = Gearbox.Name
-		Entity.ShortName    = Gearbox.ID
+		Entity.ShortName    = ShortName(Gearbox:GetType())
 
-		local SplitID       = string.Split(Gearbox.ID, "-")
+		local SplitID       = string.Split(Entity.ShortName, "-")
 		Entity.Shape        = SplitID[#SplitID]
 
-		Entity.EntType      = Class.Name
+		Entity.EntType      = Class and Class.Name or Gearbox.Name
 		Entity.ClassData    = Class
-		Entity.DefaultSound = Class.Sound
+		Entity.DefaultSound = Gearbox.Sound
+		Entity.SoundPath    = Entity.SoundPath or Gearbox.Sound
 		Entity.SwitchTime   = Gearbox.Switch
 		Entity.MaxTorque    = TorqueRating
-		Entity.MinGear      = Class.Gears.Min
+		Entity.MinGear      = Gearbox.Gears.Min
 		Entity.MaxGear      = MaxGear
 		Entity.GearCount    = Entity.MaxGear
 		Entity.ScaleMult    = Scale
-		Entity.DualClutch   = CanDualClutch and Data.DualClutch or Gearbox.DualClutch
+		Entity.DualClutch   = CanDualClutch and Entity:ACF_GetUserVar("DualClutch") or Gearbox.DualClutch
 		Entity.In           = ACF.LocalPlane(Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("input")).Pos), Entity.Shape == "T" and -vector_forward or vector_right)
 		Entity.OutL         = ACF.LocalPlane(Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaftL")).Pos), Entity.Shape == "ST" and vector_left or vector_right)
 		Entity.OutR         = ACF.LocalPlane(Entity:WorldToLocal(Entity:GetAttachment(Entity:LookupAttachment("driveshaftR")).Pos), vector_left)
@@ -228,9 +181,6 @@ do -- Spawn and Update functions -----------------------
 			Entity.Name = Entity.Name .. ", Dual Clutch"
 		end
 
-		WireIO.SetupInputs(Entity, Inputs, Data, Class, Gearbox)
-		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Gearbox)
-
 		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 
 		ACF.Activate(Entity, true)
@@ -238,7 +188,7 @@ do -- Spawn and Update functions -----------------------
 		local PhysObj = Entity.ACF.PhysObj
 
 		if IsPhysObjValid(PhysObj) then
-			local Mass = GetMass(Model, PhysObj, Class, Gearbox, ScaledMass)
+			local Mass = GetMass(Gearbox.Model, PhysObj, Class, Gearbox, ScaledMass)
 
 			Contraption.SetMass(Entity, Mass)
 		end
@@ -292,231 +242,124 @@ do -- Spawn and Update functions -----------------------
 		end
 	end
 
-	-- Some information may still be passed from the menu tool
-	-- We don't want to save it on the entity if it's not needed
-	local function CleanupData(Class, Gearbox)
-		if Class ~= "acf_gearbox" then return end
+	function ENT:ACF_SetupWireIO(Inputs, Outputs)
+		local Gearbox = self:GetGearbox()
 
-		if not Gearbox.Automatic then
-			Gearbox.Reverse = nil
+		if Gearbox then
+			if Gearbox.SetupInputs  then Gearbox.SetupInputs(self, Inputs) end
+			if Gearbox.SetupOutputs then Gearbox.SetupOutputs(self, Outputs) end
 		end
 
-		if not Gearbox.CVT then
-			Gearbox.MinRPM = nil
-			Gearbox.MaxRPM = nil
-		end
-
-		if Gearbox.DualClutch then
-			Gearbox:SetBodygroup(1, 1)
+		if self.DualClutch then
+			Inputs[#Inputs + 1] = "Left Clutch (Sets the percentage of power, from 0 to 1, that will not be passed to the left side output.)"
+			Inputs[#Inputs + 1] = "Right Clutch (Sets the percentage of power, from 0 to 1, that will not be passed to the right side output.)"
+			Inputs[#Inputs + 1] = "Left Brake (Sets the amount of power given to the left side brakes.)"
+			Inputs[#Inputs + 1] = "Right Brake (Sets the amount of power given to the right side brakes.)"
+		else
+			Inputs[#Inputs + 1] = "Clutch (Sets the percentage of power, from 0 to 1, that will not be passed to the output.)"
+			Inputs[#Inputs + 1] = "Brake (Sets the amount of power given to the brakes.)"
 		end
 	end
 
-	hook.Add("ACF_OnSpawnEntity", "ACF Cleanup Gearbox Data", CleanupData)
-	hook.Add("ACF_OnUpdateEntity", "ACF Cleanup Gearbox Data", CleanupData)
-	hook.Add("ACF_OnSetupInputs", "ACF Cleanup Gearbox Data", function(Entity, List)
-		if Entity:GetClass() ~= "acf_gearbox" then return end
+	-- Type-specific runtime cleanup (was the "Cleanup Gearbox Data" ACF_On*Entity hooks). Runs after the
+	-- gearbox class' OnSpawn/OnUpdate has set the Automatic/CVT flags.
+	local function CleanupData(Entity)
+		if not Entity.Automatic then Entity.Reverse = nil end
+		if not Entity.CVT then Entity.MinRPM = nil; Entity.MaxRPM = nil end
 
-		local Count = #List
-
-		if Entity.DualClutch then
-			List[Count + 1] = "Left Clutch (Sets the percentage of power, from 0 to 1, that will not be passed to the left side output.)"
-			List[Count + 2] = "Right Clutch (Sets the percentage of power, from 0 to 1, that will not be passed to the right side output.)"
-			List[Count + 3] = "Left Brake (Sets the amount of power given to the left side brakes.)"
-			List[Count + 4] = "Right Brake (Sets the amount of power given to the right side brakes.)"
-		else
-			List[Count + 1] = "Clutch (Sets the percentage of power, from 0 to 1, that will not be passed to the output.)"
-			List[Count + 2] = "Brake (Sets the amount of power given to the brakes.)"
-		end
-	end)
-	hook.Add("ACF_OnEntityLast", "ACF Cleanup Gearbox Data", function(Class, Gearbox)
-		if Class ~= "acf_gearbox" then return end
-
-		Gearbox:SetBodygroup(1, 0)
-	end)
+		Entity:SetBodygroup(1, Entity.DualClutch and 1 or 0)
+	end
 
 	-------------------------------------------------------------------------------
 
-	function ACF.MakeGearbox(Player, Pos, Angle, Data)
-		VerifyData(Data)
+	-- Spawn-only init (runs before Entity:Spawn(), so the model is ready for physics).
+	function ENT:ACF_PreSpawn(_, _, _, ClientData)
+		self.ACF            = {}
+		self.Engines        = {}
+		self.Wheels         = {} -- a "Link" has these components: Ent, Side, Axis, Rope, RopeLen, Output, ReqTq, Vel
+		self.Effectors      = {}
+		self.GearboxIn      = {}
+		self.GearboxOut     = {}
+		self.TotalReqTq     = 0
+		self.TorqueOutput   = 0
+		self.LBrake         = 0
+		self.RBrake         = 0
+		self.ChangeFinished = 0
+		self.InGear         = false
+		self.Braking        = false
+		self.LastBrake      = 0
+		self.LastActive     = 0
+		self.LClutch        = 1
+		self.RClutch        = 1
 
-		local Class   = Classes.GetGroup(Gearboxes, Data.Gearbox)
-		local Gearbox = Gearboxes.GetItem(Class.ID, Data.Gearbox)
-		local Limit   = Class.LimitConVar.Name
+		-- ClientData isn't verified yet here; resolve defensively for the pre-spawn model. On dupes the
+		-- Gearbox field arrives nested ({Type,Data}) and falls through to the default - PostUpdate fixes it.
+		local ID = ClientData.Gearbox
+		if istable(ID) then ID = ID.Type end
 
-		if not Player:CheckLimit(Limit) then return end
+		local Gearbox = Classes.GetSubtypeByName("ACF.Gearboxes.BaseGearbox", ID)
+			or Classes.GetTypeByName("ACF.Gearboxes.2Gear-T")
 
-		local CanSpawn = hook.Run("ACF_PreSpawnEntity", "acf_gearbox", Player, Data, Class, Gearbox)
+		self:SetScaledModel(Gearbox.Model)
 
-		if CanSpawn == false then return false end
-
-		local Entity = ents.Create("acf_gearbox")
-
-		if not IsEntityValid(Entity) then return end
-
-		Entity:SetAngles(Angle)
-		Entity:SetPos(Pos)
-		Entity:Spawn()
-
-		Player:AddCleanup("acf_gearbox", Entity)
-		Player:AddCount(Limit, Entity)
-
-		Entity.SoundPath      = Class.Sound
-		Entity.Engines        = {}
-		Entity.Wheels         = {} -- a "Link" has these components: Ent, Side, Axis, Rope, RopeLen, Output, ReqTq, Vel
-		Entity.Effectors	  = {}
-		Entity.GearboxIn      = {}
-		Entity.GearboxOut     = {}
-		Entity.TotalReqTq     = 0
-		Entity.TorqueOutput   = 0
-		Entity.LBrake         = 0
-		Entity.RBrake         = 0
-		Entity.ChangeFinished = 0
-		Entity.InGear         = false
-		Entity.Braking        = false
-		Entity.LastBrake      = 0
-		Entity.LastActive     = 0
-		Entity.LClutch        = 1
-		Entity.RClutch        = 1
-		Entity.DataStore      = Entities.GetArguments("acf_gearbox")
-
-		duplicator.ClearEntityModifier(Entity, "mass")
-
-		UpdateGearbox(Entity, Data, Class, Gearbox)
-
-		if Class.OnSpawn then
-			Class.OnSpawn(Entity, Data, Class, Gearbox)
-		end
-
-		hook.Run("ACF_OnSpawnEntity", "acf_gearbox", Entity, Data, Class, Gearbox)
-
-		timer.Create("ACF Gearbox Clock " .. Entity:EntIndex(), 3, 0, function()
-			if IsEntityValid(Entity) then
-				CheckRopes(Entity, "GearboxOut")
-				CheckRopes(Entity, "Wheels")
-			else
-				timer.Remove("ACF Gearbox Clock " .. Entity:EntIndex())
-			end
-		end)
-
-		return Entity
+		duplicator.ClearEntityModifier(self, "mass")
 	end
 
-	Entities.LegacyRegister("acf_gearbox", ACF.MakeGearbox, "Gearbox", "Gears", "FinalDrive", "ShiftPoints", "Reverse", "MinRPM", "MaxRPM", "GearAmount", "GearboxScale", "GearboxLegacyRatio", "DualClutch")
+	function ENT.ACF_CheckSpawnLimit(Player)
+		return Player:CheckLimit("_acf_gearbox")
+	end
+
+	-- Runs before each reconfigure (and is fired by the framework before deserialize, while the OLD
+	-- gearbox config is still live), letting the previous gearbox class tear down its runtime state.
+	function ENT:ACF_OnEntityLast()
+		local Gearbox = self:GetGearbox()
+		if Gearbox and Gearbox.OnLast then Gearbox.OnLast(self) end
+	end
+
+	function ENT:ACF_PostUpdateEntityData()
+		local Gearbox = self:GetGearbox()
+
+		UpdateGearbox(self, Gearbox)
+
+		-- Gearbox class init (automatic/CVT set up shift/drive state). OnSpawn == OnUpdate for these.
+		local Init = Gearbox.OnUpdate or Gearbox.OnSpawn
+		if Init then Init(self) end
+
+		CleanupData(self)
+
+		-- A reconfigure can invalidate existing links (no-op on a fresh spawn).
+		if next(self.Engines) then
+			for Engine in pairs(self.Engines) do self:Unlink(Engine) self:Link(Engine) end
+		end
+
+		if next(self.Wheels) then
+			for Wheel in pairs(self.Wheels) do self:Unlink(Wheel) self:Link(Wheel) end
+		end
+
+		if next(self.GearboxIn) then
+			for Box in pairs(self.GearboxIn) do Box:Unlink(self) Box:Link(self) end
+		end
+
+		if next(self.GearboxOut) then
+			for Box in pairs(self.GearboxOut) do self:Unlink(Box) self:Link(Box) end
+		end
+	end
+
+	function ENT:ACF_PostSpawn()
+		timer.Create("ACF Gearbox Clock " .. self:EntIndex(), 3, 0, function()
+			if IsEntityValid(self) then
+				CheckRopes(self, "GearboxOut")
+				CheckRopes(self, "Wheels")
+			else
+				timer.Remove("ACF Gearbox Clock " .. self:EntIndex())
+			end
+		end)
+	end
 
 	ACF.RegisterLinkSource("acf_gearbox", "GearboxIn")
 	ACF.RegisterLinkSource("acf_gearbox", "GearboxOut")
 	ACF.RegisterLinkSource("acf_gearbox", "Engines")
 	ACF.RegisterLinkSource("acf_gearbox", "Wheels")
-
-	------------------- Updating ---------------------
-
-	function ENT:Update(Data)
-		VerifyData(Data)
-
-		local Class    = Classes.GetGroup(Gearboxes, Data.Gearbox)
-		local Gearbox  = Class.Lookup[Data.Gearbox]
-		local OldClass = self.ClassData
-		local Feedback = ""
-
-		local CanUpdate, Reason = hook.Run("ACF_PreUpdateEntity", "acf_gearbox", self, Data, Class, Gearbox)
-		if CanUpdate == false then return CanUpdate, Reason end
-
-		if OldClass.OnLast then
-			OldClass.OnLast(self, OldClass)
-		end
-
-		hook.Run("ACF_OnEntityLast", "acf_gearbox", self, OldClass)
-
-		ACF.SaveEntity(self)
-
-		UpdateGearbox(self, Data, Class, Gearbox)
-
-		ACF.RestoreEntity(self)
-
-		if Class.OnUpdate then
-			Class.OnUpdate(self, Data, Class, Gearbox)
-		end
-
-		hook.Run("ACF_OnUpdateEntity", "acf_gearbox", self, Data, Class, Gearbox)
-
-		if next(self.Engines) then
-			local Count, Total = 0, 0
-
-			for Engine in pairs(self.Engines) do
-				self:Unlink(Engine)
-
-				local Result = self:Link(Engine)
-
-				if not Result then Count = Count + 1 end
-
-				Total = Total + 1
-			end
-
-			if Count == Total then
-				Feedback = Feedback .. "\nUnlinked all engines due to excessive driveshaft angle."
-			elseif Count > 0 then
-				local Text = Feedback .. "\nUnlinked %s out of %s engines due to excessive driveshaft angle."
-
-				Feedback = Text:format(Count, Total)
-			end
-		end
-
-		if next(self.Wheels) then
-			local Count, Total = 0, 0
-
-			for Wheel in pairs(self.Wheels) do
-				self:Unlink(Wheel)
-
-				local Result = self:Link(Wheel)
-
-				if not Result then Count = Count + 1 end
-
-				Total = Total + 1
-			end
-
-			if Count == Total then
-				Feedback = Feedback .. "\nUnlinked all wheels due to excessive driveshaft angle."
-			elseif Count > 0 then
-				local Text = Feedback .. "\nUnlinked %s out of %s wheels due to excessive driveshaft angle."
-
-				Feedback = Text:format(Count, Total)
-			end
-		end
-
-		if next(self.GearboxIn) or next(self.GearboxOut) then
-			local Count, Total = 0, 0
-
-			for Entity in pairs(self.GearboxIn) do
-				Entity:Unlink(self)
-
-				local Result = Entity:Link(self)
-
-				if not Result then Count = Count + 1 end
-
-				Total = Total + 1
-			end
-
-			for Entity in pairs(self.GearboxOut) do
-				self:Unlink(Entity)
-
-				local Result = self:Link(Entity)
-
-				if not Result then Count = Count + 1 end
-
-				Total = Total + 1
-			end
-
-			if Count == Total then
-				Feedback = Feedback .. "\nUnlinked all gearboxes due to excessive driveshaft angle."
-			elseif Count > 0 then
-				local Text = Feedback .. "\nUnlinked %s out of %s gearboxes due to excessive driveshaft angle."
-
-				Feedback = Text:format(Count, Total)
-			end
-		end
-
-		return true, "Gearbox updated successfully!" .. Feedback
-	end
 end ----------------------------------------------------
 
 do -- Inputs -------------------------------------------
@@ -1148,11 +991,10 @@ do -- Duplicator Support -------------------------------
 			duplicator.StoreEntityModifier(self, "ACFEffectors", Entities)
 		end
 
-		--Wire dupe info
-		self.BaseClass.PreEntityCopy(self)
+		-- AutoRegisterV2 wraps this as the original PreEntityCopy and handles the wire/base dupe info.
 	end
 
-	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+	function ENT:PostEntityPaste(_, Ent, CreatedEntities)
 		local EntMods = Ent.EntityMods
 
 		-- Backwards compatibility
@@ -1190,7 +1032,7 @@ do -- Duplicator Support -------------------------------
 			EntMods.ACFEffectors = nil
 		end
 
-		self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
+		-- AutoRegisterV2 wraps this as the original PostEntityPaste and handles the wire/base dupe info.
 	end
 end ----------------------------------------------------
 
@@ -1302,14 +1144,10 @@ do -- Miscellaneous ------------------------------------
 		return Property ~= "bodygroups"
 	end
 
-	function ENT:OnRemove()
-		local Class = self.ClassData
-
-		if Class.OnLast then
-			Class.OnLast(self, Class)
-		end
-
-		hook.Run("ACF_OnEntityLast", "acf_gearbox", self, Class)
+	-- Remove-only teardown. Captured by AutoRegisterV2 as OrigOnRemove; the generated OnRemove runs
+	-- ACF_OnEntityLast (which fires the gearbox class' OnLast) + WireLib cleanup around this.
+	function ENT:OnRemove(IsFullUpdate)
+		if IsFullUpdate then return end
 
 		for Engine in pairs(self.Engines) do
 			self:Unlink(Engine)
@@ -1332,7 +1170,5 @@ do -- Miscellaneous ------------------------------------
 		end
 
 		timer.Remove("ACF Gearbox Clock " .. self:EntIndex())
-
-		WireLib.Remove(self)
 	end
 end ----------------------------------------------------

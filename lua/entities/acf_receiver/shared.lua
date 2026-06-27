@@ -3,7 +3,7 @@ DEFINE_BASECLASS("acf_base_simple")
 ENT.Author    = "LiddulBOFH"
 ENT.ACF_Limit = 4
 
-ACF.AutoRegisterV2(function()
+ACF.Entities.AutoRegisterV2(function()
 	MENU_FIELD("ACF.Sensors.Receiver", "Sensor", {
 		InstantiateTypeForDefault = "ACF.Sensors.Receiver.Warning.Laser",
 		OnlyAllowSubtypes         = true,

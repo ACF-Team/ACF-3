@@ -1,127 +1,125 @@
 local ACF     = ACF
-local Engines = ACF.Classes.Engines
-
-
-Engines.Register("V8", {
-	Name = "V8 Engine",
-})
+local Classes = ACF.Classes
+Classes.DefineClass("ACF.Engines.V8", "ACF.Engines.BaseEngine", function()
+	CLASS.Name = "V8 Engine"
+end)
 
 do -- Petrol Engines
-	Engines.RegisterItem("5.7-V8", "V8", {
-		Name		 = "5.7L V8 Petrol",
-		Description	 = "#acf.descs.engines.v8.5_7",
-		Model		 = "models/engines/v8s.mdl",
-		Sound		 = "acf_base/engines/v8_petrolsmall.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "GenericPetrol",
-		Mass		 = 260,
-		Torque		 = 389,
-		FlywheelMass = 0.15,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.5.7-V8", "ACF.Engines.V8", function()
+		CLASS.Name		 = "5.7L V8 Petrol"
+		CLASS.Description	 = "#acf.descs.engines.v8.5_7"
+		CLASS.Model		 = "models/engines/v8s.mdl"
+		CLASS.Sound		 = "acf_base/engines/v8_petrolsmall.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
+		CLASS.Mass		 = 260
+		CLASS.Torque		 = 389
+		CLASS.FlywheelMass = 0.15
+		CLASS.RPM = {
 			Idle	= 800,
 			Limit	= 5700,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 100,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("9.0-V8", "V8", {
-		Name		 = "9.0L V8 Petrol",
-		Description	 = "#acf.descs.engines.v8.9_0",
-		Model		 = "models/engines/v8m.mdl",
-		Sound		 = "acf_base/engines/v8_petrolmedium.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "GenericPetrol",
-		Mass		 = 400,
-		Torque		 = 576,
-		FlywheelMass = 0.25,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.9.0-V8", "ACF.Engines.V8", function()
+		CLASS.Name		 = "9.0L V8 Petrol"
+		CLASS.Description	 = "#acf.descs.engines.v8.9_0"
+		CLASS.Model		 = "models/engines/v8m.mdl"
+		CLASS.Sound		 = "acf_base/engines/v8_petrolmedium.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
+		CLASS.Mass		 = 400
+		CLASS.Torque		 = 576
+		CLASS.FlywheelMass = 0.25
+		CLASS.RPM = {
 			Idle	= 700,
 			Limit	= 5500,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 100,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("18.0-V8", "V8", {
-		Name		 = "18.0L V8 Petrol",
-		Description	 = "#acf.descs.engines.v8.18_0",
-		Model		 = "models/engines/v8l.mdl",
-		Sound		 = "acf_base/engines/v8_petrollarge.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "GenericPetrol",
-		Mass		 = 850,
-		Torque		 = 1848,
-		FlywheelMass = 2.8,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.18.0-V8", "ACF.Engines.V8", function()
+		CLASS.Name		 = "18.0L V8 Petrol"
+		CLASS.Description	 = "#acf.descs.engines.v8.18_0"
+		CLASS.Model		 = "models/engines/v8l.mdl"
+		CLASS.Sound		 = "acf_base/engines/v8_petrollarge.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
+		CLASS.Mass		 = 850
+		CLASS.Torque		 = 1848
+		CLASS.FlywheelMass = 2.8
+		CLASS.RPM = {
 			Idle	= 600,
 			Limit	= 3000,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 100,
-		},
-	})
+		}
+	end)
 end
 
 do -- Diesel Engines
-	Engines.RegisterItem("4.5-V8", "V8", {
-		Name		 = "4.5L V8 Diesel",
-		Description	 = "#acf.descs.engines.v8.4_5",
-		Model		 = "models/engines/v8s.mdl",
-		Sound		 = "acf_base/engines/v8_dieselsmall.wav",
-		Fuel		 = { Diesel = true },
-		Type		 = "GenericDiesel",
-		Mass		 = 320,
-		Torque		 = 446,
-		FlywheelMass = 0.75,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.4.5-V8", "ACF.Engines.V8", function()
+		CLASS.Name		 = "4.5L V8 Diesel"
+		CLASS.Description	 = "#acf.descs.engines.v8.4_5"
+		CLASS.Model		 = "models/engines/v8s.mdl"
+		CLASS.Sound		 = "acf_base/engines/v8_dieselsmall.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
+		CLASS.Mass		 = 320
+		CLASS.Torque		 = 446
+		CLASS.FlywheelMass = 0.75
+		CLASS.RPM = {
 			Idle	= 800,
 			Limit	= 4000,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 100,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("7.8-V8", "V8", {
-		Name		 = "7.8L V8 Diesel",
-		Description	 = "#acf.descs.engines.v8.7_8",
-		Model		 = "models/engines/v8m.mdl",
-		Sound		 = "acf_base/engines/v8_dieselmedium2.wav",
-		Fuel		 = { Diesel = true },
-		Type		 = "GenericDiesel",
-		Mass		 = 520,
-		Torque		 = 870,
-		FlywheelMass = 1.6,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.7.8-V8", "ACF.Engines.V8", function()
+		CLASS.Name		 = "7.8L V8 Diesel"
+		CLASS.Description	 = "#acf.descs.engines.v8.7_8"
+		CLASS.Model		 = "models/engines/v8m.mdl"
+		CLASS.Sound		 = "acf_base/engines/v8_dieselmedium2.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
+		CLASS.Mass		 = 520
+		CLASS.Torque		 = 870
+		CLASS.FlywheelMass = 1.6
+		CLASS.RPM = {
 			Idle	= 650,
 			Limit	= 3800,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 100,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("19.0-V8", "V8", {
-		Name		 = "19.0L V8 Diesel",
-		Description	 = "#acf.descs.engines.v8.19_0",
-		Model		 = "models/engines/v8l.mdl",
-		Sound		 = "acf_base/engines/v8_diesellarge.wav",
-		Fuel		 = { Diesel = true },
-		Type		 = "GenericDiesel",
-		Mass		 = 1200,
-		Torque		 = 3308,
-		FlywheelMass = 4.5,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.19.0-V8", "ACF.Engines.V8", function()
+		CLASS.Name		 = "19.0L V8 Diesel"
+		CLASS.Description	 = "#acf.descs.engines.v8.19_0"
+		CLASS.Model		 = "models/engines/v8l.mdl"
+		CLASS.Sound		 = "acf_base/engines/v8_diesellarge.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
+		CLASS.Mass		 = 1200
+		CLASS.Torque		 = 3308
+		CLASS.FlywheelMass = 4.5
+		CLASS.RPM = {
 			Idle	= 500,
 			Limit	= 2000,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 100,
-		},
-	})
+		}
+	end)
 end
 
 ACF.SetCustomAttachment("models/engines/v8l.mdl", "driveshaft", Vector(-25.6, 0, 7.4), Angle(0, 90, 90))

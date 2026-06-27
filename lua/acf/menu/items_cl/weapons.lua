@@ -4,6 +4,26 @@ local ModelData = ACF.ModelData
 local Current   = {}
 local CreateControl, IsScalable
 
+-- Non-scalable weapons expose their concrete, selectable variants as IsWeaponOption subtypes
+-- (e.g. ACF.Guns.40mmFlareLauncher under ACF.Guns.FlareLauncher). Cached per category class.
+local OptionCache = {}
+local function GetWeaponOptions(Class)
+	local Cached = OptionCache[Class]
+	if Cached then return Cached end
+
+	local Options = {}
+
+	for _, Child in pairs(Classes.GetSubtypes(Classes.GetTypeName(Class))) do
+		if Child.IsWeaponOption then
+			Options[#Options + 1] = Child
+		end
+	end
+
+	OptionCache[Class] = Options
+
+	return Options
+end
+
 ---Wrapper function to update the entity preview panel with a given weapon entry object.
 ---@param Base userdata The panel in which all the weapon controls and information are being placed on.
 ---@param Data table<string, any> The weapon entry object selected on the menu.
@@ -48,7 +68,7 @@ local function UpdateControl(Base)
 
 		UpdatePreview(Base, Class)
 	else
-		ACF.LoadSortedList(Base.List, Class.Items, "Caliber")
+		ACF.LoadSortedList(Base.List, GetWeaponOptions(Class), "Caliber")
 	end
 end
 

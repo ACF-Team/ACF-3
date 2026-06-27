@@ -3,28 +3,7 @@ local Classes     = ACF.Classes
 local WireLib     = WireLib
 local ActiveTanks = ACF.FuelTanks
 
-local FUELTYPE_BASE = "ACF.FuelTypes.FuelType"
 local TANK_MATERIAL = "models/props_canal/metalcrate001d"
-
--- Resolves a FuelType client-data value (legacy short id, class FQN string, or {Type=} table)
--- to a ContainerShapes-style class FQN. Falls back to Petrol.
-local function ResolveFuelType(Value)
-	if istable(Value) and Value.Type then Value = Value.Type end
-	if Classes.GetTypeByName(Value) then return Value end -- Already a FQN
-
-	for _, Class in ipairs(Classes.GetSubtypes(FUELTYPE_BASE)) do
-		if Class.ID == Value then return Classes.GetTypeName(Class) end
-	end
-
-	return "ACF.FuelTypes.Petrol"
-end
-
--- Runs on raw client/dupe data before serialization. Resolves the FuelType short ID into a class
--- FQN. Shape (FQN) and the FuelSizeX/Y/Z fields come straight from the menu / compat patch, so no
--- shape/size translation happens here.
-function ENT.ACF_OnVerifyClientData(ClientData)
-	ClientData.FuelType = ResolveFuelType(ClientData.FuelType)
-end
 
 do -- Spawning
 	function ENT:ACF_PreSpawn(_, _, _, ClientData)
@@ -52,7 +31,6 @@ do -- Spawning
 	end
 
 	function ENT:ACF_PostSpawn()
-		-- Fuel tanks should be active by default.
 		self:TriggerInput("Active", 1)
 		WireLib.TriggerOutput(self, "Entity", self)
 	end
@@ -80,9 +58,6 @@ do -- Updating
 		self:SetMaterial(TANK_MATERIAL)
 
 		local FuelID = FuelType.ID
-
-		-- Fields the (still legacy) engine link code + E2/SF read directly.
-		self.FuelType    = FuelID
 		self.FuelDensity = FuelType.Density
 		self.IsExplosive = FuelType.IsExplosive
 		self.NoLinks     = false
@@ -160,10 +135,10 @@ do -- Overlay text
 			State:AddWarning("WARNING: Leaking!")
 		end
 
-		local FuelTypeID = self.FuelType
-		local FuelType   = Classes.FuelTypes.Get(FuelTypeID)
+		-- The V2 fuel type instance lives on the entity's field set; read it straight off.
+		local FuelType = self:ACF_GetUserVar("FuelType")
 
-		State:AddKeyValue("Fuel Type", FuelTypeID)
+		State:AddKeyValue("Fuel Type", FuelType and FuelType.ID or self.FuelType)
 
 		if FuelType and FuelType.FuelTankOverlay then
 			FuelType.FuelTankOverlay(self.Amount, State)

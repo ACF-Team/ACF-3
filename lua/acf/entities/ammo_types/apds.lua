@@ -15,10 +15,10 @@ Classes.DefineClass("ACF.Ammunition.APDS", "ACF.Ammunition.AP", function()
 		["ACF.Guns.RotaryAutocannon"] = true,
 	})
 
-	function CLASS:UpdateRoundData(ToolData, Data, GUIData)
+	function CLASS:UpdateRoundData(Data, GUIData)
 		GUIData = GUIData or Data
 
-		ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
+		ACF.UpdateRoundSpecs(self, Data, GUIData)
 
 		local Cylinder  = (math.pi * (Data.Caliber * 0.5) ^ 2) * Data.ProjLength * 0.5 -- A cylinder 1/2 the length of the projectile
 		local Hole		= Data.ProjArea * Data.ProjLength * 0.5 -- Volume removed by the hole the dart passes through
@@ -29,21 +29,21 @@ Classes.DefineClass("ACF.Ammunition.APDS", "ACF.Ammunition.AP", function()
 		Data.DragCoef  = Data.ProjArea * 0.000125 / Data.ProjMass -- Worse drag (Manually fudged to make a meaningful difference)
 		Data.CartMass  = Data.PropMass + Data.ProjMass + SabotMass
 
-		hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
+		hook.Run("ACF_OnUpdateRound", self, self, Data, GUIData)
 
 		for K, V in pairs(self:GetDisplayData(Data)) do
 			GUIData[K] = V
 		end
 	end
 
-	function CLASS:BaseConvert(ToolData)
-		local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, { ProjScale = 0.45 }) -- Ratio of projectile to gun caliber
+	function CLASS:BaseConvert()
+		local Data, GUIData = ACF.RoundBaseGunpowder(self, { ProjScale = 0.45 }) -- Ratio of projectile to gun caliber
 
 		Data.ShovePower = 0.2
 		Data.LimitVel   = 950 --Most efficient penetration speed in m/s
 		Data.Ricochet   = 80 --Base ricochet angle
 
-		self:UpdateRoundData(ToolData, Data, GUIData)
+		self:UpdateRoundData(Data, GUIData)
 
 		return Data, GUIData
 	end

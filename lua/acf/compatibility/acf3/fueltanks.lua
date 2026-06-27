@@ -10,17 +10,16 @@ end
 -- Migrates legacy ACF-3 / ACE fuel tanks onto the AutoRegisterV2 serialized field set. This is where
 -- all the historical size/shape encodings are normalised into FuelSizeX/Y/Z + the Shape class field;
 -- FuelType is left as-is (the entity's ACF_OnVerifyClientData resolves the short id into a class).
-ACF.Classes.Entities.RegisterCompatPatch("acf_fueltank", 2026062101, function(Data)
+ACF.Entities.RegisterCompatPatch("acf_fueltank", 2026062101, function(Data)
 	if Data.ACF_UserData then return end
 
-	local Old      = Data.Data or {}
-	local FuelTank = Old.FuelTank or Data.FuelTank
-	local Size     = Old.Size     or Data.Size
-	local SizeId   = Old.SizeId   or Data.SizeId
-	local ShapeID  = Old.FuelShape or Data.FuelShape
-	local SX       = Old.FuelSizeX or Data.FuelSizeX
-	local SY       = Old.FuelSizeY or Data.FuelSizeY
-	local SZ       = Old.FuelSizeZ or Data.FuelSizeZ
+	local FuelTank = Data.FuelTank
+	local Size     = Data.Size
+	local SizeId   = Data.SizeId
+	local ShapeID  = Data.FuelShape
+	local SX       = Data.FuelSizeX
+	local SY       = Data.FuelSizeY
+	local SZ       = Data.FuelSizeZ
 
 	-- Only derive size when it wasn't already saved per-axis (FuelSizeX/Y/Z).
 	if not (SX and SY and SZ) then
@@ -45,8 +44,15 @@ ACF.Classes.Entities.RegisterCompatPatch("acf_fueltank", 2026062101, function(Da
 		end
 	end
 
+	if isstring(Data.FuelType) then
+		Data.FuelType = {
+			Type = "ACF.FuelTypes." .. Data.FuelType,
+			Data = {}
+		}
+	end
+
 	Data.ACF_UserData = {
-		FuelType  = Old.FuelType or Data.FuelType,
+		FuelType  = Data.FuelType,
 		Shape     = ShapeFQN(ShapeID or "Box"),
 		FuelSizeX = SX,
 		FuelSizeY = SY,

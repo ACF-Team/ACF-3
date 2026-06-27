@@ -1,4 +1,4 @@
-ACF.Classes.Entities.RegisterCompatPatch("acf_autoloader", 2026060901, function(Data)
+ACF.Entities.RegisterCompatPatch("acf_autoloader", 2026060901, function(Data)
 	local EntityMods = Data.EntityMods
 	if not EntityMods then return end
 

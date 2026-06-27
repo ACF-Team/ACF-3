@@ -19,9 +19,11 @@ local IsPhysObjValid	= ACF.Optimizations.IsPhysObjValid
 --===============================================================================================--
 do
 	ACF.RegisterClassLink("acf_engine", "acf_fueltank", function(Engine, Target)
+		local TargetFuelType = ACF.Classes.GetTypeName(Target:ACF_GetUserVar("FuelType"):GetType())
+
 		if Engine.FuelTanks[Target] then return false, "This engine is already linked to this fuel tank!" end
 		if Target.Engines[Engine] then return false, "This engine is already linked to this fuel tank!" end
-		if not Engine.FuelTypes[Target.FuelType] then return false, "Cannot link because fuel type is incompatible." end
+		if not Engine.FuelTypes[TargetFuelType] then return false, "Cannot link because fuel type is incompatible." end
 		if Target.NoLinks then return false, "This fuel tank doesn't allow linking." end
 		if Engine:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This fuel tank is too far away from this engine." end
 
@@ -246,52 +248,22 @@ end
 --===============================================================================================--
 
 do -- Spawn and Update functions
-	local Classes     = ACF.Classes
-	local WireIO      = Utilities.WireIO
-	local Engines     = Classes.Engines
-	local EngineTypes = Classes.EngineTypes
-	local Entities    = Classes.Entities
+	local Classes = ACF.Classes
 
-	local Inputs = {
-		"Active (If set to a non-zero value, it'll attempt to start the engine.)",
-		"Throttle (On a range from 0 to 100, defines how much power will be given to the engine.)"
-	}
-	local Outputs = {
-		"RPM (Current rotations per minute of the engine.)",
-		"Torque (Current torque, in nM, output by the engine.)",
-		"Power (Current power, in kW, output by the engine.)",
-		"Fuel Use (Amount of fuel, in liters per minute, being consumed by the engine.)",
-		"Mass (Total mass detected on the vehicle by the engine.)",
-		"Physical Mass (Physical mass detected on the vehicle by the engine.)",
-		"Entity (The engine itself.) [ENTITY]",
-	}
-
-	local function VerifyData(Data)
-		if not Data.Engine then
-			Data.Engine = Data.Id or "5.7-V8"
-		end
-
-		local Class = Classes.GetGroup(Engines, Data.Engine)
-
-		if not Class then
-			Class = Engines.Get("V8")
-
-			Data.Engine = "5.7-V8"
-		end
-
-		local Engine = Engines.GetItem(Class.ID, Data.Engine)
-
-		do -- External verifications
-			if Class.VerifyData then
-				Class.VerifyData(Data, Class, Engine)
-			end
-
-			hook.Run("ACF_OnVerifyData", "acf_engine", Data, Class, Engine)
-		end
+	-- Engine/engine-type classes are identified by FQN; derive the legacy short id for display by
+	-- stripping the namespace prefix (FQNs like "ACF.Engines.5.7-V8" contain dots, so a plain split
+	-- on "." won't work).
+	local function ShortName(Class, Prefix)
+		local Name = Classes.GetTypeName(Class):gsub("^" .. Prefix, "")
+		return Name
 	end
 
-	local function UpdateEngine(Entity, Data, Class, Engine, Type)
-		local Mass = Engine.Mass
+	local function UpdateEngine(Entity, Engine)
+		local EngineClass = Engine:GetType()
+		local Group       = Classes.GetBaseClass(EngineClass)
+		local Type        = Classes.GetSubtypeByName("ACF.EngineTypes.BaseEngineType", Engine.Type)
+			or Classes.GetTypeByName("ACF.EngineTypes.GenericPetrol")
+		local Mass        = Engine.Mass
 
 		Entity.ACF = Entity.ACF or {}
 
@@ -300,15 +272,10 @@ do -- Spawn and Update functions
 		Entity:PhysicsInit(SOLID_VPHYSICS)
 		Entity:SetMoveType(MOVETYPE_VPHYSICS)
 
-		-- Storing all the relevant information on the entity for duping
-		for _, V in ipairs(Entity.DataStore) do
-			Entity[V] = Data[V]
-		end
-
 		Entity.Name             = Engine.Name
-		Entity.ShortName        = Engine.ID
-		Entity.EntType          = Class.Name
-		Entity.ClassData        = Class
+		Entity.ShortName        = ShortName(EngineClass, "ACF%.Engines%.")
+		Entity.EntType          = Group and Group.Name or Engine.Name
+		Entity.ClassData        = Group
 		Entity.DefaultSound     = Engine.Sound
 		Entity.SoundPitch       = Engine.Pitch or 1
 		Entity.SoundVolume      = Engine.SoundVolume or 1
@@ -327,9 +294,9 @@ do -- Spawn and Update functions
 		Entity.Inertia          = Engine.FlywheelMass * math.pi ^ 2
 		Entity.IsElectric       = Engine.IsElectric
 		Entity.IsTrans          = Engine.IsTrans -- driveshaft outputs to the side
-		Entity.FuelTypes        = Engine.Fuel or { Petrol = true }
+		Entity.FuelTypes        = Engine.Fuel or { ["ACF.FuelTypes.Petrol"] = true }
 		Entity.FuelType         = next(Engine.Fuel)
-		Entity.EngineType       = Type.ID
+		Entity.EngineType       = ShortName(Type, "ACF%.EngineTypes%.")
 		Entity.Efficiency       = Type.Efficiency
 		Entity.TorqueScale      = Type.TorqueScale
 		Entity.HealthMult       = Type.HealthMult
@@ -339,10 +306,8 @@ do -- Spawn and Update functions
 		if Engine.IsTrans then
 			Entity.Out = ACF.LocalPlane(vector_origin, Vector(0, 1, 0))
 		end
-		Entity.IsSpecial        = Engines.IsSpecial(Engines.GetItem(Class.ID, Data.Engine))
-
-		WireIO.SetupInputs(Entity, Inputs, Data, Class, Engine, Type)
-		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Engine, Type)
+		Entity.IsSpecial        = Engine.IsSpecial
+		Entity.SoundPath        = Entity.SoundPath or Engine.Sound
 
 		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 
@@ -358,151 +323,72 @@ do -- Spawn and Update functions
 		Contraption.SetMass(Entity, Mass)
 	end
 
-	function ACF.MakeEngine(Player, Pos, Angle, Data)
-		VerifyData(Data)
+	-- Spawn-only init (runs before Entity:Spawn(), so the model is ready for physics).
+	function ENT:ACF_PreSpawn(_, _, _, ClientData)
+		self.ACF               = {}
+		self.Active            = false
+		self.Gearboxes         = {}
+		self.FuelTanks         = {}
+		self.LastThink         = 0
+		self.MassRatio         = 1
+		self.FuelUsage         = 0
+		self.Throttle          = 0
+		self.FlyRPM            = 0
+		self.LastPitch         = 0
+		self.LastTorque        = 0
+		self.LastFuelUsage     = 0
+		self.LastPower         = 0
+		self.LastRPM           = 0
+		self.LastTotalMass     = 0
+		self.LastPhysMass      = 0
+		self.revLimiterEnabled = true
 
-		local Class  = Classes.GetGroup(Engines, Data.Engine)
-		local Engine = Engines.GetItem(Class.ID, Data.Engine)
-		local Type   = EngineTypes.Get(Engine.Type)
-		local Limit  = Class.LimitConVar.Name
+		-- ClientData isn't verified yet here; resolve defensively for the pre-spawn model. On dupes the
+		-- Engine field arrives nested ({Type,Data}) and falls through to the default - PostUpdate fixes it.
+		local Engine = Classes.GetSubtypeByName("ACF.Engines.BaseEngine", ClientData.Engine)
+			or Classes.GetTypeByName("ACF.Engines.5.7-V8")
 
-		if not Player:CheckLimit(Limit) then return false end
+		Contraption.SetModel(self, Engine.Model)
 
-		local CanSpawn = hook.Run("ACF_PreSpawnEntity", "acf_engine", Player, Data, Class, Engine)
-
-		if CanSpawn == false then return false end
-
-		local Entity = ents.Create("acf_engine")
-
-		if not IsValid(Entity) then return false end
-
-		Entity:SetAngles(Angle)
-		Entity:SetPos(Pos)
-		Entity:Spawn()
-
-		Player:AddCleanup("acf_engine", Entity)
-		Player:AddCount(Limit, Entity)
-
-		Entity.Active        = false
-		Entity.Gearboxes     = {}
-		Entity.FuelTanks     = {}
-		Entity.LastThink     = 0
-		Entity.MassRatio     = 1
-		Entity.FuelUsage     = 0
-		Entity.Throttle      = 0
-		Entity.FlyRPM        = 0
-		Entity.SoundPath     = Engine.Sound
-		Entity.LastPitch     = 0
-		Entity.LastTorque    = 0
-		Entity.LastFuelUsage = 0
-		Entity.LastPower     = 0
-		Entity.LastRPM       = 0
-		Entity.LastTotalMass = 0
-		Entity.LastPhysMass  = 0
-		Entity.DataStore     = Entities.GetArguments("acf_engine")
-		Entity.revLimiterEnabled = true
-
-		duplicator.ClearEntityModifier(Entity, "mass")
-
-		UpdateEngine(Entity, Data, Class, Engine, Type)
-
-		if Class.OnSpawn then
-			Class.OnSpawn(Entity, Data, Class, Engine)
-		end
-
-		ACF.AugmentedTimer(function(cfg) Entity:UpdateFuelMod(cfg) end, function() return IsEntityValid(Entity) end, nil, {MinTime = 0.1, MaxTime = 0.25})
-
-		hook.Run("ACF_OnSpawnEntity", "acf_engine", Entity, Data, Class, Engine)
-
-		return Entity
+		duplicator.ClearEntityModifier(self, "mass")
 	end
 
-	Entities.LegacyRegister("acf_engine", ACF.MakeEngine, "Engine")
+	function ENT.ACF_CheckSpawnLimit(Player)
+		return Player:CheckLimit("_acf_engine")
+	end
 
-	ACF.RegisterLinkSource("acf_engine", "FuelTanks")
-	ACF.RegisterLinkSource("acf_engine", "Gearboxes")
+	function ENT:ACF_PreUpdateEntityData()
+		-- Don't reconfigure a running engine; shut it down first (no-op on a fresh spawn).
+		if self.Active then self:Disable() end
+	end
 
-	------------------- Updating ---------------------
+	function ENT:ACF_PostUpdateEntityData()
+		UpdateEngine(self, self:GetEngine())
 
-	function ENT:Update(Data)
-		if self.Active then return false, "Turn off the engine before updating it!" end
-
-		VerifyData(Data)
-
-		local Class    = Classes.GetGroup(Engines, Data.Engine)
-		local Engine   = Engines.GetItem(Class.ID, Data.Engine)
-		local Type     = EngineTypes.Get(Engine.Type)
-		local OldClass = self.ClassData
-		local Feedback = ""
-
-		local CanUpdate, Reason = hook.Run("ACF_PreUpdateEntity", "acf_engine", self, Data, Class, Engine)
-
-		if CanUpdate == false then return CanUpdate, Reason end
-
-		if OldClass.OnLast then
-			OldClass.OnLast(self, OldClass)
-		end
-
-		hook.Run("ACF_OnEntityLast", "acf_engine", self, OldClass)
-
-		ACF.SaveEntity(self)
-
-		UpdateEngine(self, Data, Class, Engine, Type)
-
-		ACF.RestoreEntity(self)
-
-		if Class.OnUpdate then
-			Class.OnUpdate(self, Data, Class, Engine)
-		end
-
-		hook.Run("ACF_OnUpdateEntity", "acf_engine", self, Data, Class, Engine)
-
+		-- A reconfigure can invalidate existing links (no-op on a fresh spawn).
 		if next(self.Gearboxes) then
-			local Count, Total = 0, 0
-
 			for Gearbox in pairs(self.Gearboxes) do
 				self:Unlink(Gearbox)
-
-				local Result = self:Link(Gearbox)
-
-				if not Result then Count = Count + 1 end
-
-				Total = Total + 1
-			end
-
-			if Count == Total then
-				Feedback = Feedback .. "\nUnlinked all gearboxes due to excessive driveshaft angle."
-			elseif Count > 0 then
-				local Text = Feedback .. "\nUnlinked %s out of %s gearboxes due to excessive driveshaft angle."
-
-				Feedback = Text:format(Count, Total)
+				self:Link(Gearbox)
 			end
 		end
 
 		if next(self.FuelTanks) then
-			local Count, Total = 0, 0
-
 			for Tank in pairs(self.FuelTanks) do
 				if not self.FuelTypes[Tank.FuelType] then
 					self:Unlink(Tank)
-
-					Count = Count + 1
 				end
-
-				Total = Total + 1
-			end
-
-			if Count == Total then
-				Feedback = Feedback .. "\nUnlinked all fuel tanks due to fuel type change."
-			elseif Count > 0 then
-				local Text = Feedback .. "\nUnlinked %s out of %s fuel tanks due to fuel type change."
-
-				Feedback = Text:format(Count, Total)
 			end
 		end
-
-		return true, "Engine updated successfully!" .. Feedback
 	end
+
+	function ENT:ACF_PostSpawn()
+		ACF.AugmentedTimer(function(cfg) self:UpdateFuelMod(cfg) end, function() return IsEntityValid(self) end, nil, {MinTime = 0.1, MaxTime = 0.25})
+	end
+
+	ACF.RegisterLinkSource("acf_engine", "FuelTanks")
+	ACF.RegisterLinkSource("acf_engine", "Gearboxes")
+
 end
 
 --===============================================================================================--
@@ -888,11 +774,10 @@ function ENT:PreEntityCopy()
 		duplicator.StoreEntityModifier(self, "ACFFuelTanks", Tanks)
 	end
 
-	--Wire dupe info
-	self.BaseClass.PreEntityCopy(self)
+	-- AutoRegisterV2 wraps this as the original PreEntityCopy and handles the wire/base dupe info.
 end
 
-function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+function ENT:PostEntityPaste(_, Ent, CreatedEntities)
 	local EntMods = Ent.EntityMods
 
 	-- Backwards compatibility
@@ -933,8 +818,7 @@ function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
 		EntMods.ACFFuelTanks = nil
 	end
 
-	--Wire dupe info
-	self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
+	-- AutoRegisterV2 wraps this as the original PostEntityPaste and handles the wire/base dupe info.
 end
 
 function ENT:GetCost()
@@ -943,14 +827,16 @@ function ENT:GetCost()
 	return math.max(5, (selftbl.PeakTorque / 160) + (selftbl.PeakPower / 80))
 end
 
-function ENT:OnRemove()
+-- Remove-only teardown. Captured by AutoRegisterV2 as OrigOnRemove; the generated OnRemove still runs
+-- ACF_OnEntityLast + WireLib cleanup around this.
+function ENT:OnRemove(IsFullUpdate)
+	if IsFullUpdate then return end
+
 	local Class = self.ClassData
 
-	if Class.OnLast then
+	if Class and Class.OnLast then
 		Class.OnLast(self, Class)
 	end
-
-	hook.Run("ACF_OnEntityLast", "acf_engine", self, Class)
 
 	self:DestroySound()
 
@@ -963,8 +849,6 @@ function ENT:OnRemove()
 	end
 
 	TimerRemove("ACF Engine Clock " .. self:EntIndex())
-
-	WireLib.Remove(self)
 end
 
 do	-- NET SURFER 2.0

@@ -1,28 +1,23 @@
 local ACF        = ACF
 local Classes    = ACF.Classes
-local Components = Classes.Components
 local GetType    = Classes.GetTypeByName
 
--- Class: Supply Unit under Components
-Components.Register("SP-RFL", {
-	Name   = "Supply Crate",
-	Entity = "acf_supply",
-	TutorialURL = "docs/acf_tutorials/refills.html",
-	LimitConVar = {
+local Classes   = ACF.Classes
+
+Classes.DefineClass("ACF.Components.SupplyCrate", "ACF.Components.BaseComponent", function()
+	CLASS.Name        = "Supply Crate"
+	CLASS.Description = "A scalable container that supplies fuel and ammo."
+	CLASS.Model       = "models/acf/core/s_fuel.mdl"
+	CLASS.Material    = "phoenix_storms/future_vents"
+	CLASS.Preview = {FOV = 120}
+	CLASS.Entity = "acf_supply"
+	CLASS.TutorialURL = "docs/acf_tutorials/refills.html"
+	CLASS.LimitConVar = {
 		Name   = "_acf_supply",
 		Amount = 4,
 		Text   = "Maximum amount of ACF Supply crates a player can create."
 	}
-})
-
--- Single generic supply item; capacity scales with size sliders
-Components.RegisterItem("RFL-UNIT", "SP-RFL", {
-	Name        = "Supply Crate",
-	Description = "A scalable container that supplies fuel and ammo.",
-	Model       = "models/acf/core/s_fuel.mdl",
-	Material    = "phoenix_storms/future_vents",
-	Preview = {FOV = 120},
-	CreateMenu = function(_, Menu)
+	function CLASS.CreateMenu(_, Menu)
 		-- Shape selector. The combo value is the ContainerShapes class FQN written straight into the
 		-- "Shape" field; no string->class translation needed at spawn time.
 		local SupplyShape = Menu:AddComboBox()
@@ -131,6 +126,5 @@ Components.RegisterItem("RFL-UNIT", "SP-RFL", {
 
 		ACF.SetClientData("PrimaryClass", "acf_supply")
 		ACF.SetClientData("SecondaryClass", "N/A")
-	end,
-})
-
+	end
+end)

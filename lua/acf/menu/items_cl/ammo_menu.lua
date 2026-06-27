@@ -42,9 +42,32 @@ end
 ---@param ToolData table<string, any> The copy of the local player's client data variables.
 ---@return table<string, any> Group The weapon group object expected by the player's menu.
 local function GetWeaponClass(ToolData)
-	local Destiny = Classes[ToolData.Destiny or "Weapons"]
+	-- Guns and missiles are both V2 subtypes of ACF.Weapons.BaseWeapon, resolved by FQN.
+	return Classes.GetSubtypeByName("ACF.Weapons.BaseWeapon", ToolData.Weapon)
+end
 
-	return Classes.GetGroup(Destiny, ToolData.Weapon)
+---Refreshes an ammo instance's runtime state for menu display: gives it a weapon back-reference
+---(so the round math can read caliber/round limits) and syncs its round inputs from client data.
+---@param Inst table The ammo-type instance to set up.
+---@param ToolData table<string, any> The copy of the local player's client data variables.
+local function SetupAmmo(Inst, ToolData)
+	if not Inst then return end
+
+	-- Build a weapon instance for the back-reference (V2 weapon classes only; missiles are grouped).
+	local WeaponClass = GetWeaponClass(ToolData)
+
+	if WeaponClass and WeaponClass.GetType then
+		local WeaponInst = WeaponClass()
+		WeaponInst.Caliber = ToolData.Caliber or WeaponInst.Caliber
+		Inst.Weapon = WeaponInst
+	end
+
+	-- Sync the round inputs (Projectile/Propellant/Tracer + type-specific) from client data.
+	for _, Field in ipairs(Classes.GetTypeFields(Inst:GetType())) do
+		if Field.Menu and ToolData[Field.Name] ~= nil then
+			Inst[Field.Name] = ToolData[Field.Name]
+		end
+	end
 end
 
 ---Returns the mass of a hollow box given the current size and armor thickness expected for it.
@@ -228,8 +251,9 @@ local function AddTracer(Base, ToolData)
 	Tracer:SetClientData("Tracer", "OnChange")
 	Tracer:DefineSetter(function(Panel, _, _, Value)
 		ToolData.Tracer = Value
+		Ammo.Tracer     = Value
 
-		Ammo:UpdateRoundData(ToolData, BulletData)
+		Ammo:UpdateRoundData(BulletData)
 
 		ACF.SetClientData("Projectile", BulletData.ProjLength)
 		ACF.SetClientData("Propellant", BulletData.PropLength)
@@ -278,12 +302,13 @@ local function AddControls(Base, ToolData)
 	Projectile:SetClientData("Projectile", "OnValueChanged")
 	Projectile:DefineSetter(function(Panel, _, _, Value, IsTracked)
 		ToolData.Projectile = Value
+		Ammo.Projectile     = Value
 
 		if not IsTracked then
 			BulletData.Priority = "Projectile"
 		end
 
-		Ammo:UpdateRoundData(ToolData, BulletData)
+		Ammo:UpdateRoundData(BulletData)
 
 		ACF.SetClientData("Propellant", BulletData.PropLength)
 
@@ -299,12 +324,13 @@ local function AddControls(Base, ToolData)
 	Propellant:SetClientData("Propellant", "OnValueChanged")
 	Propellant:DefineSetter(function(Panel, _, _, Value, IsTracked)
 		ToolData.Propellant = Value
+		Ammo.Propellant     = Value
 
 		if not IsTracked then
 			BulletData.Priority = "Propellant"
 		end
 
-		Ammo:UpdateRoundData(ToolData, BulletData)
+		Ammo:UpdateRoundData(BulletData)
 
 		ACF.SetClientData("Projectile", BulletData.ProjLength)
 
@@ -590,7 +616,8 @@ function ACF.UpdateAmmoMenu(Menu)
 	local ToolData = ACF.GetAllClientData()
 	local Base = Menu.AmmoBase
 
-	BulletData = Ammo:ClientConvert(ToolData)
+	SetupAmmo(Ammo, ToolData)
+	BulletData = Ammo:ClientConvert()
 
 	Menu:ClearTemporal(Base)
 
@@ -747,9 +774,11 @@ function ACF.CreateAmmoMenu(Menu)
 		local ToolData = ACF.GetAllClientData()
 		local Class = GetWeaponClass(ToolData)
 		if Class then
-			local CurrentAmmo = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", ToolData.AmmoType)
-			if CurrentAmmo then
-				local BulletData = CurrentAmmo:ClientConvert(ToolData)
+			local AmmoClass = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", ToolData.AmmoType)
+			if AmmoClass then
+				local CurrentAmmo = AmmoClass()
+				SetupAmmo(CurrentAmmo, ToolData)
+				local BulletData = CurrentAmmo:ClientConvert()
 				UpdateProjectileCountLimits(ToolData, BulletData)
 			end
 		end
@@ -797,9 +826,9 @@ function ACF.CreateAmmoMenu(Menu)
 		local ToolData = ACF.GetAllClientData()
 		local Class = GetWeaponClass(ToolData)
 		if Class then
-			local CurrentAmmo = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", ToolData.AmmoType)
+			local CurrentAmmo = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", ToolData.AmmoType) CurrentAmmo = CurrentAmmo and CurrentAmmo() SetupAmmo(CurrentAmmo, ToolData)
 			if CurrentAmmo then
-				local BulletData = CurrentAmmo:ClientConvert(ToolData)
+				local BulletData = CurrentAmmo:ClientConvert()
 				local CountX = ACF.GetClientNumber("CrateProjectilesX", 3)
 				local CountY = ACF.GetClientNumber("CrateProjectilesY", 3)
 				local CountZ = ACF.GetClientNumber("CrateProjectilesZ", 3)
@@ -885,7 +914,7 @@ function ACF.CreateAmmoMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		Ammo = Data
+		Ammo = Data()
 
 		ACF.SetClientData("AmmoType", Classes.GetTypeName(Data:GetType()))
 		Title:SetText(UpdateTitle())

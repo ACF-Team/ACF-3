@@ -25,13 +25,13 @@ Classes.DefineClass("ACF.Ammunition.HP", "ACF.Ammunition.AP", function()
 		return Display
 	end
 
-	function CLASS:UpdateRoundData(ToolData, Data, GUIData)
+	function CLASS:UpdateRoundData(Data, GUIData)
 		GUIData = GUIData or Data
 
-		ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
+		ACF.UpdateRoundSpecs(self, Data, GUIData)
 
 		local FreeVol      = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)
-		local HollowCavity = FreeVol * math.Clamp(ToolData.HollowRatio, 0, 1)
+		local HollowCavity = FreeVol * math.Clamp(self.HollowRatio, 0, 1)
 		local ExpRatio     = HollowCavity / GUIData.ProjVolume
 
 		Data.CavVol     = HollowCavity
@@ -42,29 +42,29 @@ Classes.DefineClass("ACF.Ammunition.HP", "ACF.Ammunition.AP", function()
 		Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
 		Data.CartMass   = Data.PropMass + Data.ProjMass
 
-		hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
+		hook.Run("ACF_OnUpdateRound", self, self, Data, GUIData)
 
 		for K, V in pairs(self:GetDisplayData(Data)) do
 			GUIData[K] = V
 		end
 	end
 
-	function CLASS:BaseConvert(ToolData)
-		local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, {})
+	function CLASS:BaseConvert()
+		local Data, GUIData = ACF.RoundBaseGunpowder(self, {})
 
 		Data.LimitVel = 400 --Most efficient penetration speed in m/s
 		Data.Ricochet = 90 --Base ricochet angle
 
-		self:UpdateRoundData(ToolData, Data, GUIData)
+		self:UpdateRoundData(Data, GUIData)
 
 		return Data, GUIData
 	end
 
-	function CLASS:VerifyData(ToolData)
-		BASE.VerifyData(self, ToolData)
+	function CLASS:VerifyData()
+		BASE.VerifyData(self)
 
-		if not isnumber(ToolData.HollowRatio) then
-			ToolData.HollowRatio = 0.5
+		if not isnumber(self.HollowRatio) then
+			self.HollowRatio = 0.5
 		end
 	end
 
@@ -102,13 +102,13 @@ Classes.DefineClass("ACF.Ammunition.HP", "ACF.Ammunition.AP", function()
 	else
 		ACF.RegisterAmmoDecal("ACF.Ammunition.HP", "damage/ap_pen", "damage/ap_rico")
 
-		function CLASS:OnCreateAmmoControls(Base, ToolData, BulletData)
+		function CLASS:OnCreateAmmoControls(Base, _, BulletData)
 			local HollowRatio = Base:AddSlider("#acf.menu.ammo.hollow_ratio", 0, 1, 2)
 			HollowRatio:SetClientData("HollowRatio", "OnValueChanged")
 			HollowRatio:DefineSetter(function(_, _, _, Value)
-				ToolData.HollowRatio = math.Round(Value, 2)
+				self.HollowRatio = math.Round(Value, 2)
 
-				self:UpdateRoundData(ToolData, BulletData)
+				self:UpdateRoundData(BulletData)
 
 				return BulletData.CavVol
 			end)
@@ -120,13 +120,13 @@ Classes.DefineClass("ACF.Ammunition.HP", "ACF.Ammunition.AP", function()
 			Label:TrackClientData("HollowRatio")
 		end
 
-		function CLASS:OnCreateAmmoInformation(Base, ToolData, BulletData)
+		function CLASS:OnCreateAmmoInformation(Base, _, BulletData)
 			local RoundStats = Base:AddLabel()
 			RoundStats:TrackClientData("Projectile", "SetText")
 			RoundStats:TrackClientData("Propellant")
 			RoundStats:TrackClientData("HollowRatio")
 			RoundStats:DefineSetter(function()
-				self:UpdateRoundData(ToolData, BulletData)
+				self:UpdateRoundData(BulletData)
 
 				local Text		= language.GetPhrase("acf.menu.ammo.round_stats_ap")
 				local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
@@ -141,7 +141,7 @@ Classes.DefineClass("ACF.Ammunition.HP", "ACF.Ammunition.AP", function()
 			HollowStats:TrackClientData("Propellant")
 			HollowStats:TrackClientData("HollowRatio")
 			HollowStats:DefineSetter(function()
-				self:UpdateRoundData(ToolData, BulletData)
+				self:UpdateRoundData(BulletData)
 
 				local Text	  = language.GetPhrase("acf.menu.ammo.hollow_stats_hp")
 				local Caliber = math.Round(BulletData.Diameter * 10, 2)
@@ -155,7 +155,7 @@ Classes.DefineClass("ACF.Ammunition.HP", "ACF.Ammunition.AP", function()
 			PenStats:TrackClientData("Propellant")
 			PenStats:TrackClientData("HollowRatio")
 			PenStats:DefineSetter(function()
-				self:UpdateRoundData(ToolData, BulletData)
+				self:UpdateRoundData(BulletData)
 
 				local Text     = language.GetPhrase("acf.menu.ammo.pen_stats_ap")
 				local MaxPen   = math.Round(BulletData.MaxPen, 2)

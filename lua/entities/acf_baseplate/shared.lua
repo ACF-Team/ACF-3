@@ -3,7 +3,7 @@ DEFINE_BASECLASS "acf_base_scalable"
 ENT.ACF_Limit      		= 2
 ENT.ACF_PreventArmoring = false
 
-ACF.AutoRegisterV2(function()
+ACF.Entities.AutoRegisterV2(function()
 	MENU_FIELD("ACF.Baseplates.BaseplateType", 	"BaseplateType", 			{OnlyAllowSubtypes = true, InstantiateTypeForDefault = "ACF.Baseplates.GroundVehicle"})
 	MENU_FIELD("Number",  					  	"Width", 					{Min = 36,  Max = 240, Default = 36, Decimals = 2})
 	MENU_FIELD("Number",  					  	"Length", 					{Min = 36,  Max = 480, Default = 36, Decimals = 2})

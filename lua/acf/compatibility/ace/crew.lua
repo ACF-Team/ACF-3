@@ -28,5 +28,5 @@ local function ConvertACEData(Data, ConvData)
 end
 
 for Class, ConvData in pairs(ACEConversionLUT) do
-    ACF.Classes.Entities.RegisterCompatPatch(Class, -100000, function(Data) return ConvertACEData(Data, ConvData) end)
+    ACF.Entities.RegisterCompatPatch(Class, -100000, function(Data) return ConvertACEData(Data, ConvData) end)
 end

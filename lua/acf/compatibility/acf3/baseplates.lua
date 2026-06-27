@@ -1,4 +1,4 @@
-ACF.Classes.Entities.RegisterCompatPatch("acf_baseplate", 2026060901, function(Data)
+ACF.Entities.RegisterCompatPatch("acf_baseplate", 2026060901, function(Data)
     local ACF_UserData = Data.ACF_UserData
     if not ACF_UserData then return end
 

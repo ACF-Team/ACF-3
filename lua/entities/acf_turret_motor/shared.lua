@@ -2,7 +2,7 @@ DEFINE_BASECLASS("acf_base_scalable")
 
 ENT.ACF_Limit = 20
 
-ACF.AutoRegisterV2(function()
+ACF.Entities.AutoRegisterV2(function()
 	MENU_FIELD("ACF.Turrets.Motor", "Motor", {
 		InstantiateTypeForDefault = "ACF.Turrets.Motor.Electric",
 		OnlyAllowSubtypes         = true,

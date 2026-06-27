@@ -6,7 +6,7 @@ ENT.PluralName     = "ACF Waterjets"
 ENT.ACF_Limit      = 4
 ENT.ACF_PreventArmoring = true
 
-ACF.AutoRegisterV2(function()
+ACF.Entities.AutoRegisterV2(function()
     MENU_FIELD("Number",  					  	"WaterjetSize", 				{Min = 0.5, Max = 2, Default = 1, Decimals = 2})
     MENU_FIELD("String",  					  	"SoundPath", 					{Default = "ambient/machines/spin_loop.wav"})
     MENU_FIELD("Number",  					  	"SoundPitch", 					{Min = 0.1, Max = 2, Default = 1, Decimals = 2})

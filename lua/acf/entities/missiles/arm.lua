@@ -26,7 +26,7 @@ Classes.DefineClass("ACF.Missiles.AntiRadiation.AGM-122", "ACF.Missiles.AntiRadi
 	CLASS.Year			= 1986
 	CLASS.ReloadTime	= 10
 	CLASS.ExhaustPos  	= Vector(-30)
-	CLASS.Racks			= { ["1xRK_small"] = true, ["1xRK"] = true, ["2xRK"] = true, ["4xRK"] = true }
+	CLASS.Racks			= { ["ACF.Racks.1xRK_small"] = true, ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true, ["ACF.Racks.4xRK"] = true }
 	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.AntiRadiation"] = true }
 	CLASS.Navigation  	= "Chase"
 	CLASS.Fuzes			= { Contact = true, Optical = true }
@@ -68,7 +68,7 @@ Classes.DefineClass("ACF.Missiles.AntiRadiation.AGM-45", "ACF.Missiles.AntiRadia
 	CLASS.Year		= 1969
 	CLASS.ReloadTime	= 25
 	CLASS.ExhaustPos  = Vector(-70)
-	CLASS.Racks		= { ["1xRK"] = true, ["2xRK"] = true, ["4xRK"] = true }
+	CLASS.Racks		= { ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true, ["ACF.Racks.4xRK"] = true }
 	CLASS.Guidance	= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.AntiRadiation"] = true }
 	CLASS.Navigation  = "Chase"
 	CLASS.Fuzes		= { Contact = true, Timed = true }

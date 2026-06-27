@@ -24,7 +24,7 @@ Classes.DefineClass("ACF.Missiles.GuidedBomb.Walleye", "ACF.Missiles.GuidedBomb"
 	CLASS.Year			= 1967
 	CLASS.Diameter		= 16.4 * ACF.InchToMm -- in mm
 	CLASS.ReloadTime	= 30
-	CLASS.Racks			= { ["1xRK"] = true, ["2xRK"] = true }
+	CLASS.Racks			= { ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true }
 	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.RadioMCLOS"] = true }
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { Contact = true, Timed = true, Optical = true, Altitude = true }
@@ -67,7 +67,7 @@ Classes.DefineClass("ACF.Missiles.GuidedBomb.227kg", "ACF.Missiles.GuidedBomb", 
 	CLASS.Diameter		= 10 * ACF.InchToMm -- in mm
 	CLASS.ReloadTime	= 25
 	CLASS.Offset		= Vector(12, 0, 0)
-	CLASS.Racks			= { ["1xRK"] = true, ["2xRK"] = true, ["3xRK"] = true, ["4xRK"] = true }
+	CLASS.Racks			= { ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true, ["3xRK"] = true, ["ACF.Racks.4xRK"] = true }
 	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.Laser"] = true, ["ACF.Missiles.Guidance.GPSGuided"] = true }
 	CLASS.Navigation	= "PN"
 	CLASS.Fuzes			= { Contact = true, Timed = true, Optical = true, Altitude = true }
@@ -126,7 +126,7 @@ Classes.DefineClass("ACF.Missiles.GuidedBomb.454kg", "ACF.Missiles.GuidedBomb", 
 	CLASS.Year			= 1976
 	CLASS.Diameter		= 11.5 * ACF.InchToMm -- in mm
 	CLASS.ReloadTime	= 40
-	CLASS.Racks			= { ["1xRK"] = true, ["2xRK"] = true, ["3xRK"] = true, ["4xRK"] = true }
+	CLASS.Racks			= { ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true, ["3xRK"] = true, ["ACF.Racks.4xRK"] = true }
 	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.Laser"] = true, ["ACF.Missiles.Guidance.GPSGuided"] = true }
 	CLASS.Navigation	= "PN"
 	CLASS.Fuzes			= { Contact = true, Timed = true, Optical = true, Altitude = true }
@@ -185,7 +185,7 @@ Classes.DefineClass("ACF.Missiles.GuidedBomb.909kg", "ACF.Missiles.GuidedBomb", 
 	CLASS.Diameter		= 17 * ACF.InchToMm -- in mm
 	CLASS.ReloadTime	= 60
 	CLASS.Offset		= Vector(15, 0, 0)
-	CLASS.Racks			= { ["1xRK"] = true, ["2xRK"] = true, ["4xRK"] = true }
+	CLASS.Racks			= { ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true, ["ACF.Racks.4xRK"] = true }
 	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.Laser"] = true, ["ACF.Missiles.Guidance.GPSGuided"] = true }
 	CLASS.Navigation	= "PN"
 	CLASS.Fuzes			= { Contact = true, Timed = true, Optical = true, Altitude = true }

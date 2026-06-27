@@ -49,16 +49,17 @@ do -- Piledrivers menu
 			-- The entity's "Weapon" field is a nested class instance...
 			ACF.SetClientData("Weapon", { Type = ClassID, Data = { Caliber = Value } })
 
-			-- ...but the round pipeline keys off the class name, so the round preview gets a flat tool data.
-			BulletData = Ammo:ClientConvert({
-				Weapon     = ClassID,
-				Caliber    = Value,
-				Destiny    = "Piledrivers",
-				AmmoType   = "ACF.Ammunition.HP",
-				Projectile = Length,
-				Propellant = 0,
-				Tracer     = false,
-			})
+			-- Configure the ammo instance: weapon back-reference (built from the piledriver class at
+			-- this caliber) and the spike as the projectile, then convert off the instance.
+			local WeaponInst   = Class()
+			WeaponInst.Caliber = Value
+
+			Ammo.Weapon     = WeaponInst
+			Ammo.Projectile = Length
+			Ammo.Propellant = 0
+			Ammo.Tracer     = false
+
+			BulletData = Ammo:ClientConvert()
 
 			Panel:SetValue(Value)
 			ClassPreview:SetModelScale(Scale, true)

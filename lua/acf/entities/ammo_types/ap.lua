@@ -17,9 +17,13 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function()
 	CLASS.Bodygroup   = 0 -- Bodygroup index for crate and menu models
 	CLASS.MenuFOV     = 60 -- Default FOV for menu preview
 
-	MENU_FIELD("Number", "Projectile", 	{Default = 0})
-	MENU_FIELD("Number", "Propellant", 	{Default = 0})
-	MENU_FIELD("Number", "Tracer", 		{Default = 0})
+	MENU_FIELD("Number",  "Projectile", {Default = 0})
+	MENU_FIELD("Number",  "Propellant", {Default = 0})
+	MENU_FIELD("Boolean", "Tracer", 	{Default = false})
+
+	-- NOTE: round inputs are the MENU_FIELDs above. A runtime back-reference to the weapon
+	-- instance (self.Weapon) is assigned by the crate/menu before convert; it is intentionally
+	-- NOT a declared field (it's a live class instance, not serialized).
 
 	--- Default crate model path - used to detect ammo types with custom models
 	local DefaultCrateModel = "models/acf/munitions/cartridge.mdl"
@@ -143,49 +147,39 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function()
 		return Display
 	end
 
-	function CLASS:UpdateRoundData(ToolData, Data, GUIData)
+	function CLASS:UpdateRoundData(Data, GUIData)
 		GUIData = GUIData or Data
 
-		ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
+		ACF.UpdateRoundSpecs(self, Data, GUIData)
 
 		Data.ProjMass   = Data.ProjArea * Data.ProjLength * ACF.SteelDensity --Volume of the projectile as a cylinder * density of steel
 		Data.MuzzleVel  = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
 		Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
 		Data.CartMass   = Data.PropMass + Data.ProjMass
 
-		hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
+		hook.Run("ACF_OnUpdateRound", self, self, Data, GUIData)
 
 		for K, V in pairs(self:GetDisplayData(Data)) do
 			GUIData[K] = V
 		end
 	end
 
-	function CLASS:BaseConvert(ToolData)
-		local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, {})
+	function CLASS:BaseConvert()
+		local Data, GUIData = ACF.RoundBaseGunpowder(self, {})
 
 		Data.ShovePower = 0.2
 		Data.LimitVel   = 800 --Most efficient penetration speed in m/s
 		Data.Ricochet   = 60 --Base ricochet angle
 
-		self:UpdateRoundData(ToolData, Data, GUIData)
+		self:UpdateRoundData(Data, GUIData)
 
 		return Data, GUIData
 	end
 
-	function CLASS:VerifyData(ToolData)
-		if not isnumber(ToolData.Projectile) then
-			ToolData.Projectile = ACF.CheckNumber(ToolData.RoundProjectile, 0)
-		end
-
-		if not isnumber(ToolData.Propellant) then
-			ToolData.Propellant = ACF.CheckNumber(ToolData.RoundPropellant, 0)
-		end
-
-		if ToolData.Tracer == nil then
-			local Data10 = ToolData.RoundData10
-
-			ToolData.Tracer = Data10 and tobool(tonumber(Data10)) or false -- Haha "0.00" is true but 0 isn't
-		end
+	function CLASS:VerifyData()
+		if not isnumber(self.Projectile) then self.Projectile = 0 end
+		if not isnumber(self.Propellant) then self.Propellant = 0 end
+		if self.Tracer == nil then self.Tracer = false end
 	end
 
 	if SERVER then
@@ -207,16 +201,7 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function()
 			Ballistics.CreateBullet(BulletData)
 		end
 
-		function CLASS:ServerConvert(ToolData)
-			self:VerifyData(ToolData)
-
-			local Data = self:BaseConvert(ToolData)
-
-			Data.WeaponType = ToolData.Weapon
-			Data.AmmoType   = ToolData.AmmoType
-
-			return Data
-		end
+		-- ServerConvert is inherited from ACF.Ammunition.BaseAmmo.
 
 		function CLASS:Network(Entity, BulletData)
 			Entity:SetNW2String("AmmoType", "ACF.Ammunition.AP")
@@ -297,10 +282,10 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function()
 
 		local DecalIndex = ACF.GetAmmoDecalIndex
 
-		function CLASS:ClientConvert(ToolData)
-			self:VerifyData(ToolData)
+		function CLASS:ClientConvert()
+			self:VerifyData()
 
-			local Data, GUIData = self:BaseConvert(ToolData)
+			local Data, GUIData = self:BaseConvert()
 
 			if GUIData then
 				for K, V in pairs(GUIData) do
@@ -317,12 +302,11 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function()
 			return math.Round(self:GetPenetration(Bullet, Speed), 2), math.Round(Speed, 2)
 		end
 
-		function CLASS:OnCreateAmmoPreview(_, Setup, ToolData)
-			local Destiny = Classes[ToolData.Destiny or "Weapons"]
-			local Class = Classes.GetGroup(Destiny, ToolData.Weapon)
-			local Weapon = Destiny and Destiny.GetItem and Destiny.GetItem(Class and Class.ID, ToolData.Weapon)
+		function CLASS:OnCreateAmmoPreview(_, Setup)
+			local Weapon = self.Weapon
+			local Class  = Weapon and Weapon:GetType()
 
-			local Info = self:ResolveModel("Menu", Class, Weapon)
+			local Info = self:ResolveModel("Menu", Class, Class and not Class.IsScalable and Weapon or nil)
 
 			if Info then
 				Setup.Model     = Info.Model
@@ -375,12 +359,12 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function()
 			Label:TrackClientData("Propellant")
 		end
 
-		function CLASS:OnCreateAmmoInformation(Base, ToolData, BulletData)
+		function CLASS:OnCreateAmmoInformation(Base, _, BulletData)
 			local RoundStats = Base:AddLabel()
 			RoundStats:TrackClientData("Projectile", "SetText")
 			RoundStats:TrackClientData("Propellant")
 			RoundStats:DefineSetter(function()
-				self:UpdateRoundData(ToolData, BulletData)
+				self:UpdateRoundData(BulletData)
 
 				local Text		= language.GetPhrase("acf.menu.ammo.round_stats_ap")
 				local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)

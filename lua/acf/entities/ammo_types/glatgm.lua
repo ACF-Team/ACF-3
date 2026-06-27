@@ -16,8 +16,8 @@ Classes.DefineClass("ACF.Ammunition.GLATGM", "ACF.Ammunition.HEATFS", function()
 
 	CLASS.MaxStandoffRatio = .4
 
-	function CLASS:BaseConvert(ToolData)
-		local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, {})
+	function CLASS:BaseConvert()
+		local Data, GUIData = ACF.RoundBaseGunpowder(self, {})
 
 		GUIData.MinConeAng	 = 0
 		GUIData.MinFillerVol = 0
@@ -27,7 +27,7 @@ Classes.DefineClass("ACF.Ammunition.GLATGM", "ACF.Ammunition.HEATFS", function()
 		Data.Ricochet		= 91 -- Base ricochet angle
 		Data.DetonatorAngle	= 91
 
-		self:UpdateRoundData(ToolData, Data, GUIData)
+		self:UpdateRoundData(Data, GUIData)
 
 		return Data, GUIData
 	end
@@ -104,8 +104,8 @@ Classes.DefineClass("ACF.Ammunition.GLATGM", "ACF.Ammunition.HEATFS", function()
 			return false
 		end
 
-		function CLASS:OnCreateAmmoPreview(Preview, Setup, ToolData, BulletData)
-			BASE.OnCreateAmmoPreview(self, Preview, Setup, ToolData, BulletData)
+		function CLASS:OnCreateAmmoPreview(Preview, Setup, _, BulletData)
+			BASE.OnCreateAmmoPreview(self, Preview, Setup)
 
 			local Caliber = BulletData.Caliber
 			local Model, FOV, Height
@@ -127,16 +127,16 @@ Classes.DefineClass("ACF.Ammunition.GLATGM", "ACF.Ammunition.HEATFS", function()
 			Setup.Height = Height or Setup.Height
 		end
 
-		function CLASS:OnCreateAmmoControls(Base, ToolData, BulletData)
+		function CLASS:OnCreateAmmoControls(Base, _, BulletData)
 			local LinerAngle = Base:AddSlider("Liner Angle", BulletData.MinConeAng, 90, 1)
 			LinerAngle:SetClientData("LinerAngle", "OnValueChanged")
 			LinerAngle:TrackClientData("Projectile")
 			LinerAngle:DefineSetter(function(Panel, _, Key, Value)
 				if Key == "LinerAngle" then
-					ToolData.LinerAngle = math.Round(Value, 2)
+					self.LinerAngle = math.Round(Value, 2)
 				end
 
-				self:UpdateRoundData(ToolData, BulletData)
+				self:UpdateRoundData(BulletData)
 
 				Panel:SetMin(BulletData.MinConeAng)
 				Panel:SetValue(BulletData.ConeAng)
@@ -147,22 +147,22 @@ Classes.DefineClass("ACF.Ammunition.GLATGM", "ACF.Ammunition.HEATFS", function()
 			local StandoffRatio = Base:AddSlider("Extra Standoff Ratio", 0, 0.4, 2)
 			StandoffRatio:SetClientData("StandoffRatio", "OnValueChanged")
 			StandoffRatio:DefineSetter(function(_, _, _, Value)
-				ToolData.StandoffRatio = math.Round(Value, 2)
+				self.StandoffRatio = math.Round(Value, 2)
 
-				self:UpdateRoundData(ToolData, BulletData)
+				self:UpdateRoundData(BulletData)
 
-				return ToolData.StandoffRatio
+				return self.StandoffRatio
 			end)
 		end
 
-		function CLASS:OnCreateAmmoInformation(Base, ToolData, BulletData)
+		function CLASS:OnCreateAmmoInformation(Base, _, BulletData)
 			local RoundStats = Base:AddLabel()
 			RoundStats:TrackClientData("Projectile", "SetText")
 			RoundStats:TrackClientData("Propellant")
 			RoundStats:TrackClientData("LinerAngle")
 			RoundStats:TrackClientData("StandoffRatio")
 			RoundStats:DefineSetter(function()
-				self:UpdateRoundData(ToolData, BulletData)
+				self:UpdateRoundData(BulletData)
 
 				local Text		= "Peak Velocity: %s m/s\nLaunch Velocity: %s m/s\nAcceleration: %s s\nProjectile Mass : %s\nPropellant Mass : %s\nExplosive Mass : %s"
 				local Velocity  = math.Clamp(BulletData.MuzzleVel / ACF.Scale, 200, 1600) -- Minimum initial launch velocity of 40m/s and lowest peak at 100m/s while top speed is 800m/s
@@ -181,7 +181,7 @@ Classes.DefineClass("ACF.Ammunition.GLATGM", "ACF.Ammunition.HEATFS", function()
 			FillerStats:TrackClientData("LinerAngle")
 			FillerStats:TrackClientData("StandoffRatio")
 			FillerStats:DefineSetter(function()
-				self:UpdateRoundData(ToolData, BulletData)
+				self:UpdateRoundData(BulletData)
 
 				local Text	   = "Blast Radius : %s m\nFragments : %s\nFragment Mass : %s\nFragment Velocity : %s m/s"
 				local Blast	   = math.Round(BulletData.BlastRadius, 2)
@@ -197,7 +197,7 @@ Classes.DefineClass("ACF.Ammunition.GLATGM", "ACF.Ammunition.HEATFS", function()
 			Penetrator:TrackClientData("LinerAngle")
 			Penetrator:TrackClientData("StandoffRatio")
 			Penetrator:DefineSetter(function()
-				self:UpdateRoundData(ToolData, BulletData)
+				self:UpdateRoundData(BulletData)
 
 				local Text     = "Copper mass : %s g\nJet mass : %s g\nJet velocity : %s m/s - %s m/s"
 				local CuMass   = math.Round(BulletData.LinerMass * 1e3, 0)
@@ -214,7 +214,7 @@ Classes.DefineClass("ACF.Ammunition.GLATGM", "ACF.Ammunition.HEATFS", function()
 			PenStats:TrackClientData("LinerAngle")
 			PenStats:TrackClientData("StandoffRatio")
 			PenStats:DefineSetter(function()
-				self:UpdateRoundData(ToolData, BulletData)
+				self:UpdateRoundData(BulletData)
 
 				local Text   = "Penetration at passive standoff :\nAt %s mm : %s mm RHA\nMaximum penetration :\nAt %s mm : %s mm RHA"
 				local Standoff1 = math.Round(BulletData.Standoff * 1e3, 0)

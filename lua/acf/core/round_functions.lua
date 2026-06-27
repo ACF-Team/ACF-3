@@ -5,14 +5,16 @@ local isstring = isstring
 local MM_TO_CM = ACF.MmToInch * ACF.InchToCm -- Millimeters to centimeters
 
 
-local function GetClassWeaponSpecs(Class, ToolData)
+local function GetClassWeaponSpecs(Class, Caliber)
 	local Round = Class.Round
 	if not Round then return end
 
-	local Field   = Classes.GetTypeFieldByName(Class, "Caliber")
+	-- V2 weapon classes expose a Caliber MENU_FIELD (for bounds) and CaliberLimits. Grouped weapons
+	-- (missiles/piledrivers, not yet V2) only have a Round + BaseCaliber, so guard accordingly.
+	local Field   = Class.GetType and Classes.GetTypeFieldByName(Class, "Caliber")
 	local Bounds  = Field and Field.Options or {}
-	local Base    = Class.CaliberLimits and Class.CaliberLimits.Base or 1
-	local Caliber = math.Clamp(tonumber(ToolData.Caliber) or Base, Bounds.Min or Base, Bounds.Max or Base)
+	local Base    = (Class.CaliberLimits and Class.CaliberLimits.Base) or Class.BaseCaliber or 1
+	Caliber       = math.Clamp(tonumber(Caliber) or Base, Bounds.Min or Base, Bounds.Max or Base)
 	local Scale   = Caliber / Base
 
 	return {
@@ -24,56 +26,21 @@ local function GetClassWeaponSpecs(Class, ToolData)
 	}
 end
 
-local function GetLegacyWeaponSpecs(ToolData)
-	local NewClass = isstring(ToolData.Weapon) and Classes.GetTypeByName(ToolData.Weapon)
-	if NewClass then return GetClassWeaponSpecs(NewClass, ToolData) end
-
-	local Class = ACF.Classes.GetSubtypeByName("ACF.Weapons.BaseWeapon", ToolData.Weapon)
-	if not Class then return end
-
-	local Result = {
-		Caliber     = true,
-		MaxLength   = true,
-		PropLength  = true,
-		ProjLength  = true,
-		FillerRatio = true,
-	}
-
-	if not Class.IsScalable then
-		local Weapon = Source.GetItem(Class.ID, ToolData.Weapon)
-		local Round  = Weapon.Round
-
-		Result.Caliber    = Weapon.Caliber
-		Result.MaxLength  = Round.MaxLength
-		Result.PropLength = Round.PropLength
-		Result.ProjLength = Round.ProjLength
-		Result.Efficiency = Round.Efficiency
-	else
-		local Bounds  = Class.CaliberLimits
-		local Round   = Class.Round
-		local Caliber = math.Clamp(ToolData.Caliber or Bounds.Base, Bounds.Min, Bounds.Max)
-		local Scale   = Caliber / Bounds.Base
-		local ProjLen = Round.ProjLength
-
-		Result.Caliber    = Caliber
-		Result.MaxLength  = Round.MaxLength * Scale
-		Result.PropLength = Round.PropLength * Scale
-		Result.ProjLength = ProjLen and ProjLen * Scale
-		Result.Efficiency = Round.Efficiency
-	end
-
-	return Result
-end
-
-function ACF.RoundBaseGunpowder(ToolData, Data)
-	local Specs   = GetLegacyWeaponSpecs(ToolData)
+-- Ammo is the ammo-type instance: it carries the round inputs (Projectile/Propellant/Tracer/...)
+-- and a back-reference to its weapon instance (Ammo.Weapon).
+function ACF.RoundBaseGunpowder(Ammo, Data)
+	local Weapon  = Ammo.Weapon
+	-- Weapon is a V2 weapon instance (has GetType) for guns, or a grouped/shim class table for the
+	-- not-yet-V2 missile/piledriver systems.
+	local Class   = Weapon and (Weapon.GetType and Weapon:GetType() or Weapon)
+	local Specs   = Class and GetClassWeaponSpecs(Class, Weapon.Caliber)
 	local GUIData = {}
 
 	if not Specs then return Data, GUIData end
 
 	local Length    = math.Round(Specs.MaxLength * (Data.LengthAdj or 1), 2)
 	local Radius    = Specs.Caliber * MM_TO_CM * 0.5 -- Radius in cm
-	local CaseScale = ToolData.CasingScale or ACF.AmmoCaseScale
+	local CaseScale = Ammo.CasingScale or ACF.AmmoCaseScale
 
 	Data.Caliber    = Specs.Caliber * MM_TO_CM -- Bullet caliber will have to stay in cm
 	Data.Diameter   = Data.Caliber * (Data.ProjScale or 1) -- Real caliber of the projectile
@@ -87,19 +54,19 @@ function ACF.RoundBaseGunpowder(ToolData, Data)
 	GUIData.MaxPropLength  = math.min(Specs.PropLength, Length - GUIData.MinProjLength)
 	GUIData.MaxProjLength  = math.min(Specs.ProjLength or Length, Length - GUIData.MinPropLength)
 
-	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
+	ACF.UpdateRoundSpecs(Ammo, Data, GUIData)
 
 	return Data, GUIData
 end
 
-function ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
+function ACF.UpdateRoundSpecs(Ammo, Data, GUIData)
 	GUIData = GUIData or Data
 
 	Data.Priority = Data.Priority or "Projectile"
-	Data.Tracer   = ToolData.Tracer and math.Round(Data.Caliber * 0.15, 2) or 0
+	Data.Tracer   = Ammo.Tracer and math.Round(Data.Caliber * 0.15, 2) or 0
 
-	local Projectile = math.Clamp(ToolData.Projectile, GUIData.MinProjLength, GUIData.MaxProjLength)
-	local Propellant = math.Clamp(ToolData.Propellant, GUIData.MinPropLength, GUIData.MaxPropLength)
+	local Projectile = math.Clamp(Ammo.Projectile, GUIData.MinProjLength, GUIData.MaxProjLength)
+	local Propellant = math.Clamp(Ammo.Propellant, GUIData.MinPropLength, GUIData.MaxPropLength)
 
 	if Data.Priority == "Projectile" then
 		Propellant = math.min(Propellant, GUIData.MaxRoundLength - Projectile, GUIData.MaxPropLength)
@@ -266,9 +233,8 @@ do -- MARK: Ammo capacity
 	ACF.GetModelDimensions = GetModelDimensions
 
 	local function GetRoundProperties(Class, ToolData, BulletData)
-		local Weapon  = Class.Lookup and Class.Lookup[ToolData.Weapon]
-		local Caliber = Weapon and Weapon.Caliber or ToolData.Caliber
-		local Round   = Weapon and Weapon.Round or Class.Round
+		local Caliber = ToolData.Caliber
+		local Round   = Class.Round
 		local Length, Diameter = GetModelDimensions(Round)
 
 		if Length then

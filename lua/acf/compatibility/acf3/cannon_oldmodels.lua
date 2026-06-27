@@ -40,7 +40,7 @@ local PortingData = {
 }
 
 -- patch ID from https://github.com/ACF-Team/ACF-3/commit/cadf24dc5a0fa78df21f81600692c1ee7887a390
-ACF.Classes.Entities.RegisterCompatPatch("acf_gun", 2021111301, function(Data)
+ACF.Entities.RegisterCompatPatch("acf_gun", 2021111301, function(Data)
     local Model = Data.Model
 
     if not (Model and OldModels[Model]) then return end

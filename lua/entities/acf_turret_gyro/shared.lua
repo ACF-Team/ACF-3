@@ -2,7 +2,7 @@ DEFINE_BASECLASS("acf_base_simple")
 
 ENT.ACF_Limit = 20
 
-ACF.AutoRegisterV2(function()
+ACF.Entities.AutoRegisterV2(function()
 	MENU_FIELD("ACF.Turrets.Gyro", "Gyro", {
 		InstantiateTypeForDefault = "ACF.Turrets.Gyro.Single",
 		OnlyAllowSubtypes         = true,

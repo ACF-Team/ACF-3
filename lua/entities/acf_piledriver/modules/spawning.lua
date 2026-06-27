@@ -74,8 +74,11 @@ do -- Updating
                 Propellant = 0,
             }
 
+            Ammo.Weapon      = Weapon
+            Ammo.Projectile  = self.SpikeLength
+            Ammo.Propellant  = 0
             Ammo.SpikeLength = self.SpikeLength
-            local BulletData  = Ammo:ServerConvert(RoundData)
+            local BulletData  = Ammo:ServerConvert()
             BulletData.Crate  = self:EntIndex()
             BulletData.Filter = { self }
             BulletData.Gun    = self

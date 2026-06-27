@@ -134,6 +134,10 @@ function Ballistics.CreateBullet(BulletData)
 	end
 
 	local Bullet = table.Copy(BulletData)
+	Bullet.TypeDef = ACF.Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", Bullet.AmmoType)
+	if not Bullet.TypeDef then
+		error("Bullet.AmmoType was probably wrong, review: " .. tostring(Bullet.AmmoType))
+	end
 
 	if not Bullet.Filter then
 		Bullet.Filter = IsValid(Bullet.Gun) and { Bullet.Gun } or {}
@@ -162,8 +166,6 @@ function Ballistics.CreateBullet(BulletData)
 		-- Network the whole bullet state when event viewer is active.
 		EventViewer.AppendEvent(GetEventViewerName(Index), "Ballistics.CreateBullet", Bullet)
 	end
-
-	Bullet.TypeDef = ACF.Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", Bullet.AmmoType)
 
 	-- TODO: Make bullets use a metatable instead
 	function Bullet:GetPenetration()
@@ -333,7 +335,6 @@ function Ballistics.DoBulletsFlight(Bullet)
 			end
 
 			local Type = Ballistics.GetImpactType(traceRes, Entity)
-
 			Ballistics.OnImpact(Bullet, traceRes, Bullet.TypeDef, Type)
 		end
 	end
@@ -492,7 +493,7 @@ do -- Terminal ballistics --------------------------
 				Caliber    = FragSize,
 				Diameter   = FragSize,
 				-- WeaponType = Bullet.WeaponType,
-				Type       = "ACF.Ammunition.AP",
+				AmmoType   = "ACF.Ammunition.AP",
 				Owner      = Bullet.Owner,
 				Entity     = Bullet.Entity,
 				-- Crate      = Bullet.Crate,

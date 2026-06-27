@@ -1,5 +1,4 @@
-local Classes  = ACF.Classes
-local Entities = Classes.Entities
+local Entities = ACF.Entities
 Entities.CompatPatches = Entities.CompatPatches or {}
 
 

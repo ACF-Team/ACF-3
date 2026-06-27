@@ -40,17 +40,13 @@ local function GenerateLinkTable(Entity, Target)
 	return Link, Angle
 end
 
-function ENT.ACF_OnVerifyClientData(ClientData)
-	ClientData.WaterjetSize = math.Clamp(ClientData.WaterjetSize or 1, 0.5, 1)
-	ClientData.Size = Vector(ClientData.WaterjetSize, ClientData.WaterjetSize, ClientData.WaterjetSize)
-end
-
 function ENT:ACF_PreSpawn()
 	self:SetScaledModel("models/maxofs2d/hover_propeller.mdl")
 end
 
-function ENT:ACF_PostUpdateEntityData(ClientData)
-	self:SetScale(ClientData.Size)
+function ENT:ACF_PostUpdateEntityData()
+	local Size = self:ACF_GetUserVar("WaterjetSize")
+	self:SetScale(Vector(Size, Size, Size))
 
 	self.SlewRatePitch = 5
 	self.SlewRateYaw = 5
@@ -64,7 +60,7 @@ function ENT:ACF_PostUpdateEntityData(ClientData)
 	self.CQ = 10 				-- Torque coefficient
 	self.CT = 0.025 			-- Force coefficient
 	self.Rho = 1000 			-- Density of water in kg/m^3
-	self.Diameter = ClientData.WaterjetSize * 10 * ACF.InchToMeter -- Convert from inches to meters (model is 10u in diameter by default)
+	self.Diameter = Size * 10 * ACF.InchToMeter -- Convert from inches to meters (model is 10u in diameter by default)
 
 	self.Gearboxes = {}
 end

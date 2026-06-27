@@ -1,8 +1,11 @@
+local Classes   = ACF.Classes
+local Entities  = ACF.Entities
+
 -- Define base entity types that will never get these ran just so they exist
-ACF.Classes.DefineClass("base_wire_entity",                       function() end)
-ACF.Classes.DefineClass("base_scalable",      "base_wire_entity", function() end)
-ACF.Classes.DefineClass("acf_base_simple",    "base_wire_entity", function() end)
-ACF.Classes.DefineClass("acf_base_scalable",  "base_scalable",    function() end)
+Classes.DefineClass("base_wire_entity",                       function() end)
+Classes.DefineClass("base_scalable",      "base_wire_entity", function() end)
+Classes.DefineClass("acf_base_simple",    "base_wire_entity", function() end)
+Classes.DefineClass("acf_base_scalable",  "base_scalable",    function() end)
 
 local function ClassNameTrick(ENT)
     local Class  = string.Split(ENT.Folder, "/"); Class = Class[#Class]
@@ -62,6 +65,8 @@ local function PrepareSpawnFunctions(ENT, ClassName)
         })
     end
 
+    local CheckSpawnLimit = ENT.ACF_CheckSpawnLimit -- might be temporary
+
     if not ENT.ACF_PostMenuSpawn then
         function ENT:ACF_PostMenuSpawn()
             ACF.DropToFloor(self)
@@ -81,6 +86,7 @@ local function PrepareSpawnFunctions(ENT, ClassName)
     -- Calls ACF_OnVerifyClientData (entity-specific transforms) before,
     -- and ACF_PostUpdateEntityData (entity init) after.
     function ENT:ACF_UpdateEntityData(ClientData)
+        ClientData = ClientData or {}
         self.ACF = self.ACF or {}
 
         if ENT.ACF_OnVerifyClientData then
@@ -92,8 +98,6 @@ local function PrepareSpawnFunctions(ENT, ClassName)
         if CanUpdate == false then return CanUpdate, Reason end
 
         if self.ACF_PreUpdateEntityData then self:ACF_PreUpdateEntityData(ClientData) end
-
-        self:ACF_SetupWireFunctions()
 
         local ACF_OnEntityLast = self.ACF_OnEntityLast
         if ACF_OnEntityLast then ACF_OnEntityLast(self) end
@@ -113,12 +117,15 @@ local function PrepareSpawnFunctions(ENT, ClassName)
         if self.ACF_PostUpdateEntityData then
             self:ACF_PostUpdateEntityData(ClientData)
         end
+
+        self:ACF_SetupWireFunctions()
         ACF.Activate(self, true)
         return true, (self.PrintName or ClassName) .. " updated successfully!"
     end
 
     local function DoSpawn(Player, Pos, Angle, ClientData, IsMenuSpawn)
-        if IsValid(Player) and not Player:CheckLimit("_" .. ClassName) then return end
+        local Func = CheckSpawnLimit or Player.CheckLimit
+        if IsValid(Player) and not Func(Player, "_" .. ClassName) then return end
 
         local CanSpawn  = hook.Run("ACF_PreSpawnEntity", ClassName, Player, ClientData, HookArgs)
         if CanSpawn == false then return end
@@ -153,11 +160,11 @@ local function PrepareSpawnFunctions(ENT, ClassName)
 
     duplicator.RegisterEntityClass(ClassName, DoSpawn, "Pos", "Angle", "ACF_UserData")
 
-    hook.Add("ACF_TemporaryHook_InstantiateEntity", "AutoRegV2_" .. ClassName, function(HookClass, Player, Pos, Ang, ClientData)
+    function Entities.DoSpawn(HookClass, Player, Pos, Ang, ClientData)
         if HookClass ~= ClassName then return end
         local Entity = DoSpawn(Player, Pos, Ang, ClientData or {}, true)
         if IsValid(Entity) then return Entity end
-    end)
+    end
 end
 
 local function PrepareSerializationFunctions(ENT, ClassName)
@@ -174,7 +181,12 @@ local function PrepareSerializationFunctions(ENT, ClassName)
     local BaseClassName       = ENT.Base or "base_gmodentity"
 
     function ENT:PreEntityCopy()
-        if self.ACF_LiveData then
+        -- Serialize ACF_UserData ONCE, at the leaf class only. ClassDef is the most-derived definition,
+        -- whose field list already includes every inherited field (see GetTypeFields). If the base is
+        -- itself an AutoRegisterV2 entity (the acf_container family), its generated PreEntityCopy would
+        -- otherwise re-serialize with the base's (smaller) ClassDef and clobber ACF_UserData down to just
+        -- the base's own fields. We still chain into the base for any hand-written base PreEntityCopy.
+        if self:GetClass() == ClassName and self.ACF_LiveData then
             self.ACF_UserData = ACF.Classes.Serialization.Serialize(ClassDef, self.ACF_LiveData)
         end
         if OrigPreEntityCopy then OrigPreEntityCopy(self) end
@@ -184,8 +196,10 @@ local function PrepareSerializationFunctions(ENT, ClassName)
     end
 
     function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
-        local Data = Ent.ACF_UserData or {}
-        if self.ACF_LiveData then
+        -- Resolve entity references ONCE, at the leaf class only (the leaf ClassDef covers every inherited
+        -- field). Mirrors the leaf-only guard in PreEntityCopy so base autoreg methods don't redo it.
+        if self:GetClass() == ClassName and self.ACF_LiveData then
+            local Data = Ent.ACF_UserData or {}
             ACF.Classes.Serialization.ResolveEntities(ClassDef, self.ACF_LiveData, Data, CreatedEntities, self)
         end
         if OrigPostEntityPaste then OrigPostEntityPaste(self, Player, Ent, CreatedEntities) end
@@ -227,7 +241,7 @@ local function PrepareNames(ENT, SingleName, PluralName)
     end
 end
 
-function ACF.AutoRegisterV2(DefineFields, SingleName, PluralName)
+function ACF.Entities.AutoRegisterV2(DefineFields, SingleName, PluralName)
     ENT.IsACFEntity = true
     PrepareNames(ENT, SingleName, PluralName)
     ClassNameTrick(ENT)

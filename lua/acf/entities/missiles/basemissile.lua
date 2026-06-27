@@ -18,7 +18,7 @@ Classes.DefineClass("ACF.Missiles.BaseMissile", "ACF.Weapons.BaseWeapon", functi
     end
 
     function CLASS:WeaponEquals(Other)
-        if not BASE.WeaponEquals(Other) then return false end
+        if not BASE.WeaponEquals(self, Other) then return false end
         -- We may need these later?
         -- Racks are kind abnormal compared to guns so i think this will be checked differently
         -- if not self.Guidance:GuidanceEquals(Other.Guidance) then return false end

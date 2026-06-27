@@ -1,49 +1,48 @@
 local ACF     = ACF
-local Engines = ACF.Classes.Engines
+local Classes = ACF.Classes
 
-
-Engines.Register("I2", {
-	Name = "Inline 2 Engine",
-})
+Classes.DefineClass("ACF.Engines.I2", "ACF.Engines.BaseEngine", function()
+	CLASS.Name = "Inline 2 Engine"
+end)
 
 do
-	Engines.RegisterItem("0.8L-I2", "I2", {
-		Name		 = "0.8L I2 Diesel",
-		Description	 = "#acf.descs.engines.i2.0_8",
-		Model		 = "models/engines/inline2s.mdl",
-		Sound		 = "acf_base/engines/i4_diesel2.wav",
-		Fuel		 = { Diesel = true },
-		Type		 = "GenericDiesel",
-		Mass		 = 45,
-		Torque		 = 131,
-		FlywheelMass = 0.12,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.0.8L-I2", "ACF.Engines.I2", function()
+		CLASS.Name		 = "0.8L I2 Diesel"
+		CLASS.Description	 = "#acf.descs.engines.i2.0_8"
+		CLASS.Model		 = "models/engines/inline2s.mdl"
+		CLASS.Sound		 = "acf_base/engines/i4_diesel2.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
+		CLASS.Mass		 = 45
+		CLASS.Torque		 = 131
+		CLASS.FlywheelMass = 0.12
+		CLASS.RPM = {
 			Idle	= 500,
 			Limit	= 2950,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 125,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("10.0-I2", "I2", {
-		Name		 = "10.0L I2 Diesel",
-		Description	 = "#acf.descs.engines.i2.10_0",
-		Model		 = "models/engines/inline2b.mdl",
-		Sound		 = "acf_base/engines/vtwin_large.wav",
-		Fuel		 = { Diesel = true },
-		Type		 = "GenericDiesel",
-		Mass		 = 800,
-		Torque		 = 2500,
-		FlywheelMass = 7,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.10.0-I2", "ACF.Engines.I2", function()
+		CLASS.Name		 = "10.0L I2 Diesel"
+		CLASS.Description	 = "#acf.descs.engines.i2.10_0"
+		CLASS.Model		 = "models/engines/inline2b.mdl"
+		CLASS.Sound		 = "acf_base/engines/vtwin_large.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
+		CLASS.Mass		 = 800
+		CLASS.Torque		 = 2500
+		CLASS.FlywheelMass = 7
+		CLASS.RPM = {
 			Idle	= 350,
 			Limit	= 1200,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 125,
-		},
-	})
+		}
+	end)
 end
 
 ACF.SetCustomAttachment("models/engines/inline2b.mdl", "driveshaft", Vector(), Angle(0, 180, 90))

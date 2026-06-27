@@ -3,22 +3,22 @@ local Classes = ACF.Classes
 Classes.DefineClass("ACF.Guns.BaseGun", "ACF.Weapons.BaseWeapon", function()
 	CLASS.Cleanup 			= "acf_gun"
 	CLASS.IsScalable 		= false
-	-- Marks the class as a weapon in menu/usercode (used to be done with group classes)
+	-- IsWeapon marks a class that shows up in the weapon menu's class list (replaces the old group classes).
 	CLASS.IsWeapon      	= false
-	-- Marks the class as a weapon option that can be chosen (non-applicable with scalables)
+	-- IsWeaponOption marks a concrete, selectable variant of a non-scalable weapon (e.g. the
+	-- 40mm Flare Launcher under the Flare Launcher category). The weapon menu lists IsWeapon classes
+	-- and, for non-scalable ones, their IsWeaponOption subtypes (see menu/items_cl/weapons.lua).
 	CLASS.IsWeaponOption	= false
-	-- TODO: Review if these ^^ two flags are really the best idea...
 
 	function CLASS.__inherited(NewClass)
-		if not NewClass.LimitConvar then
-			NewClass.LimitConvar = {
+		if not NewClass.LimitConVar then
+			NewClass.LimitConVar = {
 				Name   = "_acf_weapon", -- should rename this...
 				Amount = 16,
 				Text   = "Maximum amount of ACF weapons a player can create."
 			}
 		end
-
-		Classes.AddSboxLimit(NewClass.LimitConvar)
+		Classes.AddSboxLimit(NewClass.LimitConVar)
 
 		if NewClass.MuzzleFlash then
 			PrecacheParticleSystem(NewClass.MuzzleFlash)
@@ -38,7 +38,7 @@ Classes.DefineClass("ACF.Guns.BaseScalableGun", "ACF.Guns.BaseGun", function()
 	CLASS.CaliberLimits = {Base = 50, Min = 25, Max = 75}
 
 	function CLASS.__inherited(NewClass)
-		BASE.__inherited(NewClass)
+
 	end
 
 	function CLASS:VerifyData()

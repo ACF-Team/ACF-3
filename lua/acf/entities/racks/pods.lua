@@ -1,21 +1,21 @@
-local Racks = ACF.Classes.Racks
+local Classes = ACF.Classes
 
-Racks.Register("40mm7xPOD", {
-	Name		= "7x 40mm FFAR Pod",
-	Description	= "A lightweight pod for small rockets which is vulnerable to shots and explosions.",
-	Model		= "models/missiles/launcher7_40mm.mdl",
-	EntType		= "Pod",
-	Caliber		= 40,
-	Mass		= 10,
-	Year		= 1940,
-	Armor		= 5,
-	Preview = {
+Classes.DefineClass("ACF.Racks.40mm7xPOD", "ACF.Racks.BaseRack", function()
+	CLASS.Name		= "7x 40mm FFAR Pod"
+	CLASS.Description	= "A lightweight pod for small rockets which is vulnerable to shots and explosions."
+	CLASS.Model		= "models/missiles/launcher7_40mm.mdl"
+	CLASS.EntType		= "Pod"
+	CLASS.Caliber		= 40
+	CLASS.Mass		= 10
+	CLASS.Year		= 1940
+	CLASS.Armor		= 5
+	CLASS.Preview = {
 		FOV = 77,
-	},
+	}
 
-	ProtectMissile = true,
+	CLASS.ProtectMissile = true
 
-	MountPoints = {
+	CLASS.MountPoints = {
 		{ Name = "missile1", Position = Vector() },
 		{ Name = "missile2", Position = Vector(0, -2, 0) },
 		{ Name = "missile3", Position = Vector(0, -1, -1.73) },
@@ -24,25 +24,25 @@ Racks.Register("40mm7xPOD", {
 		{ Name = "missile6", Position = Vector(0, 1, 1.74) },
 		{ Name = "missile7", Position = Vector(0, -1, 1.74) }
 	}
-})
+end)
 
-Racks.Register("57mm16xPOD", {
-	Name		= "16x 57mm FFAR Pod",
-	Description	= "A lightweight pod for small rockets which is vulnerable to shots and explosions.",
-	Model		= "models/failz/ub_16.mdl",
-	EntType		= "Pod",
-	Caliber		= 57,
-	Mass		= 30,
-	Year		= 1956,
-	Armor		= 5,
-	Spread		= 1.37,
-	Preview = {
+Classes.DefineClass("ACF.Racks.57mm16xPOD", "ACF.Racks.BaseRack", function()
+	CLASS.Name		= "16x 57mm FFAR Pod"
+	CLASS.Description	= "A lightweight pod for small rockets which is vulnerable to shots and explosions."
+	CLASS.Model		= "models/failz/ub_16.mdl"
+	CLASS.EntType		= "Pod"
+	CLASS.Caliber		= 57
+	CLASS.Mass		= 30
+	CLASS.Year		= 1956
+	CLASS.Armor		= 5
+	CLASS.Spread		= 1.37
+	CLASS.Preview = {
 		FOV = 60,
-	},
+	}
 
-	ProtectMissile = true,
+	CLASS.ProtectMissile = true
 
-	MountPoints = {
+	CLASS.MountPoints = {
 		{ Name = "missile1", Position = Vector(3.5, 2.61, 0.96) },
 		{ Name = "missile2", Position = Vector(3.5, 1.65, -2.34) },
 		{ Name = "missile3", Position = Vector(3.5, -1.65, -2.34) },
@@ -60,25 +60,25 @@ Racks.Register("57mm16xPOD", {
 		{ Name = "missile15", Position = Vector(3.5, 2.86, -5) },
 		{ Name = "missile16", Position = Vector(3.5, 0, -5.8) },
 	}
-})
+end)
 
-Racks.Register("57mm32xPOD", {
-	Name		= "32x 57mm FFAR Pod",
-	Description	= "A lightweight pod for small rockets which is vulnerable to shots and explosions.",
-	Model		= "models/failz/ub_32.mdl",
-	EntType		= "Pod",
-	Caliber		= 57,
-	Mass		= 130,
-	Year		= 1956,
-	Armor		= 5,
-	Spread		= 1.37,
-	Preview = {
+Classes.DefineClass("ACF.Racks.57mm32xPOD", "ACF.Racks.BaseRack", function()
+	CLASS.Name		= "32x 57mm FFAR Pod"
+	CLASS.Description	= "A lightweight pod for small rockets which is vulnerable to shots and explosions."
+	CLASS.Model		= "models/failz/ub_32.mdl"
+	CLASS.EntType		= "Pod"
+	CLASS.Caliber		= 57
+	CLASS.Mass		= 130
+	CLASS.Year		= 1956
+	CLASS.Armor		= 5
+	CLASS.Spread		= 1.37
+	CLASS.Preview = {
 		FOV = 85,
-	},
+	}
 
-	ProtectMissile = true,
+	CLASS.ProtectMissile = true
 
-	MountPoints = {
+	CLASS.MountPoints = {
 		{ Name = "missile1", Position = Vector(-8, 0, 3.3) },
 		{ Name = "missile2", Position = Vector(-8, 3.1, 0.8) },
 		{ Name = "missile3", Position = Vector(-8, 1.8, -2.8) },
@@ -112,25 +112,25 @@ Racks.Register("57mm32xPOD", {
 		{ Name = "missile31", Position = Vector(-8, -8.2, 6.75) },
 		{ Name = "missile32", Position = Vector(-8, -5.3, 9.1) },
 	}
-})
+end)
 
-Racks.Register("70mm7xPOD", {
-	Name		= "7x 70mm FFAR Pod",
-	Description	= "A lightweight pod for rockets which is vulnerable to shots and explosions.",
-	Model		= "models/missiles/launcher7_70mm.mdl",
-	EntType		= "Pod",
-	Caliber		= 70,
-	Mass		= 30,
-	Year		= 1940,
-	Armor		= 5,
-	Spread		= 0.6,
-	Preview = {
+Classes.DefineClass("ACF.Racks.70mm7xPOD", "ACF.Racks.BaseRack", function()
+	CLASS.Name		= "7x 70mm FFAR Pod"
+	CLASS.Description	= "A lightweight pod for rockets which is vulnerable to shots and explosions."
+	CLASS.Model		= "models/missiles/launcher7_70mm.mdl"
+	CLASS.EntType		= "Pod"
+	CLASS.Caliber		= 70
+	CLASS.Mass		= 30
+	CLASS.Year		= 1940
+	CLASS.Armor		= 5
+	CLASS.Spread		= 0.6
+	CLASS.Preview = {
 		FOV = 77,
-	},
+	}
 
-	ProtectMissile = true,
+	CLASS.ProtectMissile = true
 
-	MountPoints = {
+	CLASS.MountPoints = {
 		{ Name = "missile1", Position = Vector() },
 		{ Name = "missile2", Position = Vector(0, -3.5) },
 		{ Name = "missile3", Position = Vector(0, -1.75, -3.03) },
@@ -139,25 +139,25 @@ Racks.Register("70mm7xPOD", {
 		{ Name = "missile6", Position = Vector(0, 1.75, 3.04) },
 		{ Name = "missile7", Position = Vector(0, -1.75, 3.04) }
 	}
-})
+end)
 
-Racks.Register("70mm19xPOD", {
-	Name		= "19x 70mm FFAR Pod",
-	Description	= "A lightweight pod for rockets which is vulnerable to shots and explosions.",
-	Model		= "models/failz/lau_61.mdl",
-	EntType		= "Pod",
-	Caliber		= 70,
-	Mass		= 90,
-	Year		= 1960,
-	Armor		= 5,
-	Spread		= 0.6,
-	Preview = {
+Classes.DefineClass("ACF.Racks.70mm19xPOD", "ACF.Racks.BaseRack", function()
+	CLASS.Name		= "19x 70mm FFAR Pod"
+	CLASS.Description	= "A lightweight pod for rockets which is vulnerable to shots and explosions."
+	CLASS.Model		= "models/failz/lau_61.mdl"
+	CLASS.EntType		= "Pod"
+	CLASS.Caliber		= 70
+	CLASS.Mass		= 90
+	CLASS.Year		= 1960
+	CLASS.Armor		= 5
+	CLASS.Spread		= 0.6
+	CLASS.Preview = {
 		FOV = 105,
-	},
+	}
 
-	ProtectMissile = true,
+	CLASS.ProtectMissile = true
 
-	MountPoints = {
+	CLASS.MountPoints = {
 		{ Name = "missile1", Position = Vector(5, -3.9, 7) },
 		{ Name = "missile2", Position = Vector(5, 0, 7) },
 		{ Name = "missile3", Position = Vector(5, 3.9, 7) },
@@ -178,25 +178,25 @@ Racks.Register("70mm19xPOD", {
 		{ Name = "missile18", Position = Vector(5, 0, -7.2) },
 		{ Name = "missile19", Position = Vector(5, 3.9, -7.2) },
 	}
-})
+end)
 
-Racks.Register("80mm20xPOD", {
-	Name		= "20x 80mm FFAR Pod",
-	Description	= "A lightweight pod for rockets which is vulnerable to shots and explosions.",
-	Model		= "models/failz/b8.mdl",
-	EntType		= "Pod",
-	Caliber		= 80,
-	Mass		= 120,
-	Year		= 1970,
-	Armor		= 5,
-	Spread		= 1.3,
-	Preview = {
+Classes.DefineClass("ACF.Racks.80mm20xPOD", "ACF.Racks.BaseRack", function()
+	CLASS.Name		= "20x 80mm FFAR Pod"
+	CLASS.Description	= "A lightweight pod for rockets which is vulnerable to shots and explosions."
+	CLASS.Model		= "models/failz/b8.mdl"
+	CLASS.EntType		= "Pod"
+	CLASS.Caliber		= 80
+	CLASS.Mass		= 120
+	CLASS.Year		= 1970
+	CLASS.Armor		= 5
+	CLASS.Spread		= 1.3
+	CLASS.Preview = {
 		FOV = 105,
-	},
+	}
 
-	ProtectMissile = true,
+	CLASS.ProtectMissile = true
 
-	MountPoints = {
+	CLASS.MountPoints = {
 		{ Name = "missile1", Position = Vector(4, 2.8, 4.8) },
 		{ Name = "missile2", Position = Vector(4, 5.6, 0.8) },
 		{ Name = "missile3", Position = Vector(4, 4.2, -3.94) },
@@ -218,135 +218,135 @@ Racks.Register("80mm20xPOD", {
 		{ Name = "missile19", Position = Vector(4, -8.0, 6.8) },
 		{ Name = "missile20", Position = Vector(4, -3.8, 10) },
 	}
-})
+end)
 
-Racks.Register("1x BGM-71E", {
-	Name		= "TOW Launch Tube",
-	Description	= "A single BGM-71E round.",
-	Model		= "models/missiles/bgm_71e_round.mdl",
-	EntType		= "Pod",
-	Caliber		= 152,
-	Mass		= 11,
-	Year		= 1970,
-	Armor		= 2.5,
-	Preview = {
+Classes.DefineClass("ACF.Racks.1xBGM-71E", "ACF.Racks.BaseRack", function()
+	CLASS.Name		= "TOW Launch Tube"
+	CLASS.Description	= "A single BGM-71E round."
+	CLASS.Model		= "models/missiles/bgm_71e_round.mdl"
+	CLASS.EntType		= "Pod"
+	CLASS.Caliber		= 152
+	CLASS.Mass		= 11
+	CLASS.Year		= 1970
+	CLASS.Armor		= 2.5
+	CLASS.Preview = {
 		Height = 110,
 		FOV    = 60,
-	},
+	}
 
-	ProtectMissile = true,
-	HideMissile = true,
+	CLASS.ProtectMissile = true
+	CLASS.HideMissile = true
 
-	MountPoints = {
+	CLASS.MountPoints = {
 		{ Name = "missile1", Position = Vector(15.76, 0, 0) }
 	}
-})
+end)
 
-Racks.Register("2x BGM-71E", {
-	Name		= "Dual TOW Launch Tube",
-	Description	= "A BGM-71E rack designed to carry 2 rounds.",
-	Model		= "models/missiles/bgm_71e_2xrk.mdl",
-	EntType		= "Pod",
-	Caliber		= 152,
-	Mass		= 32,
-	Year		= 1970,
-	Armor		= 2.5,
-	Preview = {
+Classes.DefineClass("ACF.Racks.2xBGM-71E", "ACF.Racks.BaseRack", function()
+	CLASS.Name		= "Dual TOW Launch Tube"
+	CLASS.Description	= "A BGM-71E rack designed to carry 2 rounds."
+	CLASS.Model		= "models/missiles/bgm_71e_2xrk.mdl"
+	CLASS.EntType		= "Pod"
+	CLASS.Caliber		= 152
+	CLASS.Mass		= 32
+	CLASS.Year		= 1970
+	CLASS.Armor		= 2.5
+	CLASS.Preview = {
 		Height = 95,
 		FOV    = 60,
-	},
+	}
 
-	ProtectMissile = true,
-	HideMissile = true,
+	CLASS.ProtectMissile = true
+	CLASS.HideMissile = true
 
-	MountPoints = {
+	CLASS.MountPoints = {
 		{ Name = "missile1", Position = Vector(23.64, 4.73, 0) },
 		{ Name = "missile2", Position = Vector(23.64, -4.73, 0) }
 	}
-})
+end)
 
-Racks.Register("4x BGM-71E", {
-	Name		= "Quad TOW Launch Tube",
-	Description	= "A BGM-71E rack designed to carry 4 rounds.",
-	Model		= "models/missiles/bgm_71e_4xrk.mdl",
-	EntType		= "Pod",
-	Caliber		= 152,
-	Mass		= 65,
-	Year		= 1970,
-	Armor		= 2.5,
-	Preview = {
+Classes.DefineClass("ACF.Racks.4xBGM-71E", "ACF.Racks.BaseRack", function()
+	CLASS.Name		= "Quad TOW Launch Tube"
+	CLASS.Description	= "A BGM-71E rack designed to carry 4 rounds."
+	CLASS.Model		= "models/missiles/bgm_71e_4xrk.mdl"
+	CLASS.EntType		= "Pod"
+	CLASS.Caliber		= 152
+	CLASS.Mass		= 65
+	CLASS.Year		= 1970
+	CLASS.Armor		= 2.5
+	CLASS.Preview = {
 		FOV = 85,
-	},
+	}
 
-	ProtectMissile = true,
-	HideMissile = true,
+	CLASS.ProtectMissile = true
+	CLASS.HideMissile = true
 
-	MountPoints = {
+	CLASS.MountPoints = {
 		{ Name = "missile1", Position = Vector(23.64, 4.73, 0) },
 		{ Name = "missile2", Position = Vector(23.64, -4.73, 0) },
 		{ Name = "missile3", Position = Vector(23.64, 4.73, -11.43) },
 		{ Name = "missile4", Position = Vector(23.64, -4.73, -11.43) }
 	}
-})
+end)
 
-Racks.Register("380mmRW61", {
-	Name		= "380mm Rocket Mortar",
-	Description	= "A lightweight pod for rocket-asisted mortars which is vulnerable to shots and explosions.",
-	Model		= "models/launcher/rw61.mdl",
-	EntType		= "Pod",
-	Caliber		= 380,
-	Mass		= 429,
-	Year		= 1945,
-	Armor		= 25,
-	Spread		= 0.01,
+Classes.DefineClass("ACF.Racks.380mmRW61", "ACF.Racks.BaseRack", function()
+	CLASS.Name		= "380mm Rocket Mortar"
+	CLASS.Description	= "A lightweight pod for rocket-asisted mortars which is vulnerable to shots and explosions."
+	CLASS.Model		= "models/launcher/rw61.mdl"
+	CLASS.EntType		= "Pod"
+	CLASS.Caliber		= 380
+	CLASS.Mass		= 429
+	CLASS.Year		= 1945
+	CLASS.Armor		= 25
+	CLASS.Spread		= 0.01
 
-	ProtectMissile = true,
+	CLASS.ProtectMissile = true
 
-	MountPoints = {
+	CLASS.MountPoints = {
 		{ Name = "missile1", Position = Vector(8.39, -0.01, 0) },
 	}
-})
+end)
 
-Racks.Register("3xUARRK", {
-	Name		= "Triple Launch Tube",
-	Description	= "A lightweight rack for bombs which is vulnerable to shots and explosions.",
-	Model		= "models/missiles/rk3uar.mdl",
-	EntType		= "Pod",
-	Mass		= 61,
-	Year		= 1941,
-	Armor		= 5,
-	Spread		= 0.04,
-	Preview = {
+Classes.DefineClass("ACF.Racks.3xUARRK", "ACF.Racks.BaseRack", function()
+	CLASS.Name		= "Triple Launch Tube"
+	CLASS.Description	= "A lightweight rack for bombs which is vulnerable to shots and explosions."
+	CLASS.Model		= "models/missiles/rk3uar.mdl"
+	CLASS.EntType		= "Pod"
+	CLASS.Mass		= 61
+	CLASS.Year		= 1941
+	CLASS.Armor		= 5
+	CLASS.Spread		= 0.04
+	CLASS.Preview = {
 		Height = 115,
 		FOV    = 60,
-	},
+	}
 
-	ProtectMissile = true,
+	CLASS.ProtectMissile = true
 
-	MountPoints = {
+	CLASS.MountPoints = {
 		{ Name = "missile1", Position = Vector(-4.5, 0, 9.09) },
 		{ Name = "missile2", Position = Vector(-4.5, 3.19, 3.48) },
 		{ Name = "missile3", Position = Vector(-4.5, -3.21, 3.48) },
 	}
-})
+end)
 
-Racks.Register("6xUARRK", {
-	Name		= "6x Launch Tube",
-	Description	= "6-pack of death, used to efficiently carry artillery rockets",
-	Model		= "models/missiles/6pod_rk.mdl",
-	RackModel	= "models/missiles/6pod_cover.mdl",
-	EntType		= "Pod",
-	Mass		= 213,
-	Year		= 1980,
-	Armor		= 5,
-	Spread		= 0.04,
-	Preview = {
+Classes.DefineClass("ACF.Racks.6xUARRK", "ACF.Racks.BaseRack", function()
+	CLASS.Name		= "6x Launch Tube"
+	CLASS.Description	= "6-pack of death, used to efficiently carry artillery rockets"
+	CLASS.Model		= "models/missiles/6pod_rk.mdl"
+	CLASS.RackModel	= "models/missiles/6pod_cover.mdl"
+	CLASS.EntType		= "Pod"
+	CLASS.Mass		= 213
+	CLASS.Year		= 1980
+	CLASS.Armor		= 5
+	CLASS.Spread		= 0.04
+	CLASS.Preview = {
 		FOV = 60,
-	},
+	}
 
-	ProtectMissile = true,
+	CLASS.ProtectMissile = true
 
-	MountPoints = {
+	CLASS.MountPoints = {
 		{ Name = "missile1", Position = Vector(0.035, -11.26, 5.58) },
 		{ Name = "missile2", Position = Vector(0.025, 0.03, 5.58) },
 		{ Name = "missile3", Position = Vector(0.025, 11.18, 5.58) },
@@ -354,226 +354,226 @@ Racks.Register("6xUARRK", {
 		{ Name = "missile5", Position = Vector(0.025, 0.03, -5.51) },
 		{ Name = "missile6", Position = Vector(0.025, 11.18, -5.51) },
 	}
-})
+end)
 
-Racks.Register("1x FIM-92", {
-	Name		= "Stinger Launch Tube",
-	Description	= "An FIM-92 rack designed to carry 1 missile.",
-	Model		= "models/missiles/fim_92_1xrk.mdl",
-	EntType		= "Pod",
-	Caliber		= 70,
-	Mass		= 11,
-	Year		= 1984,
-	Armor		= 2.5,
-	Preview = {
+Classes.DefineClass("ACF.Racks.1xFIM-92", "ACF.Racks.BaseRack", function()
+	CLASS.Name		= "Stinger Launch Tube"
+	CLASS.Description	= "An FIM-92 rack designed to carry 1 missile."
+	CLASS.Model		= "models/missiles/fim_92_1xrk.mdl"
+	CLASS.EntType		= "Pod"
+	CLASS.Caliber		= 70
+	CLASS.Mass		= 11
+	CLASS.Year		= 1984
+	CLASS.Armor		= 2.5
+	CLASS.Preview = {
 		Height = 70,
 		FOV    = 60,
-	},
+	}
 
-	ProtectMissile = true,
+	CLASS.ProtectMissile = true
 
-	MountPoints = {
+	CLASS.MountPoints = {
 		{ Name = "missile1", Position = Vector() }
 	}
-})
+end)
 
-Racks.Register("2x FIM-92", {
-	Name		= "Dual Stinger Launch Tube",
-	Description	= "An FIM-92 rack designed to carry 2 missiles.",
-	Model		= "models/missiles/fim_92_2xrk.mdl",
-	EntType		= "Pod",
-	Caliber		= 70,
-	Mass		= 16,
-	Year		= 1984,
-	Armor		= 16,
-	Preview = {
+Classes.DefineClass("ACF.Racks.2xFIM-92", "ACF.Racks.BaseRack", function()
+	CLASS.Name		= "Dual Stinger Launch Tube"
+	CLASS.Description	= "An FIM-92 rack designed to carry 2 missiles."
+	CLASS.Model		= "models/missiles/fim_92_2xrk.mdl"
+	CLASS.EntType		= "Pod"
+	CLASS.Caliber		= 70
+	CLASS.Mass		= 16
+	CLASS.Year		= 1984
+	CLASS.Armor		= 16
+	CLASS.Preview = {
 		Height = 90,
 		FOV    = 60,
-	},
+	}
 
-	ProtectMissile = true,
+	CLASS.ProtectMissile = true
 
-	MountPoints = {
+	CLASS.MountPoints = {
 		{ Name = "missile1", Position = Vector(0, 3.35, 0.45) },
 		{ Name = "missile2", Position = Vector(0, -3.35, 0.45) }
 	}
-})
+end)
 
-Racks.Register("4x FIM-92", {
-	Name		= "Quad Stinger Launch Tube",
-	Description	= "An FIM-92 rack designed to carry 4 missiles.",
-	Model		= "models/missiles/fim_92_4xrk.mdl",
-	EntType		= "Pod",
-	Caliber		= 70,
-	Mass		= 42,
-	Year		= 1984,
-	Armor		= 5,
-	Preview = {
+Classes.DefineClass("ACF.Racks.4xFIM-92", "ACF.Racks.BaseRack", function()
+	CLASS.Name		= "Quad Stinger Launch Tube"
+	CLASS.Description	= "An FIM-92 rack designed to carry 4 missiles."
+	CLASS.Model		= "models/missiles/fim_92_4xrk.mdl"
+	CLASS.EntType		= "Pod"
+	CLASS.Caliber		= 70
+	CLASS.Mass		= 42
+	CLASS.Year		= 1984
+	CLASS.Armor		= 5
+	CLASS.Preview = {
 		FOV = 65,
-	},
+	}
 
-	ProtectMissile = true,
+	CLASS.ProtectMissile = true
 
-	MountPoints = {
+	CLASS.MountPoints = {
 		{ Name = "missile1", Position = Vector(0, 2.6, 2.65) },
 		{ Name = "missile2", Position = Vector(0, -2.6, 2.65) },
 		{ Name = "missile3", Position = Vector(0, 2.6, -3.6) },
 		{ Name = "missile4", Position = Vector(0, -2.6, -3.6) }
 	}
-})
+end)
 
-Racks.Register("1x Strela-1", {
-	Name		= "Strela Launch Tube",
-	Description	= "An 9M31 rack designed to carry 1 missile.",
-	Model		= "models/missiles/9m31_rk1.mdl",
-	EntType		= "Pod",
-	Caliber		= 120,
-	Mass		= 75,
-	Year		= 1968,
-	Armor		= 5,
-	Preview = {
+Classes.DefineClass("ACF.Racks.1xStrela-1", "ACF.Racks.BaseRack", function()
+	CLASS.Name		= "Strela Launch Tube"
+	CLASS.Description	= "An 9M31 rack designed to carry 1 missile."
+	CLASS.Model		= "models/missiles/9m31_rk1.mdl"
+	CLASS.EntType		= "Pod"
+	CLASS.Caliber		= 120
+	CLASS.Mass		= 75
+	CLASS.Year		= 1968
+	CLASS.Armor		= 5
+	CLASS.Preview = {
 		FOV = 60,
-	},
+	}
 
-	ProtectMissile = true,
+	CLASS.ProtectMissile = true
 
-	MountPoints = {
+	CLASS.MountPoints = {
 		{ Name = "missile1", Position = Vector(44.12, 2.65, 0.13) }
 	}
-})
+end)
 
-Racks.Register("2x Strela-1", {
-	Name		= "Dual Strela Launch Tube",
-	Description	= "An 9M31 rack designed to carry 2 missiles.",
-	Model		= "models/missiles/9m31_rk2.mdl",
-	EntType		= "Pod",
-	Caliber		= 120,
-	Mass		= 177,
-	Year		= 1968,
-	Armor		= 5,
-	Preview = {
+Classes.DefineClass("ACF.Racks.2xStrela-1", "ACF.Racks.BaseRack", function()
+	CLASS.Name		= "Dual Strela Launch Tube"
+	CLASS.Description	= "An 9M31 rack designed to carry 2 missiles."
+	CLASS.Model		= "models/missiles/9m31_rk2.mdl"
+	CLASS.EntType		= "Pod"
+	CLASS.Caliber		= 120
+	CLASS.Mass		= 177
+	CLASS.Year		= 1968
+	CLASS.Armor		= 5
+	CLASS.Preview = {
 		FOV = 65,
-	},
+	}
 
-	ProtectMissile = true,
+	CLASS.ProtectMissile = true
 
-	MountPoints = {
+	CLASS.MountPoints = {
 		{ Name = "missile1", Position = Vector(44.12, -5.59, 0.13) },
 		{ Name = "missile2", Position = Vector(44.12, 10.97, 0.13) }
 	}
-})
+end)
 
-Racks.Register("4x Strela-1", {
-	Name		= "Quad Strela Launch Tube",
-	Description	= "An 9m31 rack designed to carry 4 missiles.",
-	Model		= "models/missiles/9m31_rk4.mdl",
-	EntType		= "Pod",
-	Caliber		= 120,
-	Mass		= 482,
-	Year		= 1968,
-	Armor		= 5,
-	Preview = {
+Classes.DefineClass("ACF.Racks.4xStrela-1", "ACF.Racks.BaseRack", function()
+	CLASS.Name		= "Quad Strela Launch Tube"
+	CLASS.Description	= "An 9m31 rack designed to carry 4 missiles."
+	CLASS.Model		= "models/missiles/9m31_rk4.mdl"
+	CLASS.EntType		= "Pod"
+	CLASS.Caliber		= 120
+	CLASS.Mass		= 482
+	CLASS.Year		= 1968
+	CLASS.Armor		= 5
+	CLASS.Preview = {
 		FOV = 60,
-	},
+	}
 
-	ProtectMissile = true,
+	CLASS.ProtectMissile = true
 
-	MountPoints = {
+	CLASS.MountPoints = {
 		{ Name = "missile1", Position = Vector(44.17, -42.66, 3.74) },
 		{ Name = "missile2", Position = Vector(44.17, -26.1, 3.74) },
 		{ Name = "missile3", Position = Vector(44.17, 25.98, 3.74) },
 		{ Name = "missile4", Position = Vector(44.17, 42.54, 3.74) }
 	}
-})
+end)
 
-Racks.Register("1x Ataka", {
-	Name		= "Ataka Launch Tube",
-	Description	= "An 9M120 rack designed to carry 1 missile.",
-	Model		= "models/missiles/9m120_rk1.mdl",
-	RackModel	= "models/missiles/9m120.mdl",
-	EntType		= "Pod",
-	Caliber		= 130,
-	Mass		= 13,
-	Year		= 1968,
-	Armor		= 2.5,
-	Preview = {
+Classes.DefineClass("ACF.Racks.1xAtaka", "ACF.Racks.BaseRack", function()
+	CLASS.Name		= "Ataka Launch Tube"
+	CLASS.Description	= "An 9M120 rack designed to carry 1 missile."
+	CLASS.Model		= "models/missiles/9m120_rk1.mdl"
+	CLASS.RackModel	= "models/missiles/9m120.mdl"
+	CLASS.EntType		= "Pod"
+	CLASS.Caliber		= 130
+	CLASS.Mass		= 13
+	CLASS.Year		= 1968
+	CLASS.Armor		= 2.5
+	CLASS.Preview = {
 		Height = 60,
 		FOV    = 60,
-	},
+	}
 
-	ProtectMissile = true,
-	HideMissile = true,
+	CLASS.ProtectMissile = true
+	CLASS.HideMissile = true
 
-	MountPoints = {
+	CLASS.MountPoints = {
 		{ Name = "missile1", Position = Vector(0, 0, 3) }
 	}
-})
+end)
 
-Racks.Register("1x SPG9", {
-	Name		= "SPG-9 Launch Tube",
-	Description	= "Launch tube for SPG-9 recoilless rocket.",
-	Model		= "models/spg9/spg9.mdl",
-	EntType		= "Pod",
-	Caliber		= 73,
-	Mass		= 26,
-	Year		= 1968,
-	Armor		= 5,
-	Spread		= 0.03,
-	Preview = {
+Classes.DefineClass("ACF.Racks.1xSPG9", "ACF.Racks.BaseRack", function()
+	CLASS.Name		= "SPG-9 Launch Tube"
+	CLASS.Description	= "Launch tube for SPG-9 recoilless rocket."
+	CLASS.Model		= "models/spg9/spg9.mdl"
+	CLASS.EntType		= "Pod"
+	CLASS.Caliber		= 73
+	CLASS.Mass		= 26
+	CLASS.Year		= 1968
+	CLASS.Armor		= 5
+	CLASS.Spread		= 0.03
+	CLASS.Preview = {
 		Height = 80,
 		FOV    = 60,
-	},
+	}
 
-	ProtectMissile = true,
-	HideMissile = true,
+	CLASS.ProtectMissile = true
+	CLASS.HideMissile = true
 
-	MountPoints = {
+	CLASS.MountPoints = {
 		{ Name = "missile1", Position = Vector() }
 	}
-})
+end)
 
-Racks.Register("1x Kornet", {
-	Name		= "Kornet Launch Tube",
-	Description	= "Launch tube for Kornet antitank missile.",
-	Model		= "models/kali/weapons/kornet/parts/9m133 kornet tube.mdl",
-	EntType		= "Pod",
-	Caliber		= 152,
-	Mass		= 16,
-	Year		= 1994,
-	Armor		= 2.5,
-	Preview = {
+Classes.DefineClass("ACF.Racks.1xKornet", "ACF.Racks.BaseRack", function()
+	CLASS.Name		= "Kornet Launch Tube"
+	CLASS.Description	= "Launch tube for Kornet antitank missile."
+	CLASS.Model		= "models/kali/weapons/kornet/parts/9m133 kornet tube.mdl"
+	CLASS.EntType		= "Pod"
+	CLASS.Caliber		= 152
+	CLASS.Mass		= 16
+	CLASS.Year		= 1994
+	CLASS.Armor		= 2.5
+	CLASS.Preview = {
 		FOV = 60,
-	},
+	}
 
-	ProtectMissile = true,
-	HideMissile = true,
+	CLASS.ProtectMissile = true
+	CLASS.HideMissile = true
 
-	MountPoints = {
+	CLASS.MountPoints = {
 		{ Name = "missile1", Position = Vector() }
 	}
-})
+end)
 
-Racks.Register("127mm4xPOD", {
-	Name		= "Quad Zuni Rocket Pod",
-	Description	= "LAU-10/A Pod for the Zuni rocket.",
-	Model		= "models/ghosteh/lau10.mdl",
-	EntType		= "Pod",
-	Caliber		= 127,
-	Mass		= 68,
-	Year		= 1957,
-	Armor		= 5,
-	Spread		= 0.02,
-	Preview = {
+Classes.DefineClass("ACF.Racks.127mm4xPOD", "ACF.Racks.BaseRack", function()
+	CLASS.Name		= "Quad Zuni Rocket Pod"
+	CLASS.Description	= "LAU-10/A Pod for the Zuni rocket."
+	CLASS.Model		= "models/ghosteh/lau10.mdl"
+	CLASS.EntType		= "Pod"
+	CLASS.Caliber		= 127
+	CLASS.Mass		= 68
+	CLASS.Year		= 1957
+	CLASS.Armor		= 5
+	CLASS.Spread		= 0.02
+	CLASS.Preview = {
 		Height = 100,
 		FOV    = 60,
-	},
+	}
 
-	ProtectMissile = true,
+	CLASS.ProtectMissile = true
 
-	MountPoints = {
+	CLASS.MountPoints = {
 		{ Name = "missile1", Position = Vector(5.2, 2.75, 2.65) },
 		{ Name = "missile2", Position = Vector(5.2, -2.75, 2.65) },
 		{ Name = "missile3", Position = Vector(5.2, 2.75, -2.83) },
 		{ Name = "missile4", Position = Vector(5.2, -2.75, -2.83) }
 	}
-})
+end)
