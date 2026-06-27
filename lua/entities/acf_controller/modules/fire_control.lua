@@ -103,6 +103,7 @@ do
 		local Turrets = SelfTbl.Turrets
 		if not IsValid(SelfTbl.Baseplate) then return end -- Needed for velocity
 		if SelfTbl.TurretLocked then return end
+		if self:GetDisableAIOCam() then return end -- I guess bro
 
 		local Primary = self.Primary
 		local BreechReference = IsValid(Primary) and Primary.BreechReference
