@@ -4,4 +4,4 @@ VALUES ('juke', 'Juke', 'Juke', 'jukecappatalist');
 
 -- Insert dupes using the string packid
 INSERT INTO DupeData (path, name, cost, weight, type, mobility, packid, description) VALUES
-('oa_86_puj', 'OA-86 Puj', 54.53, 5367, 'ATGM', 'Wheeled', 'juke', 'Uses AIO Controls');
+('oa_86_puj', 'OA-86 Puj', 54.53, 5367, 'ATGM', 'Wheeled', 'juke', '');

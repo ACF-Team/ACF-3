@@ -1,0 +1,7 @@
+-- Insert pack
+INSERT INTO PackData (packid, packname, author, contact)
+VALUES ('snoopy', 'Snoopy', 'Snoopy', 'astar.astar');
+
+-- Insert dupes using the string packid
+INSERT INTO DupeData (path, name, cost, weight, type, mobility, packid, description) VALUES
+('fa_0_naranja', 'FA 0 Naranja', 61.51, 7736, 'LT', 'Wheeled', 'snoopy', '');

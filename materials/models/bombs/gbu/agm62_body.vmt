@@ -1,0 +1,19 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "models\bombs\gbu/agm62_body"
+
+
+	"$envmap" "env_cubemap"
+	"$envmaptint" "[ .25 .25 .2 ]"
+	
+	
+	"$model" "1"
+	"$halflambert" 			1
+	$blendtintbybasealpha		1
+	$surfaceprop	metal
+
+	"$phong" "1"
+	"$phongboost" "2"
+	"$phongfresnelranges" "[.15 .5 1]"
+	$phongexponent			5			// either/or
+}

@@ -28,6 +28,7 @@ do
 			RecacheBindNW(self, SelfTbl, "AHS_Primary_RT", SelfTbl.Primary.ReloadTime or 0, self.SetNWFloat)
 			RecacheBindNW(self, SelfTbl, "AHS_Primary_RD", SelfTbl.Primary.State == "Loaded" or false, self.SetNWBool)
 			RecacheBindNW(self, SelfTbl, "AHS_Primary", SelfTbl.Primary, self.SetNWEntity)
+			RecacheBindNW(self, SelfTbl, "AHS_Primary_MV", SelfTbl.Primary.BulletData.MuzzleVel or 0, self.SetNWFloat)
 		else
 			SelfTbl.Primary = next(self.GunsPrimary)
 		end

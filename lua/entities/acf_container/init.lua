@@ -8,7 +8,6 @@ local Contraption = ACF.Contraption
 local TimerCreate = timer.Create
 local TimerExists = timer.Exists
 local Clamp       = math.Clamp
-local Round       = math.Round
 
 ENT.Spawnable      = false
 ENT.AdminSpawnable = false
@@ -22,18 +21,22 @@ end
 
 function ENT:SetAmount(Amount)
 	local Cap = self.Capacity or 0
-	local New = Round(Clamp(Amount or 0, 0, Cap), 2)
-
-	if New == self.Amount then return end
+	local New = Clamp(Amount or 0, 0, Cap)
 
 	self.Amount = New
 
-	if WireLib then
-		WireLib.TriggerOutput(self, self.WireAmountName, New)
-	end
+	local TimeCheck = CurTime() - (self.LastInfoUpdate or 0) > 0.1
+	local ValueCheck = math.abs((self.LastInfoAmount or 0) - New) > 0.001
+	if TimeCheck and ValueCheck then
+		if WireLib then
+			WireLib.TriggerOutput(self, self.WireAmountName, New)
+		end
 
-	self:UpdateMass()
-	if self.UpdateOverlay then self:UpdateOverlay() end
+		self:UpdateMass()
+		if self.UpdateOverlay then self:UpdateOverlay() end
+		self.LastInfoUpdate = CurTime()
+		self.LastInfoAmount = New
+	end
 end
 
 function ENT:Consume(Amount)

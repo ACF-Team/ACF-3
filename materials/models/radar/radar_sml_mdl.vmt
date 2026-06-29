@@ -1,0 +1,20 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "models\radar/radar_sml_mdl"
+	"$halflambert" 			1
+	$blendtintbybasealpha		1
+	$surfaceprop	metal
+	$bumpmap "models\radar/radar_sml_mdl_nm"
+	
+		
+	$phong 1
+	$phongboost	5
+	$phongfresnelranges	"[0.05 0.5 1]"
+	$phongexponenttexture models\radar/radar_sml_mdl
+
+
+	"$envmap" "env_cubemap"
+	$normalmapalphaenvmapmask 1
+	$envmaptint "[0.2 0.2 0.2]"
+	$envmapanisotropy 1
+}

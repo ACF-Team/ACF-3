@@ -1,0 +1,5 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "models\radar/radar_sml_mdl_nm"
+	"$model" "1"
+}

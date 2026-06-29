@@ -6,6 +6,9 @@ local function CreateMenu(Menu)
 	ACF.SetClientData("PrimaryClass", "acf_controller")
 	ACF.SetClientData("SecondaryClass", "N/A")
 
+	Menu:AddWikiLink("AIO Controllers", "docs/getting_started/first_tank/baseplate_aio.html")
+	Menu:AddWikiLink("AIO Car Steering", "docs/getting_started/first_car.html")
+
 	Menu:AddTitle("All-In-One Controllers")
 	Menu:AddLabel("Allows you to easily setup a tank without requiring a complex wiring setup.")
 

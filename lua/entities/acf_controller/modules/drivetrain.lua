@@ -1,6 +1,32 @@
 local RecacheBindOutput = ENT.RecacheBindOutput
 local GetKeyState = ENT.GetKeyState
 
+local function Init(Entity)
+	Entity.Gearbox              = nil  -- Main gearbox of the vehicle
+	Entity.Baseplate            = nil  -- The baseplate of the vehicle
+	Entity.SteerPlates          = {}   -- Steering plates, if any
+	Entity.GearboxEnds          = {}   -- Gearboxes connected to a wheel
+	Entity.GearboxIntermediates = {}   -- Or otherwise
+	Entity.Wheels               = {}   -- Wheels
+	Entity.Engines              = {}   -- Engines
+	Entity.Fuels                = {}   -- Fuel tanks
+	Entity.LeftGearboxes        = {}   -- Gearboxes connected to the left drive wheel
+	Entity.RightGearboxes       = {}   -- Gearboxes connected to the right drive wheel
+	Entity.LeftWheels           = {}   -- Wheels connected to the left drive wheel
+	Entity.RightWheels          = {}   -- Wheels connected to the right drive wheel
+	Entity.GearboxLeft          = nil  -- A Gearbox connected to the left drive wheel
+	Entity.GearboxRight         = nil  -- A Gearbox connected to the right drive wheel
+	Entity.GearboxLeftDir       = nil  -- Direction of that left gearbox's output
+	Entity.GearboxRightDir      = nil  -- Direction of that right gearbox's output
+	Entity.ControllerWelds      = {}   -- Keep track of the welds we created
+	Entity.SteerPlatesSorted    = {}   -- Steer plates sorted by their position
+	Entity.SteerPhysicsObjects  = {}   -- Steering physics objects
+	Entity.SteerAngles          = {}   -- Steering angles for the wheels
+	Entity.FuelCapacity         = 0    -- Total fuel capacity of the vehicle
+	Entity.GearboxEndCount      = 1    -- Number of endpoint gearboxes
+	Entity.Speed                = 0
+end
+
 -- Drivetrain related
 do
 	local CLUTCH_FLOW = 0
@@ -166,7 +192,12 @@ do
 		self.GearboxLeft, self.GearboxLeftDir = next(LeftGearboxes)
 		self.GearboxRight, self.GearboxRightDir = next(RightGearboxes)
 
-		for v in pairs(self.SteerPlates) do self.SteerPlatesSorted[#self.SteerPlatesSorted + 1] = v end
+		for v in pairs(self.SteerPlates) do
+			local PhysObj = v:GetPhysicsObject()
+			if IsValid(PhysObj) then PhysObj:EnableGravity(false) end
+			self.SteerPlatesSorted[#self.SteerPlatesSorted + 1] = v
+		end
+
 		table.sort(self.SteerPlatesSorted, function(A, B)
 			return self.Baseplate:WorldToLocal(A:GetPos()).x > self.Baseplate:WorldToLocal(B:GetPos()).x
 		end)
@@ -184,7 +215,7 @@ do
 
 		-- Set default shift RPMs to one of the engine's powerbands
 		local Engine = next(self.Engines)
-		if not MainGearbox.Automatic and IsValid(Engine) then
+		if IsValid(Engine) then
 			if self:GetShiftMinRPM() == 0 then self:SetShiftMinRPM(Engine.PeakMinRPM + 100) end
 			if self:GetShiftMaxRPM() == 0 then self:SetShiftMaxRPM(Engine.PeakMaxRPM - 100) end
 		end
@@ -325,3 +356,29 @@ do
 		SelfTbl.LastTrueGear = TrueGear
 	end
 end
+
+ACF.RegisterControllerLink("acf_gearbox", {
+	Field = "Gearbox",
+	Single = true,
+	OnLinked = function(Controller, Target)
+		Controller:AnalyzeDrivetrain(Target)
+	end,
+})
+
+ACF.RegisterControllerLink("acf_baseplate", {
+	Field = "Baseplate",
+	Single = true,
+	OnLinked = function(Controller, Target)
+		if IsValid(Target.Pod) and not Controller.Seat then Controller:Link(Target.Pod) end
+	end,
+	OnUnlinked = function(Controller, Target)
+		if IsValid(Target.Pod) and not Controller.Seat then Controller:Unlink(Target.Pod) end
+	end,
+})
+
+ACF.RegisterControllerLink("prop_physics", {
+	Field = "SteerPlates",
+	Single = false,
+})
+
+return Init

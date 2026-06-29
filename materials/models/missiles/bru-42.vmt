@@ -1,0 +1,6 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "models\missiles/bru-42"
+	$halflambert 			1
+	$blendtintbybasealpha		1
+}

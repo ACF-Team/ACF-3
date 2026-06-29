@@ -4,6 +4,8 @@ local SetDrawColor = surface.SetDrawColor
 local DrawRect = surface.DrawRect
 local DrawText = draw.DrawText
 local DrawLine = surface.DrawLine
+local DrawOutlinedRect = surface.DrawOutlinedRect
+local DrawCircle = surface.DrawCircle
 
 local AmmoTypes    = ACF.Classes.AmmoTypes
 
@@ -44,6 +46,26 @@ return function(State)
         Ent.ReceiverData[Receiver] = {Direction, CurTime()}
     end)
 
+    State.SelectedTargetID = nil
+    State.CurrentTargetID = nil
+    net.Receive("ACF_Controller_Radar", function()
+        local Ent = net.ReadEntity()
+        local Count = net.ReadUInt(4)
+
+        local RadarData = {}
+        for _ = 1, Count do
+            local ID = net.ReadUInt(6)
+            local Name = net.ReadString()
+            local Pos = net.ReadVector()
+            RadarData[ID] = {Pos, Name}
+        end
+        local TargetVelocity = net.ReadVector()
+
+        if not IsValid(Ent) then return end
+        Ent.RadarData = RadarData
+        Ent.TargetVelocity = TargetVelocity
+    end)
+
     local function SelectAmmoType(Index)
         if State.MyController:GetDisableAmmoSelect() then return end
         local NewAmmoType = State.MyController.TypesSorted and State.MyController.TypesSorted[Index] or nil
@@ -57,6 +79,14 @@ return function(State)
         State.MyController.SelectedAmmoType = NewAmmoType
     end
 
+    local function SelectRadarTarget()
+        State.SelectedTargetID = State.CurrentTargetID
+        net.Start("ACF_Controller_Radar")
+        net.WriteUInt(State.MyController:EntIndex(), MAX_EDICT_BITS)
+        net.WriteUInt(State.SelectedTargetID or 0, 6)
+        net.SendToServer()
+    end
+
     hook.Add("PlayerButtonDown", "ACFControllerSeatButtonDown", function(_, Button)
         if not IsFirstTimePredicted() then return end
         if not IsValid(State.MyController) then return end
@@ -65,6 +95,8 @@ return function(State)
         for i = 1, 9 do
             if Button == i + 1 then SelectAmmoType(i) end
         end
+
+        if Button == KEY_F then SelectRadarTarget() end
     end)
 
     local rangerTrace = {}
@@ -305,7 +337,9 @@ return function(State)
 
         local ColData2 = State.MyController:GetHUDColor2()
         if ColData2 == Vector() then ColData2 = Vector(0, 1, 1) end
+        local Col2 = Color(ColData2.x * 255, ColData2.y * 255, ColData2.z * 255, 255)
 
+        -- Warning Receivers
         for Receiver, Data in pairs(State.MyController.ReceiverData or {}) do
             if not IsValid(Receiver) then continue end
             local Direction, Time = Data[1], Data[2]
@@ -319,5 +353,39 @@ return function(State)
                 DrawLine(SP1.x, SP1.y, SP2.x, SP2.y)
             end
         end
+
+        -- Radars
+        local radius = 10 * Scale
+        SetDrawColor(Col2)
+        local MinTargetID = nil
+        local MinTargetDist = math.huge
+        for ID, Data in pairs(State.MyController.RadarData or {}) do
+            local SP = Data[1]:ToScreen()
+
+            -- Find closest target to center of screen
+            local Dist = (SP.x - x) ^ 2 + (SP.y - y) ^ 2
+            if Dist < MinTargetDist then MinTargetDist = Dist MinTargetID = ID end
+
+            DrawOutlinedRect(SP.x - radius, SP.y - radius, radius * 2, radius * 2, 1)
+            DrawText("ID: " .. ID, Font, SP.x, SP.y + radius + 2 * Scale, Col2, TEXT_ALIGN_CENTER)
+            DrawText(Data[2], Font, SP.x, SP.y - radius - 15 * Scale, Col2, TEXT_ALIGN_CENTER)
+
+            -- Lead indicator for currently selected target
+            if ID == State.SelectedTargetID then
+                local TargetPos = Data[1]
+                local TargetVel = State.MyController.TargetVelocity or vector_origin
+                local MyPos = State.MyController:GetPos()
+                local MuzzleVel = State.MyController:GetNWFloat("AHS_Primary_MV", 0)
+                if MuzzleVel > 0 then
+                    local TimeToTarget = (TargetPos - MyPos):Length() / (MuzzleVel * 39.37) * 1.27
+                    local Drop = Vector(0, 0, 300 * TimeToTarget * TimeToTarget)
+                    local LeadPos = TargetPos + TargetVel * TimeToTarget + Drop
+                    local LeadSP = LeadPos:ToScreen()
+                    DrawLine(SP.x, SP.y, LeadSP.x, LeadSP.y)
+                    DrawCircle(LeadSP.x, LeadSP.y, radius)
+                end
+            end
+        end
+        State.CurrentTargetID = MinTargetID
     end)
 end

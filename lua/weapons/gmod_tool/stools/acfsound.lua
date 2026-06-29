@@ -12,6 +12,8 @@ TOOL.Information = {
 	{ name = "info" }
 }
 
+local Notify = ACF.Utilities.Notify
+
 -- NOTE(TMF): I would have used concommands just to set clients data, however i didn't feel like using them here since i don't know how to use them lol
 -- So instead i went the dumb, hard and convoluted way and network the data needed back and forth
 if SERVER then

@@ -601,8 +601,8 @@ do -- Inputs -------------------------------------------
 	ACF.AddInputAction("acf_gearbox", "CVT Ratio", function(Entity, Value)
 		if not Entity.CVT then return end
 
-		if Entity.GearboxLegacyRatio then Value = 1 / Value end
-		Entity.CVTRatio = Clamp(Value, ACF.MinCVTRatio, ACF.MaxCVTRatio)
+		if Entity.GearboxLegacyRatio and Value ~= 0 then Value = 1 / Value end
+		Entity.CVTRatio = Value ~= 0 and Clamp(Value, ACF.MinCVTRatio, ACF.MaxCVTRatio) or Value
 	end)
 
 	ACF.AddInputAction("acf_gearbox", "Steer Rate", function(Entity, Value)
@@ -885,7 +885,7 @@ do -- Movement -----------------------------------------
 			local Gears = SelfTbl.Gears
 
 			if SelfTbl.CVTRatio > 0 then
-				Gears[1] = Clamp(SelfTbl.CVTRatio, ACF.MinCVTRatio, ACF.MaxCVTRatio)
+				Gears[1] = SelfTbl.CVTRatio
 			else
 				local MinRPM  = SelfTbl.MinRPM
 				Gears[1] = 1 / Clamp((InputRPM - MinRPM) / (SelfTbl.MaxRPM - MinRPM), 0.05, 1)

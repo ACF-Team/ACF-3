@@ -27,6 +27,7 @@ do
 
         if ent.IsACFEntity then
             contraption.ACF_EntitiesCount = math.max(0, contraption.ACF_EntitiesCount + 1)
+            hook.Run("ACF_OnPostACFEntityAddedToContraption", contraption, ent)
         end
     end)
 

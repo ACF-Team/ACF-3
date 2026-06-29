@@ -78,7 +78,7 @@ function Ammo:BaseConvert(ToolData)
 
 	Data.MaxFlechettes = math.Clamp(math.floor(Data.Caliber * 4), 12, 64)
 	Data.MinFlechettes = math.min(12, Data.MaxFlechettes) --force bigger guns to have higher min count
-	Data.MinSpread	   = 1
+	Data.MinSpread	   = 0.2
 	Data.MaxSpread	   = 10
 	Data.ShovePower	   = 0.2
 	Data.LimitVel	   = 500 --Most efficient penetration speed in m/s
