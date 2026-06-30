@@ -1,5 +1,3 @@
-local Classes = ACF.Classes
-
 local RackFQN = {
 	["40mm7xPOD"] = "ACF.Racks.40mm7xPOD",
 	["40mm7xPOD"] = "ACF.Racks.40mm7xPOD",

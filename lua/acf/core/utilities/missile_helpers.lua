@@ -11,10 +11,6 @@ local function GetMissileClass(ID)
 	end
 end
 
-local function ShortID(Class)
-	return Classes.GetTypeName(Class):match("[^.]+$")
-end
-
 function ACF.GetGunValue(BulletData, Value)
 	BulletData = istable(BulletData) and BulletData.WeaponType or BulletData
 
