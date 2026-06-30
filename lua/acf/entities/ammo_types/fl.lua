@@ -47,10 +47,11 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
 		return Display
 	end
 
-	function CLASS:UpdateRoundData(Data, GUIData)
-		GUIData = GUIData or Data
+	function CLASS:UpdateRoundData()
+		local Data    = self.BulletData
+		local GUIData = self.GUIData
 
-		ACF.UpdateRoundSpecs(self, Data, GUIData)
+		ACF.UpdateRoundSpecs(self)
 
 		local Flechettes = math.Clamp(self.Flechettes, Data.MinFlechettes, Data.MaxFlechettes)
 
@@ -73,7 +74,9 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
 	end
 
 	function CLASS:BaseConvert()
-		local Data, GUIData = ACF.RoundBaseGunpowder(self, { LengthAdj = 0.5 })
+		self.BulletData = { LengthAdj = 0.5 }
+
+		local Data = ACF.RoundBaseGunpowder(self)
 
 		Data.MaxFlechettes = math.Clamp(math.floor(Data.Caliber * 4), 12, 64)
 		Data.MinFlechettes = math.min(12, Data.MaxFlechettes) --force bigger guns to have higher min count
@@ -83,9 +86,9 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
 		Data.LimitVel	   = 500 --Most efficient penetration speed in m/s
 		Data.Ricochet	   = 75 --Base ricochet angle
 
-		self:UpdateRoundData(Data, GUIData)
+		self:UpdateRoundData()
 
-		return Data, GUIData
+		return self.BulletData, self.GUIData
 	end
 
 	function CLASS:VerifyData()
@@ -205,7 +208,7 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
 			Flechettes:DefineSetter(function(Panel, _, _, Value)
 				self.Flechettes = math.floor(Value)
 
-				self:UpdateRoundData(BulletData)
+				self:UpdateRoundData()
 
 				Panel:SetValue(BulletData.Flechettes)
 
@@ -217,7 +220,7 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
 			Spread:DefineSetter(function(Panel, _, _, Value)
 				self.Spread = Value
 
-				self:UpdateRoundData(BulletData)
+				self:UpdateRoundData()
 
 				Panel:SetValue(BulletData.FlechetteSpread)
 
@@ -237,7 +240,7 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
 			RoundStats:TrackClientData("Propellant")
 			RoundStats:TrackClientData("Flechettes")
 			RoundStats:DefineSetter(function()
-				self:UpdateRoundData(BulletData)
+				self:UpdateRoundData()
 
 				local Text		= language.GetPhrase("acf.menu.ammo.round_stats_fl")
 				local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
@@ -253,10 +256,10 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
 			PenStats:TrackClientData("Propellant")
 			PenStats:TrackClientData("Flechettes")
 			PenStats:DefineSetter(function()
-				self:UpdateRoundData(BulletData)
+				self:UpdateRoundData()
 
 				local Text	   = language.GetPhrase("acf.menu.ammo.pen_stats_ap")
-				local MaxPen   = math.Round(BulletData.MaxPen, 2)
+				local MaxPen   = math.Round(self.GUIData.MaxPen, 2)
 				local R1P, R1V = self:GetRangedPenetration(BulletData, 300)
 				local R2V, R2P = self:GetRangedPenetration(BulletData, 800)
 

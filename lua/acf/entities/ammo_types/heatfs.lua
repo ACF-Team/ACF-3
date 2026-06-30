@@ -17,10 +17,11 @@ Classes.DefineClass("ACF.Ammunition.HEATFS", "ACF.Ammunition.HEAT", function()
 
 	CLASS.MaxStandoffRatio = 0.75
 
-	function CLASS:UpdateRoundData(Data, GUIData)
-		GUIData = GUIData or Data
+	function CLASS:UpdateRoundData()
+		local Data    = self.BulletData
+		local GUIData = self.GUIData
 
-		ACF.UpdateRoundSpecs(self, Data, GUIData)
+		ACF.UpdateRoundSpecs(self)
 
 		local CapLength       = GUIData.MinProjLength * 0.5
 		local BodyLength      = Data.ProjLength - CapLength
@@ -129,7 +130,7 @@ Classes.DefineClass("ACF.Ammunition.HEATFS", "ACF.Ammunition.HEAT", function()
 		ACF.RegisterAmmoDecal("ACF.Ammunition.HEATFS", "damage/heat_pen", "damage/heat_rico", function(Caliber) return Caliber * 0.1667 end)
 
 		function CLASS:OnCreateAmmoControls(Base, _, BulletData)
-			local LinerAngle = Base:AddSlider("#acf.menu.ammo.liner_angle", BulletData.MinConeAng, 90, 1)
+			local LinerAngle = Base:AddSlider("#acf.menu.ammo.liner_angle", self.GUIData.MinConeAng, 90, 1)
 			LinerAngle:SetClientData("LinerAngle", "OnValueChanged")
 			LinerAngle:TrackClientData("Projectile")
 			LinerAngle:DefineSetter(function(Panel, _, Key, Value)
@@ -137,9 +138,9 @@ Classes.DefineClass("ACF.Ammunition.HEATFS", "ACF.Ammunition.HEAT", function()
 					self.LinerAngle = math.Round(Value, 2)
 				end
 
-				self:UpdateRoundData(BulletData)
+				self:UpdateRoundData()
 
-				Panel:SetMin(BulletData.MinConeAng)
+				Panel:SetMin(self.GUIData.MinConeAng)
 				Panel:SetValue(BulletData.ConeAng)
 
 				return BulletData.ConeAng
@@ -150,7 +151,7 @@ Classes.DefineClass("ACF.Ammunition.HEATFS", "ACF.Ammunition.HEAT", function()
 			StandoffRatio:DefineSetter(function(_, _, _, Value)
 				self.StandoffRatio = math.Round(Value, 2)
 
-				self:UpdateRoundData(BulletData)
+				self:UpdateRoundData()
 
 				return self.StandoffRatio
 			end)

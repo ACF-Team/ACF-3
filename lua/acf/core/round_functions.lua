@@ -9,11 +9,12 @@ local function GetClassWeaponSpecs(Class, Caliber)
 	local Round = Class.Round
 	if not Round then return end
 
-	-- V2 weapon classes expose a Caliber MENU_FIELD (for bounds) and CaliberLimits. Grouped weapons
-	-- (missiles/piledrivers, not yet V2) only have a Round + BaseCaliber, so guard accordingly.
+	-- Scalable guns expose a Caliber MENU_FIELD (for bounds) and CaliberLimits. Fixed-caliber weapons
+	-- (missiles) instead carry a plain Class.Caliber with their Round authored at that size, so fall
+	-- back to it (Base == Caliber => Scale 1); grouped legacy weapons may only have BaseCaliber.
 	local Field   = Class.GetType and Classes.GetTypeFieldByName(Class, "Caliber")
 	local Bounds  = Field and Field.Options or {}
-	local Base    = (Class.CaliberLimits and Class.CaliberLimits.Base) or Class.BaseCaliber or 1
+	local Base    = (Class.CaliberLimits and Class.CaliberLimits.Base) or Class.BaseCaliber or Class.Caliber or 1
 	Caliber       = math.Clamp(tonumber(Caliber) or Base, Bounds.Min or Base, Bounds.Max or Base)
 	local Scale   = Caliber / Base
 
@@ -26,15 +27,20 @@ local function GetClassWeaponSpecs(Class, Caliber)
 	}
 end
 
--- Ammo is the ammo-type instance: it carries the round inputs (Projectile/Propellant/Tracer/...)
--- and a back-reference to its weapon instance (Ammo.Weapon).
-function ACF.RoundBaseGunpowder(Ammo, Data)
+-- Ammo is the ammo-type instance: it carries the round inputs (Projectile/Propellant/Tracer/...), a
+-- back-reference to its weapon instance (Ammo.Weapon), and the computed round state in Ammo.BulletData
+-- (flight/round data) + Ammo.GUIData (menu bounds/display). BaseConvert pre-seeds Ammo.BulletData with
+-- any per-type factors (ProjScale/PropScale/LengthAdj) before calling this.
+function ACF.RoundBaseGunpowder(Ammo)
+	local Data    = Ammo.BulletData
+	local GUIData = {}
+	Ammo.GUIData  = GUIData
+
 	local Weapon  = Ammo.Weapon
 	-- Weapon is a V2 weapon instance (has GetType) for guns, or a grouped/shim class table for the
 	-- not-yet-V2 missile/piledriver systems.
 	local Class   = Weapon and (Weapon.GetType and Weapon:GetType() or Weapon)
 	local Specs   = Class and GetClassWeaponSpecs(Class, Weapon.Caliber)
-	local GUIData = {}
 
 	if not Specs then return Data, GUIData end
 
@@ -54,13 +60,14 @@ function ACF.RoundBaseGunpowder(Ammo, Data)
 	GUIData.MaxPropLength  = math.min(Specs.PropLength, Length - GUIData.MinProjLength)
 	GUIData.MaxProjLength  = math.min(Specs.ProjLength or Length, Length - GUIData.MinPropLength)
 
-	ACF.UpdateRoundSpecs(Ammo, Data, GUIData)
+	ACF.UpdateRoundSpecs(Ammo)
 
 	return Data, GUIData
 end
 
-function ACF.UpdateRoundSpecs(Ammo, Data, GUIData)
-	GUIData = GUIData or Data
+function ACF.UpdateRoundSpecs(Ammo)
+	local Data    = Ammo.BulletData
+	local GUIData = Ammo.GUIData
 
 	Data.Priority = Data.Priority or "Projectile"
 	Data.Tracer   = Ammo.Tracer and math.Round(Data.Caliber * 0.15, 2) or 0

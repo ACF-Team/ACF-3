@@ -43,10 +43,11 @@ Classes.DefineClass("ACF.Ammunition.APFSDS", "ACF.Ammunition.AP", function()
 		return Constant * FirstChunk * SecondChunk * ThirdChunk * RoundLength
 	end
 
-	function CLASS:UpdateRoundData(Data, GUIData)
-		GUIData = GUIData or Data
+	function CLASS:UpdateRoundData()
+		local Data    = self.BulletData
+		local GUIData = self.GUIData
 
-		ACF.UpdateRoundSpecs(self, Data, GUIData)
+		ACF.UpdateRoundSpecs(self)
 
 		local Cylinder  = (math.pi * (Data.Caliber * 0.5) ^ 2) * Data.ProjLength * 0.25 -- A cylinder 1/4 the length of the projectile
 		local Hole		= Data.ProjArea * Data.ProjLength * 0.25 -- Volume removed by the hole the dart passes through
@@ -65,15 +66,17 @@ Classes.DefineClass("ACF.Ammunition.APFSDS", "ACF.Ammunition.AP", function()
 	end
 
 	function CLASS:BaseConvert()
-		local Data, GUIData = ACF.RoundBaseGunpowder(self, { ProjScale = 0.35 })
+		self.BulletData = { ProjScale = 0.35 }
+
+		local Data = ACF.RoundBaseGunpowder(self)
 
 		Data.ShovePower = 0.2
 		Data.LimitVel   = 1000 --Most efficient penetration speed in m/s
 		Data.Ricochet   = 80 --Base ricochet angle
 
-		self:UpdateRoundData(Data, GUIData)
+		self:UpdateRoundData()
 
-		return Data, GUIData
+		return self.BulletData, self.GUIData
 	end
 
 	if SERVER then

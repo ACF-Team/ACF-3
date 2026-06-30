@@ -241,7 +241,6 @@ do -- Spawn/Update/Remove
 
 		Ammo:Network(Entity, Entity.BulletData)
 
-		-- Runtime fields the rest of the entity / other modules read (legacy copied these via DataStore).
 		Entity.Weapon            = Data.Weapon
 		Entity.AmmoType          = Data.AmmoType
 		Entity.CrateProjectilesX = Data.CrateProjectilesX

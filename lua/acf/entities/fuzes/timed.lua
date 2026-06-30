@@ -8,10 +8,10 @@ Classes.DefineClass("ACF.Missiles.Fuze.Timed", "ACF.Missiles.Fuze.Contact", func
 
 	MENU_FIELD("Number", "FuzeTimer", {Default = 0})
 
-	function CLASS:OnFirst(Entity, Data)
-		BASE.OnFirst(self, Entity, Data)
+	function CLASS:OnFirst(Entity)
+		BASE.OnFirst(self, Entity)
 
-		self.Timer = Data.FuzeTimer
+		self.Timer = self.FuzeTimer
 	end
 
 	function CLASS:WriteDisplayConfig(State)

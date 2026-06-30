@@ -56,20 +56,8 @@ local function SaveCopyData(Player, Entity)
 			Data[K] = nil
 		end
 	end
-
-	for _, V in ipairs(Entity.DataStore) do
-		local Value = Entity[V]
-
-		if Value ~= nil then
-			Count = Count + 1
-
-			Data[V] = Value
-			List[Count] = {
-				Key = V,
-				Value = Value,
-			}
-		end
-	end
+	-- TODO: Fix this
+	if Count == 0 then return "{}" end
 
 	if not GetDisabledData(Player, Class) then
 		Disabled[Player][Class] = {}

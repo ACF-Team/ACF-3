@@ -147,10 +147,11 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function()
 		return Display
 	end
 
-	function CLASS:UpdateRoundData(Data, GUIData)
-		GUIData = GUIData or Data
+	function CLASS:UpdateRoundData()
+		local Data    = self.BulletData
+		local GUIData = self.GUIData
 
-		ACF.UpdateRoundSpecs(self, Data, GUIData)
+		ACF.UpdateRoundSpecs(self)
 
 		Data.ProjMass   = Data.ProjArea * Data.ProjLength * ACF.SteelDensity --Volume of the projectile as a cylinder * density of steel
 		Data.MuzzleVel  = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
@@ -165,15 +166,17 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function()
 	end
 
 	function CLASS:BaseConvert()
-		local Data, GUIData = ACF.RoundBaseGunpowder(self, {})
+		self.BulletData = {}
+
+		local Data = ACF.RoundBaseGunpowder(self)
 
 		Data.ShovePower = 0.2
 		Data.LimitVel   = 800 --Most efficient penetration speed in m/s
 		Data.Ricochet   = 60 --Base ricochet angle
 
-		self:UpdateRoundData(Data, GUIData)
+		self:UpdateRoundData()
 
-		return Data, GUIData
+		return self.BulletData, self.GUIData
 	end
 
 	function CLASS:VerifyData()
@@ -284,16 +287,9 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function()
 
 		function CLASS:ClientConvert()
 			self:VerifyData()
+			self:BaseConvert()
 
-			local Data, GUIData = self:BaseConvert()
-
-			if GUIData then
-				for K, V in pairs(GUIData) do
-					Data[K] = V
-				end
-			end
-
-			return Data
+			return self.BulletData
 		end
 
 		function CLASS:GetRangedPenetration(Bullet, Range)
@@ -359,17 +355,17 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function()
 			Label:TrackClientData("Propellant")
 		end
 
-		function CLASS:OnCreateAmmoInformation(Base, _, BulletData)
+		function CLASS:OnCreateAmmoInformation(Base, _, _)
 			local RoundStats = Base:AddLabel()
 			RoundStats:TrackClientData("Projectile", "SetText")
 			RoundStats:TrackClientData("Propellant")
 			RoundStats:DefineSetter(function()
-				self:UpdateRoundData(BulletData)
+				self:UpdateRoundData()
 
 				local Text		= language.GetPhrase("acf.menu.ammo.round_stats_ap")
-				local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
-				local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
-				local PropMass	= ACF.GetProperMass(BulletData.PropMass)
+				local MuzzleVel	= math.Round(self.BulletData.MuzzleVel * ACF.Scale, 2)
+				local ProjMass	= ACF.GetProperMass(self.BulletData.ProjMass)
+				local PropMass	= ACF.GetProperMass(self.BulletData.PropMass)
 
 				return Text:format(MuzzleVel, ProjMass, PropMass)
 			end)
@@ -380,7 +376,7 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function()
 			MaxPenLabel:TrackClientData("FillerRatio")
 			MaxPenLabel:DefineSetter(function()
 				local Text   = language.GetPhrase("acf.menu.ammo.pen_stats_ap")
-				local MaxPen = math.Round(BulletData.MaxPen, 2)
+				local MaxPen = math.Round(self.GUIData.MaxPen, 2)
 				return Text:format(MaxPen)
 			end)
 		end

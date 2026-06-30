@@ -50,10 +50,10 @@ Classes.DefineClass("ACF.Missiles.Fuze.Optical", "ACF.Missiles.Fuze.Contact", fu
 			Data.FuzeDistance = math.Clamp(Distance or 0, self.MinDistance, self.MaxDistance)
 		end
 
-		function CLASS:OnFirst(Entity, Data)
-			BASE.OnFirst(self, Entity, Data)
+		function CLASS:OnFirst(Entity)
+			BASE.OnFirst(self, Entity)
 
-			self.Distance = Data.FuzeDistance
+			self.Distance = self.FuzeDistance
 		end
 
 		function CLASS:GetDetonate(Missile)

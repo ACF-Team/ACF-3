@@ -12,8 +12,8 @@ Classes.DefineClass("ACF.Missiles.Fuze.Contact", "ACF.Missiles.Fuze", function()
 		self.Name = self.ID -- Workaround
 	end
 
-	function CLASS:OnFirst(_, Data)
-		self.Primer = Data.ArmingDelay
+	function CLASS:OnFirst(_)
+		self.Primer = self.ArmingDelay
 	end
 
 	function CLASS:Configure()

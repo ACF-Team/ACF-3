@@ -57,7 +57,6 @@ function ACF.CanLinkRack(RackData, WeaponData)
 	end
 
 	local Allowed = WeaponData.Racks
-	PrintTable(Allowed)
 	if not (Allowed and Allowed[Classes.GetTypeName(RackData:GetType())]) then
 		return false, (WeaponData.ID or "These") .. " rounds are not compatible with " .. RackData.Name .. "!"
 	end

@@ -253,7 +253,7 @@ local function AddTracer(Base, ToolData)
 		ToolData.Tracer = Value
 		Ammo.Tracer     = Value
 
-		Ammo:UpdateRoundData(BulletData)
+		Ammo:UpdateRoundData()
 
 		ACF.SetClientData("Projectile", BulletData.ProjLength)
 		ACF.SetClientData("Propellant", BulletData.PropLength)
@@ -293,12 +293,12 @@ local function AddControls(Base, ToolData)
 	RoundLength:DefineSetter(function()
 		local Text = language.GetPhrase("acf.menu.ammo.round_length")
 		local CurLength = BulletData.ProjLength + BulletData.PropLength
-		local MaxLength = BulletData.MaxRoundLength
+		local MaxLength = Ammo.GUIData.MaxRoundLength
 
 		return Text:format(CurLength, MaxLength)
 	end)
 
-	local Projectile = Base:AddSlider("#acf.menu.ammo.projectile_length", 0, BulletData.MaxRoundLength, 2)
+	local Projectile = Base:AddSlider("#acf.menu.ammo.projectile_length", 0, Ammo.GUIData.MaxRoundLength, 2)
 	Projectile:SetClientData("Projectile", "OnValueChanged")
 	Projectile:DefineSetter(function(Panel, _, _, Value, IsTracked)
 		ToolData.Projectile = Value
@@ -308,7 +308,7 @@ local function AddControls(Base, ToolData)
 			BulletData.Priority = "Projectile"
 		end
 
-		Ammo:UpdateRoundData(BulletData)
+		Ammo:UpdateRoundData()
 
 		ACF.SetClientData("Propellant", BulletData.PropLength)
 
@@ -320,7 +320,7 @@ local function AddControls(Base, ToolData)
 		return BulletData.ProjLength
 	end)
 
-	local Propellant = Base:AddSlider("#acf.menu.ammo.propellant_length", 0, BulletData.MaxRoundLength, 2)
+	local Propellant = Base:AddSlider("#acf.menu.ammo.propellant_length", 0, Ammo.GUIData.MaxRoundLength, 2)
 	Propellant:SetClientData("Propellant", "OnValueChanged")
 	Propellant:DefineSetter(function(Panel, _, _, Value, IsTracked)
 		ToolData.Propellant = Value
@@ -330,7 +330,7 @@ local function AddControls(Base, ToolData)
 			BulletData.Priority = "Propellant"
 		end
 
-		Ammo:UpdateRoundData(BulletData)
+		Ammo:UpdateRoundData()
 
 		ACF.SetClientData("Projectile", BulletData.ProjLength)
 
@@ -514,7 +514,10 @@ local function AddGraph(Base, ToolData)
 		Graph:SetXSpacing(100)
 		Graph:SetYSpacing(50)
 
+		-- Fresh instance for this graph; set it up + convert so its BulletData/GUIData are populated.
 		local Ammo = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", ToolData.AmmoType)()
+		SetupAmmo(Ammo, ToolData)
+		local BulletData = Ammo:ClientConvert()
 
 		if ToolData.AmmoType == "ACF.Ammunition.HEAT" or ToolData.AmmoType == "ACF.Ammunition.HEATFS" then
 			local PassiveStandoffPen = Ammo:GetPenetration(BulletData, BulletData.Standoff)
@@ -544,12 +547,12 @@ local function AddGraph(Base, ToolData)
 			Panel:SetYSpacing(10)
 
 			Panel:SetXRange(0, 10)
-			Panel:SetYRange(0, BulletData.BlastRadius * 2)
+			Panel:SetYRange(0, Ammo.GUIData.BlastRadius * 2)
 
-			Panel:PlotLimitLine(BlastRadiusText, true, BulletData.BlastRadius, GraphRed)
+			Panel:PlotLimitLine(BlastRadiusText, true, Ammo.GUIData.BlastRadius, GraphRed)
 
 			Panel:PlotFunction(BlastRadiusText, GraphRed, function()
-				return BulletData.BlastRadius
+				return Ammo.GUIData.BlastRadius
 			end)
 		elseif ToolData.AmmoType == "ACF.Ammunition.SM" then
 			Panel:SetYLabel("#acf.menu.ammo.smoke_radius")
@@ -558,14 +561,14 @@ local function AddGraph(Base, ToolData)
 			Panel:SetYSpacing(10)
 			Panel:SetXSpacing(5)
 
-			local WPTime = BulletData.WPLife or 0
-			local SFTime = BulletData.SMLife or 0
+			local WPTime = Ammo.GUIData.WPLife or 0
+			local SFTime = Ammo.GUIData.SMLife or 0
 
-			local MinWP = BulletData.WPRadiusMin or 0
-			local MaxWP = BulletData.WPRadiusMax or 0
+			local MinWP = Ammo.GUIData.WPRadiusMin or 0
+			local MaxWP = Ammo.GUIData.WPRadiusMax or 0
 
-			local MinSF = BulletData.SMRadiusMin or 0
-			local MaxSF = BulletData.SMRadiusMax or 0
+			local MinSF = Ammo.GUIData.SMRadiusMin or 0
+			local MaxSF = Ammo.GUIData.SMRadiusMax or 0
 
 			Panel:SetXRange(0, math.max(WPTime, SFTime) * 1.1)
 			Panel:SetYRange(0, math.max(MaxWP, MaxSF) * 1.1)
@@ -586,7 +589,7 @@ local function AddGraph(Base, ToolData)
 				Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.smoke_max_radius"), SFTime, MaxSF, GraphRed)
 			end
 		else
-			Panel:SetYRange(0, math.ceil(BulletData.MaxPen or 0) * 1.1)
+			Panel:SetYRange(0, math.ceil(Ammo.GUIData.MaxPen or 0) * 1.1)
 
 			Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.300m"), 300, Ammo:GetRangedPenetration(BulletData, 300), GraphBlue)
 			Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.800m"), 800, Ammo:GetRangedPenetration(BulletData, 800), GraphBlue)

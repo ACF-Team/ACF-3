@@ -44,10 +44,11 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function()
 		return Display
 	end
 
-	function CLASS:UpdateRoundData(Data, GUIData)
-		GUIData = GUIData or Data
+	function CLASS:UpdateRoundData()
+		local Data    = self.BulletData
+		local GUIData = self.GUIData
 
-		ACF.UpdateRoundSpecs(self, Data, GUIData)
+		ACF.UpdateRoundSpecs(self)
 
 		Data.FillerPriority = Data.FillerPriority or "Smoke"
 
@@ -73,9 +74,11 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function()
 	end
 
 	function CLASS:BaseConvert()
-		local Data, GUIData = ACF.RoundBaseGunpowder(self, {})
+		self.BulletData = {}
 
-		GUIData.MinFillerVol = 0
+		local Data = ACF.RoundBaseGunpowder(self)
+
+		self.GUIData.MinFillerVol = 0
 
 		Data.ShovePower		= 0.1
 		Data.LimitVel		= 100 --Most efficient penetration speed in m/s
@@ -83,9 +86,9 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function()
 		Data.DetonatorAngle	= 80
 		Data.CanFuze		= Data.Caliber * 10 >= ACF.MinFuzeCaliber -- Can fuze on calibers >= 25mm
 
-		self:UpdateRoundData(Data, GUIData)
+		self:UpdateRoundData()
 
-		return Data, GUIData
+		return self.BulletData, self.GUIData
 	end
 
 	function CLASS:VerifyData()
@@ -187,7 +190,7 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function()
 			FillerRatio:DefineSetter(function(_, _, _, Value)
 				self.FillerRatio = math.Round(Value, 2)
 
-				self:UpdateRoundData(BulletData)
+				self:UpdateRoundData()
 
 				return BulletData.FillerVol
 			end)
@@ -197,7 +200,7 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function()
 			SmokeWPRatio:DefineSetter(function(_, _, _, Value)
 				self.SmokeWPRatio = math.Round(Value, 2)
 
-				self:UpdateRoundData(BulletData)
+				self:UpdateRoundData()
 
 				return BulletData.WPVol
 			end)
@@ -217,7 +220,7 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function()
 			RoundStats:TrackClientData("FillerRatio")
 			RoundStats:TrackClientData("SmokeWPRatio")
 			RoundStats:DefineSetter(function()
-				self:UpdateRoundData(Data)
+				self:UpdateRoundData()
 
 				local Text		= language.GetPhrase("acf.menu.ammo.round_stats_ap")
 				local MuzzleVel	= math.Round(Data.MuzzleVel * ACF.Scale, 2)
@@ -231,7 +234,7 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function()
 			SmokeStats:TrackClientData("FillerRatio", "SetText")
 			SmokeStats:TrackClientData("SmokeWPRatio")
 			SmokeStats:DefineSetter(function()
-				self:UpdateRoundData(Data)
+				self:UpdateRoundData()
 
 				local SMText, WPText = "", ""
 

@@ -32,10 +32,11 @@ Classes.DefineClass("ACF.Ammunition.HE", "ACF.Ammunition.APHE", function()
 		return Display
 	end
 
-	function CLASS:UpdateRoundData(Data, GUIData)
-		GUIData = GUIData or Data
+	function CLASS:UpdateRoundData()
+		local Data    = self.BulletData
+		local GUIData = self.GUIData
 
-		ACF.UpdateRoundSpecs(self, Data, GUIData)
+		ACF.UpdateRoundSpecs(self)
 
 		local FreeVol   = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)
 		local FillerVol = FreeVol * math.Clamp(self.FillerRatio, 0, 1)
@@ -54,9 +55,11 @@ Classes.DefineClass("ACF.Ammunition.HE", "ACF.Ammunition.APHE", function()
 	end
 
 	function CLASS:BaseConvert()
-		local Data, GUIData = ACF.RoundBaseGunpowder(self, {})
+		self.BulletData = {}
 
-		GUIData.MinFillerVol = 0
+		local Data = ACF.RoundBaseGunpowder(self)
+
+		self.GUIData.MinFillerVol = 0
 
 		Data.ShovePower		= 0.1
 		Data.LimitVel		= 100 --Most efficient penetration speed in m/s
@@ -64,9 +67,9 @@ Classes.DefineClass("ACF.Ammunition.HE", "ACF.Ammunition.APHE", function()
 		Data.DetonatorAngle	= 80
 		Data.CanFuze		= Data.Caliber * 10 >= ACF.MinFuzeCaliber -- Can fuze on calibers >= 25mm
 
-		self:UpdateRoundData(Data, GUIData)
+		self:UpdateRoundData()
 
-		return Data, GUIData
+		return self.BulletData, self.GUIData
 	end
 
 	if SERVER then
@@ -118,7 +121,7 @@ Classes.DefineClass("ACF.Ammunition.HE", "ACF.Ammunition.APHE", function()
 			RoundStats:TrackClientData("Propellant")
 			RoundStats:TrackClientData("FillerRatio")
 			RoundStats:DefineSetter(function()
-				self:UpdateRoundData(BulletData)
+				self:UpdateRoundData()
 
 				local Text		= language.GetPhrase("acf.menu.ammo.round_stats_he")
 				local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
@@ -132,14 +135,14 @@ Classes.DefineClass("ACF.Ammunition.HE", "ACF.Ammunition.APHE", function()
 			local FillerStats = Base:AddLabel()
 			FillerStats:TrackClientData("FillerRatio", "SetText")
 			FillerStats:DefineSetter(function()
-				self:UpdateRoundData(BulletData)
+				self:UpdateRoundData()
 
 				local Text	   = language.GetPhrase("acf.menu.ammo.filler_stats_he")
-				local Blast	   = math.Round(BulletData.BlastRadius, 2)
-				local FragMass = ACF.GetProperMass(BulletData.FragMass)
-				local FragVel  = math.Round(BulletData.FragVel, 2)
+				local Blast	   = math.Round(self.GUIData.BlastRadius, 2)
+				local FragMass = ACF.GetProperMass(self.GUIData.FragMass)
+				local FragVel  = math.Round(self.GUIData.FragVel, 2)
 
-				return Text:format(Blast, BulletData.Fragments, FragMass, FragVel)
+				return Text:format(Blast, self.GUIData.Fragments, FragMass, FragVel)
 			end)
 		end
 	end

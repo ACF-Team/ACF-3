@@ -25,10 +25,11 @@ Classes.DefineClass("ACF.Ammunition.HP", "ACF.Ammunition.AP", function()
 		return Display
 	end
 
-	function CLASS:UpdateRoundData(Data, GUIData)
-		GUIData = GUIData or Data
+	function CLASS:UpdateRoundData()
+		local Data    = self.BulletData
+		local GUIData = self.GUIData
 
-		ACF.UpdateRoundSpecs(self, Data, GUIData)
+		ACF.UpdateRoundSpecs(self)
 
 		local FreeVol      = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)
 		local HollowCavity = FreeVol * math.Clamp(self.HollowRatio, 0, 1)
@@ -50,14 +51,16 @@ Classes.DefineClass("ACF.Ammunition.HP", "ACF.Ammunition.AP", function()
 	end
 
 	function CLASS:BaseConvert()
-		local Data, GUIData = ACF.RoundBaseGunpowder(self, {})
+		self.BulletData = {}
+
+		local Data = ACF.RoundBaseGunpowder(self)
 
 		Data.LimitVel = 400 --Most efficient penetration speed in m/s
 		Data.Ricochet = 90 --Base ricochet angle
 
-		self:UpdateRoundData(Data, GUIData)
+		self:UpdateRoundData()
 
-		return Data, GUIData
+		return self.BulletData, self.GUIData
 	end
 
 	function CLASS:VerifyData()
@@ -108,7 +111,7 @@ Classes.DefineClass("ACF.Ammunition.HP", "ACF.Ammunition.AP", function()
 			HollowRatio:DefineSetter(function(_, _, _, Value)
 				self.HollowRatio = math.Round(Value, 2)
 
-				self:UpdateRoundData(BulletData)
+				self:UpdateRoundData()
 
 				return BulletData.CavVol
 			end)
@@ -126,7 +129,7 @@ Classes.DefineClass("ACF.Ammunition.HP", "ACF.Ammunition.AP", function()
 			RoundStats:TrackClientData("Propellant")
 			RoundStats:TrackClientData("HollowRatio")
 			RoundStats:DefineSetter(function()
-				self:UpdateRoundData(BulletData)
+				self:UpdateRoundData()
 
 				local Text		= language.GetPhrase("acf.menu.ammo.round_stats_ap")
 				local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
@@ -141,11 +144,11 @@ Classes.DefineClass("ACF.Ammunition.HP", "ACF.Ammunition.AP", function()
 			HollowStats:TrackClientData("Propellant")
 			HollowStats:TrackClientData("HollowRatio")
 			HollowStats:DefineSetter(function()
-				self:UpdateRoundData(BulletData)
+				self:UpdateRoundData()
 
 				local Text	  = language.GetPhrase("acf.menu.ammo.hollow_stats_hp")
 				local Caliber = math.Round(BulletData.Diameter * 10, 2)
-				local Energy  = math.Round(BulletData.MaxKETransfert, 2)
+				local Energy  = math.Round(self.GUIData.MaxKETransfert, 2)
 
 				return Text:format(Caliber, Energy)
 			end)
@@ -155,10 +158,10 @@ Classes.DefineClass("ACF.Ammunition.HP", "ACF.Ammunition.AP", function()
 			PenStats:TrackClientData("Propellant")
 			PenStats:TrackClientData("HollowRatio")
 			PenStats:DefineSetter(function()
-				self:UpdateRoundData(BulletData)
+				self:UpdateRoundData()
 
 				local Text     = language.GetPhrase("acf.menu.ammo.pen_stats_ap")
-				local MaxPen   = math.Round(BulletData.MaxPen, 2)
+				local MaxPen   = math.Round(self.GUIData.MaxPen, 2)
 				local R1P, R1V = self:GetRangedPenetration(BulletData, 300)
 				local R2V, R2P = self:GetRangedPenetration(BulletData, 800)
 

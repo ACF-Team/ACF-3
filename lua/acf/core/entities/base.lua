@@ -27,7 +27,6 @@ do -- Spawning and updating
 
 		Entity.ACF       = Entity.ACF or {}
 		Entity.Owner     = Player -- MUST be stored on ent for PP (supposedly)
-		Entity.DataStore = Entities.GetArguments(Class)
 
 		if not NoUndo then
 			undo.Create(Entity.Name or Class)

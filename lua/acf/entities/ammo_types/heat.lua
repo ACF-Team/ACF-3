@@ -56,7 +56,8 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function()
 			Penetration = (MaxVel * BreakupT - math.sqrt(ACF.HEATMinPenVel * BreakupT * (MaxVel * BreakupT + Gamma * Standoff))) / Gamma
 		end
 
-		return math.max(Penetration * ACF.HEATPenMul * PenMul * 1e3, 0) -- m to mm
+		local Ret = math.max(Penetration * ACF.HEATPenMul * PenMul * 1e3, 0) -- m to mm
+		return Ret
 	end
 
 	function CLASS:GetDisplayData(Data)
@@ -76,10 +77,11 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function()
 		return Display
 	end
 
-	function CLASS:UpdateRoundData(Data, GUIData)
-		GUIData = GUIData or Data
+	function CLASS:UpdateRoundData()
+		local Data    = self.BulletData
+		local GUIData = self.GUIData
 
-		ACF.UpdateRoundSpecs(self, Data, GUIData)
+		ACF.UpdateRoundSpecs(self)
 
 		local CapLength       = GUIData.MinProjLength * 0.5
 		local BodyLength      = Data.ProjLength - CapLength
@@ -174,10 +176,12 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function()
 	end
 
 	function CLASS:BaseConvert()
-		local Data, GUIData = ACF.RoundBaseGunpowder(self, {})
+		self.BulletData = {}
 
-		GUIData.MinConeAng	 = 0
-		GUIData.MinFillerVol = 0
+		local Data = ACF.RoundBaseGunpowder(self)
+
+		self.GUIData.MinConeAng	 = 0
+		self.GUIData.MinFillerVol = 0
 
 		Data.ShovePower		= 0.1
 		Data.LimitVel		= 100 -- Most efficient penetration speed in m/s
@@ -185,9 +189,9 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function()
 		Data.DetonatorAngle	= 75
 		Data.CanFuze		= Data.Caliber * 10 >= ACF.MinFuzeCaliber -- Can fuze on calibers >= 25mm
 
-		self:UpdateRoundData(Data, GUIData)
+		self:UpdateRoundData()
 
-		return Data, GUIData
+		return self.BulletData, self.GUIData
 	end
 
 	function CLASS:VerifyData()
@@ -441,7 +445,7 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function()
 		end
 
 		function CLASS:OnCreateAmmoControls(Base, _, BulletData)
-			local LinerAngle = Base:AddSlider("#acf.menu.ammo.liner_angle", BulletData.MinConeAng, 90, 1)
+			local LinerAngle = Base:AddSlider("#acf.menu.ammo.liner_angle", self.GUIData.MinConeAng, 90, 1)
 			LinerAngle:SetClientData("LinerAngle", "OnValueChanged")
 			LinerAngle:TrackClientData("Projectile")
 			LinerAngle:DefineSetter(function(Panel, _, Key, Value)
@@ -449,9 +453,9 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function()
 					self.LinerAngle = math.Round(Value, 2)
 				end
 
-				self:UpdateRoundData(BulletData)
+				self:UpdateRoundData()
 
-				Panel:SetMin(BulletData.MinConeAng)
+				Panel:SetMin(self.GUIData.MinConeAng)
 				Panel:SetValue(BulletData.ConeAng)
 
 				return BulletData.ConeAng
@@ -463,7 +467,7 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function()
 			StandoffRatio:DefineSetter(function(_, _, _, Value)
 				self.StandoffRatio = math.Round(Value, 2)
 
-				self:UpdateRoundData(BulletData)
+				self:UpdateRoundData()
 
 				return self.StandoffRatio
 			end)
@@ -483,7 +487,7 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function()
 			RoundStats:TrackClientData("LinerAngle")
 			RoundStats:TrackClientData("StandoffRatio")
 			RoundStats:DefineSetter(function()
-				self:UpdateRoundData(BulletData)
+				self:UpdateRoundData()
 
 				local Text		= language.GetPhrase("acf.menu.ammo.round_stats_he")
 				local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
@@ -500,14 +504,14 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function()
 			FillerStats:TrackClientData("LinerAngle")
 			FillerStats:TrackClientData("StandoffRatio")
 			FillerStats:DefineSetter(function()
-				self:UpdateRoundData(BulletData)
+				self:UpdateRoundData()
 
 				local Text	   = language.GetPhrase("acf.menu.ammo.filler_stats_he")
-				local Blast	   = math.Round(BulletData.BlastRadius, 2)
-				local FragMass = ACF.GetProperMass(BulletData.FragMass)
-				local FragVel  = math.Round(BulletData.FragVel, 2)
+				local Blast	   = math.Round(self.GUIData.BlastRadius, 2)
+				local FragMass = ACF.GetProperMass(self.GUIData.FragMass)
+				local FragVel  = math.Round(self.GUIData.FragVel, 2)
 
-				return Text:format(Blast, BulletData.Fragments, FragMass, FragVel)
+				return Text:format(Blast, self.GUIData.Fragments, FragMass, FragVel)
 			end)
 
 			local Penetrator = Base:AddLabel()
@@ -516,7 +520,7 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function()
 			Penetrator:TrackClientData("LinerAngle")
 			Penetrator:TrackClientData("StandoffRatio")
 			Penetrator:DefineSetter(function()
-				self:UpdateRoundData(BulletData)
+				self:UpdateRoundData()
 
 				local Text     = language.GetPhrase("acf.menu.ammo.penetrator_heat")
 				local CuMass   = math.Round(BulletData.LinerMass * 1e3, 0)
@@ -533,7 +537,7 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function()
 			PenStats:TrackClientData("LinerAngle")
 			PenStats:TrackClientData("StandoffRatio")
 			PenStats:DefineSetter(function()
-				self:UpdateRoundData(BulletData)
+				self:UpdateRoundData()
 
 				local Text   = language.GetPhrase("acf.menu.ammo.pen_stats_heat")
 				local Standoff1 = math.Round(BulletData.Standoff * 1e3, 0)

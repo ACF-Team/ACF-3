@@ -17,10 +17,11 @@ Classes.DefineClass("ACF.Ammunition.APCR", "ACF.Ammunition.AP", function()
 		["ACF.Guns.RotaryAutocannon"] = true,
 	})
 
-	function CLASS:UpdateRoundData(Data, GUIData)
-		GUIData = GUIData or Data
+	function CLASS:UpdateRoundData()
+		local Data    = self.BulletData
+		local GUIData = self.GUIData
 
-		ACF.UpdateRoundSpecs(self, Data, GUIData)
+		ACF.UpdateRoundSpecs(self)
 
 		Data.ProjMass  = Data.ProjArea * Data.ProjLength * ACF.SteelDensity --Volume of the projectile as a cylinder * density of steel (kg/in3)
 		Data.MuzzleVel = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
@@ -35,15 +36,17 @@ Classes.DefineClass("ACF.Ammunition.APCR", "ACF.Ammunition.AP", function()
 	end
 
 	function CLASS:BaseConvert()
-		local Data, GUIData = ACF.RoundBaseGunpowder(self, { ProjScale = 0.75 }) -- APCR has a smaller penetrator
+		self.BulletData = { ProjScale = 0.75 }
+
+		local Data = ACF.RoundBaseGunpowder(self) -- APCR has a smaller penetrator
 
 		Data.ShovePower = 0.2
 		Data.LimitVel   = 900 --Most efficient penetration speed in m/s
 		Data.Ricochet   = 55 --Base ricochet angle
 
-		self:UpdateRoundData(Data, GUIData)
+		self:UpdateRoundData()
 
-		return Data, GUIData
+		return self.BulletData, self.GUIData
 	end
 
 	if SERVER then
