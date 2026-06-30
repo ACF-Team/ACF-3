@@ -1,6 +1,8 @@
 local Classes   = ACF.Classes
 local Entities  = ACF.Entities
 
+Entities.SpawnFuncs = Entities.SpawnFuncs or {}
+
 -- Define base entity types that will never get these ran just so they exist
 Classes.DefineClass("base_wire_entity",                       function() end)
 Classes.DefineClass("base_scalable",      "base_wire_entity", function() end)
@@ -158,13 +160,17 @@ local function PrepareSpawnFunctions(ENT, ClassName)
         return Entity
     end
 
-    duplicator.RegisterEntityClass(ClassName, DoSpawn, "Pos", "Angle", "ACF_UserData")
+    Entities.SpawnFuncs[ClassName] = DoSpawn
 
-    function Entities.DoSpawn(HookClass, Player, Pos, Ang, ClientData)
-        if HookClass ~= ClassName then return end
-        local Entity = DoSpawn(Player, Pos, Ang, ClientData or {}, true)
-        if IsValid(Entity) then return Entity end
-    end
+    duplicator.RegisterEntityClass(ClassName, DoSpawn, "Pos", "Angle", "ACF_UserData")
+end
+
+function Entities.DoSpawnInternal(ClassName, Player, Pos, Ang, ClientData)
+    local DoSpawn = Entities.SpawnFuncs[ClassName]
+    if not DoSpawn then return end
+
+    local Entity = DoSpawn(Player, Pos, Ang, ClientData or {}, true)
+    if IsValid(Entity) then return Entity end
 end
 
 local function PrepareSerializationFunctions(ENT, ClassName)
