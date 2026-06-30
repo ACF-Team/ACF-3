@@ -727,6 +727,8 @@ elseif SERVER then
 		if Entity.ACF_PreventArmoring then return end
 
 		Entity.ACF_Volumetric_Material_Override = "RHA"
+
+		Entity.ACF_Armor_Legacy_Thickness = Data.Thickness or 0
 	end)
 
 	-- Keeps the toolgun's NW vars in sync with the convex under the player's crosshair, for client-side display.
