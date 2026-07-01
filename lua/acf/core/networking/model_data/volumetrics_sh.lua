@@ -82,19 +82,7 @@ do
     end
 
     function ProcessConvexes(Entity, Meshes)
-        local MeshData = { Verts = {}, Convexes = {} }
-        local Lookup   = {}
-
-        local function GetIndex(Pos)
-            local Key = Pos.x .. " " .. Pos.y .. " " .. Pos.z
-            local Index = Lookup[Key]
-            if not Index then
-                MeshData.Verts[#MeshData.Verts + 1] = Pos
-                Index = #MeshData.Verts
-                Lookup[Key] = Index
-            end
-            return Index
-        end
+        local MeshData = { Convexes = {} }
 
         for _, Convex in ipairs(Meshes) do
             local Tris    = {}
@@ -109,7 +97,7 @@ do
                 NormSum = NormSum + (C - A):Cross(B - A) -- Outward-facing; GetMeshConvexes triangles wind such that (B-A)x(C-A) points inward
                 Volume  = Volume + A:Dot(B:Cross(C)) -- Scalar triple product gives 6 times the volume
 
-                Tris[#Tris + 1] = Vector(GetIndex(A), GetIndex(B), GetIndex(C))
+                Tris[#Tris + 1] = { A, B, C }
             end
 
             -- Material-independent characteristics; material-dependent ones (Material, Mass, Health, MaxHealth)
@@ -308,7 +296,6 @@ function ACF.RayIntersectMesh(Entity, Start, Direction, Length, IncludeDead, Fil
     local MeshData = Entity.ACF_Volumetric_Mesh
     if not MeshData then return {} end
 
-    local Verts   = MeshData.Verts
     local Hits    = {}
     local NormDir = Direction:GetNormalized()
 
@@ -317,9 +304,9 @@ function ACF.RayIntersectMesh(Entity, Start, Direction, Length, IncludeDead, Fil
         if Filter and Filter[ConvexID] then continue end -- explicitly filtered (already penetrated this flight)
 
         for _, Tri in ipairs(Convex.Tris) do
-            local A = Entity:LocalToWorld(Verts[Tri[1]])
-            local B = Entity:LocalToWorld(Verts[Tri[2]])
-            local C = Entity:LocalToWorld(Verts[Tri[3]])
+            local A = Entity:LocalToWorld(Tri[1])
+            local B = Entity:LocalToWorld(Tri[2])
+            local C = Entity:LocalToWorld(Tri[3])
 
             -- Plane/barycentric math is orientation-agnostic, so this raw cross product is fine for it
             local RawNormal = (B - A):Cross(C - A):GetNormalized()

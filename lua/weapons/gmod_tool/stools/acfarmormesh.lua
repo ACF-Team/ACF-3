@@ -554,8 +554,6 @@ if CLIENT then
 		local MeshData = Entity.ACF_Volumetric_Mesh
 		if not MeshData then return end
 
-		local Verts = MeshData.Verts
-
 		White.a = AlphaConVar:GetInt()
 
 		render.SetColorMaterial()
@@ -572,9 +570,9 @@ if CLIENT then
 			end
 
 			for _, Tri in ipairs(Convex.Tris) do
-				local A = Entity:LocalToWorld(Verts[Tri[1]])
-				local B = Entity:LocalToWorld(Verts[Tri[2]])
-				local C = Entity:LocalToWorld(Verts[Tri[3]])
+				local A = Entity:LocalToWorld(Tri[1])
+				local B = Entity:LocalToWorld(Tri[2])
+				local C = Entity:LocalToWorld(Tri[3])
 
 				render.DrawQuad(A, B, C, C, Col)
 			end

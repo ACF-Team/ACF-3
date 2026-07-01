@@ -64,8 +64,6 @@ local function RenderDamage(bDrawingDepth, _, isDraw3DSkybox)
 		local MeshData = Entity.ACF_Volumetric_Mesh
 		if not MeshData then continue end
 
-		local Verts = MeshData.Verts
-
 		render.SetColorMaterial() -- Stops flashing
 		for ConvexID, Data in pairs(Convexes) do
 			local Convex = MeshData.Convexes[ConvexID]
@@ -74,9 +72,9 @@ local function RenderDamage(bDrawingDepth, _, isDraw3DSkybox)
 			render_SetMaterial(Data.Material)
 
 			for _, Tri in ipairs(Convex.Tris) do
-				local A = Entity:LocalToWorld(Verts[Tri[1]])
-				local B = Entity:LocalToWorld(Verts[Tri[2]])
-				local C = Entity:LocalToWorld(Verts[Tri[3]])
+				local A = Entity:LocalToWorld(Tri[1])
+				local B = Entity:LocalToWorld(Tri[2])
+				local C = Entity:LocalToWorld(Tri[3])
 
 				-- Push the triangle 0.1 units along its outward normal to avoid z-fighting with the model surface
 				local Normal = (B - A):Cross(C - A):GetNormalized()

@@ -16,13 +16,13 @@ local NetMeshTag = "ACF_MeshDebug_ServerMesh"
 local NetCycle   = "ACF_MeshDebug_CycleMode"
 
 -- Used by both client draw and server send for ACF_Volumetric_Mesh convexes.
-local function GetConvexVertices(Entity, Verts, Convex)
+local function GetConvexVertices(Entity, Convex)
 	local Unique     = {}
 	local WorldVerts = {}
 
 	for _, Tri in ipairs(Convex.Tris) do
 		for i = 1, 3 do
-			local Pos = Verts[Tri[i]]
+			local Pos = Tri[i]
 			local Key = Pos.x .. " " .. Pos.y .. " " .. Pos.z
 
 			if not Unique[Key] then
@@ -303,7 +303,6 @@ if CLIENT then
 		local MeshData = Entity.ACF_Volumetric_Mesh
 		if not MeshData then return end
 
-		local Verts = MeshData.Verts
 		render.SetColorMaterial()
 
 		for Index, Convex in ipairs(MeshData.Convexes) do
@@ -312,9 +311,9 @@ if CLIENT then
 			Col.a               = IsHighlighted and 120 or Alpha
 
 			for _, Tri in ipairs(Convex.Tris) do
-				local A = Entity:LocalToWorld(Verts[Tri[1]])
-				local B = Entity:LocalToWorld(Verts[Tri[2]])
-				local C = Entity:LocalToWorld(Verts[Tri[3]])
+				local A = Entity:LocalToWorld(Tri[1])
+				local B = Entity:LocalToWorld(Tri[2])
+				local C = Entity:LocalToWorld(Tri[3])
 				render.DrawQuad(A, B, C, C, Col)
 			end
 		end
@@ -325,7 +324,7 @@ if CLIENT then
 		if not MeshData then return end
 
 		for Index, Convex in ipairs(MeshData.Convexes) do
-			local WorldVerts = GetConvexVertices(Entity, MeshData.Verts, Convex)
+			local WorldVerts = GetConvexVertices(Entity, Convex)
 			if WorldVerts then
 				local IsHighlighted = Index == HighlightID
 				local Col           = HSVToColor((Index * 47) % 360, 1, 1)
@@ -342,12 +341,11 @@ if CLIENT then
 		local MeshData = Entity.ACF_Volumetric_Mesh
 		if not MeshData then return end
 
-		local Verts  = MeshData.Verts
 		local EyePos = EyePos()
 		cam.IgnoreZ(true)
 
 		for Index, Convex in ipairs(MeshData.Convexes) do
-			local _, Center = GetConvexVertices(Entity, Verts, Convex)
+			local _, Center = GetConvexVertices(Entity, Convex)
 			if Center then
 				local Dist          = math.max(EyePos:Distance(Center), 1)
 				local Scale         = math.Clamp(Dist / 2200, 0.08, 0.22)
@@ -557,7 +555,6 @@ elseif SERVER then
 		local MeshData = Entity.ACF_Volumetric_Mesh
 		if not MeshData then return end
 
-		local Verts    = MeshData.Verts
 		local Convexes = MeshData.Convexes
 
 		net.Start(NetVolTag)
@@ -571,9 +568,9 @@ elseif SERVER then
 				local Seen   = {}
 
 				for _, Tri in ipairs(Convex.Tris) do
-					local A = Entity:LocalToWorld(Verts[Tri[1]])
-					local B = Entity:LocalToWorld(Verts[Tri[2]])
-					local C = Entity:LocalToWorld(Verts[Tri[3]])
+					local A = Entity:LocalToWorld(Tri[1])
+					local B = Entity:LocalToWorld(Tri[2])
+					local C = Entity:LocalToWorld(Tri[3])
 					Tris[#Tris + 1] = { A, B, C }
 
 					for _, V in ipairs({ A, B, C }) do
