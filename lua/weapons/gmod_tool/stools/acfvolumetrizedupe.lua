@@ -81,6 +81,16 @@ elseif SERVER then
 
 	local PrimitiveModel = "models/combine_helicopter/helicopter_bomb01.mdl"
 
+	-- Classes that are already volumetric in nature, so they should never be reconsidered for legacy
+	-- sprop-to-primitive conversion (e.g. a primitive that retained a stale ACF_Armor entity modifier).
+	local LegacyArmorClassBlacklist = {
+		["primitive_shape"] = true,
+		["primitive_airfoil"] = true,
+		["primitive_rail_slider"] = true,
+		["primitive_ladder"] = true,
+		["primitive_staircase"] = true,
+	}
+
 	-- Builds the DT (networked var) table Primitive entities restore themselves from on paste.
 	local function BuildPrimitiveDT(Type, Size)
 		local DT = table.Copy(PrimitiveTypeDefaults[Type] or {})
@@ -189,7 +199,7 @@ elseif SERVER then
 		-- Convert legacy sprop armor entities into primitives within the captured dupe table
 		local BasePos = Target:GetPos() + Vector(0, 0, 24)
 		for index, ent in pairs(EntsByIndex) do
-			if ent.ACF_Armor_Legacy_Thickness then
+			if ent.ACF_Armor_Legacy_Thickness and not LegacyArmorClassBlacklist[ent:GetClass()] then
 				-- ACF_Armor_Legacy_Thickness is in millimeters; geometry here is all in inches
 				local Thickness = ent.ACF_Armor_Legacy_Thickness / 25.4
 				local Primitive = ACF.SpropToPrimitive(ent, BasePos, Thickness)

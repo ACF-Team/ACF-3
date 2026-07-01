@@ -705,16 +705,6 @@ elseif SERVER then
 		end
 	end)
 
-	-- Classes that are already volumetric in nature, so they should never be treated as legacy sprop
-	-- armor even if they retain a stale "ACF_Armor" entity modifier (e.g. from a volumetrize conversion).
-	local LegacyArmorClassBlacklist = {
-		["primitive_shape"] = true,
-		["primitive_airfoil"] = true,
-		["primitive_rail_slider"] = true,
-		["primitive_ladder"] = true,
-		["primitive_staircase"] = true,
-	}
-
 	-- Backwards compatibility: entities duplicated with the old armor system's "ACF_Armor" entity modifier
 	-- were always uniformly RHA. Set ACF_Volumetric_Material_Override so ProcessConvexes applies RHA to all
 	-- convexes regardless of count (hollow cube primitives reinitialize from 1 convex to 6, so per-convex
@@ -726,7 +716,6 @@ elseif SERVER then
 		duplicator.ClearEntityModifier(Entity, "ACF_Armor")
 
 		if Entity.ACF_PreventArmoring then return end
-		if LegacyArmorClassBlacklist[Entity:GetClass()] then return end
 
 		Entity.ACF_Volumetric_Material_Override = "RHA"
 
