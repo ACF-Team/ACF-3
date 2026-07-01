@@ -1,8 +1,10 @@
 local ACF        = ACF
-local Components = ACF.Classes.Components
+local Classes    = ACF.Classes
+
+local COMPONENT_BASE = "ACF.Components.BaseComponent"
 
 local function CreateMenu(Menu)
-	local Entries = Components.GetEntries()
+	local Entries = Classes.GetChildren(Classes.GetTypeByName(COMPONENT_BASE))
 
 	ACF.SetClientData("PrimaryClass", "N/A")
 	ACF.SetClientData("SecondaryClass", "N/A")
@@ -33,9 +35,9 @@ local function CreateMenu(Menu)
 		self.Selected = Data
 
 		ACF.SetClientData("PrimaryClass", Data.Entity)
-		ACF.SetClientData("ComponentClass", Data.ID)
+		ACF.SetClientData("ComponentClass", Classes.GetTypeName(Data))
 
-		ACF.LoadSortedList(ComponentList, Data.Items, "ID")
+		ACF.LoadSortedList(ComponentList, Classes.GetChildren(Data), "Name")
 	end
 
 	function ComponentList:OnSelect(Index, _, Data)
@@ -46,7 +48,8 @@ local function CreateMenu(Menu)
 
 		local ClassData = ComponentClass.Selected
 
-		ACF.SetClientData("Component", Data.ID)
+		-- Written as the class FQN so the target entity's field set resolves it.
+		ACF.SetClientData("Component", Classes.GetTypeName(Data))
 
 		ComponentName:SetText(Data.Name)
 		ComponentDesc:SetText(Data.Description or "#acf.menu.no_description_provided")
@@ -68,7 +71,7 @@ local function CreateMenu(Menu)
 		Menu:EndTemporal(Base)
 	end
 
-	ACF.LoadSortedList(ComponentClass, Entries, "ID")
+	ACF.LoadSortedList(ComponentClass, Entries, "Name")
 end
 
 ACF.AddMenuItem(501, "#acf.menu.entities", "#acf.menu.components", "drive", CreateMenu)

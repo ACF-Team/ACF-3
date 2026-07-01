@@ -49,7 +49,6 @@ lua/acf/entities/ammo_types/
 -- Becomes table structure
 ACF.Core.Utilities
 ACF.Damage
-ACF.Entities.AmmoTypes
 ```
 
 **Keep the root table clean:**
@@ -103,7 +102,7 @@ end
 local Ammo = AmmoTypes.Register("HE", "APHE")  -- Second arg is base class
 
 function Ammo:OnLoaded()
-    Ammo.BaseClass.OnLoaded(self)  -- Call parent
+    BASE.OnLoaded(self)  -- Call parent
 
     self.Name        = "High Explosive"
     self.Description = "Explodes on impact."

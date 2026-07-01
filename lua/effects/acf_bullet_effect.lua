@@ -1,6 +1,6 @@
 
 local ACF       = ACF
-local AmmoTypes = ACF.Classes.AmmoTypes
+local Classes   = ACF.Classes
 local Bullets   = ACF.BulletEffect
 local Clock     = ACF.Utilities.Clock
 
@@ -25,7 +25,7 @@ function EFFECT:Init(Data)
 
 	-- Scale encodes the hit type, so if it's 0 it's a new bullet, else it's an update so we need to remove the effect
 	if Bullet and not Bullet.Removed and Hit > 0 then
-		local RoundData = AmmoTypes.Get(Bullet.AmmoType)
+		local RoundData = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", Bullet.AmmoType)
 
 		-- Updating old effect with new values
 		Bullet.Effect.DrawEffect = CanDraw
@@ -71,7 +71,7 @@ function EFFECT:Init(Data)
 			FillerMass    = Crate:GetNW2Float("FillerMass"),
 			WPMass        = Crate:GetNW2Float("WPMass"),
 			DragCoef      = Crate:GetNW2Float("DragCoef", 1),
-			AmmoType      = Crate:GetNW2String("AmmoType", "AP"),
+			AmmoType      = Crate:GetNW2String("AmmoType", "ACF.Ammunition.AP"),
 			Tracer        = Tracer and ParticleEmitter(Origin) or nil,
 			Color         = Tracer and Crate:GetColor() or nil,
 			Accel         = Crate:GetNW2Vector("Accel", ACF.Gravity),

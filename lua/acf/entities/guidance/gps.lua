@@ -1,30 +1,32 @@
 local ACF       = ACF
-local Guidances = ACF.Classes.Guidances
-local Guidance  = Guidances.Register("GPS Guided", "Radio (MCLOS)")
+local Classes 	= ACF.Classes
+Classes.DefineClass("ACF.Missiles.Guidance.GPSGuided", "ACF.Missiles.Guidance.RadioMCLOS", function()
+	local BASE = BASE
+	CLASS.Name = "GPS Guided"
+	if CLIENT then
+		CLASS.Description = "This guidance package allows you to guide the munition to a desired point in the map."
+	else
+		function CLASS:GetCost()
+			return 1
+		end
 
-if CLIENT then
-	Guidance.Description = "This guidance package allows you to guide the munition to a desired point in the map."
-else
-	function Guidance:GetCost()
-		return 1
+		function CLASS:OnLaunched(Missile)
+			BASE.OnLaunched(self, Missile)
+
+			local Computer = self:GetComputer()
+
+			if not Computer then return end
+			if not Computer.IsGPS then return end
+			if Computer.InputCoords == vector_origin then return end
+			if Computer.IsJammed then return end
+
+			self.TarPos = Computer.Coordinates
+		end
+
+		function CLASS:GetGuidance()
+			if not self.TarPos then return end
+
+			return { TargetPos = self.TarPos }
+		end
 	end
-
-	function Guidance:OnLaunched(Missile)
-		Guidance.BaseClass.OnLaunched(self, Missile)
-
-		local Computer = self:GetComputer()
-
-		if not Computer then return end
-		if not Computer.IsGPS then return end
-		if Computer.InputCoords == vector_origin then return end
-		if Computer.IsJammed then return end
-
-		self.TarPos = Computer.Coordinates
-	end
-
-	function Guidance:GetGuidance()
-		if not self.TarPos then return end
-
-		return { TargetPos = self.TarPos }
-	end
-end
+end)

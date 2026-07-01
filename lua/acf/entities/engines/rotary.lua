@@ -1,69 +1,66 @@
 local ACF     = ACF
-local Engines = ACF.Classes.Engines
-
-
-Engines.Register("R", {
-	Name		= "Rotary Engine",
-	Description	= "#acf.descs.engines.r"
-})
+local Classes = ACF.Classes
+Classes.DefineClass("ACF.Engines.R", "ACF.Engines.BaseEngine", function()
+	CLASS.Name = "Rotary Engine"
+end)
 
 do
-	Engines.RegisterItem("900cc-R", "R", {
-		Name		 = "0.9L Rotary",
-		Description	 = "#acf.descs.engines.r.0_9",
-		Model		 = "models/engines/wankel_2_small.mdl",
-		Sound		 = "acf_base/engines/wankel_small.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "Wankel",
-		Mass		 = 50,
-		Torque		 = 97,
-		FlywheelMass = 0.06,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.900cc-R", "ACF.Engines.R", function()
+		CLASS.Name		 = "0.9L Rotary"
+		CLASS.Description	 = "#acf.descs.engines.r.0_9"
+		CLASS.Model		 = "models/engines/wankel_2_small.mdl"
+		CLASS.Sound		 = "acf_base/engines/wankel_small.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.Wankel"
+		CLASS.Mass		 = 50
+		CLASS.Torque		 = 97
+		CLASS.FlywheelMass = 0.06
+		CLASS.RPM = {
 			Idle	= 950,
 			Limit	= 9200,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 105,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("1.3L-R", "R", {
-		Name		 = "1.3L Rotary",
-		Description	 = "#acf.descs.engines.r.1_3",
-		Model		 = "models/engines/wankel_2_med.mdl",
-		Sound		 = "acf_base/engines/wankel_medium.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "Wankel",
-		Mass		 = 140,
-		Torque		 = 155,
-		FlywheelMass = 0.06,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.1.3L-R", "ACF.Engines.R", function()
+		CLASS.Name		 = "1.3L Rotary"
+		CLASS.Description	 = "#acf.descs.engines.r.1_3"
+		CLASS.Model		 = "models/engines/wankel_2_med.mdl"
+		CLASS.Sound		 = "acf_base/engines/wankel_medium.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.Wankel"
+		CLASS.Mass		 = 140
+		CLASS.Torque		 = 155
+		CLASS.FlywheelMass = 0.06
+		CLASS.RPM = {
 			Idle	= 950,
 			Limit	= 9000,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 105,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("2.0L-R", "R", {
-		Name		 = "2.0L Rotary",
-		Description	 = "#acf.descs.engines.r.2_0",
-		Model		 = "models/engines/wankel_3_med.mdl",
-		Sound		 = "acf_base/engines/wankel_large.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "Wankel",
-		Mass		 = 200,
-		Torque		 = 235,
-		FlywheelMass = 0.1,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.2.0L-R", "ACF.Engines.R", function()
+		CLASS.Name		 = "2.0L Rotary"
+		CLASS.Description	 = "#acf.descs.engines.r.2_0"
+		CLASS.Model		 = "models/engines/wankel_3_med.mdl"
+		CLASS.Sound		 = "acf_base/engines/wankel_large.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.Wankel"
+		CLASS.Mass		 = 200
+		CLASS.Torque		 = 235
+		CLASS.FlywheelMass = 0.1
+		CLASS.RPM = {
 			Idle	= 950,
 			Limit	= 9500,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 105,
-		},
-	})
+		}
+	end)
 end
 
 ACF.SetCustomAttachment("models/engines/wankel_4_med.mdl", "driveshaft", Vector(), Angle(0, 0, 90))

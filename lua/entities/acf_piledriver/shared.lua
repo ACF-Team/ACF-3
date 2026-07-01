@@ -1,38 +1,16 @@
 DEFINE_BASECLASS("acf_base_scalable")
 
-ENT.PrintName       = "ACF Piledriver"
-ENT.WireDebugName   = "ACF Piledriver"
-ENT.PluralName      = "ACF Piledrivers"
-ENT.IsACFPiledriver = true
+ENT.ACF_Limit      		= 4
 
-cleanup.Register("acf_piledriver")
+ACF.Entities.AutoRegisterV2(function()
+	MENU_FIELD("ACF.Piledrivers.Piledriver", 	"Weapon", 			{OnlyAllowSubtypes = false, InstantiateTypeForDefault = "ACF.Piledrivers.Piledriver"})
+end, "Piledriver")
 
-ENT.ACF_UserVars = {
-	["Weapon"]   = {
-		Type       = "GroupClass",
-		ClassName  = "Piledrivers",
-		Default    = "PD"
-	},
-	["Caliber"]  = {
-		Type       = "Number",
-		Min        = function(Ctx)
-			return Ctx:ResolveClientData("Weapon").Caliber.Min
-		end,
-		Max        = function(Ctx)
-			return Ctx:ResolveClientData("Weapon").Caliber.Max
-		end,
-		Default    = function(Ctx)
-			return Ctx:ResolveClientData("Weapon").Caliber.Base
-		end,
-		Decimals   = 2
-	}
-}
-
-ENT.ACF_WireInputs = {
+ENT.ACF_StaticWireInputs = {
 	"Fire (Attempts to fire the piledriver.)",
 }
 
-ENT.ACF_WireOutputs = {
+ENT.ACF_StaticWireOutputs = {
 	"Ready (Returns 1 if the piledriver can be fired.)",
 	"Status (Returns the current state of the piledriver.) [STRING]",
 	"Shots Left (Returns the amount of charges available to fire.)",

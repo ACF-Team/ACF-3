@@ -1,89 +1,88 @@
 local ACF     = ACF
-local Engines = ACF.Classes.Engines
+local Classes = ACF.Classes
 
-
-Engines.Register("I5", {
-	Name = "Inline 5 Engine",
-})
+Classes.DefineClass("ACF.Engines.I5", "ACF.Engines.BaseEngine", function()
+	CLASS.Name = "Inline 5 Engine"
+end)
 
 do -- Petrol Engines
-	Engines.RegisterItem("2.3-I5", "I5", {
-		Name		 = "2.3L I5 Petrol",
-		Description	 = "#acf.descs.engines.i5.2_3",
-		Model		 = "models/engines/inline5s.mdl",
-		Sound		 = "acf_base/engines/i5_petrolsmall.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "GenericPetrol",
-		Mass		 = 100,
-		Torque		 = 156,
-		FlywheelMass = 0.12,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.2.3-I5", "ACF.Engines.I5", function()
+		CLASS.Name		 = "2.3L I5 Petrol"
+		CLASS.Description	 = "#acf.descs.engines.i5.2_3"
+		CLASS.Model		 = "models/engines/inline5s.mdl"
+		CLASS.Sound		 = "acf_base/engines/i5_petrolsmall.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
+		CLASS.Mass		 = 100
+		CLASS.Torque		 = 156
+		CLASS.FlywheelMass = 0.12
+		CLASS.RPM = {
 			Idle	= 900,
 			Limit	= 7000,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 117,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("3.9-I5", "I5", {
-		Name		 = "3.9L I5 Petrol",
-		Description	 = "#acf.descs.engines.i5.3_9",
-		Model		 = "models/engines/inline5m.mdl",
-		Sound		 = "acf_base/engines/i5_petrolmedium.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "GenericPetrol",
-		Mass		 = 250,
-		Torque		 = 343,
-		FlywheelMass = 0.25,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.3.9-I5", "ACF.Engines.I5", function()
+		CLASS.Name		 = "3.9L I5 Petrol"
+		CLASS.Description	 = "#acf.descs.engines.i5.3_9"
+		CLASS.Model		 = "models/engines/inline5m.mdl"
+		CLASS.Sound		 = "acf_base/engines/i5_petrolmedium.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
+		CLASS.Mass		 = 250
+		CLASS.Torque		 = 343
+		CLASS.FlywheelMass = 0.25
+		CLASS.RPM = {
 			Idle	= 700,
 			Limit	= 6500,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 117,
-		},
-	})
+		}
+	end)
 end
 
 do -- Diesel Engines
-	Engines.RegisterItem("2.9-I5", "I5", {
-		Name		 = "2.9L I5 Diesel",
-		Description	 = "#acf.descs.engines.i5.2_9",
-		Model		 = "models/engines/inline5s.mdl",
-		Sound		 = "acf_base/engines/i5_dieselsmall2.wav",
-		Fuel		 = { Diesel = true },
-		Type		 = "GenericDiesel",
-		Mass		 = 130,
-		Torque		 = 225,
-		FlywheelMass = 0.5,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.2.9-I5", "ACF.Engines.I5", function()
+		CLASS.Name		 = "2.9L I5 Diesel"
+		CLASS.Description	 = "#acf.descs.engines.i5.2_9"
+		CLASS.Model		 = "models/engines/inline5s.mdl"
+		CLASS.Sound		 = "acf_base/engines/i5_dieselsmall2.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
+		CLASS.Mass		 = 130
+		CLASS.Torque		 = 225
+		CLASS.FlywheelMass = 0.5
+		CLASS.RPM = {
 			Idle	= 500,
 			Limit	= 4200,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 117,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("4.1-I5", "I5", {
-		Name		 = "4.1L I5 Diesel",
-		Description	 = "#acf.descs.engines.i5.4_1",
-		Model		 = "models/engines/inline5m.mdl",
-		Sound		 = "acf_base/engines/i5_dieselmedium.wav",
-		Fuel		 = { Diesel = true },
-		Type		 = "GenericDiesel",
-		Mass		 = 400,
-		Torque		 = 550,
-		FlywheelMass = 1.5,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.4.1-I5", "ACF.Engines.I5", function()
+		CLASS.Name		 = "4.1L I5 Diesel"
+		CLASS.Description	 = "#acf.descs.engines.i5.4_1"
+		CLASS.Model		 = "models/engines/inline5m.mdl"
+		CLASS.Sound		 = "acf_base/engines/i5_dieselmedium.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
+		CLASS.Mass		 = 400
+		CLASS.Torque		 = 550
+		CLASS.FlywheelMass = 1.5
+		CLASS.RPM = {
 			Idle	= 650,
 			Limit	= 3800,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 117,
-		},
-	})
+		}
+	end)
 end
 
 ACF.SetCustomAttachment("models/engines/inline5m.mdl", "driveshaft", Vector(-15, 0, 6.6), Angle(0, 180, 90))

@@ -1,267 +1,261 @@
 local ACF       = ACF
 local Classes   = ACF.Classes
-local AmmoTypes = Classes.AmmoTypes
-local Ammo      = AmmoTypes.Register("SM", "AP")
 
+Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function()
+	local BASE = BASE
 
-function Ammo:OnLoaded()
-	Ammo.BaseClass.OnLoaded(self)
-
-	self.Name		 = "Smoke"
-	self.SpawnIcon   = "acf/icons/shell_smoke.png"
-	self.Bodygroup   = 6 -- WP bodygroup index
-	self.MortarBodygroup = 1 -- Smoke mortar submodel
-	self.Description = "#acf.descs.ammo.sm"
-	self.Blacklist = {
-		AC = true,
-		AL = true,
-		GL = true,
-		MG = true,
-		SA = true,
-		LAC = true,
-		RAC = true,
-	}
-end
-
-function Ammo:GetPenetration()
-	return 0
-end
-
-function Ammo:GetDisplayData(Data)
-	local SMFiller = math.min(math.log(1 + Data.FillerMass * 8 * ACF.MeterToInch) * 43.4216, 350)
-	local WPFiller = math.min(math.log(1 + Data.WPMass * 8 * ACF.MeterToInch) * 43.4216, 350)
-	local Display  = {
-		SMFiller    = SMFiller,
-		SMLife      = math.Round(10 + SMFiller * 0.25, 2),
-		SMRadiusMin = math.Round(SMFiller * 1.25 * 0.15 * ACF.InchToMeter, 2),
-		SMRadiusMax = math.Round(SMFiller * 1.25 * 2 * ACF.InchToMeter, 2),
-		WPFiller    = WPFiller,
-		WPLife      = math.Round(5 + WPFiller * 0.1, 2),
-		WPRadiusMin = math.Round(WPFiller * 1.25 * ACF.InchToMeter, 2),
-		WPRadiusMax = math.Round(WPFiller * 1.25 * 2 * ACF.InchToMeter, 2),
+	CLASS.Name		 = "Smoke"
+	CLASS.SpawnIcon   = "acf/icons/shell_smoke.png"
+	CLASS.Bodygroup   = 6 -- WP bodygroup index
+	CLASS.MortarBodygroup = 1 -- Smoke mortar submodel
+	CLASS.Description = "#acf.descs.ammo.sm"
+	CLASS.Blacklist = {
+		["ACF.Guns.Autocannon"] = true,
+		["ACF.Guns.GrenadeLauncher"] = true,
+		["ACF.Guns.Machinegun"] = true,
+		["ACF.Guns.SemiautomaticCannon"] = true,
+		["ACF.Guns.LightAutocannon"] = true,
+		["ACF.Guns.RotaryAutocannon"] = true,
 	}
 
-	hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
+	MENU_FIELD("Number", "FillerRatio", {Default = 0})
+	MENU_FIELD("Number", "SmokeWPRatio", {Default = 0})
 
-	return Display
-end
-
-function Ammo:UpdateRoundData(ToolData, Data, GUIData)
-	GUIData = GUIData or Data
-
-	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
-
-	Data.FillerPriority = Data.FillerPriority or "Smoke"
-
-	-- Volume of the projectile as a cylinder - Volume of the filler * density of steel + Volume of the filler * density of TNT
-	local FreeVol     = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)
-	local FillerVol   = FreeVol * math.Clamp(ToolData.FillerRatio, 0, 1)
-	local SmokeRatio  = math.Clamp(ToolData.SmokeWPRatio, 0, 1)
-	local SmokeFiller = FillerVol * SmokeRatio
-	local WPFiller    = FillerVol * (1 - SmokeRatio)
-
-	Data.FillerMass = SmokeFiller * ACF.HEDensity
-	Data.WPMass     = WPFiller * ACF.HEDensity
-	Data.ProjMass   = math.max(GUIData.ProjVolume - FillerVol, 0) * ACF.SteelDensity + Data.FillerMass + Data.WPMass
-	Data.MuzzleVel  = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
-	Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
-	Data.CartMass   = Data.PropMass + Data.ProjMass
-
-	hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
-
-	for K, V in pairs(self:GetDisplayData(Data)) do
-		GUIData[K] = V
-	end
-end
-
-function Ammo:BaseConvert(ToolData)
-	local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, {})
-
-	GUIData.MinFillerVol = 0
-
-	Data.ShovePower		= 0.1
-	Data.LimitVel		= 100 --Most efficient penetration speed in m/s
-	Data.Ricochet		= 60 --Base ricochet angle
-	Data.DetonatorAngle	= 80
-	Data.CanFuze		= Data.Caliber * 10 >= ACF.MinFuzeCaliber -- Can fuze on calibers >= 25mm
-
-	self:UpdateRoundData(ToolData, Data, GUIData)
-
-	return Data, GUIData
-end
-
-function Ammo:VerifyData(ToolData)
-	Ammo.BaseClass.VerifyData(self, ToolData)
-
-	if not isnumber(ToolData.FillerRatio) then
-		ToolData.FillerRatio = 1
+	function CLASS:GetPenetration()
+		return 0
 	end
 
-	if not isnumber(ToolData.SmokeWPRatio) then
-		ToolData.SmokeWPRatio = 0.5
-	end
-end
-
-if SERVER then
-	local Ballistics = ACF.Ballistics
-	local Entities   = Classes.Entities
-	local Conversion	= ACF.PointConversion
-
-	Entities.AddArguments("acf_ammo", "FillerRatio", "SmokeWPRatio") -- Adding extra info to ammo crates
-
-	function Ammo:GetCost(BulletData)
-		return ((BulletData.ProjMass - BulletData.FillerMass - BulletData.WPMass) * Conversion.Steel * 0.75) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.SF) + (BulletData.WPMass * Conversion.WP)
-	end
-
-	function Ammo:OnLast(Entity)
-		Ammo.BaseClass.OnLast(self, Entity)
-
-		Entity.FillerRatio  = nil
-		Entity.SmokeWPRatio = nil
-
-		-- Cleanup the leftovers aswell
-		Entity.SmokeFiller = nil
-		Entity.WPFiller    = nil
-		Entity.RoundData5  = nil
-		Entity.RoundData6  = nil
-
-		Entity:SetNW2Float("FillerMass", 0)
-		Entity:SetNW2Float("WPMass", 0)
-	end
-
-	function Ammo:Network(Entity, BulletData)
-		Ammo.BaseClass.Network(self, Entity, BulletData)
-
-		Entity:SetNW2String("AmmoType", "SM")
-		Entity:SetNW2Float("FillerMass", BulletData.FillerMass)
-		Entity:SetNW2Float("WPMass", BulletData.WPMass)
-	end
-
-	function Ammo:UpdateCrateOverlay(BulletData, State)
-		local Data = self:GetDisplayData(BulletData)
-
-		State:AddNumber("Muzzle Velocity", BulletData.MuzzleVel, " m/s")
-		if Data.WPFiller > 0 then
-			State:AddKeyValue("WP Radius", ("%s m to %s m"):format(Data.WPRadiusMin, Data.WPRadiusMax))
-			State:AddKeyValue("WP Lifetime", ("%s s"):format(Data.WPLife))
-		end
-		if Data.SMFiller > 0 then
-			State:AddKeyValue("SM Radius", ("%s m to %s m"):format(Data.SMRadiusMin, Data.SMRadiusMax))
-			State:AddKeyValue("SM Lifetime", ("%s s"):format(Data.SMLife))
-		end
-	end
-
-	function Ammo:PropImpact(Bullet, Trace)
-		if ACF.Check(Trace.Entity) then
-			local Speed  = Bullet.Flight:Length() / ACF.Scale
-			local Energy = ACF.Kinetic(Speed, Bullet.ProjMass)
-
-			Bullet.Speed  = Speed
-			Bullet.Energy = Energy
-
-			local HitRes = Ballistics.DoRoundImpact(Bullet, Trace)
-
-			if HitRes.Ricochet then return "Ricochet" end
-		end
-
-		return false
-	end
-
-	function Ammo:WorldImpact()
-		return false
-	end
-else
-	local Effects = ACF.Utilities.Effects
-
-	ACF.RegisterAmmoDecal("SM", "damage/he_pen", "damage/he_rico")
-
-	function Ammo:ImpactEffect(_, Bullet)
-		local Crate = Bullet.Crate
-		local Color = IsValid(Crate) and Crate:GetColor() or Color(255, 255, 255)
-
-		local EffectTable = {
-			Origin = Bullet.SimPos,
-			Normal = Bullet.SimFlight:GetNormalized(),
-			Scale = math.max(Bullet.FillerMass * 8 * ACF.MeterToInch, 0),
-			Magnitude = math.max(Bullet.WPMass * 8 * ACF.MeterToInch, 0),
-			Start = Vector(Color.r, Color.g, Color.b),
-			Radius = Bullet.Caliber,
+	function CLASS:GetDisplayData(Data)
+		local SMFiller = math.min(math.log(1 + Data.FillerMass * 8 * ACF.MeterToInch) * 43.4216, 350)
+		local WPFiller = math.min(math.log(1 + Data.WPMass * 8 * ACF.MeterToInch) * 43.4216, 350)
+		local Display  = {
+			SMFiller    = SMFiller,
+			SMLife      = math.Round(10 + SMFiller * 0.25, 2),
+			SMRadiusMin = math.Round(SMFiller * 1.25 * 0.15 * ACF.InchToMeter, 2),
+			SMRadiusMax = math.Round(SMFiller * 1.25 * 2 * ACF.InchToMeter, 2),
+			WPFiller    = WPFiller,
+			WPLife      = math.Round(5 + WPFiller * 0.1, 2),
+			WPRadiusMin = math.Round(WPFiller * 1.25 * ACF.InchToMeter, 2),
+			WPRadiusMax = math.Round(WPFiller * 1.25 * 2 * ACF.InchToMeter, 2),
 		}
 
-		Effects.CreateEffect("ACF_Smoke", EffectTable)
+		hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
+
+		return Display
 	end
 
-	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
-		local FillerRatio = Base:AddSlider("#acf.menu.ammo.filler_ratio", 0, 1, 2)
-		FillerRatio:SetClientData("FillerRatio", "OnValueChanged")
-		FillerRatio:DefineSetter(function(_, _, _, Value)
-			ToolData.FillerRatio = math.Round(Value, 2)
+	function CLASS:UpdateRoundData()
+		local Data    = self.BulletData
+		local GUIData = self.GUIData
 
-			self:UpdateRoundData(ToolData, BulletData)
+		ACF.UpdateRoundSpecs(self)
 
-			return BulletData.FillerVol
-		end)
+		Data.FillerPriority = Data.FillerPriority or "Smoke"
 
-		local SmokeWPRatio = Base:AddSlider("#acf.menu.ammo.wp_ratio", 0, 1, 2)
-		SmokeWPRatio:SetClientData("SmokeWPRatio", "OnValueChanged")
-		SmokeWPRatio:DefineSetter(function(_, _, _, Value)
-			ToolData.SmokeWPRatio = math.Round(Value, 2)
+		-- Volume of the projectile as a cylinder - Volume of the filler * density of steel + Volume of the filler * density of TNT
+		local FreeVol     = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)
+		local FillerVol   = FreeVol * math.Clamp(self.FillerRatio, 0, 1)
+		local SmokeRatio  = math.Clamp(self.SmokeWPRatio, 0, 1)
+		local SmokeFiller = FillerVol * SmokeRatio
+		local WPFiller    = FillerVol * (1 - SmokeRatio)
 
-			self:UpdateRoundData(ToolData, BulletData)
+		Data.FillerMass = SmokeFiller * ACF.HEDensity
+		Data.WPMass     = WPFiller * ACF.HEDensity
+		Data.ProjMass   = math.max(GUIData.ProjVolume - FillerVol, 0) * ACF.SteelDensity + Data.FillerMass + Data.WPMass
+		Data.MuzzleVel  = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
+		Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
+		Data.CartMass   = Data.PropMass + Data.ProjMass
 
-			return BulletData.WPVol
-		end)
+		hook.Run("ACF_OnUpdateRound", self, self, Data, GUIData)
+
+		for K, V in pairs(self:GetDisplayData(Data)) do
+			GUIData[K] = V
+		end
 	end
 
-	function Ammo:OnCreateCrateInformation(Base, Label, ...)
-		Ammo.BaseClass.OnCreateCrateInformation(self, Base, Label, ...)
+	function CLASS:BaseConvert()
+		self.BulletData = {}
 
-		Label:TrackClientData("FillerRatio")
-		Label:TrackClientData("SmokeWPRatio")
+		local Data = ACF.RoundBaseGunpowder(self)
+
+		self.GUIData.MinFillerVol = 0
+
+		Data.ShovePower		= 0.1
+		Data.LimitVel		= 100 --Most efficient penetration speed in m/s
+		Data.Ricochet		= 60 --Base ricochet angle
+		Data.DetonatorAngle	= 80
+		Data.CanFuze		= Data.Caliber * 10 >= ACF.MinFuzeCaliber -- Can fuze on calibers >= 25mm
+
+		self:UpdateRoundData()
+
+		return self.BulletData, self.GUIData
 	end
 
-	function Ammo:OnCreateAmmoInformation(Menu, ToolData, Data)
-		local RoundStats = Menu:AddLabel()
-		RoundStats:TrackClientData("Projectile", "SetText")
-		RoundStats:TrackClientData("Propellant")
-		RoundStats:TrackClientData("FillerRatio")
-		RoundStats:TrackClientData("SmokeWPRatio")
-		RoundStats:DefineSetter(function()
-			self:UpdateRoundData(ToolData, Data)
+	function CLASS:VerifyData()
+		BASE.VerifyData(self)
 
-			local Text		= language.GetPhrase("acf.menu.ammo.round_stats_ap")
-			local MuzzleVel	= math.Round(Data.MuzzleVel * ACF.Scale, 2)
-			local ProjMass	= ACF.GetProperMass(Data.ProjMass)
-			local PropMass	= ACF.GetProperMass(Data.PropMass)
+		if not isnumber(self.FillerRatio) then self.FillerRatio = 1 end
+		if not isnumber(self.SmokeWPRatio) then self.SmokeWPRatio = 0.5 end
+	end
 
-			return Text:format(MuzzleVel, ProjMass, PropMass)
-		end)
+	if SERVER then
+		local Ballistics = ACF.Ballistics
+		local Conversion	= ACF.PointConversion
 
-		local SmokeStats = Menu:AddLabel()
-		SmokeStats:TrackClientData("FillerRatio", "SetText")
-		SmokeStats:TrackClientData("SmokeWPRatio")
-		SmokeStats:DefineSetter(function()
-			self:UpdateRoundData(ToolData, Data)
+		function CLASS:GetCost(BulletData)
+			return ((BulletData.ProjMass - BulletData.FillerMass - BulletData.WPMass) * Conversion.Steel * 0.75) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.SF) + (BulletData.WPMass * Conversion.WP)
+		end
 
-			local SMText, WPText = "", ""
+		function CLASS:OnLast(Entity)
+			BASE.OnLast(self, Entity)
 
-			if Data.FillerMass > 0 then
-				local Text		  = language.GetPhrase("acf.menu.ammo.smoke_stats")
-				local SmokeMass	  = ACF.GetProperMass(Data.FillerMass)
-				local SmokeRadius = (Data.SMRadiusMin + Data.SMRadiusMax) * 0.5
+			Entity.FillerRatio  = nil
+			Entity.SmokeWPRatio = nil
 
-				SMText = Text:format(SmokeMass, SmokeRadius, Data.SMLife)
+			-- Cleanup the leftovers aswell
+			Entity.SmokeFiller = nil
+			Entity.WPFiller    = nil
+			Entity.RoundData5  = nil
+			Entity.RoundData6  = nil
+
+			Entity:SetNW2Float("FillerMass", 0)
+			Entity:SetNW2Float("WPMass", 0)
+		end
+
+		function CLASS:Network(Entity, BulletData)
+			BASE.Network(self, Entity, BulletData)
+
+			Entity:SetNW2String("AmmoType", "ACF.Ammunition.SM")
+			Entity:SetNW2Float("FillerMass", BulletData.FillerMass)
+			Entity:SetNW2Float("WPMass", BulletData.WPMass)
+		end
+
+		function CLASS:UpdateCrateOverlay(BulletData, State)
+			local Data = self:GetDisplayData(BulletData)
+
+			State:AddNumber("Muzzle Velocity", BulletData.MuzzleVel, " m/s")
+			if Data.WPFiller > 0 then
+				State:AddKeyValue("WP Radius", ("%s m to %s m"):format(Data.WPRadiusMin, Data.WPRadiusMax))
+				State:AddKeyValue("WP Lifetime", ("%s s"):format(Data.WPLife))
+			end
+			if Data.SMFiller > 0 then
+				State:AddKeyValue("SM Radius", ("%s m to %s m"):format(Data.SMRadiusMin, Data.SMRadiusMax))
+				State:AddKeyValue("SM Lifetime", ("%s s"):format(Data.SMLife))
+			end
+		end
+
+		function CLASS:PropImpact(Bullet, Trace)
+			if ACF.Check(Trace.Entity) then
+				local Speed  = Bullet.Flight:Length() / ACF.Scale
+				local Energy = ACF.Kinetic(Speed, Bullet.ProjMass)
+
+				Bullet.Speed  = Speed
+				Bullet.Energy = Energy
+
+				local HitRes = Ballistics.DoRoundImpact(Bullet, Trace)
+
+				if HitRes.Ricochet then return "Ricochet" end
 			end
 
-			if Data.WPMass > 0 then
-				local Text	   = language.GetPhrase("acf.menu.ammo.wp_stats")
-				local WPMass   = ACF.GetProperMass(Data.WPMass)
-				local WPRadius = (Data.WPRadiusMin + Data.WPRadiusMax) * 0.5
+			return false
+		end
 
-				WPText = Text:format(WPMass, WPRadius, Data.WPLife)
-			end
+		function CLASS:WorldImpact()
+			return false
+		end
+	else
+		local Effects = ACF.Utilities.Effects
 
-			return SMText .. WPText
-		end)
+		ACF.RegisterAmmoDecal("ACF.Ammunition.SM", "damage/he_pen", "damage/he_rico")
+
+		function CLASS:ImpactEffect(_, Bullet)
+			local Crate = Bullet.Crate
+			local Color = IsValid(Crate) and Crate:GetColor() or Color(255, 255, 255)
+
+			local EffectTable = {
+				Origin = Bullet.SimPos,
+				Normal = Bullet.SimFlight:GetNormalized(),
+				Scale = math.max(Bullet.FillerMass * 8 * ACF.MeterToInch, 0),
+				Magnitude = math.max(Bullet.WPMass * 8 * ACF.MeterToInch, 0),
+				Start = Vector(Color.r, Color.g, Color.b),
+				Radius = Bullet.Caliber,
+			}
+
+			Effects.CreateEffect("ACF_Smoke", EffectTable)
+		end
+
+		function CLASS:OnCreateAmmoControls(Base, _, BulletData)
+			local FillerRatio = Base:AddSlider("#acf.menu.ammo.filler_ratio", 0, 1, 2)
+			FillerRatio:SetClientData("FillerRatio", "OnValueChanged")
+			FillerRatio:DefineSetter(function(_, _, _, Value)
+				self.FillerRatio = math.Round(Value, 2)
+
+				self:UpdateRoundData()
+
+				return BulletData.FillerVol
+			end)
+
+			local SmokeWPRatio = Base:AddSlider("#acf.menu.ammo.wp_ratio", 0, 1, 2)
+			SmokeWPRatio:SetClientData("SmokeWPRatio", "OnValueChanged")
+			SmokeWPRatio:DefineSetter(function(_, _, _, Value)
+				self.SmokeWPRatio = math.Round(Value, 2)
+
+				self:UpdateRoundData()
+
+				return BulletData.WPVol
+			end)
+		end
+
+		function CLASS:OnCreateCrateInformation(Base, Label, ...)
+			BASE.OnCreateCrateInformation(self, Base, Label, ...)
+
+			Label:TrackClientData("FillerRatio")
+			Label:TrackClientData("SmokeWPRatio")
+		end
+
+		function CLASS:OnCreateAmmoInformation(Menu, _, Data)
+			local RoundStats = Menu:AddLabel()
+			RoundStats:TrackClientData("Projectile", "SetText")
+			RoundStats:TrackClientData("Propellant")
+			RoundStats:TrackClientData("FillerRatio")
+			RoundStats:TrackClientData("SmokeWPRatio")
+			RoundStats:DefineSetter(function()
+				self:UpdateRoundData()
+
+				local Text		= language.GetPhrase("acf.menu.ammo.round_stats_ap")
+				local MuzzleVel	= math.Round(Data.MuzzleVel * ACF.Scale, 2)
+				local ProjMass	= ACF.GetProperMass(Data.ProjMass)
+				local PropMass	= ACF.GetProperMass(Data.PropMass)
+
+				return Text:format(MuzzleVel, ProjMass, PropMass)
+			end)
+
+			local SmokeStats = Menu:AddLabel()
+			SmokeStats:TrackClientData("FillerRatio", "SetText")
+			SmokeStats:TrackClientData("SmokeWPRatio")
+			SmokeStats:DefineSetter(function()
+				self:UpdateRoundData()
+
+				local SMText, WPText = "", ""
+
+				if Data.FillerMass > 0 then
+					local Text		  = language.GetPhrase("acf.menu.ammo.smoke_stats")
+					local SmokeMass	  = ACF.GetProperMass(Data.FillerMass)
+					local SmokeRadius = (Data.SMRadiusMin + Data.SMRadiusMax) * 0.5
+
+					SMText = Text:format(SmokeMass, SmokeRadius, Data.SMLife)
+				end
+
+				if Data.WPMass > 0 then
+					local Text	   = language.GetPhrase("acf.menu.ammo.wp_stats")
+					local WPMass   = ACF.GetProperMass(Data.WPMass)
+					local WPRadius = (Data.WPRadiusMin + Data.WPRadiusMax) * 0.5
+
+					WPText = Text:format(WPMass, WPRadius, Data.WPLife)
+				end
+
+				return SMText .. WPText
+			end)
+		end
 	end
-end
+end)

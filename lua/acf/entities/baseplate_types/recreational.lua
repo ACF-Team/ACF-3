@@ -1,20 +1,32 @@
-local Notify    = ACF.Utilities.Notify
-local Types     = ACF.Classes.BaseplateTypes
-local Baseplate = Types.Register("Recreational")
+local Notify     = ACF.Utilities.Notify
 local EmptyTable = {}
 
-function Baseplate:OnLoaded()
-	self.Name		 = "Recreational"
-	self.Icon        = "icon16/car_add.png"
-	self.Description = "A baseplate designed for non combat use (e.g. cars).\nWeapons and ammo will be removed. Fuel consumption rate set to 1."
-	self.EnforceLooped = function(Baseplate)
+ACF.Classes.DefineClass("ACF.Baseplates.Recreational", "ACF.Baseplates.BaseplateType", function()
+	CLASS.Name        = "Recreational"
+	CLASS.Icon        = "icon16/car_add.png"
+	CLASS.Description = "A baseplate designed for non combat use (e.g. cars).\nWeapons and ammo will be removed. Fuel consumption rate set to 1."
+
+	MENU_FIELD("Boolean", "ExplodeOnCollisions", {Default = false})
+
+	function CLASS.CreateMenu(SubMenu, NestedData, PushData)
+		local Opts = ACF.Classes.GetTypeFieldByName(CLASS, "ExplodeOnCollisions").Options
+		local Box  = SubMenu:AddCheckBox("Explode on Collisions")
+		local Init = NestedData.ExplodeOnCollisions
+		if Init == nil then Init = Opts.Default or false end
+		Box:SetValue(Init)
+		function Box:OnChange(Value)
+			NestedData.ExplodeOnCollisions = Value
+			PushData()
+		end
+	end
+
+	function CLASS.EnforceLooped(Baseplate)
 		local Contraption = Baseplate:CFW_GetContraption()
 		if not Contraption then return end
 
 		local Owner = Baseplate:CPPIGetOwner()
 
-		-- Kill ammo
-		for v, _ in pairs(Contraption.Ammo or EmptyTable) do
+		for v in pairs(Contraption.Ammo or EmptyTable) do
 			if IsValid(Owner) then Notify.WarningToPlayer(Owner, "Baseplate removed", "A recreational baseplate was used for combat.") end
 			if IsValid(v) then
 				Contraption.Ammo[v] = nil
@@ -22,8 +34,7 @@ function Baseplate:OnLoaded()
 			end
 		end
 
-		-- Kill weapons
-		for v, _ in pairs(Contraption.Guns or EmptyTable) do
+		for v in pairs(Contraption.Guns or EmptyTable) do
 			if IsValid(Owner) then Notify.WarningToPlayer(Owner, "Baseplate removed", "A recreational baseplate was used for combat.") end
 			if IsValid(v) then
 				Contraption.Guns[v] = nil
@@ -31,7 +42,7 @@ function Baseplate:OnLoaded()
 			end
 		end
 
-		for v, _ in pairs(Contraption.Piledrivers or EmptyTable) do
+		for v in pairs(Contraption.Piledrivers or EmptyTable) do
 			if IsValid(Owner) then Notify.WarningToPlayer(Owner, "Baseplate removed", "A recreational baseplate was used for combat.") end
 			if IsValid(v) then
 				Contraption.Piledrivers[v] = nil
@@ -39,7 +50,7 @@ function Baseplate:OnLoaded()
 			end
 		end
 
-		for v, _ in pairs(Contraption.Racks or EmptyTable) do
+		for v in pairs(Contraption.Racks or EmptyTable) do
 			if IsValid(Owner) then Notify.WarningToPlayer(Owner, "Baseplate removed", "A recreational baseplate was used for combat.") end
 			if IsValid(v) then
 				Contraption.Racks[v] = nil
@@ -47,10 +58,9 @@ function Baseplate:OnLoaded()
 			end
 		end
 	end
-end
 
-function Baseplate:PhysicsCollide(Data)
-	if not self:ACF_GetUserVar("ExplodeOnCollisions") then return end
-
-	Types.BP_PhysicsCollideExplosion(self, Data)
-end
+	function CLASS:PhysicsCollide(Entity, Data)
+		if not self.ExplodeOnCollisions then return end
+		BASE.BP_PhysicsCollideExplosion(Entity, Data)
+	end
+end)

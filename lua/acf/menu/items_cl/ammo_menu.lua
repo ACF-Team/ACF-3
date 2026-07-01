@@ -1,8 +1,15 @@
 local hook      = hook
 local ACF       = ACF
 local Classes   = ACF.Classes
-local AmmoTypes = Classes.AmmoTypes
 local BoxSize   = Vector()
+
+-- The crate keeps its drum/box UI logic keyed on the short "AmmoShape" client data, but the entity's
+-- inherited "Shape" field wants a ContainerShapes class FQN. This maps one to the other so the menu
+-- can write the field directly (the compat patch handles old dupes).
+local SHAPE_FQN = {
+	Box      = "ACF.ContainerShapes.Box",
+	Cylinder = "ACF.ContainerShapes.Cylinder",
+}
 local Ammo, BulletData
 local GhostData = {Secondary = {
 	Model = "models/holograms/hq_rcube_thin.mdl",
@@ -17,13 +24,13 @@ local GraphRedAlt = Color(255, 65, 65)
 ---Gets a key-value table of all the ammo type objects a given weapon class can make use of.
 ---@param Class string The ammo type ID that will be checked.
 ---@return table<string, table> Result The ammo type objects said weapon class can use.
-local function GetAmmoList(Class)
-	local Entries = AmmoTypes.GetEntries()
+local function GetAmmoList(WeaponType)
+	local Entries = Classes.GetSubtypes("ACF.Ammunition.BaseAmmo")
 	local Result  = {}
 
 	for K, V in pairs(Entries) do
 		if V.Unlistable then continue end
-		if V.Blacklist[Class] then continue end
+		if V.Blacklist[Classes.GetTypeName(WeaponType)] then continue end
 
 		Result[K] = V
 	end
@@ -35,9 +42,32 @@ end
 ---@param ToolData table<string, any> The copy of the local player's client data variables.
 ---@return table<string, any> Group The weapon group object expected by the player's menu.
 local function GetWeaponClass(ToolData)
-	local Destiny = Classes[ToolData.Destiny or "Weapons"]
+	-- Guns and missiles are both V2 subtypes of ACF.Weapons.BaseWeapon, resolved by FQN.
+	return Classes.GetSubtypeByName("ACF.Weapons.BaseWeapon", ToolData.Weapon)
+end
 
-	return Classes.GetGroup(Destiny, ToolData.Weapon)
+---Refreshes an ammo instance's runtime state for menu display: gives it a weapon back-reference
+---(so the round math can read caliber/round limits) and syncs its round inputs from client data.
+---@param Inst table The ammo-type instance to set up.
+---@param ToolData table<string, any> The copy of the local player's client data variables.
+local function SetupAmmo(Inst, ToolData)
+	if not Inst then return end
+
+	-- Build a weapon instance for the back-reference (V2 weapon classes only; missiles are grouped).
+	local WeaponClass = GetWeaponClass(ToolData)
+
+	if WeaponClass and WeaponClass.GetType then
+		local WeaponInst = WeaponClass()
+		WeaponInst.Caliber = ToolData.Caliber or WeaponInst.Caliber
+		Inst.Weapon = WeaponInst
+	end
+
+	-- Sync the round inputs (Projectile/Propellant/Tracer + type-specific) from client data.
+	for _, Field in ipairs(Classes.GetTypeFields(Inst:GetType())) do
+		if Field.Menu and ToolData[Field.Name] ~= nil then
+			Inst[Field.Name] = ToolData[Field.Name]
+		end
+	end
 end
 
 ---Returns the mass of a hollow box given the current size and armor thickness expected for it.
@@ -221,8 +251,9 @@ local function AddTracer(Base, ToolData)
 	Tracer:SetClientData("Tracer", "OnChange")
 	Tracer:DefineSetter(function(Panel, _, _, Value)
 		ToolData.Tracer = Value
+		Ammo.Tracer     = Value
 
-		Ammo:UpdateRoundData(ToolData, BulletData)
+		Ammo:UpdateRoundData()
 
 		ACF.SetClientData("Projectile", BulletData.ProjLength)
 		ACF.SetClientData("Propellant", BulletData.PropLength)
@@ -262,21 +293,22 @@ local function AddControls(Base, ToolData)
 	RoundLength:DefineSetter(function()
 		local Text = language.GetPhrase("acf.menu.ammo.round_length")
 		local CurLength = BulletData.ProjLength + BulletData.PropLength
-		local MaxLength = BulletData.MaxRoundLength
+		local MaxLength = Ammo.GUIData.MaxRoundLength
 
 		return Text:format(CurLength, MaxLength)
 	end)
 
-	local Projectile = Base:AddSlider("#acf.menu.ammo.projectile_length", 0, BulletData.MaxRoundLength, 2)
+	local Projectile = Base:AddSlider("#acf.menu.ammo.projectile_length", 0, Ammo.GUIData.MaxRoundLength, 2)
 	Projectile:SetClientData("Projectile", "OnValueChanged")
 	Projectile:DefineSetter(function(Panel, _, _, Value, IsTracked)
 		ToolData.Projectile = Value
+		Ammo.Projectile     = Value
 
 		if not IsTracked then
 			BulletData.Priority = "Projectile"
 		end
 
-		Ammo:UpdateRoundData(ToolData, BulletData)
+		Ammo:UpdateRoundData()
 
 		ACF.SetClientData("Propellant", BulletData.PropLength)
 
@@ -288,16 +320,17 @@ local function AddControls(Base, ToolData)
 		return BulletData.ProjLength
 	end)
 
-	local Propellant = Base:AddSlider("#acf.menu.ammo.propellant_length", 0, BulletData.MaxRoundLength, 2)
+	local Propellant = Base:AddSlider("#acf.menu.ammo.propellant_length", 0, Ammo.GUIData.MaxRoundLength, 2)
 	Propellant:SetClientData("Propellant", "OnValueChanged")
 	Propellant:DefineSetter(function(Panel, _, _, Value, IsTracked)
 		ToolData.Propellant = Value
+		Ammo.Propellant     = Value
 
 		if not IsTracked then
 			BulletData.Priority = "Propellant"
 		end
 
-		Ammo:UpdateRoundData(ToolData, BulletData)
+		Ammo:UpdateRoundData()
 
 		ACF.SetClientData("Projectile", BulletData.ProjLength)
 
@@ -405,7 +438,7 @@ end
 
 local function AddPenetrationTable(Base, ToolData)
 	--HE and Smoke do not support this.
-	if ToolData.AmmoType == "SM" or ToolData.AmmoType == "HE" then return end
+	if ToolData.AmmoType == "ACF.Ammunition.SM" or ToolData.AmmoType == "ACF.Ammunition.HE" then return end
 
 	-- Setup of penetration statistics table.
 	local PenTable = Base:AddTable(5, 6)
@@ -427,7 +460,7 @@ local function AddPenetrationTable(Base, ToolData)
 			local Penetration, Velocity = Ammo:GetRangedPenetration(BulletData, range)
 
 			-- Chemical rounds require different functions for penetration.
-			if ToolData.AmmoType == "HEAT" or ToolData.AmmoType == "HEATFS" then
+			if ToolData.AmmoType == "ACF.Ammunition.HEAT" or ToolData.AmmoType == "ACF.Ammunition.HEATFS" then
 				Penetration = Ammo:GetPenetration(BulletData, BulletData.Standoff)
 			end
 
@@ -481,9 +514,12 @@ local function AddGraph(Base, ToolData)
 		Graph:SetXSpacing(100)
 		Graph:SetYSpacing(50)
 
-		local Ammo = AmmoTypes.Get(ToolData.AmmoType)
+		-- Fresh instance for this graph; set it up + convert so its BulletData/GUIData are populated.
+		local Ammo = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", ToolData.AmmoType)()
+		SetupAmmo(Ammo, ToolData)
+		local BulletData = Ammo:ClientConvert()
 
-		if ToolData.AmmoType == "HEAT" or ToolData.AmmoType == "HEATFS" then
+		if ToolData.AmmoType == "ACF.Ammunition.HEAT" or ToolData.AmmoType == "ACF.Ammunition.HEATFS" then
 			local PassiveStandoffPen = Ammo:GetPenetration(BulletData, BulletData.Standoff)
 			local BreakupDistPen = Ammo:GetPenetration(BulletData, BulletData.BreakupDist)
 
@@ -502,7 +538,7 @@ local function AddGraph(Base, ToolData)
 			Panel:PlotFunction(PenetrationText, GraphRedAlt, function(X)
 				return Ammo:GetPenetration(BulletData, X / 1000)
 			end)
-		elseif ToolData.AmmoType == "HE" then
+		elseif ToolData.AmmoType == "ACF.Ammunition.HE" then
 			local BlastRadiusText = language.GetPhrase("acf.menu.ammo.blast_radius")
 
 			Panel:SetYLabel(BlastRadiusText)
@@ -511,28 +547,28 @@ local function AddGraph(Base, ToolData)
 			Panel:SetYSpacing(10)
 
 			Panel:SetXRange(0, 10)
-			Panel:SetYRange(0, BulletData.BlastRadius * 2)
+			Panel:SetYRange(0, Ammo.GUIData.BlastRadius * 2)
 
-			Panel:PlotLimitLine(BlastRadiusText, true, BulletData.BlastRadius, GraphRed)
+			Panel:PlotLimitLine(BlastRadiusText, true, Ammo.GUIData.BlastRadius, GraphRed)
 
 			Panel:PlotFunction(BlastRadiusText, GraphRed, function()
-				return BulletData.BlastRadius
+				return Ammo.GUIData.BlastRadius
 			end)
-		elseif ToolData.AmmoType == "SM" then
+		elseif ToolData.AmmoType == "ACF.Ammunition.SM" then
 			Panel:SetYLabel("#acf.menu.ammo.smoke_radius")
 			Panel:SetXLabel("#acf.menu.ammo.time")
 
 			Panel:SetYSpacing(10)
 			Panel:SetXSpacing(5)
 
-			local WPTime = BulletData.WPLife or 0
-			local SFTime = BulletData.SMLife or 0
+			local WPTime = Ammo.GUIData.WPLife or 0
+			local SFTime = Ammo.GUIData.SMLife or 0
 
-			local MinWP = BulletData.WPRadiusMin or 0
-			local MaxWP = BulletData.WPRadiusMax or 0
+			local MinWP = Ammo.GUIData.WPRadiusMin or 0
+			local MaxWP = Ammo.GUIData.WPRadiusMax or 0
 
-			local MinSF = BulletData.SMRadiusMin or 0
-			local MaxSF = BulletData.SMRadiusMax or 0
+			local MinSF = Ammo.GUIData.SMRadiusMin or 0
+			local MaxSF = Ammo.GUIData.SMRadiusMax or 0
 
 			Panel:SetXRange(0, math.max(WPTime, SFTime) * 1.1)
 			Panel:SetYRange(0, math.max(MaxWP, MaxSF) * 1.1)
@@ -553,7 +589,7 @@ local function AddGraph(Base, ToolData)
 				Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.smoke_max_radius"), SFTime, MaxSF, GraphRed)
 			end
 		else
-			Panel:SetYRange(0, math.ceil(BulletData.MaxPen or 0) * 1.1)
+			Panel:SetYRange(0, math.ceil(Ammo.GUIData.MaxPen or 0) * 1.1)
 
 			Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.300m"), 300, Ammo:GetRangedPenetration(BulletData, 300), GraphBlue)
 			Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.800m"), 800, Ammo:GetRangedPenetration(BulletData, 800), GraphBlue)
@@ -583,7 +619,8 @@ function ACF.UpdateAmmoMenu(Menu)
 	local ToolData = ACF.GetAllClientData()
 	local Base = Menu.AmmoBase
 
-	BulletData = Ammo:ClientConvert(ToolData)
+	SetupAmmo(Ammo, ToolData)
+	BulletData = Ammo:ClientConvert()
 
 	Menu:ClearTemporal(Base)
 
@@ -638,6 +675,7 @@ local function UpdateShapeSelector(Menu)
 		-- Force shape to Crate if it was set to Drum
 		if ACF.GetClientString("AmmoShape", "Box") == "Cylinder" then
 			ACF.SetClientData("AmmoShape", "Box")
+			ACF.SetClientData("Shape", SHAPE_FQN.Box)
 			ShapeList:ChooseOptionID(1)
 
 			-- Reset slider visibility and labels for crate mode
@@ -677,6 +715,7 @@ function ACF.CreateAmmoMenu(Menu)
 	-- Set default shape
 	local DefaultShape = ACF.GetClientString("AmmoShape", "Box")
 	ACF.SetClientData("AmmoShape", DefaultShape, true)
+	ACF.SetClientData("Shape", SHAPE_FQN[DefaultShape] or SHAPE_FQN.Box, true)
 
 	-- Select the correct shape in the combo box (1 = Box, 2 = Cylinder)
 	ShapeList:ChooseOptionID(DefaultShape == "Cylinder" and 2 or 1)
@@ -716,6 +755,7 @@ function ACF.CreateAmmoMenu(Menu)
 	-- Handle shape selection changes
 	function ShapeList:OnSelect(_, _, Data)
 		ACF.SetClientData("AmmoShape", Data)
+		ACF.SetClientData("Shape", SHAPE_FQN[Data] or SHAPE_FQN.Box)
 
 		if Data == "Cylinder" then
 			-- For drums: X = rounds per ring, Y is hidden, Z = layers
@@ -737,9 +777,11 @@ function ACF.CreateAmmoMenu(Menu)
 		local ToolData = ACF.GetAllClientData()
 		local Class = GetWeaponClass(ToolData)
 		if Class then
-			local CurrentAmmo = ACF.Classes.AmmoTypes.Get(ToolData.AmmoType)
-			if CurrentAmmo then
-				local BulletData = CurrentAmmo:ClientConvert(ToolData)
+			local AmmoClass = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", ToolData.AmmoType)
+			if AmmoClass then
+				local CurrentAmmo = AmmoClass()
+				SetupAmmo(CurrentAmmo, ToolData)
+				local BulletData = CurrentAmmo:ClientConvert()
 				UpdateProjectileCountLimits(ToolData, BulletData)
 			end
 		end
@@ -787,9 +829,9 @@ function ACF.CreateAmmoMenu(Menu)
 		local ToolData = ACF.GetAllClientData()
 		local Class = GetWeaponClass(ToolData)
 		if Class then
-			local CurrentAmmo = ACF.Classes.AmmoTypes.Get(ToolData.AmmoType)
+			local CurrentAmmo = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", ToolData.AmmoType) CurrentAmmo = CurrentAmmo and CurrentAmmo() SetupAmmo(CurrentAmmo, ToolData)
 			if CurrentAmmo then
-				local BulletData = CurrentAmmo:ClientConvert(ToolData)
+				local BulletData = CurrentAmmo:ClientConvert()
 				local CountX = ACF.GetClientNumber("CrateProjectilesX", 3)
 				local CountY = ACF.GetClientNumber("CrateProjectilesY", 3)
 				local CountZ = ACF.GetClientNumber("CrateProjectilesZ", 3)
@@ -847,7 +889,7 @@ function ACF.CreateAmmoMenu(Menu)
 		local Class = GetWeaponClass(ToolData)
 
 		if Class then
-			local Ammo = ACF.Classes.AmmoTypes.Get(ToolData.AmmoType)
+			local Ammo = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", ToolData.AmmoType)
 
 			if Ammo then
 				local BulletData = Ammo:ClientConvert(ToolData)
@@ -859,8 +901,8 @@ function ACF.CreateAmmoMenu(Menu)
 		end
 	end
 	]]--
-	function List:LoadEntries(Class)
-		ACF.LoadSortedList(self, GetAmmoList(Class), "Name", "SpawnIcon")
+	function List:LoadEntries(WeaponType)
+		ACF.LoadSortedList(self, GetAmmoList(WeaponType), "Name", "SpawnIcon")
 
 		-- Update shape selector visibility based on whether weapon is automatic
 		UpdateShapeSelector(Menu)
@@ -875,9 +917,9 @@ function ACF.CreateAmmoMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		Ammo = Data
+		Ammo = Data()
 
-		ACF.SetClientData("AmmoType", Data.ID)
+		ACF.SetClientData("AmmoType", Classes.GetTypeName(Data:GetType()))
 		Title:SetText(UpdateTitle())
 		Desc:SetText(Data.Description)
 

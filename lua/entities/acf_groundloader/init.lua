@@ -7,14 +7,11 @@ local StillTimeToLink            = 6 -- Must be relatively still for X seconds t
 local DistanceTravelledTolerance = 2
 local function TimeToBeLoadableAgain() return math.random(30, 45) end
 
-ENT.ACF_Limit = 2
 -- dbg cant be set in the same statement because shouldDbg isnt true until after that statement - hence the semicolon separator
 local shouldDbg, dbg = false; dbg = shouldDbg and function(...) print(...) end or function() end
 
 local ACF      		= ACF
 local Clock         = ACF.Utilities.Clock
-local Classes  		= ACF.Classes
-local Entities 		= Classes.Entities
 local Utilities   	= ACF.Utilities
 local WireIO      	= Utilities.WireIO
 
@@ -253,5 +250,3 @@ function ENT:ACF_PostMenuSpawn()
 end
 
 function ENT:GetCost() return 15 end
-
-Entities.Register()

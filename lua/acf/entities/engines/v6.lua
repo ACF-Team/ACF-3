@@ -1,109 +1,106 @@
 local ACF     = ACF
-local Engines = ACF.Classes.Engines
-
-
-Engines.Register("V6", {
-	Name		= "V6 Engine",
-	Description	= "#acf.descs.engines.v6"
-})
+local Classes = ACF.Classes
+Classes.DefineClass("ACF.Engines.V6", "ACF.Engines.BaseEngine", function()
+	CLASS.Name = "V6 Engine"
+end)
 
 do -- Petrol Engines
-	Engines.RegisterItem("3.6-V6", "V6", {
-		Name		 = "3.6L V6 Petrol",
-		Description	 = "#acf.descs.engines.v6.3_6",
-		Model		 = "models/engines/v6small.mdl",
-		Sound		 = "acf_base/engines/v6_petrolsmall.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "GenericPetrol",
-		Mass		 = 190,
-		Torque		 = 316,
-		FlywheelMass = 0.25,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.3.6-V6", "ACF.Engines.V6", function()
+		CLASS.Name		 = "3.6L V6 Petrol"
+		CLASS.Description	 = "#acf.descs.engines.v6.3_6"
+		CLASS.Model		 = "models/engines/v6small.mdl"
+		CLASS.Sound		 = "acf_base/engines/v6_petrolsmall.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
+		CLASS.Mass		 = 190
+		CLASS.Torque		 = 316
+		CLASS.FlywheelMass = 0.25
+		CLASS.RPM = {
 			Idle	= 700,
 			Limit	= 5000,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 105,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("6.2-V6", "V6", {
-		Name		 = "6.2L V6 Petrol",
-		Description	 = "#acf.descs.engines.v6.6_2",
-		Model		 = "models/engines/v6med.mdl",
-		Sound		 = "acf_base/engines/v6_petrolmedium.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "GenericPetrol",
-		Mass		 = 360,
-		Torque		 = 590,
-		FlywheelMass = 0.45,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.6.2-V6", "ACF.Engines.V6", function()
+		CLASS.Name		 = "6.2L V6 Petrol"
+		CLASS.Description	 = "#acf.descs.engines.v6.6_2"
+		CLASS.Model		 = "models/engines/v6med.mdl"
+		CLASS.Sound		 = "acf_base/engines/v6_petrolmedium.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
+		CLASS.Mass		 = 360
+		CLASS.Torque		 = 590
+		CLASS.FlywheelMass = 0.45
+		CLASS.RPM = {
 			Idle	= 800,
 			Limit	= 5000,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 105,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("12.0-V6", "V6", {
-		Name		 = "12.0L V6 Petrol",
-		Description	 = "#acf.descs.engines.v6.12_0",
-		Model		 = "models/engines/v6large.mdl",
-		Sound		 = "acf_base/engines/v6_petrollarge.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "GenericPetrol",
-		Mass		 = 675,
-		Torque		 = 1806,
-		FlywheelMass = 4,
+	Classes.DefineClass("ACF.Engines.12.0-V6", "ACF.Engines.V6", function()
+		CLASS.Name		 = "12.0L V6 Petrol"
+		CLASS.Description	 = "#acf.descs.engines.v6.12_0"
+		CLASS.Model		 = "models/engines/v6large.mdl"
+		CLASS.Sound		 = "acf_base/engines/v6_petrollarge.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
+		CLASS.Mass		 = 675
+		CLASS.Torque		 = 1806
+		CLASS.FlywheelMass = 4
 		RPM = {
 			Idle	= 600,
 			Limit	= 3800,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 105,
-		},
-	})
+		}
+	end)
 end
 
 do -- Diesel Engines
-	Engines.RegisterItem("5.2-V6", "V6", {
-		Name		 = "5.2L V6 Diesel",
-		Description	 = "#acf.descs.engines.v6.5_2",
-		Model		 = "models/engines/v6med.mdl",
-		Sound		 = "acf_base/engines/i5_dieselmedium.wav",
-		Fuel		 = { Diesel = true },
-		Type		 = "GenericDiesel",
-		Mass		 = 520,
-		Torque		 = 606,
-		FlywheelMass = 0.8,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.5.2-V6", "ACF.Engines.V6", function()
+		CLASS.Name		 = "5.2L V6 Diesel"
+		CLASS.Description	 = "#acf.descs.engines.v6.5_2"
+		CLASS.Model		 = "models/engines/v6med.mdl"
+		CLASS.Sound		 = "acf_base/engines/i5_dieselmedium.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
+		CLASS.Mass		 = 520
+		CLASS.Torque		 = 606
+		CLASS.FlywheelMass = 0.8
+		CLASS.RPM = {
 			Idle	= 650,
 			Limit	= 4300,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 105,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("15.0-V6", "V6", {
-		Name		 = "15.0L V6 Diesel",
-		Description	 = "#acf.descs.engines.v6.15_0",
-		Model		 = "models/engines/v6large.mdl",
-		Sound		 = "acf_base/engines/v6_diesellarge.wav",
-		Fuel		 = { Diesel = true },
-		Type		 = "GenericDiesel",
-		Mass		 = 900,
-		Torque		 = 2208,
-		FlywheelMass = 6.4,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.15.0-V6", "ACF.Engines.V6", function()
+		CLASS.Name		 = "15.0L V6 Diesel"
+		CLASS.Description	 = "#acf.descs.engines.v6.15_0"
+		CLASS.Model		 = "models/engines/v6large.mdl"
+		CLASS.Sound		 = "acf_base/engines/v6_diesellarge.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
+		CLASS.Mass		 = 900
+		CLASS.Torque		 = 2208
+		CLASS.FlywheelMass = 6.4
+		CLASS.RPM = {
 			Idle	= 400,
 			Limit	= 3100,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 105,
-		},
-	})
+		}
+	end)
 end
 
 ACF.SetCustomAttachment("models/engines/v6large.mdl", "driveshaft", Vector(2), Angle(0, 90, 90))

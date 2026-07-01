@@ -1,51 +1,50 @@
-local Guidances = ACF.Classes.Guidances
-local Guidance  = Guidances.Register("Dumb")
+local Classes 	= ACF.Classes
+Classes.DefineClass("ACF.Missiles.Guidance.Dumb", "ACF.Missiles.Guidance", function()
+	CLASS.Name = "Dumb"
 
-function Guidance:OnLoaded()
-	self.Name = self.ID -- Workaround
-end
+	function CLASS:Configure() end
 
-function Guidance:Configure() end
+	function CLASS:WriteDisplayConfig()
 
-function Guidance:WriteDisplayConfig()
-
-end
-
-if CLIENT then
-	Guidance.Description = "This guidance package is empty and provides no control."
-else
-	local Countermeasures = ACF.Classes.Countermeasures
-
-	function Guidance:GetCost()
-		return 0
 	end
 
-	function Guidance:OnLaunched() end
+	if CLIENT then
+		CLASS.Description = "This guidance package is empty and provides no control."
+	else
+		local Countermeasures = ACF.Classes.Countermeasures
 
-	function Guidance:PreGuidance(Missile)
-		if not self.AppliedSpawnCountermeasures then
-			Countermeasures.ApplySpawnCountermeasures(Missile, self)
-
-			self.AppliedSpawnCountermeasures = true
+		function CLASS:GetCost()
+			return 0
 		end
 
-		Countermeasures.ApplyCountermeasures(Missile, self)
-	end
+		function CLASS:OnLaunched() end
 
-	function Guidance:ApplyOverride(Missile)
-		if not self.Override then return end
+		function CLASS:PreGuidance(Missile)
+			if not self.AppliedSpawnCountermeasures then
+				Countermeasures.ApplySpawnCountermeasures(Missile, self)
 
-		local Override = self.Override:GetGuidanceOverride(Missile, self)
+				self.AppliedSpawnCountermeasures = true
+			end
 
-		if Override then
-			Override.ViewCone = self.ViewCone or 0
-			Override.ViewConeRad = math.rad(self.ViewCone)
-
-			return Override
+			Countermeasures.ApplyCountermeasures(Missile, self)
 		end
+
+		function CLASS:ApplyOverride(Missile)
+			if not self.Override then return end
+
+			local Override = self.Override:GetGuidanceOverride(Missile, self)
+
+			if Override then
+				Override.ViewCone = self.ViewCone or 0
+				Override.ViewConeRad = math.rad(self.ViewCone)
+
+				return Override
+			end
+		end
+
+		function CLASS:GetGuidance() return {} end
+
+		function CLASS:OnRemoved() end
 	end
 
-	function Guidance:GetGuidance() return {} end
-
-	function Guidance:OnRemoved() end
-end
+end)

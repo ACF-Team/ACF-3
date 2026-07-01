@@ -13,7 +13,7 @@ local function CookoffCrate(Entity)
 		Entity.Burning = nil
 
 		Entity:Detonate()
-	elseif Entity.BulletData.Type ~= "Refill" and Entity.RoundData then -- Spew bullets out everywhere
+	elseif Entity.RoundData then -- Spew bullets out everywhere
 		local BulletData = Entity.BulletData
 		local VolumeRoll = math.Rand(0, 150) > math.min(BulletData.RoundVolume ^ 0.5, 150 * 0.25) -- The larger the round volume, the less the chance of detonation (25% chance at minimum)
 		local AmmoRoll   = math.Rand(0, 1) <= Entity.Ammo / math.max(Entity.Capacity, 1) -- The fuller the crate, the greater the chance of detonation

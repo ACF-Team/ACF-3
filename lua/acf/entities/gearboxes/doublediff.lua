@@ -1,5 +1,5 @@
 local ACF       = ACF
-local Gearboxes = ACF.Classes.Gearboxes
+local Classes   = ACF.Classes
 
 -- Weight
 local GearDDSW = 45
@@ -14,37 +14,37 @@ local function InitGearbox(Gearbox)
 	Gearbox:SetBodygroup(1, 1)
 end
 
-Gearboxes.Register("DoubleDiff", {
-	Name		= "Double Differential",
-	CreateMenu	= ACF.ManualGearboxMenu,
-	Gears = {
+Classes.DefineClass("ACF.Gearboxes.DoubleDiff", "ACF.Gearboxes.BaseGearbox", function()
+	CLASS.Name		= "Double Differential"
+	CLASS.CreateMenu	= ACF.ManualGearboxMenu
+	CLASS.Gears = {
 		Min	= 0,
 		Max	= 1,
-	},
-	OnSpawn = InitGearbox,
-	OnUpdate = InitGearbox,
-	SetupInputs = function(_, List)
+	}
+	CLASS.OnSpawn = InitGearbox
+	CLASS.OnUpdate = InitGearbox
+	CLASS.SetupInputs = function(_, List)
 		List[#List + 1] = "Steer Rate (From -1 to 1, defines the rate of steering.\nSetting it outside the +-0.5 bounds will produce pivot steering.)"
-	end,
-	OnLast = function(Gearbox)
+	end
+	CLASS.OnLast = function(Gearbox)
 		Gearbox.DoubleDiff = nil
 		Gearbox.SteerRate  = nil
 
 		Gearbox:SetBodygroup(1, 0)
-	end,
-})
+	end
+end)
 
 do -- Transaxial Gearboxes
-	Gearboxes.RegisterItem("DoubleDiff-T", "DoubleDiff", {
-		Name		= "Double Differential",
-		Description	= "A light duty regenerative steering transmission.",
-		Model		= "models/engines/transaxial_s.mdl",
-		Mass		= GearDDSW,
-		Switch		= 0.2,
-		MaxTorque	= GearDDST,
-		DualClutch	= true,
-		Preview = {
+	Classes.DefineClass("ACF.Gearboxes.DoubleDiff-T", "ACF.Gearboxes.DoubleDiff", function()
+		CLASS.Name		= "Double Differential"
+		CLASS.Description	= "A light duty regenerative steering transmission."
+		CLASS.Model		= "models/engines/transaxial_s.mdl"
+		CLASS.Mass		= GearDDSW
+		CLASS.Switch		= 0.2
+		CLASS.MaxTorque	= GearDDST
+		CLASS.DualClutch	= true
+		CLASS.Preview = {
 			FOV = 85,
-		},
-	})
+		}
+	end)
 end

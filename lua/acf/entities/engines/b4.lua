@@ -1,87 +1,86 @@
 local ACF     = ACF
-local Engines = ACF.Classes.Engines
+local Classes = ACF.Classes
 
-
-Engines.Register("B4", {
-	Name = "Flat 4 Engine",
-})
+Classes.DefineClass("ACF.Engines.B4", "ACF.Engines.BaseEngine", function()
+	CLASS.Name = "Flat 4 Engine"
+end)
 
 do
-	Engines.RegisterItem("1.4-B4", "B4", {
-		Name		 = "1.4L Flat 4 Petrol",
-		Description	 = "#acf.descs.engines.b4.1_4",
-		Model		 = "models/engines/b4small.mdl",
-		Sound		 = "acf_base/engines/b4_petrolsmall.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "GenericPetrol",
-		Mass		 = 60,
-		Torque		 = 131,
-		FlywheelMass = 0.06,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.1.4-B4", "ACF.Engines.B4", function()
+		CLASS.Name		 = "1.4L Flat 4 Petrol"
+		CLASS.Description	 = "#acf.descs.engines.b4.1_4"
+		CLASS.Model		 = "models/engines/b4small.mdl"
+		CLASS.Sound		 = "acf_base/engines/b4_petrolsmall.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
+		CLASS.Mass		 = 60
+		CLASS.Torque		 = 131
+		CLASS.FlywheelMass = 0.06
+		CLASS.RPM = {
 			Idle	= 600,
 			Limit	= 4500,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 80,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("2.1-B4", "B4", {
-		Name		 = "2.1L Flat 4 Petrol",
-		Description	 = "#acf.descs.engines.b4.2_1",
-		Model		 = "models/engines/b4small.mdl",
-		Sound		 = "acf_base/engines/b4_petrolmedium.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "GenericPetrol",
-		Mass		 = 125,
-		Torque		 = 225,
-		FlywheelMass = 0.15,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.2.1-B4", "ACF.Engines.B4", function()
+		CLASS.Name		 = "2.1L Flat 4 Petrol"
+		CLASS.Description	 = "#acf.descs.engines.b4.2_1"
+		CLASS.Model		 = "models/engines/b4small.mdl"
+		CLASS.Sound		 = "acf_base/engines/b4_petrolmedium.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
+		CLASS.Mass		 = 125
+		CLASS.Torque		 = 225
+		CLASS.FlywheelMass = 0.15
+		CLASS.RPM = {
 			Idle	= 700,
-			Limit	= 5000,
-		},
-		Preview = {
-			FOV = 80,
-		},
-	})
+			Limit	= 5000
+		}
+		CLASS.Preview = {
+			FOV = 80
+		}
+	end)
 
-	Engines.RegisterItem("2.4-B4", "B4", {
-		Name		 = "2.4L Flat 4 Multifuel",
-		Description	 = "#acf.descs.engines.b4.2_4",
-		Model		 = "models/engines/b4small.mdl",
-		Sound		 = "acf_extra/vehiclefx/engines/coh/ba11.wav",
-		Fuel		 = { Petrol = true, Diesel = true },
-		Type		 = "GenericDiesel",
-		Mass		 = 135,
-		Torque		 = 310,
-		FlywheelMass = 0.4,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.2.4-B4", "ACF.Engines.B4", function()
+		CLASS.Name		 = "2.4L Flat 4 Multifuel"
+		CLASS.Description	 = "#acf.descs.engines.b4.2_4"
+		CLASS.Model		 = "models/engines/b4small.mdl"
+		CLASS.Sound		 = "acf_extra/vehiclefx/engines/coh/ba11.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true, ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
+		CLASS.Mass		 = 135
+		CLASS.Torque		 = 310
+		CLASS.FlywheelMass = 0.4
+		CLASS.RPM = {
 			Idle	= 550,
-			Limit	= 2800,
-		},
-		Preview = {
-			FOV = 80,
-		},
-	})
+			Limit	= 2800
+		}
+		CLASS.Preview = {
+			FOV = 80
+		}
+	end)
 
-	Engines.RegisterItem("3.2-B4", "B4", {
-		Name		 = "3.2L Flat 4 Petrol",
-		Description	 = "#acf.descs.engines.b4.3_2", -- Ok
-		Model		 = "models/engines/b4med.mdl",
-		Sound		 = "acf_base/engines/b4_petrollarge.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "GenericPetrol",
-		Mass		 = 210,
-		Torque		 = 315,
-		FlywheelMass = 0.15,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.3.2-B4", "ACF.Engines.B4", function()
+		CLASS.Name		 = "3.2L Flat 4 Petrol"
+		CLASS.Description	 = "#acf.descs.engines.b4.3_2" -- Ok
+		CLASS.Model		 = "models/engines/b4med.mdl"
+		CLASS.Sound		 = "acf_base/engines/b4_petrollarge.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
+		CLASS.Mass		 = 210
+		CLASS.Torque		 = 315
+		CLASS.FlywheelMass = 0.15
+		CLASS.RPM = {
 			Idle	= 900,
 			Limit	= 6500
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 85,
-		},
-	})
+		}
+	end)
 end
 
 ACF.SetCustomAttachment("models/engines/b4med.mdl", "driveshaft", Vector(), Angle(0, 0, 90))

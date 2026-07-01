@@ -12,7 +12,7 @@ E2Lib.RegisterExtension("acf", true)
 --===============================================================================================--
 
 local ACF       = ACF
-local AmmoTypes = ACF.Classes.AmmoTypes
+local Classes   = ACF.Classes
 local Clock     = ACF.Utilities.Clock
 local Notify    = ACF.Utilities.Notify
 local match     = string.match
@@ -167,7 +167,7 @@ e2function number entity:acfIsAmmo()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	return this.IsACFAmmoCrate and 1 or 0
+	return this.IsACFAmmo and 1 or 0
 end
 
 -- Returns 1 if the entity is an ACF fuel tank
@@ -175,7 +175,7 @@ e2function number entity:acfIsFuel()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	return this.IsACFFuelTank and 1 or 0
+	return this.IsACFFueltank and 1 or 0
 end
 
 -- Returns the capacity of an acf ammo crate or fuel tank
@@ -989,7 +989,7 @@ e2function number entity:acfSpread()
 
 	local Spread = (this.GetSpread and this:GetSpread()) or this.Spread or 0
 
-	if this.BulletData and this.BulletData.Type == "FL" then
+	if this.BulletData and this.BulletData.AmmoType == "ACF.Ammunition.FL" then
 		return Spread + (this.BulletData.FlechetteSpread or 0)
 	end
 
@@ -1045,7 +1045,7 @@ e2function string entity:acfRoundType()
 
 	local BulletData = this.BulletData
 
-	return BulletData and BulletData.Id or ""
+	return BulletData and BulletData.WeaponType or ""
 end
 
 -- Returns the type of ammo in a crate or gun
@@ -1055,7 +1055,7 @@ e2function string entity:acfAmmoType()
 
 	local BulletData = this.BulletData
 
-	return BulletData and BulletData.Type or ""
+	return BulletData and BulletData.AmmoType or ""
 end
 
 -- Returns the caliber of an ammo
@@ -1160,7 +1160,7 @@ e2function number entity:acfPenetration()
 	if RestrictInfo(self, this) then return 0 end
 
 	local BulletData = this.BulletData
-	local AmmoType   = BulletData and AmmoTypes.Get(BulletData.Type)
+	local AmmoType   = BulletData and Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.AmmoType)
 
 	if not AmmoType then return 0 end
 
@@ -1176,7 +1176,7 @@ e2function number entity:acfBlastRadius()
 	if RestrictInfo(self, this) then return 0 end
 
 	local BulletData = this.BulletData
-	local AmmoType   = BulletData and AmmoTypes.Get(BulletData.Type)
+	local AmmoType   = BulletData and Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.AmmoType)
 
 	if not AmmoType then return 0 end
 

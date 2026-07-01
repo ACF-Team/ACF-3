@@ -1,14 +1,24 @@
 local ACF      = ACF
 local Classes  = ACF.Classes
-local Missiles = Classes.Missiles
-local Racks    = Classes.Racks
+
+local MISSILE_BASE = "ACF.Missiles.BaseMissile"
+local RACK_BASE    = "ACF.Racks.BaseRack"
+
+-- Racks/missiles are V2 classes addressed by short id (FQN suffix, or CLASS.ID for missile groups).
+local function GetRackClass(ID)
+	local Direct = Classes.GetSubtypeByName(RACK_BASE, ID)
+	if Direct then return Direct end
+	for _, Class in ipairs(Classes.GetSubtypesAsList(RACK_BASE)) do
+		if Classes.GetTypeName(Class):match("[^.]+$") == ID then return Class end
+	end
+end
 
 local function GetRackList(Data)
 	local Result = {}
 
 	if Data then
 		for Rack in pairs(Data.Racks) do
-			local Info = Racks.Get(Rack)
+			local Info = GetRackClass(Rack)
 
 			if Info then
 				Result[Rack] = Info
@@ -55,7 +65,7 @@ local function GetRackText(Data)
 end
 
 local function CreateMenu(Menu)
-	local Entries = Missiles.GetEntries()
+	local Entries = Classes.GetChildren(Classes.GetTypeByName(MISSILE_BASE))
 
 	Menu:AddTitle("Missile Settings")
 
@@ -100,9 +110,9 @@ local function CreateMenu(Menu)
 
 		MissileClass:SetText(Data.Description)
 
-		ACF.LoadSortedList(MissileList, Data.Items, "Caliber", "Model")
+		ACF.LoadSortedList(MissileList, Classes.GetChildren(Data), "Caliber", "Model")
 
-		AmmoList:LoadEntries(Data.ID)
+		AmmoList:LoadEntries(Data:GetType())
 	end
 
 	function MissileList:OnSelect(Index, _, Data)
@@ -111,7 +121,7 @@ local function CreateMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		ACF.SetClientData("Weapon", Data.ID)
+		ACF.SetClientData("Weapon", Classes.GetTypeName(Data))
 		ACF.SetClientData("Destiny", Data.Destiny or "Missiles")
 
 		ACF.LoadSortedList(RackList, GetRackList(Data), "MagSize", "Model")
@@ -135,7 +145,7 @@ local function CreateMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		ACF.SetClientData("Rack", Data.ID)
+		ACF.SetClientData("Rack", Classes.GetTypeName(Data))
 
 		RackTitle:SetText(Data.Name)
 		RackDesc:SetText(Data.Description)

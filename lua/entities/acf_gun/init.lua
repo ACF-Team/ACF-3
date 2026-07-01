@@ -15,17 +15,15 @@ include("shared.lua")
 -- Local Vars -----------------------------------
 
 local ACF         	= ACF
-local Compatibility = ACF.Compatibility
 local Contraption 	= ACF.Contraption
 local Classes     	= ACF.Classes
-local AmmoTypes   	= Classes.AmmoTypes
 local Utilities   	= ACF.Utilities
 local Clock       	= Utilities.Clock
 local Sounds      	= Utilities.Sounds
 local TimerCreate 	= timer.Create
 local TimerRemove 	= timer.Remove
 local TraceLine 	= util.TraceLine
-local EMPTY       	= { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
+local EMPTY       	= { AmmoType = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
 local Debug		 	= ACF.Debug
 
 local ENTITY  = FindMetaTable("Entity")
@@ -221,7 +219,7 @@ do -- Random timer crew stuff
 		local SelfTbl  = ENTITY.GetTable(self)
 
 		if SelfTbl.IsBelted then return end -- Filter out belt feds (usually used as secondaries)
-		if SelfTbl.Weapon == "SL" then return end -- Skip for smoke launchers
+		if SelfTbl.Weapon == "ACF.Guns.SmokeLauncher" then return end -- Skip for smoke launchers
 
 		local BreechRef = SelfTbl.BreechReference
 		if not IsValid(BreechRef) then return false end
@@ -245,81 +243,19 @@ do -- Random timer crew stuff
 end
 
 do -- Spawn and Update functions --------------------------------
-	local WireIO    = Utilities.WireIO
-	local Entities  = Classes.Entities
-	local Weapons   = Classes.Weapons
-
-	local Inputs = {
-		"Fire (Attempts to fire the weapon.)",
-		"Unload (Forces the weapon to empty itself)",
-		"Reload (Forces the weapon to reload itself.)"
-	}
-	local Outputs = {
-		"Ready (Returns 1 if the weapon can be fired.)",
-		"Status (Returns the current state of the weapon.) [STRING]",
-		"Ammo Type (Returns the name of the currently loaded ammo type.) [STRING]",
-		"Shots Left (Returns the amount of rounds left in the breech or magazine.)",
-		"Total Ammo (Returns the amount of rounds available for this weapon.)",
-		"Rate of Fire (Returns the amount of rounds per minute the weapon can fire.)",
-		"Reload Time (Returns the amount of time in seconds it'll take to reload the weapon.)",
-		"Mag Reload Time (Returns the amount of time in seconds it'll take to reload the magazine.)",
-		"Projectile Mass (Returns the mass in grams of the currently loaded projectile.)",
-		"Muzzle Velocity (Returns the speed in m/s of the currently loaded projectile.)",
-		"In Air (Returns 1 if the GLATGM is airborne.)",
-		"Entity (The weapon itself.) [ENTITY]",
-	}
-
-	local function VerifyData(Data)
-		if not isstring(Data.Weapon) then
-			Data.Weapon = Data.Id
+	-- Static wire IO is declared on ENT (shared.lua: ACF_StaticWireInputs/Outputs). Caliber-dependent
+	-- fuze and the rate-of-fire input are appended here when wire functions are (re)built.
+	function ENT:ACF_SetupWireIO(Inputs, _)
+		if (self:ACF_GetUserVar("Weapon").Caliber or 0) >= ACF.MinFuzeCaliber then
+			Inputs[#Inputs + 1] = "Fuze (Sets the delay in seconds in which explosive rounds will detonate after leaving the weapon.)"
 		end
 
-		local Class = Classes.GetGroup(Weapons, Data.Weapon)
-
-		-- Backwards compatibility for pre-scalable guns
-		if not Class then
-			local AliasData = Compatibility.Weapons.CheckGroupItem(Data.Weapon)
-
-			if AliasData then
-				Data.Weapon  = AliasData.ID
-				Data.Caliber = AliasData.Caliber or Data.Caliber
-
-				Class = Classes.GetGroup(Weapons, Data.Weapon)
-			end
-		end
-
-		if not Class then
-			Class = Weapons.Get("C")
-			Data.Destiny = "Weapons"
-			Data.Weapon  = "C"
-			Data.Caliber = 50
-		end
-
-		-- Verifying and clamping caliber value
-		if Class.IsScalable then
-			local Weapon = Weapons.GetItem(Class.ID, Data.Weapon)
-			if Weapon then
-				Data.Weapon  = Class.ID
-				Data.Caliber = Weapon.Caliber
-			end
-			local Bounds  = Class.Caliber
-			local Caliber = ACF.CheckNumber(Data.Caliber, Bounds.Base)
-			Data.Caliber = math.Clamp(Caliber, Bounds.Min, Bounds.Max)
-		end
-
-		-- For breech locations
-		if not Data.BreechIndex then
-			Data.BreechIndex = 1
-		end
-
-		do -- External verifications
-			if Class.VerifyData then
-				Class.VerifyData(Data, Class)
-			end
-
-			hook.Run("ACF_OnVerifyData", "acf_gun", Data, Class)
-		end
+		Inputs[#Inputs + 1] = "Rate of Fire (Sets the rate of fire of the weapon in rounds per minute)"
 	end
+
+	-- Field-level sanitisation happens in the serializer; legacy/dupe format conversion happens in the
+	-- compat patches (see compatibility/acf3/guns.lua). The weapon instance self-validates (clamps
+	-- caliber to its CaliberLimits) in ACF_PostUpdateEntityData.
 
 	local function GetSound(Caliber, Class, Weapon)
 		local Result = Weapon and Weapon.Sound or Class.Sound
@@ -342,7 +278,7 @@ do -- Spawn and Update functions --------------------------------
 	local function GetMass(Caliber, Class, Weapon)
 		if Weapon then return Weapon.Mass end
 
-		local Factor = Caliber / Class.Caliber.Base
+		local Factor = Caliber / Class.CaliberLimits.Base
 
 		return math.Round(Class.Mass * Factor ^ 3) -- 3d space so scaling has a cubing effect
 	end
@@ -350,7 +286,7 @@ do -- Spawn and Update functions --------------------------------
 	local function UpdateWeapon(Entity, Data, Class, Weapon)
 		local Model   = Weapon and Weapon.Model or Class.Model
 		local Caliber = Weapon and Weapon.Caliber or Data.Caliber
-		local Scale   = Weapon and 1 or (Caliber / Class.Caliber.Base * (Class.ScaleFactor or 1)) -- Set scale to 1 if Weapon exists (non scaled lmao), or relative caliber otherwise
+		local Scale   = Weapon and 1 or (Caliber / Class.CaliberLimits.Base * (Class.ScaleFactor or 1)) -- Set scale to 1 if Weapon exists (non scaled lmao), or relative caliber otherwise
 		local Cyclic  = ACF.GetWeaponValue("Cyclic", Caliber, Class, Weapon)
 		local MagSize = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 1
 
@@ -359,17 +295,15 @@ do -- Spawn and Update functions --------------------------------
 		Entity:SetScaledModel(Model)
 		Entity:SetScale(Scale)
 
-		-- Storing all the relevant information on the entity for duping
-		for _, V in ipairs(Entity.DataStore) do
-			Entity[V] = Data[V]
-		end
+		-- Flat mirrors of the serialized data the rest of the entity / other modules read directly.
+		Entity.Weapon       = Classes.GetTypeName(Class)
 
 		Entity.Name         = Weapon and Weapon.Name or (Caliber .. "mm " .. Class.Name)
 		Entity.ShortName    = Weapon and Weapon.ID or (Caliber .. "mm" .. Class.ID)
 		Entity.EntType      = Class.Name
 		Entity.ClassData    = Class
-		Entity.Class        = Class.ID -- Needed for custom killicons
-		Entity.WeaponData	= Data.WeaponData
+		Entity.Class        = Classes.GetTypeName(Class:GetType())
+		Entity.WeaponData	= Weapon
 		Entity.Caliber      = Caliber
 		Entity.MagReload    = ACF.GetWeaponValue("MagReload", Caliber, Class, Weapon)
 		Entity.IsBelted		= ACF.GetWeaponValue("IsBelted", Caliber, Class, Weapon)
@@ -390,10 +324,10 @@ do -- Spawn and Update functions --------------------------------
 		-- Breech information
 		Entity.BreechIndex  = Data.BreechIndex or 1
 		local BreechConfigs = Entity.ClassData.BreechConfigs
-		if BreechConfigs then
-			-- If a custom breech config is specified, use it
+		local BreechConfig  = BreechConfigs and BreechConfigs.Locations[Entity.BreechIndex]
+		if BreechConfig and BreechConfig.LPos then
+			-- If a (valid) custom breech config is specified, use it
 			local BreechScale = (Caliber / 10) / BreechConfigs.MeasuredCaliber
-			local BreechConfig = BreechConfigs.Locations[Entity.BreechIndex] or {}
 			Entity.BreechPos = BreechConfig.LPos * BreechScale
 			Entity.BreechAng = BreechConfig.LAng
 			Entity.BreechWidth = BreechConfig.Width * BreechScale
@@ -407,9 +341,6 @@ do -- Spawn and Update functions --------------------------------
 		end
 
 		Entity.OverlayErrors = {}
-
-		WireIO.SetupInputs(Entity, Inputs, Data, Class, Weapon)
-		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Weapon)
 
 		-- Set NWvars
 		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
@@ -444,135 +375,65 @@ do -- Spawn and Update functions --------------------------------
 		end
 	end
 
-	hook.Add("ACF_OnSetupInputs", "ACF Weapon Fuze", function(Entity, List)
-		if Entity:GetClass() ~= "acf_gun" then return end
-		if Entity.Caliber < ACF.MinFuzeCaliber then return end
-
-		List[#List + 1] = "Fuze (Sets the delay in seconds in which explosive rounds will detonate after leaving the weapon.)"
-	end)
-
-	hook.Add("ACF_OnSetupInputs", "ACF Cyclic ROF", function(Entity, List)
-		if Entity:GetClass() ~= "acf_gun" then return end
-
-		List[#List + 1] = "Rate of Fire (Sets the rate of fire of the weapon in rounds per minute)"
-	end)
-
 	-------------------------------------------------------------------------------
 
-	function ACF.MakeWeapon(Player, Pos, Angle, Data)
-		VerifyData(Data)
+	-- Spawn-only initialisation (runs before Entity:Spawn(), so the model is ready for physics).
+	function ENT:ACF_PreSpawn(_, _, _, ClientData)
+		self.ACF                = {}
+		self.BarrelFilter       = { self }
+		self.State              = "Empty"
+		self.Crates             = {}
+		self.CurrentShot        = 0
+		self.TotalAmmo          = 0
+		self.BulletData         = EMPTY
+		self.TurretLink         = false
+		self.HasInitialLoaded   = false
+		self.ParentState        = 0
 
-		local Class = Classes.GetGroup(Weapons, Data.Weapon)
-		local Limit = Class.LimitConVar.Name
+		-- ClientData isn't verified yet here; resolve defensively for the pre-spawn model.
+		local Class = Classes.GetSubtypeByName("ACF.Weapons.BaseWeapon", ClientData.Weapon)
+			or Classes.GetSubtypeByName("ACF.Weapons.BaseWeapon", "ACF.Guns.Cannon")
 
-		if not Player:CheckLimit(Limit) then return false end -- Check gun spawn limits
+		Contraption.SetModel(self, Class.Model)
 
-		local Weapon   = Weapons.GetItem(Class.ID, Data.Weapon)
-		local CanSpawn = hook.Run("ACF_PreSpawnEntity", "acf_gun", Player, Data, Class, Weapon)
-
-		if CanSpawn == false then return false end
-
-		local Entity = ents.Create("acf_gun")
-
-		if not IsValid(Entity) then return end
-
-		Player:AddCleanup(Class.Cleanup, Entity)
-		Player:AddCount(Limit, Entity)
-
-		Entity.ACF			= {}
-
-		Contraption.SetModel(Entity, Weapon and Weapon.Model or Class.Model)
-
-		Entity:SetAngles(Angle)
-		Entity:SetPos(Pos)
-		Entity:Spawn()
-
-		Entity.BarrelFilter = { Entity }
-		Entity.State        = "Empty"
-		Entity.Crates       = {}
-		Entity.CurrentShot  = 0
-		Entity.TotalAmmo    = 0
-		Entity.BulletData   = EMPTY
-		Entity.TurretLink	= false
-		Entity.HasInitialLoaded = false
-		Entity.DataStore    = Entities.GetArguments("acf_gun")
-		Entity.ParentState  = 0
-
-		duplicator.ClearEntityModifier(Entity, "mass")
-
-		UpdateWeapon(Entity, Data, Class, Weapon)
-
-		WireLib.TriggerOutput(Entity, "Status", "Empty")
-		WireLib.TriggerOutput(Entity, "Ammo Type", "Empty")
-		WireLib.TriggerOutput(Entity, "Projectile Mass", 1000)
-		WireLib.TriggerOutput(Entity, "Muzzle Velocity", 1000)
-
-		if Class.OnSpawn then
-			Class.OnSpawn(Entity, Data, Class, Weapon)
-		end
-
-		ACF.AugmentedTimer(function(Config) ENT_UpdateLoadMod(Entity, Config) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
-		ACF.AugmentedTimer(function(Config) ENT_UpdateAccuracyMod(Entity, Config) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
-		ACF.AugmentedTimer(function(Config) Entity:CheckBreechClipping(Config) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2})
-		ACF.AugmentedTimer(function(Config) Entity:UpdateRotationFilter(Config) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2})
-
-		hook.Run("ACF_OnSpawnEntity", "acf_gun", Entity, Data, Class, Weapon)
-
-		-- TODO: Wow this is weird, but at least now the timer will clean itself up...
-		local TimerName = "ACF Ammo Left " .. ENTITY.EntIndex(Entity)
-		TimerCreate(TimerName, 1, 0, function()
-			if not IsValid(Entity) then
-				TimerRemove(TimerName)
-				return
-			end
-
-			UpdateTotalAmmo(Entity)
-		end)
-
-		return Entity
+		duplicator.ClearEntityModifier(self, "mass")
 	end
 
-	Entities.Register("acf_gun", ACF.MakeWeapon, "Weapon", "Caliber", "BreechIndex")
+	function ENT.ACF_CheckSpawnLimit(Player)
+		return Player:CheckLimit("_acf_weapon")
+	end
 
-	ACF.RegisterLinkSource("acf_gun", "Crates")
+	function ENT:ACF_PreUpdateEntityData()
+		-- Don't reconfigure mid-fire.
+		self.Firing = false
 
-	------------------- Updating ---------------------
-
-	function ENT:Update(Data)
-		if self.Firing then return false, "Stop firing before updating the weapon!" end
-
-		VerifyData(Data)
-
-		local Class    = Classes.GetGroup(Weapons, Data.Weapon)
-		local Weapon   = Weapons.GetItem(Class.ID, Data.Weapon)
-		local OldClass = self.ClassData
-
-		local CanUpdate, Reason = hook.Run("ACF_PreUpdateEntity", "acf_gun", self, Data, Class, Weapon)
-
-		if CanUpdate == false then return CanUpdate, Reason end
-
-		if self.State ~= "Empty" then
+		-- Empty the breech before reconfiguring (no-op on a fresh spawn). Uses the old config.
+		if self.State and self.State ~= "Empty" then
 			self:Unload()
 		end
+	end
 
-		if OldClass.OnLast then
-			OldClass.OnLast(self, OldClass)
+	function ENT:ACF_PostUpdateEntityData()
+		local Weapon  = self:GetWeapon()
+		local Caliber = self:ACF_GetUserVar("Weapon").Caliber
+
+		-- The Weapon field deserializes from its FQN with a default caliber; push the requested
+		-- caliber onto the instance, then let it self-validate (clamps to the weapon's CaliberLimits).
+		if Weapon.Caliber ~= nil and Caliber then
+			Weapon.Caliber = Caliber
 		end
 
-		hook.Run("ACF_OnEntityLast", "acf_gun", self, OldClass)
+		Weapon:VerifyData()
 
-		ACF.SaveEntity(self)
+		-- Reflect the clamped caliber back onto the entity data so UpdateWeapon (and later updates) use it.
+		self:ACF_SetUserVar("Caliber", Weapon.Caliber)
 
-		UpdateWeapon(self, Data, Class, Weapon)
+		local Class      = Weapon:GetType()
+		local WeaponItem = not Class.IsScalable and Weapon or nil
 
-		ACF.RestoreEntity(self)
+		UpdateWeapon(self, self.ACF_LiveData, Class, WeaponItem)
 
-		if Class.OnUpdate then
-			Class.OnUpdate(self, Data, Class, Weapon)
-		end
-
-		hook.Run("ACF_OnUpdateEntity", "acf_gun", self, Data, Class, Weapon)
-
+		-- A reconfigure invalidates existing links (no-op on a fresh spawn).
 		if next(self.Crates) then
 			for Crate in pairs(self.Crates) do
 				self:Unlink(Crate)
@@ -584,9 +445,37 @@ do -- Spawn and Update functions --------------------------------
 				self:Unlink(Crew)
 			end
 		end
-
-		return true, "Weapon updated successfully!"
 	end
+
+	function ENT:ACF_PostSpawn(Player, _, _, _)
+		-- Count toward the weapon spawn limit checked by ENT.ACF_CheckSpawnLimit.
+		if IsValid(Player) then
+			Player:AddCount("_acf_weapon", self)
+		end
+
+		WireLib.TriggerOutput(self, "Status", "Empty")
+		WireLib.TriggerOutput(self, "Ammo Type", "Empty")
+		WireLib.TriggerOutput(self, "Projectile Mass", 1000)
+		WireLib.TriggerOutput(self, "Muzzle Velocity", 1000)
+
+		ACF.AugmentedTimer(function(Config) ENT_UpdateLoadMod(self, Config) end, function() return IsValid(self) end, nil, {MinTime = 0.5, MaxTime = 1})
+		ACF.AugmentedTimer(function(Config) ENT_UpdateAccuracyMod(self, Config) end, function() return IsValid(self) end, nil, {MinTime = 0.5, MaxTime = 1})
+		ACF.AugmentedTimer(function(Config) self:CheckBreechClipping(Config) end, function() return IsValid(self) end, nil, {MinTime = 1, MaxTime = 2})
+		ACF.AugmentedTimer(function(Config) self:UpdateRotationFilter(Config) end, function() return IsValid(self) end, nil, {MinTime = 1, MaxTime = 2})
+
+		-- TODO: Wow this is weird, but at least now the timer will clean itself up...
+		local TimerName = "ACF Ammo Left " .. ENTITY.EntIndex(self)
+		TimerCreate(TimerName, 1, 0, function()
+			if not IsValid(self) then
+				TimerRemove(TimerName)
+				return
+			end
+
+			UpdateTotalAmmo(self)
+		end)
+	end
+
+	ACF.RegisterLinkSource("acf_gun", "Crates")
 end ---------------------------------------------
 
 do -- Metamethods --------------------------------
@@ -630,18 +519,22 @@ do -- Metamethods --------------------------------
 
 			local EntityTbl = ENTITY.GetTable(Entity)
 			-- Roughly: Crate must be a possible propagator, with exceptions for machineguns and aircraft
-			if EntityTbl.IsBelted and EntityTbl.Weapon ~= "MG" and not ENTITY.CFW_GetContraption(Entity):ACF_IsAircraft() and ENT_FindPropagator(Entity, CrateParent) ~= CrateParent then return false end
+			if EntityTbl.IsBelted and EntityTbl.Weapon ~= "ACF.Guns.Machinegun" and not ENTITY.CFW_GetContraption(Entity):ACF_IsAircraft() and ENT_FindPropagator(Entity, CrateParent) ~= CrateParent then return false end
 			return true
 		end
 
 		ACF.RegisterClassPreLinkCheck("acf_gun", "acf_ammo", function(This, Crate)
 			if This.Crates[Crate] then return false, "This weapon is already linked to this crate." end
 			if Crate.Weapons[This] then return false, "This weapon is already linked to this crate." end
-			if This.Weapon ~= Crate.Weapon then return false, "Wrong ammo type for this weapon." end
-			if This.Caliber ~= Crate.Caliber then return false, "Wrong ammo type for this weapon." end
+
+			-- The crate must be built for a weapon compatible with this one (type + caliber).
+			local GunWeapon, CrateWeapon = This:GetWeapon(), Crate:GetWeapon()
+			if not (GunWeapon and CrateWeapon and GunWeapon:WeaponEquals(CrateWeapon)) then
+				return false, "Wrong ammo type for this weapon."
+			end
 
 			local Blacklist = Crate.RoundData.Blacklist
-			if Blacklist[This.Class] then
+			if Blacklist[This.Weapon] then
 				return false, "The ammo type in this crate cannot be used for this weapon."
 			end
 
@@ -899,7 +792,7 @@ do -- Metamethods --------------------------------
 
 			local Velocity = ENTITY.GetVelocity(ENTITY.GetAncestor(self))
 			local BulletData = SelfTbl.BulletData
-			local AmmoType = AmmoTypes.Get(BulletData.Type)
+			local AmmoType = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.AmmoType)
 
 			if BulletData.CanFuze and SelfTbl.SetFuze then
 				local Variance = 0.00005 * math.Rand(-1, 1) * (math.max(0, 50 - SelfTbl.Caliber) + 30)
@@ -935,7 +828,7 @@ do -- Metamethods --------------------------------
 
 			-- Set in air if GLATGM is used
 			local GLATGM = AmmoType:Create(self, BulletData)
-			if IsValid(GLATGM) and AmmoType.ID == "GLATGM" then
+			if IsValid(GLATGM) and AmmoType.ID == "ACF.Ammunition.GLATGM" then
 				WireLib.TriggerOutput(self, "In Air", 1)
 				GLATGM:CallOnRemove("GunResetInAir", function()
 					if IsValid(self) then WireLib.TriggerOutput(self, "In Air", 0) end
@@ -1091,7 +984,7 @@ do -- Metamethods --------------------------------
 				SelfTbl.BulletData   = BulletData
 				SelfTbl.NextFire 	  = Clock.CurTime + Time
 
-				WireLib.TriggerOutput(self, "Ammo Type", BulletData.Type)
+				WireLib.TriggerOutput(self, "Ammo Type", BulletData.AmmoType)
 				WireLib.TriggerOutput(self, "Shots Left", SelfTbl.CurrentShot)
 
 				ENTITY.SetNW2Int(self, "Length", SelfTbl.BulletData.PropLength + SelfTbl.BulletData.ProjLength)
@@ -1239,11 +1132,10 @@ do -- Metamethods --------------------------------
 				duplicator.StoreEntityModifier(self, "ACFTurret", {self.Turret:EntIndex()})
 			end
 
-			-- Wire dupe info
-			self.BaseClass.PreEntityCopy(self)
+			-- AutoRegisterV2 wraps this as the original PreEntityCopy and handles the wire/base dupe info.
 		end
 
-		function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+		function ENT:PostEntityPaste(_, Ent, CreatedEntities)
 			local EntMods = Ent.EntityMods
 
 			-- Backwards compatibility
@@ -1269,15 +1161,14 @@ do -- Metamethods --------------------------------
 				self:Link(CreatedEntities[EntMods.ACFTurret[1]])
 			end
 
-			self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
+			-- AutoRegisterV2 wraps this as the original PostEntityPaste and handles the wire/base dupe info.
 		end
 	end -----------------------------------------
 
 	do -- Overlay -------------------------------
 		function ENT:ACF_UpdateOverlayState(State)
 			local SelfTbl = ENTITY.GetTable(self)
-
-			local AmmoType  = SelfTbl.BulletData.Type .. (SelfTbl.BulletData.Tracer ~= 0 and "-T" or "")
+			local AmmoType  = SelfTbl.BulletData.AmmoType .. (SelfTbl.BulletData.Tracer ~= 0 and "-T" or "")
 			local Firerate  = math.floor(60 / SelfTbl.ReloadTime)
 			local CrateAmmo = 0
 			if next(SelfTbl.OverlayErrors) then
@@ -1302,8 +1193,10 @@ do -- Metamethods --------------------------------
 				end
 			end
 
-			local BreechIndex = SelfTbl.BreechIndex or 1
-			local BreechName = SelfTbl.ClassData.BreechConfigs and SelfTbl.ClassData.BreechConfigs.Locations[BreechIndex].Name or "N/A"
+			local BreechIndex  = SelfTbl.BreechIndex or 1
+			local BreechConfigs = SelfTbl.ClassData and SelfTbl.ClassData.BreechConfigs
+			local Breech        = BreechConfigs and BreechConfigs.Locations[BreechIndex]
+			local BreechName    = Breech and Breech.Name or "N/A"
 
 			State:AddKeyValue("Firerate", Firerate .. " RPM")
 			State:AddNumber("Shots Left", SelfTbl.CurrentShot)
@@ -1433,14 +1326,14 @@ do -- Metamethods --------------------------------
 			return CostScalar * SelfTbl.Caliber
 		end
 
+		-- Captured by AutoRegisterV2 as OrigOnRemove; the generated OnRemove runs ACF_OnEntityLast
+		-- and WireLib cleanup around this.
 		function ENT:OnRemove()
 			local Class = self.ClassData
 
-			if Class.OnLast then
+			if Class and Class.OnLast then
 				Class.OnLast(self, Class)
 			end
-
-			hook.Run("ACF_OnEntityLast", "acf_gun", self, Class)
 
 			for Crate in pairs(self.Crates) do
 				self:Unlink(Crate)
@@ -1453,8 +1346,6 @@ do -- Metamethods --------------------------------
 			end
 
 			timer.Remove("ACF Ammo Left " .. self:EntIndex())
-
-			WireLib.Remove(self)
 		end
 	end -----------------------------------------
 end

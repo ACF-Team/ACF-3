@@ -1,8 +1,28 @@
 local ACF       = ACF
-local Weapons   = ACF.Classes.Weapons
+local Classes   = ACF.Classes
 local ModelData = ACF.ModelData
 local Current   = {}
 local CreateControl, IsScalable
+
+-- Non-scalable weapons expose their concrete, selectable variants as IsWeaponOption subtypes
+-- (e.g. ACF.Guns.40mmFlareLauncher under ACF.Guns.FlareLauncher). Cached per category class.
+local OptionCache = {}
+local function GetWeaponOptions(Class)
+	local Cached = OptionCache[Class]
+	if Cached then return Cached end
+
+	local Options = {}
+
+	for _, Child in pairs(Classes.GetSubtypes(Classes.GetTypeName(Class))) do
+		if Child.IsWeaponOption then
+			Options[#Options + 1] = Child
+		end
+	end
+
+	OptionCache[Class] = Options
+
+	return Options
+end
 
 ---Wrapper function to update the entity preview panel with a given weapon entry object.
 ---@param Base userdata The panel in which all the weapon controls and information are being placed on.
@@ -18,7 +38,7 @@ local function UpdatePreview(Base, Data)
 	Preview:UpdateSettings(Data.Preview)
 
 	-- Set scale to 1 if Weapon exists (non scaled lmao), or relative caliber otherwise
-	local Scale   = Weapon and 1 or (Caliber / Class.Caliber.Base * (Class.ScaleFactor or 1))
+	local Scale   = Weapon and 1 or (Caliber / Class.CaliberLimits.Base * (Class.ScaleFactor or 1))
 	local Preview = Base.Preview
 
 	Preview:SetModelScale(Scale, true)
@@ -38,17 +58,17 @@ local function UpdateControl(Base)
 	end
 
 	if IsScalable then
-		local Bounds  = Class.Caliber
+		local Bounds  = Class.CaliberLimits
 		local Caliber = ACF.GetClientNumber("Caliber", Bounds.Base)
 
-		ACF.SetClientData("Weapon", Class.ID)
+		ACF.SetClientData("Weapon", Classes.GetTypeName(Class:GetType()))
 		ACF.SetClientData("Caliber", Caliber, true)
 
 		Base.Slider:SetMinMax(Bounds.Min, Bounds.Max)
 
 		UpdatePreview(Base, Class)
 	else
-		ACF.LoadSortedList(Base.List, Class.Items, "Caliber")
+		ACF.LoadSortedList(Base.List, GetWeaponOptions(Class), "Caliber")
 	end
 end
 
@@ -67,7 +87,7 @@ CreateControl = function(Base)
 	end
 
 	if IsScalable then -- Scalable
-		local Bounds = Current.Class.Caliber
+		local Bounds = Current.Class.CaliberLimits
 		-- Set default caliber value before creating the slider to prevent nil value errors
 		local DefaultCaliber = ACF.GetClientNumber("Caliber", Bounds.Base)
 		ACF.SetClientData("Caliber", DefaultCaliber, true)
@@ -104,7 +124,7 @@ CreateControl = function(Base)
 			Current.Weapon  = Data
 			Current.Caliber = Data.Caliber
 
-			ACF.SetClientData("Weapon", Data.ID)
+			ACF.SetClientData("Weapon", Classes.GetTypeName(Data:GetType()))
 			ACF.SetClientData("Caliber", Data.Caliber)
 
 			Title:SetText(Data.Name)
@@ -182,14 +202,21 @@ local function GetMass(_, Caliber, Class, Weapon)
 		return 0
 	end
 
-	local Scale  = Caliber / Class.Caliber.Base
+	local Scale  = Caliber / Class.CaliberLimits.Base
 	local Scaled = ModelData.GetModelVolume(Model, Scale)
 
 	return math.Round(Class.Mass * Scaled / Base)
 end
 
 local function CreateMenu(Menu)
-	local Entries = Weapons.GetEntries()
+	local Subtypes = Classes.GetSubtypes("ACF.Guns.BaseGun") -- This menu name is a lie!!! It only has guns (we probably should fix that, but thats more effort than its worth right now)
+	local Entries = {}
+
+	for ID, Type in pairs(Subtypes) do
+		if Type.IsWeapon and not Type.IsWeaponOption then
+			Entries[ID] = Type
+		end
+	end
 
 	Menu:AddTitle("#acf.menu.weapons.settings")
 
@@ -216,8 +243,6 @@ local function CreateMenu(Menu)
 	-- Configuring the ACF Spawner tool
 	ACF.SetClientData("PrimaryClass", "acf_gun") -- Left click will create an acf_gun entity
 	ACF.SetClientData("SecondaryClass", "acf_ammo") -- Right click will create an acf_ammo entity
-	ACF.SetClientData("Destiny", "Weapons") -- The information of these entities will come from ACF.Classes.Weapons
-
 	ACF.SetToolMode("acf_menu", "Spawner", "Weapon") -- The ACF Menu tool will be set to spawner stage, weapon operation
 
 	function ClassList:OnSelect(Index, _, Data)
@@ -232,7 +257,7 @@ local function CreateMenu(Menu)
 
 		ClassDesc:SetText(Data.Description)
 
-		AmmoList:LoadEntries(Data.ID)
+		AmmoList:LoadEntries(Data:GetType())
 
 		BreechIndex:Clear()
 		if Data.BreechConfigs then

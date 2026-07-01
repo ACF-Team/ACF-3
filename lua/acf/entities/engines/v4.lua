@@ -1,49 +1,47 @@
 local ACF     = ACF
-local Engines = ACF.Classes.Engines
-
-
-Engines.Register("V4", {
-	Name = "V4 Engine",
-})
+local Classes = ACF.Classes
+Classes.DefineClass("ACF.Engines.V4", "ACF.Engines.BaseEngine", function()
+	CLASS.Name = "V4 Engine"
+end)
 
 do -- Diesel Engines
-	Engines.RegisterItem("1.9L-V4", "V4", {
-		Name		 = "1.9L V4 Diesel",
-		Description	 = "#acf.descs.engines.v4.1_9",
-		Model		 = "models/engines/v4s.mdl",
-		Sound		 = "acf_base/engines/i4_diesel2.wav",
-		Fuel		 = { Diesel = true },
-		Type		 = "GenericDiesel",
-		Mass		 = 110,
-		Torque		 = 206,
-		FlywheelMass = 0.3,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.1.9L-V4", "ACF.Engines.V4", function()
+		CLASS.Name		 = "1.9L V4 Diesel"
+		CLASS.Description	 = "#acf.descs.engines.v4.1_9"
+		CLASS.Model		 = "models/engines/v4s.mdl"
+		CLASS.Sound		 = "acf_base/engines/i4_diesel2.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
+		CLASS.Mass		 = 110
+		CLASS.Torque		 = 206
+		CLASS.FlywheelMass = 0.3
+		CLASS.RPM = {
 			Idle	= 650,
 			Limit	= 4000,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 110,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("3.3L-V4", "V4", {
-		Name		 = "3.3L V4 Diesel",
-		Description	 = "#acf.descs.engines.v4.3_3",
-		Model		 = "models/engines/v4m.mdl",
-		Sound		 = "acf_base/engines/i4_dieselmedium.wav",
-		Fuel		 = { Diesel = true },
-		Type		 = "GenericDiesel",
-		Mass		 = 275,
-		Torque		 = 600,
-		FlywheelMass = 1.05,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.3.3L-V4", "ACF.Engines.V4", function()
+		CLASS.Name		 = "3.3L V4 Diesel"
+		CLASS.Description	 = "#acf.descs.engines.v4.3_3"
+		CLASS.Model		 = "models/engines/v4m.mdl"
+		CLASS.Sound		 = "acf_base/engines/i4_dieselmedium.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
+		CLASS.Mass		 = 275
+		CLASS.Torque		 = 600
+		CLASS.FlywheelMass = 1.05
+		CLASS.RPM = {
 			Idle	= 600,
 			Limit	= 3900,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 110,
-		},
-	})
+		}
+	end)
 end
 
 ACF.SetCustomAttachment("models/engines/v4m.mdl", "driveshaft", Vector(-5.99, 0, 4.85), Angle(0, 90, 90))

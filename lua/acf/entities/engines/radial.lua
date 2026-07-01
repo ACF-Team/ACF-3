@@ -1,87 +1,85 @@
 local ACF     = ACF
-local Engines = ACF.Classes.Engines
-
-
-Engines.Register("R7", {
-	Name = "Radial 7 Engine",
-})
+local Classes = ACF.Classes
+Classes.DefineClass("ACF.Engines.R7", "ACF.Engines.BaseEngine", function()
+	CLASS.Name = "Radial 7 Engine"
+end)
 
 do
-	Engines.RegisterItem("3.8-R7", "R7", {
-		Name		 = "3.8L R7 Petrol",
-		Description	 = "#acf.descs.engines.r7.3_8",
-		Model		 = "models/engines/radial7s.mdl",
-		Sound		 = "acf_base/engines/r7_petrolsmall.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "Radial",
-		Mass		 = 210,
-		Torque		 = 387,
-		FlywheelMass = 0.22,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.3.8-R7", "ACF.Engines.R7", function()
+		CLASS.Name		 = "3.8L R7 Petrol"
+		CLASS.Description	 = "#acf.descs.engines.r7.3_8"
+		CLASS.Model		 = "models/engines/radial7s.mdl"
+		CLASS.Sound		 = "acf_base/engines/r7_petrolsmall.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.Radial"
+		CLASS.Mass		 = 210
+		CLASS.Torque		 = 387
+		CLASS.FlywheelMass = 0.22
+		CLASS.RPM = {
 			Idle	= 700,
 			Limit	= 4800,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 105,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("11.0-R7", "R7", {
-		Name		 = "11.0L R7 Petrol",
-		Description	 = "#acf.descs.engines.r7.11_0",
-		Model		 = "models/engines/radial7m.mdl",
-		Sound		 = "acf_base/engines/r7_petrolmedium.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "Radial",
-		Mass		 = 385,
-		Torque		 = 700,
-		FlywheelMass = 0.45,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.11.0-R7", "ACF.Engines.R7", function()
+		CLASS.Name		 = "11.0L R7 Petrol"
+		CLASS.Description	 = "#acf.descs.engines.r7.11_0"
+		CLASS.Model		 = "models/engines/radial7m.mdl"
+		CLASS.Sound		 = "acf_base/engines/r7_petrolmedium.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.Radial"
+		CLASS.Mass		 = 385
+		CLASS.Torque		 = 700
+		CLASS.FlywheelMass = 0.45
+		CLASS.RPM = {
 			Idle	= 600,
 			Limit	= 4000,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 105,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("8.0-R7", "R7", {
-		Name		 = "8.0L R7 Diesel",
-		Description	 = "#acf.descs.engines.r7.8_0",
-		Model		 = "models/engines/radial7m.mdl",
-		Sound		 = "acf_base/engines/r7_petrolmedium.wav",
-		Fuel		 = { Petrol = true, Diesel = true },
-		Type		 = "GenericDiesel",
-		Mass		 = 450,
-		Torque		 = 1000,
-		FlywheelMass = 1,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.8.0-R7", "ACF.Engines.R7", function()
+		CLASS.Name		 = "8.0L R7 Diesel"
+		CLASS.Description	 = "#acf.descs.engines.r7.8_0"
+		CLASS.Model		 = "models/engines/radial7m.mdl"
+		CLASS.Sound		 = "acf_base/engines/r7_petrolmedium.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true, ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
+		CLASS.Mass		 = 450
+		CLASS.Torque		 = 1000
+		CLASS.FlywheelMass = 1
+		CLASS.RPM = {
 			Idle	= 400,
 			Limit	= 2800,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 105,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("24.0-R7", "R7", {
-		Name		 = "24.0L R7 Petrol",
-		Description	 = "#acf.descs.engines.r7.24_0",
-		Model		 = "models/engines/radial7l.mdl",
-		Sound		 = "acf_base/engines/r7_petrollarge.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "Radial",
-		Mass		 = 952,
-		Torque		 = 1990,
-		FlywheelMass = 3.4,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.24.0-R7", "ACF.Engines.R7", function()
+		CLASS.Name		 = "24.0L R7 Petrol"
+		CLASS.Description	 = "#acf.descs.engines.r7.24_0"
+		CLASS.Model		 = "models/engines/radial7l.mdl"
+		CLASS.Sound		 = "acf_base/engines/r7_petrollarge.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.Radial"
+		CLASS.Mass		 = 952
+		CLASS.Torque		 = 1990
+		CLASS.FlywheelMass = 3.4
+		CLASS.RPM = {
 			Idle	= 750,
 			Limit	= 2650,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 105,
-		},
-	})
+		}
+	end)
 end
 
 ACF.SetCustomAttachment("models/engines/radial7l.mdl", "driveshaft", Vector(-12), Angle(0, 180, 90))

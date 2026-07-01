@@ -1,68 +1,67 @@
 local ACF     = ACF
-local Engines = ACF.Classes.Engines
+local Classes = ACF.Classes
 
-
-Engines.Register("I1", {
-	Name = "Single Cylinder Engine",
-})
+Classes.DefineClass("ACF.Engines.I1", "ACF.Engines.BaseEngine", function()
+	CLASS.Name = "Single Cylinder Engine"
+end)
 
 do
-	Engines.RegisterItem("0.25-I1", "I1", {
-		Name		 = "250cc Single Cylinder",
-		Description	 = "#acf.descs.engines.i1.0_25",
-		Model		 = "models/engines/1cylsml.mdl",
-		Sound		 = "acf_base/engines/i1_small.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "GenericPetrol",
-		Mass		 = 15,
-		Torque		 = 25,
-		FlywheelMass = 0.005,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.0.25-I1", "ACF.Engines.I1", function()
+		CLASS.Name		 = "250cc Single Cylinder"
+		CLASS.Description	 = "#acf.descs.engines.i1.0_25"
+		CLASS.Model		 = "models/engines/1cylsml.mdl"
+		CLASS.Sound		 = "acf_base/engines/i1_small.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
+		CLASS.Mass		 = 15
+		CLASS.Torque		 = 25
+		CLASS.FlywheelMass = 0.005
+		CLASS.RPM = {
 			Idle	= 1200,
 			Limit	= 7500,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 125,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("0.5-I1", "I1", {
-		Name		 = "500cc Single Cylinder",
-		Description	 = "#acf.descs.engines.i1.0_5",
-		Model		 = "models/engines/1cylmed.mdl",
-		Sound		 = "acf_base/engines/i1_medium.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "GenericPetrol",
-		Mass		 = 20,
-		Torque		 = 50,
-		FlywheelMass = 0.005,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.0.5-I1", "ACF.Engines.I1", function()
+		CLASS.Name		 = "500cc Single Cylinder"
+		CLASS.Description	 = "#acf.descs.engines.i1.0_5"
+		CLASS.Model		 = "models/engines/1cylmed.mdl"
+		CLASS.Sound		 = "acf_base/engines/i1_medium.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
+		CLASS.Mass		 = 20
+		CLASS.Torque		 = 50
+		CLASS.FlywheelMass = 0.005
+		CLASS.RPM = {
 			Idle	= 900,
 			Limit	= 8000,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 125,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("1.3-I1", "I1", {
-		Name		 = "1300cc Single Cylinder",
-		Description	 = "#acf.descs.engines.i1.1_3",
-		Model		 = "models/engines/1cylbig.mdl",
-		Sound		 = "acf_base/engines/i1_large.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "GenericPetrol",
-		Mass		 = 50,
-		Torque		 = 112,
-		FlywheelMass = 0.1,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.1.3-I1", "ACF.Engines.I1", function()
+		CLASS.Name		 = "1300cc Single Cylinder"
+		CLASS.Description	 = "#acf.descs.engines.i1.1_3"
+		CLASS.Model		 = "models/engines/1cylbig.mdl"
+		CLASS.Sound		 = "acf_base/engines/i1_large.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
+		CLASS.Mass		 = 50
+		CLASS.Torque		 = 112
+		CLASS.FlywheelMass = 0.1
+		CLASS.RPM = {
 			Idle	= 600,
 			Limit	= 6700,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 125,
-		},
-	})
+		}
+	end)
 end
 
 ACF.SetCustomAttachment("models/engines/1cylbig.mdl", "driveshaft", Vector(), Angle(0, -90, 90))

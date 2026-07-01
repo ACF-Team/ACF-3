@@ -1,15 +1,15 @@
 local ACF        = ACF
-local Components = ACF.Classes.Components
+local Classes   = ACF.Classes
 
-Components.Register("GD-CPR", {
-	Name   = "Guidance Computer",
-	Entity = "acf_computer",
-	LimitConVar = {
+Classes.DefineClass("ACF.Components.GuidanceComputer", "ACF.Components.BaseComponent", function()
+	CLASS.Name   = "Guidance Computer"
+	CLASS.Entity = "acf_computer"
+	CLASS.LimitConVar = {
 		Name   = "_acf_computer",
 		Amount = 6,
 		Text   = "Maximum amount of ACF Computers a player can create."
 	}
-})
+end)
 
 -- Input actions
 if SERVER then
@@ -73,22 +73,22 @@ end
 do -- Joystick
 	local MenuText = "Joystick bounds : +-%s degrees\nJoystick speed : %s degrees/s\nMass : %s kg"
 
-	Components.RegisterItem("CPR-Joystick", "GD-CPR", {
-		Name        = "Joystick",
-		Description = "A small joystick, used to manually guide anti-tank missiles and munitions.",
-		Model       = "models/weapons/w_slam.mdl",
-		Mass        = 7,
-		MaxAngle    = 25,
-		Speed       = 50, -- Degrees per second
-		Offset      = Vector(0, -1.5, -0.25),
-		Inputs      = { "Pitch (Degrees on the vertical axis)", "Yaw (Degrees in the horizontal axis)" },
-		Outputs     = { "Current Pitch (Current degrees on the vertical axis)", "Current Yaw (Current degrees on the horizontal axis)" },
-		Stick = {
+	Classes.DefineClass("ACF.Components.Joystick", "ACF.Components.GuidanceComputer", function()
+		CLASS.Name        = "Joystick"
+		CLASS.Description = "A small joystick, used to manually guide anti-tank missiles and munitions."
+		CLASS.Model       = "models/weapons/w_slam.mdl"
+		CLASS.Mass        = 7
+		CLASS.MaxAngle    = 25
+		CLASS.Speed       = 50 -- Degrees per second
+		CLASS.Offset      = Vector(0, -1.5, -0.25)
+		CLASS.Inputs      = { "Pitch (Degrees on the vertical axis)", "Yaw (Degrees in the horizontal axis)" }
+		CLASS.Outputs     = { "Current Pitch (Current degrees on the vertical axis)", "Current Yaw (Current degrees on the horizontal axis)" }
+		CLASS.Stick = {
 			Model  = "models/props_c17/trappropeller_lever.mdl",
 			Scale  = 0.5,
 			Offset = 1.5,
-		},
-		CreateMenu = function(Data, Menu)
+		}
+		CLASS.CreateMenu = function(Data, Menu)
 			local Angle = Data.MaxAngle
 			local Speed = Data.Speed
 			local Mass  = Data.Mass
@@ -96,9 +96,9 @@ do -- Joystick
 			Menu:AddLabel(MenuText:format(Angle, Speed, Mass))
 
 			ACF.SetClientData("PrimaryClass", "acf_computer")
-		end,
+		end
 		-- Serverside actions
-		OnUpdate = function(Entity, _, _, Computer)
+		CLASS.OnUpdate = function(Entity, _, _, Computer)
 			Entity.IsJoystick = true
 			Entity.MoveSpeed  = Computer.Speed
 			Entity.MinPitch   = -Computer.MaxAngle
@@ -116,8 +116,8 @@ do -- Joystick
 
 			WireLib.TriggerOutput(Entity, "Current Pitch", 0)
 			WireLib.TriggerOutput(Entity, "Current Yaw", 0)
-		end,
-		OnLast = function(Entity)
+		end
+		CLASS.OnLast = function(Entity)
 			Entity.IsJoystick = nil
 			Entity.MoveSpeed  = nil
 			Entity.MinPitch   = nil
@@ -129,25 +129,25 @@ do -- Joystick
 			Entity.InputPitch = nil
 			Entity.InputYaw   = nil
 			Entity.Spread     = nil
-		end,
-		OnOverlayTitle = function(Entity)
+		end
+		CLASS.OnOverlayTitle = function(Entity)
 			if not Entity.IsJoystick then return end
 			if Entity.InputPitch ~= 0 or Entity.InputYaw ~= 0 then
 				return "In use"
 			end
-		end,
-		OnOverlayBody = function(Entity, State)
+		end
+		CLASS.OnOverlayBody = function(Entity, State)
 			if not Entity.IsJoystick then return end
 
 			local Pitch, Yaw = Entity.Pitch, Entity.Yaw
 
 			State:AddNumber("Pitch", Entity.Pitch, Pitch >= 1 and Pitch < 2 and " degree" or " degrees")
 			State:AddNumber("Yaw", Entity.Yaw, Yaw >= 1 and Yaw < 2 and " degree" or " degrees")
-		end,
-		OnDamaged = function(Entity)
+		end
+		CLASS.OnDamaged = function(Entity)
 			Entity.Spread = 1 - math.Round(Entity.ACF.Health / Entity.ACF.MaxHealth, 2)
-		end,
-		OnEnabled = function(Entity)
+		end
+		CLASS.OnEnabled = function(Entity)
 			local Inputs = Entity.Inputs
 			local Pitch  = Inputs.InputPitch
 			local Yaw    = Inputs.InputYaw
@@ -159,12 +159,12 @@ do -- Joystick
 			if Yaw and Yaw.Path then
 				Entity:TriggerInput("Yaw", Yaw.Value)
 			end
-		end,
-		OnDisabled = function(Entity)
+		end
+		CLASS.OnDisabled = function(Entity)
 			Entity:TriggerInput("Pitch", 0)
 			Entity:TriggerInput("Yaw", 0)
-		end,
-		OnThink = function(Entity)
+		end
+		CLASS.OnThink = function(Entity)
 			local Speed = Entity.MoveSpeed * engine.TickInterval()
 
 			if Entity.Pitch ~= Entity.InputPitch then
@@ -190,9 +190,9 @@ do -- Joystick
 
 				Entity:UpdateOverlay()
 			end
-		end,
+		end
 		-- Clientside actions
-		OnUpdateCL = function(Entity, _, Computer)
+		CLASS.OnUpdateCL = function(Entity, _, Computer)
 			Entity.IsJoystick  = true
 			Entity.MoveSpeed   = Computer.Speed
 			Entity.Pitch       = 0
@@ -203,8 +203,8 @@ do -- Joystick
 			Entity.StickModel  = Computer.Stick.Model
 			Entity.StickScale  = Computer.Stick.Scale
 			Entity.StickOffset = Computer.Stick.Offset
-		end,
-		OnLastCL = function(Entity)
+		end
+		CLASS.OnLastCL = function(Entity)
 			Entity.IsJoystick  = nil
 			Entity.MoveSpeed   = nil
 			Entity.Pitch       = nil
@@ -220,8 +220,8 @@ do -- Joystick
 				Entity.Stick:Remove()
 				Entity.Stick = nil
 			end
-		end,
-		OnThinkCL = function(Entity)
+		end
+		CLASS.OnThinkCL = function(Entity)
 			local Speed = Entity.MoveSpeed * engine.TickInterval()
 
 			Entity.InputPitch = Entity:GetNW2Float("Pitch")
@@ -238,8 +238,8 @@ do -- Joystick
 
 				Entity.Yaw = Entity.Yaw + Delta
 			end
-		end,
-		OnDrawCL = function(Entity)
+		end
+		CLASS.OnDrawCL = function(Entity)
 			if not IsValid(Entity.Stick) then
 				Entity.Stick = ClientsideModel(Entity.StickModel, Entity.RenderGroup)
 				Entity.Stick:SetModelScale(Entity.StickScale)
@@ -255,8 +255,8 @@ do -- Joystick
 				pos   = Pos,
 				angle = Ang,
 			}, Entity.Stick)
-		end,
-	})
+		end
+	end)
 end
 
 do -- Optical guidance computer
@@ -281,29 +281,29 @@ do -- Optical guidance computer
 		end
 	end)
 
-	Components.RegisterItem("CPR-OPT", "GD-CPR", {
-		Name        = "Optical Guidance Computer",
-		Description = "Fully analog guidance computer. Unlike the laser guidance computer, it takes a few seconds for it to aim and focus properly.",
-		Model       = "models/props_lab/monitor01b.mdl",
-		Mass        = 43,
-		Offset      = Vector(6, -1, 0),
-		Speed       = 10, -- Degrees per second
-		FocusSpeed  = 300, -- Meters per second
-		Inputs      = { "Pitch (Degrees on the vertical axis)", "Yaw (Degrees on the horizontal axis)", "HitPos (Target location to aim laser at) [VECTOR]" },
-		Outputs     = {
+	Classes.DefineClass("ACF.Components.OpticalGuidanceComputer", "ACF.Components.GuidanceComputer", function()
+		CLASS.Name        = "Optical Guidance Computer"
+		CLASS.Description = "Fully analog guidance computer. Unlike the laser guidance computer, it takes a few seconds for it to aim and focus properly."
+		CLASS.Model       = "models/props_lab/monitor01b.mdl"
+		CLASS.Mass        = 43
+		CLASS.Offset      = Vector(6, -1, 0)
+		CLASS.Speed       = 10 -- Degrees per second
+		CLASS.FocusSpeed  = 300 -- Meters per second
+		CLASS.Inputs      = { "Pitch (Degrees on the vertical axis)", "Yaw (Degrees on the horizontal axis)", "HitPos (Target location to aim laser at) [VECTOR]" }
+		CLASS.Outputs     = {
 			"Ranging (Whether or not the computer is currently adjusting to focus)",
 			"Distance (The currently measured distance from the computer, in meters)",
 			"HitPos (The vector of where the computer is currently focused on) [VECTOR]",
 			"Current Pitch (Current degrees on the vertical axis)",
-			"Current Yaw (Current degrees on the horizontal axis)" },
-		Bounds = {
+			"Current Yaw (Current degrees on the horizontal axis)" }
+		CLASS.Bounds = {
 			Pitch = 15,
 			Yaw   = 20,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 110,
-		},
-		CreateMenu = function(Data, Menu)
+		}
+		CLASS.CreateMenu = function(Data, Menu)
 			local Pitch = Data.Bounds.Pitch
 			local Yaw   = Data.Bounds.Yaw
 			local Speed = Data.Speed
@@ -313,9 +313,9 @@ do -- Optical guidance computer
 			Menu:AddLabel(MenuText:format(Pitch, Yaw, Speed, Focus, Mass))
 
 			ACF.SetClientData("PrimaryClass", "acf_computer")
-		end,
+		end
 		-- Serverside actions
-		OnUpdate = function(Entity, _, _, Computer)
+		CLASS.OnUpdate = function(Entity, _, _, Computer)
 			Entity.IsComputer = true
 			Entity.IsOptical  = true
 			Entity.Offset     = Computer.Offset
@@ -346,8 +346,8 @@ do -- Optical guidance computer
 			WireLib.TriggerOutput(Entity, "HitPos", Vector())
 			WireLib.TriggerOutput(Entity, "Current Pitch", 0)
 			WireLib.TriggerOutput(Entity, "Current Yaw", 0)
-		end,
-		OnLast = function(Entity)
+		end
+		CLASS.OnLast = function(Entity)
 			Entity.IsComputer = nil
 			Entity.IsOptical  = nil
 			Entity.Offset     = nil
@@ -372,15 +372,15 @@ do -- Optical guidance computer
 			Entity.InputHitPos = nil
 
 			Computers[Entity] = nil
-		end,
-		OnOverlayTitle = function(Entity)
+		end
+		CLASS.OnOverlayTitle = function(Entity)
 			if not Entity.IsComputer then return end
 			if Entity.Distance ~= Entity.TraceDist then return "Ranging" end
 			if Entity.InputPitch ~= 0 or Entity.InputYaw ~= 0 then
 				return "In use"
 			end
-		end,
-		OnOverlayBody = function(Entity, State)
+		end
+		CLASS.OnOverlayBody = function(Entity, State)
 			if not Entity.IsComputer then return end
 
 			local Pitch, Yaw = Entity.Pitch, Entity.Yaw
@@ -389,11 +389,11 @@ do -- Optical guidance computer
 			State:AddNumber("Pitch", Entity.Pitch, Pitch >= 1 and Pitch < 2 and " degree" or " degrees")
 			State:AddNumber("Yaw", Entity.Yaw, Yaw >= 1 and Yaw < 2 and " degree" or " degrees")
 			State:AddCoordinates("HitPos", Entity.HitPos:Unpack())
-		end,
-		OnDamaged = function(Entity)
+		end
+		CLASS.OnDamaged = function(Entity)
 			Entity.Spread = 1 - math.Round(Entity.ACF.Health / Entity.ACF.MaxHealth, 2)
-		end,
-		OnEnabled = function(Entity)
+		end
+		CLASS.OnEnabled = function(Entity)
 			local Inputs = Entity.Inputs
 			local Pitch  = Inputs.InputPitch
 			local Yaw    = Inputs.InputYaw
@@ -405,12 +405,12 @@ do -- Optical guidance computer
 			if Yaw and Yaw.Path then
 				Entity:TriggerInput("Yaw", Yaw.Value)
 			end
-		end,
-		OnDisabled = function(Entity)
+		end
+		CLASS.OnDisabled = function(Entity)
 			Entity:TriggerInput("Pitch", 0)
 			Entity:TriggerInput("Yaw", 0)
-		end,
-		OnThink = function(Entity)
+		end
+		CLASS.OnThink = function(Entity)
 			local Tick  = engine.TickInterval()
 			local Speed = Entity.MoveSpeed * Tick * math.Rand(Entity.Spread, 1)
 			local Focus = Entity.FocusSpeed * Tick * math.Rand(Entity.Spread, 1)
@@ -476,8 +476,8 @@ do -- Optical guidance computer
 
 				Entity:UpdateOverlay()
 			end
-		end,
-	})
+		end
+	end)
 end
 
 do -- Laser guidance computer
@@ -485,32 +485,32 @@ do -- Laser guidance computer
 	local LaserText = "Lasing time : %s seconds\nCooldown : %s seconds"
 	local Clock     = ACF.Utilities.Clock
 
-	Components.RegisterItem("CPR-LSR", "GD-CPR", {
-		Name        = "Laser Guidance Computer",
-		Description = "Modern equivalent to the analog guidance computer, provides faster and more accurate measurements. Can be also used as a laser target designator.",
-		Model       = "models/props_lab/monitor01b.mdl",
-		Mass        = 30,
-		LaseTime    = 20,
-		Cooldown    = 10,
-		Offset      = Vector(6, -1, 0),
-		Speed       = 45, -- Degrees per second
-		Inputs      = { "Lase (Turns on the laser)", "Pitch (Degrees on the vertical axis)", "Yaw (Degrees on the horizontal axis)", "HitPos (Target location to aim laser at) [VECTOR]" },
-		Outputs     = {
+	Classes.DefineClass("ACF.Components.LaserGuidanceComputer", "ACF.Components.GuidanceComputer", function()
+		CLASS.Name        = "Laser Guidance Computer"
+		CLASS.Description = "Modern equivalent to the analog guidance computer, provides faster and more accurate measurements. Can be also used as a laser target designator."
+		CLASS.Model       = "models/props_lab/monitor01b.mdl"
+		CLASS.Mass        = 30
+		CLASS.LaseTime    = 20
+		CLASS.Cooldown    = 10
+		CLASS.Offset      = Vector(6, -1, 0)
+		CLASS.Speed       = 45 -- Degrees per second
+		CLASS.Inputs      = { "Lase (Turns on the laser)", "Pitch (Degrees on the vertical axis)", "Yaw (Degrees on the horizontal axis)", "HitPos (Target location to aim laser at) [VECTOR]" }
+		CLASS.Outputs     = {
 			"Lasing (Whether or not the laser is on)",
 			"Lase Time (How long the laser can stay on before requiring a cool down)",
 			"Cooling Down (Whether or not the laser is cooling off)",
 			"Distance (The currently measured distance from the computer, in meters)",
 			"HitPos (The vector of where the computer detects a hit from the laser) [VECTOR]",
 			"Current Pitch (Current degrees on the vertical axis)",
-			"Current Yaw (Current degrees on the horizontal axis)" },
-		Bounds = {
+			"Current Yaw (Current degrees on the horizontal axis)" }
+		CLASS.Bounds = {
 			Pitch = 10,
 			Yaw   = 15,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 110,
-		},
-		CreateMenu = function(Data, Menu)
+		}
+		CLASS.CreateMenu = function(Data, Menu)
 			local Pitch    = Data.Bounds.Pitch
 			local Yaw      = Data.Bounds.Yaw
 			local Speed    = Data.Speed
@@ -522,9 +522,9 @@ do -- Laser guidance computer
 			Menu:AddLabel(LaserText:format(LaseTime, Cooldown))
 
 			ACF.SetClientData("PrimaryClass", "acf_computer")
-		end,
+		end
 		-- Serverside actions
-		OnUpdate = function(Entity, _, _, Computer)
+		CLASS.OnUpdate = function(Entity, _, _, Computer)
 			Entity.IsComputer = true
 			Entity.Lasing     = false
 			Entity.Offset     = Computer.Offset
@@ -567,8 +567,8 @@ do -- Laser guidance computer
 			WireLib.TriggerOutput(Entity, "HitPos", Vector())
 			WireLib.TriggerOutput(Entity, "Current Pitch", 0)
 			WireLib.TriggerOutput(Entity, "Current Yaw", 0)
-		end,
-		OnLast = function(Entity)
+		end
+		CLASS.OnLast = function(Entity)
 			Entity.IsComputer = nil
 			Entity.Lasing     = nil
 			Entity.OnCooldown = nil
@@ -596,16 +596,16 @@ do -- Laser guidance computer
 			Entity.InputHitPos = nil
 
 			ACF.ClearLaserSource(Entity)
-		end,
-		OnOverlayTitle = function(Entity)
+		end
+		CLASS.OnOverlayTitle = function(Entity)
 			if not Entity.IsComputer then return end
 			if Entity.OnCooldown then return "Cooling down" end
 			if Entity.Lasing then return "Lasing" end
 			if Entity.InputPitch ~= 0 or Entity.InputYaw ~= 0 then
 				return "In use"
 			end
-		end,
-		OnOverlayBody = function(Entity, State)
+		end
+		CLASS.OnOverlayBody = function(Entity, State)
 			if not Entity.IsComputer then return end
 
 			local Distance = math.Round(Entity.Distance * ACF.InchToMeter)
@@ -615,11 +615,11 @@ do -- Laser guidance computer
 			State:AddNumber("Pitch", Entity.Pitch, Pitch >= 1 and Pitch < 2 and " degree" or " degrees")
 			State:AddNumber("Yaw", Entity.Yaw, Yaw >= 1 and Yaw < 2 and " degree" or " degrees")
 			State:AddCoordinates("HitPos", Entity.HitPos:Unpack())
-		end,
-		OnDamaged = function(Entity)
+		end
+		CLASS.OnDamaged = function(Entity)
 			Entity.Spread = 1 - math.Round(Entity.ACF.Health / Entity.ACF.MaxHealth, 2)
-		end,
-		OnEnabled = function(Entity)
+		end
+		CLASS.OnEnabled = function(Entity)
 			local Inputs = Entity.Inputs
 			local Lase   = Inputs.Lase
 			local Pitch  = Inputs.InputPitch
@@ -636,13 +636,13 @@ do -- Laser guidance computer
 			if Yaw and Yaw.Path then
 				Entity:TriggerInput("Yaw", Yaw.Value)
 			end
-		end,
-		OnDisabled = function(Entity)
+		end
+		CLASS.OnDisabled = function(Entity)
 			Entity:TriggerInput("Lase", 0)
 			Entity:TriggerInput("Pitch", 0)
 			Entity:TriggerInput("Yaw", 0)
-		end,
-		OnThink = function(Entity)
+		end
+		CLASS.OnThink = function(Entity)
 			local Tick  = engine.TickInterval()
 			local Speed = Entity.MoveSpeed * Tick
 			local Changed
@@ -745,34 +745,34 @@ do -- Laser guidance computer
 
 				Entity:UpdateOverlay()
 			end
-		end,
-	})
+		end
+	end)
 end
 
 do -- GPS transmitter
 	local ZERO = Vector()
 
-	Components.RegisterItem("CPR-GPS", "GD-CPR", {
-		Name        = "GPS Transmitter",
-		Description = "A transmitter for GPS-based guided munitions.",
-		Model       = "models/props_lab/reciever01a.mdl",
-		Mass        = 15,
-		Inputs      = { "Coordinates (The vector to pass along to the linked rack) [VECTOR]" },
-		Outputs     = {
+	Classes.DefineClass("ACF.Components.GPSTransmitter", "ACF.Components.GuidanceComputer", function()
+		CLASS.Name        = "GPS Transmitter"
+		CLASS.Description = "A transmitter for GPS-based guided munitions."
+		CLASS.Model       = "models/props_lab/reciever01a.mdl"
+		CLASS.Mass        = 15
+		CLASS.Inputs      = { "Coordinates (The vector to pass along to the linked rack) [VECTOR]" }
+		CLASS.Outputs     = {
 			"Transmitting (Whether or not the transmitter is functioning)",
 			"Jammed (Whether or not the transmitter is being countered)",
-			"Current Coordinates (The vector currently being transmitted) [VECTOR]" },
-		Preview = {
+			"Current Coordinates (The vector currently being transmitted) [VECTOR]" }
+		CLASS.Preview = {
 			FOV = 80,
-		},
-		CreateMenu = function(Data, Menu)
+		}
+		CLASS.CreateMenu = function(Data, Menu)
 			Menu:AddLabel("Mass : " .. Data.Mass .. " kg")
 			--Menu:AddLabel("This entity can be jammed.") -- Not yet
 
 			ACF.SetClientData("PrimaryClass", "acf_computer")
-		end,
+		end
 		-- Serverside actions
-		OnUpdate = function(Entity)
+		CLASS.OnUpdate = function(Entity)
 			Entity.IsGPS       = true
 			Entity.IsJammed    = false
 			Entity.InputCoords = Vector()
@@ -782,40 +782,40 @@ do -- GPS transmitter
 			WireLib.TriggerOutput(Entity, "Current Coordinates", Vector())
 			WireLib.TriggerOutput(Entity, "Transmitting", 0)
 			WireLib.TriggerOutput(Entity, "Jammed", 0)
-		end,
-		OnLast = function(Entity)
+		end
+		CLASS.OnLast = function(Entity)
 			Entity.IsGPS       = nil
 			Entity.IsJammed    = nil
 			Entity.InputCoords = nil
 			Entity.Coordinates = nil
 			Entity.Spread      = nil
-		end,
-		OnOverlayTitle = function(Entity)
+		end
+		CLASS.OnOverlayTitle = function(Entity)
 			if not Entity.IsGPS then return end
 			if Entity.IsJammed then return "Jammed" end
 			if Entity.InputCoords ~= Vector() then
 				return "Transmitting"
 			end
-		end,
-		OnOverlayBody = function(Entity, State)
+		end
+		CLASS.OnOverlayBody = function(Entity, State)
 			if not Entity.IsGPS then return end
 
 			State:AddCoordinates("Coordinates", Entity.Coordinates:Unpack())
-		end,
-		OnDamaged = function(Entity)
+		end
+		CLASS.OnDamaged = function(Entity)
 			Entity.Spread = ACF.MaxDamageInaccuracy * (1 - math.Round(Entity.ACF.Health / Entity.ACF.MaxHealth, 2))
-		end,
-		OnEnabled = function(Entity)
+		end
+		CLASS.OnEnabled = function(Entity)
 			local Coordinates = Entity.Inputs.Coordinates
 
 			if Coordinates and Coordinates.Path then
 				Entity:TriggerInput("Coordinates", Coordinates.Value)
 			end
-		end,
-		OnDisabled = function(Entity)
+		end
+		CLASS.OnDisabled = function(Entity)
 			Entity:TriggerInput("Coordinates", Vector())
-		end,
-		OnThink = function(Entity)
+		end
+		CLASS.OnThink = function(Entity)
 			if Entity.InputCoords == ZERO then return end
 
 			local Spread = VectorRand(-Entity.Spread, Entity.Spread)
@@ -825,38 +825,6 @@ do -- GPS transmitter
 			WireLib.TriggerOutput(Entity, "Current Coordinates", Entity.Coordinates)
 
 			Entity:UpdateOverlay()
-		end,
-	})
+		end
+	end)
 end
-
-local GroundLoaderText = "Mass : %s kg\n"
-
-function ACF.CreateGroundLoaderMenu(Data, Menu)
-	Menu:AddLabel(GroundLoaderText:format(Data.Mass))
-
-	ACF.SetClientData("PrimaryClass", "acf_groundloader")
-
-	if Menu.ComponentPreview then
-		local Settings = {
-			GhostAngOffset = Angle(0, -90, 0)
-		}
-
-		Menu.ComponentPreview:UpdateSettings(Settings)
-		Menu.ComponentPreview:SetModelScale(1, true)
-	end
-end
-
--- Wow I love this file so much
--- This is just to get it in the menu.
-Components.Register("GND-LDR", {
-	Name   = "Ground Loader",
-	Entity = "acf_groundloader",
-	CreateMenu = ACF.CreateGroundLoaderMenu,
-})
-
-Components.RegisterItem("GND-LDR-ITM", "GND-LDR", {
-	Name        = "Ground Loader",
-	Description = "An entity capable of linking to ammo crates and loading racks within line of sight and range. Must be stationary to function.",
-	Model       = "models/props_vehicles/generatortrailer01.mdl",
-	Mass        = 200,
-})

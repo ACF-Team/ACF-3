@@ -1,8 +1,22 @@
-local ACF		= ACF
-local Turrets	= ACF.Classes.Turrets
+local ACF     = ACF
+local Classes = ACF.Classes
+
+-- The turret "classes" (Turrets, Motors, Gyroscopes, Computers) are the direct
+-- children of the component root; each class' own children are its items.
+local function GetGroups()
+	local Groups = {}
+	local Root   = Classes.GetTypeByName("ACF.Turrets.Component")
+	if not Root then return Groups end
+
+	for _, Group in pairs(Classes.GetChildren(Root)) do
+		Groups[#Groups + 1] = Group
+	end
+
+	return Groups
+end
 
 local function CreateMenu(Menu)
-	local Entries = Turrets.GetEntries()
+	local Groups = GetGroups()
 
 	ACF.SetToolMode("acf_menu", "Spawner", "Turret")
 
@@ -34,7 +48,7 @@ local function CreateMenu(Menu)
 		ClassDesc:SetText(Data.Description or "#acf.menu.no_description_provided")
 
 		ACF.SetToolMode("acf_menu", "Spawner", Data.ID)
-		ACF.LoadSortedList(ComponentClass, Data.Items, "Name", "Model")
+		ACF.LoadSortedList(ComponentClass, Classes.GetChildren(Data), "Name", "Model")
 	end
 
 	function ComponentClass:OnSelect(Index, _, Data)
@@ -45,8 +59,6 @@ local function CreateMenu(Menu)
 
 		local ClassData = ClassList.Selected
 
-		ACF.SetClientData("Component", Data.ID)
-
 		ComponentName:SetText(Data.Name)
 		ComponentDesc:SetText(Data.Description or "#acf.menu.no_description_provided")
 
@@ -56,7 +68,7 @@ local function CreateMenu(Menu)
 		Menu:ClearTemporal(Base)
 		Menu:StartTemporal(Base)
 
-		local CustomMenu = Data.CreateMenu or ClassData.CreateMenu
+		local CustomMenu = ClassData.CreateMenu
 
 		if CustomMenu then
 			CustomMenu(Data, Base)
@@ -65,7 +77,7 @@ local function CreateMenu(Menu)
 		Menu:EndTemporal(Base)
 	end
 
-	ACF.LoadSortedList(ClassList, Entries, "ID", "SpawnModel")
+	ACF.LoadSortedList(ClassList, Groups, "ID", "SpawnModel")
 end
 
 ACF.AddMenuItem(51, "#acf.menu.entities", "#acf.menu.turrets", "shape_align_center", CreateMenu)

@@ -1,60 +1,50 @@
-local ACF       = ACF
-local Classes   = ACF.Classes
-local Entities  = Classes.Entities
-local Guidances = Classes.Guidances
-local Fuzes     = Classes.Fuzes
+local ACF         = ACF
+local Classes     = ACF.Classes
+local MissileBase = "ACF.Missiles.BaseMissile"
 
-hook.Add("ACF_OnUpdateRound", "ACF Missile Ammo", function(_, ToolData, Data)
-	if ToolData.Destiny ~= "Missiles" then return end
+-- True when the given weapon back-reference is a V2 missile class instance.
+local function GetMissileClass(Weapon)
+	local Class = Weapon and Weapon.GetType and Weapon:GetType()
+	if Class and Classes.IsAssignableTo(Class, Classes.GetTypeByName(MissileBase)) then
+		return Class
+	end
+end
 
-	local PenMul   = ACF.GetGunValue(ToolData.Weapon, "PenMul")
-	local Standoff = ACF.GetGunValue(ToolData.Weapon, "Standoff")
-	local FillerMul = ACF.GetGunValue(ToolData.Weapon, "FillerMul")
-	local LinerMassMul = ACF.GetGunValue(ToolData.Weapon, "LinerMassMul")
+-- Inject the missile warhead multipliers (authored on the missile class Round) into the round data so
+-- the shared warhead math (e.g. HEAT) sees the boosted filler/liner/standoff. New hook signature:
+-- (Ammo, Ammo, BulletData, GUIData).
+hook.Add("ACF_OnUpdateRound", "ACF Missile Ammo", function(Ammo, _, Data)
+	local Class = GetMissileClass(Ammo and Ammo.Weapon)
+	local Round = Class and Class.Round
+	if not Round then return end
 
-	Data.PenMul = PenMul
-	Data.MissileStandoff = Standoff
-	Data.FillerMul = FillerMul
-	Data.LinerMassMul = LinerMassMul
+	Data.PenMul          = Round.PenMul
+	Data.MissileStandoff = Round.Standoff
+	Data.FillerMul       = Round.FillerMul
+	Data.LinerMassMul    = Round.LinerMassMul
 end)
 
 if CLIENT then
-	local function GetGuidanceList(Data)
-		local Result = {}
-
-		if Data then
-			for Guidance in pairs(Data.Guidance) do
-				local Info = Guidances.Get(Guidance)
-
-				if Info then
-					Result[Guidance] = Info
-				end
-			end
-		end
-
-		return Result
+	-- Resolve a guidance/fuze identifier (FQN or short id) to its V2 class.
+	local function ResolveType(Key, BaseFQN)
+		return Classes.GetTypeByName(Key) or Classes.GetTypeByName(BaseFQN .. "." .. Key)
 	end
 
-	local function GetFuzeList(Data)
+	local function GetTypeList(Set, BaseFQN)
 		local Result = {}
-
-		if Data then
-			for Fuze in pairs(Data.Fuzes) do
-				local Info = Fuzes.Get(Fuze)
-
-				if Info then
-					Result[Fuze] = Info
-				end
+		if Set then
+			for Key in pairs(Set) do
+				local Info = ResolveType(Key, BaseFQN)
+				if Info then Result[Classes.GetTypeName(Info)] = Info end
 			end
 		end
-
 		return Result
 	end
 
 	hook.Add("ACF_OnCreateAmmoControls", "ACF Add Missiles Menu", function(Base, ToolData, Ammo, BulletData)
-		if ToolData.Destiny ~= "Missiles" then return end
+		local Missile = Base.MissileData
+		if not Missile then return end
 
-		local Missile      = Base.MissileData
 		local GuidanceList = Base:AddComboBox()
 		GuidanceList:SetName("GuidanceList")
 		local GuidanceBase = Base:AddPanel("ACF_Panel")
@@ -64,29 +54,19 @@ if CLIENT then
 
 		function GuidanceList:OnSelect(Index, Name, Data)
 			if self.Selected == Data then return end
-
 			self:SetText("Guidance: " .. Name)
-
 			self.ListData.Index = Index
 			self.Selected = Data
 
-			ACF.SetClientData("Guidance", Data.ID)
+			ACF.SetClientData("Guidance", Classes.GetTypeName(Data))
 
 			local Guidance = Data()
-
-			if Guidance.OnFirst then
-				Guidance:OnFirst("Menu", ToolData)
-			end
+			if Guidance.OnFirst then Guidance:OnFirst("Menu") end
 
 			GuidanceBase:ClearTemporal(GuidanceList)
 			GuidanceBase:StartTemporal(GuidanceList)
-
-			if Guidance.AddMenuControls then
-				Guidance:AddMenuControls(GuidanceBase, ToolData, Ammo, BulletData)
-			end
-
+			if Guidance.AddMenuControls then Guidance:AddMenuControls(GuidanceBase, ToolData, Ammo, BulletData) end
 			GuidanceBase:AddHelp(Guidance.Description)
-
 			GuidanceBase:EndTemporal(GuidanceList)
 
 			BulletData.Guidance = Guidance
@@ -94,131 +74,44 @@ if CLIENT then
 
 		function FuzeList:OnSelect(Index, Name, Data)
 			if self.Selected == Data then return end
-
 			self:SetText("Fuze: " .. Name)
-
 			self.ListData.Index = Index
 			self.Selected = Data
 
-			ACF.SetClientData("Fuze", Data.ID)
+			ACF.SetClientData("Fuze", Classes.GetTypeName(Data))
 
 			local Fuze = Data()
-
-			if Fuze.OnFirst then
-				Fuze:OnFirst("Menu", ToolData)
-			end
+			if Fuze.OnFirst then Fuze:OnFirst("Menu", ToolData) end
 
 			FuzeBase:ClearTemporal(FuzeList)
 			FuzeBase:StartTemporal(FuzeList)
-
-			if Fuze.AddMenuControls then
-				Fuze:AddMenuControls(FuzeBase, ToolData, Ammo, BulletData)
-			end
-
+			if Fuze.AddMenuControls then Fuze:AddMenuControls(FuzeBase, ToolData, Ammo, BulletData) end
 			FuzeBase:AddHelp(Fuze.Description)
-
 			FuzeBase:EndTemporal(FuzeList)
 
 			BulletData.Fuze = Fuze
 		end
 
-		ACF.LoadSortedList(GuidanceList, GetGuidanceList(Missile), "Name")
-		ACF.LoadSortedList(FuzeList, GetFuzeList(Missile), "Name")
+		ACF.LoadSortedList(GuidanceList, GetTypeList(Missile.Guidance, "ACF.Missiles.Guidance"), "Name")
+		ACF.LoadSortedList(FuzeList, GetTypeList(Missile.Fuzes or Missile.Fuze, "ACF.Missiles.Fuze"), "Name")
 	end)
 else
-	local AllowedClass = {
-		acf_missile = true,
-		acf_ammo = true,
-	}
-
-	local function DecodeData(String, Namespace)
-		if not isstring(String) then return end
-
-		local Arguments = {}
-		local Name
-
-		-- Parsing the old string
-		for Part in string.gmatch(String, "[^:]+") do
-			if not Name and Namespace.Get(Part) then
-				Name = Part
-			else
-				local Key = string.match(Part, "^[^=]+")
-				local Value = string.match(Part, "[^=]+$")
-
-				if Key and Value then
-					Arguments[string.upper(Key)] = tonumber(Value) or 0
-				end
-			end
-		end
-
-		return Name, next(Arguments) and Arguments
-	end
-
-	hook.Add("ACF_OnVerifyData", "ACF Missile Ammo", function(EntClass, Data, ...)
-		if not AllowedClass[EntClass] then return end
-		if Data.Destiny ~= "Missiles" then return end
-
-		do -- Verifying guidance
-			if not Data.Guidance then -- Porting old guidance data
-				Data.Guidance = DecodeData(Data.RoundData7, Guidances) or "Dumb"
-			end
-
-			local Allowed  = ACF.GetGunValue(Data.Weapon, "Guidance")
-			local Guidance = Guidances.Get(Data.Guidance)
-
-			if not (Guidance and Allowed[Data.Guidance]) then
-				Data.Guidance = "Dumb"
-
-				Guidance = Guidances.Get("Dumb")
-			end
-
-			if Guidance.VerifyData then
-				Guidance:VerifyData(EntClass, Data, ...)
-			end
-		end
-
-		do -- Fuze verification
-			if not Data.Fuze then -- Porting old fuze data
-				local Name, Arguments = DecodeData(Data.RoundData8, Fuzes)
-
-				Data.Fuze = Name or "Contact"
-				Data.FuzeArgs = Arguments
-			end
-
-			local Allowed = ACF.GetGunValue(Data.Weapon, "Fuzes")
-			local Fuze    = Fuzes.Get(Data.Fuze)
-
-			if not (Fuze and Allowed[Data.Fuze]) then
-				Data.Fuze = "Contact"
-
-				Fuze = Fuzes.Get("Contact")
-			end
-
-			if Fuze.VerifyData then
-				Fuze:VerifyData(EntClass, Data, ...)
-			end
-		end
-	end)
-
-	hook.Add("ACF_OnAmmoFirst", "ACF Missile Ammo", function(_, Entity, Data, ...)
-		if Data.Destiny ~= "Missiles" then return end
+	-- The crate's missile weapon instance already carries deserialized Guidance/Fuze V2 instances.
+	hook.Add("ACF_OnAmmoFirst", "ACF Missile Ammo", function(Ammo, Entity)
 		if Entity.IsRefill then return end
+		local Class = GetMissileClass(Ammo and Ammo.Weapon)
+		if not Class then return end
 
-		local Guidance = Guidances.Get(Data.Guidance)()
-		local Fuze     = Fuzes.Get(Data.Fuze)()
+		local Weapon   = Ammo.Weapon
+		local Guidance = Weapon.Guidance
+		local Fuze     = Weapon.Fuze
+		if not (Guidance and Fuze) then return end
 
-		if Guidance.OnFirst then
-			Guidance:OnFirst(Entity, Data, ...)
-		end
+		if Guidance.OnFirst then Guidance:OnFirst(Entity) end
+		if Fuze.OnFirst then Fuze:OnFirst(Entity) end
+		if Guidance.Configure then Guidance:Configure(Entity) end
+		if Fuze.Configure then Fuze:Configure(Entity) end
 
-		if Fuze.OnFirst then
-			Fuze:OnFirst(Entity, Data, ...)
-		end
-
-		Guidance:Configure(Entity)
-		Fuze:Configure(Entity)
-
-		Entity.Guidance		 = Data.Guidance
 		Entity.IsMissileAmmo = true
 		Entity.GuidanceData  = Guidance
 		Entity.FuzeData      = Fuze
@@ -230,32 +123,24 @@ else
 		local Guidance = Entity.GuidanceData
 		local Fuze     = Entity.FuzeData
 
-		if Guidance.OnLast then
-			Guidance:OnLast(Entity)
-		end
-
-		if Fuze.OnLast then
-			Fuze:OnLast(Entity)
-		end
+		if Guidance and Guidance.OnLast then Guidance:OnLast(Entity) end
+		if Fuze and Fuze.OnLast then Fuze:OnLast(Entity) end
 
 		Entity.IsMissileAmmo = nil
 		Entity.GuidanceData  = nil
 		Entity.FuzeData      = nil
-		Entity.Guidance      = nil
-		Entity.Fuze          = nil
 	end)
-
-	Entities.AddArguments("acf_ammo", "Guidance", "Fuze") -- Adding extra info to ammo crates
 
 	ACF.RegisterAdditionalOverlay("acf_ammo", "Missile Info", function(Crate, State)
 		if not Crate.IsMissileAmmo then return end
 
-		local Guidance     = Crate.GuidanceData
-		local Fuze         = Crate.FuzeData
+		local Guidance = Crate.GuidanceData
+		local Fuze     = Crate.FuzeData
+		if not (Guidance and Fuze) then return end
 
 		State:AddKeyValue("Guidance", Guidance.Name)
-		Guidance:WriteDisplayConfig(State)
+		if Guidance.WriteDisplayConfig then Guidance:WriteDisplayConfig(State) end
 		State:AddKeyValue("Fuze", Fuze.Name)
-		Fuze:WriteDisplayConfig(State)
+		if Fuze.WriteDisplayConfig then Fuze:WriteDisplayConfig(State) end
 	end)
 end

@@ -1,38 +1,37 @@
 local ACF        = ACF
-local Components = ACF.Classes.Components
+local Classes    = ACF.Classes
+local GetType    = Classes.GetTypeByName
 
--- Class: Supply Unit under Components
-Components.Register("SP-RFL", {
-	Name   = "Supply Crate",
-	Entity = "acf_supply",
-	TutorialURL = "docs/acf_tutorials/refills.html",
-	LimitConVar = {
+local Classes   = ACF.Classes
+
+Classes.DefineClass("ACF.Components.SupplyCrate", "ACF.Components.BaseComponent", function()
+	CLASS.Name        = "Supply Crate"
+	CLASS.Description = "A scalable container that supplies fuel and ammo."
+	CLASS.Model       = "models/acf/core/s_fuel.mdl"
+	CLASS.Material    = "phoenix_storms/future_vents"
+	CLASS.Preview = {FOV = 120}
+	CLASS.Entity = "acf_supply"
+	CLASS.TutorialURL = "docs/acf_tutorials/refills.html"
+	CLASS.LimitConVar = {
 		Name   = "_acf_supply",
 		Amount = 4,
 		Text   = "Maximum amount of ACF Supply crates a player can create."
 	}
-})
-
--- Single generic supply item; capacity scales with size sliders
-Components.RegisterItem("RFL-UNIT", "SP-RFL", {
-	Name        = "Supply Crate",
-	Description = "A scalable container that supplies fuel and ammo.",
-	Model       = "models/acf/core/s_fuel.mdl",
-	Material    = "phoenix_storms/future_vents",
-	Preview = {FOV = 120},
-	CreateMenu = function(_, Menu)
-		-- Shape selector
+	function CLASS.CreateMenu(_, Menu)
+		-- Shape selector. The combo value is the ContainerShapes class FQN written straight into the
+		-- "Shape" field; no string->class translation needed at spawn time.
 		local SupplyShape = Menu:AddComboBox()
 
-		SupplyShape:AddChoice("Box", "Box")
-		SupplyShape:AddChoice("Sphere", "Sphere")
-		SupplyShape:AddChoice("Cylinder", "Cylinder")
+		SupplyShape:AddChoice("Box", "ACF.ContainerShapes.Box")
+		SupplyShape:AddChoice("Sphere", "ACF.ContainerShapes.Sphere")
+		SupplyShape:AddChoice("Cylinder", "ACF.ContainerShapes.Cylinder")
 
 		-- Set default shape
-		local SelectedShape = ACF.GetClientData("SupplyShape") or "Box"
+		local SelectedShape = ACF.GetClientData("Shape")
+		if not GetType(SelectedShape) then SelectedShape = "ACF.ContainerShapes.Box" end
 
-		ACF.SetClientData("SupplyShape", SelectedShape, true)
-		SupplyShape:ChooseOptionID(SelectedShape == "Sphere" and 2 or SelectedShape == "Cylinder" and 3 or 1)
+		ACF.SetClientData("Shape", SelectedShape, true)
+		SupplyShape:ChooseOptionID(SelectedShape == "ACF.ContainerShapes.Sphere" and 2 or SelectedShape == "ACF.ContainerShapes.Cylinder" and 3 or 1)
 
 		-- Live capacity and rate preview label
 		local CapacityLabel = Menu:AddLabel("")
@@ -54,9 +53,9 @@ Components.RegisterItem("RFL-UNIT", "SP-RFL", {
 
 		local function UpdateSupplyText()
 			local Wall = ACF.ContainerArmor * ACF.MmToInch
-			local Shape = ACF.GetClientData("SupplyShape") or "Box"
+			local Shape = GetType(ACF.GetClientData("Shape")) or GetType("ACF.ContainerShapes.Box")
 
-			local Volume, Area = ACF.ContainerShapes[Shape](SupplySize, Wall)
+			local Volume, Area = Shape.ShapeCalculation(SupplySize, Wall)
 
 			local Capacity = Volume * ACF.gCmToKgIn
 			local EmptyMass = Area * Wall * ACF.InchToCmCu * ACF.SteelDensity
@@ -70,11 +69,13 @@ Components.RegisterItem("RFL-UNIT", "SP-RFL", {
 		end
 
 		function SupplyShape:OnSelect(_, _, Data)
+			local ShapeClass = GetType(Data) or GetType("ACF.ContainerShapes.Box")
+
 			if Menu.ComponentPreview then
-				Menu.ComponentPreview:UpdateModel(ACF.ContainerShapeModels[Data] or "models/acf/core/s_fuel.mdl", "phoenix_storms/future_vents")
+				Menu.ComponentPreview:UpdateModel(ShapeClass.Model, "phoenix_storms/future_vents")
 			end
 
-			ACF.SetClientData("SupplyShape", Data)
+			ACF.SetClientData("Shape", Data)
 			UpdateSupplyText()
 		end
 
@@ -125,6 +126,5 @@ Components.RegisterItem("RFL-UNIT", "SP-RFL", {
 
 		ACF.SetClientData("PrimaryClass", "acf_supply")
 		ACF.SetClientData("SecondaryClass", "N/A")
-	end,
-})
-
+	end
+end)

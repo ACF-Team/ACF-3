@@ -1,214 +1,214 @@
 local ACF       = ACF
 local Classes   = ACF.Classes
 local Damage    = ACF.Damage
-local AmmoTypes = Classes.AmmoTypes
-local Ammo      = AmmoTypes.Register("APHE", "AP")
 local Clock 	= ACF.Utilities.Clock
 
-function Ammo:OnLoaded()
-	Ammo.BaseClass.OnLoaded(self)
+Classes.DefineClass("ACF.Ammunition.APHE", "ACF.Ammunition.AP", function()
+	local BASE = BASE
 
-	self.Name		 = "Armor Piercing High Explosive"
-	self.SpawnIcon   = "acf/icons/shell_aphe.png"
-	self.Bodygroup   = 1 -- APHE bodygroup index
-	self.Description = "#acf.descs.ammo.aphe"
-	self.Blacklist = {
-		GL = true,
-		MG = true,
-		MO = true,
-		SL = true,
-		RAC = true,
+	CLASS.Name		 = "Armor Piercing High Explosive"
+	CLASS.SpawnIcon   = "acf/icons/shell_aphe.png"
+	CLASS.Bodygroup   = 1 -- APHE bodygroup index
+	CLASS.Description = "#acf.descs.ammo.aphe"
+	CLASS.Blacklist = {
+		["ACF.Guns.GrenadeLauncher"] = true,
+		["ACF.Guns.Machinegun"] = true,
+		["ACF.Guns.Mortar"] = true,
+		["ACF.Guns.SmokeLauncher"] = true,
+		["ACF.Guns.RotaryAutocannon"] = true,
 	}
-end
 
-function Ammo:GetPenetration(Bullet, Speed)
-	if not isnumber(Speed) then
-		Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * ACF.InchToMeter or Bullet.MuzzleVel
-	end
+	MENU_FIELD("Number", "FillerRatio", {Default = 0})
 
-	return ACF.Penetration(Speed, Bullet.ProjMass, Bullet.Diameter * 10) * (1 - Bullet.FillerRatio)
-end
-
-function Ammo:GetDisplayData(Data)
-	local Display  = Ammo.BaseClass.GetDisplayData(self, Data)
-	local FragMass = Data.ProjMass - Data.FillerMass
-
-	Display.BlastRadius = Data.FillerMass ^ 0.33 * 8
-	Display.Fragments   = math.max(math.floor((Data.FillerMass / FragMass) * ACF.HEFrag), 2)
-	Display.FragMass    = FragMass / Display.Fragments
-	Display.FragVel     = (Data.FillerMass * ACF.HEPower * 1000 / Display.FragMass / Display.Fragments) ^ 0.5
-
-	hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
-
-	return Display
-end
-
-function Ammo:UpdateRoundData(ToolData, Data, GUIData)
-	GUIData = GUIData or Data
-
-	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
-
-	local FreeVol   = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)
-	local FillerVol = FreeVol * math.Clamp(ToolData.FillerRatio, 0, 1)
-
-	Data.FillerMass = FillerVol * ACF.HEDensity
-	Data.ProjMass   = math.max(GUIData.ProjVolume - FillerVol, 0) * ACF.SteelDensity + Data.FillerMass
-	Data.MuzzleVel  = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
-	Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
-	Data.CartMass   = Data.PropMass + Data.ProjMass
-	Data.FillerRatio = math.Clamp(ToolData.FillerRatio, 0, 1)
-
-	hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
-
-	for K, V in pairs(self:GetDisplayData(Data)) do
-		GUIData[K] = V
-	end
-end
-
-function Ammo:BaseConvert(ToolData)
-	local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, {})
-
-	Data.ShovePower = 0.1
-	Data.LimitVel   = 700 --Most efficient penetration speed in m/s
-	Data.Ricochet   = 65 --Base ricochet angle
-	Data.CanFuze    = Data.Caliber * 10 >= ACF.MinFuzeCaliber -- Can fuze on calibers >= 25mm
-
-	GUIData.MinFillerVol = 0
-
-	self:UpdateRoundData(ToolData, Data, GUIData)
-
-	return Data, GUIData
-end
-
-function Ammo:VerifyData(ToolData)
-	Ammo.BaseClass.VerifyData(self, ToolData)
-
-	if not isnumber(ToolData.FillerRatio) then
-		ToolData.FillerRatio = 1
-	end
-end
-
-if SERVER then
-	local Entities = Classes.Entities
-	local Objects  = Damage.Objects
-	local Conversion	= ACF.PointConversion
-
-	Entities.AddArguments("acf_ammo", "FillerRatio") -- Adding extra info to ammo crates
-
-	function Ammo:GetCost(BulletData)
-		return ((BulletData.ProjMass - BulletData.FillerMass) * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.CompB)
-	end
-
-	function Ammo:OnLast(Entity)
-		Ammo.BaseClass.OnLast(self, Entity)
-
-		Entity.FillerRatio = nil
-
-		-- Cleanup the leftovers aswell
-		Entity.FillerMass  = nil
-		Entity.RoundData5  = nil
-
-		Entity:SetNW2Float("FillerMass", 0)
-	end
-
-	function Ammo:Network(Entity, BulletData)
-		Ammo.BaseClass.Network(self, Entity, BulletData)
-
-		Entity:SetNW2String("AmmoType", "APHE")
-		Entity:SetNW2Float("FillerMass", BulletData.FillerMass)
-	end
-
-	function Ammo:UpdateCrateOverlay(BulletData, State)
-		Ammo.BaseClass.UpdateCrateOverlay(self, BulletData, State)
-		local Data = self:GetDisplayData(BulletData)
-		State:AddNumber("Blast Radius", Data.BlastRadius, " m", 2)
-		State:AddNumber("Blast Energy", BulletData.FillerMass * ACF.HEPower, " kJ", 2)
-	end
-
-	function Ammo:OnFlightEnd(Bullet, Trace)
-		if not Bullet.DetByFuze then
-			local Offset = Bullet.ProjLength * 0.39 * 0.5 -- Pulling the explosion back by half of the projectiles length
-
-			Bullet.Pos = Trace.HitPos - Bullet.Flight:GetNormalized() * Offset
+	function CLASS:GetPenetration(Bullet, Speed)
+		if not isnumber(Speed) then
+			Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * ACF.InchToMeter or Bullet.MuzzleVel
 		end
 
-		local Position = Bullet.Pos
-		local Filler   = Bullet.FillerMass
-		local Fragment = Bullet.ProjMass - Filler
-		local DmgInfo  = Objects.DamageInfo(Bullet.Owner, Bullet.Gun)
-
-		Bullet.KillTime = Clock.CurTime
-		Damage.createExplosion(Position, Filler, Fragment, nil, DmgInfo)
-
-		Ammo.BaseClass.OnFlightEnd(self, Bullet, Trace)
-	end
-else
-	ACF.RegisterAmmoDecal("APHE", "damage/ap_pen", "damage/ap_rico")
-
-	function Ammo:ImpactEffect(_, Bullet)
-		local Position  = Bullet.SimPos
-		local Direction = Bullet.SimFlight
-		local Filler    = Bullet.FillerMass
-
-		Damage.explosionEffect(Position, Direction, Filler)
+		return ACF.Penetration(Speed, Bullet.ProjMass, Bullet.Diameter * 10) * (1 - Bullet.FillerRatio)
 	end
 
-	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
-		local FillerRatio = Base:AddSlider("Filler Ratio", 0, 1, 2)
-		FillerRatio:SetClientData("FillerRatio", "OnValueChanged")
-		FillerRatio:DefineSetter(function(_, _, _, Value)
-			ToolData.FillerRatio = math.Round(Value, 2)
+	function CLASS:GetDisplayData(Data)
+		local Display  = BASE.GetDisplayData(self, Data)
+		local FragMass = Data.ProjMass - Data.FillerMass
 
-			self:UpdateRoundData(ToolData, BulletData)
+		Display.BlastRadius = Data.FillerMass ^ 0.33 * 8
+		Display.Fragments   = math.max(math.floor((Data.FillerMass / FragMass) * ACF.HEFrag), 2)
+		Display.FragMass    = FragMass / Display.Fragments
+		Display.FragVel     = (Data.FillerMass * ACF.HEPower * 1000 / Display.FragMass / Display.Fragments) ^ 0.5
 
-			return BulletData.FillerVol
-		end)
+		hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
+
+		return Display
 	end
 
-	function Ammo:OnCreateCrateInformation(Base, Label, ...)
-		Ammo.BaseClass.OnCreateCrateInformation(self, Base, Label, ...)
+	function CLASS:UpdateRoundData()
+		local Data    = self.BulletData
+		local GUIData = self.GUIData
 
-		Label:TrackClientData("FillerRatio")
+		ACF.UpdateRoundSpecs(self)
+
+		local FreeVol   = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)
+		local FillerVol = FreeVol * math.Clamp(self.FillerRatio, 0, 1)
+
+		Data.FillerMass = FillerVol * ACF.HEDensity
+		Data.ProjMass   = math.max(GUIData.ProjVolume - FillerVol, 0) * ACF.SteelDensity + Data.FillerMass
+		Data.MuzzleVel  = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
+		Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
+		Data.CartMass   = Data.PropMass + Data.ProjMass
+		Data.FillerRatio = math.Clamp(self.FillerRatio, 0, 1)
+
+		hook.Run("ACF_OnUpdateRound", self, self, Data, GUIData)
+
+		for K, V in pairs(self:GetDisplayData(Data)) do
+			GUIData[K] = V
+		end
 	end
 
-	function Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
-		local RoundStats = Base:AddLabel()
-		RoundStats:TrackClientData("Projectile", "SetText")
-		RoundStats:TrackClientData("Propellant")
-		RoundStats:TrackClientData("FillerRatio")
-		RoundStats:DefineSetter(function()
-			self:UpdateRoundData(ToolData, BulletData)
+	function CLASS:BaseConvert()
+		self.BulletData = {}
 
-			local Text		= language.GetPhrase("acf.menu.ammo.round_stats_he")
-			local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
-			local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
-			local PropMass	= ACF.GetProperMass(BulletData.PropMass)
-			local Filler	= ACF.GetProperMass(BulletData.FillerMass)
+		local Data = ACF.RoundBaseGunpowder(self)
 
-			return Text:format(MuzzleVel, ProjMass, PropMass, Filler)
-		end)
+		Data.ShovePower = 0.1
+		Data.LimitVel   = 700 --Most efficient penetration speed in m/s
+		Data.Ricochet   = 65 --Base ricochet angle
+		Data.CanFuze    = Data.Caliber * 10 >= ACF.MinFuzeCaliber -- Can fuze on calibers >= 25mm
 
-		local FillerStats = Base:AddLabel()
-		FillerStats:TrackClientData("FillerRatio", "SetText")
-		FillerStats:DefineSetter(function()
-			self:UpdateRoundData(ToolData, BulletData)
+		self.GUIData.MinFillerVol = 0
 
-			local Text	   = language.GetPhrase("acf.menu.ammo.filler_stats_he")
-			local Blast	   = math.Round(BulletData.BlastRadius, 2)
-			local FragMass = ACF.GetProperMass(BulletData.FragMass)
-			local FragVel  = math.Round(BulletData.FragVel, 2)
+		self:UpdateRoundData()
 
-			return Text:format(Blast, BulletData.Fragments, FragMass, FragVel)
-		end)
-
-		local MaxPen = Base:AddLabel()
-		MaxPen:TrackClientData("Projectile", "SetText")
-		MaxPen:TrackClientData("Propellant")
-		MaxPen:TrackClientData("FillerRatio")
-		MaxPen:DefineSetter(function()
-			local Text		= language.GetPhrase("acf.menu.ammo.pen_stats_ap")
-			local MaxPen	= math.Round(BulletData.MaxPen, 2)
-			return Text:format(MaxPen)
-		end)
+		return self.BulletData, self.GUIData
 	end
-end
+
+	function CLASS:VerifyData()
+		BASE.VerifyData(self)
+
+		if not isnumber(self.FillerRatio) then
+			self.FillerRatio = 1
+		end
+	end
+
+	if SERVER then
+		local Objects  = Damage.Objects
+		local Conversion	= ACF.PointConversion
+
+		function CLASS:GetCost(BulletData)
+			return ((BulletData.ProjMass - BulletData.FillerMass) * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.CompB)
+		end
+
+		function CLASS:OnLast(Entity)
+			BASE.OnLast(self, Entity)
+
+			Entity.FillerRatio = nil
+
+			-- Cleanup the leftovers aswell
+			Entity.FillerMass  = nil
+			Entity.RoundData5  = nil
+
+			Entity:SetNW2Float("FillerMass", 0)
+		end
+
+		function CLASS:Network(Entity, BulletData)
+			BASE.Network(self, Entity, BulletData)
+
+			Entity:SetNW2String("AmmoType", "ACF.Ammunition.APHE")
+			Entity:SetNW2Float("FillerMass", BulletData.FillerMass)
+		end
+
+		function CLASS:UpdateCrateOverlay(BulletData, State)
+			BASE.UpdateCrateOverlay(self, BulletData, State)
+			local Data = self:GetDisplayData(BulletData)
+			State:AddNumber("Blast Radius", Data.BlastRadius, " m", 2)
+			State:AddNumber("Blast Energy", BulletData.FillerMass * ACF.HEPower, " kJ", 2)
+		end
+
+		function CLASS:OnFlightEnd(Bullet, Trace)
+			if not Bullet.DetByFuze then
+				local Offset = Bullet.ProjLength * 0.39 * 0.5 -- Pulling the explosion back by half of the projectiles length
+
+				Bullet.Pos = Trace.HitPos - Bullet.Flight:GetNormalized() * Offset
+			end
+
+			local Position = Bullet.Pos
+			local Filler   = Bullet.FillerMass
+			local Fragment = Bullet.ProjMass - Filler
+			local DmgInfo  = Objects.DamageInfo(Bullet.Owner, Bullet.Gun)
+
+			Bullet.KillTime = Clock.CurTime
+			Damage.createExplosion(Position, Filler, Fragment, nil, DmgInfo)
+
+			BASE.OnFlightEnd(self, Bullet, Trace)
+		end
+	else
+		ACF.RegisterAmmoDecal("ACF.Ammunition.APHE", "damage/ap_pen", "damage/ap_rico")
+
+		function CLASS:ImpactEffect(_, Bullet)
+			local Position  = Bullet.SimPos
+			local Direction = Bullet.SimFlight
+			local Filler    = Bullet.FillerMass
+
+			Damage.explosionEffect(Position, Direction, Filler)
+		end
+
+		function CLASS:OnCreateAmmoControls(Base, _, BulletData)
+			local FillerRatio = Base:AddSlider("Filler Ratio", 0, 1, 2)
+			FillerRatio:SetClientData("FillerRatio", "OnValueChanged")
+			FillerRatio:DefineSetter(function(_, _, _, Value)
+				self.FillerRatio = math.Round(Value, 2)
+
+				self:UpdateRoundData()
+
+				return BulletData.FillerVol
+			end)
+		end
+
+		function CLASS:OnCreateCrateInformation(Base, Label, ...)
+			BASE.OnCreateCrateInformation(self, Base, Label, ...)
+
+			Label:TrackClientData("FillerRatio")
+		end
+
+		function CLASS:OnCreateAmmoInformation(Base, _, BulletData)
+			local RoundStats = Base:AddLabel()
+			RoundStats:TrackClientData("Projectile", "SetText")
+			RoundStats:TrackClientData("Propellant")
+			RoundStats:TrackClientData("FillerRatio")
+			RoundStats:DefineSetter(function()
+				self:UpdateRoundData()
+
+				local Text		= language.GetPhrase("acf.menu.ammo.round_stats_he")
+				local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
+				local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
+				local PropMass	= ACF.GetProperMass(BulletData.PropMass)
+				local Filler	= ACF.GetProperMass(BulletData.FillerMass)
+
+				return Text:format(MuzzleVel, ProjMass, PropMass, Filler)
+			end)
+
+			local FillerStats = Base:AddLabel()
+			FillerStats:TrackClientData("FillerRatio", "SetText")
+			FillerStats:DefineSetter(function()
+				self:UpdateRoundData()
+
+				local Text	   = language.GetPhrase("acf.menu.ammo.filler_stats_he")
+				local Blast	   = math.Round(self.GUIData.BlastRadius, 2)
+				local FragMass = ACF.GetProperMass(self.GUIData.FragMass)
+				local FragVel  = math.Round(self.GUIData.FragVel, 2)
+
+				return Text:format(Blast, self.GUIData.Fragments, FragMass, FragVel)
+			end)
+
+			local MaxPen = Base:AddLabel()
+			MaxPen:TrackClientData("Projectile", "SetText")
+			MaxPen:TrackClientData("Propellant")
+			MaxPen:TrackClientData("FillerRatio")
+			MaxPen:DefineSetter(function()
+				local Text		= language.GetPhrase("acf.menu.ammo.pen_stats_ap")
+				local MaxPen	= math.Round(self.GUIData.MaxPen, 2)
+				return Text:format(MaxPen)
+			end)
+		end
+	end
+end)

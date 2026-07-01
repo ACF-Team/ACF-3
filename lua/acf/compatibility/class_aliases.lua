@@ -679,23 +679,3 @@ do
         end
     end
 end
-
----------------------------------------------------------------------------------------------------------------------
---  ACE Crew Compatibility
---      These functions allow casting ACE crew internal names -> ACF internal names.
---
---      Breaking change introduced: Not applicable
----------------------------------------------------------------------------------------------------------------------
-
-do
-    Aliases.Register("ACE_CrewTypes", "Crewseat_Driver", "Driver")
-    Aliases.Register("ACE_CrewTypes", "Crewseat_Gunner", "Gunner")
-    Aliases.Register("ACE_CrewTypes", "Crewseat_Loader", "Loader")
-
-    -- Exposed functions
-    Compatibility.Crew = Compatibility.Crew or {}
-
-    function Compatibility.Crew.CheckACECrewType(CrewType)
-        return Aliases.Get("ACE_CrewTypes", CrewType)
-    end
-end

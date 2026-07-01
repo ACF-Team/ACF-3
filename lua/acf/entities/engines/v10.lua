@@ -1,68 +1,66 @@
 local ACF     = ACF
-local Engines = ACF.Classes.Engines
-
-
-Engines.Register("V10", {
-	Name = "V10 Engine",
-})
+local Classes = ACF.Classes
+Classes.DefineClass("ACF.Engines.V10", "ACF.Engines.BaseEngine", function()
+	CLASS.Name = "V10 Engine"
+end)
 
 do
-	Engines.RegisterItem("4.3-V10", "V10", {
-		Name		 = "4.3L V10 Petrol",
-		Description	 = "#acf.descs.engines.v10.4_3",
-		Model		 = "models/engines/v10sml.mdl",
-		Sound		 = "acf_base/engines/v10_petrolsmall.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "GenericPetrol",
-		Mass		 = 160,
-		Torque		 = 360,
-		FlywheelMass = 0.2,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.4.3-V10", "ACF.Engines.V10", function()
+		CLASS.Name		 = "4.3L V10 Petrol"
+		CLASS.Description	 = "#acf.descs.engines.v10.4_3"
+		CLASS.Model		 = "models/engines/v10sml.mdl"
+		CLASS.Sound		 = "acf_base/engines/v10_petrolsmall.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
+		CLASS.Mass		 = 160
+		CLASS.Torque		 = 360
+		CLASS.FlywheelMass = 0.2
+		CLASS.RPM = {
 			Idle	= 900,
 			Limit	= 6250,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 100,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("8.0-V10", "V10", {
-		Name		 = "8.0L V10 Petrol",
-		Description	 = "#acf.descs.engines.v10.8_0",
-		Model		 = "models/engines/v10med.mdl",
-		Sound		 = "acf_base/engines/v10_petrolmedium.wav",
-		Fuel		 = { Petrol = true },
-		Type		 = "GenericPetrol",
-		Mass		 = 300,
-		Torque		 = 612,
-		FlywheelMass = 0.5,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.8.0-V10", "ACF.Engines.V10", function()
+		CLASS.Name		 = "8.0L V10 Petrol"
+		CLASS.Description	 = "#acf.descs.engines.v10.8_0"
+		CLASS.Model		 = "models/engines/v10med.mdl"
+		CLASS.Sound		 = "acf_base/engines/v10_petrolmedium.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
+		CLASS.Mass		 = 300
+		CLASS.Torque		 = 612
+		CLASS.FlywheelMass = 0.5
+		CLASS.RPM = {
 			Idle	= 750,
 			Limit	= 6500,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 100,
-		},
-	})
+		}
+	end)
 
-	Engines.RegisterItem("22.0-V10", "V10", {
-		Name		 = "22.0L V10 Multifuel",
-		Description	 = "#acf.descs.engines.v10.22_0",
-		Model		 = "models/engines/v10big.mdl",
-		Sound		 = "acf_base/engines/v10_diesellarge.wav",
-		Fuel		 = { Petrol = true, Diesel = true },
-		Type		 = "GenericDiesel",
-		Mass		 = 1600,
-		Torque		 = 3240,
-		FlywheelMass = 5,
-		RPM = {
+	Classes.DefineClass("ACF.Engines.22.0-V10", "ACF.Engines.V10", function()
+		CLASS.Name		 = "22.0L V10 Multifuel"
+		CLASS.Description	 = "#acf.descs.engines.v10.22_0"
+		CLASS.Model		 = "models/engines/v10big.mdl"
+		CLASS.Sound		 = "acf_base/engines/v10_diesellarge.wav"
+		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true, ["ACF.FuelTypes.Diesel"] = true }
+		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
+		CLASS.Mass		 = 1600
+		CLASS.Torque		 = 3240
+		CLASS.FlywheelMass = 5
+		CLASS.RPM = {
 			Idle	= 525,
 			Limit	= 2200,
-		},
-		Preview = {
+		}
+		CLASS.Preview = {
 			FOV = 100,
-		},
-	})
+		}
+	end)
 end
 
 ACF.SetCustomAttachment("models/engines/v10big.mdl", "driveshaft", Vector(-33, 0, 7.2), Angle(0, 0, 90))

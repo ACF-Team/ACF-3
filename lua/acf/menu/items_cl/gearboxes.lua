@@ -1,7 +1,10 @@
 local ACF = ACF
-local Gearboxes = ACF.Classes.Gearboxes
+local Classes = ACF.Classes
 local Current = {}
 local StatsText = language.GetPhrase("acf.menu.gearboxes.stats")
+
+local GEARBOX_BASE = "ACF.Gearboxes.BaseGearbox"
+local GetType = Classes.GetTypeByName
 
 local function SetStatsText(GearboxStats)
 	local Mass, Torque, TorqueRating = ACF.GetGearboxStats(Current.Mass, Current.Scale, Current.MaxTorque, Current.GearCount)
@@ -11,7 +14,9 @@ end
 
 local CreateSubMenu
 local function CreateMenu(Menu)
-	local Entries = Gearboxes.GetEntries()
+	-- Gearbox "classes" are the direct children of the base gearbox (Manual, Auto, CVT, ...); their items
+	-- are the concrete gearboxes under each.
+	local Entries = Classes.GetChildren(GetType(GEARBOX_BASE))
 
 	ACF.SetClientData("PrimaryClass", "acf_gearbox")
 	ACF.SetClientData("SecondaryClass", "N/A")
@@ -68,9 +73,7 @@ CreateSubMenu = function(Menu, Entries, UseLegacyRatios)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		ACF.SetClientData("GearboxClass", Data.ID)
-
-		ACF.LoadSortedList(GearboxList, Data.Items, "ID", "Model")
+		ACF.LoadSortedList(GearboxList, Classes.GetChildren(Data), "Name", "Model")
 	end
 
 	function GearboxList:OnSelect(Index, _, Data)
@@ -79,7 +82,7 @@ CreateSubMenu = function(Menu, Entries, UseLegacyRatios)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		ACF.SetClientData("Gearbox", Data.ID)
+		ACF.SetClientData("Gearbox", Classes.GetTypeName(Data))
 
 		GearboxName:SetText(Data.Name)
 		GearboxDesc:SetText(Data.Description)
@@ -87,7 +90,7 @@ CreateSubMenu = function(Menu, Entries, UseLegacyRatios)
 		Current.Mass = Data.Mass
 		Current.MaxTorque = Data.MaxTorque
 		Current.Scale = Current.Scale or 1
-		Current.GearCount = Data.Class.CanSetGears and Current.GearCount or Data.Class.Gears.Max or 3
+		Current.GearCount = Data.CanSetGears and Current.GearCount or Data.Gears.Max or 3
 
 		SetStatsText(GearboxStats)
 
@@ -181,7 +184,7 @@ CreateSubMenu = function(Menu, Entries, UseLegacyRatios)
 		return Count
 	end)
 
-	ACF.LoadSortedList(GearboxClass, Entries, "ID")
+	ACF.LoadSortedList(GearboxClass, Entries, "Name")
 end
 
 ACF.AddMenuItem(301, "#acf.menu.entities", "#acf.menu.gearboxes", "cog", CreateMenu)

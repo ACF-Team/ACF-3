@@ -1,3 +1,11 @@
+-- This entire file needs to change a bit for the class rework,
+-- we likely will have to break some user expectations so those should be
+-- done at the end and documented properly
+-- Breaking changes so far:
+--[[
+	- Ammo types now return their fully qualified names and not their previous short identifiers. Ie. APHE -> ACF.Ammunition.APHE
+]]
+
 -- [ To Do ] --
 
 -- #general
@@ -22,10 +30,8 @@ local ACF               = ACF
 local math              = math
 local match             = string.match
 local Classes           = ACF.Classes
-local AmmoTypes         = Classes.AmmoTypes
 local Engines           = Classes.Engines
-local Entities          = Classes.Entities
-local FuelTanks         = Classes.FuelTanks
+local Entities          = ACF.Entities
 local FuelTypes         = Classes.FuelTypes
 local Gearboxes         = Classes.Gearboxes
 local Weapons           = Classes.Weapons
@@ -268,11 +274,11 @@ end
 -- @server
 -- @return table The list of ammo types
 function acf_library.listAllAmmoTypes()
-	local List   = AmmoTypes.GetList()
+	local List   = Classes.GetSubtypeFQNs("ACF.Ammunition.BaseAmmo")
 	local Result = {}
 
 	for K, V in ipairs(List) do
-		Result[K] = V.ID
+		Result[K] = V
 	end
 
 	return Result
@@ -305,39 +311,6 @@ function acf_library.listAllEngines()
 			Count = Count + 1
 
 			Result[Count] = Engine.ID
-		end
-	end
-
-	return Result
-end
-
---- Returns a list of every registered ACF fuel tank class
--- @shared
--- @return table The list of fuel tank classes
-function acf_library.listAllFuelTankClasses()
-	local List   = FuelTanks.GetList()
-	local Result = {}
-
-	for K, V in ipairs(List) do
-		Result[K] = V.ID
-	end
-
-	return Result
-end
-
---- Returns a list of every registered ACF fuel tank
--- @shared
--- @return table The list of fuel tanks
-function acf_library.listAllFuelTanks()
-	local List   = FuelTanks.GetList()
-	local Result = {}
-	local Count  = 0
-
-	for _, Class in ipairs(List) do
-		for _, Tank in ipairs(Class.Items) do
-			Count = Count + 1
-
-			Result[Count] = Tank.ID
 		end
 	end
 
@@ -431,7 +404,7 @@ end
 function acf_library.getAmmoTypeSpecs(id)
 	CheckLuaType(id, TYPE_STRING)
 
-	local Ammo = AmmoTypes.Get(id)
+	local Ammo = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", id)
 
 	if not Ammo then SF.Throw("Invalid ammo type ID, not found.", 2) end
 
@@ -466,36 +439,6 @@ function acf_library.getEngineSpecs(id)
 	local Engine = Engines.GetItem(Class.ID, id)
 
 	return WrapTable(Engine, Ignored)
-end
-
---- Returns the specifications of an ACF fuel tank class
--- @param string id The ID of the fuel tank class you want to get the information from
--- @shared
--- @return table The specifications of the fuel tank class
-function acf_library.getFuelTankClassSpecs(id)
-	CheckLuaType(id, TYPE_STRING)
-
-	local Class = FuelTanks.Get(id)
-
-	if not Class then SF.Throw("Invalid fuel tank class ID, not found.", 2) end
-
-	return WrapTable(Class, Ignored)
-end
-
---- Returns the specifications of an ACF fuel tank
--- @param string id The ID of the fuel tank you want to get the information from
--- @shared
--- @return table The specifications of the fuel tank
-function acf_library.getFuelTankSpecs(id)
-	CheckLuaType(id, TYPE_STRING)
-
-	local Class = Classes.GetGroup(FuelTanks, id)
-
-	if not Class then SF.Throw("Invalid fuel tank ID, not found.", 2) end
-
-	local FuelTank = FuelTanks.GetItem(Class.ID, id)
-
-	return WrapTable(FuelTank, Ignored)
 end
 
 --- Returns the specifications of an ACF fuel type
@@ -780,7 +723,7 @@ if SERVER then
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return false end
 
-		return This.IsACFAmmoCrate or false
+		return This.IsACFAmmo or false
 	end
 
 	--- Returns true if the entity is an ACF fuel tank
@@ -794,7 +737,7 @@ if SERVER then
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return false end
 
-		return This.IsACFFuelTank or false
+		return This.IsACFFueltank or false
 	end
 
 	--- Returns the capacity of an acf ammo crate or fuel tank
@@ -1959,7 +1902,7 @@ if SERVER then
 
 		local Spread = (This.GetSpread and This:GetSpread()) or This.Spread or 0
 
-		if This.BulletData and This.BulletData.Type == "FL" then -- TODO: Replace this hardcoded bit
+		if This.BulletData and This.BulletData.AmmoType == "ACF.Ammunition.FL" then -- TODO: Replace this hardcoded bit
 			return Spread + (This.BulletData.FlechetteSpread or 0)
 		end
 
@@ -2084,7 +2027,7 @@ if SERVER then
 
 		local BulletData = This.BulletData
 
-		return BulletData and BulletData.Id or ""
+		return BulletData and BulletData.WeaponType or ""
 	end
 
 	--- Returns the BulletData table of the ammo in an ACF ammo crate
@@ -2154,7 +2097,7 @@ if SERVER then
 
 		local BulletData = This.BulletData
 
-		return BulletData and BulletData.Type or ""
+		return BulletData and BulletData.AmmoType or ""
 	end
 
 	--- Returns the caliber of an ammo or gun
@@ -2324,7 +2267,7 @@ if SERVER then
 		if RestrictInfo(This) then return 0 end
 
 		local BulletData = This.BulletData
-		local AmmoType   = BulletData and AmmoTypes.Get(BulletData.Type)
+		local AmmoType   = BulletData and Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.AmmoType)
 
 		if not AmmoType then return 0 end
 
@@ -2346,7 +2289,7 @@ if SERVER then
 		if RestrictInfo(This) then return 0 end
 
 		local BulletData = This.BulletData
-		local AmmoType   = BulletData and AmmoTypes.Get(BulletData.Type)
+		local AmmoType   = BulletData and Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.AmmoType)
 
 		if not AmmoType then return 0 end
 

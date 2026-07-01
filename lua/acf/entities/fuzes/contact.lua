@@ -1,76 +1,67 @@
 local ACF     = ACF
 local Classes = ACF.Classes
 local Clock   = ACF.Utilities.Clock
-local Fuzes   = Classes.Fuzes
-local Fuze    = Fuzes.Register("Contact")
 
-Fuze.MinDelay = 0
-Fuze.MaxDelay = 10
+Classes.DefineClass("ACF.Missiles.Fuze.Contact", "ACF.Missiles.Fuze", function()
+	CLASS.Name = "Contact"
+	CLASS.MinDelay = 0
+	CLASS.MaxDelay = 10
 
-function Fuze:OnLoaded()
-	self.Name = self.ID -- Workaround
-end
+	MENU_FIELD("Number", "ArmingDelay", {Default = 0})
 
-function Fuze:OnFirst(_, Data)
-	self.Primer = Data.ArmingDelay
-end
-
-function Fuze:Configure()
-	self.TimeStarted = Clock.CurTime
-end
-
-function Fuze:WriteDisplayConfig(State)
-	State:AddSubKeyValue("Primer", math.Round(self.Primer, 2))
-end
-
-if CLIENT then
-	Fuze.Description = "This fuze triggers upon direct contact against solid surfaces."
-
-	function Fuze:AddMenuControls(Base, ToolData)
-		local Min = ACF.GetGunValue(ToolData.Weapon, "ArmDelay") or self.MinDelay
-
-		local Delay = Base:AddSlider("Arming Delay", Min, self.MaxDelay, 2)
-		Delay:SetClientData("ArmingDelay", "OnValueChanged")
-		Delay:DefineSetter(function(Panel, _, _, Value)
-			Panel:SetValue(Value)
-
-			return Value
-		end)
-	end
-else
-	local Entities = Classes.Entities
-
-	Entities.AddArguments("acf_ammo", "ArmingDelay") -- Adding extra info to ammo crates
-
-	function Fuze:GetCost()
-		return 0
+	function CLASS:OnLoaded()
+		self.Name = self.ID -- Workaround
 	end
 
-	function Fuze:VerifyData(_, Data)
-		local Delay = Data.ArmingDelay
-		local Args = Data.FuzeArgs
+	function CLASS:OnFirst(_)
+		self.Primer = self.ArmingDelay
+	end
 
-		if not ACF.CheckNumber(Delay) and Args then
-			Delay = ACF.CheckNumber(Args.AD) or 0
+	function CLASS:Configure()
+		self.TimeStarted = Clock.CurTime
+	end
 
-			Args.AD = nil
+	function CLASS:WriteDisplayConfig(State)
+		State:AddSubKeyValue("Primer", math.Round(self.Primer, 2))
+	end
+
+	if CLIENT then
+		CLASS.Description = "This fuze triggers upon direct contact against solid surfaces."
+
+		function CLASS:AddMenuControls(Base, ToolData)
+			local Min = ACF.GetGunValue(ToolData.Weapon, "ArmDelay") or self.MinDelay
+
+			local Delay = Base:AddSlider("Arming Delay", Min, self.MaxDelay, 2)
+			Delay:SetClientData("ArmingDelay", "OnValueChanged")
+			Delay:DefineSetter(function(Panel, _, _, Value)
+				Panel:SetValue(Value)
+
+				return Value
+			end)
+		end
+	else
+		function CLASS:GetCost()
+			return 0
 		end
 
-		local Min = ACF.GetGunValue(Data.Weapon, "ArmDelay") or self.MinDelay
+		function CLASS:VerifyData(Weapon)
+			local Delay = self.ArmingDelay
+			local Min = Weapon.ArmDelay or self.MinDelay
 
-		Data.ArmingDelay = math.Clamp(Delay or 0, Min, self.MaxDelay)
-	end
+			Data.ArmingDelay = math.Clamp(Delay or 0, Min, self.MaxDelay)
+		end
 
-	function Fuze:IsArmed()
-		return Clock.CurTime - self.TimeStarted >= self.Primer
-	end
+		function CLASS:IsArmed()
+			return Clock.CurTime - self.TimeStarted >= self.Primer
+		end
 
-	-- Do nothing, projectiles auto-detonate on contact anyway.
-	function Fuze:GetDetonate()
-		return false
-	end
+		-- Do nothing, projectiles auto-detonate on contact anyway.
+		function CLASS:GetDetonate()
+			return false
+		end
 
-	function Fuze:OnLast(Entity)
-		Entity.ArmingDelay = nil
+		function CLASS:OnLast(Entity)
+			Entity.ArmingDelay = nil
+		end
 	end
-end
+end)

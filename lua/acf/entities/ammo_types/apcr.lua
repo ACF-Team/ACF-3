@@ -1,68 +1,68 @@
-local ACF   = ACF
-local Types = ACF.Classes.AmmoTypes
-local Ammo  = Types.Register("APCR", "AP")
+local ACF   	= ACF
+local Classes   = ACF.Classes
 
+Classes.DefineClass("ACF.Ammunition.APCR", "ACF.Ammunition.AP", function()
+	local BASE = BASE
 
-function Ammo:OnLoaded()
-	Ammo.BaseClass.OnLoaded(self)
-
-	self.Name		 = "Armor Piercing Composite Rigid"
-	self.SpawnIcon   = "acf/icons/shell_apcr.png"
-	self.Bodygroup   = 2 -- APCR bodygroup index
-	self.Description = "#acf.descs.ammo.apcr"
-	self.Blacklist = ACF.GetWeaponBlacklist({
-		C = true,
-		AL = true,
-		AC = true,
-		SA = true,
-		SC = true,
-		LAC = true,
-		RAC = true,
+	CLASS.Name		 = "Armor Piercing Composite Rigid"
+	CLASS.SpawnIcon   = "acf/icons/shell_apcr.png"
+	CLASS.Bodygroup   = 2 -- APCR bodygroup index
+	CLASS.Description = "#acf.descs.ammo.apcr"
+	CLASS.Blacklist = ACF.GetWeaponBlacklist({
+		["ACF.Guns.Cannon"] = true,
+		["ACF.Guns.Autocannon"] = true,
+		["ACF.Guns.SemiautomaticCannon"] = true,
+		["ACF.Guns.ShortBarrelledCannon"] = true,
+		["ACF.Guns.LightAutocannon"] = true,
+		["ACF.Guns.RotaryAutocannon"] = true,
 	})
-end
 
-function Ammo:UpdateRoundData(ToolData, Data, GUIData)
-	GUIData = GUIData or Data
+	function CLASS:UpdateRoundData()
+		local Data    = self.BulletData
+		local GUIData = self.GUIData
 
-	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
+		ACF.UpdateRoundSpecs(self)
 
-	Data.ProjMass  = Data.ProjArea * Data.ProjLength * ACF.SteelDensity --Volume of the projectile as a cylinder * density of steel (kg/in3)
-	Data.MuzzleVel = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
-	Data.DragCoef  = Data.ProjArea * 0.0001 / Data.ProjMass
-	Data.CartMass  = Data.PropMass + Data.ProjMass
+		Data.ProjMass  = Data.ProjArea * Data.ProjLength * ACF.SteelDensity --Volume of the projectile as a cylinder * density of steel (kg/in3)
+		Data.MuzzleVel = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
+		Data.DragCoef  = Data.ProjArea * 0.0001 / Data.ProjMass
+		Data.CartMass  = Data.PropMass + Data.ProjMass
 
-	hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
+		hook.Run("ACF_OnUpdateRound", self, self, Data, GUIData)
 
-	for K, V in pairs(self:GetDisplayData(Data)) do
-		GUIData[K] = V
-	end
-end
-
-function Ammo:BaseConvert(ToolData)
-	local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, { ProjScale = 0.75 }) -- APCR has a smaller penetrator
-
-	Data.ShovePower = 0.2
-	Data.LimitVel   = 900 --Most efficient penetration speed in m/s
-	Data.Ricochet   = 55 --Base ricochet angle
-
-	self:UpdateRoundData(ToolData, Data, GUIData)
-
-	return Data, GUIData
-end
-
-if SERVER then
-	local Conversion	= ACF.PointConversion
-
-	-- Since APCR
-	function Ammo:GetCost(BulletData)
-		return (BulletData.ProjMass * Conversion.Steel * 2.5) + (BulletData.PropMass * Conversion.Propellant)
+		for K, V in pairs(self:GetDisplayData(Data)) do
+			GUIData[K] = V
+		end
 	end
 
-	function Ammo:Network(Entity, BulletData)
-		Ammo.BaseClass.Network(self, Entity, BulletData)
+	function CLASS:BaseConvert()
+		self.BulletData = { ProjScale = 0.75 }
 
-		Entity:SetNW2String("AmmoType", "APCR")
+		local Data = ACF.RoundBaseGunpowder(self) -- APCR has a smaller penetrator
+
+		Data.ShovePower = 0.2
+		Data.LimitVel   = 900 --Most efficient penetration speed in m/s
+		Data.Ricochet   = 55 --Base ricochet angle
+
+		self:UpdateRoundData()
+
+		return self.BulletData, self.GUIData
 	end
-else
-	ACF.RegisterAmmoDecal("APCR", "damage/apcr_pen", "damage/apcr_rico")
-end
+
+	if SERVER then
+		local Conversion	= ACF.PointConversion
+
+		-- Since APCR
+		function CLASS:GetCost(BulletData)
+			return (BulletData.ProjMass * Conversion.Steel * 2.5) + (BulletData.PropMass * Conversion.Propellant)
+		end
+
+		function CLASS:Network(Entity, BulletData)
+			BASE.Network(self, Entity, BulletData)
+
+			Entity:SetNW2String("AmmoType", "ACF.Ammunition.APCR")
+		end
+	else
+		ACF.RegisterAmmoDecal("ACF.Ammunition.APCR", "damage/apcr_pen", "damage/apcr_rico")
+	end
+end)

@@ -22,5 +22,3 @@ function ENT:Draw()
     self:SetupBones()
     BaseClass.Draw(self)
 end
-
-ACF.Classes.Entities.Register()

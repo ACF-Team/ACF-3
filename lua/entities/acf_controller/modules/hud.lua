@@ -23,7 +23,7 @@ do
 		-- Network various statistics
 		if IsValid(SelfTbl.Primary) then
 			RecacheBindNW(self, SelfTbl, "AHS_Primary_SL", SelfTbl.Primary.TotalAmmo or 0, self.SetNWInt)
-			RecacheBindNW(self, SelfTbl, "AHS_Primary_AT", SelfTbl.Primary.BulletData.Type or 0, self.SetNWString)
+			RecacheBindNW(self, SelfTbl, "AHS_Primary_AT", SelfTbl.Primary.BulletData.AmmoType or 0, self.SetNWString)
 			RecacheBindNW(self, SelfTbl, "AHS_Primary_NF", SelfTbl.Primary.NextFire or 0, self.SetNWFloat)
 			RecacheBindNW(self, SelfTbl, "AHS_Primary_RT", SelfTbl.Primary.ReloadTime or 0, self.SetNWFloat)
 			RecacheBindNW(self, SelfTbl, "AHS_Primary_RD", SelfTbl.Primary.State == "Loaded" or false, self.SetNWBool)
@@ -35,7 +35,7 @@ do
 
 		if IsValid(SelfTbl.Secondary) then
 			RecacheBindNW(self, SelfTbl, "AHS_Secondary_SL", SelfTbl.Secondary.TotalAmmo or 0, self.SetNWInt)
-			RecacheBindNW(self, SelfTbl, "AHS_Secondary_AT", SelfTbl.Secondary.BulletData.Type or 0, self.SetNWInt)
+			RecacheBindNW(self, SelfTbl, "AHS_Secondary_AT", SelfTbl.Secondary.BulletData.AmmoType or 0, self.SetNWString)
 			RecacheBindNW(self, SelfTbl, "AHS_Secondary_NF", SelfTbl.Secondary.NextFire or 0, self.SetNWFloat)
 			RecacheBindNW(self, SelfTbl, "AHS_Secondary_RT", SelfTbl.Secondary.ReloadTime or 0, self.SetNWFloat)
 			RecacheBindNW(self, SelfTbl, "AHS_Secondary_RD", SelfTbl.Secondary.State == "Loaded" or false, self.SetNWBool)
@@ -46,7 +46,7 @@ do
 
 		if IsValid(SelfTbl.Tertiary) then
 			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_SL", SelfTbl.Tertiary.TotalAmmo or 0, self.SetNWInt)
-			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_AT", SelfTbl.Tertiary.BulletData.Type or 0, self.SetNWInt)
+			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_AT", SelfTbl.Tertiary.BulletData.AmmoType or 0, self.SetNWString)
 			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_NF", SelfTbl.Tertiary.NextFire or 0, self.SetNWFloat)
 			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_RT", SelfTbl.Tertiary.ReloadTime or 0, self.SetNWFloat)
 			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_RD", SelfTbl.Tertiary.State == "Loaded" or false, self.SetNWBool)

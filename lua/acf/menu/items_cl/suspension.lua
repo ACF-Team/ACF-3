@@ -12,7 +12,6 @@ function ACF.CreateSuspensionToolMenu(Panel)
 
         ACF.ArmorMenu = Menu
     else
-        Menu:ClearAllTemporal()
         Menu:ClearAll()
     end
 

@@ -1,12 +1,20 @@
 local ACF         = ACF
 local Classes     = ACF.Classes
-local EngineTypes = Classes.EngineTypes
-local FuelTypes   = Classes.FuelTypes
-local Engines     = Classes.Engines
 local TankSize    = Vector()
 local HPColor     = Color(255, 65, 65)
 local TorqueColor = Color(65, 65, 255)
 local IdleColor   = Color(127, 0, 0)
+
+local ENGINE_BASE     = "ACF.Engines.BaseEngine"
+local ENGINETYPE_BASE = "ACF.EngineTypes.BaseEngineType"
+local FUELTYPE_BASE   = "ACF.FuelTypes.FuelType"
+
+local GetType = Classes.GetTypeByName
+
+-- Engine types and fuel types are V2 classes addressed by FQN (the engine class' Type field and the
+-- keys of its Fuel set are both FQNs since the engine defs were migrated).
+local function GetEngineType(FQN) return Classes.GetSubtypeByName(ENGINETYPE_BASE, FQN) end
+local function GetFuelType(FQN)   return Classes.GetSubtypeByName(FUELTYPE_BASE, FQN) end
 
 local acf_menu_multiplytorquemult = CreateClientConVar("acf_menu_multiplytorquemult", "0", true, false, "If true, engine power/torque elements in the menu & overlay will be multiplied by the internal torque multiplier.\nIt should be noted that the torque multiplier is a temporary stopgap for internal code issues, and will be removed in a future mobility update.")
 
@@ -21,7 +29,7 @@ local function UpdateEngineStats(Label, Data)
 	local Mass       = ACF.GetProperMass(Data.Mass)
 	local Torque     = math.Round(Data.Torque * GetTorqueMult())
 	local TorqueFeet = math.Round(Data.Torque * GetTorqueMult() * ACF.NmToFtLb)
-	local Type       = EngineTypes.Get(Data.Type)
+	local Type       = GetEngineType(Data.Type)
 	local Efficiency = Type.Efficiency
 	local FuelList   = ""
 
@@ -30,7 +38,7 @@ local function UpdateEngineStats(Label, Data)
 	local ConsumptionText = language.GetPhrase("acf.menu.engines.consumption_stats")
 
 	for K in pairs(Data.Fuel) do
-		local Fuel = FuelTypes.Get(K)
+		local Fuel = GetFuelType(K)
 
 		if not Fuel then continue end
 
@@ -55,8 +63,9 @@ local function UpdateEngineStats(Label, Data)
 end
 
 local function CreateMenu(Menu)
-	local EngineEntries = Engines.GetEntries()
-	-- local FuelEntries   = FuelTanks.GetEntries()
+	-- Engine "classes" are the direct children of the base engine (V8, I4, SP, ...); their items are the
+	-- concrete engines under each.
+	local EngineEntries = Classes.GetChildren(GetType(ENGINE_BASE))
 
 	Menu:AddTitle("#acf.menu.engines.settings")
 
@@ -86,16 +95,18 @@ local function CreateMenu(Menu)
 	Menu:AddTitle("#acf.menu.fuel.settings")
 	local FuelType = Menu:AddComboBox()
 
-	-- Shape selector
+	-- Shape selector. The combo value is the ContainerShapes class FQN written straight into the
+	-- "Shape" field; no string->class translation needed at spawn time.
 	local FuelShape = Menu:AddComboBox()
-	FuelShape:AddChoice("Box", "Box")
-	FuelShape:AddChoice("Sphere", "Sphere")
-	FuelShape:AddChoice("Cylinder", "Cylinder")
+	FuelShape:AddChoice("Box", "ACF.ContainerShapes.Box")
+	FuelShape:AddChoice("Sphere", "ACF.ContainerShapes.Sphere")
+	FuelShape:AddChoice("Cylinder", "ACF.ContainerShapes.Cylinder")
 
 	-- Set default shape
-	local DefaultShape = ACF.GetClientData("FuelShape") or "Box"
-	ACF.SetClientData("FuelShape", DefaultShape, true)
-	FuelShape:ChooseOptionID(DefaultShape == "Sphere" and 2 or DefaultShape == "Cylinder" and 3 or 1)
+	local DefaultShape = ACF.GetClientData("Shape")
+	if not GetType(DefaultShape) then DefaultShape = "ACF.ContainerShapes.Box" end
+	ACF.SetClientData("Shape", DefaultShape, true)
+	FuelShape:ChooseOptionID(DefaultShape == "ACF.ContainerShapes.Sphere" and 2 or DefaultShape == "ACF.ContainerShapes.Cylinder" and 3 or 1)
 	timer.Simple(0, function() if IsValid(FuelShape) then FuelShape:OnSelect(nil, nil, DefaultShape) end end) -- Frown
 
 	local Min = ACF.ContainerMinSize
@@ -189,9 +200,7 @@ local function CreateMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		ACF.SetClientData("EngineClass", Data.ID)
-
-		ACF.LoadSortedList(EngineList, Data.Items, "Mass")
+		ACF.LoadSortedList(EngineList, Classes.GetChildren(Data), "Mass")
 	end
 
 	function EngineList:OnSelect(Index, _, Data)
@@ -203,7 +212,7 @@ local function CreateMenu(Menu)
 		local ClassData = EngineClass.Selected
 		local ClassDesc = ClassData.Description
 
-		ACF.SetClientData("Engine", Data.ID)
+		ACF.SetClientData("Engine", Classes.GetTypeName(Data))
 
 		EngineName:SetText(Data.Name)
 		EngineDesc:SetText((ClassDesc and (language.GetPhrase(ClassDesc) .. "\n\n") or "") .. language.GetPhrase(Data.Description))
@@ -235,10 +244,11 @@ local function CreateMenu(Menu)
 	end
 
 	function FuelShape:OnSelect(_, _, Data)
-		ACF.SetClientData("FuelShape", Data)
+		ACF.SetClientData("Shape", Data)
 
 		-- Update preview model based on shape
-		FuelPreview:UpdateModel(ACF.ContainerShapeModels[Data], "models/props_canal/metalcrate001d")
+		local ShapeClass = GetType(Data) or GetType("ACF.ContainerShapes.Box")
+		FuelPreview:UpdateModel(ShapeClass.Model, "models/props_canal/metalcrate001d")
 
 		FuelType:UpdateFuelText()
 	end
@@ -249,7 +259,7 @@ local function CreateMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
-		ACF.SetClientData("FuelType", Data.ID)
+		ACF.SetClientData("FuelType", Classes.GetTypeName(Data))
 
 		self:UpdateFuelText()
 	end
@@ -261,10 +271,10 @@ local function CreateMenu(Menu)
 		local FuelText = ""
 
 		local Wall = ACF.ContainerArmor * ACF.MmToInch -- Wall thickness in inches
-		local Shape = ACF.GetClientData("FuelShape") or "Box"
+		local Shape = GetType(ACF.GetClientData("Shape")) or GetType("ACF.ContainerShapes.Box")
 
 		-- Calculate volume and area using shape calculations
-		local Volume, Area = ACF.ContainerShapes[Shape](TankSize, Wall)
+		local Volume, Area = Shape.ShapeCalculation(TankSize, Wall)
 
 		local Capacity	= Volume * ACF.gCmToKgIn -- Internal volume available for fuel in liters
 		local EmptyMass	= Area * Wall * ACF.InchToCmCu * ACF.SteelDensity -- Total wall volume * cu in to cc * density of steel (kg/cc)
@@ -280,11 +290,11 @@ local function CreateMenu(Menu)
 			FuelText = FuelText .. Text:format(ACF.ContainerArmor, Liters, Gallons, ACF.GetProperMass(Mass), ACF.GetProperMass(EmptyMass))
 		end
 
-		FuelDesc:SetText("Scalable Fuel Tank\n\nShape: " .. Shape)
+		FuelDesc:SetText("Scalable Fuel Tank\n\nShape: " .. (Shape.Name or "Box"))
 		FuelInfo:SetText(FuelText)
 	end
 
-	ACF.LoadSortedList(EngineClass, EngineEntries, "ID")
+	ACF.LoadSortedList(EngineClass, EngineEntries, "Name")
 end
 
 ACF.AddMenuItem(201, "#acf.menu.entities", "#acf.menu.engines", "car", CreateMenu)
