@@ -1,6 +1,7 @@
 local ACF       = ACF
 local Classes 	= ACF.Classes
 Classes.DefineClass("ACF.Missiles.Guidance.Laser", "ACF.Missiles.Guidance.RadioMCLOS", function()
+	CLASS.Name = "Laser"
 	local BASE = BASE
 	function CLASS:Configure(Missile)
 		BASE.Configure(self, Missile)

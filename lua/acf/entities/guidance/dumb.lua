@@ -1,8 +1,6 @@
 local Classes 	= ACF.Classes
 Classes.DefineClass("ACF.Missiles.Guidance.Dumb", "ACF.Missiles.Guidance", function()
-	function CLASS:OnLoaded()
-		self.Name = self.ID -- Workaround
-	end
+	CLASS.Name = "Dumb"
 
 	function CLASS:Configure() end
 

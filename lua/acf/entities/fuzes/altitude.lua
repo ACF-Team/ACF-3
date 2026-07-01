@@ -1,6 +1,7 @@
 local ACF     = ACF
 local Classes = ACF.Classes
 Classes.DefineClass("ACF.Missiles.Fuze.Altitude", "ACF.Missiles.Fuze.Contact", function()
+	CLASS.Name = "Altitude"
 	if CLIENT then
 		CLASS.Description = "This fuze tracks the guidance module's target and detonates once it crosses the altitude of the target position."
 	else

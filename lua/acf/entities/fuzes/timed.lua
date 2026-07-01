@@ -1,6 +1,7 @@
 
 local Classes = ACF.Classes
 Classes.DefineClass("ACF.Missiles.Fuze.Timed", "ACF.Missiles.Fuze.Contact", function()
+	CLASS.Name = "Timed"
 	local BASE = BASE
 
 	CLASS.MinTime = 1

@@ -1,5 +1,6 @@
 local Classes = ACF.Classes
 Classes.DefineClass("ACF.Missiles.Fuze.Radio", "ACF.Missiles.Fuze.Optical", function()
+	CLASS.Name = "Radio"
 	if CLIENT then
 		CLASS.Description = "This fuze tracks the Guidance module's target and detonates when the distance becomes low enough.\nDistance in inches."
 	else

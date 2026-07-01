@@ -3,6 +3,7 @@ local Classes = ACF.Classes
 
 Classes.DefineClass("ACF.Missiles.Fuze.Optical", "ACF.Missiles.Fuze.Contact", function()
 	local BASE = BASE
+	CLASS.Name = "Optical"
 	CLASS.MinDistance = 40
 	CLASS.MaxDistance = 2500
 

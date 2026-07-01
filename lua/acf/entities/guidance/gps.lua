@@ -2,6 +2,7 @@ local ACF       = ACF
 local Classes 	= ACF.Classes
 Classes.DefineClass("ACF.Missiles.Guidance.GPSGuided", "ACF.Missiles.Guidance.RadioMCLOS", function()
 	local BASE = BASE
+	CLASS.Name = "GPS Guided"
 	if CLIENT then
 		CLASS.Description = "This guidance package allows you to guide the munition to a desired point in the map."
 	else

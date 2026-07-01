@@ -1,5 +1,6 @@
 local Classes 	= ACF.Classes
-Classes.DefineClass("ACF.Missiles.Guidance.RadioMCLOS", "ACF.Missiles.Guidance.AntiMissile", function()
+Classes.DefineClass("ACF.Missiles.Guidance.SemiActiveRadar", "ACF.Missiles.Guidance.AntiMissile", function()
+	CLASS.Name = "Semi-active Radar"
 	if CLIENT then
 		CLASS.Description = "This guidance package uses a radar to detect contraptions and guides the munition towards the most centered one it can find."
 	else
