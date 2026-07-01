@@ -151,12 +151,6 @@ elseif SERVER then
 
 		Data.PhysicsObjects[0].Pos   = Primitive.Pos
 		Data.PhysicsObjects[0].Angle = Primitive.Angle
-
-		-- Strip the legacy armor modifier so the new primitive isn't re-tagged for conversion
-		if Data.EntityMods then
-			Data.EntityMods = table.Copy(Data.EntityMods)
-			Data.EntityMods.ACF_Armor = nil
-		end
 	end
 
 	-- TODO: What can we merge between this and ACF.ConvertBaseplate?

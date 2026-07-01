@@ -712,7 +712,6 @@ elseif SERVER then
 	-- it goes through the normal pipeline with whatever ACF_Volumetric_Materials is set at that time.
 	duplicator.RegisterEntityModifier("ACF_Armor", function(_, Entity, Data)
 		if not Data then return end
-		if Entity.ACF_Volumetric_Material_Override then return end
 
 		duplicator.ClearEntityModifier(Entity, "ACF_Armor")
 

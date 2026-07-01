@@ -122,8 +122,7 @@ do
             -- convex count may change after initialization (e.g. hollow cube primitives start solid, reinitialize hollow).
             local Material
             if not Entity.ACF_PreventArmoring then
-                Material = (Entity.ACF_Volumetric_Materials and Entity.ACF_Volumetric_Materials[ConvexID])
-                or Entity.ACF_Volumetric_Material_Override
+                Material = Entity.ACF_Volumetric_Material_Override or (Entity.ACF_Volumetric_Materials and Entity.ACF_Volumetric_Materials[ConvexID])
             end
             Material = Material or Entity.ConvexMaterial or (Entity.IsACFEntity and "RHA" or "Default")
             ACF.SetConvexMaterial(Entity, ConvexID, Material)
@@ -166,7 +165,7 @@ do
 
     hook.Add("ACF_OnLoadAddon", "ACF_Volumetric_Detours", function()
         local Detours = ACF and ACF.Detours
-        print("Loading ACF Volumetric Detours", Detours)
+        -- print("Loading ACF Volumetric Detours", Detours)
 
         local PhysInitConvex_Orig PhysInitConvex_Orig = Detours.Metatable("Entity", "PhysicsInitConvex", function(self, Mesh, ...)
             timer.Simple(0, function()
