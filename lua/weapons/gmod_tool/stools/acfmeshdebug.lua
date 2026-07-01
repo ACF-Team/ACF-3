@@ -511,7 +511,7 @@ if CLIENT then
 		Entity:SetNoDraw(true)
 		HiddenEntity = Entity
 
-		local Dir         = (Trace.HitPos - Trace.StartPos):GetNormalized()
+		local Dir         = LocalPlayer():GetAimVector()
 		local ConvexHit   = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
 		local HighlightID = ConvexHit and ConvexHit.ConvexID
 

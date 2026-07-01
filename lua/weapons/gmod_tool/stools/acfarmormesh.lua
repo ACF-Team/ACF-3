@@ -56,8 +56,8 @@ if CLIENT then
 		RunConsoleCommand("acfarmormesh_class_filter", table.concat(Parts, ","))
 	end
 
-	local function GetTraceDir(Tool, Trace)
-		local Dir = (Trace.HitPos - Trace.StartPos):GetNormalized()
+	local function GetTraceDir(Tool)
+		local Dir = LocalPlayer():GetAimVector()
 		if tobool(Tool:GetClientInfo("ignore_elevation")) then
 			local Ang = Dir:Angle()
 			Ang.p = 0
@@ -132,7 +132,7 @@ if CLIENT then
 
 	local function DoRecursiveArmorTrace(Tool, InitialTrace)
 		local Messages                 = ACF.Utilities.Messages
-		local Dir                      = GetTraceDir(Tool, InitialTrace)
+		local Dir                      = GetTraceDir(Tool)
 		local Layers, TotalKE, TotalCE = GetArmorLayers(InitialTrace, Dir, GetClassFilter())
 
 		if #Layers == 0 then
@@ -337,7 +337,7 @@ if CLIENT then
 		local Resolution = math.Clamp(math.floor(Tool:GetClientNumber("scan_resolution")), 4, 64)
 		local ScanSize   = math.Clamp(Tool:GetClientNumber("scan_size"), 10, 10000)
 		local CellSize   = ScanSize / Resolution
-		local Dir        = GetTraceDir(Tool, InitialTrace)
+		local Dir        = GetTraceDir(Tool)
 
 		local WorldUp = math.abs(Dir:Dot(Vector(0, 0, 1))) < 0.99 and Vector(0, 0, 1) or Vector(0, 1, 0)
 		local Right   = Dir:Cross(WorldUp):GetNormalized()
@@ -615,7 +615,7 @@ if CLIENT then
 		Entity:SetNoDraw(true)
 		HiddenEntity = Entity
 
-		local Dir         = (Trace.HitPos - Trace.StartPos):GetNormalized()
+		local Dir         = LocalPlayer():GetAimVector()
 		local ConvexHit   = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
 		local HighlightID = ConvexHit and ConvexHit.ConvexID
 
@@ -738,7 +738,7 @@ elseif SERVER then
 		if IsValid(Entity) and Entity.ACF_Volumetric_Mesh then
 			EntHealth, EntMaxHealth = ACF.GetEntityHealth(Entity)
 
-			local Dir = (Trace.HitPos - Trace.StartPos):GetNormalized()
+			local Dir = Player:GetAimVector()
 			ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
 		end
 
@@ -777,7 +777,7 @@ elseif SERVER then
 				ACF.SetConvexMaterial(Entity, ConvexID, Material, Player)
 			end
 		else
-			local Dir       = (Trace.HitPos - Trace.StartPos):GetNormalized()
+			local Dir       = Player:GetAimVector()
 			local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
 			if not ConvexHit then return false end
 
@@ -793,7 +793,7 @@ elseif SERVER then
 		if not IsValid(Entity) then return false end
 		if not Entity.ACF_Volumetric_Mesh then return false end
 
-		local Dir       = (Trace.HitPos - Trace.StartPos):GetNormalized()
+		local Dir       = self:GetOwner():GetAimVector()
 		local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
 		if not ConvexHit then return false end
 
