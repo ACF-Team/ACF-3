@@ -308,10 +308,10 @@ function ACF.RayIntersectMesh(Entity, Start, Direction, Length, IncludeDead, Fil
             local B = Entity:LocalToWorld(Tri[2])
             local C = Entity:LocalToWorld(Tri[3])
 
-            -- Plane/barycentric math is orientation-agnostic, so this raw cross product is fine for it
-            local RawNormal = (B - A):Cross(C - A):GetNormalized()
+            -- GetMeshConvexes triangles wind such that (C-A)x(B-A) points outward (same as ProcessConvexes)
+            local Normal = (C - A):Cross(B - A):GetNormalized()
 
-            local P = util.IntersectRayWithPlane(Start, NormDir, A, RawNormal)
+            local P = util.IntersectRayWithPlane(Start, NormDir, A, Normal)
             if not P then continue end
 
             -- Recover the T value along the ray and make sure it's within the ray length
@@ -319,12 +319,11 @@ function ACF.RayIntersectMesh(Entity, Start, Direction, Length, IncludeDead, Fil
             if T < 0 or T > Length then continue end
 
             -- Make sure the point is within the triangle, not just its plane
-            if (B - A):Cross(P - A):Dot(RawNormal) < 0 then continue end
-            if (C - B):Cross(P - B):Dot(RawNormal) < 0 then continue end
-            if (A - C):Cross(P - C):Dot(RawNormal) < 0 then continue end
+            if (B - A):Cross(P - A):Dot(Normal) > 0 then continue end
+            if (C - B):Cross(P - B):Dot(Normal) > 0 then continue end
+            if (A - C):Cross(P - C):Dot(Normal) > 0 then continue end
 
-            -- GetMeshConvexes triangles wind such that (B-A)x(C-A) points inward; flip for the stored outward normal
-            Hits[#Hits + 1] = { Pos = P, Normal = -RawNormal, ConvexID = ConvexID, T = T }
+            Hits[#Hits + 1] = { Pos = P, Normal = Normal, ConvexID = ConvexID, T = T }
         end
     end
 
@@ -393,4 +392,25 @@ function ACF.GetEntityHealth(Entity)
     end
 
     return Health, MaxHealth
+end
+
+if SERVER then
+    concommand.Add("acf_convextrace", function(Player, _)
+        if not IsValid(Player) then return end
+
+        local Trace  = Player:GetEyeTrace()
+        local Entity = Trace.Entity
+
+        if not IsValid(Entity) or not Entity.ACF_Volumetric_Mesh then return end
+
+        local Dir       = Player:GetAimVector()
+        local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
+
+        if not ConvexHit then return end
+
+        debugoverlay.Sphere(ConvexHit.EntryPos, 3, 10, Color(0, 255, 0), true)
+        debugoverlay.Sphere(ConvexHit.ExitPos,  3, 10, Color(255, 0, 0), true)
+        debugoverlay.Line(ConvexHit.EntryPos, ConvexHit.ExitPos, 10, Color(255, 255, 0), true)
+        debugoverlay.Line(ConvexHit.EntryPos, ConvexHit.EntryPos + ConvexHit.EntryNormal * 10, 10, Color(0, 128, 255), true)
+    end, nil, "Traces a single convex on the entity you are looking at.", {FCVAR_CHEAT})
 end
