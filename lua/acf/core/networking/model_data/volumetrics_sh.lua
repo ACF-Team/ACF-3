@@ -414,3 +414,26 @@ if SERVER then
         debugoverlay.Line(ConvexHit.EntryPos, ConvexHit.EntryPos + ConvexHit.EntryNormal * 10, 10, Color(0, 128, 255), true)
     end, nil, "Traces a single convex on the entity you are looking at.", {FCVAR_CHEAT})
 end
+
+concommand.Add( "test_trace", function( ply )
+    local plyTr = ply:GetEyeTrace()
+    local dir = ply:GetAimVector()
+
+    local start = plyTr.StartPos + dir * 24
+    local endpos = plyTr.HitPos + dir * 10000
+    local ents = ents.FindAlongRay( start, endpos)
+
+    local AllIntersections = {}
+    for _, ent in ipairs(ents) do
+        if not ent.ACF_Volumetric_Mesh then continue end
+
+        local Intersections = ACF.RayIntersectMesh( ent, start, dir, 10000, true )
+        for _, Intersection in ipairs(Intersections) do table.insert( AllIntersections, Intersection ) end
+    end
+
+    table.sort( AllIntersections, function(a, b) return a.T < b.T end )
+    for _, Intersection in ipairs(AllIntersections) do
+        debugoverlay.Sphere(Intersection.Pos, 3, 10, Color(0, 255, 0), true)
+        debugoverlay.Line(Intersection.Pos, Intersection.Pos + Intersection.Normal * 10, 10, Color(0, 128, 255), true)
+    end
+end )
