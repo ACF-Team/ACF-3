@@ -687,11 +687,6 @@ if CLIENT then
 elseif SERVER then
 	util.AddNetworkString("ACF_ArmorMesh_Reload")
 
-	-- Stores the entity's convex materials as an entity modifier so they persist through duplication.
-	local function SaveConvexMaterials(Entity)
-		duplicator.StoreEntityModifier(Entity, "ACF_ArmorMesh", { Materials = Entity.ACF_Volumetric_Materials })
-	end
-
 	-- ProcessConvexes reads Entity.ACF_Volumetric_Materials whenever it (re)computes the mesh, so attaching it
 	-- here is enough to survive any future rebuilds (e.g. primitives reinitializing their physics). Convexes
 	-- that already exist at restore time still need their materials applied directly.
@@ -778,14 +773,10 @@ elseif SERVER then
 
 		local Material = self:GetClientInfo("material")
 
-		Entity.ACF_Volumetric_Materials = Entity.ACF_Volumetric_Materials or {}
-
 		local Player = self:GetOwner()
 		if Player:KeyDown(IN_SPEED) then
 			for ConvexID in ipairs(Entity.ACF_Volumetric_Mesh.Convexes) do
-				if ACF.SetConvexMaterial(Entity, ConvexID, Material, Player) ~= false then
-					Entity.ACF_Volumetric_Materials[ConvexID] = Material
-				end
+				ACF.SetConvexMaterial(Entity, ConvexID, Material, Player)
 			end
 		else
 			local Dir       = (Trace.HitPos - Trace.StartPos):GetNormalized()
@@ -793,10 +784,7 @@ elseif SERVER then
 			if not ConvexHit then return false end
 
 			if ACF.SetConvexMaterial(Entity, ConvexHit.ConvexID, Material, Player) == false then return false end
-			Entity.ACF_Volumetric_Materials[ConvexHit.ConvexID] = Material
 		end
-
-		SaveConvexMaterials(Entity)
 
 		return true
 	end

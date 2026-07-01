@@ -67,7 +67,11 @@ do
         MeshData.TotalMass         = TotalMass
         MeshData.HasReactiveArmor  = HasReactive -- Lets ballistics skip the reactive-armor check entirely for normal entities
 
+        Entity.ACF_Volumetric_Materials = Entity.ACF_Volumetric_Materials or {}
+        Entity.ACF_Volumetric_Materials[ConvexID] = Convex.Material
+
         if SERVER and ArmorType.ID ~= "Default" then
+            duplicator.StoreEntityModifier(Entity, "ACF_ArmorMesh", { Materials = Entity.ACF_Volumetric_Materials })
             local EntACF = Entity.ACF
             if EntACF then
                 ACF.Contraption.SetMass(Entity, TotalMass)
