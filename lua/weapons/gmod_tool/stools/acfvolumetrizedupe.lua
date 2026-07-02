@@ -140,9 +140,15 @@ elseif SERVER then
 			-- Flip the axis direction so it points away from the baseplate
 			if (Pos - BasePos):Dot(AxisDir) < 0 then AxisDir = -AxisDir end
 
-			-- Push the cube outward and stretch it along the thickness axis
-			Pos            = Pos - AxisDir * (Thickness * 0.5)
-			Size[ThinAxis] = Size[ThinAxis] + Thickness
+			-- A Thickness of 0 means no legacy thickness data was recorded (impossible for real legacy
+			-- armor); keep the sprop model's own AABB thickness instead of overriding it to 0.
+			if Thickness ~= 0 then
+				-- Push the cube outward, keeping its inward face flush against the structure
+				-- and set its size along the thickness axis to exactly Thickness
+				local OriginalThickness = Size[ThinAxis]
+				Pos            = Pos + AxisDir * (Thickness - OriginalThickness) * -0.5
+				Size[ThinAxis] = Thickness
+			end
 		end
 
 		return { Type = Type, Pos = Pos, Angle = Angle, Size = Size }
