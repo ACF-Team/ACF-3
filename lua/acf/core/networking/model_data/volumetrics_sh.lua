@@ -393,46 +393,65 @@ function ACF.GetEntityHealth(Entity)
     return Health, MaxHealth
 end
 
-if SERVER then
-    concommand.Add("acf_convextrace", function(Player, _)
-        if not IsValid(Player) then return end
-
-        local Trace  = Player:GetEyeTrace()
-        local Entity = Trace.Entity
-
-        if not IsValid(Entity) or not Entity.ACF_Volumetric_Mesh then return end
-
-        local Dir       = Player:GetAimVector()
-        local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
-
-        if not ConvexHit then return end
-
-        debugoverlay.Sphere(ConvexHit.EntryPos, 3, 10, Color(0, 255, 0), true)
-        debugoverlay.Sphere(ConvexHit.ExitPos,  3, 10, Color(255, 0, 0), true)
-        debugoverlay.Line(ConvexHit.EntryPos, ConvexHit.ExitPos, 10, Color(255, 255, 0), true)
-        debugoverlay.Line(ConvexHit.EntryPos, ConvexHit.EntryPos + ConvexHit.EntryNormal * 10, 10, Color(0, 128, 255), true)
-    end, nil, "Traces a single convex on the entity you are looking at.", {FCVAR_CHEAT})
-end
-
+-- Testing new trace logic
 concommand.Add( "test_trace", function( ply )
     local plyTr = ply:GetEyeTrace()
     local dir = ply:GetAimVector()
 
     local start = plyTr.StartPos + dir * 24
     local endpos = plyTr.HitPos + dir * 10000
+    local length = (endpos - start):Length()
     local ents = ents.FindAlongRay( start, endpos)
 
-    local AllIntersections = {}
+    local Intersections = {}
     for _, ent in ipairs(ents) do
-        if not ent.ACF_Volumetric_Mesh then continue end
+        local MeshData = ent.ACF_Volumetric_Mesh
+        if not MeshData then continue end
 
-        local Intersections = ACF.RayIntersectMesh( ent, start, dir, 10000, true )
-        for _, Intersection in ipairs(Intersections) do table.insert( AllIntersections, Intersection ) end
+        for ConvexID, Convex in ipairs(MeshData.Convexes) do
+            for _, Tri in ipairs(Convex.Tris) do
+                local A = ent:LocalToWorld(Tri[1])
+                local B = ent:LocalToWorld(Tri[2])
+                local C = ent:LocalToWorld(Tri[3])
+
+                -- GetMeshConvexes triangles wind such that (C-A)x(B-A) points outward (same as ProcessConvexes)
+                local Normal = (C - A):Cross(B - A):GetNormalized()
+
+                local P = util.IntersectRayWithPlane(start, dir, A, Normal)
+                if not P then continue end
+
+                -- Recover the T value along the ray and make sure it's within the ray length
+                local T = (P - start):Dot(dir)
+                if T < 0 or T > length then continue end
+
+                -- Make sure the point is within the triangle, not just its plane
+                if (B - A):Cross(P - A):Dot(Normal) > 0 then continue end
+                if (C - B):Cross(P - B):Dot(Normal) > 0 then continue end
+                if (A - C):Cross(P - C):Dot(Normal) > 0 then continue end
+
+                Intersections[#Intersections + 1] = { Pos = P, Normal = Normal, Entity = ent, ConvexID = ConvexID, T = T }
+            end
+        end
     end
 
-    table.sort( AllIntersections, function(a, b) return a.T < b.T end )
-    for _, Intersection in ipairs(AllIntersections) do
-        debugoverlay.Sphere(Intersection.Pos, 3, 10, Color(0, 255, 0), true)
-        debugoverlay.Line(Intersection.Pos, Intersection.Pos + Intersection.Normal * 10, 10, Color(0, 128, 255), true)
+    table.sort( Intersections, function(a, b) return a.T < b.T end )
+
+    local Hits = {}
+    for _, Intersection in ipairs(Intersections) do
+        local Ent = Intersection.Entity
+
+        -- Golden angle step gives a well-spread hue per entity, wrapping on the HSV color wheel
+        local Hue = ( Ent:EntIndex() * 47 ) % 360
+        local EntColor = HSVToColor( Hue, 1, 1 )
+
+        debugoverlay.Sphere(Intersection.Pos, 1, 10, EntColor, true)
+        debugoverlay.Line(Intersection.Pos, Intersection.Pos + Intersection.Normal * 10, 10, EntColor, true)
+        -- debugoverlay.Line(Intersection.Pos, Ent:GetPos(), 10, EntColor, true)
+
+        if dir:Dot(Intersection.Normal) < 0 then
+
+        elseif dir:Dot(Intersection.Normal) > 0 then
+
+        end
     end
 end )
