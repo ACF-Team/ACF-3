@@ -12,6 +12,8 @@ local function IsValidScale(Scale)
 end
 
 local function CopyMesh(Mesh, Scale)
+	if not Mesh then return end
+
 	local Result = {}
 
 	for I, Hull in ipairs(Mesh) do
@@ -39,6 +41,7 @@ end
 
 function ModelData.SanitizeMesh(PhysObj)
 	local Mesh = PhysObj:GetMeshConvexes()
+	if not Mesh then return end
 
 	for I, Hull in ipairs(Mesh) do
 		for J, Vertex in ipairs(Hull) do

@@ -1341,28 +1341,6 @@ do -- Metamethods --------------------------------
 	end
 
 	do -- Misc ----------------------------------
-		function ENT:ACF_Activate(Recalc)
-			local SelfTbl = ENTITY.GetTable(self)
-			local SelfACF = SelfTbl.ACF
-
-			local PhysObj = SelfACF.PhysObj
-			local Area    = PhysObj:GetSurfaceArea() * ACF.InchToCmSq
-			local Armour  = SelfTbl.Caliber * ACF.ArmorMod
-			local Health  = Area / ACF.Threshold
-			local Percent = 1
-
-			if Recalc and SelfACF.Health and SelfACF.MaxHealth then
-				Percent = SelfACF.Health / SelfACF.MaxHealth
-			end
-
-			SelfACF.Area      = Area
-			SelfACF.Health    = Health * Percent
-			SelfACF.MaxHealth = Health
-			SelfACF.Armour    = Armour * (0.5 + Percent * 0.5)
-			SelfACF.MaxArmour = Armour
-			SelfACF.Type      = "Prop"
-		end
-
 		function ENT:SetState(State)
 			self.State = State
 

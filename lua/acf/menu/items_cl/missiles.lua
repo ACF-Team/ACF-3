@@ -1,7 +1,9 @@
-local ACF      = ACF
-local Classes  = ACF.Classes
-local Missiles = Classes.Missiles
-local Racks    = Classes.Racks
+local ACF        = ACF
+local Classes    = ACF.Classes
+local Missiles   = Classes.Missiles
+local Racks      = Classes.Racks
+local ModelData  = ACF.ModelData
+local ArmorTypes = Classes.ArmorTypes
 
 local function GetRackList(Data)
 	local Result = {}
@@ -23,6 +25,12 @@ local BaseText = "Caliber : %s\nMass : %s kg"
 local RackText = BaseText .. "\nMunitions : %s%s\n"
 local MissileText = BaseText .. "\nArming Delay : %ss%s%s"
 
+local function GetVolumetricMass(Model)
+	local Volume = ModelData.GetModelVolume(Model)
+	if not Volume then return 0 end
+	return math.Round(Volume * ACF.InchToMCu * ArmorTypes.Get("Component").Density)
+end
+
 local function GetMissileText(Data)
 	local Caliber = Data.Caliber .. "mm"
 	local Seek = ""
@@ -36,7 +44,7 @@ local function GetMissileText(Data)
 		View = "\nView Cone : " .. Data.ViewCone * 2 .. " degrees"
 	end
 
-	return MissileText:format(Caliber, Data.Mass, Data.ArmDelay, Seek, View)
+	return MissileText:format(Caliber, GetVolumetricMass(Data.Model), Data.ArmDelay, Seek, View)
 end
 
 local function GetRackText(Data)
@@ -51,7 +59,7 @@ local function GetRackText(Data)
 		Protect = "\n\nThis rack will protect its payload from getting destroyed."
 	end
 
-	return RackText:format(Caliber, Data.Mass, Data.MagSize, Protect)
+	return RackText:format(Caliber, GetVolumetricMass(Data.Model), Data.MagSize, Protect)
 end
 
 local function CreateMenu(Menu)

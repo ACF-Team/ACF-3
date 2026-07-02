@@ -67,11 +67,10 @@ local function UpdateSupply(Entity, Data)
 		Entity[V] = Data[V]
 	end
 
-	local Volume, Capacity, EmptyMass = Entity:CalcVolumeAndCapacity(Data.Size)
+	local Volume, Capacity = Entity:CalcVolumeAndCapacity(Data.Size)
 
-	Entity.Volume    = Volume
-	Entity.Capacity  = Capacity
-	Entity.EmptyMass = EmptyMass
+	Entity.Volume   = Volume
+	Entity.Capacity = Capacity
 
 	WireIO.SetupInputs(Entity, Inputs, Data)
 	WireIO.SetupOutputs(Entity, Outputs, Data)
@@ -144,12 +143,11 @@ function ENT:Update(Data)
 		self:SetScaledModel(Model)
 	end
 
-	local Volume, Capacity, EmptyMass = self:CalcVolumeAndCapacity(Data.Size)
+	local Volume, Capacity = self:CalcVolumeAndCapacity(Data.Size)
 	local Percentage = self.Capacity and self.Amount / self.Capacity or 1
 
-	self.Volume    = Volume
-	self.Capacity  = Capacity
-	self.EmptyMass = EmptyMass
+	self.Volume   = Volume
+	self.Capacity = Capacity
 
 	self:SetSize(Data.Size)
 

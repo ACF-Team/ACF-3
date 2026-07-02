@@ -45,7 +45,7 @@ do -- Forces an ACF armored entity to get rid of their mass entity modifier and 
 
 			if MassMod then
 				duplicator.ClearEntityModifier(Entity, "ACF_Armor")
-				duplicator.StoreEntityModifier(Entity, "ACF_Armor", { Ductility = Armor.Ductility })
+				duplicator.StoreEntityModifier(Entity, "ACF_Armor", {})
 			else
 				duplicator.ClearEntityModifier(Entity, "mass")
 			end

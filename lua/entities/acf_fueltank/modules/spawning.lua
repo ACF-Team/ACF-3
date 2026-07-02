@@ -86,6 +86,7 @@ local function UpdateFuelTank(Entity, Data, Class, FuelType)
 	Entity.ACF.Model = Model
 	Entity.ClassData = Class
 	Entity.Shape = Shape -- Store shape on entity for volume calculations
+	Entity.ConvexMaterial = FuelType.ArmorType or "RHA" -- Convex armor type defaults to this fuel's material
 
 	Entity:SetScaledModel(Model)
 	Entity:SetSize(Data.Size)
@@ -97,14 +98,13 @@ local function UpdateFuelTank(Entity, Data, Class, FuelType)
 	end
 
 	-- Calculate volume and capacity using base class method (uses Entity.Shape)
-	local _, Capacity, EmptyMass = Entity:CalcVolumeAndCapacity(Data.Size)
+	local _, Capacity = Entity:CalcVolumeAndCapacity(Data.Size)
 
 	Entity.Name        = Entity.FuelType .. " Tank"
 	Entity.ShortName   = Entity.FuelType
 	Entity.EntType     = Class.Name
 	Entity.FuelDensity = FuelType.Density
 	Entity.Capacity    = Capacity -- Internal volume available for fuel in liters
-	Entity.EmptyMass   = EmptyMass
 	Entity.IsExplosive = Class.IsExplosive
 	Entity.NoLinks     = Class.Unlinkable
 

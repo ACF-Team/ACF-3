@@ -265,7 +265,12 @@ if SERVER then
 			local Overkill = HitRes.Overkill or 0 -- TODO: Sometimes Overkill ends up being nil, but that should never be the case??
 
 			if Overkill > 0 then
-				table.insert(Filter, Target) -- "Penetrate" (Ignoring the prop for the retry trace)
+				-- Per-convex impacts already filtered the penetrated convex in DoRoundImpact, so the entity
+				-- stays hittable and the re-trace advances to the convex behind it. Only meshless targets
+				-- (no convex resolution) still need the whole entity filtered to avoid re-hitting it.
+				if not Bullet.ConvexHit then
+					table.insert(Filter, Target) -- "Penetrate" (Ignoring the prop for the retry trace)
+				end
 
 				Bullet.Flight = Bullet.Flight:GetNormalized() * (Energy.Kinetic * (1 - HitRes.Loss) * 2000 / Bullet.ProjMass) ^ 0.5 * ACF.MeterToInch
 
@@ -318,6 +323,21 @@ else
 		local Speed = ACF.GetRangedSpeed(Bullet.MuzzleVel, Bullet.DragCoef, Range) * ACF.InchToMeter
 
 		return math.Round(self:GetPenetration(Bullet, Speed), 2), math.Round(Speed, 2)
+	end
+
+	-- Default ammo menu graph: penetration over distance. Overridden by ammo types with bespoke behavior.
+	function Ammo:PlotAmmoGraph(Panel, _, BulletData)
+		local Colors  = ACF.GraphColors
+		local PenText = language.GetPhrase("acf.menu.ammo.penetration")
+
+		Panel:SetYRange(0, math.ceil(BulletData.MaxPen or 0) * 1.1)
+
+		Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.300m"), 300, self:GetRangedPenetration(BulletData, 300), Colors.Blue)
+		Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.800m"), 800, self:GetRangedPenetration(BulletData, 800), Colors.Blue)
+
+		Panel:PlotFunction(PenText, Colors.RedAlt, function(X)
+			return self:GetRangedPenetration(BulletData, X)
+		end)
 	end
 
 	function Ammo:OnCreateAmmoPreview(_, Setup, ToolData)

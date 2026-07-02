@@ -872,22 +872,6 @@ if SERVER then
 		return Health and math.Round(Health, 2) or 0
 	end
 
-	--- Returns the current armor of an entity
-	-- @server
-	-- @return number The entity's armor
-	function ents_methods:acfPropArmor()
-		CheckType(self, ents_metatable)
-
-		local This = unwrap(self)
-
-		if not ACF.Check(This) then SF.Throw("Entity is not valid", 2) end
-		if RestrictInfo(This) then return 0 end
-
-		local Armor = This.ACF.Armour
-
-		return Armor and math.Round(Armor, 2) or 0
-	end
-
 	--- Returns the max health of an entity
 	-- @server
 	-- @return number The entity's max health
@@ -902,22 +886,6 @@ if SERVER then
 		local MaxHealth = This.ACF.MaxHealth
 
 		return MaxHealth and math.Round(MaxHealth, 2) or 0
-	end
-
-	--- Returns the max armor of an entity
-	-- @server
-	-- @return number The entity's max armor
-	function ents_methods:acfPropArmorMax()
-		CheckType(self, ents_metatable)
-
-		local This = unwrap(self)
-
-		if not ACF.Check(This) then SF.Throw("Entity is not valid", 2) end
-		if RestrictInfo(This) then return 0 end
-
-		local MaxArmor = This.ACF.MaxArmour
-
-		return MaxArmor and math.Round(MaxArmor, 2) or 0
 	end
 
 	--- Returns the current health percentage of an entity
@@ -936,36 +904,87 @@ if SERVER then
 		return PercHealth and math.Round(PercHealth, 2) or 0
 	end
 
-	--- Returns the current armor percentage of an entity
+	--- Returns the current health of a specific convex of an entity
 	-- @server
-	-- @return number The entity's percentage of armor
-	function ents_methods:acfPropArmorPercent()
+	-- @param number convexid The convex ID
+	-- @return number The convex's current health
+	function ents_methods:acfConvexHealth(convexid)
 		CheckType(self, ents_metatable)
+		CheckLuaType(convexid, TYPE_NUMBER)
 
 		local This = unwrap(self)
 
-		if not ACF.Check(This) then SF.Throw("Entity is not valid", 2) end
+		if not IsValid(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return 0 end
 
-		local PercArmor = This.ACF.Armour / This.ACF.MaxArmour
+		local MeshData = This.ACF_Volumetric_Mesh
+		if not MeshData then return 0 end
 
-		return PercArmor and math.Round(PercArmor, 2) or 0
+		local Convex = MeshData.Convexes[math.floor(convexid)]
+		if not Convex then return 0 end
+
+		return math.Round(Convex.Health, 2)
 	end
 
-	--- Returns the ductility of an entity
+	--- Returns the max health of a specific convex of an entity
 	-- @server
-	-- @return number The entity's ductility
-	function ents_methods:acfPropDuctility()
+	-- @param number convexid The convex ID
+	-- @return number The convex's max health
+	function ents_methods:acfConvexHealthMax(convexid)
+		CheckType(self, ents_metatable)
+		CheckLuaType(convexid, TYPE_NUMBER)
+
+		local This = unwrap(self)
+
+		if not IsValid(This) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return 0 end
+
+		local MeshData = This.ACF_Volumetric_Mesh
+		if not MeshData then return 0 end
+
+		local Convex = MeshData.Convexes[math.floor(convexid)]
+		if not Convex then return 0 end
+
+		return math.Round(Convex.MaxHealth, 2)
+	end
+
+	--- Returns the health percentage of a specific convex of an entity
+	-- @server
+	-- @param number convexid The convex ID
+	-- @return number The convex's health as a fraction of its max health
+	function ents_methods:acfConvexHealthPercent(convexid)
+		CheckType(self, ents_metatable)
+		CheckLuaType(convexid, TYPE_NUMBER)
+
+		local This = unwrap(self)
+
+		if not IsValid(This) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return 0 end
+
+		local MeshData = This.ACF_Volumetric_Mesh
+		if not MeshData then return 0 end
+
+		local Convex = MeshData.Convexes[math.floor(convexid)]
+		if not Convex or Convex.MaxHealth == 0 then return 0 end
+
+		return math.Round(Convex.Health / Convex.MaxHealth, 2)
+	end
+
+	--- Returns the number of convexes of an entity
+	-- @server
+	-- @return number The number of convexes
+	function ents_methods:acfConvexCount()
 		CheckType(self, ents_metatable)
 
 		local This = unwrap(self)
 
-		if not ACF.Check(This) then SF.Throw("Entity is not valid", 2) end
+		if not IsValid(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return 0 end
 
-		local Ductility = This.ACF.Ductility
+		local MeshData = This.ACF_Volumetric_Mesh
+		if not MeshData then return 0 end
 
-		return Ductility and math.Round(Ductility * 100, 2) or 0
+		return #MeshData.Convexes
 	end
 
 	--- Returns true if hitpos is on a clipped part of prop

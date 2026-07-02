@@ -6,7 +6,7 @@ if CLIENT then
 	Guidance.Description = "This guidance package will detect a contraption in front of itself and guide the munition towards it."
 else
 	function Guidance:GetCost()
-		return 2
+		return 3
 	end
 
 	function Guidance:UpdateTarget(Missile)

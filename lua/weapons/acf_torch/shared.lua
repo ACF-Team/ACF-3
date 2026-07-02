@@ -41,7 +41,8 @@ SWEP.DrawAmmo = false
 SWEP.DrawCrosshair = true
 SWEP.DrawWeaponInfoBox = false
 SWEP.BounceWeaponIcon = false
-SWEP.MaxDistance = 64 * 64 -- Squared distance
+SWEP.MaxDistance = 128 -- The torch's maximum reach, in units
+SWEP.RepairRadius = 48 -- Convexes within this many units of the repair point are repaired
 
 
 local function TeslaSpark(pos, magnitude)
@@ -90,6 +91,46 @@ function SWEP:Initialize()
 	self.LastTrace    = {}
 	self.DamageResult = Objects.DamageResult(math.pi * 2 ^ 2, 1)
 	self.DamageInfo   = Objects.DamageInfo(self, nil, DMG_PLASMA)
+end
+
+-- Shared setup for both attacks: plays the windup/firing animations and the client-side zap sound, then
+-- gates the server-side logic on the torch's last trace.
+-- Returns Owner, Entity, Trace if the attack should proceed, or nothing otherwise.
+function SWEP:BeginAttack(AttackKey, ZapCount, ZapPitch)
+	local Owner = self:GetOwner()
+
+	if Owner:KeyPressed(AttackKey) then
+		self:SetAnim("fire_windup", true, 3)
+	end
+	self:SetAnim("fire_loop", true, 2)
+	self:SetNextPrimaryFire(Clock.CurTime + 0.05)
+	self:SetNextSecondaryFire(Clock.CurTime + 0.05)
+
+	if CLIENT then
+		Sounds.PlaySound(self, Zap:format(math.random(1, ZapCount)), nil, ZapPitch, 1)
+
+		return
+	end
+
+	if self.LastDistance > self.MaxDistance ^ 2 then return end
+
+	local Entity = self.LastEntity
+	local Trace  = self.LastTrace
+
+	if not ACF.Check(Entity) then return end
+
+	return Owner, Entity, Trace
+end
+
+-- Plays Sound on Entity, but at most once every 0.1 seconds.
+function SWEP:RateLimitedSound(Entity, Sound)
+	local Time = CurTime()
+	self.SoundTimer = self.SoundTimer or Time
+
+	if self.SoundTimer <= Time then
+		Sounds.SendSound(Entity, Sound, nil, nil, 1)
+		self.SoundTimer = Time + 0.1
+	end
 end
 
 function SWEP:SetAnim(anim, forceplay, animpriority)
@@ -167,67 +208,45 @@ function SWEP:Think()
 
 	if CLIENT then return end
 
-	local Health, MaxHealth, Armor, MaxArmor = 0, 0, 0, 0
-	--local Trace = Owner:GetEyeTrace()
-	local TraceData = {start = Owner:GetShootPos(), endpos = Owner:GetShootPos() + Owner:GetAimVector() * 64, mask = MASK_SOLID, filter = {Owner}}
+	local TraceData = {start = Owner:GetShootPos(), endpos = Owner:GetShootPos() + Owner:GetAimVector() * self.MaxDistance, mask = MASK_SOLID, filter = {Owner}}
 	local Trace = util.TraceLine(TraceData)
 	local Entity = Trace.Entity
 
 	self.LastDistance = Trace.StartPos:DistToSqr(Trace.HitPos)
 	self.LastTrace = Trace
+	self.LastEntity = Entity
 
-	if ACF.Check(Entity) and self.LastDistance <= self.MaxDistance then
-		if Entity:IsPlayer() or Entity:IsNPC() or Entity:IsNextBot() then
-			Health = Entity:Health()
-			MaxHealth = Entity:GetMaxHealth()
+	local ConvexID, Health, MaxHealth = -1, 0, 0
+	local EntHealth, EntMaxHealth = 0, 0
+	local MeshData = ACF.Check(Entity) and Entity.ACF_Volumetric_Mesh
 
-			if isfunction(Entity.Armor) then
-				Armor = Entity:Armor()
-				MaxArmor = 100
-			end
-		else
-			Health = Entity.ACF.Health
-			MaxHealth = Entity.ACF.MaxHealth
-			Armor = Entity.ACF.Armour
-			MaxArmor = Entity.ACF.MaxArmour
+	if MeshData and self.LastDistance <= self.MaxDistance ^ 2 then
+		EntHealth, EntMaxHealth = ACF.GetEntityHealth(Entity)
+
+		local Dir = (Trace.HitPos - Trace.StartPos):GetNormalized()
+		local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
+
+		if ConvexHit then
+			local Convex = MeshData.Convexes[ConvexHit.ConvexID]
+
+			ConvexID  = ConvexHit.ConvexID
+			Health    = Convex.Health
+			MaxHealth = Convex.MaxHealth
 		end
 	end
 
-	if Entity ~= self.LastEntity or Health ~= self.LastHealth or Armor ~= self.LastArmor then
-		self.LastEntity = Entity
-		self.LastHealth = Health
-		self.LastArmor = Armor
-
-		self:SetNWFloat("HP", Health)
-		self:SetNWFloat("MaxHP", MaxHealth)
-		self:SetNWFloat("Armour", Armor)
-		self:SetNWFloat("MaxArmour", MaxArmor)
-	end
+	self:SetNWInt("ConvexID", ConvexID)
+	self:SetNWFloat("ConvexHealth", Health)
+	self:SetNWFloat("ConvexMaxHealth", MaxHealth)
+	self:SetNWFloat("EntHealth", EntHealth)
+	self:SetNWFloat("EntMaxHealth", EntMaxHealth)
 
 	self:NextThink(Clock.CurTime + 0.05)
 end
 
 function SWEP:PrimaryAttack()
-	local Owner = self:GetOwner()
-
-	if Owner:KeyPressed(IN_ATTACK) then
-		self:SetAnim("fire_windup", true, 3)
-	end
-	self:SetAnim("fire_loop", true, 2)
-	self:SetNextPrimaryFire(Clock.CurTime + 0.05)
-
-	if CLIENT then
-		Sounds.PlaySound(self, Zap:format(math.random(1, 3)), nil, 115, 1)
-
-		return
-	end
-
-	if self.LastDistance > self.MaxDistance then return end
-
-	local Entity = self.LastEntity
-	local Trace = self.LastTrace
-
-	if not ACF.Check(Entity) then return end
+	local Owner, Entity, Trace = self:BeginAttack(IN_ATTACK, 3, 115)
+	if not Owner then return end
 
 	if Entity:IsPlayer() or Entity:IsNPC() or Entity:IsNextBot() then
 		local Health = Entity:Health()
@@ -249,85 +268,59 @@ function SWEP:PrimaryAttack()
 
 		Effects.CreateEffect("thruster_ring", EffectTable, true, true)
 
-		-- Sound ratelimiting
-		local Time = CurTime()
-		self.SoundTimer = self.SoundTimer or Time
-
-		if self.SoundTimer <= Time then
-			Sounds.SendSound(self, "items/medshot4.wav", nil, nil, 1)
-			self.SoundTimer = Time + 0.1
-		end
+		self:RateLimitedSound(self, "items/medshot4.wav")
 	else
-		local OldHealth = Entity.ACF.Health
-		local MaxHealth = Entity.ACF.MaxHealth
+		local MeshData = Entity.ACF_Volumetric_Mesh
+		if not MeshData then return end
 
-		local Now = CurTime()
-		if Now - (self.LastUpdate or 0) > 0.5 then
-			self.LastUpdate = Now
-			if Entity.ACF_HealthUpdatesWireOverlay then
-				Entity:UpdateOverlay()
-			end
+		local DmgResult = self.DamageResult
+		local DmgInfo   = self.DamageInfo
+		local HitPos    = Trace.HitPos
+		local Dir       = (HitPos - Trace.StartPos):GetNormalized()
+
+		if not ACF.GetConvexHit(Entity, HitPos, Dir, true) then return end
+
+		DmgInfo:SetAttacker(Owner)
+		DmgInfo:SetInflictor(self)
+		DmgInfo:SetOrigin(Trace.StartPos)
+		DmgInfo:SetHitPos(HitPos)
+		DmgInfo:SetHitGroup(Trace.HitGroup)
+
+		local Healed = false
+
+		for _, Ent in ipairs(ents.FindInSphere(HitPos, self.RepairRadius)) do
+			if not ACF.Check(Ent) then continue end
+
+			local EntMeshData = Ent.ACF_Volumetric_Mesh
+			if not EntMeshData then continue end
+
+			local ConvexHit = ACF.GetConvexHit(Ent, HitPos, Dir, true)
+			if not ConvexHit then continue end
+
+			DmgInfo:SetConvexHits({ { ConvexID = ConvexHit.ConvexID, Volume = -(ConvexHit.GeoThick * 0.1 * DmgResult:GetArea() / ACF.InchToCmCu) } })
+			Damage.doPropDamage(Ent, DmgResult, DmgInfo)
+			Healed = true
 		end
 
-		if OldHealth >= MaxHealth then return end
-
-		local OldArmor = Entity.ACF.Armour
-		local MaxArmor = Entity.ACF.MaxArmour
-
-		local Health = math.min(OldHealth + (30 / MaxArmor), MaxHealth)
-		local Armor = MaxArmor * (0.5 + Health / MaxHealth * 0.5)
-
-		Entity.ACF.Health = Health
-		Entity.ACF.Armour = Armor
-
-		Damage.Network(Entity, _, Health, MaxHealth) -- purely to update the damage material on props
-
-		if Entity.ACF_OnRepaired then
-			Entity:ACF_OnRepaired(OldArmor, OldHealth, Armor, Health)
-		end
+		if not Healed then return end
 
 		Sounds.SendSound(self, Spark:format(math.random(3, 5)), nil, nil, 1)
-		TeslaSpark(Trace.HitPos, 1)
+		TeslaSpark(HitPos, 1)
 
-		-- Sound ratelimiting
-		local Time = CurTime()
-		self.SoundTimer = self.SoundTimer or Time
-
-		if self.SoundTimer <= Time then
-			Sounds.SendSound(self, Spark:format(math.random(3, 5)), nil, nil, 1)
-			self.SoundTimer = Time + 0.1
-		end
+		self:RateLimitedSound(self, Spark:format(math.random(3, 5)))
 	end
 end
 
 function SWEP:SecondaryAttack()
-	local Owner = self:GetOwner()
-
-	if Owner:KeyPressed(IN_ATTACK2) then
-		self:SetAnim("fire_windup", true, 3)
-	end
-	self:SetAnim("fire_loop", true, 2)
-	self:SetNextPrimaryFire(Clock.CurTime + 0.05)
-
-	if CLIENT then
-		Sounds.PlaySound(self, Zap:format(math.random(1, 2)), nil, nil, 1)
-
-		return
-	end
-
-	if self.LastDistance > self.MaxDistance then return end
-
-	local Entity = self.LastEntity
-	local Trace = self.LastTrace
-
-	if not ACF.Check(Entity) then return end
+	local Owner, Entity, Trace = self:BeginAttack(IN_ATTACK2, 2, nil)
+	if not Owner then return end
 
 	if Entity:IsPlayer() or Entity:IsNPC() or Entity:IsNextBot() then
 		local damageInfo = DamageInfo()
 		damageInfo:SetDamage(1)
 		damageInfo:SetAttacker(Owner)
 		damageInfo:SetInflictor(self)
-		damageInfo:SetDamageType(DMG_DISSOLVE) -- Applies combine ball death effect
+		damageInfo:SetDamageType(DMG_BULLET)
 		damageInfo:SetDamagePosition(Trace.HitPos)
 		Entity:TakeDamageInfo(damageInfo)
 
@@ -339,41 +332,38 @@ function SWEP:SecondaryAttack()
 
 		Effects.CreateEffect("BloodImpact", EffectTable, true, true)
 	else
+		local MeshData = Entity.ACF_Volumetric_Mesh
+		if not MeshData then return end
+
 		local DmgResult = self.DamageResult
 		local DmgInfo   = self.DamageInfo
 		local HitPos    = Trace.HitPos
+		local Dir       = (HitPos - Trace.StartPos):GetNormalized()
+		local ConvexHit = ACF.GetConvexHit(Entity, HitPos, Dir, true)
 
-		DmgResult:SetThickness(Entity.ACF.Armour)
+		if not ConvexHit then return end
+
+		DmgResult:SetThickness(ConvexHit.GeoThick * ConvexHit.ArmorType.ChemicalMul)
 
 		DmgInfo:SetAttacker(Owner)
 		DmgInfo:SetInflictor(self)
 		DmgInfo:SetOrigin(Trace.StartPos)
 		DmgInfo:SetHitPos(HitPos)
 		DmgInfo:SetHitGroup(Trace.HitGroup)
+		DmgInfo:SetConvexHits({ { ConvexID = ConvexHit.ConvexID, Volume = ConvexHit.GeoThick * 0.1 * DmgResult:GetArea() / ACF.InchToCmCu } })
 
-		local HitRes = Damage.dealDamage(Entity, DmgResult, self.DamageInfo)
+		Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 
-		if HitRes.Kill then
-			ACF.APKill(Entity, Trace.Normal, 1, DmgInfo)
-		else
-			local EffectTable = {
-				Magnitude = 1,
-				Radius = 1,
-				Scale = 1,
-				Start = HitPos,
-				Origin = HitPos,
-			}
+		local EffectTable = {
+			Magnitude = 1,
+			Radius = 1,
+			Scale = 1,
+			Start = HitPos,
+			Origin = HitPos,
+		}
 
-			Effects.CreateEffect("Sparks", EffectTable, true, true)
+		Effects.CreateEffect("Sparks", EffectTable, true, true)
 
-			-- Sound ratelimiting
-			local Time = CurTime()
-			self.SoundTimer = self.SoundTimer or Time
-
-			if self.SoundTimer <= Time then
-				Sounds.SendSound(Entity, Zap:format(math.random(1, 4)), nil, nil, 1)
-				self.SoundTimer = Time + 0.1
-			end
-		end
+		self:RateLimitedSound(Entity, Zap:format(math.random(1, 4)))
 	end
 end

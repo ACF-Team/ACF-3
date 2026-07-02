@@ -86,16 +86,34 @@ function Contraption.GetAllChildren(Ent, Tab)
 	return Res
 end
 
-function Contraption.GetEnts(Ent)
-	local Con      = Ent:CFW_GetContraption()
-	local ConEnts  = Con and Con.ents or {[Ent] = true}
-	local Children = Ent:GetFamilyChildren()
-	local Phys     = {}
-	local Pare     = {}
-	local Dtch     = {}
+--- Categorizes entities into Physical, Parented, and Detached sets.
+--- Accepts either an entity (resolves its CFW contraption) or a pre-built ents set directly.
+function Contraption.GetEnts(EntOrSet)
+	local EntsSet
 
-	for K in pairs(ConEnts) do
-		if Children[K] then
+	if IsValid(EntOrSet) then
+		-- If the caller passed an entity, use its contraption
+		local Con = EntOrSet:CFW_GetContraption()
+		EntsSet   = Con and Con.ents or {[EntOrSet] = true}
+	else
+		-- Otherwise, use the set of entities directly
+		EntsSet = EntOrSet
+	end
+
+	local AllFamilyChildren = {}
+
+	for K in pairs(EntsSet) do
+		for Child in pairs(K:GetFamilyChildren()) do
+			AllFamilyChildren[Child] = true
+		end
+	end
+
+	local Phys = {}
+	local Pare = {}
+	local Dtch = {}
+
+	for K in pairs(EntsSet) do
+		if AllFamilyChildren[K] then
 			Pare[K] = true
 		else
 			local CurFamily = K:GetFamily()
@@ -112,50 +130,58 @@ function Contraption.GetEnts(Ent)
 
 	return Phys, Pare, Dtch
 end
--------------------------------------------------
-function Contraption.HasConstraints(Ent)
-	if Ent.Constraints then
-		for _, V in pairs(Ent.Constraints) do
-			if V.Type ~= "NoCollide" then
-				return true
-			end
+
+--- Builds a contraption-shaped table from a sequential entity list so entity-list callers can share the contraption pipeline.
+function ACF.EntitiesToPseudoContraption(Ents)
+	local PseudoCon = {
+		ents        = {},
+		entsbyclass = {},
+		totalMass   = 0,
+		count       = 0,
+	}
+
+	for _, Ent in pairs(Ents) do
+		if not IsValid(Ent) then continue end
+
+		PseudoCon.ents[Ent] = true
+		PseudoCon.count     = PseudoCon.count + 1
+
+		local Class = Ent:GetClass()
+		if not PseudoCon.entsbyclass[Class] then
+			PseudoCon.entsbyclass[Class] = {}
+		end
+		PseudoCon.entsbyclass[Class][Ent] = true
+
+		local Phys = Ent:GetPhysicsObject()
+		if IsValid(Phys) then
+			PseudoCon.totalMass = PseudoCon.totalMass + Phys:GetMass()
 		end
 	end
 
-	return false
+	return PseudoCon
 end
 
-function Contraption.CalcMassRatio(Ent, Tally)
-	local Con      = Ent:CFW_GetContraption()
-	local PhysMass = 0
-	local Time     = CurTime()
+--- Core mass ratio implementation shared by CalcMassRatio and ProcessList; accepts any contraption-shaped table (real or pseudo).
+--- When Tally is true, returns Power, Fuel, PhysN, ParN, ConN, OthN, TotMass, PhysMass. Owner name is the caller's responsibility.
+function Contraption.CalcMassRatioFromContraption(Con, Tally)
+	local PhysMass    = 0
+	local Time        = CurTime()
+	local Power       = 0
+	local Fuel        = 0
+	local PhysN       = 0
+	local ParN        = 0
+	local OthN        = 0
+	local ConN        = 0
 
-	-- Tally Vars
-	local Power = 0
-	local Fuel  = 0
-	local PhysN = 0
-	local ParN 	= 0
-	local OthN  = 0
-	local ConN	= 0
+	local Physical, Parented, Detached = Contraption.GetEnts(Con.ents)
+	local Constraints                  = {}
 
-	local EntContraption = Ent:CFW_GetContraption()
-	local Physical, Parented, Detached
-	if EntContraption then
-		Physical, Parented, Detached = Contraption.GetEnts(Ent)
-	else
-		Physical, Parented, Detached = {[Ent] = true}, {}, {}
-	end
-
-	local Constraints = {}
-
-	-- Duplex pairs iterates over Physical, then Detached - but we can make Detached nil
-	-- if DetachedPhysmassRatio == false
 	for K in ACF.DuplexPairs(Physical, ACF.DetachedPhysmassRatio and Detached or nil) do
 		local Phys = K:GetPhysicsObject()
 
 		if not IsValid(Phys) then
 			Physical[K] = nil
-			OthN = OthN + 1
+			OthN        = OthN + 1
 		else
 			if Tally then
 				local Class = K:GetClass()
@@ -166,11 +192,11 @@ function Contraption.CalcMassRatio(Ent, Tally)
 					Fuel = Fuel + K.Capacity
 				end
 
-				if K.Constraints then -- Tally up constraints
-					for _, Con in pairs(K.Constraints) do
-						if IsValid(Con) and Con.Type ~= "NoCollide" and not Constraints[Con] then -- NoCollides aren't a real constraint
-							Constraints[Con] = true
-							ConN = ConN + 1
+				if K.Constraints then
+					for _, Constraint in pairs(K.Constraints) do
+						if IsValid(Constraint) and Constraint.Type ~= "NoCollide" and not Constraints[Constraint] then
+							Constraints[Constraint] = true
+							ConN                    = ConN + 1
 						end
 					end
 				end
@@ -178,8 +204,7 @@ function Contraption.CalcMassRatio(Ent, Tally)
 				PhysN = PhysN + 1
 			end
 
-			local Mass = Phys:GetMass()
-			PhysMass = PhysMass + Mass
+			PhysMass = PhysMass + Phys:GetMass()
 		end
 	end
 
@@ -187,8 +212,6 @@ function Contraption.CalcMassRatio(Ent, Tally)
 		local Phys = K:GetPhysicsObject()
 
 		if not IsValid(Phys) then
-			Physical[K] = nil
-
 			OthN = OthN + 1
 		else
 			if Tally then
@@ -205,7 +228,7 @@ function Contraption.CalcMassRatio(Ent, Tally)
 		end
 	end
 
-	local TotMass = Con and Con.totalMass or PhysMass
+	local TotMass = Con.totalMass or PhysMass
 
 	for _ in pairs(Detached) do
 		OthN = OthN + 1
@@ -230,6 +253,30 @@ function Contraption.CalcMassRatio(Ent, Tally)
 	end
 
 	if Tally then
+		return Power, Fuel, PhysN, ParN, ConN, OthN, TotMass, PhysMass
+	end
+end
+
+function Contraption.HasConstraints(Ent)
+	if Ent.Constraints then
+		for _, V in pairs(Ent.Constraints) do
+			if V.Type ~= "NoCollide" then
+				return true
+			end
+		end
+	end
+
+	return false
+end
+
+--- Delegates to CalcMassRatioFromContraption using the entity's CFW contraption, or a single-entity pseudo-contraption as fallback.
+function Contraption.CalcMassRatio(Ent, Tally)
+	local Con      = Ent:CFW_GetContraption()
+	local PseudoCon = Con or ACF.EntitiesToPseudoContraption({Ent})
+
+	local Power, Fuel, PhysN, ParN, ConN, OthN, TotMass, PhysMass = Contraption.CalcMassRatioFromContraption(PseudoCon, Tally)
+
+	if Tally then
 		local Owner = Ent:CPPIGetOwner()
 
 		return Power, Fuel, PhysN, ParN, ConN, IsValid(Owner) and Owner:Name() or "Unknown", OthN, TotMass, PhysMass
@@ -238,13 +285,12 @@ end
 
 function Contraption.GetMiscInfo(Ent)
 	local Contraption = Ent:CFW_GetContraption()
-	if not Contraption then return "N/A", "N/A", {}, 0 end
+	if not Contraption then return "N/A", "N/A", {} end
 
 	local Name = Contraption.ACF_Baseplate and Contraption.ACF_Baseplate:GetNWString("WireName") or "N/A"
 	local BaseplateType = Contraption.ACF_Baseplate and Contraption.ACF_Baseplate:ACF_GetUserVar("BaseplateType").Name or "N/A"
 	local AmmoTypes = table.GetKeys(Contraption.AmmoTypes or {}) or {}
-	local MaxNominal = Contraption.MaxNominal or 0
-	return Name, BaseplateType, AmmoTypes, MaxNominal
+	return Name, BaseplateType, AmmoTypes
 end
 
 do -- ASSUMING DIRECT CONTROL
@@ -342,7 +388,7 @@ do -- ASSUMING DIRECT CONTROL
 				local Ent = self:GetEntity()
 
 				-- Required due for AD2 support, if this isn't present then entities will never get set to their required weight on dupe paste
-				if Ent.IsACFEntity and not Ent.ACF_UserWeighable then Contraption.SetMass(Ent, Ent.ACF.Mass) return end
+				if Ent.IsACFEntity and not Ent.ACF_UserWeighable and Ent.ACF then Contraption.SetMass(Ent, Ent.ACF.Mass) return end
 
 				if Ent.ACF_OnMassChange then
 					Ent:ACF_OnMassChange(self:GetMass(), Mass)

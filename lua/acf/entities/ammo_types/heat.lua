@@ -14,6 +14,7 @@ function Ammo:OnLoaded()
 	self.Bodygroup   = 8 -- HEAT bodygroup index
 	self.MortarBodygroup = 3 -- HEAT mortar submodel
 	self.Description = "#acf.descs.ammo.heat"
+	self.IsChemical  = true
 	self.Blacklist = {
 		AC = true,
 		MG = true,
@@ -60,15 +61,15 @@ function Ammo:GetPenetration(Bullet, Standoff)
 end
 
 function Ammo:GetDisplayData(Data)
-	local Fragments  = math.max(math.floor((Data.BoomFillerMass / Data.CasingMass) * ACF.HEFrag), 2)
+	local FragInfo   = ACF.Damage.getFragmentInfo(Data.BoomFillerMass, Data.CasingMass) -- Single source of truth shared with the damage code
 	local Display    = {
 		BoomFillerMass = Data.BoomFillerMass,
 		MaxPen         = self:GetPenetration(Data, Data.Standoff, ACF.SteelDensity),
 		TotalFragMass  = Data.CasingMass,
 		BlastRadius    = Data.BoomFillerMass ^ 0.33 * 8,
-		Fragments      = Fragments,
-		FragMass       = Data.CasingMass / Fragments,
-		FragVel        = (Data.BoomFillerMass * ACF.HEPower * 1000 / Data.CasingMass) ^ 0.5,
+		Fragments      = FragInfo.Count,
+		FragMass       = FragInfo.Mass,
+		FragVel        = FragInfo.Velocity * ACF.InchToMeter, -- in/s (sim units) to m/s for display
 	}
 
 	hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
@@ -289,6 +290,7 @@ if SERVER then
 			-- Get the effective armor thickness
 			local BaseArmor = 0
 			local DamageDealt
+			local ConvexHits
 			if TraceRes.HitWorld or TraceRes.Entity and TraceRes.Entity:IsWorld() then
 				-- Get the surface and calculate the RHA equivalent
 				local Surface = util.GetSurfaceData(TraceRes.SurfaceProps)
@@ -302,13 +304,30 @@ if SERVER then
 				-- TODO: Fix world entity penetration
 				--BaseArmor = Penetration + 1
 			elseif TraceRes.Hit then
-				BaseArmor = Ent.GetArmor and Ent:GetArmor(TraceRes) or Ent.ACF and Ent.ACF.Armour or 0
+				ConvexHits = ACF.GetConvexHits(Ent, PenHitPos, Direction)
+
+				if #ConvexHits > 0 then
+					BaseArmor = 0
+					for _, Hit in ipairs(ConvexHits) do
+						BaseArmor = BaseArmor + Hit.GeoThick * Hit.ArmorType.ChemicalMul
+					end
+				else
+					BaseArmor = Ent.GetArmor and Ent:GetArmor(TraceRes) or 0
+				end
+
 				-- Enable damage if a valid entity is hit
 				DamageDealt = 0
 			end
 
 			local Angle          = ACF.GetHitAngle(TraceRes, Direction)
-			local EffectiveArmor = Ent.GetArmor and BaseArmor or BaseArmor / math.abs(math.cos(math.rad(Angle)))
+			local EffectiveArmor
+			if ConvexHits and #ConvexHits > 0 then
+				EffectiveArmor = BaseArmor -- GeoThick already accounts for obliquity
+			elseif Ent.GetArmor then
+				EffectiveArmor = BaseArmor
+			else
+				EffectiveArmor = BaseArmor / math.abs(math.cos(math.rad(Angle)))
+			end
 			EffectiveArmor = math.max(EffectiveArmor, 0.01) -- Prevent divide by zero and nan armor
 
 			-- Percentage of total jet mass lost to this penetration
@@ -441,6 +460,26 @@ else
 		}
 
 		Effects.CreateEffect("ACF_Ricochet", EffectTable)
+	end
+
+	-- Ammo menu graph: penetration over standoff distance.
+	function Ammo:PlotAmmoGraph(Panel, _, BulletData)
+		local Colors  = ACF.GraphColors
+		local PenText = language.GetPhrase("acf.menu.ammo.penetration")
+
+		local PassiveStandoffPen = self:GetPenetration(BulletData, BulletData.Standoff)
+		local BreakupDistPen     = self:GetPenetration(BulletData, BulletData.BreakupDist)
+
+		Panel:SetYRange(0, math.max(BreakupDistPen, PassiveStandoffPen) * 1.5)
+		Panel:SetXRange(0, BulletData.BreakupDist * 1000 * 2.5) -- HEAT doesn't care how long the shell has been flying for penetration, just the instant it detonates
+		Panel:SetXLabel("#acf.menu.ammo.standoff")
+
+		Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.passive"), BulletData.Standoff * 1000, PassiveStandoffPen, Colors.Blue)
+		Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.breakup"), BulletData.BreakupDist * 1000, BreakupDistPen, Colors.Red)
+
+		Panel:PlotFunction(PenText, Colors.RedAlt, function(X)
+			return self:GetPenetration(BulletData, X / 1000)
+		end)
 	end
 
 	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)

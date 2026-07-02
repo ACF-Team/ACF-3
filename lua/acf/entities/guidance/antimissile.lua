@@ -8,7 +8,7 @@ else
 	Guidance.RadarType = "AM-Radar"
 
 	function Guidance:GetCost()
-		return 1
+		return 3
 	end
 
 	function Guidance:GetRadar()

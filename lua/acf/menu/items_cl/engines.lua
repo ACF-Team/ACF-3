@@ -3,6 +3,8 @@ local Classes     = ACF.Classes
 local EngineTypes = Classes.EngineTypes
 local FuelTypes   = Classes.FuelTypes
 local Engines     = Classes.Engines
+local ModelData   = ACF.ModelData
+local ArmorTypes  = Classes.ArmorTypes
 local TankSize    = Vector()
 local HPColor     = Color(255, 65, 65)
 local TorqueColor = Color(65, 65, 255)
@@ -18,7 +20,8 @@ local function UpdateEngineStats(Label, Data)
 	local PeakkWRPM  = Data.PeakPowerRPM
 	local MinPower   = RPM.PeakMin
 	local MaxPower   = RPM.PeakMax
-	local Mass       = ACF.GetProperMass(Data.Mass)
+	local Volume     = ModelData.GetModelVolume(Data.Model)
+	local Mass       = ACF.GetProperMass(Volume and math.Round(Volume * ACF.InchToMCu * ArmorTypes.Get("Component").Density) or 0)
 	local Torque     = math.Round(Data.Torque * GetTorqueMult())
 	local TorqueFeet = math.Round(Data.Torque * GetTorqueMult() * ACF.NmToFtLb)
 	local Type       = EngineTypes.Get(Data.Type)
@@ -260,24 +263,22 @@ local function CreateMenu(Menu)
 		local TextFunc = self.Selected.FuelTankText
 		local FuelText = ""
 
-		local Wall = ACF.ContainerArmor * ACF.MmToInch -- Wall thickness in inches
 		local Shape = ACF.GetClientData("FuelShape") or "Box"
 
-		-- Calculate volume and area using shape calculations
-		local Volume, Area = ACF.ContainerShapes[Shape](TankSize, Wall)
+		-- Calculate volume using shape calculations
+		local Volume = ACF.ContainerShapes[Shape](TankSize)
 
 		local Capacity	= Volume * ACF.gCmToKgIn -- Internal volume available for fuel in liters
-		local EmptyMass	= Area * Wall * ACF.InchToCmCu * ACF.SteelDensity -- Total wall volume * cu in to cc * density of steel (kg/cc)
-		local Mass		= EmptyMass + Capacity * self.Selected.Density -- Weight of tank + weight of fuel
+		local Mass		= Capacity * self.Selected.Density -- Weight of fuel
 
 		if TextFunc then
-			FuelText = FuelText .. TextFunc(Capacity, Mass, EmptyMass)
+			FuelText = FuelText .. TextFunc(Capacity, Mass)
 		else
 			local Text = language.GetPhrase("acf.menu.fuel.tank_stats")
 			local Liters = math.Round(Capacity, 2)
 			local Gallons = math.Round(Capacity * ACF.LToGal, 2)
 
-			FuelText = FuelText .. Text:format(ACF.ContainerArmor, Liters, Gallons, ACF.GetProperMass(Mass), ACF.GetProperMass(EmptyMass))
+			FuelText = FuelText .. Text:format(Liters, Gallons, ACF.GetProperMass(Mass))
 		end
 
 		FuelDesc:SetText("Scalable Fuel Tank\n\nShape: " .. Shape)

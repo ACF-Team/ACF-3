@@ -12,7 +12,7 @@ else
 	local Trace     = ACF.trace
 
 	function Guidance:GetCost()
-		return 3
+		return 4
 	end
 
 	function Guidance:OnLaunched(Missile)

@@ -1,66 +1,80 @@
-local ACF     = ACF
-local Damage  = ACF.Damage
-local Objects = Damage.Objects
-local Effects = ACF.Utilities.Effects
-local Queue = {} -- Queue[Entity] = Step; always broadcast
+local ACF       = ACF
+local Damage    = ACF.Damage
+local Objects   = Damage.Objects
+local Effects   = ACF.Utilities.Effects
+local DamageCoef      = ACF.DamageCoef
+local DamageBlastCoef = ACF.DamageBlastCoef
+local Queue = {} -- Queue[Entity] = { [ConvexID] = Step }; always broadcast
 local QueueTime = 0.5 -- Seconds to buffer damage updates before sending
 
 util.AddNetworkString("ACF_Damage")
+
+-- Writes a { {Entity, Convexes}, ... } batch in the wire format shared by SendQueue and the full-sync hook.
+local function WriteBatch(Batch)
+	net.WriteUInt(#Batch, 8)
+
+	for i = 1, #Batch do
+		local Entity, Convexes = Batch[i][1], Batch[i][2]
+
+		net.WriteUInt(Entity:EntIndex(), 13)
+		net.WriteUInt(table.Count(Convexes), 8)
+
+		for ConvexID, Step in pairs(Convexes) do
+			net.WriteUInt(ConvexID, 9)
+			net.WriteUInt(Step, 4)
+		end
+	end
+end
 
 local function SendQueue()
 	local Batch = {}
 
 	-- Validate the entities in the queue still exist
-	for Entity, Step in pairs(Queue) do
+	for Entity, Convexes in pairs(Queue) do
 		if IsValid(Entity) then
-			Batch[#Batch + 1] = {Entity, Step}
+			Batch[#Batch + 1] = {Entity, Convexes}
 		end
 	end
 
 	Queue = {}
 
-	local Count = #Batch
-
-	if Count == 0 then return end -- Nothing to send - Anything that was in the queue became invalid
+	if #Batch == 0 then return end -- Nothing to send - Anything that was in the queue became invalid
 
 	net.Start("ACF_Damage")
-	net.WriteUInt(Count, 8)
-
-	for i = 1, Count do
-		net.WriteUInt(Batch[i][1]:EntIndex(), 13)
-		net.WriteUInt(Batch[i][2], 4)
-	end
-
+	WriteBatch(Batch)
 	net.Broadcast()
 end
 
---- Helper function used to efficiently network visual damage updates on props.
+--- Helper function used to efficiently network visual damage updates on individual convexes.
 --- Updates are quantized to 10% health steps to reduce network traffic (you can't really tell the difference with smaller steps anyway)
---- @param Entity entity The entity to update damage on.
---- @param NewHealth? number The entity's new health.
---- @param MaxHealth? number The entity's maximum health.
-function Damage.Network(Entity, _, NewHealth, MaxHealth)
-	NewHealth = NewHealth or Entity.ACF.NewHealth or 0
-	MaxHealth = MaxHealth or Entity.ACF.MaxHealth or 0
+--- @param Entity entity The entity owning the convex.
+--- @param ConvexID number The convex's index into the entity's volumetric mesh.
+function Damage.NetworkConvex(Entity, ConvexID)
+	local MeshData = Entity.ACF_Volumetric_Mesh
+	local Convex    = MeshData and MeshData.Convexes[ConvexID]
 
-	local Value = NewHealth / MaxHealth
+	if not Convex then return end
+	if Convex.MaxHealth == 0 then return end
 
-	if Value ~= Value then return end -- NaN guard
-	if Value == 0     then return end -- Fully destroyed; entity removal handles client cleanup
+	local Value = Convex.Health / Convex.MaxHealth
+	local Step  = math.Round(Value * 10) -- Integer 0-10, snapped to nearest 10% boundary
 
-	local Step = math.Round(Value * 10) -- Integer 0-10, snapped to nearest 10% boundary
+	if Step == 10 and not Convex.LastDamageStep then return end -- Never visually damaged; nothing changed, nothing to send
+	if Convex.LastDamageStep == Step then return end
 
-	if Step == 10 and not Entity.ACF.LastDamageStep then return end -- Never visually damaged; nothing changed, nothing to send
-
-	if Entity.ACF.LastDamageStep == Step then return end
-
-	Entity.ACF.LastDamageStep = Step
+	Convex.LastDamageStep = Step
 
 	if not next(Queue) then
 		timer.Create("ACF_DamageQueue", QueueTime, 1, SendQueue)
 	end
 
-	Queue[Entity] = Step
+	local Convexes = Queue[Entity]
+	if not Convexes then
+		Convexes = {}
+		Queue[Entity] = Convexes
+	end
+
+	Convexes[ConvexID] = Step
 end
 
 --- Returns the penetration of a blast.
@@ -68,7 +82,7 @@ end
 -- @param Area The area of the blast in cm2.
 -- @return The penetration of the blast in RHA mm.
 function Damage.getBlastPenetration(Energy, Area)
-	return Energy / Area * 0.25 -- NOTE: 0.25 is what ACF.KEtoRHA used to be set at.
+	return Energy / Area * 0.005 -- Emperically derived
 end
 
 --- Helper function used to generate DamageResult and DamageInfo objects from projectile information.
@@ -82,19 +96,56 @@ function Damage.getBulletDamage(Bullet, Trace)
 	local DmgInfo   = Objects.DamageInfo()
 
 	if ACF.Check(Entity) then
-		local Thickness = Entity.ACF.Armour
+		local NormDir    = Bullet.Flight:GetNormalized()
+		local AmmoType   = ACF.Classes.AmmoTypes.Get(Bullet.Type)
+		local MulField   = (AmmoType and AmmoType.IsChemical) and "ChemicalMul" or "KineticMul"
+
+		-- The ballistics layer resolves the impact to a single convex (Bullet.ConvexHit) so each convex
+		-- is damaged as its own event. Older/meshless callers (blasts) fall back to summing every live convex.
+		local ConvexHit  = Bullet.ConvexHit
+		local ConvexHits = ConvexHit and { ConvexHit } or ACF.GetConvexHits(Entity, Trace.HitPos, NormDir)
+
+		local Penetration = Bullet:GetPenetration()
+		local Thickness, Angle
+		local HitPos = Trace.HitPos
+		if #ConvexHits > 0 then
+			Thickness = 0
+
+			-- Penetration is spent sequentially as the round traverses each convex in hit order. Each convex
+			-- removes only the channel it was actually bored through, so a round that stalls partway (or never
+			-- penetrates) carves a shorter tunnel instead of always assuming a full-thickness penetration.
+			local Budget = Penetration
+			local Hits   = {}
+			for _, Hit in ipairs(ConvexHits) do
+				local Effective = Hit.GeoThick * Hit.ArmorType[MulField] -- Effective armor (RHA mm) this convex presents along the path
+				local Consumed  = math.min(Effective, Budget) -- Effective armor actually defeated before the round stalls
+				local Frac      = Effective > 0 and (Consumed / Effective) or 0 -- Fraction of this convex's geometric thickness traversed
+
+				Thickness = Thickness + Effective
+				Budget    = Budget - Consumed
+				Hits[#Hits + 1] = { ConvexID = Hit.ConvexID, Volume = Hit.GeoThick * Frac * 0.1 * Bullet.ProjArea / ACF.InchToCmCu } -- (mm)(mm to cm)(cm^2) = cm^3, then cm^3 to in^3
+			end
+
+			Angle = 0 -- GeoThick already accounts for obliquity
+			DmgInfo:SetConvexHits(Hits)
+
+			if ConvexHit then HitPos = ConvexHit.EntryPos end -- Land effects/decals on the struck convex's face
+		else
+			Thickness = 0
+			Angle     = ACF.GetHitAngle(Trace, Bullet.Flight)
+		end
 
 		DmgResult:SetArea(Bullet.ProjArea)
-		DmgResult:SetPenetration(Bullet:GetPenetration())
+		DmgResult:SetPenetration(Penetration)
 		DmgResult:SetThickness(Thickness)
-		DmgResult:SetAngle(ACF.GetHitAngle(Trace, Bullet.Flight))
+		DmgResult:SetAngle(Angle)
 		DmgResult:SetFactor(Thickness / Bullet.Diameter)
 
 		DmgInfo:SetAttacker(Bullet.Owner)
 		DmgInfo:SetInflictor(Bullet.Gun)
 		DmgInfo:SetType(DMG_BULLET)
 		DmgInfo:SetOrigin(Bullet.Pos)
-		DmgInfo:SetHitPos(Trace.HitPos)
+		DmgInfo:SetHitPos(HitPos)
 		DmgInfo:SetHitGroup(Trace.HitGroup)
 	end
 
@@ -219,10 +270,13 @@ end
 -- @param DmgResult A DamageResult object.
 -- @param DmgInfo A DamageInfo object.
 -- @return The output of the DamageResult object.
-function Damage.doPropDamage(Entity, DmgResult)
-	local EntACF = Entity.ACF
-	local Health = EntACF.Health
+function Damage.doPropDamage(Entity, DmgResult, DmgInfo)
+	local IsBlast = DmgInfo and DmgInfo:GetType() == DMG_BLAST
+	local Coef    = IsBlast and DamageBlastCoef or DamageCoef
+
 	local HitRes = DmgResult:Compute()
+	HitRes.Damage = HitRes.Damage * Coef -- Erroneous :(
+	HitRes.Kill = false
 
 	-- Mark contraption as in combat when taking damage
 	local Contraption = Entity:CFW_GetContraption()
@@ -230,21 +284,32 @@ function Damage.doPropDamage(Entity, DmgResult)
 		Contraption.InCombat = engine.TickCount()
 	end
 
-	if HitRes.Damage >= Health then
-		if Entity.ACF_KillableButIndestructible then
-			HitRes.Kill = false
-			Entity.ACF.Health = 0
+	local MeshData   = Entity.ACF_Volumetric_Mesh
+	local ConvexHits = DmgInfo and DmgInfo:GetConvexHits()
+
+	if MeshData and ConvexHits then
+		if Entity.IsACFEntity then
+			-- ACF entities defer convex damage to the entity's total health rather than depleting the convexes themselves.
+			-- In the future, this should be replaced with a per convex damage system. This is for some backwards compatibility.
+			local EntACF      = Entity.ACF
+			local TotalChange = 0
+
+			for _, Hit in ipairs(ConvexHits) do
+				TotalChange  = TotalChange + Hit.Volume * Coef
+			end
+
+			EntACF.Health = math.Clamp(EntACF.Health - TotalChange, 0, EntACF.MaxHealth)
 		else
-			HitRes.Kill = true
+			for _, Hit in ipairs(ConvexHits) do
+				local Convex       = MeshData.Convexes[Hit.ConvexID]
+				local HealthChange = Hit.Volume * Coef
+
+				Convex.Health = math.Clamp(Convex.Health - HealthChange, 0, Convex.MaxHealth)
+				-- print(HealthChange, Coef)
+
+				Damage.NetworkConvex(Entity, Hit.ConvexID)
+			end
 		end
-	else
-		local NewHealth = Health - HitRes.Damage
-		local MaxHealth = EntACF.MaxHealth
-
-		EntACF.Health = NewHealth
-		EntACF.Armour = EntACF.MaxArmour * (0.5 + NewHealth / MaxHealth * 0.5) -- Simulating the plate weakening after a hit
-
-		Damage.Network(Entity, nil, NewHealth, MaxHealth)
 	end
 
 	if Entity.ACF_HealthUpdatesWireOverlay then
@@ -301,33 +366,26 @@ hook.Add("ACF_OnLoadPlayer", "ACF Render Damage", function(Player)
 	local Batch = {}
 
 	for _, Entity in ents.Iterator() do
-		local Data = Entity.ACF
+		local MeshData = Entity.ACF_Volumetric_Mesh
+		if not MeshData then continue end
 
-		if not Data then continue end
+		local Convexes
+		for ConvexID, Convex in ipairs(MeshData.Convexes) do
+			local Step = Convex.LastDamageStep
+			if not Step or Step >= 10 then continue end
 
-		local MaxHealth = Data.MaxHealth
-		if not MaxHealth or MaxHealth == 0 then continue end
+			Convexes = Convexes or {}
+			Convexes[ConvexID] = Step
+		end
 
-		local Value = (Data.Health or 0) / MaxHealth
-		if Value <= 0 or Value ~= Value then continue end
-
-		local Step = math.Round(Value * 10)
-		if Step >= 10 then continue end
-
-		Batch[#Batch + 1] = {Entity, Step}
+		if Convexes then
+			Batch[#Batch + 1] = {Entity, Convexes}
+		end
 	end
 
-	local Count = #Batch
-
-	if Count == 0 then return end
+	if #Batch == 0 then return end
 
 	net.Start("ACF_Damage")
-	net.WriteUInt(Count, 8)
-
-	for i = 1, Count do
-		net.WriteUInt(Batch[i][1]:EntIndex(), 13)
-		net.WriteUInt(Batch[i][2], 4)
-	end
-
+	WriteBatch(Batch)
 	net.Send(Player)
 end)

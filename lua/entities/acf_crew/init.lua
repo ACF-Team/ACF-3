@@ -702,26 +702,6 @@ end
 
 -- Entity methods
 do
-	function ENT:ACF_Activate(Recalc)
-		local PhysObj = self.ACF.PhysObj
-		-- local Mass    = PhysObj:GetMass()
-		local Area    = PhysObj:GetSurfaceArea() * ACF.InchToCmSq
-		local Armour  = ACF.CrewArmor -- Human body isn't that thick but we have to put something here
-		local Health  = ACF.CrewHealth
-		local Percent = 1
-
-		if Recalc and self.ACF.Health and self.ACF.MaxHealth then
-			Percent = self.ACF.Health / self.ACF.MaxHealth
-		end
-
-		self.ACF.Area      = Area
-		self.ACF.Health    = Health * Percent
-		self.ACF.MaxHealth = Health
-		self.ACF.Armour    = Armour * Percent
-		self.ACF.MaxArmour = Armour
-		self.ACF.Type      = "Prop"
-	end
-
 	-- If the player trips a legality check (e.g. notsolid)
 	-- You can't bring back a dead crew so there is no enable...
 	function ENT:Disable()
@@ -730,7 +710,6 @@ do
 
 	-- Only meant to be called by gamemodes like AAS. This function isn't called otherwise.
 	function ENT:Restore()
-		self.ACF.Armour = self.ACF.MaxArmour
 		self.ACF.Health = self.ACF.MaxHealth
 		self.IsAlive = true
 		self:SetMaterial(self.MaterialPath or "") -- Reset to default material
@@ -785,8 +764,6 @@ do
 		Other:SetColor(Col1)
 
 		self.ACF.Health, Other.ACF.Health = Other.ACF.Health, self.ACF.Health
-		self.ACF.Armour = self.ACF.MaxArmour * (self.ACF.Health / self.ACF.MaxHealth)
-		Other.ACF.Armour = Other.ACF.MaxArmour * (Other.ACF.Health / Other.ACF.MaxHealth)
 		self.IsAlive, Other.IsAlive = Other.IsAlive, self.IsAlive
 
 		self:UpdateOverlay()
@@ -801,7 +778,6 @@ do
 		local NewHealth = math.max(0, SelfACF.Health - Damage)
 
 		SelfACF.Health = NewHealth
-		SelfACF.Armour = SelfACF.MaxArmour * (NewHealth / SelfACF.MaxHealth)
 
 		if NewHealth == 0 and SelfTbl.IsAlive then
 			self:KillCrew(sound)
@@ -872,13 +848,11 @@ do
 		return HitRes
 	end
 
-	function ENT:ACF_OnRepaired(OldArmor, OldHealth)
+	function ENT:ACF_OnRepaired(_, OldHealth)
 		-- Dead crew should not be revivable
-		if OldArmor == 0 then self.ACF.Armor = 0 end
 		if OldHealth == 0 then self.ACF.Health = 0 end
 
 		if self.ACF.Health == self.ACF.MaxHealth then EmitSound("items/medshot4.wav", self:GetPos()) end
-		self.ACF.Armour = self.ACF.MaxArmour * (self.ACF.Health / self.ACF.MaxHealth)
 		self:UpdateOverlay()
 	end
 end

@@ -124,6 +124,7 @@ do -- ACF global vars
 	ACF.DefineSetting("RestrictInfo",         true,   "Entity information restrictions have been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("LegalChecks",          true,   "Legality checks for ACF entities has been %s.", ACF.BooleanDataCallback(), false)
 	ACF.DefineSetting("NameAndShame",         true,   "Console messages for failed legality checks have been %s.", ACF.BooleanDataCallback(), false)
+	ACF.DefineSetting("CostLimit",            500,    "Contraption cost limit has been set to %s.", ACF.FloatDataCallback(0, nil, 0))
 	ACF.DefineSetting("VehicleLegalChecks",   true,   "Legality checks for vehicles has been %s.", ACF.BooleanDataCallback(), false)
 	ACF.DefineSetting("LegalityDetours",      true,   "Legality detours have been %s.", ACF.BooleanDataCallback(), false)
 
@@ -134,19 +135,22 @@ do -- ACF global vars
 	ACF.DefineSetting("AllowBaseplateDamage", false,  "Non-ACF damage while driving baseplates has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("SquishyDamageMult",    1,      "Player/NPC damage multiplier has been set to a factor of %.2f.", ACF.FloatDataCallback(0.1, 2, 2))
 
-	ACF.Threshold = 264.7
-	ACF.DefineSetting("HealthFactor",         1,      "Health multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("Threshold", 0.01, 2, 2))
+	ACF.BlastAreaCoef = 1 / 264.7 -- Multiplier used to scale HE blast area against an entity's surface area. Kept separate from the convex armor health coefficient.
 
-	ACF.ArmorMod = 1
-	ACF.DefineSetting("ArmorFactor",          1,      "Armor multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("ArmorMod", 0.01, 2, 2))
+	ACF.DefineSetting("HealthCoef",           1,    "Health coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
+
+	ACF.DefineSetting("ArmorCoef",            1,      "Armor coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
+
+	ACF.DefineSetting("DamageCoef",           1,      "Damage coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 1000, 2))
+
+	ACF.DefineSetting("DamageBlastCoef",      0.1,      "Blast damage coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 1000, 2))
 
 	ACF.FuelRate = 15 -- Multiplier for fuel usage, 1.0 is approx real world
 	ACF.DefineSetting("FuelFactor",           1,      "Fuel rate multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("FuelRate", 0.01, 2, 2))
 
 	ACF.MinimumArmor         = 0.01     -- Minimum possible armor that can be given to an entity
 	ACF.MaximumArmor         = 5000  -- Maximum possible armor that can be given to an entity
-	ACF.MinDuctility         = -80   -- The minimum amount of ductility that can be set on an entity
-	ACF.MaxDuctility         = 80    -- The maximum amount of ductility that can be set on an entity
+	ACF.MaxExplosiveConvexVolume = 10000 -- Maximum convex volume (in^3) that can be assigned an explosive armor material
 	ACF.MinimumMass          = 0.1   -- The minimum amount of mass that can be set on an entity
 	ACF.MaximumMass          = 50000 -- The maximum amount of mass that can be set on an entity
 	ACF.DefineSetting("MaxThickness",         300,    nil, ACF.FloatDataCallback(ACF.MinimumArmor, ACF.MaximumArmor, 0))
@@ -195,6 +199,7 @@ do -- ACF global vars
 	ACF.InchToCm             = 2.54 -- Inches to centimeters
 	ACF.InchToCmSq           = 6.45 -- in² to cm²
 	ACF.InchToCmCu           = 16.387 -- in³ to cm³
+	ACF.InchToMCu            = 1.6387e-5 -- in³ to m³
 	ACF.NmToFtLb             = 0.73756 -- Newton meters to foot-pounds
 	ACF.KwToHp               = 1.341 -- Kilowatts to horsepower
 	ACF.LToGal               = 0.264172 -- Liters to gallons
@@ -233,7 +238,6 @@ do -- ACF global vars
 		sent_prop2mesh        = true,
 
 		starfall_hologram     = true,
-		starfall_prop         = true,
 		starfall_screen       = true,
 		starfall_processor    = true,
 	}
@@ -244,11 +248,6 @@ do -- ACF global vars
 	}
 
 	ACF.AmbientTemperature   = 288.15 -- Ambient temperature in kelvin (15°C @ sea level) from google search
-
-	-- Containers (Ammo, Fuel, Supply)
-	ACF.ContainerArmor       = 5 -- How many millimeters of armor all containers have
-	ACF.AmmoArmor            = ACF.ContainerArmor -- Backwards compatibility
-	ACF.FuelArmor            = ACF.ContainerArmor -- Backwards compatibility
 
 	-- Ammo
 	ACF.AmmoPadding          = 0.3 -- Ratio of wasted space to projectile case diameter
@@ -296,7 +295,7 @@ do -- ACF global vars
 		Copper		= 0.15,	-- Liner for HEAT cones
 		Tungsten	= 0.3,	-- Expensive
 		CompB		= 0.1,	-- Normal explosives
-		Octol		= 0.7,	-- Snowflakium, needs to be expensive as a balancing measure
+		Octol		= 0.4,	-- Snowflakium, needs to be expensive as a balancing measure
 
 		WP			= 0.01,	-- White phosphorus
 		SF			= 0.02,	-- Smoke filler
