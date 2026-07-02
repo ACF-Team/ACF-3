@@ -16,23 +16,29 @@ if CLIENT then
 elseif SERVER then
 	local Notify = ACF.Utilities.Notify
 
-	-- Maps legacy sprop model paths to the primitive shape type they should become. Entries match either
+	-- Maps legacy sprop model paths to the primitive shape they should become. Entries match either
 	-- a literal path prefix (startWith) or a Lua pattern found anywhere in the path (find), for cases like
 	-- geometry/ which mixes discs (cylinders) in with hexes/rings/spheres under one folder.
+	--
+	-- The matched value is a shape descriptor table (type, posOffset, angOffset) rather than a bare type
+	-- string, since some sprop models are built with local axes that don't line up with the primitive
+	-- they're converted to -- e.g. geometry/ discs become cylinders, but aren't modeled with the same
+	-- local orientation as the sprops/cylinders models, so they need a local angular offset applied on
+	-- top of the sprop's own angle to come out right. posOffset exists for symmetry but is currently unused.
 	local SpropPrimitiveModelPaths = {
-		{ startWith = "models/sprops/rectangles", type = "cube" },
-		{ startWith = "models/sprops/cylinders", type = "cylinder" },
-		{ startWith = "models/sprops/misc/sq_holes", type = "cube_hole" },
-		{ startWith = "models/sprops/misc/cones", type = "cone" },
-		{ startWith = "models/sprops/misc/domes", type = "dome" },
-		{ startWith = "models/sprops/misc/tubes", type = "tube" },
-		{ find = "sprops/geometry/t?_?[fhq]disc_", type = "cylinder" },
+		{ startWith = "models/sprops/rectangles", shape = { type = "cube", posOffset = vector_origin, angOffset = angle_zero } },
+		{ startWith = "models/sprops/cylinders", shape = { type = "cylinder", posOffset = vector_origin, angOffset = angle_zero } },
+		{ startWith = "models/sprops/misc/sq_holes", shape = { type = "cube_hole", posOffset = vector_origin, angOffset = angle_zero } },
+		{ startWith = "models/sprops/misc/cones", shape = { type = "cone", posOffset = vector_origin, angOffset = angle_zero } },
+		{ startWith = "models/sprops/misc/domes", shape = { type = "dome", posOffset = vector_origin, angOffset = angle_zero } },
+		{ startWith = "models/sprops/misc/tubes", shape = { type = "tube", posOffset = vector_origin, angOffset = angle_zero } },
+		{ find = "sprops/geometry/t?_?[fhq]disc_", shape = { type = "cylinder", posOffset = vector_origin, angOffset = Angle(0, 0, 90) } },
 	}
 
-	local function GetSpropPrimitiveType(Model)
+	local function GetSpropPrimitiveShape(Model)
 		for _, v in ipairs(SpropPrimitiveModelPaths) do
-			if v.startWith and string.StartsWith(Model, v.startWith) then return v.type end
-			if v.find and string.find(Model, v.find) then return v.type end
+			if v.startWith and string.StartsWith(Model, v.startWith) then return v.shape end
+			if v.find and string.find(Model, v.find) then return v.shape end
 		end
 	end
 
@@ -113,8 +119,10 @@ elseif SERVER then
 	-- (e.g. long hull plates) that vector is dominated by length, not thickness, and picking the axis
 	-- from it directly can grab an in-plane axis instead.
 	function ACF.SpropToPrimitive(Entity, BasePos, Thickness)
-		local Type = GetSpropPrimitiveType(Entity:GetModel())
-		if not Type then return end
+		local Shape = GetSpropPrimitiveShape(Entity:GetModel())
+		if not Shape then return end
+
+		local Type = Shape.type
 
 		local PhysObj = Entity:GetPhysicsObject()
 		if not IsValid(PhysObj) then return end
@@ -124,8 +132,15 @@ elseif SERVER then
 		local AMi, AMa = PhysObj:GetAABB()
 		local Size = AMa - AMi
 
+		-- angOffset is always a multiple of 90 degrees, so rotating Size by it and taking the
+		-- absolute value of each component exactly permutes which local axis (length/width/height)
+		-- each Size component belongs to -- keeping it consistent with the same reorientation
+		-- applied to Angle below, rather than leaving Size in the sprop model's original axis order.
+		Size:Rotate(Shape.angOffset)
+		Size.x, Size.y, Size.z = math.abs(Size.x), math.abs(Size.y), math.abs(Size.z)
+
 		local Pos   = Entity:GetPos()
-		local Angle = Entity:GetAngles()
+		local Angle = Entity:LocalToWorldAngles(Shape.angOffset)
 
 		if Type == "cube" then
 			local ThinAxis = 1
