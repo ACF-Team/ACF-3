@@ -397,14 +397,16 @@ if CLIENT then
 	function TOOL:Reload(Trace)
 		local Owner       = self:GetOwner()
 		local Ctrl, Shift = Owner:KeyDown(IN_DUCK), Owner:KeyDown(IN_SPEED)
+		-- Runs the trace/scan directly client-side to avoid a server round-trip. In true singleplayer
+		-- this branch never actually fires (see the SERVER TOOL:Reload below), so no duplication occurs.
 		if Ctrl and Shift then return DoArmorScan(self, Trace) end
 		if Ctrl then return DoRecursiveArmorTrace(self, Trace) end
 		if Shift then return self:GetContraptionReadout(Trace, true) end
 		return self:GetContraptionReadout(Trace, false)
 	end
 
-	-- In singleplayer, TOOL:Reload only fires serverside; the server nets Ctrl key state here so
-	-- the client can run the clientside-only trace functions.
+	-- Only used as a true-singleplayer fallback (see SERVER TOOL:Reload below): prediction never runs
+	-- this file's CLIENT TOOL:Reload there, so the server nets Ctrl key state here instead.
 	net.Receive("ACF_ArmorMesh_Reload", function()
 		local Shift = net.ReadBool()
 		local Tool  = LocalPlayer():GetTool("acfarmormesh")
@@ -811,11 +813,12 @@ elseif SERVER then
 		local Owner = self:GetOwner()
 		local Ctrl, Shift = Owner:KeyDown(IN_DUCK), Owner:KeyDown(IN_SPEED)
 		if Ctrl then
-			-- DoRecursiveArmorTrace and DoArmorScan are clientside-only; in singleplayer TOOL:Reload
-			-- is only called serverside, so we net the key state so the client can handle it.
-			net.Start("ACF_ArmorMesh_Reload")
-				net.WriteBool(Shift)
-			net.Send(Owner)
+			-- Client side predictions fails in singleplayer, so notify the client.
+			if game.SinglePlayer() then
+				net.Start("ACF_ArmorMesh_Reload")
+					net.WriteBool(Shift)
+				net.Send(Owner)
+			end
 			return false
 		end
 		if Shift then return self:GetContraptionReadout(Trace, true) end
