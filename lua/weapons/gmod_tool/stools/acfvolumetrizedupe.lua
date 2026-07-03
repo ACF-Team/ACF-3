@@ -35,8 +35,8 @@ elseif SERVER then
 
 	-- Resizes Size along its thinnest local axis to Thickness (if given), returning the
 	-- world Pos adjusted so the face furthest from BasePos stays put.
-	local function ApplyThinAxisThickness(Entity, Size, Thickness, BasePos)
-		local Pos = Entity:GetPos()
+	local function ApplyThinAxisThickness(Entity, Size, Thickness, BasePos, OverridePos)
+		local Pos = OverridePos or Entity:GetPos()
 
 		local ThinAxis = 1
 		if Size[2] < Size[ThinAxis] then ThinAxis = 2 end
@@ -86,7 +86,30 @@ elseif SERVER then
 		}
 	end)
 
-	RegisterConversion("^models/sprops/misc/sq_holes", function(Entity, Thickness, BasePos)
+	RegisterConversion("sprops/misc/sq_holes/.-qsqhole_", function(Entity, Thickness, BasePos)
+		local RawSize  = GetLocalSize(Entity)
+		local Size = Vector(RawSize.z * 2, RawSize.x * 2, RawSize.y)
+		local Angle = Entity:LocalToWorldAngles(Angle(0, 0, 90))
+		local Pos   = ApplyThinAxisThickness(Entity, Size, Thickness, BasePos)
+		return {
+			Type = "cube_hole", Pos = Pos, Angle = Angle, Size = Size,
+			DT = { PrimDT = 4, PrimMESHSMOOTH = 65, PrimNUMSEG = 1, PrimSUBDIV = 16 }
+		}
+	end)
+
+	RegisterConversion("sprops/misc/sq_holes/.-hsqhole_", function(Entity, Thickness, BasePos)
+		local RawSize  = GetLocalSize(Entity)
+		local Size = Vector(RawSize.z * 2, RawSize.x, RawSize.y)
+		local Angle = Entity:LocalToWorldAngles(Angle(90, 0, 90))
+		local Pos	= Entity:LocalToWorld(Vector(0, 0, -0.25 * RawSize.x))
+		local Pos   = ApplyThinAxisThickness(Entity, Size, Thickness, BasePos, Pos)
+		return {
+			Type = "cube_hole", Pos = Pos, Angle = Angle, Size = Size,
+			DT = { PrimDT = 4, PrimMESHSMOOTH = 65, PrimNUMSEG = 2, PrimSUBDIV = 16 }
+		}
+	end)
+
+	RegisterConversion("sprops/misc/sq_holes/.-sqhole_", function(Entity, Thickness, BasePos)
 		local RawSize  = GetLocalSize(Entity)
 		local Size = Vector(RawSize.x, RawSize.z, RawSize.y)
 		local Angle = Entity:LocalToWorldAngles(Angle(0, 0, 90))
