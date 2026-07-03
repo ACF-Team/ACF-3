@@ -33,7 +33,7 @@ elseif SERVER then
 		return AMa - AMi
 	end
 
-	RegisterConversion("^models/sprops/rectangles", function(Entity, BasePos, Thickness)
+	local function ConvertCube(Entity, Thickness, BasePos)
 		local Size  = GetLocalSize(Entity)
 		local Pos   = Entity:GetPos()
 		local Angle = Entity:GetAngles()
@@ -49,128 +49,84 @@ elseif SERVER then
 
 		if (Pos - BasePos):Dot(AxisDir) < 0 then AxisDir = -AxisDir end
 
-		if Thickness ~= 0 then
+		if Thickness then
 			local OriginalThickness = Size[ThinAxis]
 			Pos            = Pos + AxisDir * (Thickness - OriginalThickness) * -0.5
 			Size[ThinAxis] = Thickness
 		end
 
-		return { Type = "cube", Pos = Pos, Angle = Angle, Size = Size }
-	end)
+		return { Type = "cube", Pos = Pos, Angle = Angle, Size = Size, DT = { PrimMESHSMOOTH = 0, PrimTX = 0, PrimTY = 0 } }
+	end
 
-	RegisterConversion("^models/sprops/cuboids", function(Entity, BasePos, Thickness)
-		local Size  = GetLocalSize(Entity)
-		local Pos   = Entity:GetPos()
-		local Angle = Entity:GetAngles()
-
-		local ThinAxis = 1
-		if Size[2] < Size[ThinAxis] then ThinAxis = 2 end
-		if Size[3] < Size[ThinAxis] then ThinAxis = 3 end
-
-		local AxisDir
-		if ThinAxis == 1 then AxisDir = Entity:GetForward()
-		elseif ThinAxis == 2 then AxisDir = Entity:GetRight()
-		else AxisDir = Entity:GetUp() end
-
-		if (Pos - BasePos):Dot(AxisDir) < 0 then AxisDir = -AxisDir end
-
-		if Thickness ~= 0 then
-			local OriginalThickness = Size[ThinAxis]
-			Pos            = Pos + AxisDir * (Thickness - OriginalThickness) * -0.5
-			Size[ThinAxis] = Thickness
-		end
-
-		return { Type = "cube", Pos = Pos, Angle = Angle, Size = Size }
-	end)
+	RegisterConversion("^models/sprops/rectangles", ConvertCube)
+	RegisterConversion("^models/sprops/cuboids", ConvertCube)
 
 	RegisterConversion("^models/sprops/cylinders", function(Entity)
-		return { Type = "cylinder", Pos = Entity:GetPos(), Angle = Entity:GetAngles(), Size = GetLocalSize(Entity) }
+		return {
+			Type = "cylinder", Pos = Entity:GetPos(), Angle = Entity:GetAngles(), Size = GetLocalSize(Entity),
+			DT = { PrimMAXSEG = 16, PrimMESHSMOOTH = 65, PrimNUMSEG = 16, PrimTX = 0, PrimTY = 0 }
+		}
 	end)
 
 	RegisterConversion("^models/sprops/misc/sq_holes", function(Entity)
-		return { Type = "cube_hole", Pos = Entity:GetPos(), Angle = Entity:GetAngles(), Size = GetLocalSize(Entity) }
+		return {
+			Type = "cube_hole", Pos = Entity:GetPos(), Angle = Entity:GetAngles(), Size = GetLocalSize(Entity),
+			DT = { PrimDT = 4, PrimMESHSMOOTH = 65, PrimNUMSEG = 4, PrimSUBDIV = 16 }
+		}
 	end)
 
 	RegisterConversion("^models/sprops/misc/cones", function(Entity)
-		return { Type = "cone", Pos = Entity:GetPos(), Angle = Entity:GetAngles(), Size = GetLocalSize(Entity) }
+		return {
+			Type = "cone", Pos = Entity:GetPos(), Angle = Entity:GetAngles(), Size = GetLocalSize(Entity),
+			DT = { PrimMAXSEG = 16, PrimMESHSMOOTH = 45, PrimNUMSEG = 16, PrimTX = 0, PrimTY = 0 }
+		}
 	end)
 
 	RegisterConversion("^models/sprops/misc/domes", function(Entity)
-		return { Type = "dome", Pos = Entity:GetPos(), Angle = Entity:GetAngles(), Size = GetLocalSize(Entity) }
+		return {
+			Type = "dome", Pos = Entity:GetPos(), Angle = Entity:GetAngles(), Size = GetLocalSize(Entity),
+			DT = { PrimMESHSMOOTH = 65, PrimSUBDIV = 8 }
+		}
 	end)
 
-	RegisterConversion("sprops/misc/tubes/.-/h_tube_", function(Entity)
+	RegisterConversion("sprops/misc/tubes/.-/tube_", function(Entity, Thickness)
 		local RawSize = GetLocalSize(Entity)
 		local Size = Vector(RawSize.x, RawSize.z, RawSize.y)
-		local LocalOffset = Vector(0, 0, 1.25 * RawSize.z)
-
-		return { Type = "tube", Pos = Entity:LocalToWorld(LocalOffset), Angle = Entity:LocalToWorldAngles(Angle(0, 0, 90)), Size = Size }
+		return {
+			Type = "tube", Pos = Entity:GetPos(), Angle = Entity:LocalToWorldAngles(Angle(0, 0, 90)), Size = Size,
+			DT = { PrimDT = Thickness or 4, PrimMAXSEG = 16, PrimMESHSMOOTH = 65, PrimNUMSEG = 16, PrimTX = 0, PrimTY = 0 }
+		}
 	end)
 
-	RegisterConversion("sprops/misc/tubes/.-/q_tube_", function(Entity)
+	RegisterConversion("sprops/misc/tubes/.-/h_tube_", function(Entity, Thickness)
 		local RawSize = GetLocalSize(Entity)
-		local Size = Vector(RawSize.x, RawSize.z, RawSize.y)
-		local LocalOffset = Vector(-1.25 * RawSize.x, 0, 1.25 * RawSize.z)
-
-		return { Type = "tube", Pos = Entity:LocalToWorld(LocalOffset), Angle = Entity:LocalToWorldAngles(Angle(0, 0, 90)), Size = Size }
+		local Size = Vector(RawSize.x * 2, RawSize.x * 2, RawSize.y)
+		local LocalOffset = Vector(0, 0, -0.5 * RawSize.z)
+		return {
+			Type = "tube", Pos = Entity:LocalToWorld(LocalOffset), Angle = Entity:LocalToWorldAngles(Angle(0, 0, 90)), Size = Size,
+			DT = { PrimDT = Thickness or 4, PrimMAXSEG = 16, PrimMESHSMOOTH = 65, PrimNUMSEG = 8, PrimTX = 0, PrimTY = 0 }
+		}
 	end)
 
-	RegisterConversion("sprops/misc/tubes/.-/tube_", function(Entity)
+	RegisterConversion("sprops/misc/tubes/.-/q_tube_", function(Entity, Thickness)
 		local RawSize = GetLocalSize(Entity)
-		local Size = Vector(RawSize.x, RawSize.z, RawSize.y)
-
-		return { Type = "tube", Pos = Entity:GetPos(), Angle = Entity:LocalToWorldAngles(Angle(0, 0, 90)), Size = Size }
+		local Size = Vector(RawSize.x * 2, RawSize.x * 2, RawSize.y)
+		local LocalOffset = Vector(0.5 * RawSize.x, 0, -0.5 * RawSize.x)
+		print(Entity)
+		return {
+			Type = "tube", Pos = Entity:LocalToWorld(LocalOffset), Angle = Entity:LocalToWorldAngles(Angle(0, 0, 90)), Size = Size,
+			DT = { PrimDT = Thickness or 4, PrimMAXSEG = 16, PrimMESHSMOOTH = 65, PrimNUMSEG = 4, PrimTX = 0, PrimTY = 0 }
+		}
 	end)
 
 	RegisterConversion("sprops/geometry/t?_?[fhq]disc_", function(Entity)
 		local RawSize = GetLocalSize(Entity)
-		local Size = Vector(RawSize.x, RawSize.z, RawSize.y)
-
-		return { Type = "cylinder", Pos = Entity:GetPos(), Angle = Entity:LocalToWorldAngles(Angle(0, 0, 90)), Size = Size }
+		local Size = Vector(RawSize.x, RawSize.x, RawSize.y)
+		return {
+			Type = "cylinder", Pos = Entity:GetPos(), Angle = Entity:LocalToWorldAngles(Angle(0, 0, 90)), Size = Size,
+			DT = { PrimMAXSEG = 16, PrimMESHSMOOTH = 65, PrimNUMSEG = 16, PrimTX = 0, PrimTY = 0 }
+		}
 	end)
-
-	-- Extra Prim* vars per type, mirroring the defaults Primitive's own tool applies on spawn
-	-- (lua/primitive/entities/shapes.lua), since pasted primitives skip that setup and rely
-	-- entirely on the DT table below to restore their networked vars.
-	local PrimitiveTypeDefaults = {
-		cube = {
-			PrimMESHSMOOTH = 0,
-			PrimTX = 0,
-			PrimTY = 0,
-		},
-		cylinder = {
-			PrimMAXSEG     = 16,
-			PrimMESHSMOOTH = 65,
-			PrimNUMSEG     = 16,
-			PrimTX         = 0,
-			PrimTY         = 0,
-		},
-		cube_hole = {
-			PrimDT         = 4,
-			PrimMESHSMOOTH = 65,
-			PrimNUMSEG     = 4,
-			PrimSUBDIV     = 16,
-		},
-		cone = {
-			PrimMAXSEG     = 16,
-			PrimMESHSMOOTH = 45,
-			PrimNUMSEG     = 16,
-			PrimTX         = 0,
-			PrimTY         = 0,
-		},
-		dome = {
-			PrimMESHSMOOTH = 65,
-			PrimSUBDIV     = 8,
-		},
-		tube = {
-			PrimDT         = 4,
-			PrimMAXSEG     = 16,
-			PrimMESHSMOOTH = 65,
-			PrimNUMSEG     = 16,
-			PrimTX         = 0,
-			PrimTY         = 0,
-		},
-	}
 
 	local PrimitiveModel = "models/combine_helicopter/helicopter_bomb01.mdl"
 
@@ -184,9 +140,12 @@ elseif SERVER then
 		["primitive_staircase"] = true,
 	}
 
-	-- Builds the DT (networked var) table Primitive entities restore themselves from on paste.
-	local function BuildPrimitiveDT(Type, Size)
-		local DT = table.Copy(PrimitiveTypeDefaults[Type] or {})
+	-- Builds the DT (networked var) table Primitive entities restore themselves from on paste, starting
+	-- from the conversion function's own Overrides (its per-type Prim* vars, mirroring the defaults
+	-- Primitive's own tool applies on spawn -- see lua/primitive/entities/shapes.lua) since pasted
+	-- primitives skip that setup and rely entirely on this DT table to restore their networked vars.
+	local function BuildPrimitiveDT(Type, Size, Overrides)
+		local DT = Overrides and table.Copy(Overrides) or {}
 
 		DT.PrimTYPE      = Type
 		DT.PrimSIZE      = Size
@@ -199,13 +158,13 @@ elseif SERVER then
 		return DT
 	end
 
-	function ACF.SpropToPrimitive(Entity, BasePos, Thickness)
+	function ACF.SpropToPrimitive(Entity, Thickness, BasePos)
 		if not IsValid(Entity:GetPhysicsObject()) then return nil end
 
 		local Convert = GetSpropConversion(Entity:GetModel())
 		if not Convert then return nil end
 
-		return Convert(Entity, BasePos, Thickness)
+		return Convert(Entity, Thickness, BasePos)
 	end
 
 	-- Swaps a captured AdvDupe2 entity entry into a primitive_shape, matching how ConvertBaseplate swaps
@@ -217,7 +176,7 @@ elseif SERVER then
 		Data.Model = PrimitiveModel
 		Data.Pos   = Primitive.Pos
 		Data.Angle = Primitive.Angle
-		Data.DT    = BuildPrimitiveDT(Primitive.Type, Primitive.Size)
+		Data.DT    = BuildPrimitiveDT(Primitive.Type, Primitive.Size, Primitive.DT)
 
 		Data.PhysicsObjects[0].Pos   = Primitive.Pos
 		Data.PhysicsObjects[0].Angle = Primitive.Angle
@@ -261,8 +220,8 @@ elseif SERVER then
 		for index, ent in pairs(EntsByIndex) do
 			if ent.ACF_Armor_Legacy_Thickness and not LegacyArmorClassBlacklist[ent:GetClass()] and not ent._IsSpherical and not ent.IsWire then
 				-- ACF_Armor_Legacy_Thickness is in millimeters; geometry here is all in inches
-				local Thickness = ent.ACF_Armor_Legacy_Thickness / 25.4
-				local Primitive = ACF.SpropToPrimitive(ent, BasePos, Thickness)
+				local Thickness = ent.ACF_Armor_Legacy_Thickness ~= 0 and (ent.ACF_Armor_Legacy_Thickness / 25.4)
+				local Primitive = ACF.SpropToPrimitive(ent, Thickness, BasePos)
 				if Primitive then
 					ApplyPrimitiveToDupeEntry(Entities[index], Primitive)
 				else
