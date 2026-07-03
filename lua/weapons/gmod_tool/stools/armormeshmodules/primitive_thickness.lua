@@ -41,7 +41,8 @@ return function()
 		local OldSize      = Primitive:GetPrimSIZE()
 		local NewThickness = math.max(Thickness, MinSize)
 
-		Primitive:SetPos(Primitive:GetPos() + AxisDir * (NewThickness - OldSize[Axis]) * -0.5)
+		local NewPos = Primitive:GetPos() + AxisDir * (NewThickness - OldSize[Axis]) * -0.5
+		Primitive:SetPos(IsValid(Primitive:GetParent()) and Primitive:GetParent():WorldToLocal(NewPos) or NewPos)
 
 		local NewSize = Vector(OldSize)
 		NewSize[Axis] = NewThickness
