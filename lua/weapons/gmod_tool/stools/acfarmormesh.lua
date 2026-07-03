@@ -431,7 +431,7 @@ elseif SERVER then
 				return false
 			end
 
-			Apply(Entity, Thickness / 25.4, Trace.HitNormal)
+			Apply(Entity, Thickness / 25.4, Trace.HitNormal, Player)
 
 			return true
 		end
