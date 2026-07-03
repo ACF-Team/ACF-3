@@ -125,9 +125,9 @@ elseif SERVER then
 
 	RegisterConversion("sprops/misc/tubes/.-/h_tube_", function(Entity, Thickness)
 		local RawSize = GetLocalSize(Entity)
-		local Size = Vector(RawSize.x * 2, RawSize.x * 2, RawSize.y)
+		local Size = Vector(RawSize.x, RawSize.x, RawSize.y)
 		local LocalOffset = Vector(0, 0, -0.5 * RawSize.z)
-		local Pos, Angle = Entity:LocalToWorld(LocalOffset), Entity:LocalToWorldAngles(Angle(0, 0, 90))
+		local Pos, Angle = Entity:LocalToWorld(LocalOffset), Entity:LocalToWorldAngles(Angle(90, 0, 90))
 		return {
 			Type = "tube", Pos = Pos, Angle = Angle, Size = Size,
 			DT = { PrimDT = Thickness or 4, PrimMAXSEG = 16, PrimMESHSMOOTH = 65, PrimNUMSEG = 8, PrimTX = 0, PrimTY = 0}
