@@ -58,19 +58,25 @@ elseif SERVER then
 		return Pos
 	end
 
-	local function ConvertCube(Entity, Thickness, BasePos)
+	RegisterConversion("^models/sprops/rectangles", function(Entity, Thickness, BasePos)
 		local Size  = GetLocalSize(Entity)
 		local Angle = Entity:GetAngles()
 		local Pos   = ApplyThinAxisThickness(Entity, Size, Thickness, BasePos)
-
 		return {
 			Type = "cube", Pos = Pos, Angle = Angle, Size = Size,
 			DT = { PrimMESHSMOOTH = 0, PrimTX = 0, PrimTY = 0 }
 		}
-	end
+	end)
 
-	RegisterConversion("^models/sprops/rectangles", ConvertCube)
-	RegisterConversion("^models/sprops/cuboids", ConvertCube)
+	RegisterConversion("^models/sprops/cuboids", function(Entity, Thickness, BasePos)
+		local Size  = GetLocalSize(Entity)
+		local Angle = Entity:GetAngles()
+		local Pos   = ApplyThinAxisThickness(Entity, Size, Thickness, BasePos)
+		return {
+			Type = "cube", Pos = Pos, Angle = Angle, Size = Size,
+			DT = { PrimMESHSMOOTH = 0, PrimTX = 0, PrimTY = 0 }
+		}
+	end)
 
 	RegisterConversion("^models/sprops/cylinders", function(Entity)
 		local Pos, Angle = Entity:GetPos(), Entity:GetAngles()
@@ -84,7 +90,6 @@ elseif SERVER then
 		local Size  = GetLocalSize(Entity)
 		local Angle = Entity:GetAngles()
 		local Pos   = ApplyThinAxisThickness(Entity, Size, Thickness, BasePos)
-
 		return {
 			Type = "cube_hole", Pos = Pos, Angle = Angle, Size = Size,
 			DT = { PrimDT = 4, PrimMESHSMOOTH = 65, PrimNUMSEG = 4, PrimSUBDIV = 16 }
@@ -151,17 +156,6 @@ elseif SERVER then
 	end)
 
 	local PrimitiveModel = "models/combine_helicopter/helicopter_bomb01.mdl"
-
-	-- Classes that are already volumetric in nature, so they should never be reconsidered for legacy
-	-- sprop-to-primitive conversion (e.g. a primitive that retained a stale ACF_Armor entity modifier).
-	local LegacyArmorClassBlacklist = {
-		["primitive_shape"] = true,
-		["primitive_airfoil"] = true,
-		["primitive_rail_slider"] = true,
-		["primitive_ladder"] = true,
-		["primitive_staircase"] = true,
-		["sent_prop2mesh"] = true,
-	}
 
 	-- Builds the DT (networked var) table Primitive entities restore themselves from on paste, starting
 	-- from the conversion function's own Overrides (its per-type Prim* vars, mirroring the defaults
@@ -267,7 +261,7 @@ elseif SERVER then
 		-- Convert legacy sprop armor entities into primitives within the captured dupe table
 		local BasePos = Target:GetPos() + Vector(0, 0, 24)
 		for index, ent in pairs(EntsByIndex) do
-			if ent.ACF_Armor_Legacy_Thickness and not LegacyArmorClassBlacklist[ent:GetClass()] and not ent._IsSpherical and not ent.IsWire then
+			if ent.ACF_Armor_Legacy_Thickness and ent:GetClass() == "prop_physics" and not ent._IsSpherical then
 				-- ACF_Armor_Legacy_Thickness is in millimeters; geometry here is all in inches
 				local Thickness = ent.ACF_Armor_Legacy_Thickness ~= 0 and (ent.ACF_Armor_Legacy_Thickness / 25.4)
 				local Primitive = ACF.SpropToPrimitive(ent, Thickness, BasePos)
