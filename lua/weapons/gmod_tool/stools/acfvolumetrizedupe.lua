@@ -27,6 +27,7 @@ elseif SERVER then
 	-- top of the sprop's own angle to come out right. posOffset exists for symmetry but is currently unused.
 	local SpropPrimitiveModelPaths = {
 		{ startWith = "models/sprops/rectangles", shape = { type = "cube", posOffset = vector_origin, angOffset = angle_zero } },
+				{ startWith = "models/sprops/cuboids", shape = { type = "cube", posOffset = vector_origin, angOffset = angle_zero } },
 		{ startWith = "models/sprops/cylinders", shape = { type = "cylinder", posOffset = vector_origin, angOffset = angle_zero } },
 		{ startWith = "models/sprops/misc/sq_holes", shape = { type = "cube_hole", posOffset = vector_origin, angOffset = angle_zero } },
 		{ startWith = "models/sprops/misc/cones", shape = { type = "cone", posOffset = vector_origin, angOffset = angle_zero } },
@@ -130,6 +131,7 @@ elseif SERVER then
 		-- OBBMins/OBBMaxs pad sprops models by ~0.5 units per axis over their actual collision size,
 		-- so use the physics object's local AABB instead, same as ACF.ConvertBaseplate does.
 		local AMi, AMa = PhysObj:GetAABB()
+		-- print(AMi, AMa, PhysObj, IsValid(PhysObj))
 		local Size = AMa - AMi
 
 		-- angOffset is always a multiple of 90 degrees, so rotating Size by it and taking the
@@ -220,7 +222,7 @@ elseif SERVER then
 		-- Convert legacy sprop armor entities into primitives within the captured dupe table
 		local BasePos = Target:GetPos() + Vector(0, 0, 24)
 		for index, ent in pairs(EntsByIndex) do
-			if ent.ACF_Armor_Legacy_Thickness and not LegacyArmorClassBlacklist[ent:GetClass()] then
+			if ent.ACF_Armor_Legacy_Thickness and not LegacyArmorClassBlacklist[ent:GetClass()] and not ent._IsSpherical then
 				-- ACF_Armor_Legacy_Thickness is in millimeters; geometry here is all in inches
 				local Thickness = ent.ACF_Armor_Legacy_Thickness / 25.4
 				local Primitive = ACF.SpropToPrimitive(ent, BasePos, Thickness)
