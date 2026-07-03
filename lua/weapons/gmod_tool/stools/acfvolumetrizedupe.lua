@@ -57,7 +57,8 @@ elseif SERVER then
 
 		return {
 			Type = "cube", Pos = Pos, Angle = Angle, Size = Size,
-			DT = { PrimMESHSMOOTH = 0, PrimTX = 0, PrimTY = 0 }		}
+			DT = { PrimMESHSMOOTH = 0, PrimTX = 0, PrimTY = 0 }
+		}
 	end
 
 	RegisterConversion("^models/sprops/rectangles", ConvertCube)
@@ -67,28 +68,32 @@ elseif SERVER then
 		local Pos, Angle = Entity:GetPos(), Entity:GetAngles()
 		return {
 			Type = "cylinder", Pos = Pos, Angle = Angle, Size = GetLocalSize(Entity),
-			DT = { PrimMAXSEG = 16, PrimMESHSMOOTH = 65, PrimNUMSEG = 16, PrimTX = 0, PrimTY = 0 }		}
+			DT = { PrimMAXSEG = 16, PrimMESHSMOOTH = 65, PrimNUMSEG = 16, PrimTX = 0, PrimTY = 0 }
+		}
 	end)
 
 	RegisterConversion("^models/sprops/misc/sq_holes", function(Entity)
 		local Pos, Angle = Entity:GetPos(), Entity:GetAngles()
 		return {
 			Type = "cube_hole", Pos = Pos, Angle = Angle, Size = GetLocalSize(Entity),
-			DT = { PrimDT = 4, PrimMESHSMOOTH = 65, PrimNUMSEG = 4, PrimSUBDIV = 16 }		}
+			DT = { PrimDT = 4, PrimMESHSMOOTH = 65, PrimNUMSEG = 4, PrimSUBDIV = 16 }
+		}
 	end)
 
 	RegisterConversion("^models/sprops/misc/cones", function(Entity)
 		local Pos, Angle = Entity:GetPos(), Entity:GetAngles()
 		return {
 			Type = "cone", Pos = Pos, Angle = Angle, Size = GetLocalSize(Entity),
-			DT = { PrimMAXSEG = 16, PrimMESHSMOOTH = 45, PrimNUMSEG = 16, PrimTX = 0, PrimTY = 0 }		}
+			DT = { PrimMAXSEG = 16, PrimMESHSMOOTH = 45, PrimNUMSEG = 16, PrimTX = 0, PrimTY = 0 }
+		}
 	end)
 
 	RegisterConversion("^models/sprops/misc/domes", function(Entity)
 		local Pos, Angle = Entity:GetPos(), Entity:GetAngles()
 		return {
 			Type = "dome", Pos = Pos, Angle = Angle, Size = GetLocalSize(Entity),
-			DT = { PrimMESHSMOOTH = 65, PrimSUBDIV = 8 }		}
+			DT = { PrimMESHSMOOTH = 65, PrimSUBDIV = 8 }
+		}
 	end)
 
 	RegisterConversion("sprops/misc/tubes/.-/tube_", function(Entity, Thickness)
@@ -97,7 +102,8 @@ elseif SERVER then
 		local Pos, Angle = Entity:GetPos(), Entity:LocalToWorldAngles(Angle(0, 0, 90))
 		return {
 			Type = "tube", Pos = Pos, Angle = Angle, Size = Size,
-			DT = { PrimDT = Thickness or 4, PrimMAXSEG = 16, PrimMESHSMOOTH = 65, PrimNUMSEG = 16, PrimTX = 0, PrimTY = 0 }		}
+			DT = { PrimDT = Thickness or 4, PrimMAXSEG = 16, PrimMESHSMOOTH = 65, PrimNUMSEG = 16, PrimTX = 0, PrimTY = 0 }
+		}
 	end)
 
 	RegisterConversion("sprops/misc/tubes/.-/h_tube_", function(Entity, Thickness)
@@ -107,7 +113,8 @@ elseif SERVER then
 		local Pos, Angle = Entity:LocalToWorld(LocalOffset), Entity:LocalToWorldAngles(Angle(0, 0, 90))
 		return {
 			Type = "tube", Pos = Pos, Angle = Angle, Size = Size,
-			DT = { PrimDT = Thickness or 4, PrimMAXSEG = 16, PrimMESHSMOOTH = 65, PrimNUMSEG = 8, PrimTX = 0, PrimTY = 0 }		}
+			DT = { PrimDT = Thickness or 4, PrimMAXSEG = 16, PrimMESHSMOOTH = 65, PrimNUMSEG = 8, PrimTX = 0, PrimTY = 0}
+		}
 	end)
 
 	RegisterConversion("sprops/misc/tubes/.-/q_tube_", function(Entity, Thickness)
@@ -118,7 +125,8 @@ elseif SERVER then
 		local Pos, Angle = Entity:LocalToWorld(LocalOffset), Entity:LocalToWorldAngles(Angle(0, 0, 90))
 		return {
 			Type = "tube", Pos = Pos, Angle = Angle, Size = Size,
-			DT = { PrimDT = Thickness or 4, PrimMAXSEG = 16, PrimMESHSMOOTH = 65, PrimNUMSEG = 4, PrimTX = 0, PrimTY = 0 }		}
+			DT = { PrimDT = Thickness or 4, PrimMAXSEG = 16, PrimMESHSMOOTH = 65, PrimNUMSEG = 4, PrimTX = 0, PrimTY = 0 }
+		}
 	end)
 
 	RegisterConversion("sprops/geometry/t?_?[fhq]disc_", function(Entity)
@@ -127,7 +135,8 @@ elseif SERVER then
 		local Pos, Angle = Entity:GetPos(), Entity:LocalToWorldAngles(Angle(0, 0, 90))
 		return {
 			Type = "cylinder", Pos = Pos, Angle = Angle, Size = Size,
-			DT = { PrimMAXSEG = 16, PrimMESHSMOOTH = 65, PrimNUMSEG = 16, PrimTX = 0, PrimTY = 0 }		}
+			DT = { PrimMAXSEG = 16, PrimMESHSMOOTH = 65, PrimNUMSEG = 16, PrimTX = 0, PrimTY = 0 }
+		}
 	end)
 
 	local PrimitiveModel = "models/combine_helicopter/helicopter_bomb01.mdl"
