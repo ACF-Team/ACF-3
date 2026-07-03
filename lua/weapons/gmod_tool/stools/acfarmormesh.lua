@@ -22,7 +22,6 @@ if CLIENT then
 	language.Add("tool.acfarmormesh.right0", "Copy the material of the convex under your crosshair")
 	language.Add("tool.acfarmormesh.reload0", "Show contraption readout (Shift: cost breakdown, Ctrl: recursive armor trace, Ctrl+Shift: orthographic armor scan)")
 
-	local SphereSearch      = CreateClientConVar("acfarmormesh_sphere_search", 0, false, true, "", 0, 1)
 	local SphereRadius      = CreateClientConVar("acfarmormesh_sphere_radius", 0, false, true, "", 0, 10000)
 	local AlphaConVar       = CreateClientConVar("acfarmormesh_alpha", 50, false, true, "", 0, 255)
 	local ClassFilter       = CreateClientConVar("acfarmormesh_class_filter", "", false, true)
@@ -465,18 +464,9 @@ if CLIENT then
 			end
 		end, "ACF_ArmorMeshMenu")
 
-		local SphereCheck = Menu:AddCheckBox("#tool.acfarmormesh.sphere_search", "acfarmormesh_sphere_search")
-		Menu:AddHelp("#tool.acfarmormesh.sphere_search_desc")
-
 		local SphereRadiusSlider = Menu:AddSlider("#tool.acfarmormesh.sphere_search_radius", 0, 2000, 0)
 		SphereRadiusSlider:SetConVar("acfarmormesh_sphere_radius")
 		Menu:AddHelp("#tool.acfarmormesh.sphere_search_radius_desc")
-
-		function SphereCheck:OnChange(Bool)
-			SphereRadiusSlider:SetEnabled(Bool)
-		end
-
-		SphereRadiusSlider:SetEnabled(SphereCheck:GetChecked())
 
 		local AlphaSlider = Menu:AddSlider("Convex Overlay Alpha", 0, 255, 0)
 		AlphaSlider:SetConVar("acfarmormesh_alpha")
@@ -655,8 +645,6 @@ if CLIENT then
 
 		local Tool = Player:GetTool()
 		if not Tool or Tool ~= Player:GetTool("acfarmormesh") then return end
-		if not SphereSearch:GetBool() then return end
-
 		local Radius = SphereRadius:GetFloat()
 		if Radius <= 0 then return end
 
@@ -912,7 +900,7 @@ do -- Contraption Readout
 	}
 
 	local function GetReadoutMode(Tool)
-		if tobool(Tool:GetClientInfo("sphere_search")) then return Modes.Sphere end
+		if Modes.Sphere.CanCheck(Tool) then return Modes.Sphere end
 
 		return Modes.Default
 	end
