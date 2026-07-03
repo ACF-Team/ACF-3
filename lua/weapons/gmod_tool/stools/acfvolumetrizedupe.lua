@@ -16,32 +16,118 @@ if CLIENT then
 elseif SERVER then
 	local Notify = ACF.Utilities.Notify
 
-	-- Maps legacy sprop model paths to the primitive shape they should become. Entries match either
-	-- a literal path prefix (startWith) or a Lua pattern found anywhere in the path (find), for cases like
-	-- geometry/ which mixes discs (cylinders) in with hexes/rings/spheres under one folder.
-	--
-	-- The matched value is a shape descriptor table (type, posOffset, angOffset) rather than a bare type
-	-- string, since some sprop models are built with local axes that don't line up with the primitive
-	-- they're converted to -- e.g. geometry/ discs become cylinders, but aren't modeled with the same
-	-- local orientation as the sprops/cylinders models, so they need a local angular offset applied on
-	-- top of the sprop's own angle to come out right. posOffset exists for symmetry but is currently unused.
-	local SpropPrimitiveModelPaths = {
-		{ startWith = "models/sprops/rectangles", shape = { type = "cube", posOffset = vector_origin, angOffset = angle_zero } },
-				{ startWith = "models/sprops/cuboids", shape = { type = "cube", posOffset = vector_origin, angOffset = angle_zero } },
-		{ startWith = "models/sprops/cylinders", shape = { type = "cylinder", posOffset = vector_origin, angOffset = angle_zero } },
-		{ startWith = "models/sprops/misc/sq_holes", shape = { type = "cube_hole", posOffset = vector_origin, angOffset = angle_zero } },
-		{ startWith = "models/sprops/misc/cones", shape = { type = "cone", posOffset = vector_origin, angOffset = angle_zero } },
-		{ startWith = "models/sprops/misc/domes", shape = { type = "dome", posOffset = vector_origin, angOffset = angle_zero } },
-		{ startWith = "models/sprops/misc/tubes", shape = { type = "tube", posOffset = vector_origin, angOffset = angle_zero } },
-		{ find = "sprops/geometry/t?_?[fhq]disc_", shape = { type = "cylinder", posOffset = vector_origin, angOffset = Angle(0, 0, 90) } },
-	}
+	local SpropPrimitiveConversions = {}
 
-	local function GetSpropPrimitiveShape(Model)
-		for _, v in ipairs(SpropPrimitiveModelPaths) do
-			if v.startWith and string.StartsWith(Model, v.startWith) then return v.shape end
-			if v.find and string.find(Model, v.find) then return v.shape end
+	local function RegisterConversion(pattern, convert)
+		table.insert(SpropPrimitiveConversions, { pattern = pattern, convert = convert })
+	end
+
+	local function GetSpropConversion(Model)
+		for _, v in ipairs(SpropPrimitiveConversions) do
+			if string.find(Model, v.pattern) then return v.convert end
 		end
 	end
+
+	local function GetLocalSize(Entity)
+		local AMi, AMa = Entity:GetPhysicsObject():GetAABB()
+		return AMa - AMi
+	end
+
+	RegisterConversion("^models/sprops/rectangles", function(Entity, BasePos, Thickness)
+		local Size  = GetLocalSize(Entity)
+		local Pos   = Entity:GetPos()
+		local Angle = Entity:GetAngles()
+
+		local ThinAxis = 1
+		if Size[2] < Size[ThinAxis] then ThinAxis = 2 end
+		if Size[3] < Size[ThinAxis] then ThinAxis = 3 end
+
+		local AxisDir
+		if ThinAxis == 1 then AxisDir = Entity:GetForward()
+		elseif ThinAxis == 2 then AxisDir = Entity:GetRight()
+		else AxisDir = Entity:GetUp() end
+
+		if (Pos - BasePos):Dot(AxisDir) < 0 then AxisDir = -AxisDir end
+
+		if Thickness ~= 0 then
+			local OriginalThickness = Size[ThinAxis]
+			Pos            = Pos + AxisDir * (Thickness - OriginalThickness) * -0.5
+			Size[ThinAxis] = Thickness
+		end
+
+		return { Type = "cube", Pos = Pos, Angle = Angle, Size = Size }
+	end)
+
+	RegisterConversion("^models/sprops/cuboids", function(Entity, BasePos, Thickness)
+		local Size  = GetLocalSize(Entity)
+		local Pos   = Entity:GetPos()
+		local Angle = Entity:GetAngles()
+
+		local ThinAxis = 1
+		if Size[2] < Size[ThinAxis] then ThinAxis = 2 end
+		if Size[3] < Size[ThinAxis] then ThinAxis = 3 end
+
+		local AxisDir
+		if ThinAxis == 1 then AxisDir = Entity:GetForward()
+		elseif ThinAxis == 2 then AxisDir = Entity:GetRight()
+		else AxisDir = Entity:GetUp() end
+
+		if (Pos - BasePos):Dot(AxisDir) < 0 then AxisDir = -AxisDir end
+
+		if Thickness ~= 0 then
+			local OriginalThickness = Size[ThinAxis]
+			Pos            = Pos + AxisDir * (Thickness - OriginalThickness) * -0.5
+			Size[ThinAxis] = Thickness
+		end
+
+		return { Type = "cube", Pos = Pos, Angle = Angle, Size = Size }
+	end)
+
+	RegisterConversion("^models/sprops/cylinders", function(Entity)
+		return { Type = "cylinder", Pos = Entity:GetPos(), Angle = Entity:GetAngles(), Size = GetLocalSize(Entity) }
+	end)
+
+	RegisterConversion("^models/sprops/misc/sq_holes", function(Entity)
+		return { Type = "cube_hole", Pos = Entity:GetPos(), Angle = Entity:GetAngles(), Size = GetLocalSize(Entity) }
+	end)
+
+	RegisterConversion("^models/sprops/misc/cones", function(Entity)
+		return { Type = "cone", Pos = Entity:GetPos(), Angle = Entity:GetAngles(), Size = GetLocalSize(Entity) }
+	end)
+
+	RegisterConversion("^models/sprops/misc/domes", function(Entity)
+		return { Type = "dome", Pos = Entity:GetPos(), Angle = Entity:GetAngles(), Size = GetLocalSize(Entity) }
+	end)
+
+	RegisterConversion("sprops/misc/tubes/.-/h_tube_", function(Entity)
+		local RawSize = GetLocalSize(Entity)
+		local Size = Vector(RawSize.x, RawSize.z, RawSize.y)
+		local LocalOffset = Vector(0, 0, 1.25 * RawSize.z)
+
+		return { Type = "tube", Pos = Entity:LocalToWorld(LocalOffset), Angle = Entity:LocalToWorldAngles(Angle(0, 0, 90)), Size = Size }
+	end)
+
+	RegisterConversion("sprops/misc/tubes/.-/q_tube_", function(Entity)
+		local RawSize = GetLocalSize(Entity)
+		local Size = Vector(RawSize.x, RawSize.z, RawSize.y)
+		local LocalOffset = Vector(-1.25 * RawSize.x, 0, 1.25 * RawSize.z)
+
+		return { Type = "tube", Pos = Entity:LocalToWorld(LocalOffset), Angle = Entity:LocalToWorldAngles(Angle(0, 0, 90)), Size = Size }
+	end)
+
+	RegisterConversion("sprops/misc/tubes/.-/tube_", function(Entity)
+		local RawSize = GetLocalSize(Entity)
+		local Size = Vector(RawSize.x, RawSize.z, RawSize.y)
+
+		return { Type = "tube", Pos = Entity:GetPos(), Angle = Entity:LocalToWorldAngles(Angle(0, 0, 90)), Size = Size }
+	end)
+
+	RegisterConversion("sprops/geometry/t?_?[fhq]disc_", function(Entity)
+		local RawSize = GetLocalSize(Entity)
+		local Size = Vector(RawSize.x, RawSize.z, RawSize.y)
+
+		return { Type = "cylinder", Pos = Entity:GetPos(), Angle = Entity:LocalToWorldAngles(Angle(0, 0, 90)), Size = Size }
+	end)
 
 	-- Extra Prim* vars per type, mirroring the defaults Primitive's own tool applies on spawn
 	-- (lua/primitive/entities/shapes.lua), since pasted primitives skip that setup and rely
@@ -113,62 +199,13 @@ elseif SERVER then
 		return DT
 	end
 
-	-- Describes the primitive that should replace Entity. Only cubes are pushed outward and stretched
-	-- (everything else is mapped over as-is); the thickness axis is whichever local axis is thinnest
-	-- (the plate's actual armor direction) -- the vector from BasePos to Entity is only used to pick
-	-- which of the two signs along that axis points outward, since for plates far from the baseplate
-	-- (e.g. long hull plates) that vector is dominated by length, not thickness, and picking the axis
-	-- from it directly can grab an in-plane axis instead.
 	function ACF.SpropToPrimitive(Entity, BasePos, Thickness)
-		local Shape = GetSpropPrimitiveShape(Entity:GetModel())
-		if not Shape then return end
+		if not IsValid(Entity:GetPhysicsObject()) then return nil end
 
-		local Type = Shape.type
+		local Convert = GetSpropConversion(Entity:GetModel())
+		if not Convert then return nil end
 
-		local PhysObj = Entity:GetPhysicsObject()
-		if not IsValid(PhysObj) then return end
-
-		-- OBBMins/OBBMaxs pad sprops models by ~0.5 units per axis over their actual collision size,
-		-- so use the physics object's local AABB instead, same as ACF.ConvertBaseplate does.
-		local AMi, AMa = PhysObj:GetAABB()
-		-- print(AMi, AMa, PhysObj, IsValid(PhysObj))
-		local Size = AMa - AMi
-
-		-- angOffset is always a multiple of 90 degrees, so rotating Size by it and taking the
-		-- absolute value of each component exactly permutes which local axis (length/width/height)
-		-- each Size component belongs to -- keeping it consistent with the same reorientation
-		-- applied to Angle below, rather than leaving Size in the sprop model's original axis order.
-		Size:Rotate(Shape.angOffset)
-		Size.x, Size.y, Size.z = math.abs(Size.x), math.abs(Size.y), math.abs(Size.z)
-
-		local Pos   = Entity:GetPos()
-		local Angle = Entity:LocalToWorldAngles(Shape.angOffset)
-
-		if Type == "cube" then
-			local ThinAxis = 1
-			if Size[2] < Size[ThinAxis] then ThinAxis = 2 end
-			if Size[3] < Size[ThinAxis] then ThinAxis = 3 end
-
-			local AxisDir
-			if ThinAxis == 1 then AxisDir = Entity:GetForward()
-			elseif ThinAxis == 2 then AxisDir = Entity:GetRight()
-			else AxisDir = Entity:GetUp() end
-
-			-- Flip the axis direction so it points away from the baseplate
-			if (Pos - BasePos):Dot(AxisDir) < 0 then AxisDir = -AxisDir end
-
-			-- A Thickness of 0 means no legacy thickness data was recorded (impossible for real legacy
-			-- armor); keep the sprop model's own AABB thickness instead of overriding it to 0.
-			if Thickness ~= 0 then
-				-- Push the cube outward, keeping its inward face flush against the structure
-				-- and set its size along the thickness axis to exactly Thickness
-				local OriginalThickness = Size[ThinAxis]
-				Pos            = Pos + AxisDir * (Thickness - OriginalThickness) * -0.5
-				Size[ThinAxis] = Thickness
-			end
-		end
-
-		return { Type = Type, Pos = Pos, Angle = Angle, Size = Size }
+		return Convert(Entity, BasePos, Thickness)
 	end
 
 	-- Swaps a captured AdvDupe2 entity entry into a primitive_shape, matching how ConvertBaseplate swaps
@@ -222,7 +259,7 @@ elseif SERVER then
 		-- Convert legacy sprop armor entities into primitives within the captured dupe table
 		local BasePos = Target:GetPos() + Vector(0, 0, 24)
 		for index, ent in pairs(EntsByIndex) do
-			if ent.ACF_Armor_Legacy_Thickness and not LegacyArmorClassBlacklist[ent:GetClass()] and not ent._IsSpherical then
+			if ent.ACF_Armor_Legacy_Thickness and not LegacyArmorClassBlacklist[ent:GetClass()] and not ent._IsSpherical and not ent.IsWire then
 				-- ACF_Armor_Legacy_Thickness is in millimeters; geometry here is all in inches
 				local Thickness = ent.ACF_Armor_Legacy_Thickness / 25.4
 				local Primitive = ACF.SpropToPrimitive(ent, BasePos, Thickness)

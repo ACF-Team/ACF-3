@@ -436,7 +436,7 @@ concommand.Add( "test_trace", function( ply )
 
     table.sort( Intersections, function(a, b) return a.T < b.T end )
 
-    local Hits = {}
+    -- local Hits = {}
     for _, Intersection in ipairs(Intersections) do
         local Ent = Intersection.Entity
 
@@ -448,10 +448,10 @@ concommand.Add( "test_trace", function( ply )
         debugoverlay.Line(Intersection.Pos, Intersection.Pos + Intersection.Normal * 10, 10, EntColor, true)
         -- debugoverlay.Line(Intersection.Pos, Ent:GetPos(), 10, EntColor, true)
 
-        if dir:Dot(Intersection.Normal) < 0 then
+        -- if dir:Dot(Intersection.Normal) < 0 then
 
-        elseif dir:Dot(Intersection.Normal) > 0 then
+        -- elseif dir:Dot(Intersection.Normal) > 0 then
 
-        end
+        -- end
     end
 end )
