@@ -23,10 +23,11 @@ if CLIENT then
 	language.Add("tool.acfarmormesh.reload0", "Show contraption readout (Shift: cost breakdown, Ctrl: recursive armor trace, Ctrl+Shift: orthographic armor scan)")
 
 	local SphereRadius      = CreateClientConVar("acfarmormesh_sphere_radius", 0, false, true, "", 0, 10000)
+	CreateClientConVar("acfarmormesh_thickness", 0, false, true, "", 0, 500)
 	local AlphaConVar       = CreateClientConVar("acfarmormesh_alpha", 50, false, true, "", 0, 255)
 	local ClassFilter       = CreateClientConVar("acfarmormesh_class_filter", "", false, true)
 	CreateClientConVar("acfarmormesh_ignore_elevation", 0, false, true, "", 0, 1)
-	CreateClientConVar("acfarmormesh_scan_resolution", 16, false, true, "", 4, 64)
+	CreateClientConVar("acfarmormesh_scan_resolution", 32, false, true, "", 4, 64)
 	CreateClientConVar("acfarmormesh_scan_size", 160, false, true, "", 10, 10000)
 	local ScanPen           = CreateClientConVar("acfarmormesh_scan_pen", 100, false, true, "", 0, 1500)
 	local ScanTransparency  = CreateClientConVar("acfarmormesh_scan_transparency", 50, false, true, "", 0, 100)
@@ -464,6 +465,10 @@ if CLIENT then
 			end
 		end, "ACF_ArmorMeshMenu")
 
+		local ThicknessSlider = Menu:AddSlider("Thickness (WIP)", 0, 500, 0)
+		ThicknessSlider:SetConVar("acfarmormesh_thickness")
+		Menu:AddHelp("If set to a non zero value, left/right click will set/get the thickness of the primitive entity you are looking at, instead of changing its material.")
+
 		local SphereRadiusSlider = Menu:AddSlider("#tool.acfarmormesh.sphere_search_radius", 0, 2000, 0)
 		SphereRadiusSlider:SetConVar("acfarmormesh_sphere_radius")
 		Menu:AddHelp("#tool.acfarmormesh.sphere_search_radius_desc")
@@ -754,6 +759,13 @@ elseif SERVER then
 	function TOOL:LeftClick(Trace)
 		local Entity = Trace.Entity
 		if not IsValid(Entity) then return false end
+
+		local Thickness = tonumber(self:GetClientInfo("thickness"))
+		if Thickness and Thickness ~= 0 then
+			print("TODO: set primitive thickness on left click", Entity, Thickness)
+			return true
+		end
+
 		if not ACF.Check(Entity) then return false end
 		if not Entity.ACF_Volumetric_Mesh then return false end
 
@@ -784,6 +796,13 @@ elseif SERVER then
 	function TOOL:RightClick(Trace)
 		local Entity = Trace.Entity
 		if not IsValid(Entity) then return false end
+
+		local Thickness = tonumber(self:GetClientInfo("thickness"))
+		if Thickness and Thickness ~= 0 then
+			print("TODO: get primitive thickness on right click", Entity, Thickness)
+			return true
+		end
+
 		if not Entity.ACF_Volumetric_Mesh then return false end
 
 		local Dir       = self:GetOwner():GetAimVector()
