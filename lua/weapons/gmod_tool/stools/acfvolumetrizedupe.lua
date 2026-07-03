@@ -155,8 +155,6 @@ elseif SERVER then
 		}
 	end)
 
-	local PrimitiveModel = "models/combine_helicopter/helicopter_bomb01.mdl"
-
 	-- Builds the DT (networked var) table Primitive entities restore themselves from on paste, starting
 	-- from the conversion function's own Overrides (its per-type Prim* vars, mirroring the defaults
 	-- Primitive's own tool applies on spawn -- see lua/primitive/entities/shapes.lua) since pasted
@@ -190,7 +188,7 @@ elseif SERVER then
 	-- networked vars, restored via Entity:RestoreNetworkVars on creation.
 	local function ApplyPrimitiveToDupeEntry(Data, Entity, Primitive)
 		Data.Class = "primitive_shape"
-		Data.Model = PrimitiveModel
+		Data.Model = "models/combine_helicopter/helicopter_bomb01.mdl"
 		Data.Pos   = Primitive.Pos
 		Data.Angle = Primitive.Angle
 		Data.DT    = BuildPrimitiveDT(Primitive.Type, Primitive.Size, Primitive.DT)
