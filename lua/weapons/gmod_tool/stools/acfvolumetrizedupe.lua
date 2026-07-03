@@ -87,8 +87,9 @@ elseif SERVER then
 	end)
 
 	RegisterConversion("^models/sprops/misc/sq_holes", function(Entity, Thickness, BasePos)
-		local Size  = GetLocalSize(Entity)
-		local Angle = Entity:GetAngles()
+		local RawSize  = GetLocalSize(Entity)
+		local Size = Vector(RawSize.x, RawSize.z, RawSize.y)
+		local Angle = Entity:LocalToWorldAngles(Angle(0, 0, 90))
 		local Pos   = ApplyThinAxisThickness(Entity, Size, Thickness, BasePos)
 		return {
 			Type = "cube_hole", Pos = Pos, Angle = Angle, Size = Size,
