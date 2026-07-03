@@ -1,10 +1,14 @@
--- Takes the shared trace helpers (armor_trace.lua) and the tool's class filter accessor as explicit
--- dependencies, since locals from the main stool file aren't visible across include() boundaries.
-return function(ArmorTrace, GetClassFilter)
-	local ScanPen          = CreateClientConVar("acfarmormesh_scan_pen", 100, false, true, "", 0, 1500)
-	local ScanTransparency = CreateClientConVar("acfarmormesh_scan_transparency", 50, false, true, "", 0, 100)
-	CreateClientConVar("acfarmormesh_scan_resolution", 32, false, true, "", 4, 64)
-	CreateClientConVar("acfarmormesh_scan_size", 160, false, true, "", 10, 10000)
+-- Takes the shared trace helpers (armor_trace.lua), the tool's class filter accessor, and the
+-- resolution/size convar limits as explicit dependencies, since locals from the main stool file
+-- (where the matching menu sliders live) aren't visible across include() boundaries.
+return function(ArmorTrace, GetClassFilter, ResolutionMin, ResolutionMax, SizeMin, SizeMax)
+	local PenMin, PenMax                   = 0, 1500
+	local TransparencyMin, TransparencyMax = 0, 100
+
+	local ScanPen          = CreateClientConVar("acfarmormesh_scan_pen", 100, false, true, "", PenMin, PenMax)
+	local ScanTransparency = CreateClientConVar("acfarmormesh_scan_transparency", 50, false, true, "", TransparencyMin, TransparencyMax)
+	CreateClientConVar("acfarmormesh_scan_resolution", 32, false, true, "", ResolutionMin, ResolutionMax)
+	CreateClientConVar("acfarmormesh_scan_size", 160, false, true, "", SizeMin, SizeMax)
 
 	local ScanViewParams
 	local ScanRTPending = false
@@ -70,8 +74,8 @@ return function(ArmorTrace, GetClassFilter)
 
 		local PenSlider = SlidersPanel:Add("DNumSlider")
 		PenSlider:SetText("Pen (mm)")
-		PenSlider:SetMin(0)
-		PenSlider:SetMax(1500)
+		PenSlider:SetMin(PenMin)
+		PenSlider:SetMax(PenMax)
 		PenSlider:SetDecimals(0)
 		PenSlider:SetValue(QueryPen)
 		PenSlider.Label:SetDark(true)
@@ -82,8 +86,8 @@ return function(ArmorTrace, GetClassFilter)
 
 		local AlphaSlider = SlidersPanel:Add("DNumSlider")
 		AlphaSlider:SetText("Transparency (%)")
-		AlphaSlider:SetMin(0)
-		AlphaSlider:SetMax(100)
+		AlphaSlider:SetMin(TransparencyMin)
+		AlphaSlider:SetMax(TransparencyMax)
 		AlphaSlider:SetDecimals(0)
 		AlphaSlider:SetValue(OverlayAlpha)
 		AlphaSlider.Label:SetDark(true)
@@ -182,8 +186,8 @@ return function(ArmorTrace, GetClassFilter)
 	local function DoArmorScan(Tool, InitialTrace)
 		local Messages   = ACF.Utilities.Messages
 		local Filter     = GetClassFilter()
-		local Resolution = math.Clamp(math.floor(Tool:GetClientNumber("scan_resolution")), 4, 64)
-		local ScanSize   = math.Clamp(Tool:GetClientNumber("scan_size"), 10, 10000)
+		local Resolution = math.Clamp(math.floor(Tool:GetClientNumber("scan_resolution")), ResolutionMin, ResolutionMax)
+		local ScanSize   = math.Clamp(Tool:GetClientNumber("scan_size"), SizeMin, SizeMax)
 		local CellSize   = ScanSize / Resolution
 		local Dir        = ArmorTrace.GetTraceDir(Tool)
 

@@ -29,9 +29,15 @@ if CLIENT then
 	language.Add("tool.acfarmormesh.right0", "Copy the material of the convex under your crosshair")
 	language.Add("tool.acfarmormesh.reload0", "Show contraption readout (Shift: cost breakdown, Ctrl: recursive armor trace, Ctrl+Shift: orthographic armor scan)")
 
-	local SphereRadius      = CreateClientConVar("acfarmormesh_sphere_radius", 0, false, true, "", 0, 10000)
-	CreateClientConVar("acfarmormesh_thickness", 0, false, true, "", 0, 500)
-	local AlphaConVar       = CreateClientConVar("acfarmormesh_alpha", 50, false, true, "", 0, 255)
+	local ThicknessMin, ThicknessMax           = 0, 1000
+	local SphereRadiusMin, SphereRadiusMax     = 0, 2000
+	local AlphaMin, AlphaMax                   = 0, 255
+	local ScanResolutionMin, ScanResolutionMax = 4, 64
+	local ScanSizeMin, ScanSizeMax             = 10, 10000
+
+	local SphereRadius      = CreateClientConVar("acfarmormesh_sphere_radius", 0, false, true, "", SphereRadiusMin, SphereRadiusMax)
+	CreateClientConVar("acfarmormesh_thickness", 0, false, true, "", ThicknessMin, ThicknessMax)
+	local AlphaConVar       = CreateClientConVar("acfarmormesh_alpha", 50, false, true, "", AlphaMin, AlphaMax)
 	local ClassFilter       = CreateClientConVar("acfarmormesh_class_filter", "", false, true)
 	CreateClientConVar("acfarmormesh_ignore_elevation", 0, false, true, "", 0, 1)
 
@@ -55,7 +61,7 @@ if CLIENT then
 
 	local ArmorTrace            = include("armormeshmodules/armor_trace.lua")
 	local DoRecursiveArmorTrace = include("armormeshmodules/recursive_trace.lua")(ArmorTrace, GetClassFilter)
-	local DoArmorScan           = include("armormeshmodules/grid_scan.lua")(ArmorTrace, GetClassFilter)
+	local DoArmorScan           = include("armormeshmodules/grid_scan.lua")(ArmorTrace, GetClassFilter, ScanResolutionMin, ScanResolutionMax, ScanSizeMin, ScanSizeMax)
 
 	function TOOL:LeftClick(_) return true end
 	function TOOL:RightClick(_) return true end
@@ -130,15 +136,15 @@ if CLIENT then
 			end
 		end, "ACF_ArmorMeshMenu")
 
-		local ThicknessSlider = Menu:AddSlider("Thickness (WIP)", 0, 500, 0)
+		local ThicknessSlider = Menu:AddSlider("Thickness", ThicknessMin, ThicknessMax, 0)
 		ThicknessSlider:SetConVar("acfarmormesh_thickness")
 		Menu:AddHelp("If set to a non zero value, left/right click will set/get the thickness of the primitive entity you are looking at, instead of changing its material.")
 
-		local SphereRadiusSlider = Menu:AddSlider("#tool.acfarmormesh.sphere_search_radius", 0, 2000, 0)
+		local SphereRadiusSlider = Menu:AddSlider("#tool.acfarmormesh.sphere_search_radius", SphereRadiusMin, SphereRadiusMax, 0)
 		SphereRadiusSlider:SetConVar("acfarmormesh_sphere_radius")
 		Menu:AddHelp("#tool.acfarmormesh.sphere_search_radius_desc")
 
-		local AlphaSlider = Menu:AddSlider("Convex Overlay Alpha", 0, 255, 0)
+		local AlphaSlider = Menu:AddSlider("Convex Overlay Alpha", AlphaMin, AlphaMax, 0)
 		AlphaSlider:SetConVar("acfarmormesh_alpha")
 
 		Menu:AddCheckBox("Ignore camera elevation", "acfarmormesh_ignore_elevation")
@@ -146,11 +152,11 @@ if CLIENT then
 
 		local ScanSection = Menu:AddCollapsible("Orthographic Armor Scan", false)
 
-		local ScanResolutionSlider = ScanSection:AddSlider("Scan Resolution", 4, 64, 0)
+		local ScanResolutionSlider = ScanSection:AddSlider("Scan Resolution", ScanResolutionMin, ScanResolutionMax, 0)
 		ScanResolutionSlider:SetConVar("acfarmormesh_scan_resolution")
 		ScanSection:AddHelp("Number of cells per side in the orthographic scan grid.")
 
-		local ScanSizeSlider = ScanSection:AddSlider("Scan Area Size (in)", 10, 10000, 0)
+		local ScanSizeSlider = ScanSection:AddSlider("Scan Area Size (in)", ScanSizeMin, ScanSizeMax, 0)
 		ScanSizeSlider:SetConVar("acfarmormesh_scan_size")
 		ScanSection:AddHelp("Total side length of the scan area in world inches.")
 
