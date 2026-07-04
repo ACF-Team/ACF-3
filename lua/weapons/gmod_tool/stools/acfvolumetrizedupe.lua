@@ -18,16 +18,19 @@ elseif SERVER then
 
 	local SpropPrimitiveConversions = {}
 
+	-- Registers a conversion function for sprop models matching the given pattern
 	local function RegisterConversion(pattern, convert)
 		table.insert(SpropPrimitiveConversions, { pattern = pattern, convert = convert })
 	end
 
+	-- Returns the conversion function for the given sprop pattern
 	local function GetSpropConversion(Model)
 		for _, v in ipairs(SpropPrimitiveConversions) do
 			if string.find(Model, v.pattern) then return v.convert end
 		end
 	end
 
+	-- Returns the local size of the entity's physics object
 	local function GetLocalSize(Entity)
 		local AMi, AMa = Entity:GetPhysicsObject():GetAABB()
 		return AMa - AMi
@@ -58,46 +61,60 @@ elseif SERVER then
 		return Pos
 	end
 
+	-- Permutes RawSize's axes according to Perm then scales elementwise by Mul; used by
+	-- ComputeShapePose to turn a RawSize into a Size or Pos offset vector.
+	local function PermuteScale(RawSize, Perm, Mul)
+		return Vector(RawSize[Perm[1]], RawSize[Perm[2]], RawSize[Perm[3]]) * Mul
+	end
+
+	-- Every GenConvert* builder below derives its Size/Pos/Angle from RawSize the same way, optionally
+	-- resizing Pos/Size along the thinnest axis to Thickness; this is that shared computation, leaving
+	-- each builder to only assemble its Type/DT.
+	local function ComputeShapePose(Entity, SizePerm, SizeMul, PosPerm, PosMul, Ang, Thickness, BasePos, ThinAxisThickness)
+		local RawSize = GetLocalSize(Entity)
+		local Size = PermuteScale(RawSize, SizePerm, SizeMul)
+		local Pos = Entity:LocalToWorld(PermuteScale(RawSize, PosPerm, PosMul))
+		if ThinAxisThickness then Pos = ApplyThinAxisThickness(Entity, Size, Thickness, BasePos, Pos) end
+		local Angle = Entity:LocalToWorldAngles(Ang)
+		return Size, Pos, Angle
+	end
+
 	-- Builds a "simple" shape converter
-	local function GenConvertPrimitive(Type, SizePerm, SizeMul, PosPerm, PosMul, Ang, DT, ThinAxisThickness)
+	local function GenConvertSimple(Type, SizePerm, SizeMul, PosPerm, PosMul, Ang, DT, ThinAxisThickness)
 		return function(Entity, Thickness, BasePos)
-			local RawSize = GetLocalSize(Entity)
-			local Size = Vector(RawSize[SizePerm[1]], RawSize[SizePerm[2]], RawSize[SizePerm[3]]) * SizeMul
-			local Pos = Entity:LocalToWorld(Vector(RawSize[PosPerm[1]], RawSize[PosPerm[2]], RawSize[PosPerm[3]]) * PosMul)
-			if ThinAxisThickness then Pos = ApplyThinAxisThickness(Entity, Size, Thickness, BasePos, Pos) end
-			local Angle = Entity:LocalToWorldAngles(Ang)
+			local Size, Pos, Angle = ComputeShapePose(Entity, SizePerm, SizeMul, PosPerm, PosMul, Ang, Thickness, BasePos, ThinAxisThickness)
 			return { Type = Type, Pos = Pos, Angle = Angle, Size = Size, DT = DT }
 		end
 	end
 
 	-- Rectangles/Cuboids
-	local ConvertCube = GenConvertPrimitive("cube", {1, 2, 3}, Vector(1, 1, 1), {1, 1, 1}, Vector(0, 0, 0), Angle(0, 0, 0),
+	local ConvertCube = GenConvertSimple("cube", {1, 2, 3}, Vector(1, 1, 1), {1, 1, 1}, Vector(0, 0, 0), Angle(0, 0, 0),
 		{ PrimMESHSMOOTH = 0, PrimTX = 0, PrimTY = 0 }, true)
 	RegisterConversion("sprops/rectangles", ConvertCube)
 	RegisterConversion("sprops/cuboids", ConvertCube)
 
 	-- Cylinders
-	RegisterConversion("sprops/cylinders", GenConvertPrimitive("cylinder", {1, 2, 3}, Vector(1, 1, 1), {1, 1, 1}, Vector(0, 0, 0), Angle(0, 0, 0),
+	RegisterConversion("sprops/cylinders", GenConvertSimple("cylinder", {1, 2, 3}, Vector(1, 1, 1), {1, 1, 1}, Vector(0, 0, 0), Angle(0, 0, 0),
 		{ PrimMAXSEG = 16, PrimMESHSMOOTH = 65, PrimNUMSEG = 16, PrimTX = 0, PrimTY = 0 }))
 
 	-- Cones
-	RegisterConversion("sprops/misc/cones", GenConvertPrimitive("cone", {1, 2, 3}, Vector(1, 1, 1), {1, 1, 3}, Vector(0, 0, 0.5), Angle(0, 0, 0),
+	RegisterConversion("sprops/misc/cones", GenConvertSimple("cone", {1, 2, 3}, Vector(1, 1, 1), {1, 1, 3}, Vector(0, 0, 0.5), Angle(0, 0, 0),
 		{ PrimMAXSEG = 16, PrimMESHSMOOTH = 45, PrimNUMSEG = 16, PrimTX = 0, PrimTY = 0 }))
 
 	-- Domes
-	RegisterConversion("sprops/misc/domes", GenConvertPrimitive("dome", {1, 2, 3}, Vector(1, 1, 2), {1, 1, 1}, Vector(0, 0, 0), Angle(0, 0, 0),
+	RegisterConversion("sprops/misc/domes", GenConvertSimple("dome", {1, 2, 3}, Vector(1, 1, 2), {1, 1, 1}, Vector(0, 0, 0), Angle(0, 0, 0),
 		{ PrimMESHSMOOTH = 65, PrimSUBDIV = 32 }))
 
 	-- Spheres
-	RegisterConversion("models/sprops/geometry/sphere_", GenConvertPrimitive("sphere", {1, 2, 3}, Vector(1, 1, 1), {1, 1, 1}, Vector(0, 0, 0), Angle(0, 0, 0),
+	RegisterConversion("models/sprops/geometry/sphere_", GenConvertSimple("sphere", {1, 2, 3}, Vector(1, 1, 1), {1, 1, 1}, Vector(0, 0, 0), Angle(0, 0, 0),
 		{ PrimMESHSMOOTH = 65, PrimSUBDIV = 32 }))
 
 	-- Triangles
-	RegisterConversion("sprops/triangles.-rtri_", GenConvertPrimitive("wedge", {1, 2, 3}, Vector(1, 1, 1), {1, 1, 1}, Vector(0, 0, 0), Angle(0, 0, 0),
+	RegisterConversion("sprops/triangles.-rtri_", GenConvertSimple("wedge", {1, 2, 3}, Vector(1, 1, 1), {1, 1, 1}, Vector(0, 0, 0), Angle(0, 0, 0),
 		{ PrimMESHSMOOTH = 0, PrimTX = 0.5, PrimTY = 0 }))
 
 	-- Triangle Prism
-	RegisterConversion("sprops/prisms/tri/.-/tprism_", GenConvertPrimitive("wedge", {1, 2, 3}, Vector(1, 1, 1), {1, 1, 1}, Vector(0, 0, 0), Angle(0, 0, 0),
+	RegisterConversion("sprops/prisms/tri/.-/tprism_", GenConvertSimple("wedge", {1, 2, 3}, Vector(1, 1, 1), {1, 1, 1}, Vector(0, 0, 0), Angle(0, 0, 0),
 		{ PrimMESHSMOOTH = 0, PrimTX = 0.5, PrimTY = 0 }))
 
 	-- Quarter/Half/Full sqhole
@@ -105,11 +122,7 @@ elseif SERVER then
 	-- Builds a sqhole converter: permuting RawSize's axes via a Perm then scaling elementwise by a Mul
 	local function GenConvertSqHole(SizePerm, SizeMul, PosPerm, PosMul, Ang, NumSeg)
 		return function(Entity, Thickness, BasePos)
-			local RawSize = GetLocalSize(Entity)
-			local Size = Vector(RawSize[SizePerm[1]], RawSize[SizePerm[2]], RawSize[SizePerm[3]]) * SizeMul
-			local Angle = Entity:LocalToWorldAngles(Ang)
-			local Pos = Entity:LocalToWorld(Vector(RawSize[PosPerm[1]], RawSize[PosPerm[2]], RawSize[PosPerm[3]]) * PosMul)
-			Pos = ApplyThinAxisThickness(Entity, Size, Thickness, BasePos, Pos)
+			local Size, Pos, Angle = ComputeShapePose(Entity, SizePerm, SizeMul, PosPerm, PosMul, Ang, Thickness, BasePos, true)
 			return {
 				Type = "cube_hole", Pos = Pos, Angle = Angle, Size = Size,
 				DT = { PrimDT = 4, PrimMESHSMOOTH = 65, PrimNUMSEG = NumSeg, PrimSUBDIV = 16 }
@@ -134,10 +147,7 @@ elseif SERVER then
 	-- Builds a tube converter similar to above
 	local function GenConvertTube(SizePerm, SizeMul, PosPerm, PosMul, Ang, NumSeg)
 		return function(Entity, Thickness)
-			local RawSize = GetLocalSize(Entity)
-			local Size = Vector(RawSize[SizePerm[1]], RawSize[SizePerm[2]], RawSize[SizePerm[3]]) * SizeMul
-			local Pos = Entity:LocalToWorld(Vector(RawSize[PosPerm[1]], RawSize[PosPerm[2]], RawSize[PosPerm[3]]) * PosMul)
-			local Angle = Entity:LocalToWorldAngles(Ang)
+			local Size, Pos, Angle = ComputeShapePose(Entity, SizePerm, SizeMul, PosPerm, PosMul, Ang)
 			return {
 				Type = "tube", Pos = Pos, Angle = Angle, Size = Size,
 				DT = { PrimDT = Thickness or 3, PrimMAXSEG = 16, PrimMESHSMOOTH = 65, PrimNUMSEG = NumSeg, PrimTX = 0, PrimTY = 0 }
@@ -153,10 +163,7 @@ elseif SERVER then
 	-- Builds a disc converter similar to above
 	local function GenConvertDisc(SizePerm, SizeMul, PosPerm, PosMul, Ang, NumSeg)
 		return function(Entity)
-			local RawSize = GetLocalSize(Entity)
-			local Size = Vector(RawSize[SizePerm[1]], RawSize[SizePerm[2]], RawSize[SizePerm[3]]) * SizeMul
-			local Pos = Entity:LocalToWorld(Vector(RawSize[PosPerm[1]], RawSize[PosPerm[2]], RawSize[PosPerm[3]]) * PosMul)
-			local Angle = Entity:LocalToWorldAngles(Ang)
+			local Size, Pos, Angle = ComputeShapePose(Entity, SizePerm, SizeMul, PosPerm, PosMul, Ang)
 			return {
 				Type = "cylinder", Pos = Pos, Angle = Angle, Size = Size,
 				DT = { PrimMAXSEG = 16, PrimMESHSMOOTH = 65, PrimNUMSEG = NumSeg, PrimTX = 0, PrimTY = 0 }
