@@ -101,6 +101,10 @@ elseif SERVER then
 	RegisterConversion("sprops/misc/cones", GenConvertSimple("cone", {1, 2, 3}, Vector(1, 1, 1), {1, 1, 3}, Vector(0, 0, 0.5), Angle(0, 0, 0),
 		{ PrimMAXSEG = 16, PrimMESHSMOOTH = 45, PrimNUMSEG = 16, PrimTX = 0, PrimTY = 0 }))
 
+	-- Pyramids (a cube tapered to a point via PrimTX/PrimTY, same Pos/Size/Angle as cones)
+	RegisterConversion("sprops/misc/pyramids", GenConvertSimple("cube", {1, 2, 3}, Vector(1, 1, 1), {1, 1, 3}, Vector(0, 0, 0.5), Angle(0, 0, 0),
+		{ PrimMAXSEG = 16, PrimMESHSMOOTH = 45, PrimNUMSEG = 16, PrimTX = 1, PrimTY = 1 }))
+
 	-- Domes
 	RegisterConversion("sprops/misc/domes", GenConvertSimple("dome", {1, 2, 3}, Vector(1, 1, 2), {1, 1, 1}, Vector(0, 0, 0), Angle(0, 0, 0),
 		{ PrimMESHSMOOTH = 65, PrimSUBDIV = 32 }))
