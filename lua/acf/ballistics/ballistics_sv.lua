@@ -268,6 +268,40 @@ function Ballistics.TestFilter(Entity, Bullet)
 	return true
 end
 
+-- Resolves the earliest live, unfiltered convex any ACF-meshed entity along the ray presents,
+-- across potentially multiple overlapping/embedded entities -- e.g. a component entity clipped
+-- inside an armor-shell entity. Returns the same shape as ACF.GetConvexHit (plus Entity), or nil
+-- if no meshed entity contributes a live convex within this bullet's current flight segment.
+function Ballistics.GetMeshConvexHit(Bullet, HitPos, Direction)
+	local Start     = HitPos - Direction * 2 -- same backoff ACF.GetConvexHits uses
+	local FoundEnts = ents.FindAlongRay(Start, Bullet.TraceTo) -- bounds discovery to this segment, same as the physics trace already covers
+
+	local Intersections = {}
+
+	for _, Ent in ipairs(FoundEnts) do
+		if not Ent.ACF_Volumetric_Mesh then continue end
+		if table.HasValue(Bullet.Filter, Ent) then continue end
+
+		if not Ballistics.TestFilter(Ent, Bullet) then
+			table.insert(Bullet.Filter, Ent) -- same "filtered for the rest of this bullet's life" semantics as today's whole-entity filter
+			continue
+		end
+
+		local EntConvexFilter = Bullet.ConvexFilter and Bullet.ConvexFilter[Ent]
+		local Hits            = ACF.RayIntersectMesh(Ent, Start, Direction, 10000, false, EntConvexFilter)
+
+		for _, Hit in ipairs(Hits) do
+			Intersections[#Intersections + 1] = Hit
+		end
+	end
+
+	if #Intersections == 0 then return nil end
+
+	table.sort(Intersections, function(a, b) return a.T < b.T end)
+
+	return ACF.ResolveConvexStack(Intersections, Direction)[1]
+end
+
 function Ballistics.DoBulletsFlight(Bullet)
 	local CanFly = hook.Run("ACF_PreBulletFlight", Bullet)
 
@@ -354,14 +388,15 @@ function Ballistics.DoBulletsFlight(Bullet)
 				return Ballistics.DoBulletsFlight(Bullet)
 			end
 
-			-- Resolve the impact against the first live, unfiltered convex along the flight path.
-			-- The physical trace only tells us which entity was struck; convexes that are dead or
-			-- already penetrated by this bullet are transparent. If none remain, the whole entity is
-			-- transparent so we filter it and retry, letting the trace pass through to the next target.
+			-- Resolve the impact against the earliest live, unfiltered convex along the flight path,
+			-- gathered across every ACF-meshed entity in range (not just the one entity the physical
+			-- trace happened to report) -- this is what enforces "no benefit from clipping" even when
+			-- one entity (e.g. a component) is embedded inside another (e.g. an armor shell). If none
+			-- remain anywhere, Entity and anything embedded in it are transparent, so we filter it and
+			-- retry, letting the trace pass through to the next target.
 			local ConvexHit
 			if Entity.ACF_Volumetric_Mesh then
-				local ConvexFilter = Bullet.ConvexFilter and Bullet.ConvexFilter[Entity]
-				ConvexHit = ACF.GetConvexHit(Entity, traceRes.HitPos, Bullet.Flight:GetNormalized(), false, ConvexFilter)
+				ConvexHit = Ballistics.GetMeshConvexHit(Bullet, traceRes.HitPos, Bullet.Flight:GetNormalized())
 
 				if not ConvexHit then
 					-- Re-trace immediately (not via timer) from the same position: deferring until the next
@@ -371,13 +406,21 @@ function Ballistics.DoBulletsFlight(Bullet)
 
 					return Ballistics.DoBulletsFlight(Bullet)
 				end
+
+				-- Splice the mesh-resolved hit into the trace so every downstream consumer (OnImpact,
+				-- Ammo:PropImpact, DoRoundImpact, Damage.getBulletDamage/dealDamage, DoSpall,
+				-- DoReactiveArmor) sees the entity actually struck, even when it differs from the entity
+				-- the physics trace reported (e.g. a component embedded inside the armor shell).
+				traceRes.Entity    = ConvexHit.Entity
+				traceRes.HitPos    = ConvexHit.EntryPos
+				traceRes.HitNormal = ConvexHit.EntryNormal
 			end
 
 			-- Stored on the bullet rather than the trace: the EventViewer networks the trace table, and a
 			-- convex hit carries its ArmorType (a class object with functions) which can't be serialized.
 			Bullet.ConvexHit = ConvexHit
 
-			local Type = Ballistics.GetImpactType(traceRes, Entity)
+			local Type = Ballistics.GetImpactType(traceRes, traceRes.Entity)
 
 			Ballistics.OnImpact(Bullet, traceRes, AmmoTypes.Get(Bullet.Type), Type)
 		end
