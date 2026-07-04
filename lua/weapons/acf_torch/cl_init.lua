@@ -9,7 +9,7 @@ local Center          = TEXT_ALIGN_CENTER
 include("shared.lua")
 
 surface.CreateFont("torchfont", {
-	size = 40,
+	size = 32,
 	weight = 1000,
 	antialias = true,
 	additive = false,
