@@ -21,7 +21,7 @@ function Armor:OnLoaded()
     self.SuppressLoad = true
     self.Density     = 100
     self.CostMul     = 2.21
-    self.HealthMul   = 10
+    self.HealthMul   = 0.0127551
     self.KineticMul  = 1e-4
     self.ChemicalMul = 1e-4
     self.SpallMul    = 1e-4
@@ -34,7 +34,7 @@ function Armor:OnLoaded()
     self.Description = "Soft tissue, used to represent crew members. Lab-grown for your convenience."
     self.Density     = 1100 -- https://www.sciencedirect.com/topics/immunology-and-microbiology/body-density
     self.CostMul     = 5
-    self.HealthMul   = 33
+    self.HealthMul   = 0.0420918
     self.KineticMul  = 0.03
     self.ChemicalMul = 0.03
     self.SpallMul    = 0.2
@@ -48,7 +48,7 @@ function Armor:OnLoaded()
     self.SuppressLoad = true
     self.Density     = 745 -- lua/acf/entities/fuel_types/diesel.lua (0.745 kg/L)
     self.CostMul     = 2
-    self.HealthMul   = 5
+    self.HealthMul   = 0.00637755
     self.KineticMul  = 0.1
     self.ChemicalMul = 0.3
     self.SpallMul    = 0.1
@@ -62,7 +62,7 @@ function Armor:OnLoaded()
     self.SuppressLoad = true
     self.Density     = 832 -- lua/acf/entities/fuel_types/petrol.lua (0.832 kg/L)
     self.CostMul     = 2.3
-    self.HealthMul   = 4
+    self.HealthMul   = 0.00510204
     self.KineticMul  = 0.1
     self.ChemicalMul = 0.1
     self.SpallMul    = 0.1
@@ -76,7 +76,7 @@ function Armor:OnLoaded()
     self.SuppressLoad = true
     self.Density     = 3890 -- lua/acf/entities/fuel_types/electric.lua (3.89 kg/L)
     self.CostMul     = 8
-    self.HealthMul   = 2
+    self.HealthMul   = 0.00255102
     self.KineticMul  = 0.3
     self.ChemicalMul = 0.3
     self.SpallMul    = 0.5
@@ -89,7 +89,7 @@ function Armor:OnLoaded()
     self.Description = "Decent protection for its price and density."
     self.Density     = 2700 -- https://en.wikipedia.org/wiki/Aluminium
     self.CostMul     = 30
-    self.HealthMul   = 216
+    self.HealthMul   = 0.275510
     self.KineticMul  = 0.5
     self.ChemicalMul = 0.6
     self.SpallMul    = 0.5
@@ -102,7 +102,7 @@ function Armor:OnLoaded()
     self.Description = "Rolled Homogeneous Armor. The standard by which all other armor types are measured."
     self.Density     = 7840 -- https://metalzenith.com/blogs/steel-properties/rha-steel-properties-and-key-applications-in-defense
     self.CostMul     = 39.2 -- Reference: 0.005 points/kg
-    self.HealthMul   = 784
+    self.HealthMul   = 1
     self.KineticMul  = 1.0
     self.ChemicalMul = 1.0
     self.SpallMul    = 1.0
@@ -116,7 +116,7 @@ function Armor:OnLoaded()
     self.SuppressLoad = true
     self.Density     = 7840 -- https://metalzenith.com/blogs/steel-properties/rha-steel-properties-and-key-applications-in-defense
     self.CostMul     = 39.2
-    self.HealthMul   = 1568
+    self.HealthMul   = 2
     self.KineticMul  = 0.7
     self.ChemicalMul = 0.7
     self.SpallMul    = 1.0
@@ -130,7 +130,7 @@ function Armor:OnLoaded()
     self.SuppressLoad = true
     self.Density     = 2700 -- https://en.wikipedia.org/wiki/Aluminium
     self.CostMul     = 17.9
-    self.HealthMul   = 54
+    self.HealthMul   = 0.0688776
     self.KineticMul  = 0.1
     self.ChemicalMul = 0.1
     self.SpallMul    = 1
@@ -143,7 +143,7 @@ function Armor:OnLoaded()
     self.Description = "Very cheap and light, but offers very little protection."
     self.Density     = 1500 -- * https://rubberandseal.com/what-is-the-density-of-rubber-sheets/
     self.CostMul     = 12
-    self.HealthMul   = 350
+    self.HealthMul   = 0.446429
     self.KineticMul  = 0.15
     self.ChemicalMul = 0.35
     self.SpallMul    = 0.1
@@ -156,7 +156,7 @@ function Armor:OnLoaded()
     self.Description = "Layered fibrous laminate material. Not much protection, but is cheap and light."
     self.Density     = 1800 -- * http://www.china-anza.com/2-1-7-textolite-3025.html
     self.CostMul     = 35
-    self.HealthMul   = 250
+    self.HealthMul   = 0.318878
     self.KineticMul  = 0.4
     self.ChemicalMul = 1.3
     self.SpallMul    = 0.3
@@ -169,7 +169,7 @@ function Armor:OnLoaded()
     self.Description = "Expensive and dense with high protection."
     self.Density     = 19050 -- https://en.wikipedia.org/wiki/Uranium
     self.CostMul     = 69.3
-    self.HealthMul   = 1683
+    self.HealthMul   = 2.14668
     self.KineticMul  = 1.8
     self.ChemicalMul = 1.3
     self.SpallMul    = 1.3
@@ -182,7 +182,7 @@ function Armor:OnLoaded()
     self.Description = "Explosive Reactive Armor. Effective primarily against shaped charges. Will explode when hit with enough energy."
     self.Density     = 5000 -- * https://below-the-turret-ring.blogspot.com/2016/04/explosive-reactive-armor-some-history.html
     self.CostMul     = 39.7
-    self.HealthMul   = 250
+    self.HealthMul   = 0.318878
     self.KineticMul  = 0.3
     self.ChemicalMul = 3.0
     self.SpallMul    = 0.1
@@ -199,7 +199,7 @@ function Armor:OnLoaded()
     self.Description = "Heavy Explosive Reactive Armor. Offers better protection against kinetic threats and takes more energy to detonate than Light ERA, but is twice as dense and more expensive."
     self.Density     = 10000 -- * https://below-the-turret-ring.blogspot.com/2016/04/explosive-reactive-armor-some-history.html
     self.CostMul     = 47.1
-    self.HealthMul   = 600
+    self.HealthMul   = 0.765306
     self.KineticMul  = 1.33
     self.ChemicalMul = 2.0
     self.SpallMul    = 0.2
