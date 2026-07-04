@@ -370,7 +370,7 @@ elseif SERVER then
 
 		Entity.ACF_Volumetric_Material_Override = "RHA"
 
-		Entity.ACF_Armor_Legacy_Thickness = Data.Thickness or 0
+		Entity.ACF_Armor_Legacy_Thickness = Data.Thickness
 
 		if not Entity.ACF_Volumetric_Mesh then return end
 		for ConvexID in ipairs(Entity.ACF_Volumetric_Mesh.Convexes) do
