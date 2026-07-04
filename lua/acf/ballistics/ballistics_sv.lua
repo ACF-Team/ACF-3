@@ -268,10 +268,9 @@ function Ballistics.TestFilter(Entity, Bullet)
 	return true
 end
 
--- Resolves the earliest live, unfiltered convex any ACF-meshed entity along the ray presents,
--- across potentially multiple overlapping/embedded entities -- e.g. a component entity clipped
--- inside an armor-shell entity. Returns the same shape as ACF.GetConvexHit (plus Entity), or nil
--- if no meshed entity contributes a live convex within this bullet's current flight segment.
+-- Resolves the earliest live, unfiltered convex any ACF-meshed entity along the ray presents --
+-- e.g. a component clipped inside an armor shell. Same shape as ACF.GetConvexHit (plus
+-- Entity), or nil if nothing's left to hit in this bullet's flight segment.
 function Ballistics.GetMeshConvexHit(Bullet, HitPos, Direction)
 	local Start     = HitPos - Direction * 2 -- same backoff ACF.GetConvexHits uses
 	local FoundEnts = ents.FindAlongRay(Start, Bullet.TraceTo) -- bounds discovery to this segment, same as the physics trace already covers
@@ -288,18 +287,14 @@ function Ballistics.GetMeshConvexHit(Bullet, HitPos, Direction)
 		end
 
 		local EntConvexFilter = Bullet.ConvexFilter and Bullet.ConvexFilter[Ent]
-		local Hits            = ACF.RayIntersectMesh(Ent, Start, Direction, 10000, false, EntConvexFilter)
+		local Hits            = ACF.RayIntersectMesh(Ent, Start, Direction, false, EntConvexFilter)
 
 		for _, Hit in ipairs(Hits) do
 			Intersections[#Intersections + 1] = Hit
 		end
 	end
 
-	if #Intersections == 0 then return nil end
-
-	table.sort(Intersections, function(a, b) return a.T < b.T end)
-
-	return ACF.ResolveConvexStack(Intersections, Direction)[1]
+	return ACF.ResolveConvexStack(Intersections, Direction, Start, true)
 end
 
 function Ballistics.DoBulletsFlight(Bullet)
@@ -388,12 +383,10 @@ function Ballistics.DoBulletsFlight(Bullet)
 				return Ballistics.DoBulletsFlight(Bullet)
 			end
 
-			-- Resolve the impact against the earliest live, unfiltered convex along the flight path,
-			-- gathered across every ACF-meshed entity in range (not just the one entity the physical
-			-- trace happened to report) -- this is what enforces "no benefit from clipping" even when
-			-- one entity (e.g. a component) is embedded inside another (e.g. an armor shell). If none
-			-- remain anywhere, Entity and anything embedded in it are transparent, so we filter it and
-			-- retry, letting the trace pass through to the next target.
+			-- Resolve against the earliest live convex across every meshed entity in range, not just
+			-- the one the physics trace reported -- so an entity embedded in another (e.g. a
+			-- component inside an armor shell) still gets hit properly. If nothing's left anywhere,
+			-- filter Entity and retry.
 			local ConvexHit
 			if Entity.ACF_Volumetric_Mesh then
 				ConvexHit = Ballistics.GetMeshConvexHit(Bullet, traceRes.HitPos, Bullet.Flight:GetNormalized())
@@ -407,10 +400,8 @@ function Ballistics.DoBulletsFlight(Bullet)
 					return Ballistics.DoBulletsFlight(Bullet)
 				end
 
-				-- Splice the mesh-resolved hit into the trace so every downstream consumer (OnImpact,
-				-- Ammo:PropImpact, DoRoundImpact, Damage.getBulletDamage/dealDamage, DoSpall,
-				-- DoReactiveArmor) sees the entity actually struck, even when it differs from the entity
-				-- the physics trace reported (e.g. a component embedded inside the armor shell).
+				-- Splice the mesh-resolved hit into the trace so downstream code sees the entity
+				-- actually struck, even when it differs from what the physics trace reported.
 				traceRes.Entity    = ConvexHit.Entity
 				traceRes.HitPos    = ConvexHit.EntryPos
 				traceRes.HitNormal = ConvexHit.EntryNormal

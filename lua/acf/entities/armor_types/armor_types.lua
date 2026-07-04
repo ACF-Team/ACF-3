@@ -125,7 +125,7 @@ end
 -- Component Material
 local Armor = Types.Register("Component")
 function Armor:OnLoaded()
-    self.Name        = "Component Material"
+    self.Name        = "Component"
     self.Description = "Material intended to represent components. Better protection than Gun Steel, but worse health for balance reasons."
     self.SuppressLoad = true
     self.Density     = 2700 -- https://en.wikipedia.org/wiki/Aluminium

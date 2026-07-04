@@ -7,6 +7,7 @@ local ModelData = ACF.ModelData
 local CubicInchToM3 = ACF.InchToMCu
 local HealthMul = ACF.HealthCoef
 local ArmorCoef = ACF.ArmorCoef
+local ArmorTypes = ACF.Classes.ArmorTypes
 
 -- TODO: Merge these lists with the other global ACF filters
 
@@ -287,11 +288,10 @@ do
     end
 end
 
--- Returns a sorted list of { Pos, Normal, ConvexID, T, Entity } for every triangle the ray pierces.
--- Verts are stored in local space, so Entity is required to transform them into world space.
--- Filter (optional) is a per-entity set { [ConvexID] = true } of convexes to treat as transparent
--- (e.g. already penetrated by the current projectile), in addition to dead convexes.
-function ACF.RayIntersectMesh(Entity, Start, Direction, Length, IncludeDead, Filter)
+-- Returns an unsorted list of { Pos, Normal, ConvexID, T, Entity } for every triangle the ray pierces.
+-- Treated as an infinite line (T isn't culled), so callers can tell when it started inside a convex.
+-- Filter (optional) is a per-entity set { [ConvexID] = true } of convexes to treat as transparent.
+function ACF.RayIntersectMesh(Entity, Start, Direction, IncludeDead, Filter)
     local MeshData = Entity.ACF_Volumetric_Mesh
     if not MeshData then return {} end
 
@@ -313,9 +313,7 @@ function ACF.RayIntersectMesh(Entity, Start, Direction, Length, IncludeDead, Fil
             local P = util.IntersectRayWithPlane(Start, NormDir, A, Normal)
             if not P then continue end
 
-            -- Recover the T value along the ray and make sure it's within the ray length
             local T = (P - Start):Dot(NormDir)
-            if T < 0 or T > Length then continue end
 
             -- Make sure the point is within the triangle, not just its plane
             if (B - A):Cross(P - A):Dot(Normal) > 0 then continue end
@@ -326,125 +324,145 @@ function ACF.RayIntersectMesh(Entity, Start, Direction, Length, IncludeDead, Fil
         end
     end
 
-    -- Order hits by distance from ray start
-    table.sort(Hits, function(a, b) return a.T < b.T end)
     return Hits
 end
 
--- Finds every convex entry/exit pair the ray passes through, in order, and returns damage-relevant data for each.
--- Returns an empty table if the entity has no mesh or the ray misses all live convexes.
--- GeoThick is geometric thickness in mm; multiply by ArmorType.KineticMul or .ChemicalMul as needed.
--- Filter (optional) is a per-entity set { [ConvexID] = true } of convexes to treat as transparent (already penetrated).
-function ACF.GetConvexHits(Entity, HitPos, Direction, IncludeDead, Filter)
-    local MeshData = Entity.ACF_Volumetric_Mesh
-    if not MeshData then return {} end
+-- Builds the hit for Open (a stack entry, see ACF.ResolveConvexStack) closed off by ExitIntersection.
+-- Returns nil if the whole span is behind Start (irrelevant to this ray). Its own top-level function,
+-- not a closure inside ACF.ResolveConvexStack, so it's only compiled once.
+local function BuildHit(Open, ExitIntersection, Direction, Start)
+    if ExitIntersection.T < 0 then return nil end
 
-    local Hits       = ACF.RayIntersectMesh(Entity, HitPos - Direction * 2, Direction, 10000, IncludeDead, Filter)
-    local ArmorTypes = ACF.Classes.ArmorTypes
-    local ConvexHits = {}
-    local Entry
+    local Entity, ConvexID = Open.Entity, Open.ConvexID
+    local Entry       = Open.Entry
+    local RawEntryT   = Entry.T
+    local EntryNormal = Entry.Normal
 
-    for _, Hit in ipairs(Hits) do
-        if not Entry then
-            if Direction:Dot(Hit.Normal) < 0 then Entry = Hit end
-        elseif Hit.ConvexID == Entry.ConvexID and Direction:Dot(Hit.Normal) > 0 then
-            local Convex    = MeshData.Convexes[Entry.ConvexID]
-            local ArmorType = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("Default")
+    local Convex    = Entity.ACF_Volumetric_Mesh.Convexes[ConvexID]
+    local ArmorType = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("Default")
 
-            ConvexHits[#ConvexHits + 1] = {
-                ConvexID    = Entry.ConvexID,
-                GeoThick    = (Hit.T - Entry.T) * 25.4 * ArmorCoef, -- inches to mm
-                ArmorType   = ArmorType,
-                HitAngle    = math.deg(math.acos(math.min(1, math.max(-1, -Direction:Dot(Entry.Normal))))),
-                EntryPos    = Entry.Pos,
-                ExitPos     = Hit.Pos,
-                EntryNormal = Entry.Normal,
-            }
+    -- Clip the entry to Start: material behind it isn't this ray's to account for.
+    local EntryT   = math.max(0, RawEntryT)
+    local EntryPos = RawEntryT < 0 and Start or Entry.Pos
 
-            Entry = nil
-        end
-    end
-
-    return ConvexHits
+    return {
+        Entity      = Entity,
+        ConvexID    = ConvexID,
+        GeoThick    = (ExitIntersection.T - EntryT) * 25.4 * ArmorCoef, -- inches to mm
+        ArmorType   = ArmorType,
+        HitAngle    = math.deg(math.acos(math.min(1, math.max(-1, -Direction:Dot(EntryNormal))))),
+        EntryPos    = EntryPos,
+        ExitPos     = ExitIntersection.Pos,
+        EntryNormal = EntryNormal,
+    }
 end
 
--- Convenience wrapper for ACF.GetConvexHits that returns only the first convex entry/exit pair (or nil if none).
-function ACF.GetConvexHit(Entity, HitPos, Direction, IncludeDead, Filter)
-    return ACF.GetConvexHits(Entity, HitPos, Direction, IncludeDead, Filter)[1]
-end
+local function SortByT(a, b) return a.T < b.T end
 
--- Intersections: a single T-sorted list of { Pos, Normal, ConvexID, T, Entity }, merged from
--- ACF.RayIntersectMesh calls across one or more entities. Direction: normalized ray direction.
--- Returns a T-ordered list of { Entity, ConvexID, GeoThick, ArmorType, HitAngle, EntryPos, ExitPos, EntryNormal }
--- -- the same shape ACF.GetConvexHits already returns, plus Entity, generalized across entities.
+-- Pairs up ray/mesh intersections (e.g. from one or more ACF.RayIntersectMesh calls) into convex
+-- entry/exit hits, enforcing "no benefit from clipping": a convex's tracked hit ends the instant
+-- another convex is entered, but nothing is lost. An interrupted convex resumes once the
+-- interrupting one exits. Also handles a convex the ray started inside of (negative-T entry).
 --
--- Enforces "no benefit from clipping": a convex's tracked hit always ends the instant another
--- convex is entered (so nothing is shielded by being behind/inside something else), while never
--- losing pierced thickness (an interrupted convex resumes tracking from the interruption point)
--- and always keeping correct per-convex/entity/material identity.
-function ACF.ResolveConvexStack(Intersections, Direction)
-    local ArmorTypes = ACF.Classes.ArmorTypes
+-- Intersections: unsorted list of { Pos, Normal, ConvexID, T, Entity } (sorted here). Start: the
+-- world position Intersections' T values are measured from.
+-- If ClosestOnly, returns just the first (closest) hit, or nil. Otherwise returns the full T-ordered
+-- list of { Entity, ConvexID, GeoThick, ArmorType, HitAngle, EntryPos, ExitPos, EntryNormal }.
+function ACF.ResolveConvexStack(Intersections, Direction, Start, ClosestOnly)
+    table.sort(Intersections, SortByT)
 
-    local function BuildHit(Open, ExitIntersection)
-        local Convex    = Open.Entity.ACF_Volumetric_Mesh.Convexes[Open.ConvexID]
-        local ArmorType = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("Default")
-
-        return {
-            Entity      = Open.Entity,
-            ConvexID    = Open.ConvexID,
-            GeoThick    = (ExitIntersection.T - Open.Entry.T) * 25.4 * ArmorCoef, -- inches to mm
-            ArmorType   = ArmorType,
-            HitAngle    = math.deg(math.acos(math.min(1, math.max(-1, -Direction:Dot(Open.Entry.Normal))))),
-            EntryPos    = Open.Entry.Pos,
-            ExitPos     = ExitIntersection.Pos,
-            EntryNormal = Open.Entry.Normal,
-        }
-    end
-
-    -- Stack of currently-open convexes, in the order they became active. The top of the stack is
-    -- whichever convex the ray is "currently" attributed to; anything below it is waiting to
-    -- resume once the convex above it exits.
+    -- Stack of currently-open convexes; the top is whichever the ray is "currently" attributed to.
+    -- Anything below it resumes once the convex above it exits.
     local Hits  = {}
     local Stack = {}
 
     for _, Intersection in ipairs(Intersections) do
-        if Direction:Dot(Intersection.Normal) < 0 then
-            -- Facing the ray: a new convex is entered. Whatever was previously active gets its hit
-            -- closed off right here -- being "behind" the newly-entered convex grants it no extra
-            -- tracked thickness.
-            local Active = Stack[#Stack]
-            if Active then Hits[#Hits + 1] = BuildHit(Active, Intersection) end
+        local Dot = Direction:Dot(Intersection.Normal)
 
-            Stack[#Stack + 1] = { Entry = Intersection, Entity = Intersection.Entity, ConvexID = Intersection.ConvexID }
-        elseif Direction:Dot(Intersection.Normal) > 0 then
-            -- Facing away: find the open convex this exit belongs to (by entity + convex identity,
-            -- since overlapping convexes don't necessarily exit in the reverse order they were entered).
-            for I = #Stack, 1, -1 do
+        if Dot < 0 then
+            -- Entering a new convex closes off whatever was active -- no extra tracked thickness
+            -- just for being "behind" it.
+            local Top    = #Stack
+            local Active = Stack[Top]
+            if Active then
+                local Hit = BuildHit(Active, Intersection, Direction, Start)
+                if Hit then
+                    if ClosestOnly then return Hit end
+                    Hits[#Hits + 1] = Hit
+                end
+            end
+
+            Stack[Top + 1] = { Entry = Intersection, Entity = Intersection.Entity, ConvexID = Intersection.ConvexID }
+        elseif Dot > 0 then
+            -- Find the open convex this exit belongs to (identity, not just top-of-stack -- exits
+            -- don't always arrive in reverse entry order).
+            local Found = false
+            local Top   = #Stack
+
+            for I = Top, 1, -1 do
                 local Open = Stack[I]
                 if Open.Entity == Intersection.Entity and Open.ConvexID == Intersection.ConvexID then
-                    if I == #Stack then
-                        -- It's the active one: close its hit here, then resume whatever's
-                        -- underneath it from this exact point, since the ray is still inside
-                        -- that convex too.
-                        Hits[#Hits + 1] = BuildHit(Open, Intersection)
+                    Found = true
+
+                    if I == Top then
+                        -- Close it, then resume whatever's underneath from this same point.
+                        local Hit = BuildHit(Open, Intersection, Direction, Start)
                         table.remove(Stack, I)
 
                         local Resumed = Stack[#Stack]
                         if Resumed then Resumed.Entry = Intersection end
+
+                        if Hit then
+                            if ClosestOnly then return Hit end
+                            Hits[#Hits + 1] = Hit
+                        end
                     else
-                        -- It finished while inactive -- its hit was already closed early when
-                        -- something else interrupted it, so just drop it without emitting
-                        -- anything further.
+                        -- Already closed early when something else interrupted it; drop silently.
                         table.remove(Stack, I)
                     end
 
                     break
                 end
             end
+
+            if not Found then
+                -- Defensive fallback for a degenerate mesh: entry never seen at all. Treat Start as
+                -- the entry rather than dropping this convex's thickness.
+                local Synthetic = { Entry = { Pos = Start, Normal = -Direction, T = 0 }, Entity = Intersection.Entity, ConvexID = Intersection.ConvexID }
+                local Hit = BuildHit(Synthetic, Intersection, Direction, Start)
+                if Hit then
+                    if ClosestOnly then return Hit end
+                    Hits[#Hits + 1] = Hit
+                end
+            end
         end
     end
 
+    if ClosestOnly then return nil end
     return Hits
+end
+
+-- Every convex entry/exit pair the ray passes through a single entity's mesh, in order (see
+-- ACF.ResolveConvexStack). GeoThick is in mm; multiply by ArmorType.KineticMul/.ChemicalMul as needed.
+-- Filter (optional) is a per-entity set { [ConvexID] = true } of convexes to treat as transparent.
+function ACF.GetConvexHits(Entity, HitPos, Direction, IncludeDead, Filter)
+    if not Entity.ACF_Volumetric_Mesh then return {} end
+
+    local Start = HitPos - Direction * 2
+    local Hits  = ACF.RayIntersectMesh(Entity, Start, Direction, IncludeDead, Filter)
+
+    return ACF.ResolveConvexStack(Hits, Direction, Start)
+end
+
+-- Convenience wrapper returning only the closest convex entry/exit pair (or nil if none); see
+-- ACF.ResolveConvexStack's ClosestOnly argument.
+function ACF.GetConvexHit(Entity, HitPos, Direction, IncludeDead, Filter)
+    if not Entity.ACF_Volumetric_Mesh then return nil end
+
+    local Start = HitPos - Direction * 2
+    local Hits  = ACF.RayIntersectMesh(Entity, Start, Direction, IncludeDead, Filter)
+
+    return ACF.ResolveConvexStack(Hits, Direction, Start, true)
 end
 
 -- Returns an entity's total health and max health. ACF entities track this directly on their ACF table (damage is
@@ -472,22 +490,21 @@ concommand.Add( "test_trace", function( ply )
     local plyTr = ply:GetEyeTrace()
     local dir = ply:GetAimVector()
 
-    local start = plyTr.StartPos + dir * 24
+    local start = plyTr.StartPos
     local endpos = plyTr.HitPos + dir * 10000
-    local length = (endpos - start):Length()
     local ents = ents.FindAlongRay( start, endpos)
 
     local Intersections = {}
     for _, ent in ipairs(ents) do
-        local EntHits = ACF.RayIntersectMesh(ent, start, dir, length, true)
+        if ent == ply then continue end
+
+        local EntHits = ACF.RayIntersectMesh(ent, start, dir, true)
         for _, Hit in ipairs(EntHits) do
             Intersections[#Intersections + 1] = Hit
         end
     end
 
-    table.sort( Intersections, function(a, b) return a.T < b.T end )
-
-    local Hits = ACF.ResolveConvexStack(Intersections, dir)
+    local Hits = ACF.ResolveConvexStack(Intersections, dir, start)
 
     for Index, Hit in ipairs(Hits) do
         local Col = ACF.GetIndexColor(Index)
