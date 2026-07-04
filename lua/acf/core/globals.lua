@@ -187,6 +187,23 @@ do -- ACF global vars
 	ACF.MobilityLinkDistance = 650 -- Maximum distance, in inches, at which mobility-related components will remain linked with each other
 	ACF.LinkDistance         = 650 -- Maximum distance, in inches, at which components will remain linked with each other
 	ACF.KillIconColor        = Color(200, 200, 48)
+
+	ACF.ColorArray = {
+		Color(255, 0, 0),
+		Color(0, 255, 0),
+		Color(0, 0, 255),
+		Color(255, 255, 0),
+		Color(255, 0, 255),
+		Color(0, 255, 255),
+	}
+
+	local ColorArraySize = #ACF.ColorArray
+
+	-- Returns a color from ACF.ColorArray for the given (1-based) index, wrapping around.
+	function ACF.GetIndexColor(Index)
+		return ACF.ColorArray[(Index % ColorArraySize) + 1]
+	end
+
 	ACF.NetMessageSizeLimit  = 13	-- Maximum size of a net message in bytes (IF SET TOO LOW, CERTAIN MODELS MAY NOT BE NETWORKED PROPERLY)
 	ACF.FilterMakeSpherical  = true -- Whether Make Spherical entities should be filtered out of ballistics traces. Not intended to be disabled in actual gameplay
 

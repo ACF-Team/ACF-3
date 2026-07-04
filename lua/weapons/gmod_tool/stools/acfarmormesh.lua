@@ -231,8 +231,8 @@ if CLIENT then
 			local Col
 
 			if IsHighlighted then
-				Col = HSVToColor((Index * 47) % 360, 1, 1)
-				Col.a = AlphaConVar:GetInt()
+				local Base = ACF.GetIndexColor(Index)
+				Col = Color(Base.r, Base.g, Base.b, AlphaConVar:GetInt())
 			else
 				Col = White
 			end

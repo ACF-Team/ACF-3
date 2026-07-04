@@ -467,15 +467,6 @@ function ACF.GetEntityHealth(Entity)
     return Health, MaxHealth
 end
 
-local ColorArray = {
-    Color(255, 0, 0),
-    Color(0, 255, 0),
-    Color(0, 0, 255),
-    Color(255, 255, 0),
-    Color(255, 0, 255),
-    Color(0, 255, 255),
-}
-
 -- Testing new trace logic
 concommand.Add( "test_trace", function( ply )
     local plyTr = ply:GetEyeTrace()
@@ -499,7 +490,7 @@ concommand.Add( "test_trace", function( ply )
     local Hits = ACF.ResolveConvexStack(Intersections, dir)
 
     for Index, Hit in ipairs(Hits) do
-        local Col = ColorArray[Index % #ColorArray + 1]
+        local Col = ACF.GetIndexColor(Index)
         debugoverlay.Line(Hit.EntryPos, Hit.ExitPos, 10, Col, true)
         debugoverlay.EntityTextAtPosition((Hit.EntryPos + Hit.ExitPos) / 2, 0, Hit.ArmorType.Name, 10, Col)
     end
