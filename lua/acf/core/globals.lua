@@ -226,6 +226,8 @@ do -- ACF global vars
 		gmod_wire_egp_hud     = true,
 		gmod_wire_value       = true,
 		gmod_wire_gate        = true,
+		gmod_wire_latch       = true,
+		gmod_wire_hydraulic   = true,
 
 		phys_bone_follower    = true,
 		prop_dynamic          = true,
