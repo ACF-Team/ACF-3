@@ -221,6 +221,11 @@ do -- ACF global vars
 		gmod_wire_expression2 = true,
 		gmod_wire_hologram    = true,
 		gmod_wire_customprop  = true,
+		gmod_wire_pod         = true,
+		gmod_wire_cameracontroller = true,
+		gmod_wire_egp_hud     = true,
+		gmod_wire_value       = true,
+		gmod_wire_gate        = true,
 
 		phys_bone_follower    = true,
 		prop_dynamic          = true,
