@@ -9,7 +9,7 @@ local EventViewer = ACF.EventViewer
 Ballistics.Bullets         = Ballistics.Bullets or {}
 Ballistics.UnusedIndexes   = Ballistics.UnusedIndexes or {}
 Ballistics.HighestIndex    = Ballistics.HighestIndex or 0
-Ballistics.SkyboxGraceZone = 100
+Ballistics.SkyboxGraceZone = Ballistics.SkyboxGraceZone or 100
 
 local function GetEventViewerName(Idx) return "Ballistics - Bullet #" .. Idx end
 
@@ -17,7 +17,7 @@ local function GetEventViewerName(Idx) return "Ballistics - Bullet #" .. Idx end
 local Bullets      = Ballistics.Bullets
 local Unused       = Ballistics.UnusedIndexes
 local IndexLimit   = 2000
-local SkyGraceZone = 100
+local SkyGraceZone = Ballistics.SkyboxGraceZone
 local FlightTr     = { start = true, endpos = true, filter = true, mask = true }
 local GlobalFilter = ACF.GlobalFilter
 local AmmoTypes    = ACF.Classes.AmmoTypes
@@ -425,6 +425,19 @@ do -- Terminal ballistics --------------------------
 		return Normal - (2 * Normal:Dot(HitNormal)) * HitNormal
 	end
 
+	-- Re-seeds a bullet's flight after a ricochet and resets Pos/NextPos/TraceTo so the immediate
+	-- re-trace this tick (triggered by OnImpact's "Ricochet" branch) starts from the ricochet point.
+	-- Speed is unscaled (real-world) velocity; Spread is the VectorRand jitter magnitude.
+	function Ballistics.ApplyRicochet(Bullet, Position, HitNormal, Speed, Ricochet, Spread, DeltaTime)
+		local Direction = Ballistics.GetRicochetVector(Bullet.Flight, HitNormal) + VectorRand() * Spread
+		local Flight    = Direction:GetNormalized() * Speed * Ricochet * ACF.Scale
+
+		Bullet.Flight  = Flight
+		Bullet.Pos     = Position
+		Bullet.NextPos = Position + Flight * DeltaTime
+		Bullet.TraceTo = Position + Flight * (DeltaTime * 2)
+	end
+
 	-- HitAngle (optional) overrides the angle derived from the physical trace; the per-convex impact
 	-- path passes the struck convex's entry angle so ricochets evaluate against the real convex face.
 	function Ballistics.CalculateRicochet(Bullet, Trace, HitAngle)
@@ -501,15 +514,9 @@ do -- Terminal ballistics --------------------------
 
 		-- Apply the ricochet for the next bullet iteration if needed
 		if Ricochet > 0 and Bullet.Ricochets < 3 then
-			local Direction = Ballistics.GetRicochetVector(Bullet.Flight, HitNormal) + VectorRand() * 0.025
-			local Flight    = Direction:GetNormalized() * Speed * Ricochet * ACF.Scale
-			local Position  = ImpactPos
-
 			Bullet.Ricochets = Bullet.Ricochets + 1
-			Bullet.Flight    = Flight
-			Bullet.Pos       = Position
-			Bullet.NextPos   = Position + Flight * Bullet.DeltaTime
-			Bullet.TraceTo   = Position + Flight * (Bullet.DeltaTime * 2)
+
+			Ballistics.ApplyRicochet(Bullet, ImpactPos, HitNormal, Speed, Ricochet, 0.025, Bullet.DeltaTime)
 
 			HitRes.Ricochet = true
 		end
@@ -528,14 +535,11 @@ do -- Terminal ballistics --------------------------
 		end
 
 		if Ricochet > 0 and Bullet.GroundRicos < 2 then
-			local Direction = Ballistics.GetRicochetVector(Bullet.Flight, Trace.HitNormal) + VectorRand() * 0.05
 			local DeltaTime = engine.TickInterval()
 
 			Bullet.GroundRicos = Bullet.GroundRicos + 1
-			Bullet.Flight      = Direction:GetNormalized() * Speed * ACF.Scale * Ricochet
-			Bullet.Pos         = Trace.HitPos
-			Bullet.NextPos     = Bullet.Pos + Bullet.Flight * DeltaTime
-			Bullet.TraceTo     = Bullet.Pos + Bullet.Flight * (DeltaTime * 2)
+
+			Ballistics.ApplyRicochet(Bullet, Trace.HitPos, Trace.HitNormal, Speed, Ricochet, 0.05, DeltaTime)
 
 			return "Ricochet"
 		end
