@@ -79,6 +79,16 @@ function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 		ACF.ActiveBaseplatesTable[ent] = nil
 		table.RemoveByValue(ACF.ActiveBaseplatesArray, ent)
 	end)
+
+	-- Deferred a tick so the seat/etc have joined the contraption first. Not kept up to date after.
+	timer.Simple(0, function()
+		if not IsValid(self) then return end
+
+		local Contraption = self:CFW_GetContraption()
+		if Contraption then
+			Contraption.ACF_Cost = ACF.Contraption.CostSystem.CalcCostsFromContraption(Contraption)
+		end
+	end)
 end
 
 function ENT:PreEntityCopy()
