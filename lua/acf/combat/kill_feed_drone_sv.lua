@@ -17,12 +17,17 @@ hook.Add("cfw.contraption.entityRemoved", "ACF_KillFeed_DroneRemoved", function(
 
     local CostSystem = ACF.Contraption.CostSystem
     local Inflictor = Contraption.ACF_LastDamageInflictor
+    local OwnerCost = CostSystem.GetPlayerCost(Owner)
+    local AttackerCost = CostSystem.GetPlayerCost(Attacker)
+    local InflictorClass = IsValid(Inflictor) and Inflictor:GetClass() or "acf_baseplate"
 
     net.Start("ACF_KillFeed_DroneEntry")
         net.WriteEntity(Owner)
-        net.WriteFloat(CostSystem.GetPlayerCost(Owner))
+        net.WriteFloat(OwnerCost)
         net.WriteEntity(Attacker)
-        net.WriteFloat(CostSystem.GetPlayerCost(Attacker))
-        net.WriteString(IsValid(Inflictor) and Inflictor:GetClass() or "acf_baseplate")
+        net.WriteFloat(AttackerCost)
+        net.WriteString(InflictorClass)
     net.Broadcast()
+
+    ACF.RecordKill(Attacker, AttackerCost, Owner, OwnerCost, InflictorClass, true)
 end)

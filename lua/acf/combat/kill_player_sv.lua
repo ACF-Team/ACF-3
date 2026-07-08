@@ -5,18 +5,24 @@ util.AddNetworkString("ACF_KillFeed_ContraptionCost")
 --- Broadcasts kill-feed point costs ahead of the actual kill.
 --- @param Victim player The player who's about to die
 --- @param Attacker entity The entity credited with the kill, if any
+--- @return number VictimCost
+--- @return number|nil AttackerCost
 function ACF.AnnounceKillFeedCost(Victim, Attacker)
     if not IsValid(Victim) or not Victim:IsPlayer() then return end
 
     local CostSystem = ACF.Contraption.CostSystem
     local HasAttacker = IsValid(Attacker) and Attacker:IsPlayer()
+    local VictimCost = CostSystem.GetPlayerCost(Victim)
+    local AttackerCost = HasAttacker and CostSystem.GetPlayerCost(Attacker) or nil
 
     net.Start("ACF_KillFeed_ContraptionCost")
         net.WriteEntity(Victim)
-        net.WriteFloat(CostSystem.GetPlayerCost(Victim))
+        net.WriteFloat(VictimCost)
         net.WriteBool(HasAttacker)
-        if HasAttacker then net.WriteFloat(CostSystem.GetPlayerCost(Attacker)) end
+        if HasAttacker then net.WriteFloat(AttackerCost) end
     net.Broadcast()
+
+    return VictimCost, AttackerCost
 end
 
 do
@@ -33,7 +39,8 @@ do
         if not IsValid(Victim) then return end
         if not Victim:IsPlayer() then return end
 
-        ACF.AnnounceKillFeedCost(Victim, Attacker)
+        local VictimCost, AttackerCost = ACF.AnnounceKillFeedCost(Victim, Attacker)
+        ACF.RecordKill(Attacker, AttackerCost, Victim, VictimCost, IsValid(Inflictor) and Inflictor:GetClass() or nil, false)
 
         -- The damage hook must be trapped to avoid a potential recursive loop
         -- (in theory, I never tested if it could happen, but better safe than sorry...)

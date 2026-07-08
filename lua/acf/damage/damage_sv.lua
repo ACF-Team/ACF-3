@@ -169,7 +169,8 @@ function Damage.DoSquishyFlingKill(Entity, Damage, HitPos, Attacker, Inflictor, 
 	if Damage > Health then
 		-- Alive() check avoids double-announcing a driver ACF.KillPlayer already killed this tick
 		if Entity:IsPlayer() and Entity:Alive() then
-			ACF.AnnounceKillFeedCost(Entity, Attacker)
+			local VictimCost, AttackerCost = ACF.AnnounceKillFeedCost(Entity, Attacker)
+			ACF.RecordKill(Attacker, AttackerCost, Entity, VictimCost, IsValid(Inflictor) and Inflictor:GetClass() or nil, false)
 		end
 
 		local SourceDamage = DamageInfo()
