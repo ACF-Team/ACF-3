@@ -87,7 +87,7 @@ do -- Menu population functions
 	ACF.AddMenuOption(102, "#acf.menu.permissions", "gun")
 	ACF.AddMenuOption(201, "#acf.menu.entities", "brick")
 	ACF.AddMenuOption(9999, "#acf.menu.fun", "bricks")
-	ACF.AddMenuOption(100000, "#acf.menu.scanner", "magnifier")
+	ACF.AddMenuOption(100000, "Tools", "wrench_orange")
 end
 
 
