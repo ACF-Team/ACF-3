@@ -63,7 +63,13 @@ local function CreateMenu(Menu)
         RunQuery(Selected, CurrentSession)
     end)
 
-    local Summary = Menu:AddLabel("")
+    local SummaryList = Menu:AddListView()
+    SummaryList:AddColumn("Player")
+    SummaryList:AddColumn("Kills")
+    SummaryList:AddColumn("K-Pts")
+    SummaryList:AddColumn("Deaths")
+    SummaryList:AddColumn("D-Pts")
+    SummaryList:SetTall(100)
 
     local KillList = Menu:AddListView()
     KillList:AddColumn("Time")
@@ -134,6 +140,21 @@ local function CreateMenu(Menu)
             return Name ~= nil and (NameSet == nil or NameSet[Name])
         end
 
+        -- Row names come from the explicit selection, or from every known player when "everyone" is selected.
+        local RowNames
+        if #LastNames > 0 then
+            RowNames = LastNames
+        else
+            RowNames = {}
+            for Name in pairs(PlayerChecks) do RowNames[#RowNames + 1] = Name end
+            table.sort(RowNames)
+        end
+
+        local PlayerStats = {}
+        for _, Name in ipairs(RowNames) do
+            PlayerStats[Name] = { Kills = 0, KillPoints = 0, Deaths = 0, DeathPoints = 0 }
+        end
+
         local KillCount, KillPoints = 0, 0
         local DeathCount, DeathPoints = 0, 0
 
@@ -146,15 +167,37 @@ local function CreateMenu(Menu)
             if InScope(Kill.Attacker) then
                 KillCount = KillCount + 1
                 KillPoints = KillPoints + Points
+
+                local Stats = PlayerStats[Kill.Attacker]
+                if Stats then
+                    Stats.Kills = Stats.Kills + 1
+                    Stats.KillPoints = Stats.KillPoints + Points
+                end
             end
 
             if InScope(Kill.Victim) then
                 DeathCount = DeathCount + 1
                 DeathPoints = DeathPoints + Points
+
+                local Stats = PlayerStats[Kill.Victim]
+                if Stats then
+                    Stats.Deaths = Stats.Deaths + 1
+                    Stats.DeathPoints = Stats.DeathPoints + Points
+                end
             end
         end
 
-        Summary:SetText(string.format("%d kills (%d pts) / %d deaths (%d pts)", KillCount, math.Round(KillPoints), DeathCount, math.Round(DeathPoints)))
+        if IsValid(SummaryList) then
+            SummaryList:Clear()
+
+            for _, Name in ipairs(RowNames) do
+                local Stats = PlayerStats[Name]
+                SummaryList:AddLine(Name, Stats.Kills, math.Round(Stats.KillPoints), Stats.Deaths, math.Round(Stats.DeathPoints))
+            end
+
+            SummaryList:AddLine("Total", KillCount, math.Round(KillPoints), DeathCount, math.Round(DeathPoints))
+        end
+
         KillList:SetTall(400) -- Cap the height; the list scrolls internally past this
     end)
 
