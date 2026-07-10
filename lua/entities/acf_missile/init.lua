@@ -480,9 +480,11 @@ function ENT:CreateBulletData(Crate)
 	local Ammo = Crate.RoundData
 	local Data = {}
 
-	-- Creating a copy of the basic data stored on the crate
-	for _, V in ipairs(Crate.DataStore) do
-		Data[V] = Crate[V]
+	local LiveData = Crate.ACF_LiveData
+	if LiveData then
+		for _, Field in ipairs(Classes.GetTypeFields(LiveData:GetType())) do
+			Data[Field.Name] = LiveData[Field.Name]
+		end
 	end
 
 	self.ToolData          = Data

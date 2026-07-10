@@ -5,7 +5,7 @@ include("shared.lua")
 
 -- Local Vars -----------------------------------
 
-local EMPTY       = { Type = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
+local EMPTY       = { AmmoType = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0 }
 local ACF         = ACF
 local Contraption = ACF.Contraption
 local Classes     = ACF.Classes
@@ -614,7 +614,7 @@ do -- Entity Overlay ----------------------------
 		local Delay  = math.Round(self.FireDelay, 2)
 		local Reload = math.Round(self.ReloadTime, 2)
 		local Bullet = self.BulletData
-		local Ammo   = (Bullet.WeaponType and (Bullet.WeaponType .. " ") or "") .. Bullet.Type
+		local Ammo   = (Bullet.WeaponType and (Bullet.WeaponType .. " ") or "") .. (Bullet.AmmoType or "Empty")
 		local Status = self.State
 
 		local Error = false
@@ -666,8 +666,9 @@ do -- Firing -----------------------------------
 		BulletData.Flight = ShootDir
 
 		Missile:Launch(Rack.LaunchDelay)
-		if Missile.LimitConVar then
-			RemoveCount(Missile:CPPIGetOwner(), Missile.LimitConVar.Name, Missile)
+		local LimitOwner = Missile.LimitOwner
+		if Missile.LimitConVar and IsValid(LimitOwner) then
+			RemoveCount(LimitOwner, Missile.LimitConVar.Name, Missile)
 		end
 
 		Rack.LastFired = Missile
@@ -783,6 +784,7 @@ do -- Loading ----------------------------------
 
 		if LimitConVar and IsValid(Owner) then
 			Missile.LimitConVar = LimitConVar
+			Missile.LimitOwner  = Owner
 			Owner:AddCount(LimitConVar.Name, Missile)
 		end
 
