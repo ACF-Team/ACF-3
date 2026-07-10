@@ -15,12 +15,14 @@ function ACF.AnnounceKillFeedCost(Victim, Attacker)
     local VictimCost = CostSystem.GetPlayerCost(Victim)
     local AttackerCost = HasAttacker and CostSystem.GetPlayerCost(Attacker) or nil
 
-    net.Start("ACF_KillFeed_ContraptionCost")
-        net.WriteEntity(Victim)
-        net.WriteFloat(VictimCost)
-        net.WriteBool(HasAttacker)
-        if HasAttacker then net.WriteFloat(AttackerCost) end
-    net.Broadcast()
+    if ACF.EnableKillFeedCost then
+        net.Start("ACF_KillFeed_ContraptionCost")
+            net.WriteEntity(Victim)
+            net.WriteFloat(VictimCost)
+            net.WriteBool(HasAttacker)
+            if HasAttacker then net.WriteFloat(AttackerCost) end
+        net.Broadcast()
+    end
 
     return VictimCost, AttackerCost
 end

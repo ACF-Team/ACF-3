@@ -1,4 +1,5 @@
 -- Adds point costs to the native kill feed.
+local ACF = ACF
 local NPC_Color_Enemy    = Color(250, 50, 50, 255)
 local NPC_Color_Friendly = Color(50, 200, 50, 255)
 local Color_Cost         = Color(255, 210, 0, 255)
@@ -45,6 +46,7 @@ local function InsertDeath(Left, Color1, Icon, Right, Color2, VictimCost, Attack
 end
 
 hook.Add("AddDeathNotice", "ACF_KillFeed_TrackCost", function(Attacker, Team1, Inflictor, Victim, Team2, Flags)
+    if not ACF.EnableKillFeedCost then return end
     if Inflictor == "suicide" then Attacker = nil end
 
     local VictimCost, AttackerCost
@@ -116,6 +118,7 @@ local function DrawDeath(x, y, Death, Time)
 end
 
 hook.Add("DrawDeathNotice", "ACF_KillFeed_DrawWithCost", function(x, y)
+    if not ACF.EnableKillFeedCost then return end -- Let the native kill feed draw instead
     if cl_drawhud:GetInt() == 0 then return true end
 
     local Time  = hud_deathnotice_time:GetFloat()

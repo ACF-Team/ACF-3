@@ -21,13 +21,15 @@ hook.Add("cfw.contraption.entityRemoved", "ACF_KillFeed_DroneRemoved", function(
     local AttackerCost = CostSystem.GetPlayerCost(Attacker)
     local InflictorClass = IsValid(Inflictor) and Inflictor:GetClass() or "acf_baseplate"
 
-    net.Start("ACF_KillFeed_DroneEntry")
-        net.WriteEntity(Owner)
-        net.WriteFloat(OwnerCost)
-        net.WriteEntity(Attacker)
-        net.WriteFloat(AttackerCost)
-        net.WriteString(InflictorClass)
-    net.Broadcast()
+    if ACF.EnableKillFeedCost then
+        net.Start("ACF_KillFeed_DroneEntry")
+            net.WriteEntity(Owner)
+            net.WriteFloat(OwnerCost)
+            net.WriteEntity(Attacker)
+            net.WriteFloat(AttackerCost)
+            net.WriteString(InflictorClass)
+        net.Broadcast()
+    end
 
     ACF.RecordKill(Attacker, AttackerCost, Owner, OwnerCost, InflictorClass, true)
 end)
