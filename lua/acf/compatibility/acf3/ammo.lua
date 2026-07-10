@@ -87,12 +87,59 @@ local RoundFields = {
 	"HollowRatio", "LinerAngle", "SmokeWPRatio", "Spread", "StandoffRatio",
 }
 
+local WeaponFields = {}
+
+local FuzeLookup = {
+	["Altitude"] 	= {Type = "ACF.Missiles.Fuze.Altitude", CopyFields = {"ArmingDelay"}},
+	["Contact"] 	= {Type = "ACF.Missiles.Fuze.Contact", 	CopyFields = {"ArmingDelay"}},
+	["Optical"] 	= {Type = "ACF.Missiles.Fuze.Optical", 	CopyFields = {"ArmingDelay", "FuzeDistance"}},
+	["Radio"] 		= {Type = "ACF.Missiles.Fuze.Radio", 	CopyFields = {"ArmingDelay"}},
+	["Timed"] 		= {Type = "ACF.Missiles.Fuze.Timed", 	CopyFields = {"ArmingDelay", "FuzeTimer"}},
+}
+
+function WeaponFields.Fuze(Fuze, Data)
+	local TypeData = FuzeLookup[Fuze] or FuzeLookup["Contact"]
+	local CopyData = {}
+	for _, Field in ipairs(TypeData.CopyFields) do
+		CopyData[Field] = Data[Field]
+	end
+	return {
+		Type = TypeData.Type,
+		Data = CopyData
+	}
+end
+
+local GuidanceLookup = {
+	["Active Radar"] 		= {Type = "ACF.Missiles.Guidance.ActiveRadar", 		CopyFields = {}},
+	["Anti-missile"] 		= {Type = "ACF.Missiles.Guidance.AntiMissile", 		CopyFields = {}},
+	["Anti-radiation"] 		= {Type = "ACF.Missiles.Guidance.AntiRadiation", 	CopyFields = {}},
+	["GPS Guided"] 			= {Type = "ACF.Missiles.Guidance.GPSGuided", 		CopyFields = {}},
+	["Infrared"] 			= {Type = "ACF.Missiles.Guidance.Infrared", 		CopyFields = {}},
+	["Laser"] 				= {Type = "ACF.Missiles.Guidance.Laser", 			CopyFields = {}},
+	["Radio (MCLOS)"] 		= {Type = "ACF.Missiles.Guidance.RadioMCLOS", 		CopyFields = {}},
+	["Radio (SACLOS)"] 		= {Type = "ACF.Missiles.Guidance.RadioSACLOS", 		CopyFields = {}},
+	["Semi-active Radar"] 	= {Type = "ACF.Missiles.Guidance.SemiActiveRadar", 	CopyFields = {}},
+	["Wire (MCLOS)"] 		= {Type = "ACF.Missiles.Guidance.WireMCLOS", 		CopyFields = {}},
+	["Wire (SACLOS)"] 		= {Type = "ACF.Missiles.Guidance.WireSACLOS", 		CopyFields = {}},
+}
+
+function WeaponFields.Guidance(Guidance)
+	local TypeData = GuidanceLookup[Guidance] or GuidanceLookup["Dumb"]
+	local CopyData = {}
+	for _, Field in ipairs(TypeData.CopyFields) do
+		CopyData[Field] = Data[Field]
+	end
+	return {
+		Type = TypeData.Type,
+		Data = CopyData
+	}
+end
+
 ACF.Entities.RegisterCompatPatch("acf_ammo", 2026062101, function(Data)
 	if Data.ACF_UserData then return end
 
 	local Weapon  = Data.Weapon
 	local Caliber = Data.Caliber
-
 	-- Resolve pre-scalable weapon aliases (old short IDs/names) to their FQN.
 	if not ACF.Classes.GetSubtypeByName("ACF.Weapons.BaseWeapon", Weapon) then
 		Weapon = WeaponFQNTable[Weapon] or Weapon
@@ -102,12 +149,15 @@ ACF.Entities.RegisterCompatPatch("acf_ammo", 2026062101, function(Data)
 	local AmmoData = { Tracer = tobool(Data.Tracer) }
 	for _, K in ipairs(RoundFields) do AmmoData[K] = Data[K] end
 
+	local WeaponData = { Caliber = Caliber }
+	for K, V in pairs(WeaponFields) do WeaponData[K] = V(Data[K], Data) end
+
 	Data.ACF_UserData = {
 		-- If worried about potential exploits here, Caliber will only be passed to the
 		-- weapon instance if the weapon supports Caliber as a field. So it'll all be 
 		-- deserialized appropriately (+ compat patches run before the entity even gets
 		-- a chance to exist in the first place)
-		Weapon            = {Type = Weapon, Data = {Caliber = Caliber}},
+		Weapon            = {Type = Weapon, Data = WeaponData },
 		Caliber           = Caliber,
 		AmmoType          = {Type = AmmoFQN(Data.AmmoType), Data = AmmoData},
 		AmmoStage         = Data.AmmoStage,
