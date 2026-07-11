@@ -22,7 +22,7 @@ hook.Add("cfw.contraption.entityRemoved", "ACF_KillFeed_VehicleRemoved", functio
     local CostSystem = ACF.Contraption.CostSystem
     local Inflictor = Contraption.ACF_LastDamageInflictor
     local OwnerCost = Contraption.ACF_LastCost or (CostSystem.CalcCostsFromContraption(Contraption))
-    local AttackerCost = CostSystem.GetPlayerCost(Attacker)
+    local AttackerCost = CostSystem.GetAttackerCost(Attacker)
     local InflictorClass = IsValid(Inflictor) and Inflictor:GetClass() or "acf_baseplate"
 
     net.Start("ACF_KillFeed_VehicleEntry")

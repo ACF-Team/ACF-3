@@ -22,6 +22,11 @@ net.Receive("ACF_KillFeed_ContraptionCost", function()
     PendingCost[Victim:Name()] = { VictimCost = VictimCost, AttackerCost = AttackerCost, Time = RealTime() }
 end)
 
+local MaxNameLength = 10
+local function ClipName(Name)
+    return isstring(Name) and string.sub(Name, 1, MaxNameLength) or Name
+end
+
 local function GetDeathColor(TeamID)
     if TeamID == -1 then return table.Copy(NPC_Color_Enemy) end
     if TeamID == -2 then return table.Copy(NPC_Color_Friendly) end
@@ -58,7 +63,7 @@ hook.Add("AddDeathNotice", "ACF_KillFeed_TrackCost", function(Attacker, Team1, I
         PendingCost[Victim] = nil
     end
 
-    InsertDeath(Attacker, GetDeathColor(Team1), Inflictor, Victim, GetDeathColor(Team2), VictimCost, AttackerCost)
+    InsertDeath(ClipName(Attacker), GetDeathColor(Team1), Inflictor, ClipName(Victim), GetDeathColor(Team2), VictimCost, AttackerCost)
 end)
 
 -- A vehicle dying isn't a player death, so it bypasses AddDeathNotice entirely.
@@ -71,22 +76,24 @@ net.Receive("ACF_KillFeed_VehicleEntry", function()
 
     if not IsValid(Owner) or not IsValid(Attacker) then return end
 
-    local Left   = Attacker:Name()
+    local Left   = ClipName(Attacker:Name())
     local Color1 = GetDeathColor(Attacker:Team())
     local Color2 = GetDeathColor(Owner:Team())
 
-    InsertDeath(Left, Color1, InflictorClass, Owner:Name() .. "'s Vehicle", Color2, OwnerCost, AttackerCost)
+    InsertDeath(Left, Color1, InflictorClass, ClipName(Owner:Name()) .. "'s Vehicle", Color2, OwnerCost, AttackerCost)
 end)
 
--- Draws a "(N pts)" label just past Name (measured from Anchor, growing away from the icon).
-local function DrawCost(Cost, Name, Anchor, y, Align)
-    if not Cost then return end
+-- Draws a "(N pts)" label at X (its leading edge per Align) and returns its rendered width.
+local function DrawCost(Cost, X, y, Align)
+    if not Cost then return 0 end
 
     surface.SetFont("ChatFont")
-    local NameWidth = surface.GetTextSize(Name)
-    local X = Align == TEXT_ALIGN_RIGHT and (Anchor - NameWidth) or (Anchor + NameWidth)
+    local Text = string.format("(%d pts)", math.Round(Cost))
+    local Width = surface.GetTextSize(Text)
 
-    draw.SimpleText(string.format("(%d pts)", math.Round(Cost)), "ChatFont", X, y, Color_Cost, Align, TEXT_ALIGN_CENTER)
+    draw.SimpleText(Text, "ChatFont", X, y, Color_Cost, Align, TEXT_ALIGN_CENTER)
+
+    return Width
 end
 
 local function DrawDeath(x, y, Death, Time)
@@ -104,15 +111,21 @@ local function DrawDeath(x, y, Death, Time)
 
     local TextY = y + h / 2
 
+    -- Attacker: "(cost) Name", name ending at the icon.
     if Death.left then
+        surface.SetFont("ChatFont")
         local NameX = x - (w / 2) - 16
+        local NameWidth = surface.GetTextSize(Death.left)
+
         draw.SimpleText(Death.left, "ChatFont", NameX, TextY, Death.color1, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
-        DrawCost(Death.attackerCost, Death.left, NameX - 8, TextY, TEXT_ALIGN_RIGHT)
+        DrawCost(Death.attackerCost, NameX - NameWidth - 8, TextY, TEXT_ALIGN_RIGHT)
     end
 
-    local VictimNameX = x + (w / 2) + 16
-    draw.SimpleText(Death.right, "ChatFont", VictimNameX, TextY, Death.color2, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-    DrawCost(Death.victimCost, Death.right, VictimNameX + 8, TextY, TEXT_ALIGN_LEFT)
+    -- Victim: "(cost) Name", cost starting at the icon.
+    local VictimX = x + (w / 2) + 16
+    local CostWidth = DrawCost(Death.victimCost, VictimX, TextY, TEXT_ALIGN_LEFT)
+    local NameX = Death.victimCost and (VictimX + CostWidth + 8) or VictimX
+    draw.SimpleText(Death.right, "ChatFont", NameX, TextY, Death.color2, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 
     return math.ceil(y + h * 0.75)
 end

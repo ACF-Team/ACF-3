@@ -12,8 +12,10 @@ function ACF.AnnounceKillFeedCost(Victim, Attacker)
 
     local CostSystem = ACF.Contraption.CostSystem
     local HasAttacker = IsValid(Attacker) and Attacker:IsPlayer()
-    local VictimCost = CostSystem.GetPlayerCost(Victim)
-    local AttackerCost = HasAttacker and CostSystem.GetPlayerCost(Attacker) or nil
+
+    -- A victim killed in a vehicle costs 0: the vehicle's own value is reported separately as a vehicle kill.
+    local VictimCost = Victim:InVehicle() and 0 or CostSystem.GetPlayerCost(Victim)
+    local AttackerCost = HasAttacker and CostSystem.GetAttackerCost(Attacker) or nil
 
     if ACF.EnableKillFeedCost then
         net.Start("ACF_KillFeed_ContraptionCost")
