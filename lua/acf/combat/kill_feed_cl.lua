@@ -61,8 +61,8 @@ hook.Add("AddDeathNotice", "ACF_KillFeed_TrackCost", function(Attacker, Team1, I
     InsertDeath(Attacker, GetDeathColor(Team1), Inflictor, Victim, GetDeathColor(Team2), VictimCost, AttackerCost)
 end)
 
--- Drone destruction isn't a real death, so it bypasses AddDeathNotice entirely.
-net.Receive("ACF_KillFeed_DroneEntry", function()
+-- A vehicle dying isn't a player death, so it bypasses AddDeathNotice entirely.
+net.Receive("ACF_KillFeed_VehicleEntry", function()
     local Owner = net.ReadEntity()
     local OwnerCost = net.ReadFloat()
     local Attacker = net.ReadEntity()
@@ -75,7 +75,7 @@ net.Receive("ACF_KillFeed_DroneEntry", function()
     local Color1 = GetDeathColor(Attacker:Team())
     local Color2 = GetDeathColor(Owner:Team())
 
-    InsertDeath(Left, Color1, InflictorClass, Owner:Name() .. "'s Drone", Color2, OwnerCost, AttackerCost)
+    InsertDeath(Left, Color1, InflictorClass, Owner:Name() .. "'s Vehicle", Color2, OwnerCost, AttackerCost)
 end)
 
 -- Draws a "(N pts)" label just past Name (measured from Anchor, growing away from the icon).

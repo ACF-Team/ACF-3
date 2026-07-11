@@ -146,19 +146,12 @@ do	-- Actual cost functions
 
 	local FlatPlayerCost = 20
 
-	--- Single source of truth for a player's point cost: their contraption's cost, or a flat fallback.
+	--- Single source of truth for a player's point cost: flat on foot, 0 in a vehicle.
 	--- @param Player player The player to compute a cost for
 	--- @return number Cost The player's point cost
 	function CostSystem.GetPlayerCost(Player)
 		if not IsValid(Player) or not Player:IsPlayer() then return 0 end
-
-		local Vehicle = Player:GetVehicle()
-		if IsValid(Vehicle) and Vehicle.CFW_GetContraption then
-			local Contraption = Vehicle:CFW_GetContraption()
-			if Contraption then
-				return (CostSystem.CalcCostsFromContraption(Contraption))
-			end
-		end
+		if Player:InVehicle() then return 0 end
 
 		return FlatPlayerCost
 	end
