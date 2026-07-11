@@ -72,7 +72,6 @@ function ENT:Detonate()
 	Damage.createExplosion(Position, Explosive, Explosive * 0.5, { self }, DmgInfo)
 	Damage.explosionEffect(Position, nil, Explosive)
 
-	self.Damaged = true
 	self.ACF.Health = 0
 
 	self:Disable()

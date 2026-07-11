@@ -547,7 +547,7 @@ do -- Spawn/Update/Remove
 			self.RoundData:OnLast(self)
 		end
 
-		if self.Damaged then
+		if self.ACF.Health == 0 then
 			timer.Remove("ACF Crate Cookoff " .. self:EntIndex())
 
 			self:Detonate()
@@ -572,7 +572,7 @@ do -- Overlay
 		local Tracer = self.BulletData.Tracer ~= 0 and "-T" or ""
 		local AmmoType = self.BulletData.Type .. Tracer
 
-		if self.Damaged then
+		if self.ACF.Health == 0 then
 			State:AddError("Destroyed")
 		elseif next(self.Weapons) then
 			if self:CanConsume() then

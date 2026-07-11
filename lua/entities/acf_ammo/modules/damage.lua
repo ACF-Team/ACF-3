@@ -114,7 +114,6 @@ function ENT:Detonate(VisualOnly)
 
 	Damage.explosionEffect(Position, nil, Explosive)
 
-	self.Damaged = true
 	self.ACF.Health = 0
 
 	self:SetAmount(0)
