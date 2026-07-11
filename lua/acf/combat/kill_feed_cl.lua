@@ -50,7 +50,7 @@ local function InsertDeath(Left, Color1, Icon, Right, Color2, VictimCost, Attack
     })
 end
 
-hook.Add("AddDeathNotice", "ACF_KillFeed_TrackCost", function(Attacker, Team1, Inflictor, Victim, Team2, Flags)
+hook.Add("AddDeathNotice", "ACF_KillFeed_TrackCost", function(Attacker, Team1, Inflictor, Victim, Team2)
     if not ACF.EnableKillFeedCost then return end
     if Inflictor == "suicide" then Attacker = nil end
 
