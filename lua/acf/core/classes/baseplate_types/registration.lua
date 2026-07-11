@@ -34,17 +34,8 @@ function BaseplateTypes.BP_PhysicsCollideExplosion(self, Data)
 		-- Timer simple to avoid "Changing collision rules within a callback is likely to cause crashes!"
 		timer.Simple(0, function()
 			local Position = IsValid(self) and self:GetPos() or nil
-			for Player in ACF.PlayersInContraptionIterator(Contraption) do
-				Player:Kill()
-			end
 
-			for Entity in pairs(Contraption.ents) do
-				ACF.HEKill(Entity, Data.HitNormal, Data.Speed * 100, Data.HitPos, nil, true)
-			end
-
-			if WillExplode and Position then
-				ACF.Damage.explosionEffect(Position, Data.HitNormal, 120)
-			end
+			ACF.DestroyContraption(Contraption, Position, Data.HitNormal, Data.Speed * 100, WillExplode)
 		end)
 	end
 end

@@ -263,7 +263,9 @@ end
 
 do -- Overlay text
 	function ENT:ACF_UpdateOverlayState(State)
-		if self:CanConsume() then
+		if self.ACF.Health == 0 then
+			State:AddError("Destroyed")
+		elseif self:CanConsume() then
 			State:AddSuccess("Active")
 		else
 			State:AddWarning("Idle")

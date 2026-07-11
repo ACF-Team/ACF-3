@@ -203,6 +203,20 @@ do -- Serverside settings
 		Base:AddSlider("#acf.menu.settings.weapons.squishy_mult"):           LinkToServerData("SquishyDamageMult")
 	end)
 
+	ACF.AddServerSettings(76, "Kill Feed & Log", function(Base)
+		Base:AddCheckBox("Kill Feed Cost Display"):LinkToServerData("EnableKillFeedCost")
+			Base:AddHelp("Shows each player's contraption point cost next to their name in the kill feed.")
+
+		Base:AddSlider("Kill Log Disk-Write Interval (Seconds)"):LinkToServerData("KillLogFlushInterval")
+			Base:AddHelp("How often pending kills are flushed to disk.")
+
+		Base:AddSlider("Kill Log Max Sessions"):LinkToServerData("KillLogMaxSessions")
+			Base:AddHelp("How many past sessions the kill log keeps before deleting the oldest.")
+
+		Base:AddSlider("Kill Log Query Cooldown (Seconds)"):LinkToServerData("KillLogQueryCooldown")
+			Base:AddHelp("How long a player must wait between kill log queries.")
+	end)
+
 	ACF.AddServerSettings(101, "#acf.menu.settings.entity_pushing", function(Base)
 		Base:AddCheckBox("#acf.menu.settings.entity_pushing.he_push"):       LinkToServerData("HEPush")
 		Base:AddCheckBox("#acf.menu.settings.entity_pushing.ke_push"):       LinkToServerData("KEPush")

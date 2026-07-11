@@ -808,18 +808,13 @@ do
 			end
 		end
 
-		-- If all crew die, kill all seated players in the contraption
+		-- If all crew die, destroy the vehicle, same as an aircraft on a fatal impact.
 		if Alive <= 0 then
-			-- I don't like this but this only runs once per contraption
-			local ents = Contraption.ents or {}
-			for ent, _ in pairs(ents) do
-				if ent:GetClass() == "prop_vehicle_prisoner_pod" then
-					local Driver = ent:GetDriver()
-					if IsValid(Driver) then
-						ACF.KillPlayer(Driver, Contraption.ACF_LastDamageAttacker, Contraption.ACF_LastDamageInflictor)
-					end
-				end
-			end
+			local Baseplate = Contraption.ACF_Baseplate
+			local Position = IsValid(Baseplate) and Baseplate:GetPos() or self:GetPos()
+
+			ACF.DestroyContraption(Contraption, Position, vector_up, 100000)
+
 			Contraption.ACF_AllCrewKilled = true -- Flag set for other entities/block vehicle entrance/etc
 		end
 	end

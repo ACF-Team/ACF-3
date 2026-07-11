@@ -143,6 +143,36 @@ do	-- Actual cost functions
 
 		return CostSystem.CalcCostsFromContraption(ACF.EntitiesToPseudoContraption(Ents))
 	end
+
+	local FlatPlayerCost = 20
+
+	--- Single source of truth for a player's point cost: always the flat rate. Whether that cost
+	--- should be waived (e.g. a victim killed in a vehicle) is up to the caller, not this function.
+	--- @param Player player The player to compute a cost for
+	--- @return number Cost The player's point cost
+	function CostSystem.GetPlayerCost(Player)
+		if not IsValid(Player) or not Player:IsPlayer() then return 0 end
+
+		return FlatPlayerCost
+	end
+
+	--- An attacker's point cost: their current contraption's cost while seated in one (a kill made
+	--- from a vehicle is worth what the vehicle is worth), otherwise the flat rate.
+	--- @param Player player The attacking player to compute a cost for
+	--- @return number Cost The attacker's point cost
+	function CostSystem.GetAttackerCost(Player)
+		if not IsValid(Player) or not Player:IsPlayer() then return 0 end
+
+		local Vehicle = Player:GetVehicle()
+		if IsValid(Vehicle) and Vehicle.CFW_GetContraption then
+			local Contraption = Vehicle:CFW_GetContraption()
+			if Contraption then
+				return (CostSystem.CalcCostsFromContraption(Contraption))
+			end
+		end
+
+		return FlatPlayerCost
+	end
 end
 
 --------------------------------------------------------------------------------

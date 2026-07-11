@@ -181,6 +181,12 @@ do -- ACF global vars
 
 	-- The deviation of the input direction from the shaft + the output direction from the shaft cannot exceed this
 	ACF.DefineSetting("MaxDriveshaftAngle",   85,    nil, ACF.FloatDataCallback(85, 180, 0), 360)
+
+	ACF.DefineSetting("EnableKillFeedCost",   true,   "Kill feed cost display has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("KillLogFlushInterval", 30,    "Kill log disk-write interval has been set to %s seconds.", ACF.FloatDataCallback(15, 600, 0))
+	ACF.DefineSetting("KillLogMaxSessions",   20,    "Kill log max retained sessions has been set to %s.", ACF.FloatDataCallback(1, 500, 0))
+	ACF.DefineSetting("KillLogQueryCooldown", 10,    "Kill log query cooldown has been set to %s seconds.", ACF.FloatDataCallback(0, 120, 0))
+
 	ACF.Year                 = 1945
 	ACF.IllegalDisableTime   = 30 -- Time in seconds for an entity to be disabled when it fails ACF.IsLegal
 	ACF.Volume               = 1 -- Global volume for ACF sounds

@@ -160,7 +160,7 @@ end
 
 do
 	function ENT:ACF_UpdateOverlayState(State)
-		State:AddLabel(self:CanConsume() and "Supplying" or "Idle")
+		State:AddLabel(self.ACF.Health == 0 and "Destroyed" or self:CanConsume() and "Supplying" or "Idle")
 		State:AddProgressBar("Mass Remaining", Round(self.Amount or 0, 2), Round(self.Capacity or 0, 2), " kg", 2)
 	end
 end
