@@ -151,6 +151,8 @@ util.AddNetworkString("ACF_KillLog_Query")
 
 local MaxResultRows = 1000
 
+local NextQueryTime = {} -- [PlayerName] = CurTime() they're next allowed to query
+
 -- Runs a SELECT, logging an error on failure instead of treating it as an empty result.
 local function RunSelect(Query)
     local Rows = sql.Query(Query)
@@ -200,6 +202,11 @@ end)
 
 net.Receive("ACF_KillLog_Query", function(_, Player)
     if not IsValid(Player) then return end
+
+    local PlayerName = Player:Name()
+    if (NextQueryTime[PlayerName] or 0) > CurTime() then return end
+
+    NextQueryTime[PlayerName] = CurTime() + ACF.KillLogQueryCooldown
 
     local Names = util.JSONToTable(net.ReadString()) or {}
     local Session = net.ReadUInt(32)

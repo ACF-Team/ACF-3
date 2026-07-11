@@ -212,6 +212,9 @@ do -- Serverside settings
 
 		Base:AddSlider("Kill Log Max Sessions"):LinkToServerData("KillLogMaxSessions")
 			Base:AddHelp("How many past sessions the kill log keeps before deleting the oldest.")
+
+		Base:AddSlider("Kill Log Query Cooldown (Seconds)"):LinkToServerData("KillLogQueryCooldown")
+			Base:AddHelp("How long a player must wait between kill log queries.")
 	end)
 
 	ACF.AddServerSettings(101, "#acf.menu.settings.entity_pushing", function(Base)

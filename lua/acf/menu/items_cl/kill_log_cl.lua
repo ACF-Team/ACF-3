@@ -31,6 +31,11 @@ local function RequestQuery(Names, Session)
     net.SendToServer()
 end
 
+-- Predicts the server's per-player cooldown (ACF.KillLogQueryCooldown, kill_log_sv.lua) so the
+-- button can show progress without waiting on a round trip. Purely cosmetic; the server enforces
+-- the real limit.
+local NextQueryTime = 0 -- CurTime() we're next allowed to query; persists across menu rebuilds
+
 local function CreateMenu(Menu)
     Menu:AddTitle("Kill Log")
     Menu:AddLabel("Pick a session, then optionally check specific players to narrow the results. Leaving all players unchecked matches everyone in the session.")
@@ -52,8 +57,9 @@ local function CreateMenu(Menu)
         RequestQuery(LastNames, Session)
     end
 
-    Menu:AddButton("Run Query", function()
+    local QueryButton = Menu:AddButton("Run Query", function()
         if not CurrentSession then return end
+        if CurTime() < NextQueryTime then return end
 
         local Selected = {}
         for Name, Check in pairs(PlayerChecks) do
@@ -61,7 +67,25 @@ local function CreateMenu(Menu)
         end
 
         RunQuery(Selected, CurrentSession)
+
+        NextQueryTime = CurTime() + ACF.KillLogQueryCooldown
     end)
+
+    function QueryButton:Think()
+        self:SetEnabled(CurTime() >= NextQueryTime)
+    end
+
+    function QueryButton:PaintOver(w, h)
+        local Remaining = NextQueryTime - CurTime()
+        if Remaining <= 0 then return end
+
+        local Frac = 1 - (Remaining / ACF.KillLogQueryCooldown)
+
+        surface.SetDrawColor(50, 200, 50, 60)
+        surface.DrawRect(0, 0, w * Frac, h)
+
+        draw.SimpleText(string.format("%.0fs", math.ceil(Remaining)), "ACF_Control", w / 2, h / 2, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    end
 
     local SummaryList = Menu:AddListView()
     SummaryList:AddColumn("Player")
