@@ -34,11 +34,13 @@ if CLIENT then
 	local AlphaMin, AlphaMax                   = 0, 255
 	local ScanResolutionMin, ScanResolutionMax = 4, 64
 	local ScanSizeMin, ScanSizeMax             = 10, 10000
+	local NudgeExponentMin, NudgeExponentMax   = 0, 1
 
 	local SphereRadius      = CreateClientConVar("acfarmormesh_sphere_radius", 0, false, true, "", SphereRadiusMin, SphereRadiusMax)
 	CreateClientConVar("acfarmormesh_thickness", 0, false, true, "", ThicknessMin, ThicknessMax)
 	local AlphaConVar       = CreateClientConVar("acfarmormesh_alpha", 50, false, true, "", AlphaMin, AlphaMax)
 	local ClassFilter       = CreateClientConVar("acfarmormesh_class_filter", "", false, true)
+	local NudgeExponent     = CreateClientConVar("acfarmormesh_nudge_exponent", 0, false, true, "", NudgeExponentMin, NudgeExponentMax)
 	CreateClientConVar("acfarmormesh_ignore_elevation", 0, false, true, "", 0, 1)
 
 	local function GetClassFilter()
@@ -144,11 +146,18 @@ if CLIENT then
 		SphereRadiusSlider:SetConVar("acfarmormesh_sphere_radius")
 		Menu:AddHelp("#tool.acfarmormesh.sphere_search_radius_desc")
 
-		local AlphaSlider = Menu:AddSlider("Convex Overlay Alpha", AlphaMin, AlphaMax, 0)
-		AlphaSlider:SetConVar("acfarmormesh_alpha")
-
 		Menu:AddCheckBox("Ignore camera elevation", "acfarmormesh_ignore_elevation")
 		Menu:AddHelp("When enabled, the recursive armor trace fires horizontally toward the hit point, as if the camera had no pitch angle.")
+
+		local AppearanceSection = Menu:AddCollapsible("Appearance", false)
+
+		local AlphaSlider = AppearanceSection:AddSlider("Overlay Alpha", AlphaMin, AlphaMax, 0)
+		AlphaSlider:SetConVar("acfarmormesh_alpha")
+		AppearanceSection:AddHelp("Overlay transparency.")
+
+		local NudgeSlider = AppearanceSection:AddSlider("Overlay Nudge", NudgeExponentMin, NudgeExponentMax, 2)
+		NudgeSlider:SetConVar("acfarmormesh_nudge_exponent")
+		AppearanceSection:AddHelp("Pushes the overlay outward to prevent z-fighting.")
 
 		local ScanSection = Menu:AddCollapsible("Orthographic Armor Scan", false)
 
@@ -214,7 +223,18 @@ if CLIENT then
 		cam.End2D()
 	end
 
+	-- 0 -> 1.001, 1 -> 1.1, interpolating smoothly in between since x is a float.
+	local function GetNudgeFactor(x)
+		return 1 + 10 ^ (2 * x - 3)
+	end
+
+	local Nudge = GetNudgeFactor(NudgeExponent:GetFloat())
 	local White = Color(255, 255, 255, 50)
+
+	-- Recomputes the overlay's nudge factor whenever the exponent slider changes.
+	cvars.AddChangeCallback("acfarmormesh_nudge_exponent", function(_, _, New)
+		Nudge = GetNudgeFactor(tonumber(New))
+	end, "ACF_ArmorMesh_Nudge")
 
 	-- Draws every convex of the mesh as a translucent quad: white normally, colored if highlighted.
 	-- Runs every frame instead of using debugoverlay so the visualization doesn't flicker.
@@ -238,9 +258,9 @@ if CLIENT then
 			end
 
 			for _, Tri in ipairs(Convex.Tris) do
-				local A = Entity:LocalToWorld(Tri[1])
-				local B = Entity:LocalToWorld(Tri[2])
-				local C = Entity:LocalToWorld(Tri[3])
+				local A = Entity:LocalToWorld(Tri[1] * Nudge)
+				local B = Entity:LocalToWorld(Tri[2] * Nudge)
+				local C = Entity:LocalToWorld(Tri[3] * Nudge)
 
 				render.DrawQuad(A, B, C, C, Col)
 			end
