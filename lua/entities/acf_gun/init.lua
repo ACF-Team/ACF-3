@@ -832,6 +832,7 @@ do -- Metamethods --------------------------------
 
 			if not SelfTbl.Firing then return false end -- Nobody is holding the trigger
 			if SelfTbl.Disabled then return false end -- Disabled
+			if SelfTbl.ACF.Health <= 0 then return false end -- Destroyed
 
 			if SelfTbl.State ~= "Loaded" then -- Weapon is not loaded
 				if SelfTbl.State == "Empty" and not SelfTbl.Retry then

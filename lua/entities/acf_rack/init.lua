@@ -752,6 +752,7 @@ do -- Firing -----------------------------------
 		if self.RetryShoot then return false end
 		if not self.Firing then return false end
 		if not ACF.RacksCanFire then return false end
+		if self.ACF.Health <= 0 then return false end -- Destroyed
 
 		return true
 	end
