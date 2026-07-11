@@ -72,8 +72,11 @@ function ENT:Detonate()
 	Damage.createExplosion(Position, Explosive, Explosive * 0.5, { self }, DmgInfo)
 	Damage.explosionEffect(Position, nil, Explosive)
 
-	constraint.RemoveAll(self)
-	self:Remove()
+	self.Damaged = true
+	self.ACF.Health = 0
+
+	self:Disable()
+	self:UpdateOverlay(true)
 end
 
 function ENT:Think()

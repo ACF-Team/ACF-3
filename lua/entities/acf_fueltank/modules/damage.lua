@@ -74,8 +74,13 @@ function ENT:Detonate()
 	Damage.createExplosion(Position, Explosive, Explosive * 0.5, { self }, DmgInfo)
 	Damage.explosionEffect(Position, nil, Explosive)
 
-	constraint.RemoveAll(self)
-	self:Remove()
+	self.Damaged = true
+	self.Leaking = 0
+	self.ACF.Health = 0
+
+	self:SetAmount(0)
+	self:Disable()
+	self:UpdateOverlay(true)
 end
 
 --- Only runs when the tank is leaking

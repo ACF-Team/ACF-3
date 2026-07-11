@@ -572,7 +572,9 @@ do -- Overlay
 		local Tracer = self.BulletData.Tracer ~= 0 and "-T" or ""
 		local AmmoType = self.BulletData.Type .. Tracer
 
-		if next(self.Weapons) then
+		if self.Damaged then
+			State:AddError("Destroyed")
+		elseif next(self.Weapons) then
 			if self:CanConsume() then
 				State:AddSuccess("Providing Ammo")
 			elseif self.Amount ~= 0 then
