@@ -193,13 +193,20 @@ do
     end)
 end
 
--- Networking: sends per-entity convex materials to clients when they look at a new contraption.
+-- Networking: sends per-entity convex materials to clients while they're looking at a contraption.
+--
+-- Materials can change after the initial look (a contraption still spawning in, or a later edit), so
+-- the client just re-requests on a short interval for as long as it keeps looking at something. Lone
+-- entities are always answered instantly; contraptions are throttled to CONTRAPTION_REFRESH_INTERVAL
+-- since a full resync of every member is more expensive.
 do
     local ArmorTypes         = ACF.Classes.ArmorTypes
     local ArmorTypeByIndex   = {} -- index (1-based int) -> armor type ID string
     local ArmorTypeIndexByID = {} -- armor type ID string -> index (1-based int)
     local MAX_CONVEXES       = 5  -- bits for the convex count field
     local MAX_MATERIALS      = 5  -- bits for the material index field
+    local REFRESH_INTERVAL             = 1 -- seconds between re-requests while still looking at something
+    local CONTRAPTION_REFRESH_INTERVAL = 5 -- seconds between contraption re-syncs to the same player
 
     -- Built once after all armor types are registered; neither table changes after this.
     hook.Add("ACF_OnLoadAddon", "ACF_BuildArmorTypeIndex", function()
@@ -216,11 +223,14 @@ do
         util.AddNetworkString("ACF_EntityMaterials")
         util.AddNetworkString("ACF_ContraptionMaterials_Request")
 
-        -- Tracks the last-seen contraption/entity per player to avoid redundant sends.
-        local PlayerLastToken = {}
+        -- PlayerLastRequestTime guards against requests faster than REFRESH_INTERVAL.
+        -- PlayerLastContraptionSync adds the longer CONTRAPTION_REFRESH_INTERVAL throttle for contraptions.
+        local PlayerLastRequestTime     = {}
+        local PlayerLastContraptionSync = {}
 
-        hook.Add("PlayerDisconnected", "ACF_ClearPlayerLastToken", function(Player)
-            PlayerLastToken[Player] = nil
+        hook.Add("PlayerDisconnected", "ACF_ClearPlayerVolumetricNetworkState", function(Player)
+            PlayerLastRequestTime[Player]     = nil
+            PlayerLastContraptionSync[Player] = nil
         end)
 
         -- Sends the convex materials of a single entity to a player.
@@ -247,13 +257,16 @@ do
             local Ent      = Entity(EntIndex)
             if not IsValid(Ent) then return end
 
-            local Contraption = Ent:CFW_GetContraption()
-            local Token       = Contraption or Ent
+            local Now = CurTime()
+            if Now < (PlayerLastRequestTime[Player] or 0) + REFRESH_INTERVAL then return end
+            PlayerLastRequestTime[Player] = Now
 
-            if PlayerLastToken[Player] == Token then return end
-            PlayerLastToken[Player] = Token
+            local Contraption = Ent:CFW_GetContraption()
 
             if Contraption then
+                if Now < (PlayerLastContraptionSync[Player] or 0) + CONTRAPTION_REFRESH_INTERVAL then return end
+                PlayerLastContraptionSync[Player] = Now
+
                 for ContraptionEnt in pairs(Contraption.ents) do
                     ACF.NetworkEntityMaterials(ContraptionEnt, Player)
                 end
@@ -264,11 +277,21 @@ do
     end
 
     if CLIENT then
+        local function RequestMaterials(Ent)
+            net.Start("ACF_ContraptionMaterials_Request")
+            net.WriteUInt(Ent:EntIndex(), MAX_EDICT_BITS)
+            net.SendToServer()
+        end
+
         hook.Add("ACF_RenderContext_LookAtChanged", "ACF_NetworkContraptionMaterials", function(_, New)
             if not IsValid(New) then return end
-            net.Start("ACF_ContraptionMaterials_Request")
-            net.WriteUInt(New:EntIndex(), MAX_EDICT_BITS)
-            net.SendToServer()
+            RequestMaterials(New)
+        end)
+
+        -- Keeps re-requesting for as long as the player is looking at something.
+        timer.Create("ACF_NetworkContraptionMaterials_Refresh", REFRESH_INTERVAL, 0, function()
+            local LookAt = ACF.RenderContext and ACF.RenderContext.LookAt
+            if IsValid(LookAt) then RequestMaterials(LookAt) end
         end)
 
         net.Receive("ACF_EntityMaterials", function()
