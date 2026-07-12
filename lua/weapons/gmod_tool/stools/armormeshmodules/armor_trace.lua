@@ -1,5 +1,3 @@
-local IsValid = IsValid
-
 local function GetTraceDir(Tool)
 	local Dir = LocalPlayer():GetAimVector()
 	if tobool(Tool:GetClientInfo("ignore_elevation")) then
