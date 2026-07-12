@@ -35,7 +35,7 @@ do
     local ArmorTypes = ACF.Classes.ArmorTypes
 
     -- Sets the material of a convex, recalculating its mass, health pool, and the entity's aggregates.
-    function ACF.SetConvexMaterial(Entity, ConvexID, Material, Player)
+    function ACF.SetConvexMaterial(Entity, ConvexID, Material, Player, ShouldStore)
         local MeshData = Entity.ACF_Volumetric_Mesh
         if not MeshData then return end
 
@@ -52,7 +52,6 @@ do
         end
 
         Convex.Material    = ArmorType.ID
-        -- print("SetConvexMaterial", Entity, ConvexID, Material, Convex.Material)
         Convex.Mass        = Convex.Volume * CubicInchToM3 * ArmorType.Density -- Volume is in^3, Density is kg/m^3
         Convex.MaxHealth   = Convex.Volume * ArmorType.HealthMul * HealthMul -- HealthMul bakes in material density
         Convex.Health      = Convex.MaxHealth
@@ -72,7 +71,7 @@ do
         Entity.ACF_Volumetric_Materials[ConvexID] = Convex.Material
 
         if SERVER and ArmorType.ID ~= "Default" then
-            duplicator.StoreEntityModifier(Entity, "ACF_ArmorMesh", { Materials = Entity.ACF_Volumetric_Materials })
+            if ShouldStore then duplicator.StoreEntityModifier(Entity, "ACF_ArmorMesh", { Materials = Entity.ACF_Volumetric_Materials }) end
             local EntACF = Entity.ACF
             if EntACF then
                 ACF.Contraption.SetMass(Entity, TotalMass)

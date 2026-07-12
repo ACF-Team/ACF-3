@@ -371,7 +371,7 @@ elseif SERVER then
 		for ConvexID in ipairs(MeshData.Convexes) do
 			local Material = Data.Materials[ConvexID]
 			if Material then
-				ACF.SetConvexMaterial(Entity, ConvexID, Material)
+				ACF.SetConvexMaterial(Entity, ConvexID, Material, true)
 			end
 		end
 	end)
@@ -394,7 +394,7 @@ elseif SERVER then
 
 		if not Entity.ACF_Volumetric_Mesh then return end
 		for ConvexID in ipairs(Entity.ACF_Volumetric_Mesh.Convexes) do
-			if Material then ACF.SetConvexMaterial(Entity, ConvexID, "RHA") end
+			if Material then ACF.SetConvexMaterial(Entity, ConvexID, "RHA", true) end
 		end
 	end)
 
@@ -469,14 +469,14 @@ elseif SERVER then
 		local Player = self:GetOwner()
 		if Player:KeyDown(IN_SPEED) then
 			for ConvexID in ipairs(Entity.ACF_Volumetric_Mesh.Convexes) do
-				ACF.SetConvexMaterial(Entity, ConvexID, Material, Player)
+				ACF.SetConvexMaterial(Entity, ConvexID, Material, Player, true)
 			end
 		else
 			local Dir       = Player:GetAimVector()
 			local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
 			if not ConvexHit then return false end
 
-			if ACF.SetConvexMaterial(Entity, ConvexHit.ConvexID, Material, Player) == false then return false end
+			if ACF.SetConvexMaterial(Entity, ConvexHit.ConvexID, Material, Player, true) == false then return false end
 		end
 
 		return true
