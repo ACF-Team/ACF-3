@@ -1,6 +1,6 @@
 local ACF             = ACF
 local Classes         = ACF.Classes
-local Countermeasures = ACF.Classes.Countermeasures
+local Countermeasures = ACF.Countermeasures
 
 Classes.DefineClass("ACF.Sensors.Radar.Missile", "ACF.Sensors.Radar", function()
 	CLASS.Name       = "Missile Radar"

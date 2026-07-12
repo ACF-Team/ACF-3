@@ -24,7 +24,9 @@ function ACF.Classes.CreateTypeSelector(Menu, ClassDef, FieldName)
 
         SubPanel:ClearAll()
 
-        SelectedTypeID = TypeObj.ID
+        -- Serialize by FQN: this value becomes the { Type = … } key the server resolves via
+        -- GetTypeByName, which is keyed by FQN (not the class' short CLASS.ID).
+        SelectedTypeID = ACF.Classes.GetTypeName(TypeObj)
 
         local OldData = NestedData
         NestedData    = {}
@@ -61,7 +63,7 @@ function ACF.Classes.CreateTypeSelector(Menu, ClassDef, FieldName)
     if ComboBox.ListData then
         local SelectIdx = 1
         for I, TypeObj in ipairs(ComboBox.ListData.Choices) do
-            if TypeObj.ID == InitialTypeID then
+            if ACF.Classes.GetTypeName(TypeObj) == InitialTypeID then
                 SelectIdx = I
                 break
             end

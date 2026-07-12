@@ -11,7 +11,7 @@ Classes.DefineClass("ACF.Missiles.Guidance.Dumb", "ACF.Missiles.Guidance", funct
 	if CLIENT then
 		CLASS.Description = "This guidance package is empty and provides no control."
 	else
-		local Countermeasures = ACF.Classes.Countermeasures
+		local Countermeasures = ACF.Countermeasures
 
 		function CLASS:GetCost()
 			return 0

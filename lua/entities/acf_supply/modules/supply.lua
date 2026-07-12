@@ -171,7 +171,7 @@ function ENT:Think()
 			Target:Consume(-Units)
 			RefilledFuel = true
 
-			if Target.FuelType == "Electric" then
+			if Target.IsElectric then
 				Sounds.SendSound(self, "ambient/energy/newspark04.wav", 70, 100, 0.5)
 				Sounds.SendSound(Target, "ambient/energy/newspark04.wav", 70, 100, 0.5)
 			else

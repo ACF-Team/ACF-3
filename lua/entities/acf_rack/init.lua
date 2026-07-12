@@ -497,9 +497,12 @@ do -- Entity Link/Unlink -----------------------
 		if Target.IsRefill then return false, "Refill crates cannot be linked!" end
 		if Target:GetPos():DistToSqr(Weapon:GetPos()) > MaxDistance then return false, "This crate is too far away from this rack." end
 
-		local Blacklist = Target.RoundData.Blacklist
+		-- Ammo-side blacklist is keyed by weapon FQN (use the crate's missile WeaponType, not its
+		-- short .Class); weapon-side blacklist is the missile's own list of disallowed ammo FQNs.
+		local Blacklist  = Target.RoundData.Blacklist
+		local MissileWep = Target:GetWeapon()
 
-		if Blacklist[Target.Class] then
+		if Blacklist[Target.BulletData.WeaponType] or (MissileWep.Blacklist and MissileWep.Blacklist[Target.BulletData.AmmoType]) then
 			return false, "That round type cannot be used with this missile!"
 		end
 

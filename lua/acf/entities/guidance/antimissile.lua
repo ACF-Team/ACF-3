@@ -6,7 +6,7 @@ Classes.DefineClass("ACF.Missiles.Guidance.AntiMissile", "ACF.Missiles.AntiRadia
 	if CLIENT then
 		CLASS.Description = "This guidance package uses a radar to detect missiles and guides the munition towards the most centered one it can find."
 	else
-		local Countermeasures = ACF.Classes.Countermeasures
+		local Countermeasures = ACF.Countermeasures
 		CLASS.RadarType = "AM-Radar"
 
 		function CLASS:GetCost()

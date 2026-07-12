@@ -84,7 +84,7 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function()
 		end
 
 		-- Priority 3: Mortars have a different model
-		local IsMortar = Class and Class.ID == "ACF.Guns.Mortar" -- wow this sucks
+		local IsMortar = Class and Classes.GetTypeName(Class) == "ACF.Guns.Mortar"
 		local MortarBodygroup = self.MortarBodygroup
 
 		if IsMortar and MortarBodygroup then

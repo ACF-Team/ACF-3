@@ -30,7 +30,10 @@ local function GetAmmoList(WeaponType)
 
 	for K, V in pairs(Entries) do
 		if V.Unlistable then continue end
+		-- Ammo-side: the ammo type refuses this weapon.
 		if V.Blacklist[Classes.GetTypeName(WeaponType)] then continue end
+		-- Weapon-side: the weapon (flare launcher, missiles) refuses this ammo type.
+		if WeaponType and WeaponType.Blacklist and WeaponType.Blacklist[Classes.GetTypeName(V)] then continue end
 
 		Result[K] = V
 	end

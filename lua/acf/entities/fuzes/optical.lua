@@ -36,19 +36,10 @@ Classes.DefineClass("ACF.Missiles.Fuze.Optical", "ACF.Missiles.Fuze.Contact", fu
 			return 1
 		end
 
-		function CLASS:VerifyData(EntClass, Data, ...)
-			BASE.VerifyData(self, EntClass, Data, ...)
+		function CLASS:VerifyData(Weapon)
+			BASE.VerifyData(self, Weapon)
 
-			local Distance = Data.FuzeDistance
-			local Args = Data.FuzeArgs
-
-			if not ACF.CheckNumber(Distance) and Args then
-				Distance = ACF.CheckNumber(Args.DS) or 0
-
-				Args.DS = nil
-			end
-
-			Data.FuzeDistance = math.Clamp(Distance or 0, self.MinDistance, self.MaxDistance)
+			self.FuzeDistance = math.Clamp(self.FuzeDistance or 0, self.MinDistance, self.MaxDistance)
 		end
 
 		function CLASS:OnFirst(Entity)

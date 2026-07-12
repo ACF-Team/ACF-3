@@ -6,7 +6,7 @@ Classes.DefineClass("ACF.Missiles.AirToAir", "ACF.Missiles.BaseMissile", functio
 	CLASS.Sound			= "acf_missiles/missiles/missile_rocket.mp3"
 	CLASS.Effect		= "Rocket Motor"
 	CLASS.Spread		= 1
-	CLASS.Blacklist		= { "ACF.Ammunition.AP", "ACF.Ammunition.APHE", "ACF.Ammunition.HEAT", "ACF.Ammunition.HP", "ACF.Ammunition.FL", "ACF.Ammunition.SM" }
+	CLASS.Blacklist		= { ["ACF.Ammunition.AP"] = true, ["ACF.Ammunition.APHE"] = true, ["ACF.Ammunition.HEAT"] = true, ["ACF.Ammunition.HP"] = true, ["ACF.Ammunition.FL"] = true, ["ACF.Ammunition.SM"] = true }
 	CLASS.LimitConVar 	= {
 		Name = "_acfm_aam",
 		Amount = 8,
@@ -51,7 +51,7 @@ Classes.DefineClass("ACF.Missiles.AirToAir.AIM-9", "ACF.Missiles.AirToAir", func
 		ActualLength    	= 119,
 		ActualWidth     	= 18
 	}
-	Preview 			= {
+	CLASS.Preview 			= {
 		Height = 100,
 		FOV    = 60,
 	}
@@ -94,7 +94,7 @@ Classes.DefineClass("ACF.Missiles.AirToAir.AIM-120", "ACF.Missiles.AirToAir", fu
 		ActualLength    	= 144,
 		ActualWidth     	= 15
 	}
-	Preview 			= {
+	CLASS.Preview 			= {
 		Height = 60,
 		FOV    = 60,
 	}

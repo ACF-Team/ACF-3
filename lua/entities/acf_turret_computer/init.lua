@@ -151,7 +151,7 @@ do	-- Metamethods and other important stuff
 			local Gun = self.Gun
 			local BD = Gun.BulletData
 
-			if BD.Type == "Empty" then return end
+			if BD.AmmoType == "Empty" then return end
 
 			self.Status = "Calculating..."
 

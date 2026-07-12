@@ -8,6 +8,26 @@ local HookRun      = hook.Run
 local Clamp        = math.Clamp
 local Floor        = math.floor
 
+-- Missile weapons carry Guidance/Fuze as nested class-instance fields. On a menu spawn the selection
+-- arrives as flat top-level ClientData (the chosen FQN under the field's own key + the sub-params under
+-- their field keys); rebuild the instance here so the crate's weapon carries the chosen type + params,
+-- mirroring how gun caliber is folded onto the weapon below. Dupes omit these top-level keys (the
+-- values are already deserialized nested under the Weapon field), so an absent key leaves the existing
+-- instance untouched.
+local function FoldWeaponSubInstance(Weapon, FieldName, BaseFQN, Data)
+	local FQN = Data[FieldName]
+	if not isstring(FQN) then return end
+
+	local SubClass = Classes.GetTypeByName(FQN)
+	local BaseType = Classes.GetTypeByName(BaseFQN)
+	if not (SubClass and BaseType and Classes.IsAssignableTo(SubClass, BaseType)) then return end
+
+	local Instance = Classes.Serialization.DeserializePartial(SubClass, Data)
+	if Instance.VerifyData then Instance:VerifyData(Weapon) end
+
+	Weapon[FieldName] = Instance
+end
+
 do -- IO
 	WireLib.AddInputAlias("Active", "Load")
 	WireLib.AddOutputAlias("Munitions", "Ammo")
@@ -340,6 +360,12 @@ do -- Spawn/Update/Remove
 			WeaponInst.Caliber = Data.Caliber or WeaponInst.Caliber
 		end
 		if WeaponInst.VerifyData then WeaponInst:VerifyData() end
+
+		-- Fold the menu-selected guidance/fuze onto missile weapons (no-op for guns and for dupes).
+		if Classes.GetTypeFieldByName(Class, "Guidance") then
+			FoldWeaponSubInstance(WeaponInst, "Guidance", "ACF.Missiles.Guidance", Data)
+			FoldWeaponSubInstance(WeaponInst, "Fuze",     "ACF.Missiles.Fuze",     Data)
+		end
 
 		-- The ammo round inputs (Projectile/Propellant/Tracer + type-specific like FillerRatio) live
 		-- on the ammo instance, which reads the weapon via this back-reference. On a menu spawn

@@ -6,7 +6,7 @@ Classes.DefineClass("ACF.Missiles.GlidingBomb", "ACF.Missiles.BaseMissile", func
 	CLASS.Sound			= "acf_missiles/fx/clunk.mp3"
 	CLASS.NoThrust		= true
 	CLASS.Spread		= 1
-	CLASS.Blacklist		= { "ACF.Ammunition.AP", "ACF.Ammunition.APHE", "ACF.Ammunition.HP", "ACF.Ammunition.FL" }
+	CLASS.Blacklist		= { ["ACF.Ammunition.AP"] = true, ["ACF.Ammunition.APHE"] = true, ["ACF.Ammunition.HP"] = true, ["ACF.Ammunition.FL"] = true }
 	CLASS.LimitConVar	= {
 		Name = "_acfm_gbomb",
 		Amount = 8,

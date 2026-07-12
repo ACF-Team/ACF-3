@@ -4,16 +4,16 @@ end)
 
 local Classes = ACF.Classes
 
--- Components are V2 classes (ACF.Components.*) with no CLASS.ID; map a legacy computer id to its FQN by
--- matching the FQN suffix, falling back to a working guidance computer for unknown legacy ids.
+local Lookup = {
+	["CPR-Joystick"] = "ACF.Components.Joystick",
+	["CPR-OPT"] = "ACF.Components.OpticalGuidanceComputer",
+	["CPR-LSR"] = "ACF.Components.LaserGuidanceComputer",
+	["CPR-GPS"] = "ACF.Components.GPSTransmitter",
+}
+
 local function ComponentFQN(ID)
-	if Classes.GetSubtypeByName("ACF.Components.BaseComponent", ID) then return ID end -- already an FQN
-
-	for _, Class in ipairs(Classes.GetSubtypesAsList("ACF.Components.BaseComponent")) do
-		if Classes.GetTypeName(Class):match("[^.]+$") == ID then return Classes.GetTypeName(Class) end
-	end
-
-	return "ACF.Components.LaserGuidanceComputer"
+	if Classes.GetSubtypeByName("ACF.Components.GuidanceComputer", ID) then return ID end -- already an FQN
+	return Lookup[ID] or "ACF.Components.LaserGuidanceComputer"
 end
 
 -- AutoRegisterV2 conversion: migrate legacy flat computer dupe data into the nested ACF_UserData field set.

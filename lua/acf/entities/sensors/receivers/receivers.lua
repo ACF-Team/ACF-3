@@ -1,6 +1,6 @@
 local ACF             = ACF
 local Classes         = ACF.Classes
-local Countermeasures = ACF.Classes.Countermeasures
+local Countermeasures = ACF.Countermeasures
 local Trace           = ACF.trace
 
 Classes.DefineClass("ACF.Sensors.Receiver.Warning", "ACF.Sensors.Receiver", function()

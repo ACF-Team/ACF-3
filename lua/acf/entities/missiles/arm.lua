@@ -6,7 +6,7 @@ Classes.DefineClass("ACF.Missiles.AntiRadiation", "ACF.Missiles.BaseMissile", fu
 	CLASS.Sound			= "acf_missiles/missiles/missile_rocket.mp3"
 	CLASS.Effect		= "Rocket Motor ATGM"
 	CLASS.Spread		= 1
-	CLASS.Blacklist		= { "ACF.Ammunition.AP", "ACF.Ammunition.APHE", "ACF.Ammunition.HP", "ACF.Ammunition.FL", "ACF.Ammunition.SM" }
+	CLASS.Blacklist		= { ["ACF.Ammunition.AP"] = true, ["ACF.Ammunition.APHE"] = true, ["ACF.Ammunition.HP"] = true, ["ACF.Ammunition.FL"] = true, ["ACF.Ammunition.SM"] = true }
 	CLASS.LimitConVar 	= {
 		Name = "_acfm_arm",
 		Amount = 8,
@@ -94,7 +94,7 @@ Classes.DefineClass("ACF.Missiles.AntiRadiation.AGM-45", "ACF.Missiles.AntiRadia
 		ActualLength    	= 120,
 		ActualWidth     	= 26
 	}
-	Preview = {
+	CLASS.Preview = {
 		Height = 80,
 		FOV    = 60,
 	}

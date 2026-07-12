@@ -45,10 +45,9 @@ Classes.DefineClass("ACF.Missiles.Fuze.Contact", "ACF.Missiles.Fuze", function()
 		end
 
 		function CLASS:VerifyData(Weapon)
-			local Delay = self.ArmingDelay
-			local Min = Weapon.ArmDelay or self.MinDelay
+			local Min = (Weapon and Weapon.ArmDelay) or self.MinDelay
 
-			Data.ArmingDelay = math.Clamp(Delay or 0, Min, self.MaxDelay)
+			self.ArmingDelay = math.Clamp(self.ArmingDelay or 0, Min, self.MaxDelay)
 		end
 
 		function CLASS:IsArmed()

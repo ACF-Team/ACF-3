@@ -35,19 +35,10 @@ Classes.DefineClass("ACF.Missiles.Fuze.Timed", "ACF.Missiles.Fuze.Contact", func
 			end)
 		end
 	else
-		function CLASS:VerifyData(EntClass, Data, ...)
-			BASE.VerifyData(self, EntClass, Data, ...)
+		function CLASS:VerifyData(Weapon)
+			BASE.VerifyData(self, Weapon)
 
-			local Timer = Data.FuzeTimer
-			local Args = Data.FuzeArgs
-
-			if not ACF.CheckNumber(Timer) and Args then
-				Timer = ACF.CheckNumber(Args.TM) or 0
-
-				Args.TM = nil
-			end
-
-			Data.FuzeTimer = math.Clamp(Timer or 0, self.MinTime, self.MaxTime)
+			self.FuzeTimer = math.Clamp(self.FuzeTimer or 0, self.MinTime, self.MaxTime)
 		end
 
 		function CLASS:IsOnTime()

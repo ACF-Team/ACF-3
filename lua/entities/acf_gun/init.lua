@@ -533,8 +533,10 @@ do -- Metamethods --------------------------------
 				return false, "Wrong ammo type for this weapon."
 			end
 
+			-- Ammo-side blacklist (keyed by weapon FQN) OR weapon-side blacklist (keyed by ammo FQN,
+			-- e.g. the Flare Launcher which only accepts flares).
 			local Blacklist = Crate.RoundData.Blacklist
-			if Blacklist[This.Weapon] then
+			if Blacklist[This.Weapon] or (GunWeapon.Blacklist and GunWeapon.Blacklist[Crate.BulletData.AmmoType]) then
 				return false, "The ammo type in this crate cannot be used for this weapon."
 			end
 
@@ -828,7 +830,7 @@ do -- Metamethods --------------------------------
 
 			-- Set in air if GLATGM is used
 			local GLATGM = AmmoType:Create(self, BulletData)
-			if IsValid(GLATGM) and AmmoType.ID == "ACF.Ammunition.GLATGM" then
+			if IsValid(GLATGM) and Classes.GetTypeName(AmmoType) == "ACF.Ammunition.GLATGM" then
 				WireLib.TriggerOutput(self, "In Air", 1)
 				GLATGM:CallOnRemove("GunResetInAir", function()
 					if IsValid(self) then WireLib.TriggerOutput(self, "In Air", 0) end

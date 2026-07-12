@@ -113,6 +113,7 @@ local GuidanceLookup = {
 	["Active Radar"] 		= {Type = "ACF.Missiles.Guidance.ActiveRadar", 		CopyFields = {}},
 	["Anti-missile"] 		= {Type = "ACF.Missiles.Guidance.AntiMissile", 		CopyFields = {}},
 	["Anti-radiation"] 		= {Type = "ACF.Missiles.Guidance.AntiRadiation", 	CopyFields = {}},
+	["Dumb"] 				= {Type = "ACF.Missiles.Guidance.Dumb", 			CopyFields = {}},
 	["GPS Guided"] 			= {Type = "ACF.Missiles.Guidance.GPSGuided", 		CopyFields = {}},
 	["Infrared"] 			= {Type = "ACF.Missiles.Guidance.Infrared", 		CopyFields = {}},
 	["Laser"] 				= {Type = "ACF.Missiles.Guidance.Laser", 			CopyFields = {}},
@@ -123,7 +124,7 @@ local GuidanceLookup = {
 	["Wire (SACLOS)"] 		= {Type = "ACF.Missiles.Guidance.WireSACLOS", 		CopyFields = {}},
 }
 
-function WeaponFields.Guidance(Guidance)
+function WeaponFields.Guidance(Guidance, Data)
 	local TypeData = GuidanceLookup[Guidance] or GuidanceLookup["Dumb"]
 	local CopyData = {}
 	for _, Field in ipairs(TypeData.CopyFields) do
