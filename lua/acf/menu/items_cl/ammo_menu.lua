@@ -214,8 +214,8 @@ local function AddTracer(Base, ToolData)
 
 		Ammo:UpdateRoundData(ToolData, BulletData)
 
-		ACF.SetClientData("Projectile", BulletData.ProjLength)
-		ACF.SetClientData("Propellant", BulletData.PropLength)
+		ACF.SetClientData("RoundLength", BulletData.RoundLength)
+		ACF.SetClientData("PropRatio", BulletData.PropRatio)
 
 		Panel:SetValue(ToolData.Tracer)
 
@@ -247,56 +247,50 @@ local function AddControls(Base, ToolData)
 	if not Result then return end
 
 	local RoundLength = Base:AddLabel()
-	RoundLength:TrackClientData("Projectile", "SetText", "GetText")
-	RoundLength:TrackClientData("Propellant")
+	RoundLength:TrackClientData("RoundLength", "SetText", "GetText")
+	RoundLength:TrackClientData("PropRatio")
 	RoundLength:DefineSetter(function()
 		local Text = language.GetPhrase("acf.menu.ammo.round_length")
-		local CurLength = BulletData.ProjLength + BulletData.PropLength
+		local CurLength = math.Round(BulletData.RoundLength, 2)
 		local MaxLength = BulletData.MaxRoundLength
 
 		return Text:format(CurLength, MaxLength)
 	end)
 
-	local Projectile = Base:AddSlider("#acf.menu.ammo.projectile_length", 0, BulletData.MaxRoundLength, 2)
-	Projectile:SetClientData("Projectile", "OnValueChanged")
-	Projectile:DefineSetter(function(Panel, _, _, Value, IsTracked)
-		ToolData.Projectile = Value
-
-		if not IsTracked then
-			BulletData.Priority = "Projectile"
-		end
+	-- RoundLength and PropRatio are the actual stored/networked round dimensions (see
+	-- round_functions.lua's ACF.UpdateRoundSpecs) -- ProjLength/PropLength are just derived from
+	-- them for display and mass/volume math. Each slider is bound straight to its own real
+	-- ClientVar and only has to worry about its own value; ACF.UpdateRoundSpecs handles clamping
+	-- PropRatio's valid window against the current RoundLength (and vice versa) on its own, so
+	-- there's no cross-slider pushback needed here anymore.
+	local TotalLength = Base:AddSlider("#acf.menu.ammo.total_length", BulletData.MinProjLength + BulletData.MinPropLength, BulletData.MaxRoundLength, 2)
+	TotalLength:SetClientData("RoundLength", "OnValueChanged")
+	TotalLength:DefineSetter(function(Panel, _, _, Value)
+		ToolData.RoundLength = Value
 
 		Ammo:UpdateRoundData(ToolData, BulletData)
 
-		ACF.SetClientData("Propellant", BulletData.PropLength)
-
-		Panel:SetValue(BulletData.ProjLength)
+		Panel:SetValue(BulletData.RoundLength)
 
 		-- Update projectile count limits when round dimensions change (skip for missiles)
 		UpdateProjectileCountLimits(ToolData, BulletData, true)
 
-		return BulletData.ProjLength
+		return BulletData.RoundLength
 	end)
 
-	local Propellant = Base:AddSlider("#acf.menu.ammo.propellant_length", 0, BulletData.MaxRoundLength, 2)
-	Propellant:SetClientData("Propellant", "OnValueChanged")
-	Propellant:DefineSetter(function(Panel, _, _, Value, IsTracked)
-		ToolData.Propellant = Value
-
-		if not IsTracked then
-			BulletData.Priority = "Propellant"
-		end
+	local PropRatio = Base:AddSlider("#acf.menu.ammo.propellant_ratio", 0, 1, 3)
+	PropRatio:SetClientData("PropRatio", "OnValueChanged")
+	PropRatio:DefineSetter(function(Panel, _, _, Value)
+		ToolData.PropRatio = Value
 
 		Ammo:UpdateRoundData(ToolData, BulletData)
 
-		ACF.SetClientData("Projectile", BulletData.ProjLength)
-
-		Panel:SetValue(BulletData.PropLength)
+		Panel:SetValue(BulletData.PropRatio)
 
 		-- Update projectile count limits when round dimensions change (skip for missiles)
 		UpdateProjectileCountLimits(ToolData, BulletData, true)
 
-		return BulletData.PropLength
+		return BulletData.PropRatio
 	end)
 
 	if Ammo.OnCreateAmmoControls then
@@ -337,8 +331,8 @@ local function AddCrateInformation(Base, ToolData)
 	Crate:TrackClientData("CrateProjectilesZ")
 	Crate:TrackClientData("AmmoShape")
 	-- Track projectile dimensions so crate size updates when ammo config changes
-	Crate:TrackClientData("Projectile")
-	Crate:TrackClientData("Propellant")
+	Crate:TrackClientData("RoundLength")
+	Crate:TrackClientData("PropRatio")
 	Crate:TrackClientData("Tracer")
 	Crate:DefineSetter(function()
 		UpdateBoxSizeFromProjectileCounts(ToolData, BulletData)
@@ -404,11 +398,13 @@ local function AddPenetrationTable(Base, ToolData)
 	PenTable.SetCellValue(3, 1, "0 " .. language.GetPhrase("acf.menu.ammo.pen_table_deg"))
 	PenTable.SetCellValue(4, 1, "30 " .. language.GetPhrase("acf.menu.ammo.pen_table_deg"))
 	PenTable.SetCellValue(5, 1, "60 " .. language.GetPhrase("acf.menu.ammo.pen_table_deg"))
-	PenTable:TrackClientData("Projectile", "SetText")
-	PenTable:TrackClientData("Propellant")
+	PenTable:TrackClientData("RoundLength", "SetText")
+	PenTable:TrackClientData("PropRatio")
 	PenTable:TrackClientData("FillerRatio")
 	PenTable:TrackClientData("LinerAngle")
+	PenTable:TrackClientData("LinerAngleRatio")
 	PenTable:TrackClientData("StandoffRatio")
+	PenTable:TrackClientData("TelescopeRatio")
 
 	PenTable:DefineSetter(function()
 		local Ranges = {0, 100, 250, 500, 800}
@@ -430,6 +426,55 @@ local function AddPenetrationTable(Base, ToolData)
 
 	Base:AddLabel("#acf.menu.ammo.pen_table_nominal")
 	Base:AddLabel("#acf.menu.ammo.approx_pen_warning")
+end
+
+---Creates the bullet visualizer panel on the ACF menu, drawing a schematic side profile of the current round.
+---@param Base userdata The panel being populated with the visualizer.
+---@param ToolData table<string, any> The copy of the local player's client data variables.
+local function AddVisual(Base, ToolData)
+	if Ammo.PreCreateAmmoVisual then
+		local Result = Ammo:PreCreateAmmoVisual(Base, ToolData, BulletData)
+
+		if not Result then return end
+	end
+
+	local Result = hook.Run("ACF_PreCreateAmmoVisual", Base, ToolData, Ammo, BulletData)
+
+	if not Result then return end
+
+	local Visual = Base:AddVisualizer()
+	Base.Visual = Visual
+	local MenuSizeX = Base:GetParent():GetParent():GetWide() -- Parent of the parent of this item should be the menu panel
+	Visual:SetSize(MenuSizeX, MenuSizeX * 0.3)
+
+	Visual:TrackClientData("RoundLength")
+	Visual:TrackClientData("PropRatio")
+	Visual:TrackClientData("Tracer")
+	Visual:TrackClientData("FillerRatio")
+	Visual:TrackClientData("LinerAngle")
+	Visual:TrackClientData("LinerAngleRatio")
+	Visual:TrackClientData("StandoffRatio")
+	Visual:TrackClientData("SmokeWPRatio")
+	Visual:TrackClientData("TelescopeRatio")
+
+	Visual:DefineSetter(function(Panel)
+		local Ammo = AmmoTypes.Get(ToolData.AmmoType)
+
+		-- Each ammo type draws its own bullet; see Ammo:DrawAmmoVisual in the respective ammo_types file
+		if Ammo.DrawAmmoVisual then
+			Panel:SetDrawFunc(function(self, w, h)
+				Ammo:DrawAmmoVisual(self, w, h, ToolData, BulletData)
+			end)
+		else
+			Panel:Clear()
+		end
+	end)
+
+	if Ammo.OnCreateAmmoVisual then
+		Ammo:OnCreateAmmoVisual(Base, ToolData, BulletData)
+	end
+
+	hook.Run("ACF_OnCreateAmmoVisual", Base, ToolData, Ammo, BulletData)
 end
 
 local function AddGraph(Base, ToolData)
@@ -454,12 +499,14 @@ local function AddGraph(Base, ToolData)
 	Graph:SetYSpacing(50)
 	Graph:SetFidelity(16)
 
-	Graph:TrackClientData("Projectile")
-	Graph:TrackClientData("Propellant")
+	Graph:TrackClientData("RoundLength")
+	Graph:TrackClientData("PropRatio")
 	Graph:TrackClientData("FillerRatio")
 	Graph:TrackClientData("LinerAngle")
+	Graph:TrackClientData("LinerAngleRatio")
 	Graph:TrackClientData("StandoffRatio")
 	Graph:TrackClientData("SmokeWPRatio")
+	Graph:TrackClientData("TelescopeRatio")
 
 	Graph:DefineSetter(function(Panel)
 		Panel:Clear()
@@ -520,6 +567,7 @@ function ACF.UpdateAmmoMenu(Menu)
 	hook.Run("ACF_OnCreateAmmoMenu", Base, ToolData, Ammo, BulletData)
 
 	AddPreview(Base, ToolData)
+	AddVisual(Base, ToolData)
 	AddControls(Base, ToolData)
 	AddInformation(Base, ToolData)
 	AddPenetrationTable(Base, ToolData)
@@ -693,8 +741,8 @@ function ACF.CreateAmmoMenu(Menu)
 	Size:TrackClientData("CrateProjectilesY", "SetText")
 	Size:TrackClientData("CrateProjectilesZ", "SetText")
 	Size:TrackClientData("AmmoShape")
-	Size:TrackClientData("Projectile") -- Update when round dimensions change
-	Size:TrackClientData("Propellant")
+	Size:TrackClientData("RoundLength") -- Update when round dimensions change
+	Size:TrackClientData("PropRatio")
 	Size:TrackClientData("Tracer")
 	Size:DefineSetter(function()
 		-- Recalculate BoxSize to ensure we have the latest values

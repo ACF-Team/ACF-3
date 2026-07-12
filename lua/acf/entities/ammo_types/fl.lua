@@ -209,6 +209,67 @@ else
 		return math.Round(self:GetPenetration(Bullet, Speed), 2), math.Round(Speed, 2)
 	end
 
+	-- Ammo menu visual: casing plus a canister body carrying a bundle of small steel flechette darts
+	-- (BulletData.FlechetteCaliber/Mass), rather than a single solid penetrator like plain AP.
+	function Ammo:DrawAmmoVisual(Panel, w, h, _, BulletData)
+		local GeoPrim  = ACF.GeoPrim
+		local Margin   = 10
+		local DrawW    = w - Margin * 2
+		local Diameter = BulletData.Caliber
+		local Radius   = Diameter * 0.5
+
+		local Length = BulletData.ProjLength + BulletData.PropLength
+
+		if Length <= 0 then return end
+
+		local Scale      = DrawW / Length
+		local DiameterPx = math.min(Diameter * Scale, (h - Margin * 2) * 0.6)
+		local CenterY    = h * 0.5
+
+		local Propellant = GeoPrim.New("Cylinder", { Radius = Radius, Height = BulletData.PropLength })
+		Propellant:SetMaterial("Propellant")
+
+		-- Canister body: a thin-walled cup carrying the flechette bundle
+		local Canister = GeoPrim.New("Cylinder", { Radius = Radius, Height = BulletData.ProjLength })
+		Canister:SetMaterial("Canister Body (Sabot Cup)")
+
+		local X = Margin
+		X = Propellant:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(180, 150, 60), Color(30, 30, 30))
+		local ProjX = X
+		Canister:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(140, 140, 145), Color(30, 30, 30))
+
+		-- Tracer, a colored segment at the base of the canister, drawn last (and not as a Canister
+		-- child -- Draw() paints an entire subtree in one Color, so a child never gets a color of its
+		-- own) so it takes hover priority and actually renders red instead of inheriting the canister's gray.
+		if BulletData.Tracer and BulletData.Tracer > 0 then
+			local Tracer = GeoPrim.New("Cylinder", { Radius = Radius, Height = BulletData.Tracer })
+			Tracer:SetMaterial("Tracer")
+			Tracer:Draw(Panel, ProjX, CenterY, Scale, DiameterPx, Color(220, 40, 30), Color(30, 30, 30))
+		end
+
+		local ProjW = BulletData.ProjLength * Scale
+
+		-- Illustrative rows of the packed flechette darts inside the cup (not a literal 1:1 count,
+		-- and not modeled as GeoPrim children -- it's a decorative pattern, not a physical shape
+		-- anything queries the volume of)
+		local DartDia = math.max(DiameterPx * 0.12, 2)
+		local Rows    = math.max(math.floor(DiameterPx / (DartDia * 1.4)), 1)
+		local InnerX  = ProjX + ProjW * 0.1
+		local InnerW  = ProjW * 0.8
+
+		surface.SetDrawColor(90, 95, 100)
+		for Row = 1, Rows do
+			local RowY = CenterY - DiameterPx * 0.5 + (Row - 0.5) * (DiameterPx / Rows)
+
+			surface.DrawRect(InnerX, RowY - DartDia * 0.5, InnerW, DartDia)
+		end
+
+		local InnerLengthMm = math.Round(BulletData.ProjLength * 0.8 * 10)
+		local InnerDiameterMm = math.Round(Radius * 2 * 10)
+
+		Panel:AddRegion(InnerX, CenterY - DiameterPx * 0.5, InnerW, DiameterPx, ("%d Flechettes (Steel Darts)\n%dx%d mm"):format(BulletData.Flechettes or 0, InnerDiameterMm, InnerLengthMm))
+	end
+
 	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
 		local Flechettes = Base:AddSlider("#acf.menu.ammo.flechette_amount", BulletData.MinFlechettes, BulletData.MaxFlechettes)
 		Flechettes:SetClientData("Flechettes", "OnValueChanged")
@@ -243,8 +304,8 @@ else
 
 	function Ammo:OnCreateAmmoInformation(Menu, ToolData, BulletData)
 		local RoundStats = Menu:AddLabel()
-		RoundStats:TrackClientData("Projectile", "SetText")
-		RoundStats:TrackClientData("Propellant")
+		RoundStats:TrackClientData("RoundLength", "SetText")
+		RoundStats:TrackClientData("PropRatio")
 		RoundStats:TrackClientData("Flechettes")
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
@@ -259,8 +320,8 @@ else
 		end)
 
 		local PenStats = Menu:AddLabel()
-		PenStats:TrackClientData("Projectile", "SetText")
-		PenStats:TrackClientData("Propellant")
+		PenStats:TrackClientData("RoundLength", "SetText")
+		PenStats:TrackClientData("PropRatio")
 		PenStats:TrackClientData("Flechettes")
 		PenStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)

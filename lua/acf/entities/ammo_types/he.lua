@@ -143,8 +143,8 @@ else
 
 	function Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
 		local RoundStats = Base:AddLabel()
-		RoundStats:TrackClientData("Projectile", "SetText")
-		RoundStats:TrackClientData("Propellant")
+		RoundStats:TrackClientData("RoundLength", "SetText")
+		RoundStats:TrackClientData("PropRatio")
 		RoundStats:TrackClientData("FillerRatio")
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)

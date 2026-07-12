@@ -51,8 +51,8 @@ Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", ComboBo
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Set fuze to contact or optical"}))
 Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", ComboBoxName = "FuzeList", OptionID = 2}):DelayByLength()
 
-Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.ammo.propellant_length", Value = 50}):DelayByLength()
-Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.ammo.projectile_length", Value = 100}):DelayByLength()
+Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.ammo.total_length", Value = 150.00}):DelayByLength()
+Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.ammo.propellant_ratio", Value = 0.3333}):DelayByLength()
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.ammo.filler_ratio", Value = 1}):DelayByLength()
 
 

@@ -117,7 +117,7 @@ ACF.RegisterClassLinkCheck("acf_autoloader", "acf_ammo", function(This, Ammo)
 
 	local BulletData = Ammo.BulletData
 	local Caliber = BulletData.Caliber
-	local Length = BulletData.ProjLength + BulletData.PropLength
+	local Length = BulletData.RoundLength or (BulletData.ProjLength + BulletData.PropLength)
 	if Ammo.IsMissileAmmo then
 		local Class    	= Classes.GetGroup(Classes.Missiles, BulletData.Id)
 		local Weapon    = Class and Class.Lookup[BulletData.Id]

@@ -135,6 +135,46 @@ else
 		return false
 	end
 
+	-- Ammo menu visual: casing plus a body split between the pyrotechnic filler and the steel shell
+	-- wall/nose around it, matching the mass split in UpdateRoundData (ProjVolume - FillerVol is
+	-- steel, the rest filler). No tracer segment, since flares don't have a tracer control.
+	function Ammo:DrawAmmoVisual(Panel, w, h, ToolData, BulletData)
+		local GeoPrim  = ACF.GeoPrim
+		local Margin   = 10
+		local DrawW    = w - Margin * 2
+		local Diameter = BulletData.Diameter or BulletData.Caliber
+
+		local Length = BulletData.ProjLength + BulletData.PropLength
+
+		if Length <= 0 then return end
+
+		local Scale      = DrawW / Length
+		local DiameterPx = math.min(Diameter * Scale, (h - Margin * 2) * 0.6)
+		local CenterY    = h * 0.5
+		local Radius     = Diameter * 0.5
+
+		local FillerRatio = math.Clamp(ToolData.FillerRatio or 0, 0, 1)
+		local FillerLenCm = BulletData.ProjLength * FillerRatio
+		local SteelLenCm  = BulletData.ProjLength - FillerLenCm
+
+		local Propellant = GeoPrim.New("Cylinder", { Radius = Radius, Height = BulletData.PropLength })
+		Propellant:SetMaterial("Propellant")
+
+		local Filler = GeoPrim.New("Cylinder", { Radius = Radius, Height = FillerLenCm })
+		Filler:SetMaterial("Pyrotechnic Filler (Flare Composition)")
+
+		local ShellCasing = GeoPrim.New("Cylinder", { Radius = Radius, Height = SteelLenCm })
+		ShellCasing:SetMaterial("Steel Shell Casing")
+
+		local X = Margin
+		X = Propellant:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(180, 150, 60), Color(30, 30, 30))
+
+		if FillerLenCm > 0 then
+			X = Filler:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(210, 80, 30), Color(30, 30, 30))
+		end
+		ShellCasing:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(120, 120, 130), Color(30, 30, 30))
+	end
+
 	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
 		local FillerRatio = Base:AddSlider("Filler Ratio", 0, 1, 2)
 		FillerRatio:SetClientData("FillerRatio", "OnValueChanged")
@@ -157,8 +197,8 @@ else
 
 	function Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
 		local RoundStats = Base:AddLabel()
-		RoundStats:TrackClientData("Projectile", "SetText")
-		RoundStats:TrackClientData("Propellant")
+		RoundStats:TrackClientData("RoundLength", "SetText")
+		RoundStats:TrackClientData("PropRatio")
 		RoundStats:TrackClientData("FillerRatio")
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)

@@ -202,7 +202,7 @@ do -- Spawn/Update/Remove
 
 			if not RoundLength then
 				RoundDiameter = Caliber * ACF.AmmoCaseScale * 0.1
-				RoundLength = BulletData.PropLength + BulletData.ProjLength
+				RoundLength = BulletData.RoundLength or (BulletData.PropLength + BulletData.ProjLength)
 				RoundLength = RoundLength / ACF.InchToCm
 				RoundDiameter = RoundDiameter / ACF.InchToCm
 			end
@@ -605,7 +605,7 @@ do -- Overlay
 		State:AddHeader("Bullet Info", 2)
 
 		local Caliber = math.Round(BulletData.Caliber * 10, 2)
-		local Length  = math.Round(BulletData.ProjLength + BulletData.PropLength, 2)
+		local Length  = math.Round(BulletData.RoundLength or (BulletData.ProjLength + BulletData.PropLength), 2)
 		if self.IsMissileAmmo then
 			local Class    	= Classes.GetGroup(Classes.Missiles, BulletData.Id)
 			local Weapon    = Class and Class.Lookup[BulletData.Id]

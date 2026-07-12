@@ -21,6 +21,17 @@ function Ammo:OnLoaded()
 	self.MaxStandoffRatio = 0.75
 end
 
+function Ammo:VerifyData(ToolData)
+	Ammo.BaseClass.VerifyData(self, ToolData)
+
+	-- HEAT's VerifyData above unconditionally re-defaults a legacy LinerAngle field HEATFS no longer
+	-- uses once LinerAngleRatio exists (see the migration in UpdateRoundData) -- clear it back out so
+	-- it doesn't linger as dead data in saved ToolData/dupes.
+	if isnumber(ToolData.LinerAngleRatio) then
+		ToolData.LinerAngle = nil
+	end
+end
+
 function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	GUIData = GUIData or Data
 
@@ -34,7 +45,23 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local WarheadLength   = FreeLength * (1 - ToolData.StandoffRatio)
 	local WarheadDiameter = 2 * FreeRadius
 	local MinConeAng      = math.deg(math.atan(FreeRadius / WarheadLength))
-	local LinerAngle      = math.Clamp(ToolData.LinerAngle, MinConeAng, 90) -- Cone angle is angle between cone walls, not between a wall and the center line
+
+	-- Migrates old ToolData saved with an absolute LinerAngle (degrees) to LinerAngleRatio below --
+	-- MinConeAng moves whenever RoundLength/StandoffRatio do, so an absolute angle would need
+	-- continual re-clamping against a moving target; the ratio's own bounds (0-1) never move, so it
+	-- doesn't. Needs MinConeAng, so this can only run here rather than in VerifyData. Runs once:
+	-- ToolData.LinerAngle is cleared immediately after conversion, so this never fires again.
+	if not isnumber(ToolData.LinerAngleRatio) then
+		if isnumber(ToolData.LinerAngle) then
+			ToolData.LinerAngleRatio = math.Remap(math.Clamp(ToolData.LinerAngle, MinConeAng, 90), MinConeAng, 90, 0, 1)
+			ToolData.LinerAngle = nil
+		else
+			ToolData.LinerAngleRatio = 1
+		end
+	end
+
+	local LinerAngleRatio = math.Clamp(ToolData.LinerAngleRatio, 0, 1)
+	local LinerAngle      = math.Remap(LinerAngleRatio, 0, 1, MinConeAng, 90) -- Cone angle is angle between cone walls, not between a wall and the center line
 	local LinerMass, ConeVol, ConeLength = self:ConeCalc(LinerAngle, FreeRadius)
 
 	-- Charge length increases jet velocity, but with diminishing returns. All explosive sorrounding the cone has 100% effectiveness,
@@ -66,9 +93,10 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	GUIData.MinConeAng = MinConeAng
 
-	Data.ConeAng        = LinerAngle
-	Data.MinConeAng     = MinConeAng
-	Data.FillerMass     = FillerMass
+	Data.ConeAng         = LinerAngle
+	Data.MinConeAng      = MinConeAng
+	Data.LinerAngleRatio = LinerAngleRatio
+	Data.FillerMass      = FillerMass
 	local NonCasingVol  = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)
 	Data.CasingMass		= (GUIData.ProjVolume - NonCasingVol) * ACF.SteelDensity
 	Data.ProjMass       = Data.FillerMass + Data.CasingMass + LinerMass
@@ -133,20 +161,18 @@ else
 	ACF.RegisterAmmoDecal("HEATFS", "damage/heat_pen", "damage/heat_rico", function(Caliber) return Caliber * 0.1667 end)
 
 	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
-		local LinerAngle = Base:AddSlider("#acf.menu.ammo.liner_angle", BulletData.MinConeAng, 90, 1)
-		LinerAngle:SetClientData("LinerAngle", "OnValueChanged")
-		LinerAngle:TrackClientData("Projectile")
-		LinerAngle:DefineSetter(function(Panel, _, Key, Value)
-			if Key == "LinerAngle" then
-				ToolData.LinerAngle = math.Round(Value, 2)
-			end
+		-- A ratio (0 = MinConeAng, the shallowest liner the current warhead geometry allows, 1 = a
+		-- flat 90 degrees) rather than an absolute angle -- MinConeAng shifts whenever RoundLength or
+		-- StandoffRatio change, so an absolute-angle slider would need its range/value re-clamped on
+		-- every update (as this one used to via Panel:SetMin); the ratio's own bounds never move.
+		local LinerAngleRatio = Base:AddSlider("#acf.menu.ammo.liner_angle_ratio", 0, 1, 2)
+		LinerAngleRatio:SetClientData("LinerAngleRatio", "OnValueChanged")
+		LinerAngleRatio:DefineSetter(function(_, _, _, Value)
+			ToolData.LinerAngleRatio = math.Round(Value, 2)
 
 			self:UpdateRoundData(ToolData, BulletData)
 
-			Panel:SetMin(BulletData.MinConeAng)
-			Panel:SetValue(BulletData.ConeAng)
-
-			return BulletData.ConeAng
+			return BulletData.LinerAngleRatio
 		end)
 
 		local StandoffRatio = Base:AddSlider("#acf.menu.ammo.standoff_ratio", 0, 0.75, 2)

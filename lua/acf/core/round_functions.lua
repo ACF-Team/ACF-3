@@ -71,29 +71,58 @@ function ACF.RoundBaseGunpowder(ToolData, Data)
 	return Data, GUIData
 end
 
+--- Migrates ToolData length fields to the RoundLength/PropRatio representation. Supports plain
+--- old-format ToolData (Projectile/Propellant lengths, from dupes/blueprints saved before that
+--- representation was replaced) and the older RoundProjectile/RoundPropellant fallback below that.
+--- No-ops once RoundLength/PropRatio are already present.
+function ACF.VerifyRoundLengthData(ToolData)
+	if isnumber(ToolData.RoundLength) and isnumber(ToolData.PropRatio) then return end
+
+	local Projectile = isnumber(ToolData.Projectile) and ToolData.Projectile or ACF.CheckNumber(ToolData.RoundProjectile, 0)
+	local Propellant = isnumber(ToolData.Propellant) and ToolData.Propellant or ACF.CheckNumber(ToolData.RoundPropellant, 0)
+	local Total = Projectile + Propellant
+
+	ToolData.RoundLength = Total
+	ToolData.PropRatio   = Total > 0 and (Propellant / Total) or 0
+end
+
+--- Total round length (RoundLength) and the fraction of it taken up by the propellant (PropRatio,
+--- 0-1) are the authoritative state -- ProjLength/PropLength below are derived from them, and are
+--- the hook point for future mechanics (e.g. telescoping projectiles) that need ProjLength/PropLength
+--- to diverge from a simple RoundLength*(1-PropRatio)/RoundLength*PropRatio split.
 function ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 	GUIData = GUIData or Data
 
-	Data.Priority = Data.Priority or "Projectile"
-	Data.Tracer   = ToolData.Tracer and math.Round(Data.Caliber * 0.15, 2) or 0
+	Data.Tracer = ToolData.Tracer and math.Round(Data.Caliber * 0.15, 2) or 0
 
-	local Projectile = math.Clamp(ToolData.Projectile, GUIData.MinProjLength, GUIData.MaxProjLength)
-	local Propellant = math.Clamp(ToolData.Propellant, GUIData.MinPropLength, GUIData.MaxPropLength)
+	local MinLength   = GUIData.MinProjLength + GUIData.MinPropLength
+	local RoundLength = math.Clamp(ToolData.RoundLength or 0, MinLength, GUIData.MaxRoundLength)
 
-	if Data.Priority == "Projectile" then
-		Propellant = math.min(Propellant, GUIData.MaxRoundLength - Projectile, GUIData.MaxPropLength)
-	elseif Data.Priority == "Propellant" then
-		Projectile = math.min(Projectile, GUIData.MaxRoundLength - Propellant, GUIData.MaxProjLength)
-	end
+	-- The ratio's valid window shrinks as RoundLength approaches either component's own max,
+	-- so neither ProjLength nor PropLength can be pushed past its individual cap.
+	local RatioMin = math.max(0, 1 - GUIData.MaxProjLength / RoundLength)
+	local RatioMax = math.min(1, GUIData.MaxPropLength / RoundLength)
+	local PropRatio = math.Clamp(ToolData.PropRatio or 0, RatioMin, RatioMax)
 
-	local ProjLength = math.Round(Projectile, 2)
-	local PropLength = math.Round(Propellant, 2)
-	local ProjVolume = Data.ProjArea * ProjLength
-	local PropVolume = Data.PropArea * PropLength
+	local PropLength = math.Round(RoundLength * PropRatio, 2)
 
-	Data.ProjLength  = ProjLength
-	Data.PropLength  = PropLength
-	Data.PropMass    = Data.PropArea * (Data.PropLength * ACF.PDensity * 0.001) -- Volume of the case as a cylinder * Powder density converted from g to kg
+	-- TelescopeRatio (0-1, defaults to 0 for ammo types that don't use it) lets the projectile
+	-- reach back into a fraction of the propellant's length instead of stopping where the
+	-- propellant begins. The propellant isn't shortened by this -- it's bored out instead, so
+	-- PropVolume below is a hollow cylinder (solid minus the rod's core) over the telescoped length.
+	local TelescopeRatio  = math.Clamp(ToolData.TelescopeRatio or 0, 0, 1)
+	local TelescopeLength = math.Round(PropLength * TelescopeRatio, 2)
+	local ProjLength      = math.Round(RoundLength * (1 - PropRatio) + TelescopeLength, 2)
+	local ProjVolume      = Data.ProjArea * ProjLength
+	local PropVolume      = math.max(0, Data.PropArea * PropLength - Data.ProjArea * TelescopeLength)
+
+	Data.RoundLength     = RoundLength
+	Data.PropRatio       = PropRatio
+	Data.TelescopeRatio  = TelescopeRatio
+	Data.TelescopeLength = TelescopeLength
+	Data.ProjLength      = ProjLength
+	Data.PropLength      = PropLength
+	Data.PropMass    = PropVolume * ACF.PDensity * 0.001 -- Volume of the case (hollowed out by any telescoped rod) * Powder density converted from g to kg
 	Data.RoundVolume = ProjVolume + PropVolume
 
 	GUIData.ProjVolume = ProjVolume
@@ -299,7 +328,9 @@ do -- MARK: Ammo capacity
 		end
 
 		Diameter = Caliber * ACF.AmmoCaseScale * MM_TO_CM
-		Length   = BulletData.PropLength + BulletData.ProjLength
+		-- RoundLength, not PropLength + ProjLength -- ProjLength already includes any telescoped
+		-- overlap into the propellant, so summing them would double-count that overlap.
+		Length   = BulletData.RoundLength or (BulletData.PropLength + BulletData.ProjLength)
 
 		return Vector(Length, Diameter, Diameter) / ACF.InchToCm
 	end

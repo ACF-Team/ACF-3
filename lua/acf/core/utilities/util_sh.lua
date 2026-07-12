@@ -1085,7 +1085,7 @@ do -- Crew related
 		local LongestBullet = nil
 		for Crate in pairs(Gun.Crates) do
 			local BulletData = Crate.BulletData
-			local Length = BulletData.PropLength + BulletData.ProjLength
+			local Length = BulletData.RoundLength or (BulletData.PropLength + BulletData.ProjLength)
 			if Length > LongestLength then
 				LongestLength = Length
 				LongestBullet = BulletData
@@ -1112,7 +1112,7 @@ do -- Reload related
 		-- Reload mod scales the final reload value and represents the ease of manipulating the weapon's ammunition
 		local ReloadMod = ACF.GetWeaponValue("ReloadMod", Caliber, Class, Weapon) or 1
 
-		local BaseTime = ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime) + ((BulletData.PropLength + BulletData.ProjLength) * ACF.LengthToTime)
+		local BaseTime = ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime) + ((BulletData.RoundLength or (BulletData.PropLength + BulletData.ProjLength)) * ACF.LengthToTime)
 		return math.Clamp(BaseTime * ReloadMod, 0, 60), true -- Clamped to a maximum of 60 seconds of ideal loading
 	end
 
@@ -1137,7 +1137,7 @@ do -- Reload related
 		local MagSize = math.max(MagSizeOverride or DefaultMagSize, DefaultMagSize)
 
 		-- Note: Currently represents a projectile of the same dimensions with the mass of the entire magazine
-		local BaseTime = ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime) * MagSize + ((BulletData.PropLength + BulletData.ProjLength) * ACF.LengthToTime)
+		local BaseTime = ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime) * MagSize + ((BulletData.RoundLength or (BulletData.PropLength + BulletData.ProjLength)) * ACF.LengthToTime)
 		return math.Clamp(BaseTime * ReloadMod, 0, 60), true -- Clamped to a maximum of 60 seconds of ideal loading
 	end
 

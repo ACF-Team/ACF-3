@@ -871,6 +871,97 @@ function PANEL:AddGraph()
 	return Base
 end
 
+-- A blank canvas panel used to draw a schematic of an object (e.g. a bullet's side profile).
+-- Unlike AddGraph, there's no grid/axes -- the draw callback just gets the full canvas size and draws whatever it wants.
+function PANEL:AddVisualizer()
+	local Base = self:AddPanel("Panel")
+	Base:DockMargin(0, 5, 0, 5)
+	Base:SetMouseInputEnabled(true)
+
+	AccessorFunc(Base, "BGColor", "BGColor", FORCE_COLOR)
+	Base:SetBGColor(Color(30, 30, 30))
+
+	Base.DrawFunc = nil
+	Base.Regions  = {}
+
+	-- Sets the function called every Paint with (self, w, h) to draw the visual
+	Base.SetDrawFunc = function(self, Func) self.DrawFunc = Func end
+	Base.Clear = function(self) self.DrawFunc = nil end
+
+	-- Registers a hoverable rectangle of the canvas with a label shown in a tooltip (e.g. a material name).
+	-- Regions are checked most-recently-added first, so draw the base shape's region before any detail
+	-- drawn on top of it (e.g. a liner cavity or tracer tip) so the detail's label wins when hovered.
+	Base.AddRegion = function(self, x, y, w, h, Label)
+		local Regions = self.Regions
+		Regions[#Regions + 1] = { x = x, y = y, w = w, h = h, label = Label }
+	end
+
+	Base.Paint = function(self, w, h)
+		surface.SetDrawColor(self.BGColor)
+		surface.DrawRect(0, 0, w, h)
+
+		self.Regions = {}
+
+		if self.DrawFunc then
+			self.DrawFunc(self, w, h)
+		end
+
+		surface.SetDrawColor(0, 0, 0, 255)
+		surface.DrawOutlinedRect(0, 0, w, h)
+
+		if self:IsHovered() then
+			local PanelPosX, PanelPosY = self:LocalToScreen(0, 0)
+			local MouseX, MouseY       = input.GetCursorPos()
+			local LocalMouseX          = MouseX - PanelPosX
+			local LocalMouseY          = MouseY - PanelPosY
+			local Regions              = self.Regions
+			local Label
+
+			for I = #Regions, 1, -1 do
+				local Region = Regions[I]
+
+				if LocalMouseX >= Region.x and LocalMouseX <= Region.x + Region.w and LocalMouseY >= Region.y and LocalMouseY <= Region.y + Region.h then
+					surface.SetDrawColor(255, 255, 255, 40)
+					surface.DrawRect(Region.x, Region.y, Region.w, Region.h)
+
+					Label = Region.label
+
+					break
+				end
+			end
+
+			if Label then
+				surface.SetFont("ACF_Label")
+
+				-- Labels may span multiple lines (e.g. a material name with its dimensions on the
+				-- line below), so the box is sized to the widest line and the full stack's height.
+				local Lines = string.Explode("\n", Label)
+				local TextW, LineH = 0, select(2, surface.GetTextSize(""))
+
+				for _, Line in ipairs(Lines) do
+					TextW = math.max(TextW, surface.GetTextSize(Line))
+				end
+
+				local TextH = LineH * #Lines
+				local PadX, PadY = 6, 4
+				local BoxX = math.Clamp(LocalMouseX + 12, 0, math.max(w - TextW - PadX * 2, 0))
+				local BoxY = math.Clamp(LocalMouseY + 12, 0, math.max(h - TextH - PadY * 2, 0))
+
+				surface.SetDrawColor(20, 20, 20, 230)
+				surface.DrawRect(BoxX, BoxY, TextW + PadX * 2, TextH + PadY * 2)
+				surface.SetDrawColor(255, 255, 255, 255)
+				surface.DrawOutlinedRect(BoxX, BoxY, TextW + PadX * 2, TextH + PadY * 2)
+
+				for I, Line in ipairs(Lines) do
+					draw.SimpleText(Line, "ACF_Label", BoxX + PadX, BoxY + PadY + (I - 1) * LineH, Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+				end
+			end
+		end
+	end
+
+	return Base
+end
+
 -- Lerps linearly between two matrices
 -- This is in no way correct, but works fine for this purpose
 -- Matrices need to be affine, shear is not preserved

@@ -133,7 +133,7 @@ else
 	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
 		local LinerAngle = Base:AddSlider("Liner Angle", BulletData.MinConeAng, 90, 1)
 		LinerAngle:SetClientData("LinerAngle", "OnValueChanged")
-		LinerAngle:TrackClientData("Projectile")
+		LinerAngle:TrackClientData("RoundLength")
 		LinerAngle:DefineSetter(function(Panel, _, Key, Value)
 			if Key == "LinerAngle" then
 				ToolData.LinerAngle = math.Round(Value, 2)
@@ -160,8 +160,8 @@ else
 
 	function Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
 		local RoundStats = Base:AddLabel()
-		RoundStats:TrackClientData("Projectile", "SetText")
-		RoundStats:TrackClientData("Propellant")
+		RoundStats:TrackClientData("RoundLength", "SetText")
+		RoundStats:TrackClientData("PropRatio")
 		RoundStats:TrackClientData("LinerAngle")
 		RoundStats:TrackClientData("StandoffRatio")
 		RoundStats:DefineSetter(function()
@@ -195,8 +195,8 @@ else
 		end)
 
 		local Penetrator = Base:AddLabel()
-		Penetrator:TrackClientData("Projectile", "SetText")
-		Penetrator:TrackClientData("Propellant")
+		Penetrator:TrackClientData("RoundLength", "SetText")
+		Penetrator:TrackClientData("PropRatio")
 		Penetrator:TrackClientData("LinerAngle")
 		Penetrator:TrackClientData("StandoffRatio")
 		Penetrator:DefineSetter(function()
@@ -212,8 +212,8 @@ else
 		end)
 
 		local PenStats = Base:AddLabel()
-		PenStats:TrackClientData("Projectile", "SetText")
-		PenStats:TrackClientData("Propellant")
+		PenStats:TrackClientData("RoundLength", "SetText")
+		PenStats:TrackClientData("PropRatio")
 		PenStats:TrackClientData("LinerAngle")
 		PenStats:TrackClientData("StandoffRatio")
 		PenStats:DefineSetter(function()

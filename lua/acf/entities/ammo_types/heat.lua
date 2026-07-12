@@ -462,6 +462,61 @@ else
 		Effects.CreateEffect("ACF_Ricochet", EffectTable)
 	end
 
+	-- Ammo menu visual: built from a GeoPrim tree (see acf/core/geo_prim_sh.lua) rather than hand-rolled
+	-- pixel math, so the shell's geometry -- casing, warhead, and the conical liner cavity carved into
+	-- the nose -- has one definition shared between rendering and (eventually) volume-derived quantities.
+	function Ammo:DrawAmmoVisual(Panel, w, h, _, BulletData)
+		local GeoPrim = ACF.GeoPrim
+		local Margin  = 10
+		local DrawW   = w - Margin * 2
+
+		local ConeAngle = math.max(BulletData.ConeAng or 45, 5)
+		local Diameter  = BulletData.Diameter or BulletData.Caliber
+		local ConeDepth = math.min((Diameter * 0.5) / math.tan(math.rad(ConeAngle)), BulletData.ProjLength * 0.8)
+
+		-- The standoff gap is a real distance (BulletData.Standoff, in meters) rather than a fixed
+		-- fraction of the shell, so it's budgeted into the layout length up front -- capped to the
+		-- shell's own length so a long standoff doesn't dwarf the round in the schematic -- rather
+		-- than squeezed into whatever pixels happen to be left over after the casing and warhead.
+		local ShellLength = BulletData.ProjLength + BulletData.PropLength
+		local StandoffCm  = math.min((BulletData.Standoff or 0) * 100, ShellLength)
+		local Length = ShellLength + StandoffCm
+
+		if Length <= 0 then return end
+
+		local Scale      = DrawW / Length
+		local DiameterPx = math.min(Diameter * Scale, (h - Margin * 2) * 0.6)
+		local CenterY    = h * 0.5
+
+		local Propellant = GeoPrim.New("Cylinder", { Radius = Diameter * 0.5, Height = BulletData.PropLength })
+		Propellant:SetMaterial("Propellant")
+
+		local Warhead = GeoPrim.New("Cylinder", { Radius = Diameter * 0.5, Height = BulletData.ProjLength })
+		Warhead:SetMaterial("Explosive")
+
+		-- Liner cavity: apex (Radius 0) buried ConeDepth behind the nose, mouth (full bore) opening
+		-- flush with the front face -- matches the shaped charge pointing its jet forward on impact.
+		local Liner = GeoPrim.New("Cone", { Radius = 0, TipRadius = Diameter * 0.5, Height = ConeDepth })
+		Liner:SetVoid(true):SetMaterial("Copper Liner (Shaped Charge)")
+		Warhead:AddChild(Liner, BulletData.ProjLength - ConeDepth)
+
+		local X = Margin
+		X = Propellant:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(180, 150, 60), Color(30, 30, 30))
+		X = Warhead:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(150, 90, 40), Color(30, 30, 30))
+
+		-- Standoff gap: distance the jet needs before hitting the target for full penetration
+		local StandoffPx = StandoffCm * Scale
+
+		if StandoffPx > 1 then
+			local StandoffMm = math.Round(StandoffCm * 10)
+			local StandoffDiameterMm = math.Round(Diameter * 0.5 * 10)
+
+			surface.SetDrawColor(255, 200, 60, 120)
+			surface.DrawRect(X, CenterY - DiameterPx * 0.25, StandoffPx, DiameterPx * 0.5)
+			Panel:AddRegion(X, CenterY - DiameterPx * 0.25, StandoffPx, DiameterPx * 0.5, ("Standoff Probe\n%dx%d mm"):format(StandoffDiameterMm, StandoffMm))
+		end
+	end
+
 	-- Ammo menu graph: penetration over standoff distance.
 	function Ammo:PlotAmmoGraph(Panel, _, BulletData)
 		local Colors  = ACF.GraphColors
@@ -485,7 +540,7 @@ else
 	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
 		local LinerAngle = Base:AddSlider("#acf.menu.ammo.liner_angle", BulletData.MinConeAng, 90, 1)
 		LinerAngle:SetClientData("LinerAngle", "OnValueChanged")
-		LinerAngle:TrackClientData("Projectile")
+		LinerAngle:TrackClientData("RoundLength")
 		LinerAngle:DefineSetter(function(Panel, _, Key, Value)
 			if Key == "LinerAngle" then
 				ToolData.LinerAngle = math.Round(Value, 2)
@@ -515,14 +570,16 @@ else
 		Ammo.BaseClass.OnCreateCrateInformation(self, Base, Label, ...)
 
 		Label:TrackClientData("LinerAngle")
+		Label:TrackClientData("LinerAngleRatio")
 		Label:TrackClientData("StandoffRatio")
 	end
 
 	function Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
 		local RoundStats = Base:AddLabel()
-		RoundStats:TrackClientData("Projectile", "SetText")
-		RoundStats:TrackClientData("Propellant")
+		RoundStats:TrackClientData("RoundLength", "SetText")
+		RoundStats:TrackClientData("PropRatio")
 		RoundStats:TrackClientData("LinerAngle")
+		RoundStats:TrackClientData("LinerAngleRatio")
 		RoundStats:TrackClientData("StandoffRatio")
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
@@ -537,9 +594,10 @@ else
 		end)
 
 		local FillerStats = Base:AddLabel()
-		FillerStats:TrackClientData("Projectile", "SetText")
-		FillerStats:TrackClientData("Propellant")
+		FillerStats:TrackClientData("RoundLength", "SetText")
+		FillerStats:TrackClientData("PropRatio")
 		FillerStats:TrackClientData("LinerAngle")
+		FillerStats:TrackClientData("LinerAngleRatio")
 		FillerStats:TrackClientData("StandoffRatio")
 		FillerStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
@@ -553,9 +611,10 @@ else
 		end)
 
 		local Penetrator = Base:AddLabel()
-		Penetrator:TrackClientData("Projectile", "SetText")
-		Penetrator:TrackClientData("Propellant")
+		Penetrator:TrackClientData("RoundLength", "SetText")
+		Penetrator:TrackClientData("PropRatio")
 		Penetrator:TrackClientData("LinerAngle")
+		Penetrator:TrackClientData("LinerAngleRatio")
 		Penetrator:TrackClientData("StandoffRatio")
 		Penetrator:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
@@ -570,9 +629,10 @@ else
 		end)
 
 		local PenStats = Base:AddLabel()
-		PenStats:TrackClientData("Projectile", "SetText")
-		PenStats:TrackClientData("Propellant")
+		PenStats:TrackClientData("RoundLength", "SetText")
+		PenStats:TrackClientData("PropRatio")
 		PenStats:TrackClientData("LinerAngle")
+		PenStats:TrackClientData("LinerAngleRatio")
 		PenStats:TrackClientData("StandoffRatio")
 		PenStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)

@@ -254,8 +254,8 @@ local function CreateMenu(Menu)
 		end
 	end
 
-	EntData:TrackClientData("Projectile", "SetText")
-	EntData:TrackClientData("Propellant")
+	EntData:TrackClientData("RoundLength", "SetText")
+	EntData:TrackClientData("PropRatio")
 	EntData:TrackClientData("Tracer")
 	EntData:TrackClientData("Caliber")
 	local function Update()

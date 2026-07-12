@@ -69,6 +69,14 @@ function Ammo:CalcSpeed(Bullet, Penetration)
 	return Speed * 1000 -- From km/s to m/s
 end
 
+function Ammo:VerifyData(ToolData)
+	Ammo.BaseClass.VerifyData(self, ToolData)
+
+	if not isnumber(ToolData.TelescopeRatio) then
+		ToolData.TelescopeRatio = 0
+	end
+end
+
 function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	GUIData = GUIData or Data
 
@@ -104,6 +112,15 @@ end
 
 if SERVER then
 	local Conversion	= ACF.PointConversion
+	local Entities		= ACF.Classes.Entities
+
+	Entities.AddArguments("acf_ammo", "TelescopeRatio") -- Adding extra info to ammo crates
+
+	function Ammo:OnLast(Entity)
+		Ammo.BaseClass.OnLast(self, Entity)
+
+		Entity.TelescopeRatio = nil
+	end
 
 	function Ammo:GetCost(BulletData)
 		local SabotMass	= BulletData.CartMass - BulletData.PropMass - BulletData.ProjMass
@@ -118,4 +135,83 @@ if SERVER then
 	end
 else
 	ACF.RegisterAmmoDecal("APFSDS", "damage/apcr_pen", "damage/apcr_rico")
+
+	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
+		local TelescopeRatio = Base:AddSlider("#acf.menu.ammo.telescope_ratio", 0, 1, 3)
+		TelescopeRatio:SetClientData("TelescopeRatio", "OnValueChanged")
+		TelescopeRatio:DefineSetter(function(Panel, _, _, Value)
+			ToolData.TelescopeRatio = Value
+
+			self:UpdateRoundData(ToolData, BulletData)
+
+			Panel:SetValue(BulletData.TelescopeRatio)
+
+			return BulletData.TelescopeRatio
+		end)
+	end
+
+	function Ammo:OnCreateCrateInformation(Base, Label, ...)
+		Ammo.BaseClass.OnCreateCrateInformation(self, Base, Label, ...)
+
+		Label:TrackClientData("TelescopeRatio")
+	end
+
+	-- Ammo menu visual: a long-rod penetrator (BulletData.Diameter, already scaled down to 35% of bore)
+	-- riding inside a full-bore sabot (BulletData.Caliber) that only covers part of the dart's length.
+	function Ammo:DrawAmmoVisual(Panel, w, h, _, BulletData)
+		local GeoPrim = ACF.GeoPrim
+		local Margin  = 10
+		local DrawW   = w - Margin * 2
+
+		local TelescopeLengthCm = BulletData.TelescopeLength or 0
+		local ExposedProjLength = BulletData.ProjLength - TelescopeLengthCm
+
+		-- Sabot mass/volume in UpdateRoundData is sized off the full rod (BulletData.ProjLength), not
+		-- just its exposed portion -- but the sabot can only be drawn over the exposed rod (the part
+		-- not buried back in the propellant), so the drawn length is still capped to what's visible.
+		local SabotLenCm = math.min(BulletData.ProjLength * 0.25, ExposedProjLength)
+
+		-- ProjLength already includes the telescoped overlap into the propellant, so laying it out
+		-- back-to-back with PropLength would double-count that overlap -- use RoundLength (the real
+		-- physical span) instead, and pull the rod's start back into the propellant separately below.
+		local Length = BulletData.RoundLength
+
+		if Length <= 0 then return end
+
+		local Scale   = DrawW / Length
+		local BoreDia = math.min(BulletData.Caliber * Scale, (h - Margin * 2) * 0.6)
+		local CenterY = h * 0.5
+
+		local Propellant = GeoPrim.New("Cylinder", { Radius = BulletData.Caliber * 0.5, Height = BulletData.PropLength })
+		Propellant:SetMaterial("Propellant")
+
+		-- Discarding sabot, full bore diameter, only wraps the rear portion of the rod
+		local Sabot = GeoPrim.New("Cylinder", { Radius = BulletData.Caliber * 0.5, Height = SabotLenCm })
+		Sabot:SetMaterial("Aluminum Sabot (Discarding)")
+
+		-- Long-rod penetrator, running the full length of the projectile. Drawn after the sabot,
+		-- starting at RodX (behind SabotX when telescoped) so it's the on-top, narrower shape
+		-- within the overlap.
+		local Penetrator = GeoPrim.New("Cylinder", { Radius = BulletData.Diameter * 0.5, Height = BulletData.ProjLength })
+		Penetrator:SetMaterial("Tungsten Penetrator")
+
+		local X = Margin
+		X = Propellant:Draw(Panel, X, CenterY, Scale, BoreDia, Color(180, 150, 60), Color(30, 30, 30))
+		local SabotX = X
+		-- Telescoped rounds have the rod reaching back into the propellant/case by TelescopeLength,
+		-- so the rod is drawn starting that far behind the sabot instead of flush with it.
+		local RodX = X - TelescopeLengthCm * Scale
+		Sabot:Draw(Panel, SabotX, CenterY, Scale, BoreDia, Color(150, 150, 155), Color(30, 30, 30))
+		Penetrator:Draw(Panel, RodX, CenterY, Scale, BoreDia, Color(90, 95, 100), Color(30, 30, 30))
+
+		-- Tracer, a colored segment at the very base of the rod -- behind the telescoped tail buried
+		-- in the case, not just behind the sabot -- drawn last (and not as a Rod child -- Draw() paints
+		-- an entire subtree in one Color, so a child never gets a color of its own) so it takes hover
+		-- priority and actually renders red instead of inheriting the penetrator's gray.
+		if BulletData.Tracer and BulletData.Tracer > 0 then
+			local Tracer = GeoPrim.New("Cylinder", { Radius = BulletData.Diameter * 0.5, Height = BulletData.Tracer })
+			Tracer:SetMaterial("Tracer")
+			Tracer:Draw(Panel, RodX, CenterY, Scale, BoreDia, Color(220, 40, 30), Color(30, 30, 30))
+		end
+	end
 end

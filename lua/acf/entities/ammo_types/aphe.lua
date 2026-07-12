@@ -146,6 +146,66 @@ if SERVER then
 else
 	ACF.RegisterAmmoDecal("APHE", "damage/ap_pen", "damage/ap_rico")
 
+	-- Ammo menu visual: casing plus a body split between the explosive filler and the steel shell
+	-- wall/nose around it, matching the mass split in UpdateRoundData (ProjVolume - FillerVol is
+	-- steel, the rest filler). Inherited by HE, which doesn't override this.
+	function Ammo:DrawAmmoVisual(Panel, w, h, ToolData, BulletData)
+		local GeoPrim  = ACF.GeoPrim
+		local Margin   = 10
+		local DrawW    = w - Margin * 2
+		local Diameter = BulletData.Diameter or BulletData.Caliber
+
+		local Length = BulletData.ProjLength + BulletData.PropLength
+
+		if Length <= 0 then return end
+
+		local Scale      = DrawW / Length
+		local DiameterPx = math.min(Diameter * Scale, (h - Margin * 2) * 0.6)
+		local CenterY    = h * 0.5
+		local Radius     = Diameter * 0.5
+
+		-- Use ToolData directly rather than BulletData.FillerRatio: HE overrides UpdateRoundData
+		-- without inheriting APHE's, and only ToolData.FillerRatio is guaranteed to be set for both.
+		local FillerRatio = math.Clamp(ToolData.FillerRatio or 0, 0, 1)
+
+		-- Matches UpdateRoundData's own math (ACF.RoundShellCapacity): the filler cavity is inset
+		-- from the casing's outer radius/length by MinWall (the shell wall thickness needed to
+		-- survive firing), and FillerRatio scales that already-shrunk cavity, not the raw ProjLength.
+		local _, CavityLenCm, CavityRadius = ACF.RoundShellCapacity(BulletData.PropMass, BulletData.ProjArea, BulletData.Caliber, BulletData.ProjLength)
+		local FillerLenCm = CavityLenCm * FillerRatio
+
+		local Propellant = GeoPrim.New("Cylinder", { Radius = Radius, Height = BulletData.PropLength })
+		Propellant:SetMaterial("Propellant")
+
+		-- Steel casing spans the whole body at the full outer radius, drawn first as the "hull" so
+		-- the wall around the inset filler cavity shows as a visible steel ring once Filler is
+		-- painted on top of it (a child GeoPrim can't have its own color -- see the Tracer comment
+		-- below -- so these have to be two independent top-level primitives, not parent/child).
+		local ShellCasing = GeoPrim.New("Cylinder", { Radius = Radius, Height = BulletData.ProjLength })
+		ShellCasing:SetMaterial("Steel Shell Casing")
+
+		local Filler = GeoPrim.New("Cylinder", { Radius = CavityRadius, Height = FillerLenCm })
+		Filler:SetMaterial("Explosive Filler")
+
+		local X = Margin
+		X = Propellant:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(180, 150, 60), Color(30, 30, 30))
+
+		local BodyStartX = X
+		ShellCasing:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(120, 120, 130), Color(30, 30, 30))
+
+		if FillerLenCm > 0 then
+			Filler:Draw(Panel, BodyStartX, CenterY, Scale, DiameterPx, Color(190, 140, 40), Color(30, 30, 30))
+		end
+
+		-- Tracer, a colored segment at the very base of the body (against the casing), drawn last
+		-- so it takes hover priority over whatever filler/steel material happens to sit underneath it
+		if BulletData.Tracer and BulletData.Tracer > 0 then
+			local Tracer = GeoPrim.New("Cylinder", { Radius = Radius, Height = math.max(BulletData.Tracer, 2 / Scale) })
+			Tracer:SetMaterial("Tracer")
+			Tracer:Draw(Panel, BodyStartX, CenterY, Scale, DiameterPx, Color(220, 40, 30), Color(30, 30, 30))
+		end
+	end
+
 	function Ammo:ImpactEffect(_, Bullet)
 		local Position  = Bullet.SimPos
 		local Direction = Bullet.SimFlight
@@ -174,8 +234,8 @@ else
 
 	function Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
 		local RoundStats = Base:AddLabel()
-		RoundStats:TrackClientData("Projectile", "SetText")
-		RoundStats:TrackClientData("Propellant")
+		RoundStats:TrackClientData("RoundLength", "SetText")
+		RoundStats:TrackClientData("PropRatio")
 		RoundStats:TrackClientData("FillerRatio")
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
@@ -203,8 +263,8 @@ else
 		end)
 
 		local MaxPen = Base:AddLabel()
-		MaxPen:TrackClientData("Projectile", "SetText")
-		MaxPen:TrackClientData("Propellant")
+		MaxPen:TrackClientData("RoundLength", "SetText")
+		MaxPen:TrackClientData("PropRatio")
 		MaxPen:TrackClientData("FillerRatio")
 		MaxPen:DefineSetter(function()
 			local Text		= language.GetPhrase("acf.menu.ammo.pen_stats_ap")
