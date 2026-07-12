@@ -294,7 +294,7 @@ function Ballistics.GetMeshConvexHit(Bullet, HitPos, Direction)
 		end
 	end
 
-	return ACF.ResolveConvexStack(Intersections, Direction, Start, true)
+	return ACF.ResolveConvexStack(Intersections, Direction, true)
 end
 
 function Ballistics.DoBulletsFlight(Bullet)
