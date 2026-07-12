@@ -10,57 +10,64 @@ local function GetTraceDir(Tool)
 	return Dir
 end
 
+local MaxTraceDist = 32768
+
+-- Gathers every meshed entity along the whole ray in one FindAlongRay pass (same shape as the
+-- test_trace concommand in volumetrics_sh.lua) and resolves their convex stacks together, instead
+-- of walking one physically-traced entity at a time. A non-filtered IsACFEntity found along the
+-- ray still cuts the scan short at its OBB entry point, same as before; anything else without a
+-- mesh is just transparent to the scan now rather than acting as a silent hard stop.
 local function GetArmorLayers(StartTrace, Dir, Filter)
-	local ArmorTypes = ACF.Classes.ArmorTypes
-	local Layers     = {}
-	local Skipped    = {}
-	local Processed  = {}
-	local Current    = StartTrace
+	local Layers = {}
+	local Start  = StartTrace.HitPos - Dir * 2 -- same backoff ACF.GetConvexHits uses
 
-	for _ = 1, 30 do
-		local Entity = Current.Entity
-		if not IsValid(Entity) then break end
+	local FoundEnts = ents.FindAlongRay(Start, Start + Dir * MaxTraceDist)
 
+	local Intersections = {}
+	local TerminalEntity, TerminalT
+
+	for _, Entity in ipairs(FoundEnts) do
 		local Class = Entity:GetClass()
 
 		if Entity.IsACFEntity and not Filter[Class] then
-			table.insert(Layers, { Terminal = true, Entity = Entity })
-			break
+			local HitPos = util.IntersectRayWithOBB(Start, Dir * MaxTraceDist, Entity:GetPos(), Entity:GetAngles(), Entity:OBBMins(), Entity:OBBMaxs())
+
+			if HitPos then
+				local T = (HitPos - Start):Dot(Dir)
+
+				if not TerminalT or T < TerminalT then
+					TerminalT      = T
+					TerminalEntity = Entity
+				end
+			end
+		elseif Entity.ACF_Volumetric_Mesh then
+			local Hits = ACF.RayIntersectMesh(Entity, Start, Dir, true)
+
+			for _, Hit in ipairs(Hits) do
+				Intersections[#Intersections + 1] = Hit
+			end
 		end
+	end
 
-		if not Entity.ACF_Volumetric_Mesh then break end
+	local Hits = ACF.ResolveConvexStack(Intersections, Dir)
 
-		local EntProcessed = Processed[Entity]
-		if not EntProcessed then
-			EntProcessed      = {}
-			Processed[Entity] = EntProcessed
-		end
+	for _, Hit in ipairs(Hits) do
+		if TerminalT and (Hit.EntryPos - Start):Dot(Dir) >= TerminalT then break end
 
-		local ConvexHit = ACF.GetConvexHit(Entity, Current.HitPos, Dir, true, EntProcessed)
+		local Convex = Hit.Entity.ACF_Volumetric_Mesh.Convexes[Hit.ConvexID]
 
-		if ConvexHit then
-			EntProcessed[ConvexHit.ConvexID] = true
+		table.insert(Layers, {
+			Terminal = false,
+			Entity   = Hit.Entity,
+			Material = Convex.Material,
+			GeoThick = Hit.GeoThick,
+			EffKE    = Hit.GeoThick * Hit.ArmorType.KineticMul,
+			EffCE    = Hit.GeoThick * Hit.ArmorType.ChemicalMul,
+		})
+	end
 
-			local Convex    = Entity.ACF_Volumetric_Mesh.Convexes[ConvexHit.ConvexID]
-			local ArmorType = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("Default")
-
-			table.insert(Layers, {
-				Terminal = false,
-				Entity   = Entity,
-				Material = Convex.Material,
-				GeoThick = ConvexHit.GeoThick,
-				EffKE    = ConvexHit.GeoThick * ArmorType.KineticMul,
-				EffCE    = ConvexHit.GeoThick * ArmorType.ChemicalMul,
-			})
-		else
-			Skipped[Entity] = true
-			Current = util.TraceLine({
-				start  = Current.HitPos,
-				endpos = Current.HitPos + Dir * 32768,
-				filter = function(Ent) return not Skipped[Ent] end,
-				mask   = MASK_SOLID,
-			})
-		end
+	if TerminalEntity then
+		table.insert(Layers, { Terminal = true, Entity = TerminalEntity })
 	end
 
 	local TotalKE, TotalCE = 0, 0
