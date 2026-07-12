@@ -325,6 +325,8 @@ function ACF.RayIntersectMesh(Entity, Start, Direction, IncludeDead, Filter)
         if Convex.Health <= 0 and not IncludeDead then continue end -- destroyed convex is transparent to projectiles
         if Filter and Filter[ConvexID] then continue end -- explicitly filtered (already penetrated this flight)
 
+        local HitsBefore = #Hits
+
         for _, Tri in ipairs(Convex.Tris) do
             local A = Entity:LocalToWorld(Tri[1])
             local B = Entity:LocalToWorld(Tri[2])
@@ -349,6 +351,11 @@ function ACF.RayIntersectMesh(Entity, Start, Direction, IncludeDead, Filter)
             if T < 0 then T = 0 P = Start end
 
             Hits[#Hits + 1] = { Pos = P, Normal = Normal, ConvexID = ConvexID, T = T, Entity = Entity, IsEntry = IsEntry }
+        end
+
+        -- Started inside this convex: only the exit hit came back. Add the missing entry at T = 0.
+        if #Hits - HitsBefore == 1 then
+            Hits[#Hits + 1] = { Pos = Start, Normal = -NormDir, ConvexID = ConvexID, T = 0, Entity = Entity, IsEntry = true }
         end
     end
 
@@ -492,6 +499,7 @@ concommand.Add( "test_trace", function( ply )
             Intersections[#Intersections + 1] = Hit
         end
     end
+    -- PrintTable(Intersections)
 
     local Hits = ACF.ResolveConvexStack(Intersections, dir)
 
