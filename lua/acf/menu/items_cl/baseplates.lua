@@ -23,10 +23,12 @@ local function CreateMenu(Menu)
 	ACF.SetClientData("Length",    ACF.GetClientNumber("Length",    LengthOpts.Default    or 36),  true)
 	ACF.SetClientData("Thickness", ACF.GetClientNumber("Thickness", ThicknessOpts.Default or 1.5), true)
 
-	local SizeX      = Menu:AddSlider("#acf.menu.baseplates.plate_width",     WidthOpts.Min     or 36,  WidthOpts.Max     or 240, WidthOpts.Decimals     or 2)
-	local SizeY      = Menu:AddSlider("#acf.menu.baseplates.plate_length",    LengthOpts.Min    or 36,  LengthOpts.Max    or 480, LengthOpts.Decimals    or 2)
-	local SizeZ      = Menu:AddSlider("#acf.menu.baseplates.plate_thickness", ThicknessOpts.Min or 0.5, ThicknessOpts.Max or 3,   ThicknessOpts.Decimals or 2)
-	local DisableAltE = Menu:AddCheckBox("#acf.menu.baseplates.disable_alt_e")
+	local SizeX      			= Menu:AddSlider("#acf.menu.baseplates.plate_width",     WidthOpts.Min     or 36,  WidthOpts.Max     or 240, WidthOpts.Decimals     or 2)
+	local SizeY      			= Menu:AddSlider("#acf.menu.baseplates.plate_length",    LengthOpts.Min    or 36,  LengthOpts.Max    or 480, LengthOpts.Decimals    or 2)
+	local SizeZ      			= Menu:AddSlider("#acf.menu.baseplates.plate_thickness", ThicknessOpts.Min or 0.5, ThicknessOpts.Max or 3,   ThicknessOpts.Decimals or 2)
+	local DisableAltE 			= Menu:AddCheckBox("#acf.menu.baseplates.disable_alt_e")
+	local NetworkOptimization 	= Menu:AddCheckBox("#acf.menu.baseplates.network_optimization")
+	local UnfreezeOnEntry 		= Menu:AddCheckBox("#acf.menu.baseplates.unfreeze_on_entry")
 
 	local BaseplateBase = Menu:AddCollapsible("#acf.menu.baseplates.baseplate_info", nil, "icon16/shape_square_edit.png")
 	local BaseplateName = BaseplateBase:AddTitle()
@@ -82,6 +84,8 @@ local function CreateMenu(Menu)
 	end)
 
 	DisableAltE:SetClientData("DisableAltE", "OnChange")
+	NetworkOptimization:SetClientData("NetworkOptimization", "OnChange")
+	UnfreezeOnEntry:SetClientData("UnfreezeOnEntry", "OnChange")
 
 	UpdatePreviewSize()
 
