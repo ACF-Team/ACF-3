@@ -53,7 +53,7 @@ do -- Petrol Engines
 		CLASS.Mass		 = 675
 		CLASS.Torque		 = 1806
 		CLASS.FlywheelMass = 4
-		RPM = {
+		CLASS.RPM = {
 			Idle	= 600,
 			Limit	= 3800,
 		}
