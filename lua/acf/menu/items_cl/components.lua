@@ -34,10 +34,13 @@ local function CreateMenu(Menu)
 		self.ListData.Index = Index
 		self.Selected = Data
 
+		local TypeName = Classes.GetTypeName(Data)
 		ACF.SetClientData("PrimaryClass", Data.Entity)
-		ACF.SetClientData("ComponentClass", Classes.GetTypeName(Data))
+		ACF.SetClientData("ComponentClass", TypeName)
 
-		ACF.LoadSortedList(ComponentList, Classes.GetChildren(Data), "Name")
+		local Children = Classes.GetChildren(Data)
+		local Options = table.Count(Children) > 0 and Children or { [TypeName] = Data }
+		ACF.LoadSortedList(ComponentList, Options, "Name")
 	end
 
 	function ComponentList:OnSelect(Index, _, Data)

@@ -77,10 +77,11 @@ end)
 do -- Scalable Gearboxes
 	Classes.DefineClass("ACF.Gearboxes.CVT-L", "ACF.Gearboxes.CVT", function()
 		CLASS.Name			= "CVT, Inline"
-		CLASS.Description		= "An inline gearbox capable of keeping an engine within a specified RPM range by constantly adjusting the gear ratio."
+		CLASS.Description	= "An inline gearbox capable of keeping an engine within a specified RPM range by constantly adjusting the gear ratio."
+		CLASS.ID			= "CVT-L"
 		CLASS.Model			= "models/engines/linear_s.mdl"
 		CLASS.Mass			= GearCVTSW
-		CLASS.Switch			= 0.15
+		CLASS.Switch		= 0.15
 		CLASS.MaxTorque		= GearCVTST
 		CLASS.CanDualClutch	= true
 		CLASS.Preview = {
@@ -90,10 +91,11 @@ do -- Scalable Gearboxes
 
 	Classes.DefineClass("ACF.Gearboxes.CVT-T", "ACF.Gearboxes.CVT", function()
 		CLASS.Name			= "CVT, Transaxial"
-		CLASS.Description		= "A transaxial gearbox capable of keeping an engine within a specified RPM range by constantly adjusting the gear ratio."
+		CLASS.Description	= "A transaxial gearbox capable of keeping an engine within a specified RPM range by constantly adjusting the gear ratio."
+		CLASS.ID			= "CVT-T"
 		CLASS.Model			= "models/engines/transaxial_s.mdl"
 		CLASS.Mass			= GearCVTSW
-		CLASS.Switch			= 0.15
+		CLASS.Switch		= 0.15
 		CLASS.MaxTorque		= GearCVTST
 		CLASS.CanDualClutch	= true
 		CLASS.Preview = {
@@ -102,12 +104,13 @@ do -- Scalable Gearboxes
 	end)
 
 	Classes.DefineClass("ACF.Gearboxes.CVT-ST", "ACF.Gearboxes.CVT", function()
-		CLASS.Name		= "CVT, Straight"
+		CLASS.Name			= "CVT, Straight"
 		CLASS.Description	= "A straight-through gearbox capable of keeping an engine within a specified RPM range by constantly adjusting the gear ratio."
-		CLASS.Model		= "models/engines/t5small.mdl"
-		CLASS.Mass		= math.floor(GearCVTSW * StWB)
+		CLASS.ID			= "CVT-ST"
+		CLASS.Model			= "models/engines/t5small.mdl"
+		CLASS.Mass			= math.floor(GearCVTSW * StWB)
 		CLASS.Switch		= 0.15
-		CLASS.MaxTorque	= math.floor(GearCVTST * StTB)
+		CLASS.MaxTorque		= math.floor(GearCVTST * StTB)
 		CLASS.Preview = {
 			FOV = 105,
 		}

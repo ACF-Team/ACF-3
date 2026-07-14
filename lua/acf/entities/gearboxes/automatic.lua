@@ -124,10 +124,11 @@ end)
 do -- Scalable Gearboxes
 	Classes.DefineClass("ACF.Gearboxes.Auto-L", "ACF.Gearboxes.Auto", function()
 		CLASS.Name			= "Automatic, Inline"
-		CLASS.Description		= "An inline gearbox capable of automatically shifting gears based on speed."
+		CLASS.Description	= "An inline gearbox capable of automatically shifting gears based on speed."
+		CLASS.ID			= "Auto-L"
 		CLASS.Model			= "models/engines/linear_s.mdl"
 		CLASS.Mass			= Gear3SW
-		CLASS.Switch			= ShiftS
+		CLASS.Switch		= ShiftS
 		CLASS.MaxTorque		= Gear3ST
 		CLASS.CanDualClutch	= true
 		CLASS.Preview = {
@@ -137,10 +138,11 @@ do -- Scalable Gearboxes
 
 	Classes.DefineClass("ACF.Gearboxes.Auto-T", "ACF.Gearboxes.Auto", function()
 		CLASS.Name			= "Automatic, Transaxial"
-		CLASS.Description		= "A transaxial gearbox capable of automatically shifting gears based on speed."
+		CLASS.Description	= "A transaxial gearbox capable of automatically shifting gears based on speed."
+		CLASS.ID			= "Auto-T"
 		CLASS.Model			= "models/engines/transaxial_s.mdl"
 		CLASS.Mass			= Gear3SW
-		CLASS.Switch			= ShiftS
+		CLASS.Switch		= ShiftS
 		CLASS.MaxTorque		= Gear3ST
 		CLASS.CanDualClutch	= true
 		CLASS.Preview = {
@@ -149,12 +151,13 @@ do -- Scalable Gearboxes
 	end)
 
 	Classes.DefineClass("ACF.Gearboxes.Auto-ST", "ACF.Gearboxes.Auto", function()
-		CLASS.Name		= "Automatic, Straight"
+		CLASS.Name			= "Automatic, Straight"
 		CLASS.Description	= "A straight-through gearbox capable of automatically shifting gears based on speed."
-		CLASS.Model		= "models/engines/t5small.mdl"
-		CLASS.Mass		= math.floor(Gear3SW * StWB)
+		CLASS.ID			= "Auto-ST"
+		CLASS.Model			= "models/engines/t5small.mdl"
+		CLASS.Mass			= math.floor(Gear3SW * StWB)
 		CLASS.Switch		= ShiftS
-		CLASS.MaxTorque	= math.floor(Gear3ST * StTB)
+		CLASS.MaxTorque		= math.floor(Gear3ST * StTB)
 		CLASS.Preview = {
 			FOV = 105,
 		}

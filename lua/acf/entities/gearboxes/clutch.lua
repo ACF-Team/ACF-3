@@ -21,12 +21,13 @@ end)
 
 do -- Scalable Clutch
 	Classes.DefineClass("ACF.Gearboxes.Clutch-S", "ACF.Gearboxes.Clutch", function()
-		CLASS.Name		= "Clutch, Straight"
+		CLASS.Name			= "Clutch, Straight"
 		CLASS.Description	= CDesc
-		CLASS.Model		= "models/engines/flywheelclutchs.mdl"
-		CLASS.Mass		= CSW
+		CLASS.ID			= "Clutch-S"
+		CLASS.Model			= "models/engines/flywheelclutchs.mdl"
+		CLASS.Mass			= CSW
 		CLASS.Switch		= 0.15
-		CLASS.MaxTorque	= CST
+		CLASS.MaxTorque		= CST
 		CLASS.Preview = {
 			FOV = 115,
 		}
