@@ -178,6 +178,7 @@ do -- Panel helpers
 end
 
 do -- Default gearbox menus
+	local Classes = ACF.Classes
 	local Values = {}
 
 	do -- Manual Gearbox Menu
@@ -187,9 +188,10 @@ do -- Default gearbox menus
 			local Gears = Class.CanSetGears and ACF.GetClientNumber("GearAmount", 3) or Class.Gears.Max
 			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings", nil, "icon16/cog_edit.png")
 
-			Values[Class.ID] = Values[Class.ID] or {}
+			local ClassID = Classes.GetTypeName(Class:GetType())
+			Values[ClassID] = Values[ClassID] or {}
 
-			local ValuesData = Values[Class.ID]
+			local ValuesData = Values[ClassID]
 
 			for I = 1, Gears do
 				local Variable = "Gear" .. I
@@ -274,9 +276,10 @@ do -- Default gearbox menus
 
 			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings", nil, "icon16/cog_edit.png")
 
-			Values[Class.ID] = Values[Class.ID] or {}
+			local ClassID = Classes.GetTypeName(Class:GetType())
+			Values[ClassID] = Values[ClassID] or {}
 
-			local ValuesData = Values[Class.ID]
+			local ValuesData = Values[ClassID]
 
 			ACF.SetClientData("Gear1", 1)
 
@@ -358,9 +361,10 @@ do -- Default gearbox menus
 			local Gears = Class.CanSetGears and ACF.GetClientNumber("GearAmount", 3) or Class.Gears.Max
 			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings", nil, "icon16/cog_edit.png")
 
-			Values[Class.ID] = Values[Class.ID] or {}
+			local ClassID = Classes.GetTypeName(Class:GetType())
+			Values[ClassID] = Values[ClassID] or {}
 
-			local ValuesData = Values[Class.ID]
+			local ValuesData = Values[ClassID]
 
 			GearBase:AddLabel("#acf.menu.gearboxes.upshift_speed_unit")
 
