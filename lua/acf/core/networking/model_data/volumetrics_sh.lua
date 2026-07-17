@@ -508,15 +508,6 @@ concommand.Add( "test_trace", function( ply )
         debugoverlay.Line(Hit.EntryPos, Hit.ExitPos, 10, Col, true)
         debugoverlay.EntityTextAtPosition((Hit.EntryPos + Hit.ExitPos) / 2, 0, Hit.ArmorType.Name, 10, Col)
         debugoverlay.EntityTextAtPosition((Hit.EntryPos + Hit.ExitPos) / 2, 1, "CID: " .. Hit.ConvexID, 10, Col)
-
-        -- local FaceCol = Color(Col.r, Col.g, Col.b, 50)
-        -- local Convex  = Hit.Entity.ACF_Volumetric_Mesh.Convexes[Hit.ConvexID]
-        -- for _, Tri in ipairs(Convex.Tris) do
-        --     local A = Hit.Entity:LocalToWorld(Tri[1])
-        --     local B = Hit.Entity:LocalToWorld(Tri[2])
-        --     local C = Hit.Entity:LocalToWorld(Tri[3])
-
-        --     debugoverlay.Triangle(A, B, C, 10, FaceCol, true)
-        -- end
+        debugoverlay.EntityTextAtPosition((Hit.EntryPos + Hit.ExitPos) / 2, 2, "RHAe: " .. math.Round(Hit.GeoThick * Hit.ArmorType.KineticMul), 10, Col)
     end
 end )
