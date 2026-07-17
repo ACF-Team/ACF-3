@@ -236,7 +236,10 @@ if CLIENT then
 		Nudge = GetNudgeFactor(tonumber(New))
 	end, "ACF_ArmorMesh_Nudge")
 
+	local EdgeColor = Color(255, 255, 255, 255)
+
 	-- Draws every convex of the mesh as a translucent quad: white normally, colored if highlighted.
+	-- The highlighted convex also gets its triangle edges outlined, to make its shape easier to read.
 	-- Runs every frame instead of using debugoverlay so the visualization doesn't flicker.
 	local function DrawConvexes(Entity, HighlightID)
 		local MeshData = Entity.ACF_Volumetric_Mesh
@@ -263,6 +266,12 @@ if CLIENT then
 				local C = Entity:LocalToWorld(Tri[3] * Nudge)
 
 				render.DrawQuad(A, B, C, C, Col)
+
+				if IsHighlighted then
+					render.DrawLine(A, B, EdgeColor, true)
+					render.DrawLine(B, C, EdgeColor, true)
+					render.DrawLine(C, A, EdgeColor, true)
+				end
 			end
 		end
 	end
