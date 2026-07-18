@@ -316,7 +316,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		end
 
 		do -- Fragment damage
-			local FragHit = floor(Fragments * AreaFraction)
+			local FragHit = math.ceil(Fragments * AreaFraction)
 
 			if FragHit > 0 then
 				local Loss      = BaseFragV * Distance / Radius
