@@ -735,18 +735,53 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 
 		return HitRes
 	elseif HitRes then
+		--If the missile is still on a rack it will be ignored
+		if not self.Launched then
+			return HitRes
+		end
+
 		local Ratio      = self.ACF.Health / self.ACF.MaxHealth
 		local BulletData = self.BulletData
 
-		-- The missile should detonate when it gets penetrated.
+		-- The missile will be considered destroyed when it gets penetrated.
 		if DmgResult.Penetration > self.ForcedArmor then
-			if BulletData.Type == "HEAT" then
-				BulletData.Type = "HE"
+			-- New death mechanic for ASM,AAM,ARM,SAM,ARTY,FFAR
+			if self.EntType == "Anti-Tank Guided Missiles" or self.EntType == "Air-To-Air Missiles" or self.EntType == "Anti-Radiation Missiles" or self.EntType == "Surface-To-Air Missiles" or self.EntType == "Artillery Rockets" or self.EntType == "Folding-Fin Aerial Rockets" then
+				BulletData.Type = "HP"
+				self:SetNW2String("AmmoType", "HP")
+				self.UseGuidance = nil
+				local MissileAngles = self.CurDir:Angle()
+				local LocalSpin  = VectorRand(-15, 15) / Ratio
+				self.RotAxis = MissileAngles:Up() * LocalSpin.z + MissileAngles:Right() * LocalSpin.y + MissileAngles:Forward() * LocalSpin.x
+				self.TorqueMul = 98
 
-				self:SetNW2String("AmmoType", "HE")
+				timer.Simple(Ratio,
+					function()
+						if not IsValid(self) then
+							return
+						end
+
+						self:SetNoDraw(true)
+						self:SetNotSolid(true)
+
+						local Effect = EffectData()
+						Effect:SetOrigin(self:GetPos())
+						Effect:SetRadius(BulletData.Caliber)
+						Effect:SetScale(BulletData.FillerMass or 1)
+						util.Effect("ACF_Explosion", Effect)
+
+						local GibModel	= "models/gibs/metal_gib%s.mdl"
+						self:SetNW2String("FlightModel", GibModel:format(math.random(1, 5)))
+						DetonateMissile(self, Owner)
+					end
+				)
+			else -- Old instant death mechanic for BOMB,GBOMB,GBU,UAR
+				if BulletData.Type == "HEAT" then
+					BulletData.Type = "HE"
+					self:SetNW2String("AmmoType", "HE")
+				end
+				DetonateMissile(self, Owner)
 			end
-			DetonateMissile(self, Owner)
-
 			return HitRes
 		end
 
