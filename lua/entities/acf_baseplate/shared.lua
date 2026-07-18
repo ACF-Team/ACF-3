@@ -29,6 +29,8 @@ ENT.ACF_WireInputs = {
 ENT.ACF_WireOutputs = {
 	"Entity (The entity itself) [ENTITY]",
 	"Vehicles (Seat for this entity, compatible with wire) [ARRAY]",
+	"Seat (The seat/pod of this baseplate) [ENTITY]",
+	"Driver (The player currently seated in this baseplate's seat) [ENTITY]",
 }
 
 AddCSLuaFile("modules/autotest.lua")

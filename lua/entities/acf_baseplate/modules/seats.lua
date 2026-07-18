@@ -12,6 +12,7 @@ function ENT:ConfigureLuaSeat(Pod, Player)
 		if Veh == Pod then
 			-- Ply:GodEnable() -- Remove this if aliases are removed?
 			Ply:SetNoDraw(true)
+			WireLib.TriggerOutput(self, "Driver", Ply)
 		end
 	end)
 
@@ -20,6 +21,7 @@ function ENT:ConfigureLuaSeat(Pod, Player)
 		if Veh == Pod then
 			-- Ply:GodDisable() -- Remove this if aliases are removed?
 			Ply:SetNoDraw(false)
+			WireLib.TriggerOutput(self, "Driver", NULL)
 		end
 	end)
 
@@ -56,6 +58,8 @@ function ENT:ConfigureLuaSeat(Pod, Player)
 	end)
 
 	WireLib.TriggerOutput(self, "Vehicles", {Pod})
+	WireLib.TriggerOutput(self, "Seat", Pod)
+	WireLib.TriggerOutput(self, "Driver", NULL)
 end
 
 -- Show/Hide physical entities when entering/existing seats, if the contraption has auto treads (networking optimization)
