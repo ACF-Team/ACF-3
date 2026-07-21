@@ -661,7 +661,7 @@ do
 			self.ToBeReplaced = true									-- Mark self for replacement
 
 			-- Only consider "lower" priority crews
-			local offset = self.ReplacedOnlyLower and 1 or 0
+			local offset = self:ACF_GetUserVar("ReplacedOnlyLower") and 1 or 0
 			for i = self.CrewPriority + offset, ACF.CrewRepPrioMax do
 				local OtherCrews = Contraption.CrewsByPriority[i] or {}
 				for Other in pairs(OtherCrews) do									-- For each crew of that priority
