@@ -482,7 +482,7 @@ function ACF.GetEntityHealth(Entity)
 end
 
 -- Testing new trace logic
-concommand.Add( "test_trace", function( ply )
+local function TestTrace( ply )
     local plyTr = ply:GetEyeTrace()
     local dir = ply:GetAimVector()
 
@@ -510,4 +510,82 @@ concommand.Add( "test_trace", function( ply )
         debugoverlay.EntityTextAtPosition((Hit.EntryPos + Hit.ExitPos) / 2, 1, "CID: " .. Hit.ConvexID, 10, Col)
         debugoverlay.EntityTextAtPosition((Hit.EntryPos + Hit.ExitPos) / 2, 2, "RHAe: " .. math.Round(Hit.GeoThick * Hit.ArmorType.KineticMul), 10, Col)
     end
-end )
+end
+
+concommand.Add( "test_trace", TestTrace )
+if CLIENT then concommand.Add( "test_trace_cl", function() TestTrace( LocalPlayer() ) end ) end
+
+-- Draws the convex hulls (ACF_Volumetric_Mesh) of the entity being looked at.
+local function DrawConvexes( ply )
+    local Ent = ply:GetEyeTrace().Entity
+    print("DrawConvexes", Ent)
+    if not IsValid(Ent) then return end
+
+    local MeshData = Ent.ACF_Volumetric_Mesh
+    if not MeshData then return end
+
+    for ConvexID, Convex in ipairs(MeshData.Convexes) do
+        local Col = ACF.GetIndexColor(ConvexID)
+        local FillCol = Color(Col.r, Col.g, Col.b, 80)
+
+        for _, Tri in ipairs(Convex.Tris) do
+            local A = Ent:LocalToWorld(Tri[1])
+            local B = Ent:LocalToWorld(Tri[2])
+            local C = Ent:LocalToWorld(Tri[3])
+
+            debugoverlay.Triangle(A, B, C, 10, FillCol, true)
+            debugoverlay.Line(A, B, 10, color_white, true)
+            debugoverlay.Line(B, C, 10, color_white, true)
+            debugoverlay.Line(C, A, 10, color_white, true)
+
+            local Center = (A + B + C) / 3
+            local Normal = (C - A):Cross(B - A):GetNormalized()
+            debugoverlay.Line(Center, Center + Normal * 5, 10, Col, true)
+        end
+
+        local Center = Ent:LocalToWorld(Convex.Tris[1][1])
+        debugoverlay.EntityTextAtPosition(Center, 0, "CID: " .. ConvexID, 10, Col)
+    end
+end
+
+concommand.Add( "test_draw_convexes", DrawConvexes )
+if CLIENT then concommand.Add( "test_draw_convexes_cl", function() DrawConvexes( LocalPlayer() ) end ) end
+
+-- Draws the raw physics convex hulls (PhysObj:GetMeshConvexes()) of the entity being looked at.
+local function DrawMeshConvexes( ply )
+    local Ent = ply:GetEyeTrace().Entity
+    print("DrawMeshConvexes", Ent)
+    if not IsValid(Ent) then return end
+
+    local PhysObj = Ent:GetPhysicsObject()
+    if not IsValid(PhysObj) then return end
+
+    local Mesh = PhysObj:GetMeshConvexes()
+    if not Mesh then return end
+
+    for ConvexID, Hull in ipairs(Mesh) do
+        local Col = ACF.GetIndexColor(ConvexID)
+        local FillCol = Color(Col.r, Col.g, Col.b, 80)
+
+        for I = 1, #Hull, 3 do
+            local A = Ent:LocalToWorld(Hull[I].pos)
+            local B = Ent:LocalToWorld(Hull[I + 1].pos)
+            local C = Ent:LocalToWorld(Hull[I + 2].pos)
+
+            debugoverlay.Triangle(A, B, C, 10, FillCol, true)
+            debugoverlay.Line(A, B, 10, color_white, true)
+            debugoverlay.Line(B, C, 10, color_white, true)
+            debugoverlay.Line(C, A, 10, color_white, true)
+
+            local Center = (A + B + C) / 3
+            local Normal = (C - A):Cross(B - A):GetNormalized()
+            debugoverlay.Line(Center, Center + Normal * 5, 10, Col, true)
+        end
+
+        local Center = Ent:LocalToWorld(Hull[1].pos)
+        debugoverlay.EntityTextAtPosition(Center, 0, "CID: " .. ConvexID, 10, Col)
+    end
+end
+
+concommand.Add( "test_draw_meshconvexes", DrawMeshConvexes )
+if CLIENT then concommand.Add( "test_draw_meshconvexes_cl", function() DrawMeshConvexes( LocalPlayer() ) end ) end
