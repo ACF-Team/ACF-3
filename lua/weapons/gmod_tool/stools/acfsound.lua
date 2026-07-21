@@ -154,8 +154,10 @@ local function SetSoundData(Ply, Entity, Support)
 				end
 				if not IsValidEntity then return end
 				Support.SetSoundBanks(Entity, SoundTable)
+				-- Store AFTER the data actually arrives, and store the real SoundTable
+				-- and not before this callback has had a chance to populate it.
+				duplicator.StoreEntityModifier(Entity, "acf_replacesound", SoundTable)
 			end)
-			duplicator.StoreEntityModifier(Entity, "acf_replacesound", SoundTable)
 		end
 	else
 		local Sound = Ply:GetInfo("wire_soundemitter_sound")
@@ -172,7 +174,33 @@ local function SetSoundData(Ply, Entity, Support)
 	end
 end
 
-duplicator.RegisterEntityModifier("acf_replacesound", SetSoundData)
+-- Duplicator playback applier
+local function ApplySoundDuplicatorData(_, Entity, Data)
+	if not IsValid(Entity) then return end
+	if not Data then return end
+
+	local Class = Entity:GetClass()
+	if not Class then return end
+
+	local Support = ACF.SoundToolSupport[Class]
+	if not Support then return end
+
+	if Class == "acf_engine" then
+		if not Support.SetSoundBanks then return end
+
+		Support.SetSoundBanks(Entity, Data)
+	else
+		if not Support.SetSound then return end
+
+		Support.SetSound(Entity, {
+			Sound  = Data[1],
+			Pitch  = ACF.CheckNumber(Data[2], 1),
+			Volume = ACF.CheckNumber(Data[3], 1),
+		})
+	end
+end
+
+duplicator.RegisterEntityModifier("acf_replacesound", ApplySoundDuplicatorData)
 
 -- An improved IsValid function, just to check if an entity is ACF class and if it has support from this tool
 local function IsReallyValid(trace, ply)
