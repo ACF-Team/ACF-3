@@ -5,7 +5,7 @@ local GetClientNumber, GetClientString = ACF.GetClientNumber, ACF.GetClientStrin
 
 	--- Generates the menu used in the Sound Replacer tool.
 	--- @param Panel panel The base panel to build the menu off of.
-function ACF.CreateSoundMenu(Panel)
+function ACF.CreateSoundMenu(Panel) -- MARK: Main Sound Menu
 	-- Main menu, aka the selection box from where everything else gets built upon
 	local Menu = ACF.InitMenuBase(Panel, "SoundMenu", "acf_reload_sound_menu")
 	Menu.ButtonHeight = 20
@@ -19,7 +19,7 @@ function ACF.CreateSoundMenu(Panel)
 	OptionSelectionBox:AddChoice("Generic - One sound. ", 1) -- TODO: Localize me!
 	--OptionSelectionBox:AddChoice("Weapons - Start/Loop/Stop. ", 2)
 	--OptionSelectionBox:AddChoice("Engines - Simple interpolated. ", 3)
-	OptionSelectionBox:AddChoice("Engines - Multiple interpolated. ", 4)
+	OptionSelectionBox:AddChoice("Engines - Multiple interpolated. ", 4) -- TODO: Localize me!
 	OptionSelectionBox.OnSelect = function(_, Index, _)
 		Menu:StartTemporal(Panel)
 		Menu:ClearTemporal(Panel)
@@ -29,7 +29,7 @@ function ACF.CreateSoundMenu(Panel)
 
 	--- Build the rest of the menu according to our selection
 	--- @param Num int The sub menu selected at the index.
-	function Menu:CreateSubMenu(Num)
+	function Menu:CreateSubMenu(Num) -- MARK: Init SubMenu
 		--============================================================================================================--
 		-- Local Constants, Variables, Tables and Methods															  --
 		--============================================================================================================--
@@ -67,8 +67,38 @@ function ACF.CreateSoundMenu(Panel)
 			end)()
 		}
 		--============================================================================================================--
-		-- SUBMENUS of the SUBMENUS  																				  --
+		-- Helper functions																							  --
 		--============================================================================================================--
+		-- Recomputes the true total sound-panel count across every bank (not just one), and writes it into our Current table.
+		-- This is called any time a soundBank Values table changes size, instead of overwriting the counter directly.
+		local function RecalcTotalSoundPanels(SoundBankPanel)
+			local Total = 0
+
+			for I = 1, #SoundBankPanel do
+				if SoundBankPanel[I] then
+					Total = Total + #SoundBankPanel[I].Values
+				end
+			end
+			Current.Count.OfSoundPanels = Total
+
+			return Total
+		end
+
+		-- Pushes an updated max onto every slider so that no bank can be raised past the amount still available in the shared sound budget.
+		local function RecalcSoundMaxes(SoundBankPanel)
+			for I = 1, #SoundBankPanel do
+				local Bank = SoundBankPanel[I]
+
+				if Bank then
+					local OwnCount    = #Bank.Values
+					local OthersTotal = Current.Count.OfSoundPanels - OwnCount
+					local MaxAllowed  = math.Clamp(_MAXSOUNDS - OthersTotal, 0, _MAXSOUNDS)
+
+					Bank[2]:SetMax(MaxAllowed)
+				end
+			end
+		end
+
 		-- The graphing function, this is a mirror of the function found in sounds_cl.lua and is redundant
 		-- TODO(TMF): This should be a single function pulled from ACF.Sounds object
 		local function UpdateGraph()
@@ -99,13 +129,15 @@ function ACF.CreateSoundMenu(Panel)
 				end)
 			end
 		end
-
+		--============================================================================================================--
+		-- SUBMENUS of the SUBMENUS  																				  --
+		--============================================================================================================--
 		-- The function that adds the panels to the corresponding SoundBank panels 
 		-- NOTE: For every DataVar defined here, they get formatted as follows:
 		-- [VALUE]@SB[SoundBankPanelID]-[SoundPanelID]; e.g:
 		-- RPM@SB1-1: DataVar with the RPM value of the first Soundpanel that's within the first SoundBank panel; 
 		-- Volume@SB2-3: DataVar with the Volume value of the third Soundpanel that's within the second SoundBank panel.
-		local AddValuePanel = function(SBPanelID)
+		local AddValuePanel = function(SBPanelID) -- MARK: AddValuePanel
 			Current.Panels.SoundBankPanels[SBPanelID].Values = Current.Panels.SoundBankPanels[SBPanelID].Values or {}
 			local VPPanel   = Current.Panels.SoundBankPanels[SBPanelID].Values -- Just here for verbosity sake
 			local PanelID   = #VPPanel == 0 and 1 or #VPPanel + 1 -- Ensure it always begins from 1 and increments from there on for every soundbank panel
@@ -270,7 +302,7 @@ function ACF.CreateSoundMenu(Panel)
 		end
 
 		-- The function that adds the soundbank panels
-		local AddSoundBankPanel = function()
+		local AddSoundBankPanel = function() -- MARK: AddSoundBankPanel
 			Current.Panels.SoundBankPanels = Current.Panels.SoundBankPanels or {}
 			local SBPanel = Current.Panels.SoundBankPanels -- Make it less verbose
 			local ID = #SBPanel == 0 and 1 or #SBPanel + 1 -- Ensure it always begins from 1 and increments sequentially from there on
@@ -279,14 +311,13 @@ function ACF.CreateSoundMenu(Panel)
 			local PlayAtExhaust = _:Add(self:AddCheckBox("Play At Exhaust")) -- TODO: Localize me!
 			local OffThrottle = _:Add(self:AddSlider("OffThrottle", 0, 1, 2)) -- TODO: Localize me!
 			local OnThrottle = _:Add(self:AddSlider("OnThrottle", 0, 1, 2)) -- TODO: Localize me!
-			local ValueSlider = _:Add(self:AddSlider("Sounds", 0, 16, 0)) -- TODO: Localize me!
+			local ValueSlider = _:Add(self:AddSlider("Sounds", 0, _MAXSOUNDS, 0)) -- TODO: Localize me!
 			local BotPanel = _:Add(self:AddPanel("DListLayout"))
 
 			MPanel:SetLabel("Sound Bank " .. ID) -- TODO: Localize me!
 			MPanel:Dock(TOP)
 			MPanel:DockMargin(0, 0, 0, 8)
 
-			--PlayAtExhaust:SetParent(MPanel)
 			PlayAtExhaust:Dock(TOP)
 			PlayAtExhaust:DockMargin(0, 8, 8, 0)
 			PlayAtExhaust:SetValue(ID == 1 and false or GetClientData("PlayAtExhaust " .. ID))
@@ -302,7 +333,6 @@ function ACF.CreateSoundMenu(Panel)
 				end
 			end)
 
-			--OffThrottle:SetParent(MPanel)
 			OffThrottle:Dock(TOP)
 			OffThrottle:DockMargin(0, 8, 8, 0)
 			OffThrottle:SetMinMax(0, 1)
@@ -312,7 +342,6 @@ function ACF.CreateSoundMenu(Panel)
 				Panel:SetValue(Value)
 			end)
 
-			--OnThrottle:SetParent(MPanel)
 			OnThrottle:Dock(TOP)
 			OnThrottle:DockMargin(0, 8, 8, 0)
 			OnThrottle:SetMinMax(0, 1)
@@ -328,11 +357,13 @@ function ACF.CreateSoundMenu(Panel)
 			ValueSlider:SetValue(GetClientNumber("SoundsAtSoundBank " .. ID), Min)
 			ValueSlider:SetClientData("SoundsAtSoundBank " .. ID, "OnValueChanged")
 			ValueSlider:DefineSetter(function(Panel, _, _, Value)
-				local ValueAmount = math.Clamp(math.floor(tonumber(Value)), Min, _MAXSOUNDS)
+				local OthersTotal = Current.Count.OfSoundPanels - LastValueAmount
+				local MaxAllowed  = math.Clamp(_MAXSOUNDS - OthersTotal, Min, _MAXSOUNDS)
+				local ValueAmount = math.Clamp(math.floor(tonumber(Value)), Min, MaxAllowed)
+
 				if ValueAmount ~= LastValueAmount then
-					if ValueAmount <= _MAXSOUNDS and ValueAmount > LastValueAmount then
+					if ValueAmount > LastValueAmount then
 						for _ = LastValueAmount + 1, ValueAmount do
-							Current.Count.OfSoundPanels = Current.Count.OfSoundPanels + 1
 							BotPanel:Add(AddValuePanel(ID))
 						end
 					elseif ValueAmount < LastValueAmount then
@@ -340,32 +371,28 @@ function ACF.CreateSoundMenu(Panel)
 							if IsValid(SBPanel[ID].Values[I]) then
 								SBPanel[ID].Values[I]:Remove()
 								SBPanel[ID].Values[I] = nil
-								Current.Count.OfSoundPanels = Current.Count.OfSoundPanels - 1
 							end
 						end
 					end
+					RecalcTotalSoundPanels(SBPanel)
 				end
 				LastValueAmount = ValueAmount
 
 				Panel:SetClientData("SoundsAtSoundBank " .. ID, ValueAmount)
 				Panel:SetValue(ValueAmount)
-				-- This does not work unfortunately, i need a less ass solution to this!
-				--[[for I = 1, #SBPanel do
-					if I ~= ID then
-						SBPanel[I][2]:SetMax(_MAXSOUNDS - Current.Count.OfSoundPanels)
-					end
-				end]]--
+
+				RecalcSoundMaxes(SBPanel) -- Let's keep every soundBank's slider max in sync with the new total
 			end)
 
-			--BotPanel:SetParent(MPanel)
 			BotPanel:Dock(TOP)
+
 			-- Update the count on events
 			BotPanel.OnChildAdded = function()
-				Current.Count.OfSoundPanels = #SBPanel[ID].Values
+				RecalcTotalSoundPanels(SBPanel)
 				UpdateGraph()
 			end
 			BotPanel.OnChildRemoved = function()
-				Current.Count.OfSoundPanels = #SBPanel[ID].Values
+				RecalcTotalSoundPanels(SBPanel)
 				UpdateGraph()
 			end
 
@@ -376,7 +403,7 @@ function ACF.CreateSoundMenu(Panel)
 		-- MAIN SUBMENUS																							  --
 		-- I explictly gave these their numeric keys so its easier to infer which submenu we're working with   		  --																		          --
 		--============================================================================================================--
-		local Case = {
+		local Case = { -- MARK: Main SubMenu
 			-- First panel, Generic - One sound. Old menu with text entry for a single sound
 			[1] = function ()
 				self:AddLabel("Play a single sound for all the supported ACF entities, excluding engines.") -- TODO: Localize me!
@@ -691,8 +718,9 @@ function ACF.CreateSoundMenu(Panel)
 		Switch()
 	end
 
-	do -- SoundBank entity data reception and menu population
-		-- Recieve data just to set the option of the selection box
+	do -- MARK: Networking
+		-- SoundBank networking entity data reception and menu population
+		-- Receives data just to set the option of the selection box
 		net.Receive("ACF_SoundMenu_Send_ID", function()
 			local MenuID = net.ReadUInt(4)
 
