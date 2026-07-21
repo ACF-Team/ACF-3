@@ -18,8 +18,8 @@ local Notify = ACF.Utilities.Notify
 -- So instead i went the dumb, hard and convoluted way and network the data needed back and forth
 if SERVER then
 	util.AddNetworkString("ACF_SoundMenu_Send_ID")   -- Networks data from Server to Client
-	util.AddNetworkString("ACF_SoundMenu_Get_Multi") -- Networks data from Entity(Server) to Client
-	util.AddNetworkString("ACF_SoundMenu_Set_Multi") -- Networks data from Client to Entity(Server)
+	util.AddNetworkString("ACF_SoundMenu_Get_Multi") -- Networks Entity data from Server to Client
+	util.AddNetworkString("ACF_SoundMenu_Set_Multi") -- Networks Entity data from Client to Server
 end
 
 --===============================================================================================--
@@ -32,6 +32,8 @@ end
 	--- @param Data table? The soundbank table to set soundbank Data to the Entity or not
 	--- @param Loopback bool? False to just populate a client menu and its datavars or True to GET the datavars from client and send them back 
 local function DoSoundBankData(Ply, Data, Loopback)
+	if CLIENT then return end
+
 	net.Start("ACF_SoundMenu_Get_Multi")
 		if not Loopback then
 			net.WriteBool(false)
@@ -71,6 +73,7 @@ end
 
 -- A function to get the sound data according to the entity's class
 local function GetSoundData(Ply, Trace, Support)
+	if CLIENT then return end
 	local Entity = Trace.Entity
 	local Class = Entity:GetClass()
 
@@ -102,6 +105,7 @@ end
 -- A function to set the sound data of an ACF entity that has support from this tool 
 local function SetSoundData(Ply, Entity, Support)
 	if not IsValid(Entity) then return end
+	if CLIENT then return end
 
 	local Class = Entity:GetClass()
 	if not Class then return end
@@ -176,6 +180,7 @@ end
 
 -- Duplicator playback applier
 local function ApplySoundDuplicatorData(_, Entity, Data)
+	if CLIENT then return end
 	if not IsValid(Entity) then return end
 	if not Data then return end
 
@@ -225,11 +230,11 @@ end
 -- A function to get the sound tool support of a valid acf entity
 local function CheckSupport(Ply, Trace)
 	if not IsReallyValid(Trace, Ply) then return false end
-	if CLIENT then return true end
 
 	local Class = Trace.Entity:GetClass()
 	local Support = ACF.SoundToolSupport[Class]
 
+	if CLIENT then return Support end -- I dunno if this is correct to do
 	return Support
 end
 
