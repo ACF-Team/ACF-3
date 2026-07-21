@@ -5,7 +5,6 @@ local Con = ACF.Contraption
 function ENT:ACF_PostUpdateEntityData()
 	self.BaseplateSize = Vector(self:ACF_GetUserVar("Length"), self:ACF_GetUserVar("Width"), self:ACF_GetUserVar("Thickness"))
 	self:SetSize(self.BaseplateSize)
-	print(self.BaseplateSize, self:GetSize())
 	local BPTypeInst = self:ACF_GetUserVar("BaseplateType")
 	if BPTypeInst and BPTypeInst.OnInitialize then
 		BPTypeInst:OnInitialize(self)
