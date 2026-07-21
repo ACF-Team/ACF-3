@@ -12,12 +12,12 @@ ACEConversionLUT.ace_crewseat_loader = {
 }
 
 local ACEModelConversion = {}
-ACEModelConversion.Sitting = "Sitting_Large"
-ACEModelConversion["Sitting Alt"] = "Sitting_Large"
-ACEModelConversion.Standing = "Standing_Large"
+ACEModelConversion.Sitting = "SittingLarge"
+ACEModelConversion["Sitting Alt"] = "SittingLarge"
+ACEModelConversion.Standing = "StandingLarge"
 -- todo
-ACEModelConversion.Jeep = "Standing_Large"
-ACEModelConversion.Airboat = "Standing_Large"
+ACEModelConversion.Jeep = "StandingLarge"
+ACEModelConversion.Airboat = "StandingLarge"
 
 local function ConvertACEData(Data, ConvData)
     Data.Class = "acf_crew"
