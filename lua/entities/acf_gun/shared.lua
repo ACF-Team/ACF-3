@@ -22,7 +22,7 @@ cleanup.Register("acf_smokelauncher")
 ENT.ACF_StaticWireInputs = {
 	"Fire (Attempts to fire the weapon.)",
 	"Unload (Forces the weapon to empty itself)",
-	"Reload` (Forces the weapon to reload itself.)",
+	"Reload (Forces the weapon to reload itself.)",
 }
 
 ENT.ACF_StaticWireOutputs = {
