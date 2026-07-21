@@ -64,6 +64,11 @@ do -- Spawn and Update functions -----------------------
 		local Class = Classes.GetSubtypeByName("ACF.Gearboxes.BaseGearbox", ID)
 			or Classes.GetTypeByName("ACF.Gearboxes.2Gear-T")
 
+		if Class.CanSetGears and ClientData.GearAmount ~= nil then
+			local Requested = ACF.CheckNumber(ClientData.GearAmount, Class.Gears.Max)
+			ClientData.GearAmount = math.Clamp(math.Round(Requested), math.max(1, Class.Gears.Min), Class.Gears.Max)
+		end
+
 		local MaxGears = Class.CanSetGears and (Class.MaxGear or ClientData.GearAmount or Class.Gears.Max) or Class.Gears.Max
 		local ToLegacy = tobool(ClientData.GearboxConvertRatio)
 		ClientData.GearboxConvertRatio = false -- one-shot; don't reconvert on dupes
