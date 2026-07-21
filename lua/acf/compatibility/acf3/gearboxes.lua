@@ -13,8 +13,7 @@ end
 ACF.Entities.RegisterCompatPatch("acf_gearbox", 2026062801, function(Data)
 	if Data.ACF_UserData then return end
 
-	local Old       = Data.Data or {}
-	local GearboxID = Old.Gearbox or Data.Gearbox or "2Gear-T"
+	local GearboxID = Data.Gearbox or "2Gear-T"
 	local Overrides
 
 	local FQN = GearboxFQN(GearboxID)
@@ -30,11 +29,8 @@ ACF.Entities.RegisterCompatPatch("acf_gearbox", 2026062801, function(Data)
 
 	FQN = FQN or "ACF.Gearboxes.2Gear-T"
 
-	-- Values may live at the top level (modern legacy dupes) or under a nested "Data" table (older/ACE).
 	local function Pick(Key)
-		local Value = Old[Key]
-		if Value == nil then Value = Data[Key] end
-		return Value
+		return Data[Key]
 	end
 
 	local UserData = {

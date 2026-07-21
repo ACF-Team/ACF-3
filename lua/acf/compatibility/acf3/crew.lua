@@ -23,13 +23,8 @@ local PoseRemap = {
 ACF.Entities.RegisterCompatPatch("acf_crew", 2026062801, function(Data)
 	if Data.ACF_UserData then return end
 
-	-- Values may live at the top level (modern legacy dupes) or under a nested "Data" table (older/ACE).
-	local Old = Data.Data or {}
-
 	local function Pick(Key)
-		local Value = Old[Key]
-		if Value == nil then Value = Data[Key] end
-		return Value
+		return Data[Key]
 	end
 
 	local CrewModelID = Pick("CrewModelID")

@@ -3,8 +3,7 @@
 ACF.Entities.RegisterCompatPatch("acf_engine", 2026062801, function(Data)
 	if Data.ACF_UserData then return end
 
-	local Old    = Data.Data or {}
-	local Engine = Old.Engine or Data.Engine or Data.Id or "5.7-V8"
+	local Engine = Data.Engine or Data.Id or "5.7-V8"
 	local FQN    = "ACF.Engines." .. tostring(Engine)
 
 	if not ACF.Classes.GetSubtypeByName("ACF.Engines.BaseEngine", FQN) then
