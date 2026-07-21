@@ -14,10 +14,6 @@ util.AddNetworkString("ACF_Autoloader_Links")
 -- Converts shell scale to model scale
 local RefSize = Vector(43.233333587646, 7.2349619865417, 7.2349619865417)
 
-function ENT:ACF_PreUpdateEntityData()
-	self.AutoloaderSize = Vector(self:ACF_GetUserVar("AutoloaderLength") / RefSize.x * 10, self:ACF_GetUserVar("AutoloaderCaliber") / RefSize.y, self:ACF_GetUserVar("AutoloaderCaliber") / RefSize.z) / ACF.InchToMm
-end
-
 function ENT:ACF_PreSpawn()
 	self:SetScaledModel("models/acf/autoloader_tractorbeam.mdl")
 
@@ -34,6 +30,11 @@ function ENT:ACF_PreSpawn()
 end
 
 function ENT:ACF_PostUpdateEntityData()
+	local RefX, RefY, RefZ = RefSize:Unpack()
+	local Length = self:ACF_GetUserVar("AutoloaderLength")
+	local Caliber = self:ACF_GetUserVar("AutoloaderCaliber")
+	self.AutoloaderSize = Vector(Length / RefX * 10, Caliber / RefY, Caliber / RefZ) / ACF.InchToMm
+
 	self:SetScale(self.AutoloaderSize)
 
 	-- Mass is proportional to volume of the shell
