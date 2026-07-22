@@ -64,7 +64,8 @@ do -- Playing regular sounds
 	--- @param Pitch? integer The sound's pitch from 0-255
 	--- @param Volume number A float representing the sound's volume; this is multiplied by the client's volume setting
 	--- @param UseBASS? boolean Whether the sound should be played through BASS instead; use this for things like volumes greater than 1
-	function Sounds.PlaySound(Origin, Path, Level, Pitch, Volume, UseBASS)
+	--- @param Callback? function Called with the resulting IGModAudioChannel after it's been created
+	function Sounds.PlaySound(Origin, Path, Level, Pitch, Volume, UseBASS, Callback)
 		Volume = ACF.Volume * Volume
 
 		if isentity(Origin) and IsValid(Origin) then
@@ -79,6 +80,8 @@ do -- Playing regular sounds
 						Channel:SetVolume(Volume)
 						Channel:Play()
 					end
+
+					if Callback then Callback(Channel) end
 				end)
 			else
 				sound.Play(Path, Origin, Level, Pitch, Volume)

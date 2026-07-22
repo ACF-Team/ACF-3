@@ -5,7 +5,7 @@ local GetClientNumber, GetClientString = ACF.GetClientNumber, ACF.GetClientStrin
 
 	--- Generates the menu used in the Sound Replacer tool.
 	--- @param Panel panel The base panel to build the menu off of.
-function ACF.CreateSoundMenu(Panel) -- MARK: Main Sound Menu
+function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 	-- Main menu, aka the selection box from where everything else gets built upon
 	local Menu = ACF.InitMenuBase(Panel, "SoundMenu", "acf_reload_sound_menu")
 	Menu.ButtonHeight = 20
@@ -29,21 +29,22 @@ function ACF.CreateSoundMenu(Panel) -- MARK: Main Sound Menu
 
 	--- Build the rest of the menu according to our selection
 	--- @param Num int The sub menu selected at the index.
-	function Menu:CreateSubMenu(Num) -- MARK: Init SubMenu
+	function Menu:CreateSubMenu(Num) -- MARK: CreateSubMenu
 		--============================================================================================================--
 		-- Local Constants, Variables, Tables and Methods															  --
 		--============================================================================================================--
-		local SoundGraph 			   -- Glocal
-		local _MAXSOUNDS 	      = 16 -- Maximum amount of sounds we're willing to send and have. TODO(TMF): Make this a global!
-		local _MAXSOUNDBANKPANELS = 4  -- Maximum amount of soundbanks we're willing to have. Again this should be a global!
-		local Current = {					 -- Local table used to store objects and other miscellaneous stuff
-			Panels = {SoundBankPanels = {}}, -- Contains the panel objects
-			Count  = {OfSoundBankPanels = 0, -- Keeps total count of them
+		local SoundGraph 			          -- Glocal
+		local _MAXSOUNDS 	      = 16        -- Maximum amount of sounds we're willing to send and have. TODO(TMF): Make this a global!
+		local _MAXSOUNDBANKPANELS = 4         -- Maximum amount of soundbanks we're willing to have. Again this should be a global!
+		local Current = {					  -- Local table used to store objects and other miscellaneous stuff
+			Panels  = {SoundBankPanels = {}}, -- Contains the panel objects
+			Count   = {OfSoundBankPanels = 0, -- Keeps total count of them
 					  OfSoundPanels = 0},
-			Graph  = {Idle      = 0,         -- Graph that contains the values to be set for the SoundGraph panel
-					  Redline   = 1,		 -- Datavars wouldn't initialize correctly so here is this...
+			Graph   = {Idle      = 0,         -- Graph that contains the values to be set for the SoundGraph panel
+					  Redline   = 1,		  -- Datavars wouldn't initialize correctly so here is this...
 					  RPMSlider = 2},
-			Colors = (function() 			 -- IIFE that returns a table with optionally randomized colors and if the text should be dark or light colored
+			Preview = {Channels = {}},        -- Holds the currently playing soundbank channels in the preview
+			Colors  = (function() 			  -- IIFE that returns a table with optionally randomized colors and if the text should be dark or light colored
 				local ColorTable = {}
 				local IsRandomColor = GetClientData("GetRandomColors")
 
@@ -67,7 +68,7 @@ function ACF.CreateSoundMenu(Panel) -- MARK: Main Sound Menu
 			end)()
 		}
 		--============================================================================================================--
-		-- Helper functions																							  --
+		-- MARK: Helper funcs														 								  --
 		--============================================================================================================--
 		-- Recomputes the true total sound-panel count across every bank (not just one), and writes it into our Current table.
 		-- This is called any time a soundBank Values table changes size, instead of overwriting the counter directly.
@@ -129,6 +130,46 @@ function ACF.CreateSoundMenu(Panel) -- MARK: Main Sound Menu
 				end)
 			end
 		end
+
+		-- SoundBank's preview functions: Plays every sound in the currently-plotted bank simultaneously.
+		-- Does cross-fading on them sound Pitch/Volume based on the RPM slider. This behavior mirrors exactly what
+		-- DoPitchVolumeAtRPM does in sounds_cl.lua, just driven by this menu RPM slider instead of the entity's live RPM.
+		local function UpdateSoundBankPreview(SoundBank, OffVolume, OnVolume, VolumeSliderPanel)
+			local Fade = Sounds.Fade
+			local Count = math.Clamp(#SoundBank, 1, _MAXSOUNDS)
+			local RPM = Current.Graph.RPMSlider or 0
+			-- DoPitchVolumeAtRPM expects a 0-100 range for throttle, but our volume slider works in the 0.1-1 range.
+			-- So instead we simply multiply that by 100 to get the actual value that our function expects.
+			local Throttle = VolumeSliderPanel:GetValue() * 100
+
+			for I, SoundData in ipairs(SoundBank) do
+				local Channel = Current.Preview.Channels[I]
+				if not IsValid(Channel) then continue end
+
+				local AddCurveWidth = SoundData.Width
+				local Min = I == 1 and -1000000 or SoundBank[math.Clamp(I - 1 - AddCurveWidth, 1, Count)].RPM
+				local Mid = SoundData.RPM
+				local Max = I == Count and 1000000 or SoundBank[math.Clamp(I + 1 + AddCurveWidth, 1, Count)].RPM
+
+				local Curve = Fade(RPM, Min, Mid, Max)
+				local Volume = Curve * math.Remap(Throttle, 0, 100, OffVolume, OnVolume) * SoundData.Volume
+				local Pitch = (RPM / SoundData.RPM) * SoundData.Pitch
+
+				Channel:SetVolume(Volume * ACF.Volume)
+				Channel:SetPlaybackRate(Pitch / 100)
+			end
+		end
+
+		local function StopSoundBankPreview()
+			for I, Channel in pairs(Current.Preview.Channels) do
+				if IsValid(Channel) then Channel:Stop() end
+				Current.Preview.Channels[I] = nil
+			end
+
+			Current.Preview.SoundList  = nil
+			Current.Preview.OffVolume  = nil
+			Current.Preview.OnVolume   = nil
+		end
 		--============================================================================================================--
 		-- SUBMENUS of the SUBMENUS  																				  --
 		--============================================================================================================--
@@ -172,7 +213,6 @@ function ACF.CreateSoundMenu(Panel) -- MARK: Main Sound Menu
 			MainPanel:DockMargin(0, 2, 0, 2)
 			MainPanel:SetLabel("Value " .. PanelID) -- TODO: Localize me!
 
-			--BasePanel:SetParent(MainPanel)
 			BasePanel:SetTall(72)
 			BasePanel:DockPadding(4, 8, 4, 0)
 			BasePanel:SetBackgroundColor(BGColor)
@@ -403,7 +443,7 @@ function ACF.CreateSoundMenu(Panel) -- MARK: Main Sound Menu
 		-- MAIN SUBMENUS																							  --
 		-- I explictly gave these their numeric keys so its easier to infer which submenu we're working with   		  --																		          --
 		--============================================================================================================--
-		local Case = { -- MARK: Main SubMenu
+		local Case = { -- MARK: SwitchCase Menus
 			-- First panel, Generic - One sound. Old menu with text entry for a single sound
 			[1] = function ()
 				self:AddLabel("Play a single sound for all the supported ACF entities, excluding engines.") -- TODO: Localize me!
@@ -479,7 +519,7 @@ function ACF.CreateSoundMenu(Panel) -- MARK: Main Sound Menu
 			end,]]--
 			-- Fourth panel, Engines - Custom interpolated. New menu with a button to add up to 16 sound paths, with configurable pitch, volume and width for each sound
 			-- Has a graph at the top of the list to better visualise how they play at a determined engine RPM
-			[2] = function()
+			[2] = function() -- MARK: Multiple sounds
 				self:AddLabel("Play multiple interpolated sounds exclusively for ACF engines.") -- TODO: Localize me!
 				-- Contact panel
 				local Contact = self:AddCollapsible("Contact", true, "icon16/bug_link.png") -- TODO: Localize me!
@@ -529,6 +569,7 @@ function ACF.CreateSoundMenu(Panel) -- MARK: Main Sound Menu
 
 				-- The properties
 				GraphGroup:DockMargin(0, 0, 0, 0)
+				GraphGroup.OnRemove = function() StopSoundBankPreview() end -- Stop our soundbank sounds whenever we change menus
 
 				GraphPanel:DockPadding(4, 4, 4, 0)
 				GraphPanel:Dock(TOP)
@@ -557,11 +598,17 @@ function ACF.CreateSoundMenu(Panel) -- MARK: Main Sound Menu
 				SoundGraph:SetYSpacing(100)
 
 				BankSlider:SetTall(Menu.ButtonHeight)
-				BankSlider:SetValue("Select a Sound Bank to plot")
+				BankSlider:SetValue("Select a Sound Bank to plot") -- TODO: Localize me!
 				BankSlider:SetClientData("SoundBankPlotIndex", "OnSelect")
 				BankSlider:DefineSetter(function(Panel, _, _, Value)
 					Panel:SetValue(Value)
 					Panel:SetText(Panel:GetOptionText(Value) or "Select a Sound Bank to plot") -- TODO: Localize me!
+
+					-- Switching the plotted bank invalidates whatever's currently playing
+					StopSoundBankPreview()
+					SoundPrePlay:SetEnabled(Current.Panels.SoundBankPanels[Value] ~= nil)
+					SoundPreStop:SetEnabled(false)
+
 					UpdateGraph()
 				end)
 
@@ -618,24 +665,88 @@ function ACF.CreateSoundMenu(Panel) -- MARK: Main Sound Menu
 
 					Current.Graph.RPMSlider = Value
 					SoundGraph:PlotLimitLine("RPM", false, Value, color_black)
+
+					-- Update our currently active soundbank preview 
+					if Current.Preview.SoundList then
+						UpdateSoundBankPreview(Current.Preview.SoundList, Current.Preview.OffVolume, Current.Preview.OnVolume, VolumeSlider)
+					end
+
 					return Value
 				end)
 
 				VolumeSlider:Dock(TOP)
+				VolumeSlider.OnValueChanged = function()
+					-- Same as above here but only for volume
+					if Current.Preview.SoundList then
+						UpdateSoundBankPreview(Current.Preview.SoundList, Current.Preview.OffVolume, Current.Preview.OnVolume, VolumeSlider)
+					end
+				end
 
 				SoundPre:SetWide(Menu.Wide)
 				SoundPre:SetTall(Menu.ButtonHeight)
 
 				SoundPrePlay:SetIcon("icon16/sound.png")
-				SoundPrePlay:SetTooltip("Unimplemented!")
+				SoundPrePlay:SetTooltip("Plays the currently selected Sound Bank, cross-faded at the selected RPM.") -- TODO: Localize me!
 				SoundPrePlay:SetEnabled(false)
 				SoundPrePlay.DoClick = function()
-					-- Do something here to play them sounds!
+					local Bank = GetClientData("SoundBankPlotIndex")
+					if not Bank or not isnumber(Bank) then return end
+
+					local BankPanel = Current.Panels.SoundBankPanels[Bank]
+					if not BankPanel then return end
+
+					local Count = #BankPanel.Values
+					if Count == 0 then return end
+
+					StopSoundBankPreview() -- Stop any previous sound bank before starting a new one
+
+					-- Get the values straight out of the datavars the same way UpdateGraph does. 
+					local SoundList = {}
+
+					for I = 1, Count do
+						SoundList[I] = {
+							RPM    = GetClientNumber("RPM@SB" .. Bank .. "-" .. I, 0),
+							Path   = GetClientString("Path@SB" .. Bank .. "-" .. I, ""),
+							Pitch  = GetClientNumber("Pitch@SB" .. Bank .. "-" .. I, 100),
+							Volume = GetClientNumber("Volume@SB" .. Bank .. "-" .. I, 1),
+							Width  = GetClientNumber("Width@SB" .. Bank .. "-" .. I, 0),
+						}
+					end
+
+					local OffVolume = GetClientNumber("OffThrottle " .. Bank, 0.25)
+					local OnVolume  = GetClientNumber("OnThrottle " .. Bank, 1)
+
+					-- Stash our preview values
+					Current.Preview.SoundList = SoundList
+					Current.Preview.OffVolume = OffVolume
+					Current.Preview.OnVolume  = OnVolume
+
+					for I, SoundData in ipairs(SoundList) do
+						if not Sounds.IsValidSound(SoundData.Path) then continue end
+
+						-- "noplay" lets us set volume/pitch before it actually starts.
+						sound.PlayFile("sound/" .. SoundData.Path, "noplay", function(Channel)
+							if not IsValid(Channel) then return end
+
+							Current.Preview.Channels[I] = Channel
+							Channel:EnableLooping(true)
+							Channel:SetVolume(0) -- Silent until the Think hook sets the real value next tick
+							Channel:Play()
+
+							UpdateSoundBankPreview(SoundList, OffVolume, OnVolume, VolumeSlider)
+						end)
+					end
+
+					SoundPreStop:SetEnabled(true)
 				end
 
 				SoundPreStop:SetIcon("icon16/sound_mute.png")
-				SoundPreStop:SetTooltip("Unimplemented!")
+				SoundPreStop:SetTooltip("Stop the Sound Bank preview.") -- TODO: Localize me!
 				SoundPreStop:SetEnabled(false)
+				SoundPreStop.DoClick = function()
+					StopSoundBankPreview()
+					SoundPreStop:SetEnabled(false)
+				end
 
 				-- Set the Play/Stop button positions here
 				SoundPre:InvalidateLayout(true)
@@ -665,19 +776,34 @@ function ACF.CreateSoundMenu(Panel) -- MARK: Main Sound Menu
 					local ValueAmount = math.Clamp(math.floor(tonumber(Value)), 1, _MAXSOUNDBANKPANELS)
 					if ValueAmount ~= LastSoundBankValue then
 						if ValueAmount > LastSoundBankValue then
-							for _ = LastSoundBankValue + 1, ValueAmount do
-								BankSlider:AddChoice("Plot Sound Bank " .. ValueAmount, ValueAmount) -- TODO: Localize me!
+							for I = LastSoundBankValue + 1, ValueAmount do
+								BankSlider:AddChoice("Plot Sound Bank " .. I, I) -- TODO: Localize me!
 								Current.Count.OfSoundBankPanels = Current.Count.OfSoundBankPanels + 1
 								SoundBankList:Add(AddSoundBankPanel())
 							end
 						elseif ValueAmount < LastSoundBankValue then
-							for I = ValueAmount + 1, LastSoundBankValue do
+							-- We're removing the highest index first, in descending order so each RemoveChoice
+							-- doesn't shift the position of entries still waiting to be removed and accidentally cause chaos.
+							for I = LastSoundBankValue, ValueAmount + 1, -1 do
 								if IsValid(Current.Panels.SoundBankPanels[I][1]) then
 									Current.Count.OfSoundPanels = Current.Count.OfSoundPanels - #Current.Panels.SoundBankPanels[I].Values
 									Current.Count.OfSoundBankPanels = Current.Count.OfSoundBankPanels - 1
 									Current.Panels.SoundBankPanels[I][1]:Remove()
 									Current.Panels.SoundBankPanels[I] = nil
+
 									BankSlider:RemoveChoice(I)
+
+									-- The bank currently plotted/previewed just got deleted so now we reset our combobox selection, 
+									-- stop any active sound preview, and clear the now stale plotted graph curve.
+									if GetClientData("SoundBankPlotIndex") == I then
+										StopSoundBankPreview()
+										SetClientData("SoundBankPlotIndex", 0)
+
+										BankSlider:SetValue("Select a Sound Bank to plot") -- TODO: Localize me!
+										SoundPrePlay:SetEnabled(false)
+										SoundPreStop:SetEnabled(false)
+										SoundGraph:Clear()
+									end
 								end
 							end
 						end
