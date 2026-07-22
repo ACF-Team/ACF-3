@@ -100,6 +100,8 @@ function Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable)
 	if not IsValid(Origin) then return end
 	if not istable(SoundTable) then return end
 
+	local _BIT_NUM_SOUNDBANKS = ACF.GetNearestPowerOfTwo(ACF.MaxSoundBanks)
+
 	-- Separate our table in chunks to be sent instead of all at once
 	-- This saves about 40% in data size vs. sending the whole table
 	net.Start("ACF_Sounds_AdjustableCreate_Multi")
@@ -107,7 +109,7 @@ function Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable)
 		net.WriteEntity(Origin.Exhaust)
 
 		local SoundBankCount = #Origin.SoundBanks
-		net.WriteUInt(SoundBankCount, 2)
+		net.WriteUInt(SoundBankCount, _BIT_NUM_SOUNDBANKS)
 
 		for _, Bank in ipairs(SoundTable) do
 			net.WriteBool(Bank.PlaysAtExhaust or false)

@@ -184,12 +184,11 @@ do -- Processing adjustable sounds (for example, engine noises)
 end
 
 local cos = math.cos
+local _PI = math.pi
 -- Fade function taken from:
 -- https://dsp.stackexchange.com/questions/37477/understanding-equal-power-crossfades
 -- https://dsp.stackexchange.com/questions/14754/equal-power-crossfade
 function Sounds.Fade(N, Min, Mid, Max)
-	local _PI = math.pi
-
 	if N < Min or N > Max then return 0 end
 
 	if N > Mid then
@@ -294,11 +293,12 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 		Origin.SoundBankCount = 0
 	end
 
+	local _BIT_NUM_SOUNDBANKS = ACF.GetNearestPowerOfTwo(ACF.MaxSoundBanks)
 	-- For multiple sounds creation
 	net.Receive("ACF_Sounds_AdjustableCreate_Multi", function()
 		local Origin = net.ReadEntity()
 		local Exhaust = net.ReadEntity()
-		local SoundBankCount = net.ReadUInt(2)
+		local SoundBankCount = net.ReadUInt(_BIT_NUM_SOUNDBANKS)
 
 		local SoundTable = {}
 
