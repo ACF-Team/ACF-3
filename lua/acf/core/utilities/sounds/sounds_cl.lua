@@ -1,8 +1,4 @@
 local Sounds = ACF.Utilities.Sounds
-local _MAXSOUNDS = 16 -- Maximum amount of sounds we're willing to send and have. TODO(TMF): Make this a global!
-local _HUGE = 1000000 --math.huge returns nan for the Fade function
-local Map = math.Remap
-local Clamp = math.Clamp
 
 do -- Valid sound check
 	local file     = file
@@ -187,6 +183,7 @@ do -- Processing adjustable sounds (for example, engine noises)
 	end)
 end
 
+local cos = math.cos
 -- Fade function taken from:
 -- https://dsp.stackexchange.com/questions/37477/understanding-equal-power-crossfades
 -- https://dsp.stackexchange.com/questions/14754/equal-power-crossfade
@@ -199,9 +196,11 @@ function Sounds.Fade(N, Min, Mid, Max)
 		Min = Mid - (Max - Mid)
 	end
 
-	return math.cos((1 - ((N - Min) / (Mid - Min))) * (_PI / 2))
+	return cos((1 - ((N - Min) / (Mid - Min))) * (_PI / 2))
 end
 
+local Remap = math.Remap
+local Clamp = math.Clamp
 -- This is where the magic to interpolate sounds happen.
 -- In order to make yourself a better idea of what this does you can consult the image below:
 -- https://i.imgur.com/KaFmaMf.png
@@ -224,11 +223,11 @@ local function DoPitchVolumeAtRPM(Origin, Throttle, RPM)
 
 			local AddCurveWidth = SoundTable.Width or 0
 			local EnginePitch = SoundTable.Pitch or 1
-			local Min    = Idx == 1 and -_HUGE or SoundBank.Sounds[Clamp(Idx - 1 - AddCurveWidth, 1, _MAXSOUNDS)].RPM
+			local Min    = Idx == 1 and -1000000 or SoundBank.Sounds[Clamp(Idx - 1 - AddCurveWidth, 1, ACF.MaxSounds)].RPM
 			local Mid    = SoundTable.RPM
-			local Max    = Idx == #SoundBank.Sounds and _HUGE or SoundBank.Sounds[Clamp(Idx + 1 + AddCurveWidth, 1, _MAXSOUNDS)].RPM
+			local Max    = Idx == #SoundBank.Sounds and 1000000 or SoundBank.Sounds[Clamp(Idx + 1 + AddCurveWidth, 1, ACF.MaxSounds)].RPM
 			local Curve  = Fade(RPM, Min, Mid, Max)
-			local Volume = Curve * Map(Throttle, 0, 100, OffVolume, OnVolume) * (SoundTable.Volume or 1)
+			local Volume = Curve * Remap(Throttle, 0, 100, OffVolume, OnVolume) * (SoundTable.Volume or 1)
 			local Pitch  = (RPM / SoundTable.RPM) * EnginePitch
 
 			Sounds.UpdateAdjustableSound(Entity, Pitch, Volume)
@@ -296,8 +295,7 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 	end
 
 	-- For multiple sounds creation
-	net.Receive("ACF_Sounds_AdjustableCreate_Multi", function(len)
-		print("Received " .. len .. " bits from \"ACF_Sounds_AdjustableCreate_Multi\" for sound creation!") -- Debug print
+	net.Receive("ACF_Sounds_AdjustableCreate_Multi", function()
 		local Origin = net.ReadEntity()
 		local Exhaust = net.ReadEntity()
 		local SoundBankCount = net.ReadUInt(2)
@@ -323,7 +321,7 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 									 })
 
 			for _ = 1, SoundCount do
-				local RPM 		 = net.ReadUInt(14)
+				local RPM 		 = net.ReadUInt(ACF.NetSoundRPMBitLimit)
 				local StringPath = net.ReadString()
 				local Pitch 	 = net.ReadUInt(8)
 				local Volume 	 = net.ReadUInt(8)
@@ -343,8 +341,7 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 	end)
 
 	-- For updates on multiple sounds
-	net.Receive("ACF_Sounds_Adjustable_Multi", function(len)
-		print("Received " .. len .. " bits from \"ACF_Sounds_Adjustable_Multi\" for sound updates!") -- Debug print
+	net.Receive("ACF_Sounds_Adjustable_Multi", function()
 		local Origin = net.ReadEntity()
 		local ShouldStop = net.ReadBool()
 
@@ -355,7 +352,7 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 			Sounds.DeleteMultipleAdjustableSounds(Origin)
 		else
 			local Throttle = net.ReadUInt(7)
-			local RPM = net.ReadUInt(14)
+			local RPM = net.ReadUInt(ACF.NetSoundRPMBitLimit)
 
 			DoPitchVolumeAtRPM(Origin, Throttle, RPM)
 		end

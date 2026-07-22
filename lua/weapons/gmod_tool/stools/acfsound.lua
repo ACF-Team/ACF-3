@@ -50,7 +50,7 @@ local function DoSoundBankData(Ply, Data, Loopback)
 				net.WriteUInt(#Bank.Sounds, 4)
 
 				for _, Sound in ipairs(Bank.Sounds) do
-					net.WriteUInt(Sound.RPM, 14)
+					net.WriteUInt(Sound.RPM, ACF.NetSoundRPMBitLimit)
 					net.WriteString(Sound.Path)
 					net.WriteUInt(Sound.Pitch, 8)
 					net.WriteUInt(Sound.Volume * 100, 8) -- Same here
@@ -138,7 +138,7 @@ local function SetSoundData(Ply, Entity, Support)
 					end
 
 					for _ = 1, SoundCount do
-						local RPM = net.ReadUInt(14)
+						local RPM = net.ReadUInt(ACF.NetSoundRPMBitLimit)
 						local Path = net.ReadString()
 						local Pitch = net.ReadUInt(8)
 						local Volume = net.ReadUInt(8) * 0.01 -- Again, same here

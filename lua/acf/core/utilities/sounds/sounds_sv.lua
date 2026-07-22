@@ -127,7 +127,7 @@ function Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable)
 				local Volume = V.Volume
 				local Width = V.Width
 
-				net.WriteUInt(RPM, 14)
+				net.WriteUInt(RPM, ACF.NetSoundRPMBitLimit)
 				net.WriteString(StringPath)
 				net.WriteUInt(Pitch, 8)
 
@@ -167,7 +167,7 @@ function Sounds.SendMultipleAdjustableSounds(Origin, ShouldStop, Throttle, RPM)
 			net.WriteBool(ShouldStop)
 		if not ShouldStop then
 			net.WriteUInt(Throttle or 0, 7)
-			net.WriteUInt(RPM or 0, 14) -- Theorically there are engines capable of reaching more than 16K RPM. If you do so, you can go off yourself...
+			net.WriteUInt(RPM or 0, ACF.NetSoundRPMBitLimit) -- Theorically there are engines capable of reaching more than 16K RPM. If you do so, you can go off yourself...
 		end
 		net.SendPAS(Origin:GetPos())
 		OriginTbl.SoundTimer = Time + 0.05

@@ -33,9 +33,8 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 		--============================================================================================================--
 		-- Local Constants, Variables, Tables and Methods															  --
 		--============================================================================================================--
-		local SoundGraph 			          -- Glocal
-		local _MAXSOUNDS 	      = 16        -- Maximum amount of sounds we're willing to send and have. TODO(TMF): Make this a global!
-		local _MAXSOUNDBANKPANELS = 4         -- Maximum amount of soundbanks we're willing to have. Again this should be a global!
+		local SoundGraph  					  -- Glocal
+		local _MAX_NET_SOUND_RPM = (2 ^ ACF.NetSoundRPMBitLimit) - 1 -- Maximum limit RPM related stuff is allowed to have for networking reasons
 		local Current = {					  -- Local table used to store objects and other miscellaneous stuff
 			Panels  = {SoundBankPanels = {}}, -- Contains the panel objects
 			Count   = {OfSoundBankPanels = 0, -- Keeps total count of them
@@ -48,11 +47,11 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 				local ColorTable = {}
 				local IsRandomColor = GetClientData("GetRandomColors")
 
-				for I = 1, _MAXSOUNDS do
+				for I = 1, ACF.MaxSounds do
 					local Col
 					if not IsRandomColor then
 						-- In short, it creates a rainbow :3
-						local Freq = 360 / _MAXSOUNDS
+						local Freq = 360 / ACF.MaxSounds
 						Col = HSVToColor(I * Freq % 360, 1, 1)
 					else
 						-- Create a randomized reduced range color to allow it to contrast with the background
@@ -93,15 +92,14 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 				if Bank then
 					local OwnCount    = #Bank.Values
 					local OthersTotal = Current.Count.OfSoundPanels - OwnCount
-					local MaxAllowed  = math.Clamp(_MAXSOUNDS - OthersTotal, 0, _MAXSOUNDS)
+					local MaxAllowed  = math.Clamp(ACF.MaxSounds - OthersTotal, 0, ACF.MaxSounds)
 
 					Bank[2]:SetMax(MaxAllowed)
 				end
 			end
 		end
 
-		-- The graphing function, this is a mirror of the function found in sounds_cl.lua and is redundant
-		-- TODO(TMF): This should be a single function pulled from ACF.Sounds object
+		-- The graphing function, this is a mirror of the function found in sounds_cl.lua
 		local function UpdateGraph()
 			local Bank = GetClientData("SoundBankPlotIndex")
 			if not Bank or not isnumber(Bank) then return end -- Kinda pointless isnumber check, but just in case...
@@ -120,12 +118,12 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 			for I = 1, Count do
 				local AddCurveWidth = GetClientNumber("Width@SB" .. Bank .. "-" .. I, 0)
 				local Volume = GetClientNumber("Volume@SB" .. Bank .. "-" .. I, 0) * 100
-				local Min = I == 1 and -1000000 or GetClientNumber("RPM@SB" .. Bank .. "-" .. Clamp(I - 1 - AddCurveWidth, 1, _MAXSOUNDS))
+				local Min = I == 1 and -1000000 or GetClientNumber("RPM@SB" .. Bank .. "-" .. Clamp(I - 1 - AddCurveWidth, 1, ACF.MaxSounds))
 				local Mid = GetClientNumber("RPM@SB" .. Bank .. "-" .. I, 0)
-				local Max = I == Count and 1000000 or GetClientNumber("RPM@SB" .. Bank .. "-" .. Clamp(I + 1 + AddCurveWidth, 1, _MAXSOUNDS))
+				local Max = I == Count and 1000000 or GetClientNumber("RPM@SB" .. Bank .. "-" .. Clamp(I + 1 + AddCurveWidth, 1, ACF.MaxSounds))
 
 				-- The 1000 extra is so it can see til the graph X limit and not cutoff
-				SoundGraph:PlotLimitFunction("Sound " .. I, 0, 16383 + 1000, Current.Colors[I][1], function(X) -- TODO: Localize me!
+				SoundGraph:PlotLimitFunction("Sound " .. I, 0, _MAX_NET_SOUND_RPM + 1000, Current.Colors[I][1], function(X) -- TODO: Localize me!
 					return (Fade(X, Min, Mid, Max)) * Volume
 				end)
 			end
@@ -136,7 +134,7 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 		-- DoPitchVolumeAtRPM does in sounds_cl.lua, just driven by this menu RPM slider instead of the entity's live RPM.
 		local function UpdateSoundBankPreview(SoundBank, OffVolume, OnVolume, VolumeSliderPanel)
 			local Fade = Sounds.Fade
-			local Count = math.Clamp(#SoundBank, 1, _MAXSOUNDS)
+			local Count = math.Clamp(#SoundBank, 1, ACF.MaxSounds)
 			local RPM = Current.Graph.RPMSlider or 0
 			-- DoPitchVolumeAtRPM expects a 0-100 range for throttle, but our volume slider works in the 0.1-1 range.
 			-- So instead we simply multiply that by 100 to get the actual value that our function expects.
@@ -197,8 +195,7 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 			local BasePanel = BaseMainPanel:Add(self:AddPanel("DPanel"))
 			local TopDiv = BasePanel:Add(self:AddPanel("ACF_Panel")) -- This is equivalent to a HTML Div, generic panel to parent other children to.
 			local BotDiv = BasePanel:Add(self:AddPanel("ACF_Panel")) -- Same as above.
-			-- TODO(TMF): The max value below is hardcoded, this should be a global!
-			local RPMWang, RPMLabel = self:AddNumberWang("RPM:", 0, 16383, 0) -- TODO: Localize me!
+			local RPMWang, RPMLabel = self:AddNumberWang("RPM:", 0, _MAX_NET_SOUND_RPM, 0) -- TODO: Localize me!
 			local _, PathLabel, PathText = self:AddTextEntry("Path:") -- TODO: Localize me!
 			local ParseIcon = PathText:Add(self:AddPanel("DImage"))
 			local SearchButton = TopDiv:Add(self:AddPanel("DImageButton"))
@@ -232,9 +229,8 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 			RPMWang:SetValue(GetClientNumber("RPM@SB" .. SBPanelID .. "-" .. PanelID, DefaultRPM))
 			RPMWang:SetClientData("RPM@SB" .. SBPanelID .. "-" .. PanelID, "OnValueChanged")
 			RPMWang:DefineSetter(function(Panel, _, _, Value)
-				-- TODO(TMF): The max value below is hardcoded, this should be a global!
 				local Min = PanelID == 1 and 0 or GetClientNumber("RPM@SB" .. SBPanelID .. "-" .. (PanelID - 1))
-				local Max = PanelID == #VPPanel and 16383 or GetClientNumber("RPM@SB" .. SBPanelID .. "-" .. (PanelID + 1))
+				local Max = PanelID == #VPPanel and _MAX_NET_SOUND_RPM or GetClientNumber("RPM@SB" .. SBPanelID .. "-" .. (PanelID + 1))
 
 				Panel:SetMinMax(Min, Max) -- YEA, I MINMAX MY NUMBERS, SO What!?
 				Panel:SetValue(Value)
@@ -351,7 +347,7 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 			local PlayAtExhaust = _:Add(self:AddCheckBox("Play At Exhaust")) -- TODO: Localize me!
 			local OffThrottle = _:Add(self:AddSlider("OffThrottle", 0, 1, 2)) -- TODO: Localize me!
 			local OnThrottle = _:Add(self:AddSlider("OnThrottle", 0, 1, 2)) -- TODO: Localize me!
-			local ValueSlider = _:Add(self:AddSlider("Sounds", 0, _MAXSOUNDS, 0)) -- TODO: Localize me!
+			local ValueSlider = _:Add(self:AddSlider("Sounds", 0, ACF.MaxSounds, 0)) -- TODO: Localize me!
 			local BotPanel = _:Add(self:AddPanel("DListLayout"))
 
 			MPanel:SetLabel("Sound Bank " .. ID) -- TODO: Localize me!
@@ -398,7 +394,7 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 			ValueSlider:SetClientData("SoundsAtSoundBank " .. ID, "OnValueChanged")
 			ValueSlider:DefineSetter(function(Panel, _, _, Value)
 				local OthersTotal = Current.Count.OfSoundPanels - LastValueAmount
-				local MaxAllowed  = math.Clamp(_MAXSOUNDS - OthersTotal, Min, _MAXSOUNDS)
+				local MaxAllowed  = math.Clamp(ACF.MaxSounds - OthersTotal, Min, ACF.MaxSounds)
 				local ValueAmount = math.Clamp(math.floor(tonumber(Value)), Min, MaxAllowed)
 
 				if ValueAmount ~= LastValueAmount then
@@ -549,9 +545,8 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 				local BankSlider = GraphPanel:Add(self:AddComboBox())
 				local PanelBottom = GraphPanel:Add(self:AddPanel("ACF_Panel"))
 				local IdleWang, IdleLabel = self:AddNumberWang("Idle:", 0, 2000, 0)
-				-- TODO(TMF): The max values below are hardcoded, this should be a global!
-				local RedlineWang, RedlineLabel = self:AddNumberWang("Redline:", 0, 16383, 0)
-				local RPMSlider = GraphPanel:Add(self:AddSlider("RPM", 0, 16383))
+				local RedlineWang, RedlineLabel = self:AddNumberWang("Redline:", 0, _MAX_NET_SOUND_RPM, 0)
+				local RPMSlider = GraphPanel:Add(self:AddSlider("RPM", 0, _MAX_NET_SOUND_RPM))
 				local VolumeSlider = GraphPanel:Add(self:AddSlider("#tool.acfsound.volume", 0.1, 1, 2))
 				local SoundPre = GraphPanel:Add(self:AddPanel("ACF_Panel"))
 				local SoundPrePlay = SoundPre:AddButton("#tool.acfsound.play")
@@ -637,7 +632,7 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 				RedlineWang:SetParent(PanelBottom)
 				RedlineWang:Dock(LEFT)
 				RedlineWang:SetWide(48)
-				RedlineWang:SetMinMax(GetClientNumber("Idle"), 16383)
+				RedlineWang:SetMinMax(GetClientNumber("Idle"), _MAX_NET_SOUND_RPM)
 				RedlineWang:SetClientData("Redline", "OnValueChanged")
 				RedlineWang:SetValue(DefaultRedline)
 				RedlineWang:DefineSetter(function(Panel, _, _, Value)
@@ -656,9 +651,8 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 				RPMSlider:SetClientData("RPMSlider", "OnValueChanged")
 				RPMSlider:SetValue(GetClientNumber("RPMSlider", 4400))
 				RPMSlider:DefineSetter(function(Panel, _, _, Value)
-					-- TODO(TMF): The max value below is hardcoded, this should be a global!
 					local Min = GetClientNumber("Idle", 0)
-					local Max = GetClientNumber("Redline", 16383)
+					local Max = GetClientNumber("Redline", _MAX_NET_SOUND_RPM)
 
 					Panel:SetMinMax(Min, Max)
 					Panel:SetValue(Value)
@@ -760,8 +754,8 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 				-- The bottom group where the panels are added and removed dynamically
 				local SoundBanksGroup = self:AddCollapsible("Sound Banks", nil, "icon16/application_double.png") -- TODO: Localize me!
 				-- TODO: Localize me!
-				local SoundBankHelp = SoundBanksGroup:Add(self:AddHelp("This panel allows you to set up to " .. _MAXSOUNDBANKPANELS .. " different sound banks and up to " .. _MAXSOUNDS .. " sounds total. If you can't add a new sound, check that you're not hitting this limit!"))
-				local SoundBankSlider = SoundBanksGroup:Add(self:AddSlider("Sound Banks", 1, _MAXSOUNDBANKPANELS, 0))
+				local SoundBankHelp = SoundBanksGroup:Add(self:AddHelp("This panel allows you to set up to " .. ACF.MaxSoundBanks .. " different sound banks and up to " .. ACF.MaxSounds .. " sounds total. If you can't add a new sound, check that you're not hitting this limit!"))
+				local SoundBankSlider = SoundBanksGroup:Add(self:AddSlider("Sound Banks", 1, ACF.MaxSoundBanks, 0))
 				local SoundBankList = SoundBanksGroup:Add(self:AddPanel("DListLayout"))
 
 				SoundBanksGroup:DockMargin(0, 0, 0, 0)
@@ -773,7 +767,7 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 				SoundBankSlider:SetValue(GetClientData("SoundBankSlider"))
 				SoundBankSlider:SetClientData("SoundBankSlider", "OnValueChanged")
 				SoundBankSlider:DefineSetter(function(Panel, _, _, Value)
-					local ValueAmount = math.Clamp(math.floor(tonumber(Value)), 1, _MAXSOUNDBANKPANELS)
+					local ValueAmount = math.Clamp(math.floor(tonumber(Value)), 1, ACF.MaxSoundBanks)
 					if ValueAmount ~= LastSoundBankValue then
 						if ValueAmount > LastSoundBankValue then
 							for I = LastSoundBankValue + 1, ValueAmount do
@@ -874,7 +868,7 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 					SetClientData("SoundsAtSoundBank " .. SB, SoundCount)
 
 					for S = 1, SoundCount do
-						local RPM 	 = net.ReadUInt(14)
+						local RPM 	 = net.ReadUInt(ACF.NetSoundRPMBitLimit)
 						local Path   = net.ReadString()
 						local Pitch  = net.ReadUInt(8)
 						local Volume = net.ReadUInt(8)
@@ -905,7 +899,7 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 						net.WriteUInt(SoundCount, 4)
 
 						for S = 1, SoundCount do
-							net.WriteUInt(GetClientNumber("RPM@SB" .. SB .. "-" .. S), 14)
+							net.WriteUInt(GetClientNumber("RPM@SB" .. SB .. "-" .. S), ACF.NetSoundRPMBitLimit)
 							net.WriteString(GetClientString("Path@SB" .. SB .. "-" .. S))
 							net.WriteUInt(GetClientNumber("Pitch@SB" .. SB .. "-" .. S), 8)
 							net.WriteUInt(GetClientNumber("Volume@SB" .. SB .. "-" .. S) * 100, 8) -- Again, same here

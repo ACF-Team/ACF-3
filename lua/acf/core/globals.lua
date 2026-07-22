@@ -201,6 +201,11 @@ do -- ACF global vars
 	-- Miscellaneous Sound Stuff
 	ACF.SpeedOfSound 		 = 343 * ACF.MeterToInch -- in Meters per Second. Source internally uses inches(or units) so we have to convert
 													 -- Actually this would vary as a function of temperature and air pressure, but this should suffice for now
+	-- acf_engine exclusive constants
+	ACF.MaxSounds            = 16 -- Maximum amount of sounds per engine is allowed to play in interpolation. 
+	ACF.MaxSoundBanks        = 16 -- Maximum amount of soundbanks that an engine can have.
+	ACF.NetSoundRPMBitLimit  = 14 -- Maximum networked size of an engine's RPM in bits (IF SET TOO LOW, ENGINE'S WILL HAVE LIMITED SOUND PITCH RANGE)
+
 	-- Fuzes
 	ACF.MinFuzeCaliber       = 25 -- Minimum caliber in millimeters that can be fuzed
 
