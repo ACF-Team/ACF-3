@@ -47,6 +47,28 @@ function Ammo:GetPenetration(Bullet, Speed)
 	return Constant * FirstChunk * SecondChunk * ThirdChunk * RoundLength
 end
 
+-- Inverse of the Lanz-Odermatt equation above, solved for Speed (Penetration in mm, returns speed in m/s)
+function Ammo:CalcSpeed(Bullet, Penetration)
+	local RoundLength   = Bullet.ProjLength * 10 -- From cm to mm
+	local RoundCaliber  = Bullet.Diameter * 10 -- From cm to mm
+	local RoundBrinell  = 294
+	local RoundDensity  = 19250 -- in kg/m3
+	local TargetBrinell = 237 -- Assuming we're hitting RHA
+	local TargetDensity = 7840 -- Assuming we're hitting RHA
+	local Constant      = 1.104 -- Steel specific constant
+	local S2            = 9874 * TargetBrinell ^ 0.3598 * RoundBrinell ^ -0.2342 / RoundDensity
+
+	local FirstChunk  = 1 / math.tanh(0.283 + 0.0656 * RoundLength / RoundCaliber)
+	local SecondChunk = (RoundDensity / TargetDensity) ^ 0.5
+	local MaxPen      = Constant * FirstChunk * SecondChunk * RoundLength -- Asymptotic penetration as Speed -> infinity
+
+	if Penetration <= 0 then return 0 end
+
+	local Speed = (S2 / math.log(MaxPen / math.min(Penetration, MaxPen * 0.999999))) ^ 0.5 -- In km/s
+
+	return Speed * 1000 -- From km/s to m/s
+end
+
 function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	GUIData = GUIData or Data
 

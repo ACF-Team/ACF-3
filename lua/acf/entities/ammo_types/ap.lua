@@ -133,6 +133,11 @@ function Ammo:GetPenetration(Bullet, Speed)
 	return ACF.Penetration(Speed, Bullet.ProjMass, Bullet.Diameter * 10)
 end
 
+--- Inverse of GetPenetration, solved for Speed; override alongside GetPenetration for other formulas.
+function Ammo:CalcSpeed(Bullet, Penetration)
+	return ACF.CalcSpeed(Penetration, Bullet.ProjMass, Bullet.Diameter * 10)
+end
+
 function Ammo:GetDisplayData(Data)
 	local Display = {
 		MaxPen = self:GetPenetration(Data, Data.MuzzleVel)
@@ -272,7 +277,11 @@ if SERVER then
 					table.insert(Filter, Target) -- "Penetrate" (Ignoring the prop for the retry trace)
 				end
 
-				Bullet.Flight = Bullet.Flight:GetNormalized() * (Energy.Kinetic * (1 - HitRes.Loss) * 2000 / Bullet.ProjMass) ^ 0.5 * ACF.MeterToInch
+				-- Remaining penetration capacity after the hit, converted back to speed to keep multi-layer penetration consistent
+				local RemainingPen = Bullet:GetPenetration() * (1 - HitRes.Loss)
+				local NewSpeed = self:CalcSpeed(Bullet, RemainingPen)
+
+				Bullet.Flight = Bullet.Flight:GetNormalized() * NewSpeed * ACF.MeterToInch
 
 				return "Penetrated"
 			elseif HitRes.Ricochet then

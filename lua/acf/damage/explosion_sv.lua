@@ -399,7 +399,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 			BlastResult = Damage.dealDamage(HitEnt, BlastDmg, DmgInfo)
 			Losses      = BlastResult.Loss * 0.5
 			Penetration = BlastPen > BlastThickness
-			print(Penetration, HitEnt, BlastPen, BlastThickness)
+			-- print(Penetration, HitEnt, BlastPen, BlastThickness)
 		end
 
 		do -- Fragment damage
