@@ -40,11 +40,22 @@ Sounds.acf_engine = {
 		Ent.SoundBanks = SoundBankData
 
 		Ent:UpdateSoundBank()
+
+		-- Given the fact that we now have changed the soundtable data, we have to forcefully rebroadcast it back to the clients
+		-- within PAS, because otherwise they'll keep hearing the old sounds until they happen to leave and reenter the PAS.
+		if SERVER then
+			ACF.Utilities.Sounds.CreateMultipleAdjustableSounds(Ent, Ent.SoundBanks)
+		end
 	end,
 	ResetSoundBanks = function(Ent)
 		Ent.SoundBanks = {}
 
 		Ent:UpdateSoundBank()
+
+		-- Same here if we reset.
+		if SERVER then
+			ACF.Utilities.Sounds.CreateMultipleAdjustableSounds(Ent, Ent.SoundBanks)
+		end
 	end
 }
 
