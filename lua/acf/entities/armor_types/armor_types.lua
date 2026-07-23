@@ -175,6 +175,19 @@ function Armor:OnLoaded()
     self.SpallMul    = 1.3
 end
 
+-- Silicon Carbide
+local Armor = Types.Register("SiliconCarbide")
+function Armor:OnLoaded()
+    self.Name        = "Silicon Carbide"
+    self.Description = "Advanced ceramic armor. Excellent protection per unit mass against both kinetic and chemical threats, but brittle and expensive."
+    self.Density     = 3210 -- https://en.wikipedia.org/wiki/Silicon_carbide
+    self.CostMul     = 65
+    self.HealthMul   = 0.153061
+    self.KineticMul  = 2.2
+    self.ChemicalMul = 1.6
+    self.SpallMul    = 1.5
+end
+
 -- Light ERA
 local Armor = Types.Register("LightERA")
 function Armor:OnLoaded()
