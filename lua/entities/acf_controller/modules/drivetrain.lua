@@ -98,6 +98,7 @@ do
 	-- Sets an input for an entity, if it exists and the value has changed since last time.
 	local function TriggerSafe(SelfTbl, Entity, Name, Value)
 		if not IsValid(Entity) then return end
+		if not SelfTbl.LastInputs then SelfTbl.LastInputs = {} end
 		if not SelfTbl.LastInputs[Entity] then SelfTbl.LastInputs[Entity] = {} end
 		if SelfTbl.LastInputs[Entity][Name] ~= Value then
 			SelfTbl.LastInputs[Entity][Name] = Value
