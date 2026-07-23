@@ -179,10 +179,10 @@ end
 local Armor = Types.Register("SiliconCarbide")
 function Armor:OnLoaded()
     self.Name        = "Silicon Carbide"
-    self.Description = "Advanced ceramic armor. Excellent protection per unit mass against both kinetic and chemical threats, but brittle and expensive."
+    self.Description = "Excellent protection, but brittle and expensive."
     self.Density     = 3210 -- https://en.wikipedia.org/wiki/Silicon_carbide
-    self.CostMul     = 65
-    self.HealthMul   = 0.153061
+    self.CostMul     = 80 -- Expensive to manufacture
+    self.HealthMul   = 0.153061 -- Brittle
     self.KineticMul  = 2.2
     self.ChemicalMul = 1.6
     self.SpallMul    = 1.5
