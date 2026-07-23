@@ -546,7 +546,7 @@ function ENT:Disable()
 end
 
 function ENT:UpdateOutputs(SelfTbl)
-	SelfTbl = SelfTbl or self:GetTable()
+	SelfTbl = SelfTbl or ENTITY.GetTable(self)
 	local FuelUsage = Round(SelfTbl.FuelUsage)
 	local Torque    = SelfTbl.Torque
 	local FlyRPM    = SelfTbl.FlyRPM
@@ -657,57 +657,46 @@ end
 
 -- The function to either create or update on the client the sounds of an engine by networking the necesary data.
 -- Checks only if there was one soundbank with one sound and the latter is an empty path, so it becomes muted and saves on networking.
--- Otherwise it networks the creation, updatin and playing of sounds on the client by interpolating them based on their defined RPM.
--- TODO(TMF): Add a mechanism to create sounds only when its needed to do so, not just everytime the engine turns on and off, as this will allow to save on one tick network lag.
+-- Otherwise just networks RPM and Throttle values to the client. If the client does not have the soundTable, it can just request it.
 function ENT:UpdateSoundBank(SelfTbl)
-	SelfTbl = SelfTbl or self:GetTable()
+	SelfTbl = SelfTbl or ENTITY.GetTable(self)
 
 	local SoundBanks = SelfTbl.SoundBanks
+
+	-- Populate a placeholder SoundTable if none is found for the engine
+	if table.IsEmpty(SoundBanks) then
+		if table.IsEmpty(SelfTbl.DefaultSoundBanks) then
+			local Idle = SelfTbl.IdleRPM
+			local Redline = SelfTbl.LimitRPM
+			SoundBanks = {{	Sounds = {{
+							RPM = (Idle + Redline) / 2,
+							Path = SelfTbl.SoundPath,
+							Pitch = 100,
+							Volume = 1}
+						}
+						}}
+			SelfTbl.SoundBanks = SoundBanks
+		else
+			SelfTbl.SoundBanks = SelfTbl.DefaultSoundBanks
+		end
+		return
+	end
+
 	local SoundBankCount, SoundCount = GetSoundCount(self)
 
 	-- Exit early if only one soundbank was found and has an empty soundpath
 	if SoundBankCount == 1 and SoundCount == 1 and SoundBanks[1].Sounds[1].Path == "" then return end
 
-	-- SoundTable was supposedly created on the client, time to update that
-	if SelfTbl.Sound then
-		local Throttle = Round(SelfTbl.Throttle, 2) * 100
-		local RPM = Round(SelfTbl.FlyRPM)
+	SelfTbl.SoundBankCount, SelfTbl.SoundCount = SoundBankCount, SoundCount
 
-		Sounds.SendMultipleAdjustableSounds(self, false, Throttle, RPM)
-	else
-		-- Populate a placeholder SoundTable if none is found for the engine
-		if table.IsEmpty(SoundBanks) then
-			if table.IsEmpty(SelfTbl.DefaultSoundBanks) then
-				local Idle = SelfTbl.IdleRPM
-				local Redline = SelfTbl.LimitRPM
-				SoundBanks = {{	Sounds = {{
-								RPM = (Idle + Redline) / 2,
-								Path = SelfTbl.SoundPath,
-								Pitch = 100,
-								Volume = 1}
-							}
-							}}
-				SelfTbl.SoundBanks = SoundBanks
-			else
-				SelfTbl.SoundBanks = SelfTbl.DefaultSoundBanks
-			end
-			return
-		end
-		-- The sounds are able to be created
-		SoundBankCount, SoundCount = GetSoundCount(self) -- Update these in case the SoundTable has changed 
-		SelfTbl.SoundBankCount, SelfTbl.SoundCount = SoundBankCount, SoundCount
+	local Throttle = Round(SelfTbl.Throttle, 2) * 100
+	local RPM = Round(SelfTbl.FlyRPM)
 
-		Sounds.CreateMultipleAdjustableSounds(self, SoundBanks)
-		SelfTbl.Sound = true
-	end
+	Sounds.SendMultipleAdjustableSounds(self, false, Throttle, RPM)
 end
 
--- TODO(TMF): Add a mechanism to delete sounds only when its needed to do so, not just everytime the engine turns on and off.
 function ENT:DestroyAllSounds()
 	Sounds.SendMultipleAdjustableSounds(self, true, _, _)
-
-	-- Just here as a check if a sound was created or not
-	self.Sound = nil
 end
 
 function ENT:ACF_IsLegal()

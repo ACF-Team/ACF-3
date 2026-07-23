@@ -236,6 +236,21 @@ end
 
 do -- Multiple Engine Sounds(ex. Interpolated sounds)
 	local IsValid = IsValid
+	 -- Weak keyed table so it doesn't stay around when its awaiting a request to arrive and the entity gets removed.
+	local PendingSoundRequests = setmetatable({}, {__mode = "k"})
+
+	--- Ask the server for the Entity's soundbank data, if we didn't have it yet but we receive a Throttle/RPM update.
+	local function RequestMultipleAdjustableSounds(Origin)
+		if not IsValid(Origin) then return end
+		if PendingSoundRequests[Origin] then return end -- Already asked, waiting on the response
+
+		PendingSoundRequests[Origin] = true
+
+		net.Start("ACF_Sounds_AdjustableRequest_Multi")
+			net.WriteEntity(Origin)
+		net.SendToServer()
+	end
+
 	--- Creates many sounds from a table, and stores their entries in the Origin's entity.
 	--- Reuses existing methods to create and update sounds.
 	--- @param Origin table The entity to play the sounds from
@@ -270,6 +285,7 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 		Origin.SoundBankCount = SoundBankCount
 		Origin.SoundObjects = SoundTable
 		Origin.SoundCount = SoundCount
+		PendingSoundRequests[Origin] = nil -- Our response arrived, clear the request.
 		-- Ensuring that the sounds can't stick around if the server doesn't properly ask for them to be destroyed
 		Origin:CallOnRemove("ACF_ForceStopMultipleAdjustableSounds", function(Entity)
 			Sounds.DeleteMultipleAdjustableSounds(Entity, true)
@@ -296,6 +312,7 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 	local _BIT_NUM_SOUNDBANKS = ACF.GetNearestPowerOfTwo(ACF.MaxSoundBanks)
 	-- For multiple sounds creation
 	net.Receive("ACF_Sounds_AdjustableCreate_Multi", function()
+		-- print("Received " .. len .. " bits from \"ACF_Sounds_AdjustableCreate_Multi\" for sound creation!") -- Debug print
 		local Origin = net.ReadEntity()
 		local Exhaust = net.ReadEntity()
 		local SoundBankCount = net.ReadUInt(_BIT_NUM_SOUNDBANKS)
@@ -342,17 +359,23 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 
 	-- For updates on multiple sounds
 	net.Receive("ACF_Sounds_Adjustable_Multi", function()
+		-- print("Received " .. len .. " bits from \"ACF_Sounds_Adjustable_Multi\" for sound creation!") -- Debug print
 		local Origin = net.ReadEntity()
 		local ShouldStop = net.ReadBool()
 
 		if not IsValid(Origin) then return end
 
-		-- Do we really need to remove every existing sound when the engine just turns off?
 		if ShouldStop then
 			Sounds.DeleteMultipleAdjustableSounds(Origin)
 		else
 			local Throttle = net.ReadUInt(7)
 			local RPM = net.ReadUInt(ACF.NetSoundRPMBitLimit)
+
+			-- In case we don't just have the soundbank table yet, we do a request for it instead.
+			if not Origin.SoundObjects or table.IsEmpty(Origin.SoundObjects) then
+				RequestMultipleAdjustableSounds(Origin)
+				return
+			end
 
 			DoPitchVolumeAtRPM(Origin, Throttle, RPM)
 		end
