@@ -140,6 +140,9 @@ do
 		-- Need a list of all linked wheels
 		if not IsValid(MainGearbox) then return end
 
+		local baseplate = self.Baseplate
+		if not baseplate then return end
+
 		-- Recalculate the drive train components
 		self.Wheels, self.Engines, self.Fuels, self.GearboxEnds, self.GearboxIntermediates = DiscoverDriveTrain(MainGearbox)
 
@@ -169,12 +172,12 @@ do
 		local LeftWheels, RightWheels = {}, {}
 		local avg, count = 0, 0
 		for Wheel in pairs(self.Wheels) do
-			avg, count = avg + self.Baseplate:WorldToLocal(Wheel:GetPos()).y, count + 1
+			avg, count = avg + baseplate:WorldToLocal(Wheel:GetPos()).y, count + 1
 		end
 		avg = avg / count
 
 		for Wheel in pairs(self.Wheels) do
-			if self.Baseplate:WorldToLocal(Wheel:GetPos()).y > avg then LeftWheels[Wheel] = true else RightWheels[Wheel] = true end
+			if baseplate:WorldToLocal(Wheel:GetPos()).y > avg then LeftWheels[Wheel] = true else RightWheels[Wheel] = true end
 		end
 		self.LeftWheels, self.RightWheels = LeftWheels, RightWheels
 
@@ -199,7 +202,7 @@ do
 		end
 
 		table.sort(self.SteerPlatesSorted, function(A, B)
-			return self.Baseplate:WorldToLocal(A:GetPos()).x > self.Baseplate:WorldToLocal(B:GetPos()).x
+			return baseplate:WorldToLocal(A:GetPos()).x > baseplate:WorldToLocal(B:GetPos()).x
 		end)
 
 		self.CanSteer = #self.SteerPlatesSorted > 0 -- Steer if there are any steer plates
