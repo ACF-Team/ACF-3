@@ -87,7 +87,7 @@ function Contraption.GetAllChildren(Ent, Tab)
 end
 
 function Contraption.GetEnts(Ent)
-	local Con      = Ent:GetContraption()
+	local Con      = Ent:CFW_GetContraption()
 	local ConEnts  = Con and Con.ents or {[Ent] = true}
 	local Children = Ent:GetFamilyChildren()
 	local Phys     = {}
@@ -126,7 +126,7 @@ function Contraption.HasConstraints(Ent)
 end
 
 function Contraption.CalcMassRatio(Ent, Tally)
-	local Con      = Ent:GetContraption()
+	local Con      = Ent:CFW_GetContraption()
 	local PhysMass = 0
 	local Time     = CurTime()
 
@@ -138,7 +138,7 @@ function Contraption.CalcMassRatio(Ent, Tally)
 	local OthN  = 0
 	local ConN	= 0
 
-	local EntContraption = Ent:GetContraption()
+	local EntContraption = Ent:CFW_GetContraption()
 	local Physical, Parented, Detached
 	if EntContraption then
 		Physical, Parented, Detached = Contraption.GetEnts(Ent)
@@ -237,7 +237,7 @@ function Contraption.CalcMassRatio(Ent, Tally)
 end
 
 function Contraption.GetMiscInfo(Ent)
-	local Contraption = Ent:GetContraption()
+	local Contraption = Ent:CFW_GetContraption()
 	if not Contraption then return "N/A", "N/A", {}, 0 end
 
 	local Name = Contraption.ACF_Baseplate and Contraption.ACF_Baseplate:GetNWString("WireName") or "N/A"

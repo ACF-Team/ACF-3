@@ -124,6 +124,7 @@ function Damage.DoSquishyFlingKill(Entity, Damage, HitPos, Attacker, Inflictor, 
 		SourceDamage:SetDamage(Damage)
 		SourceDamage:SetDamageForce(Direction * ForceMult)
 		SourceDamage:SetDamageType(Explosive and DMG_BLAST or DMG_BULLET)
+		SourceDamage:SetDamagePosition(HitPos)
 
 		Entity:TakeDamageInfo(SourceDamage)
 
@@ -224,7 +225,7 @@ function Damage.doPropDamage(Entity, DmgResult)
 	local HitRes = DmgResult:Compute()
 
 	-- Mark contraption as in combat when taking damage
-	local Contraption = Entity:GetContraption()
+	local Contraption = Entity:CFW_GetContraption()
 	if Contraption then
 		Contraption.InCombat = engine.TickCount()
 	end

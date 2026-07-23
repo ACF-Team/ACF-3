@@ -1,0 +1,5 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "models\bombs\gbu/gbu16_body"
+	"$model" "1"
+}

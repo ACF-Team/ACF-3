@@ -7,12 +7,6 @@ local CSW = 5
 -- Torque Rating
 local CST = 3000
 
--- Old gearbox scales
-local ScaleT = 0.75
-local ScaleS = 1
-local ScaleM = 1.5
-local ScaleL = 2.5
-
 -- General description
 local CDesc = "A standalone clutch for when a full size gearbox is unnecessary or too long."
 
@@ -36,28 +30,6 @@ do -- Scalable Clutch
 		Preview = {
 			FOV = 115,
 		},
-	})
-end
-
-do -- Pre-Scalable Straight-through Gearboxes
-	Gearboxes.AddItemAlias("Clutch", "Clutch-S", "Clutch-S-T", {
-		Scale = ScaleT,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("Clutch", "Clutch-S", "Clutch-S-S", {
-		Scale = ScaleS,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("Clutch", "Clutch-S", "Clutch-S-M", {
-		Scale = ScaleM,
-		InvertGearRatios = true,
-	})
-
-	Gearboxes.AddItemAlias("Clutch", "Clutch-S", "Clutch-S-L", {
-		Scale = ScaleL,
-		InvertGearRatios = true,
 	})
 end
 

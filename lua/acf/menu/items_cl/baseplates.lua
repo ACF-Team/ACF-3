@@ -10,6 +10,9 @@ local function CreateMenu(Menu)
 	VerificationCtx:StartClientData(ACF.GetAllClientData(true))
 
 	Menu:AddTitle("#acf.menu.baseplates.settings")
+
+	Menu:AddWikiLink("Baseplates", "docs/getting_started/first_tank/baseplate_aio.html")
+
 	Menu:AddLabel("#acf.menu.baseplates.desc")
 
 					    	   Menu:AddSimpleClassUserVar(VerificationCtx, "",                                           "BaseplateType", "Name", "Icon")
@@ -17,6 +20,8 @@ local function CreateMenu(Menu)
 	local SizeY              = Menu:AddNumberUserVar(     VerificationCtx, "#acf.menu.baseplates.plate_length",          "Length")
 	local SizeZ		   	     = Menu:AddNumberUserVar(     VerificationCtx, "#acf.menu.baseplates.plate_thickness",       "Thickness")
 						       Menu:AddBooleanUserVar(    VerificationCtx, "#acf.menu.baseplates.disable_alt_e",         "DisableAltE")
+						       Menu:AddBooleanUserVar(    VerificationCtx, "#acf.menu.baseplates.network_optimization", "NetworkOptimization")
+						       Menu:AddBooleanUserVar(    VerificationCtx, "#acf.menu.baseplates.unfreeze_on_entry",   "UnfreezeOnEntry")
 	local ExplodeCollide     = Menu:AddBooleanUserVar(    VerificationCtx, "#acf.menu.baseplates.explode_on_collisions", "ExplodeOnCollisions")
 	local ExplodeCollideInfo = Menu:AddHelp("#acf.menu.baseplates.explode_on_collisions_info")
 	local GForceTicks        = Menu:AddNumberUserVar(     VerificationCtx, "#acf.menu.baseplates.gforce_ticks",   		  "GForceTicks")

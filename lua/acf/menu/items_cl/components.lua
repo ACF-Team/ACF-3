@@ -60,6 +60,8 @@ local function CreateMenu(Menu)
 		local CustomMenu = Data.CreateMenu or ClassData.CreateMenu
 
 		if CustomMenu then
+			local TutorialURL = Data.TutorialURL or ClassData.TutorialURL
+			if TutorialURL then Base:AddWikiLink(Data.Name, TutorialURL) end
 			CustomMenu(Data, Base)
 		end
 

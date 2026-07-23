@@ -5,6 +5,7 @@ local Components = ACF.Classes.Components
 Components.Register("SP-RFL", {
 	Name   = "Supply Crate",
 	Entity = "acf_supply",
+	TutorialURL = "docs/acf_tutorials/refills.html",
 	LimitConVar = {
 		Name   = "_acf_supply",
 		Amount = 4,

@@ -1,7 +1,4 @@
 local Sounds = ACF.Utilities.Sounds
-local _MAXSOUNDS = 16 -- Maximum amount of sounds we're willing to send and have. TODO(TMF): Make this a global!
-local map = math.Remap
-local clamp = math.Clamp
 
 do -- Valid sound check
 	local file     = file
@@ -63,7 +60,8 @@ do -- Playing regular sounds
 	--- @param Pitch? integer The sound's pitch from 0-255
 	--- @param Volume number A float representing the sound's volume; this is multiplied by the client's volume setting
 	--- @param UseBASS? boolean Whether the sound should be played through BASS instead; use this for things like volumes greater than 1
-	function Sounds.PlaySound(Origin, Path, Level, Pitch, Volume, UseBASS)
+	--- @param Callback? function Called with the resulting IGModAudioChannel after it's been created
+	function Sounds.PlaySound(Origin, Path, Level, Pitch, Volume, UseBASS, Callback)
 		Volume = ACF.Volume * Volume
 
 		if isentity(Origin) and IsValid(Origin) then
@@ -78,6 +76,8 @@ do -- Playing regular sounds
 						Channel:SetVolume(Volume)
 						Channel:Play()
 					end
+
+					if Callback then Callback(Channel) end
 				end)
 			else
 				sound.Play(Path, Origin, Level, Pitch, Volume)
@@ -183,154 +183,199 @@ do -- Processing adjustable sounds (for example, engine noises)
 	end)
 end
 
+local cos = math.cos
+local _PI = math.pi
 -- Fade function taken from:
 -- https://dsp.stackexchange.com/questions/37477/understanding-equal-power-crossfades
 -- https://dsp.stackexchange.com/questions/14754/equal-power-crossfade
-function Sounds.Fade(n, min, mid, max)
-	local _PI = math.pi
+function Sounds.Fade(N, Min, Mid, Max)
+	if N < Min or N > Max then return 0 end
 
-	if n < min or n > max then return 0 end
-
-	if n > mid then
-		min = mid - (max - mid)
+	if N > Mid then
+		Min = Mid - (Max - Mid)
 	end
 
-	return math.cos((1 - ((n - min) / (mid - min))) * (_PI / 2))
+	return cos((1 - ((N - Min) / (Mid - Min))) * (_PI / 2))
 end
 
--- Consider if we actually want to do this too! (commented out for now)
---local SmoothRPM = 0
---local SmoothThrottle = 0
-
+local Remap = math.Remap
+local Clamp = math.Clamp
 -- This is where the magic to interpolate sounds happen.
 -- In order to make yourself a better idea of what this does you can consult the image below:
 -- https://i.imgur.com/KaFmaMf.png
 local function DoPitchVolumeAtRPM(Origin, Throttle, RPM)
+	local Fade = Sounds.Fade -- idk if this is faster to do, but given this is a hot path, might as well be...
 	local SoundObjects = Origin.SoundObjects
 	if not SoundObjects or table.IsEmpty(SoundObjects) then return end
 
-	local fade = Sounds.Fade -- idk if this is faster to do, but given this is a hot path, might as well be...
-	--SmoothRPM = SmoothRPM * (1 - 0.1) + RPM * 0.1
-	--SmoothThrottle = SmoothThrottle * (1 - 0.1) + Throttle * 10
-
-	-- Sound volumes when throttle is 0 and 100 respectively
-	-- TODO(TMF): This should be able to be configured from the sound menu or to be a function of the engine's load
-	local _OFFVOLUME = 0.25
-	local _ONVOLUME = 1
-
 	-- TODO(TMF): Potentially add some mechanism here to check for any differences and only update those
-	for idx, soundTable in ipairs(SoundObjects) do
-		if not soundTable.RPM then continue end
-		Origin.Sound = soundTable.Sound
+	for _, SoundBank in ipairs(SoundObjects) do
+		local Entity = SoundBank.Entity
+		if not IsValid(Entity) then Entity = Origin end
 
-		local addCurveWidth = soundTable.Width or 0
-		local enginePitch = soundTable.Pitch or 1
-		local min    = idx == 1 and 0 or SoundObjects[clamp(idx - 1 - addCurveWidth, 1, _MAXSOUNDS)].RPM
-		local mid    = soundTable.RPM
-		local max    = idx == #SoundObjects and 1000000 or SoundObjects[clamp(idx + 1 + addCurveWidth, 1, _MAXSOUNDS)].RPM
-		local curve  = fade(RPM, min, mid, max)
-		local volume = curve * map(Throttle, 0, 100, _OFFVOLUME, _ONVOLUME) * (soundTable.Volume or 1)
-		local pitch  = (RPM / soundTable.RPM) * enginePitch
+		local OffVolume = SoundBank.OffThrottle
+		local OnVolume = SoundBank.OnThrottle
 
-		Sounds.UpdateAdjustableSound(Origin, pitch, volume)
+		for Idx, SoundTable in ipairs(SoundBank.Sounds) do
+			if not SoundTable.RPM then continue end
+			Entity.Sound = SoundTable.Sound
+
+			local AddCurveWidth = SoundTable.Width or 0
+			local EnginePitch = SoundTable.Pitch or 1
+			local Min    = Idx == 1 and -1000000 or SoundBank.Sounds[Clamp(Idx - 1 - AddCurveWidth, 1, ACF.MaxSounds)].RPM
+			local Mid    = SoundTable.RPM
+			local Max    = Idx == #SoundBank.Sounds and 1000000 or SoundBank.Sounds[Clamp(Idx + 1 + AddCurveWidth, 1, ACF.MaxSounds)].RPM
+			local Curve  = Fade(RPM, Min, Mid, Max)
+			local Volume = Curve * Remap(Throttle, 0, 100, OffVolume, OnVolume) * (SoundTable.Volume or 1)
+			local Pitch  = (RPM / SoundTable.RPM) * EnginePitch
+
+			Sounds.UpdateAdjustableSound(Entity, Pitch, Volume)
+		end
 	end
 end
 
 do -- Multiple Engine Sounds(ex. Interpolated sounds)
+	local IsValid = IsValid
+	 -- Weak keyed table so it doesn't stay around when its awaiting a request to arrive and the entity gets removed.
+	local PendingSoundRequests = setmetatable({}, {__mode = "k"})
+
+	--- Ask the server for the Entity's soundbank data, if we didn't have it yet but we receive a Throttle/RPM update.
+	local function RequestMultipleAdjustableSounds(Origin)
+		if not IsValid(Origin) then return end
+		if PendingSoundRequests[Origin] then return end -- Already asked, waiting on the response
+
+		PendingSoundRequests[Origin] = true
+
+		net.Start("ACF_Sounds_AdjustableRequest_Multi")
+			net.WriteEntity(Origin)
+		net.SendToServer()
+	end
+
 	--- Creates many sounds from a table, and stores their entries in the Origin's entity.
 	--- Reuses existing methods to create and update sounds.
 	--- @param Origin table The entity to play the sounds from
 	--- @param SoundTable table The networked table with nested table containing rpm, sound path, pitch, volume, width and empty sound
 	function Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable)
+		local SoundTable = SoundTable
+		local SoundBankCount = 0
 		local SoundCount = 0
 
-		for _, sndTable in ipairs(SoundTable) do
-			if not Sounds.IsValidSound(sndTable.Path) then return end
-			local Sound = Sounds.CreateAdjustableSound(Origin,
-				sndTable.Path,
-				sndTable.Pitch or 100, 0 -- Create the sound deafened
-			)
-			if not Sound then
-				print("Failed to create sound for entity " .. tostring(Origin) .. ". Sound path does not exist!")
-				continue
-			end
-			sndTable.Sound = Sound
-			SoundCount = SoundCount + 1
+		for _, SoundBankTable in ipairs(SoundTable) do
+			local Entity = SoundBankTable.PlayAtEntity
+			if not IsValid(Entity) then continue end -- Just in case
 
-			Sounds.UpdateAdjustableSound(Origin, sndTable.Pitch or 100, 0)
+			for _, SndTable in ipairs(SoundBankTable.Sounds) do
+				local Sound = Sounds.CreateAdjustableSound(Entity,
+				SndTable.Path,
+				SndTable.Pitch or 100, 0) -- Create the sound deafened
+
+				if not Sound then
+					print("Failed to create sound for entity " .. tostring(Entity) .. ". Sound path does not exist!")
+					continue
+				end
+				SndTable.Sound = Sound
+				SoundCount = SoundCount + 1
+			end
+			-- Sort the table by the rpm before moving on, so it can be iterated in sequential order
+			table.sort(SoundBankTable.Sounds, function(a, b) return a.RPM < b.RPM end)
+
+			SoundBankCount = SoundBankCount + 1
 		end
 
-		-- Sort the table by the rpm before moving on, so it can be iterated in sequential order
-		table.sort(SoundTable, function(a, b) return a.RPM < b.RPM end)
-
+		Origin.SoundBankCount = SoundBankCount
 		Origin.SoundObjects = SoundTable
 		Origin.SoundCount = SoundCount
+		PendingSoundRequests[Origin] = nil -- Our response arrived, clear the request.
 		-- Ensuring that the sounds can't stick around if the server doesn't properly ask for them to be destroyed
 		Origin:CallOnRemove("ACF_ForceStopMultipleAdjustableSounds", function(Entity)
 			Sounds.DeleteMultipleAdjustableSounds(Entity, true)
 		end)
 	end
 
-	local IsValid = IsValid
 	--- Stops all the existing sounds from the entity
 	--- @param Origin table The entity to stop all the sounds from
 	function Sounds.DeleteMultipleAdjustableSounds(Origin, _)
 		if not IsValid(Origin) then return end
 		if not Origin.SoundObjects then return end
 
-		for idx, snd in ipairs(Origin.SoundObjects) do
-			snd.Sound:Stop()
-			Origin.SoundObjects[idx] = nil
+		for Idx, Bank in ipairs(Origin.SoundObjects) do
+			for _, Snd in ipairs(Bank.Sounds) do
+				Snd.Sound:Stop()
+			end
+			Origin.SoundObjects[Idx] = nil
 		end
-		Origin.Sound      = nil -- Just in case
-		Origin.SoundCount = 0
+		Origin.Sound      	  = nil -- Just in case
+		Origin.SoundCount 	  = 0
+		Origin.SoundBankCount = 0
 	end
 
+	local _BIT_NUM_SOUNDBANKS = ACF.GetNearestPowerOfTwo(ACF.MaxSoundBanks)
 	-- For multiple sounds creation
 	net.Receive("ACF_Sounds_AdjustableCreate_Multi", function()
-		--print("Received " .. len .. " bits from \"ACF_Sounds_AdjustableCreate_Multi\" for sound creation!") -- Debug print
+		-- print("Received " .. len .. " bits from \"ACF_Sounds_AdjustableCreate_Multi\" for sound creation!") -- Debug print
 		local Origin = net.ReadEntity()
+		local Exhaust = net.ReadEntity()
+		local SoundBankCount = net.ReadUInt(_BIT_NUM_SOUNDBANKS)
 
 		local SoundTable = {}
-		local Count = net.ReadUInt(4)
 
-		local I = 0
+		for Bank = 1, SoundBankCount do
+			local PlaysAtExhaust = net.ReadBool()
+			local OffThrottle = net.ReadUInt(8)
+			local OnThrottle = net.ReadUInt(8)
+			local SoundCount = net.ReadUInt(4)
 
-		while (I < Count) do
-			local RPM 		 = net.ReadUInt(14)
-			local StringPath = net.ReadString()
-			local Pitch 	 = net.ReadUInt(8)
-			local Volume 	 = net.ReadUInt(8)
-			local Width 	 = net.ReadUInt(4)
+			if not IsValid(Exhaust) then Exhaust = Origin end
+			local PlayAtEntity = PlaysAtExhaust and Exhaust or Origin
 
-			Volume = Volume * 0.01 -- Reduce the received value down to a float
-			table.insert(SoundTable, {	RPM    = RPM,
-									  	Path   = StringPath,
-										Pitch  = Pitch or 100,
-										Volume = Volume or 1,
-									  	Width  = Width or 0,
-									    Sound  = nil }) -- Fuck it we ball
-			I = I + 1
+			OffThrottle = OffThrottle * 0.01 -- Reduce the received values down to a float
+			OnThrottle = OnThrottle * 0.01
+
+			table.insert(SoundTable, {PlayAtEntity = PlayAtEntity,
+									  OffThrottle = OffThrottle,
+									  OnThrottle = OnThrottle,
+									  Sounds = {}
+									 })
+
+			for _ = 1, SoundCount do
+				local RPM 		 = net.ReadUInt(ACF.NetSoundRPMBitLimit)
+				local StringPath = net.ReadString()
+				local Pitch 	 = net.ReadUInt(8)
+				local Volume 	 = net.ReadUInt(8)
+				local Width 	 = net.ReadUInt(4)
+
+				Volume = Volume * 0.01 -- Reduce the received value down to a float
+				table.insert(SoundTable[Bank].Sounds, { RPM    = RPM,
+													    Path   = StringPath,
+														Pitch  = Pitch or 100,
+														Volume = Volume or 1,
+														Width  = Width or 0,
+														Sound  = nil }) -- Fuck it we ball
+			end
 		end
-
 		if not IsValid(Origin) then return end
 		Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable)
 	end)
 
 	-- For updates on multiple sounds
 	net.Receive("ACF_Sounds_Adjustable_Multi", function()
-		--print("Received " .. len .. " bits from \"ACF_Sounds_Adjustable_Multi\" for sound updates!") -- Debug print
+		-- print("Received " .. len .. " bits from \"ACF_Sounds_Adjustable_Multi\" for sound creation!") -- Debug print
 		local Origin = net.ReadEntity()
 		local ShouldStop = net.ReadBool()
 
 		if not IsValid(Origin) then return end
 
-		-- Do we really need to remove every existing sound when the engine just turns off?
 		if ShouldStop then
 			Sounds.DeleteMultipleAdjustableSounds(Origin)
 		else
 			local Throttle = net.ReadUInt(7)
-			local RPM = net.ReadUInt(14)
+			local RPM = net.ReadUInt(ACF.NetSoundRPMBitLimit)
+
+			-- In case we don't just have the soundbank table yet, we do a request for it instead.
+			if not Origin.SoundObjects or table.IsEmpty(Origin.SoundObjects) then
+				RequestMultipleAdjustableSounds(Origin)
+				return
+			end
 
 			DoPitchVolumeAtRPM(Origin, Throttle, RPM)
 		end

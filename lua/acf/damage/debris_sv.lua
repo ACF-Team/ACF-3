@@ -105,6 +105,7 @@ local function Gib(Entity, DmgInfo)
 	dmg:SetDamage(Entity:Health())
 	if DmgInfo and IsValid(DmgInfo.Attacker) then dmg:SetAttacker(DmgInfo.Attacker) else dmg:SetAttacker(Entity) end
 	if DmgInfo and IsValid(DmgInfo.Inflictor) then dmg:SetInflictor(DmgInfo.Inflictor) else dmg:SetInflictor(Entity) end
+	if DmgInfo and DmgInfo.HitPos then dmg:SetDamagePosition(DmgInfo.HitPos) end
 	dmg:SetDamageType(DMG_ALWAYSGIB)
 
 	timer.Simple(0, function()

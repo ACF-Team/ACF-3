@@ -1,0 +1,12 @@
+-- Insert pack
+INSERT INTO PackData (packid, packname, author, contact)
+VALUES ('danger_force', 'Danger Force', 'Plab', '');
+
+-- Insert dupes using the string packid
+INSERT INTO DupeData (path, name, cost, weight, type, mobility, packid, description) VALUES
+('bi_dey', 'Bi-dey', 54.53, 5367, 'SPG', 'Tracked', 'danger_force', ''),
+('to_let_bol', 'To-let Bol', 515.43, 59274.09, 'SPG', 'Tracked', 'danger_force', 'Controls
+M1: Cannon
+M2: autocannons
+G: Missiles
+Middle Mouse: Ballistics comp rangefind');

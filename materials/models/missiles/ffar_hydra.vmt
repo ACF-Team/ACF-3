@@ -1,0 +1,21 @@
+"VertexLitGeneric"
+{
+
+	 $model "1"
+	 $basetexturetransform "center 0.5 0.5 scale 1.0 1.0 rotate 0.0 translate 0.0 0.0"
+	 $bumptransform "center 0.5 0.5 scale 1.0 1.0 rotate 0.0 translate 0.0 0.0"
+	 $basetexture "models/missiles/hydra40_ambient"
+	 $bumpmap "models/missiles/hydra40_norm"
+
+	"$envmap" "env_cubemap"
+	"$normalmapalphaenvmapmask" "1"
+	"$envmaptint" "[ .04 .03 .01 ]"
+	"$envmapcontrast" .1
+	"$envmapsaturation" 0.1
+	"$phong" "1" 
+	"$phongboost" "0.6" 
+	"$phongfresnelranges" "[0.5 0.2 0.2]"
+	"$phongexponent" "9"
+	"$blendtintbybasealpha" "1"
+	"$color"	"{1 50 200}"
+}

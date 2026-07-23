@@ -12,6 +12,7 @@ function ENT:ConfigureLuaSeat(Pod, Player)
 		if Veh == Pod then
 			-- Ply:GodEnable() -- Remove this if aliases are removed?
 			Ply:SetNoDraw(true)
+			WireLib.TriggerOutput(self, "Driver", Ply)
 		end
 	end)
 
@@ -20,6 +21,7 @@ function ENT:ConfigureLuaSeat(Pod, Player)
 		if Veh == Pod then
 			-- Ply:GodDisable() -- Remove this if aliases are removed?
 			Ply:SetNoDraw(false)
+			WireLib.TriggerOutput(self, "Driver", NULL)
 		end
 	end)
 
@@ -27,7 +29,7 @@ function ENT:ConfigureLuaSeat(Pod, Player)
 	hook.Add("PlayerUse", "ACFBaseplateSeatEnterExternal" .. self:EntIndex(), function(Ply, Ent)
 		if not Ply:KeyDown(IN_WALK) then return end
 		if IsValid(Ent) then
-			local Contraption = Ent:GetContraption()
+			local Contraption = Ent:CFW_GetContraption()
 			if Contraption then
 				local Base = Contraption.ACF_Baseplate
 				if Base == self and IsValid(Pod) and Pod:GetDriver() ~= Ply and not self:ACF_GetUserVar("DisableAltE") then
@@ -56,6 +58,8 @@ function ENT:ConfigureLuaSeat(Pod, Player)
 	end)
 
 	WireLib.TriggerOutput(self, "Vehicles", {Pod})
+	WireLib.TriggerOutput(self, "Seat", Pod)
+	WireLib.TriggerOutput(self, "Driver", NULL)
 end
 
 -- Show/Hide physical entities when entering/existing seats, if the contraption has auto treads (networking optimization)
@@ -63,27 +67,53 @@ local ShouldHidePhysicalIfExists = {
 	["sent_tanktracks_legacy"] = true,
 	["sent_tanktracks_auto"] = true,
 }
+
+-- Iterates over the contraption's unparented, physical entities, optionally skipping ACF entities
+-- (used to avoid nodrawing things like the baseplate itself, which are still physical)
+local function ForEachUnparentedEntity(Contraption, SkipACFEntities, Callback)
+	for ent, _ in pairs(Contraption.ents) do
+		if IsValid(ent) and not IsValid(ent:GetParent()) and not (SkipACFEntities and ent.IsACFEntity) then
+			local Phys = ent:GetPhysicsObject()
+			if IsValid(Phys) then
+				Callback(ent, Phys)
+			end
+		end
+	end
+end
+
 local function ShowHidePhysicalEntities(Contraption, NoDraw)
+	local Base = Contraption.ACF_Baseplate
+	if IsValid(Base) and not Base:ACF_GetUserVar("NetworkOptimization") then return end
+
 	local ShouldRun = false
 	for _, Class in ipairs(table.GetKeys(Contraption.entsbyclass)) do
 		if ShouldHidePhysicalIfExists[Class] then ShouldRun = true end
 	end
 	if not ShouldRun then return end
-	for ent, _ in pairs(Contraption.ents) do
-		if IsValid(ent) and not IsValid(ent:GetParent()) and not ent.IsACFEntity then ent:SetNoDraw(NoDraw) end
-		if IsValid(ent) and not IsValid(ent:GetParent()) and not ent.IsACFEntity then ent:SetNoDraw(NoDraw) end
-	end
+
+	ForEachUnparentedEntity(Contraption, true, function(ent) ent:SetNoDraw(NoDraw) end)
+end
+
+local function UnfreezePhysicalEntities(Contraption)
+	local Base = Contraption.ACF_Baseplate
+	if not IsValid(Base) or not Base:ACF_GetUserVar("UnfreezeOnEntry") then return end
+
+	ForEachUnparentedEntity(Contraption, false, function(_, Phys)
+		Phys:EnableMotion(true)
+		Phys:Wake()
+	end)
 end
 
 hook.Add("PlayerEnteredVehicle", "ACFHidePhysicalEntities", function(_, Veh)
-	if Veh.GetContraption and IsValid(Veh:GetContraption()) then
-		ShowHidePhysicalEntities(Veh:GetContraption(), true)
+	if Veh:CFW_GetContraption() then
+		ShowHidePhysicalEntities(Veh:CFW_GetContraption(), true)
+		UnfreezePhysicalEntities(Veh:CFW_GetContraption())
 	end
 end)
 
 hook.Add("PlayerLeaveVehicle", "ACFHidePhysicalEntities", function(_, Veh)
-	if Veh.GetContraption and IsValid(Veh:GetContraption()) then
-		ShowHidePhysicalEntities(Veh:GetContraption(), false)
+	if Veh:CFW_GetContraption() then
+		ShowHidePhysicalEntities(Veh:CFW_GetContraption(), false)
 	end
 end)
 

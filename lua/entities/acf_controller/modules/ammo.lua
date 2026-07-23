@@ -1,3 +1,7 @@
+local function Init(Entity)
+	Entity.PrimaryAmmoCountsByType = {}
+end
+
 -- Ammo related
 do
 	net.Receive("ACF_Controller_Ammo", function(_, ply)
@@ -20,7 +24,7 @@ do
 	end)
 
 	function ENT:ProcessAmmo(SelfTbl)
-		local Contraption = self:GetContraption()
+		local Contraption = self:CFW_GetContraption()
 		if Contraption == nil then return end
 
 		-- Determine current counts
@@ -47,3 +51,5 @@ do
 		end
 	end
 end
+
+return Init

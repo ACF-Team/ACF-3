@@ -4,6 +4,7 @@
 local ACF          = ACF
 local Contraption  = ACF.Contraption
 local ModelData	   = ACF.ModelData
+local Notify       = ACF.Utilities.Notify
 local StringFind   = string.find
 local TimerSimple  = timer.Simple
 local Baddies	   = ACF.GlobalFilter
@@ -91,16 +92,14 @@ function ACF.DisableEntity(Entity, Reason, Message, Timeout)
 		Entity:Disable() -- Let the entity know it's disabled
 		if Entity.UpdateOverlay then Entity:UpdateOverlay(true) end -- Update overlay if it has one (Passes true to update overlay instantly)
 		if IsValid(Owner) and tobool(Owner:GetInfo("acf_legalhints")) then -- Notify the owner
-			local Name = Entity.WireDebugName .. " [" .. Entity:EntIndex() .. "]"
-
 			if Reason == "Not Solid" then -- Thank you garry, very cool
 				timer.Simple(1.1, function() -- Remover tool sets nodraw and removes 1 second later, causing annoying alerts
 					if not IsValid(Entity) then return end
 
-					ACF.SendNotify(Owner, false, Name .. " has been disabled: " .. Message)
+					Notify.EntityDisabledToPlayer(Entity, Owner, Message)
 				end)
 			else
-				ACF.SendNotify(Owner, false, Name .. " has been disabled: " .. Message)
+				Notify.EntityDisabledToPlayer(Entity, Owner, Message)
 			end
 		end
 		-- Send the entity to the client

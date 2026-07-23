@@ -60,6 +60,8 @@ local function CreateMenu(Menu)
 
 	Menu:AddTitle("#acf.menu.engines.settings")
 
+	Menu:AddWikiLink("Engines", "docs/acf_tutorials/engines.html")
+
 	local EngineClass = Menu:AddComboBox()
 	EngineClass:SetName("EngineClass")
 	local EngineList = Menu:AddComboBox()

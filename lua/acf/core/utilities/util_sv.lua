@@ -1,4 +1,5 @@
 local ACF = ACF
+local Notify = ACF.Utilities.Notify
 
 -- 16 Segments font created by ThorType
 -- Huge thanks to LiddulBOFH to help me get it working
@@ -7,34 +8,6 @@ resource.AddFile("resource/fonts/16segments-basic.ttf")
 
 resource.AddFile("resource/fonts/conduit.ttf")
 resource.AddFile("resource/fonts/prototype.ttf")
-
-do -- Networked notifications
-	local Messages = ACF.Utilities.Messages
-
-	util.AddNetworkString("ACF_Notify")
-	util.AddNetworkString("ACF_NameAndShame")
-
-	function ACF.Shame(Entity, Message)
-		if not ACF.NameAndShame then return end
-		local Owner = Entity:CPPIGetOwner()
-
-		if not IsValid(Owner) then return end
-
-		local ShameMsg = Owner:GetName() .. " had " .. tostring(Entity) .. " disabled for " .. Message
-		Messages.PrintLog("Error", ShameMsg)
-
-		net.Start("ACF_NameAndShame")
-			net.WriteString(ShameMsg)
-		net.Broadcast()
-	end
-
-	function ACF.SendNotify(Player, Success, Message)
-		net.Start("ACF_Notify")
-			net.WriteBool(Success or false)
-			net.WriteString(Message or "")
-		net.Send(Player)
-	end
-end
 
 do -- HTTP Request
 	local NoRequest = true
@@ -533,7 +506,7 @@ do -- Entity linking
 			function()
 				local Status, Message = ACF.PerformClassLinkCheck(Source, Target)
 				if not Status then
-					ACF.SendNotify(Source:CPPIGetOwner(), false, Message or "A link has been automatically removed.")
+					Notify.EntityWarningToPlayer(Source, Source:CPPIGetOwner(), "A link has been automatically removed.", Message or "No additional info was provided")
 				end
 			end,
 			function() return IsValid(Source) and IsValid(Target) end,
@@ -1007,7 +980,7 @@ end
 
 do
 	function ACF.GetEntityBaseplate(Entity)
-		local Contraption = Entity:GetContraption()
+		local Contraption = Entity:CFW_GetContraption()
 		if not Contraption then return end
 
 		local Baseplate = Contraption.ACF_Baseplate
@@ -1024,7 +997,7 @@ do
 		if IsValid(Baseplate) then
 			local Type = Baseplate:ACF_GetUserVar("BaseplateType")
 			if Type ~= AllowedType then
-				ACF.SendNotify(Entity:CPPIGetOwner(), false, string.format("%s was removed due to being on an invalid baseplate (got %s, expected %s)", Entity, Type, AllowedType))
+				Notify.WarningToPlayer(Entity:CPPIGetOwner(), string.format("%s was removed due to being on an invalid baseplate type", tostring(Entity)), string.format("Got %s, expected %s", Type and Type.ID or "none", AllowedType.ID))
 				Entity:Remove()
 				return
 			end

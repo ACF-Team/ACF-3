@@ -1,0 +1,5 @@
+"VertexlitGeneric"
+{
+	"$basetexture" "models/failz/inside"
+	"$surfaceprop" "Metal"
+}

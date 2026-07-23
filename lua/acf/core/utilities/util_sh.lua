@@ -1224,7 +1224,7 @@ do -- Reload related
 				if self:GetStage() == 1 and self.Component:GetClass() == "starfall_hud" and ent.ACF and ent.ACF_GetSeatProxy then
 					self.Component:LinkVehicle(ent:ACF_GetSeatProxy())
 					self:SetStage(0)
-					SF.AddNotify(self:GetOwner(), "Linked to vehicle successfully.", "GENERIC" , 4, "DRIP2")
+					SF.AddNotify(self:GetOwner(), "Linked to ACF baseplate vehicle successfully.", "GENERIC" , 4, "DRIP2")
 					return true
 				end
 
@@ -1267,21 +1267,38 @@ do -- Reload related
 end
 
 do
-	--- Sets up a table to track G forces
+	local VECTOR = FindMetaTable("Vector")
+	--- Sets up a table to track G forces. The vectors inside are mutable!! Be careful of that!!!!
+	--- (this is for performance reasons so we don't make thousands vectors per second potentially)
 	--- Use with ACF.UpdateGForceTracker to update the G force tracker.
 	--- @param pos? Vector The initial position
 	--- @param vel? Vector The initial velocity
 	--- @param accel? Vector The initial acceleration
 	--- @return nil
 	function ACF.SetupGForceTracker(pos, vel, accel)
-		return {
-			Pos = pos or vector_origin,
-			Vel = vel or vector_origin,
-			Acc = accel or vector_origin,
-			LastPos = pos or vector_origin,
-			LastVel = vel or vector_origin,
-			LastAcc = accel or vector_origin
+		local Object = {
+			Pos     = Vector(0, 0, 0),
+			Vel     = Vector(0, 0, 0),
+			Acc     = Vector(0, 0, 0),
+			LastPos = Vector(0, 0, 0),
+			LastVel = Vector(0, 0, 0),
+			LastAcc = Vector(0, 0, 0)
 		}
+		if pos then
+			VECTOR.SetUnpacked(Object.Pos, VECTOR.Unpack(pos))
+			VECTOR.SetUnpacked(Object.LastPos, VECTOR.Unpack(pos))
+		end
+
+		if vel then
+			VECTOR.SetUnpacked(Object.Vel, VECTOR.Unpack(vel))
+			VECTOR.SetUnpacked(Object.LastVel, VECTOR.Unpack(vel))
+		end
+
+		if accel then
+			VECTOR.SetUnpacked(Object.Acc, VECTOR.Unpack(accel))
+			VECTOR.SetUnpacked(Object.LastAcc, VECTOR.Unpack(accel))
+		end
+		return Object
 	end
 
 	local DeltaTime = engine.TickInterval()
@@ -1293,14 +1310,22 @@ do
 	function ACF.UpdateGForceTracker(tbl, newPos, sampleRate)
 		if not tbl then return end
 
-		tbl.Pos = newPos or tbl.Pos
-		tbl.Vel = (tbl.Pos - tbl.LastPos) / (DeltaTime * sampleRate)
-		tbl.Acc = (tbl.Vel - tbl.LastVel) / (DeltaTime * sampleRate)
+		if newPos then VECTOR.SetUnpacked(tbl.Pos, VECTOR.Unpack(newPos)) end
 
-		tbl.LastPos = tbl.Pos
-		tbl.LastVel = tbl.Vel
-		tbl.LastAcc = tbl.Acc
-		return tbl.Acc:Length() / -ACF.Gravity.z -- Since gravity is a vector...
+		VECTOR.SetUnpacked(tbl.Vel, VECTOR.Unpack(tbl.Pos))
+		VECTOR.Sub(tbl.Vel, tbl.LastPos)
+		VECTOR.Div(tbl.Vel, DeltaTime * sampleRate)
+
+		VECTOR.SetUnpacked(tbl.Acc, VECTOR.Unpack(tbl.Vel))
+		VECTOR.Sub(tbl.Acc, tbl.LastVel)
+		VECTOR.Div(tbl.Acc, DeltaTime * sampleRate)
+
+		VECTOR.SetUnpacked(tbl.LastPos, VECTOR.Unpack(tbl.Pos))
+		VECTOR.SetUnpacked(tbl.LastVel, VECTOR.Unpack(tbl.Vel))
+		VECTOR.SetUnpacked(tbl.LastAcc, VECTOR.Unpack(tbl.Acc))
+
+		local _, _, Gravity = VECTOR.Unpack(ACF.Gravity)
+		return VECTOR.Length(tbl.Acc) / -Gravity -- Since gravity is a vector...
 	end
 end
 

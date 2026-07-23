@@ -1,11 +1,9 @@
 local ACF      		= ACF
+local Notify        = ACF.Utilities.Notify
 
 function ENT:CFW_PreParentedTo(_, NewEntity)
 	if IsValid(NewEntity) then
-		local Owner = self:CPPIGetOwner()
-		if IsValid(Owner) then
-			ACF.SendNotify(Owner, false, "Cannot parent an ACF baseplate to another entity.")
-		end
+		Notify.EntityWarning(self, "Cannot parent an ACF baseplate to another entity", "Baseplates are expected to be the root ancestor of a contraption, and parenting them would break that guarantee.")
 	end
 
 	return false

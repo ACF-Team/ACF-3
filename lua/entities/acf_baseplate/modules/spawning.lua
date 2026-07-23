@@ -1,4 +1,6 @@
 local ACF      		= ACF
+local Notify        = ACF.Utilities.Notify
+local Con = ACF.Contraption
 
 function ENT.ACF_OnVerifyClientData(ClientData)
 	ClientData.Size = Vector(ClientData.Length, ClientData.Width, ClientData.Thickness)
@@ -36,22 +38,35 @@ function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 	end
 
 	hook.Add("PhysgunPickup", "ACFBaseplatePickup" .. self:EntIndex(), function( _, ent )
-		local Contraption = ent.GetContraption and ent:GetContraption()
+		local Contraption = ent:CFW_GetContraption()
 		if Contraption ~= nil then
 			Contraption.IsPickedUp = true
 		end
 	end)
 
 	hook.Add("PhysgunDrop", "ACFBaseplateDrop" .. self:EntIndex(), function( _, ent )
-		local Contraption = ent.GetContraption and ent:GetContraption()
+		local Contraption = ent:CFW_GetContraption()
 		if Contraption ~= nil then
 			Contraption.IsPickedUp = false
+		end
+	end)
+
+	timer.Create("ACFPhysicalChecks" .. self:EntIndex(), 3, 0, function()
+		local Physical, _, _ = Con.GetEnts(self)
+		for Ent in pairs(Physical) do
+			if not IsValid(Ent) then continue end
+			if Ent.ACF_ReplacedPhysicsCollide then continue end
+			local PhysCollide = self:ACF_GetUserVar("BaseplateType").PhysicsCollide
+			if not PhysCollide then continue end
+			Ent.PhysicsCollide = PhysCollide
+			Ent.ACF_ReplacedPhysicsCollide = true
 		end
 	end)
 
 	self:CallOnRemove("ACF_RemovePickupHooks", function()
 		hook.Remove("PhysgunPickup", "ACFBaseplatePickup" .. self:EntIndex())
 		hook.Remove("PhysgunDrop", "ACFBaseplateDrop" .. self:EntIndex())
+		timer.Remove("ACFPhysicalChecks" .. self:EntIndex())
 	end)
 
 	ACF.AugmentedTimer(function(cfg) self:UpdateAccuracyMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 0.1, MaxTime = 0.25})
@@ -81,7 +96,7 @@ function ENT:PostEntityPaste(_, _, CreatedEntities)
 	if LuaSeatID then
 		self.Pod = CreatedEntities[LuaSeatID]
 		if not IsValid(self.Pod) then
-			ACF.SendNotify(self:CPPIGetOwner(), false, "The baseplate pod did not get duplicated correctly. You may have to relink pod controllers, etc.")
+			Notify.EntityWarning(self, "The baseplate pod did not get duplicated correctly", "You may have to relink pod controllers, etc.")
 			local Pod = ACF.GenerateLuaSeat(self, self:CPPIGetOwner(), self:GetPos(), self:GetAngles(), self:GetModel(), true)
 			if IsValid(Pod) then self.Pod = Pod end
 		end

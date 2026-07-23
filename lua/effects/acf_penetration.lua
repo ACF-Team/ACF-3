@@ -5,7 +5,16 @@ local GetDecal   = ACF.GetPenetrationDecal
 local GetScale   = ACF.GetDecalScale
 local Sounds     = ACF.Utilities.Sounds
 local Effects    = ACF.Utilities.Effects
+local Colors     = Effects.MaterialColors
 local White      = Color(255, 255, 255)
+
+local MetalMaterials = {
+	[MAT_GRATE] = true,
+	[MAT_CLIP] = true,
+	[MAT_METAL] = true,
+	[MAT_COMPUTER] = true,
+	[MAT_VENT] = true,
+}
 
 function EFFECT:Init(Data)
 	local Caliber  = Data:GetRadius()
@@ -20,18 +29,18 @@ function EFFECT:Init(Data)
 	TraceData.start = Origin - Normal
 	TraceData.endpos = Origin + Normal * Velocity
 
-	local Trace     = TraceLine(TraceData)
-	local HitNormal = Trace.HitNormal
-	local MatType   = Trace.MatType
+	local Trace       = TraceLine(TraceData)
+	local HitNormal   = Trace.HitNormal
+	local MatType     = Trace.MatType
+	local DebrisColor = Colors[MatType] or Colors.Default
 
 	local SoundData = Sounds.GetHitSoundPath(Data, Trace, "penetration")
-
 	Sounds.PlaySound(Trace.HitPos, SoundData.SoundPath:format(math.random(0, 4)), 100, SoundData.SoundPitch, 1)
 
-	if MatType == 71 or MatType == 73 or MatType == 77 or MatType == 80 then
-		self:Metal(Emitter, Origin, Scale, HitNormal)
+	if MetalMaterials[MatType] then
+		self:Metal(Emitter, Origin, Scale, Normal, DebrisColor)
 	else -- Nonspecific
-		self:Concrete(Emitter, Origin, Scale, HitNormal)
+		self:Concrete(Emitter, Origin, Scale, Normal, DebrisColor)
 	end
 
 	if IsValid(Trace.Entity) or Trace.HitWorld then
@@ -42,7 +51,7 @@ function EFFECT:Init(Data)
 	end
 end
 
-function EFFECT:Metal(Emitter, Origin, Scale, HitNormal)
+function EFFECT:Metal(Emitter, Origin, Scale, HitNormal, DebrisColor)
 	local EffectTable = {
 		Origin = Origin,
 		Normal = HitNormal,
@@ -55,11 +64,14 @@ function EFFECT:Metal(Emitter, Origin, Scale, HitNormal)
 
 	if not IsValid(Emitter) then return end
 
-	for _ = 0, 4 * Scale do
+	for _ = 0, 10 * Scale do
 		local Debris = Emitter:Add("effects/fleck_tile" .. math.random(1, 2), Origin)
 
 		if Debris then
-			Debris:SetVelocity(HitNormal * math.random(20, 40 * Scale) + VectorRand() * math.random(25, 50 * Scale))
+			-- Limit the z offset to keep the particles from being directed below the hit point
+			local VelOffset = Vector(math.Rand(-1, 1), math.Rand(-1, 1), math.Rand(0, 1))
+
+			Debris:SetVelocity((HitNormal + VelOffset) * 150 * 1.5)
 			Debris:SetLifeTime(0)
 			Debris:SetDieTime(math.Rand(1.5, 3) * Scale * 0.3333)
 			Debris:SetStartAlpha(255)
@@ -70,7 +82,7 @@ function EFFECT:Metal(Emitter, Origin, Scale, HitNormal)
 			Debris:SetRollDelta(math.Rand(-3, 3))
 			Debris:SetAirResistance(100)
 			Debris:SetGravity(Vector(0, 0, -650))
-			Debris:SetColor(120, 120, 120)
+			Debris:SetColor(DebrisColor.r, DebrisColor.g, DebrisColor.b)
 		end
 	end
 
@@ -78,7 +90,10 @@ function EFFECT:Metal(Emitter, Origin, Scale, HitNormal)
 		local Embers = Emitter:Add("particles/flamelet" .. math.random(1, 5), Origin)
 
 		if Embers then
-			Embers:SetVelocity((HitNormal - VectorRand()) * math.random(30 * Scale, 80 * Scale))
+			-- Limit the z offset to keep the particles from being directed below the hit point
+			local VelOffset = Vector(math.Rand(-1, 1), math.Rand(-1, 1), math.Rand(-1, 0))
+
+			Embers:SetVelocity((HitNormal - VelOffset) * math.random(30 * Scale, 80 * Scale))
 			Embers:SetLifeTime(0)
 			Embers:SetDieTime(math.Rand(0.3, 1) * Scale * 0.2)
 			Embers:SetStartAlpha(255)
@@ -98,7 +113,7 @@ function EFFECT:Metal(Emitter, Origin, Scale, HitNormal)
 	Emitter:Finish()
 end
 
-function EFFECT:Concrete(Emitter, Origin, Scale, HitNormal)
+function EFFECT:Concrete(Emitter, Origin, Scale, HitNormal, DebrisColor)
 	local EffectTable = {
 		Origin = Origin,
 		Normal = HitNormal,
@@ -111,11 +126,14 @@ function EFFECT:Concrete(Emitter, Origin, Scale, HitNormal)
 
 	if not IsValid(Emitter) then return end
 
-	for _ = 0, 4 * Scale do
+	for _ = 0, 10 * Scale do
 		local Debris = Emitter:Add("effects/fleck_tile" .. math.random(1, 2), Origin)
 
 		if Debris then
-			Debris:SetVelocity(HitNormal * math.random(20, 40 * Scale) + VectorRand() * math.random(25, 50 * Scale))
+			-- Limit the z offset to keep the particles from being directed below the hit point
+			local VelOffset = Vector(math.Rand(-1, 1), math.Rand(-1, 1), math.Rand(0, 1))
+
+			Debris:SetVelocity((HitNormal + VelOffset) * 150 * 1.5)
 			Debris:SetLifeTime(0)
 			Debris:SetDieTime(math.Rand(1.5, 3) * Scale * 0.3333)
 			Debris:SetStartAlpha(255)
@@ -126,7 +144,7 @@ function EFFECT:Concrete(Emitter, Origin, Scale, HitNormal)
 			Debris:SetRollDelta(math.Rand(-3, 3))
 			Debris:SetAirResistance(100)
 			Debris:SetGravity(Vector(0, 0, -650))
-			Debris:SetColor(120, 120, 120)
+			Debris:SetColor(DebrisColor.r, DebrisColor.g, DebrisColor.b)
 		end
 	end
 
@@ -134,7 +152,10 @@ function EFFECT:Concrete(Emitter, Origin, Scale, HitNormal)
 		local Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Origin)
 
 		if Smoke then
-			Smoke:SetVelocity(HitNormal * math.random(20, 40 * Scale) + VectorRand() * math.random(25, 50 * Scale))
+			-- Limit the z offset to keep the particles from being directed below the hit point
+			local VelOffset = Vector(math.Rand(-1, 1), math.Rand(-1, 1), math.Rand(0, 1))
+
+			Smoke:SetVelocity(HitNormal * math.random(20, 40 * Scale) + VelOffset * math.random(25, 50 * Scale))
 			Smoke:SetLifeTime(0)
 			Smoke:SetDieTime(math.Rand(1, 2) * Scale * 0.3333)
 			Smoke:SetStartAlpha(math.Rand(50, 150))
@@ -145,7 +166,7 @@ function EFFECT:Concrete(Emitter, Origin, Scale, HitNormal)
 			Smoke:SetRollDelta(math.Rand(-0.2, 0.2))
 			Smoke:SetAirResistance(200)
 			Smoke:SetGravity(Vector(math.random(-5, 5) * Scale, math.random(-5, 5) * Scale, -50))
-			Smoke:SetColor(90, 90, 90)
+			Smoke:SetColor(DebrisColor.r, DebrisColor.g, DebrisColor.b)
 		end
 	end
 
@@ -153,7 +174,10 @@ function EFFECT:Concrete(Emitter, Origin, Scale, HitNormal)
 		local Embers = Emitter:Add("particles/flamelet" .. math.random(1, 5), Origin)
 
 		if Embers then
-			Embers:SetVelocity((HitNormal - VectorRand()) * math.random(30 * Scale, 80 * Scale))
+			-- Limit the z offset to keep the particles from being directed below the hit point
+			local VelOffset = Vector(math.Rand(-1, 1), math.Rand(-1, 1), math.Rand(-1, 0))
+
+			Embers:SetVelocity((HitNormal - VelOffset) * math.random(30 * Scale, 80 * Scale))
 			Embers:SetLifeTime(0)
 			Embers:SetDieTime(math.Rand(0.3, 1) * Scale * 0.2)
 			Embers:SetStartAlpha(255)

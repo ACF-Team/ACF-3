@@ -1,3 +1,5 @@
+local Notify = ACF.Utilities.Notify
+
 -- Track ACF changes on a contraption
 do
     -- Maintain a record in the contraption of its current baseplate
@@ -14,7 +16,8 @@ do
             -- scenario since there's still only one baseplate. Maybe this is too paranoid.
             if IsValid(contraption.ACF_Baseplate) and ent ~= contraption.ACF_Baseplate then
                 -- Destroy the new one! We can't have more than one on a contraption
-                ACF.SendNotify(ent:CPPIGetOwner(), false, "A contraption can only have one ACF baseplate. New baseplate removed.")
+                -- Warn on the baseplate that won't be destroyed... otherwise not really a point to using EntityWarning
+                Notify.EntityWarning(contraption.ACF_Baseplate, "A contraption can only have one ACF baseplate. New baseplate removed.")
                 ent:Remove()
                 return
             end
@@ -24,6 +27,7 @@ do
 
         if ent.IsACFEntity then
             contraption.ACF_EntitiesCount = math.max(0, contraption.ACF_EntitiesCount + 1)
+            hook.Run("ACF_OnPostACFEntityAddedToContraption", contraption, ent)
         end
     end)
 

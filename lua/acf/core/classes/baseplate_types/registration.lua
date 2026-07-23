@@ -13,14 +13,18 @@ local LastBaseplateExplosions = {}
 local TIME_BETWEEN_HE_EXPLOSIONS_PER_PLAYER = 10
 
 function BaseplateTypes.BP_PhysicsCollideExplosion(self, Data)
-	local Contraption = self:GetContraption()
+	local CanExplode = hook.Run("ACF_PreExplodeBaseplate", self)
+	if not CanExplode then return end
+
+	local Contraption = self:CFW_GetContraption()
 	if not Contraption then return end
 
-	if Data.HitEntity:GetContraption() == Contraption then return end
+	if Data.HitEntity:CFW_GetContraption() == Contraption then return end
 	if Data.Speed > 1000 then
 		local Owner       = self:CPPIGetOwner()
 		local WillExplode = true
-		if IsValid(Owner) then -- I don't even think this could happen...
+
+		if IsValid(Owner) then
 			local Now         = Clock.CurTime
 			local LastTime    = LastBaseplateExplosions[Owner]
 			WillExplode = LastTime == nil or (Now - LastTime) > TIME_BETWEEN_HE_EXPLOSIONS_PER_PLAYER

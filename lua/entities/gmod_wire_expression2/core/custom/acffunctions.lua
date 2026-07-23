@@ -14,6 +14,7 @@ E2Lib.RegisterExtension("acf", true)
 local ACF       = ACF
 local AmmoTypes = ACF.Classes.AmmoTypes
 local Clock     = ACF.Utilities.Clock
+local Notify    = ACF.Utilities.Notify
 local match     = string.match
 local floor     = math.floor
 local Round     = math.Round
@@ -337,7 +338,7 @@ end
 e2function number entity:acfLinkTo(entity Target, number Notify)
 	if not ACF.AllowDynamicLinking then
 		if Notify ~= 0 then
-			ACF.SendNotify(self.player, 0, "Dynamic linking has been disabled on this server.")
+			Notify.EntityWarningToPlayer(Target, self.player, "Dynamic linking has been disabled on this server.")
 		end
 
 		return 0
@@ -347,7 +348,7 @@ e2function number entity:acfLinkTo(entity Target, number Notify)
 	if not validPhysics(Target) then return 0 end
 	if not (isOwner(self, this) and isOwner(self, Target)) then
 		if Notify ~= 0 then
-			ACF.SendNotify(self.player, 0, "Must be called on entities you own.")
+			Notify.EntityWarningToPlayer(Target, self.player, "Must be called on entities you own.")
 		end
 
 		return 0
@@ -355,7 +356,7 @@ e2function number entity:acfLinkTo(entity Target, number Notify)
 
 	if not this.Link then
 		if Notify ~= 0 then
-			ACF.SendNotify(self.player, 0, "This entity is not linkable.")
+			Notify.EntityWarningToPlayer(Target, self.player, "This entity is not linkable.")
 		end
 
 		return 0
@@ -364,7 +365,11 @@ e2function number entity:acfLinkTo(entity Target, number Notify)
 	local Success, Message = this:Link(Target, true)
 
 	if Notify ~= 0 then
-		ACF.SendNotify(self.player, Success, Message)
+		if Success then
+			Notify.EntityNoticeToPlayer(Target, self.player, Message)
+		else
+			Notify.EntityWarningToPlayer(Target, self.player, Message)
+		end
 	end
 
 	return Success and 1 or 0
@@ -376,7 +381,7 @@ e2function number entity:acfUnlinkFrom(entity Target, number Notify)
 	if not validPhysics(Target) then return 0 end
 	if not (isOwner(self, this) and isOwner(self, Target)) then
 		if Notify ~= 0 then
-			ACF.SendNotify(self.player, 0, "Must be called on entities you own.")
+			Notify.EntityWarningToPlayer(Target, self.player, "Must be called on entities you own.")
 		end
 
 		return 0
@@ -384,7 +389,7 @@ e2function number entity:acfUnlinkFrom(entity Target, number Notify)
 
 	if not this.Unlink then
 		if Notify ~= 0 then
-			ACF.SendNotify(self.player, 0, "This entity is not linkable.")
+			Notify.EntityWarningToPlayer(Target, self.player, "This entity is not linkable.")
 		end
 
 		return 0
@@ -393,7 +398,11 @@ e2function number entity:acfUnlinkFrom(entity Target, number Notify)
 	local Success, Message = this:Unlink(Target)
 
 	if Notify > 0 then
-		ACF.SendNotify(self.player, Success, Message)
+		if Success then
+			Notify.EntityNoticeToPlayer(Target, self.player, Message)
+		else
+			Notify.EntityWarningToPlayer(Target, self.player, Message)
+		end
 	end
 
 	return Success and 1 or 0

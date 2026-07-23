@@ -46,26 +46,6 @@ Weapons.Register("RAC", {
 	CostScalar	= 1.75
 })
 
-Weapons.RegisterItem("14.5mmRAC", "RAC", {
-	Caliber = 14.5,
-})
-
-Weapons.RegisterItem("20mmRAC", "RAC", {
-	Caliber = 20,
-})
-
-Weapons.RegisterItem("30mmRAC", "RAC", {
-	Caliber = 30,
-})
-
-Weapons.RegisterItem("20mmHRAC", "RAC", {
-	Caliber = 20,
-})
-
-Weapons.RegisterItem("30mmHRAC", "RAC", {
-	Caliber = 30,
-})
-
 ACF.SetCustomAttachment("models/rotarycannon/kw/20mmrac.mdl", "muzzle", Vector(59.6, 0, 1.74))
 
 ACF.AddHitboxes("models/rotarycannon/kw/20mmrac.mdl", {

@@ -1,6 +1,32 @@
 local RecacheBindOutput = ENT.RecacheBindOutput
 local GetKeyState = ENT.GetKeyState
 
+local function Init(Entity)
+	Entity.Gearbox              = nil  -- Main gearbox of the vehicle
+	Entity.Baseplate            = nil  -- The baseplate of the vehicle
+	Entity.SteerPlates          = {}   -- Steering plates, if any
+	Entity.GearboxEnds          = {}   -- Gearboxes connected to a wheel
+	Entity.GearboxIntermediates = {}   -- Or otherwise
+	Entity.Wheels               = {}   -- Wheels
+	Entity.Engines              = {}   -- Engines
+	Entity.Fuels                = {}   -- Fuel tanks
+	Entity.LeftGearboxes        = {}   -- Gearboxes connected to the left drive wheel
+	Entity.RightGearboxes       = {}   -- Gearboxes connected to the right drive wheel
+	Entity.LeftWheels           = {}   -- Wheels connected to the left drive wheel
+	Entity.RightWheels          = {}   -- Wheels connected to the right drive wheel
+	Entity.GearboxLeft          = nil  -- A Gearbox connected to the left drive wheel
+	Entity.GearboxRight         = nil  -- A Gearbox connected to the right drive wheel
+	Entity.GearboxLeftDir       = nil  -- Direction of that left gearbox's output
+	Entity.GearboxRightDir      = nil  -- Direction of that right gearbox's output
+	Entity.ControllerWelds      = {}   -- Keep track of the welds we created
+	Entity.SteerPlatesSorted    = {}   -- Steer plates sorted by their position
+	Entity.SteerPhysicsObjects  = {}   -- Steering physics objects
+	Entity.SteerAngles          = {}   -- Steering angles for the wheels
+	Entity.FuelCapacity         = 0    -- Total fuel capacity of the vehicle
+	Entity.GearboxEndCount      = 1    -- Number of endpoint gearboxes
+	Entity.Speed                = 0
+end
+
 -- Drivetrain related
 do
 	local CLUTCH_FLOW = 0
@@ -143,12 +169,12 @@ do
 		local LeftWheels, RightWheels = {}, {}
 		local avg, count = 0, 0
 		for Wheel in pairs(self.Wheels) do
-			avg, count = avg + Wheel:GetPos().x, count + 1
+			avg, count = avg + self.Baseplate:WorldToLocal(Wheel:GetPos()).y, count + 1
 		end
 		avg = avg / count
 
 		for Wheel in pairs(self.Wheels) do
-			if Wheel:GetPos().x < avg then LeftWheels[Wheel] = true else RightWheels[Wheel] = true end
+			if self.Baseplate:WorldToLocal(Wheel:GetPos()).y > avg then LeftWheels[Wheel] = true else RightWheels[Wheel] = true end
 		end
 		self.LeftWheels, self.RightWheels = LeftWheels, RightWheels
 
@@ -166,21 +192,30 @@ do
 		self.GearboxLeft, self.GearboxLeftDir = next(LeftGearboxes)
 		self.GearboxRight, self.GearboxRightDir = next(RightGearboxes)
 
+		for v in pairs(self.SteerPlates) do
+			local PhysObj = v:GetPhysicsObject()
+			if IsValid(PhysObj) then PhysObj:EnableGravity(false) end
+			self.SteerPlatesSorted[#self.SteerPlatesSorted + 1] = v
+		end
+
+		table.sort(self.SteerPlatesSorted, function(A, B)
+			return self.Baseplate:WorldToLocal(A:GetPos()).x > self.Baseplate:WorldToLocal(B:GetPos()).x
+		end)
+
 		self.CanSteer = #self.SteerPlatesSorted > 0 -- Steer if there are any steer plates
 
-		self.CanNeutral = not self.CanSteer -- Can't neutral steer if you can steer
-
 		-- Can't neutral steer if a gearbox is connected to both sides
+		self.HasTransfers = (next(self.LeftGearboxes) or next(self.RightGearboxes)) ~= MainGearbox
+
+		self.CanNeutral = true
 		for Gearbox in pairs(self.LeftGearboxes) do if self.RightGearboxes[Gearbox] then self.CanNeutral = false break end end
 		for Gearbox in pairs(self.RightGearboxes) do if self.LeftGearboxes[Gearbox] then self.CanNeutral = false break end end
 
 		for Wheel in pairs(self.Wheels) do self.SteerAngles[Wheel] = 0 end
 
-		-- if self.Gearbox.DoubleDiff then self.CanNeutral = true end
-
 		-- Set default shift RPMs to one of the engine's powerbands
 		local Engine = next(self.Engines)
-		if not MainGearbox.Automatic and IsValid(Engine) then
+		if IsValid(Engine) then
 			if self:GetShiftMinRPM() == 0 then self:SetShiftMinRPM(Engine.PeakMinRPM + 100) end
 			if self:GetShiftMaxRPM() == 0 then self:SetShiftMaxRPM(Engine.PeakMaxRPM - 100) end
 		end
@@ -202,6 +237,7 @@ do
 		RecacheBindOutput(self, SelfTbl, "Speed", Speed)
 
 		if not IsValid(SelfTbl.Gearbox) then return end
+		if self:GetDisableMobility() then return end
 
 		local W, A, S, D = GetKeyState(SelfTbl, IN_FORWARD), GetKeyState(SelfTbl, IN_MOVELEFT), GetKeyState(SelfTbl, IN_BACK), GetKeyState(SelfTbl, IN_MOVERIGHT)
 		local IsBraking = GetKeyState(SelfTbl, IN_JUMP)
@@ -229,6 +265,7 @@ do
 
 		if IsBraking or (self:GetBrakeEngagement() == 1 and not IsMoving) then -- Braking
 			SetLeft(SelfTbl, "Brake", BrakeStrength) SetRight(SelfTbl, "Brake", BrakeStrength)
+			SetLeft(SelfTbl, "Brake", BrakeStrength, true) SetRight(SelfTbl, "Brake", BrakeStrength, true) -- Differentials HAVE TO BE DIFFERENT
 			SetLeft(SelfTbl, "Clutch", CLUTCH_BLOCK) SetRight(SelfTbl, "Clutch", CLUTCH_BLOCK)
 			SetLatches(SelfTbl, true)
 			return
@@ -255,6 +292,7 @@ do
 		else
 			-- Car steering
 			SetLeft(SelfTbl, "Brake", 0) SetRight(SelfTbl, "Brake", 0)
+			SetLeft(SelfTbl, "Brake", 0, true) SetRight(SelfTbl, "Brake", 0, true)
 			SetLeft(SelfTbl, "Clutch", CLUTCH_FLOW) SetRight(SelfTbl, "Clutch", CLUTCH_FLOW)
 			SetLatches(SelfTbl, false) -- Revert braking if not braking
 
@@ -296,17 +334,18 @@ do
 
 		local MinRPM, MaxRPM = self:GetShiftMinRPM(), self:GetShiftMaxRPM()
 		if MinRPM == MaxRPM then return end -- Probably not set by the user
+		if self:GetDisableAutoShifter() then return end
 		if RPM > MinRPM then Gear = Gear + 1
 		elseif RPM < MaxRPM then Gear = Gear - 1 end
 
 		-- Clean this up later
-		local ShouldNeutral = self.CanNeutral and not self:GetForceCarSteering()
+		local UseReverser = self.HasTransfers
 		local TrueGear = 0
-		if S and not ShouldNeutral then
-			Gear = math.Clamp(Gear, 0, #self.ReverseGears)
+		if S and not UseReverser then
+			Gear = math.Clamp(Gear, 1, #self.ReverseGears)
 			TrueGear = self.ReverseGears[Gear] or 0
 		else
-			Gear = math.Clamp(Gear, 0, #self.ForwardGears)
+			Gear = math.Clamp(Gear, 1, #self.ForwardGears)
 			TrueGear = self.ForwardGears[Gear] or 0
 		end
 
@@ -316,12 +355,30 @@ do
 		SelfTbl.LastGear = Gear
 		SelfTbl.LastTrueGear = TrueGear
 	end
-
-	function ENT:AnalyzeSteerPlates(SteerPlate)
-		if not IsValid(SteerPlate) then return end
-		table.insert(self.SteerPlatesSorted, SteerPlate)
-		table.sort(self.SteerPlatesSorted, function(A, B)
-			return A:GetPos().y > B:GetPos().y
-		end)
-	end
 end
+
+ACF.RegisterControllerLink("acf_gearbox", {
+	Field = "Gearbox",
+	Single = true,
+	OnLinked = function(Controller, Target)
+		Controller:AnalyzeDrivetrain(Target)
+	end,
+})
+
+ACF.RegisterControllerLink("acf_baseplate", {
+	Field = "Baseplate",
+	Single = true,
+	OnLinked = function(Controller, Target)
+		if IsValid(Target.Pod) and not Controller.Seat then Controller:Link(Target.Pod) end
+	end,
+	OnUnlinked = function(Controller, Target)
+		if IsValid(Target.Pod) and not Controller.Seat then Controller:Unlink(Target.Pod) end
+	end,
+})
+
+ACF.RegisterControllerLink("prop_physics", {
+	Field = "SteerPlates",
+	Single = false,
+})
+
+return Init

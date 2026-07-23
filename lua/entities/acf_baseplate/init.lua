@@ -17,5 +17,6 @@ include("modules/repulsion.lua")
 include("modules/seats.lua")
 include("modules/spawning.lua")
 include("modules/state.lua")
+include("modules/autoright.lua")
 
 ACF.Classes.Entities.Register()

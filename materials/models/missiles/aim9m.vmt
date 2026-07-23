@@ -1,0 +1,18 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "models\missiles/aim9m"
+	$halflambert 			1
+	$blendtintbybasealpha		1
+	$bumpmap		models\missiles/aim9m_b
+	"$surfaceprop" "metal"
+		
+	$phong 1
+	$phongboost	5
+	$phongfresnelranges	"[0.05 0.5 1]"
+
+
+	"$envmap" "env_cubemap"
+	$normalmapalphaenvmapmask 1
+	$envmaptint "[0.2 0.2 0.2]"
+	$envmapanisotropy 1
+}

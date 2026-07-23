@@ -1,0 +1,6 @@
+"VertexlitGeneric"
+{
+	$baseTexture "models\spg9\spg9"
+	$halflambert 			1
+	$blendtintbybasealpha		1
+}

@@ -1,0 +1,24 @@
+"VertexlitGeneric"
+{
+
+	"$basetexture" "models\Kali\Weapons\Kornet\Kornet_Lenses_C"
+	"$bumpmap" "models\Kali\Weapons\Kornet\Kornet_Lenses_N"
+			
+	"$nocull" 0	
+	"$translucent" 0
+
+	"$normalmapalphaenvmapmask" 1				
+	"$envmap" "env_cubemap"					
+	"$envmaptint" "[ 1 1 1 ]"					
+ 	"$envmapFresnel" "0.5"					
+
+	"$phong" "1"						
+	"$phongexponent" "1"
+	"$phongboost" "0.5"						
+	"$phongfresnelranges"	"[ .2 1.2 8]"	
+
+	"$PhongAlbedoTint" "1"		
+
+}
+
+

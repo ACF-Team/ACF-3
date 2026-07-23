@@ -26,19 +26,22 @@ do
 	-- standard for a specific type; see ACF.BooleanDataCallback, FloatDataCallback, etc for examples of how that
 	-- behavior works.
 
-	function ACF.DefineSetting(Key, Default, TextWhenChanged, Callback)
+	-- UnrestrictedValue denotes the value that should be used if restrictions are removed.
+
+	function ACF.DefineSetting(Key, Default, TextWhenChanged, Callback, UnrestrictedValue)
 		ACF[Key] = Default
 
 		SettingData.Key             = Key
 		SettingData.Default         = Default
 		SettingData.TextWhenChanged = TextWhenChanged
 		SettingData.Callback        = Callback
+		SettingData.UnrestrictedValue = UnrestrictedValue
 
 		ACF.__DefinedSettings[Key]  = SettingData
 		SettingData                 = {}
 
 		if ACF.__OnDefinedSetting then
-			ACF.__OnDefinedSetting(Key, Default, TextWhenChanged, Callback)
+			ACF.__OnDefinedSetting(Key, Default, TextWhenChanged, Callback, UnrestrictedValue)
 		end
 	end
 
@@ -108,6 +111,16 @@ do
 	end
 end
 
+do -- Generic global funcs
+	-- Get the nearest binary step of a number. Useful for getting the nearest bit value to network stuff.
+	function ACF.GetNearestPowerOfTwo(Num)
+		if Num <= 0 then return 1 end
+		-- Calculate log base 2 and round to the nearest whole number
+		local exponent = math.floor(math.log(Num, 2) + 0.5)
+		return 2 ^ exponent
+	end
+end
+
 do -- ACF global vars
 	ACF.AmmoCrates           = ACF.AmmoCrates or {}
 	ACF.FuelTanks            = ACF.FuelTanks or {}
@@ -119,14 +132,15 @@ do -- ACF global vars
 	-- General Settings
 	ACF.DefineSetting("AllowAdminData",       false,  "Admin server data access has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("RestrictInfo",         true,   "Entity information restrictions have been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("LegalChecks",          true,   "Legality checks for ACF entities has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("NameAndShame",         false,  "Console messages for failed legality checks have been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("VehicleLegalChecks",   true,   "Legality checks for vehicles has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("LegalChecks",          true,   "Legality checks for ACF entities has been %s.", ACF.BooleanDataCallback(), false)
+	ACF.DefineSetting("NameAndShame",         true,   "Console messages for failed legality checks have been %s.", ACF.BooleanDataCallback(), false)
+	ACF.DefineSetting("VehicleLegalChecks",   true,   "Legality checks for vehicles has been %s.", ACF.BooleanDataCallback(), false)
+	ACF.DefineSetting("LegalityDetours",      true,   "Legality detours have been %s.", ACF.BooleanDataCallback(), false)
 
 	ACF.DefineSetting("GunsCanFire",          true,   "Gunfire has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("GunsCanSmoke",         true,   "Gun sounds and particles have been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("RacksCanFire",         true,   "Missile racks have been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("RequireFuel",          true,   "Engine fuel requirements have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("RequireFuel",          true,   "Engine fuel requirements have been %s.", ACF.BooleanDataCallback(), false)
 	ACF.DefineSetting("AllowBaseplateDamage", false,  "Non-ACF damage while driving baseplates has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("SquishyDamageMult",    1,      "Player/NPC damage multiplier has been set to a factor of %.2f.", ACF.FloatDataCallback(0.1, 2, 2))
 
@@ -139,7 +153,7 @@ do -- ACF global vars
 	ACF.FuelRate = 15 -- Multiplier for fuel usage, 1.0 is approx real world
 	ACF.DefineSetting("FuelFactor",           1,      "Fuel rate multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("FuelRate", 0.01, 2, 2))
 
-	ACF.MinimumArmor         = 1     -- Minimum possible armor that can be given to an entity
+	ACF.MinimumArmor         = 0.01     -- Minimum possible armor that can be given to an entity
 	ACF.MaximumArmor         = 5000  -- Maximum possible armor that can be given to an entity
 	ACF.MinDuctility         = -80   -- The minimum amount of ductility that can be set on an entity
 	ACF.MaxDuctility         = 80    -- The maximum amount of ductility that can be set on an entity
@@ -153,12 +167,11 @@ do -- ACF global vars
 	ACF.DefineSetting("KEPush",               true,   "Kinetic energy entity pushing has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("RecoilPush",           true,   "Recoil entity pushing has been %s.", ACF.BooleanDataCallback())
 
-	ACF.DefineSetting("AllowFunEnts",              true,     "Fun Entities have been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("AllowArbitraryParents",     false,    "Arbitrary parenting has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("AllowSpecialEngines",       true,     "Special engines have been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("AllowDynamicLinking",       false,    "Dynamic ACF linking has been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("LethalEntityPlayerChecks",  true,     "Lethal entity player checks have been %s.", ACF.BooleanDataCallback())
-	ACF.DefineSetting("ShowFunMenu",               true,     "The Fun Entities menu option has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("AllowFunEnts",              true,     "Fun Entities have been %s.", ACF.BooleanDataCallback(), true)
+	ACF.DefineSetting("AllowArbitraryParents",     false,    "Arbitrary parenting has been %s.", ACF.BooleanDataCallback(), true)
+	ACF.DefineSetting("AllowDynamicLinking",       false,    "Dynamic ACF linking has been %s.", ACF.BooleanDataCallback(), true)
+	ACF.DefineSetting("LethalEntityPlayerChecks",  true,     "Lethal entity player checks have been %s.", ACF.BooleanDataCallback(), false)
+	ACF.DefineSetting("ShowFunMenu",               true,     "The Fun Entities menu option has been %s.", ACF.BooleanDataCallback(), true)
 	ACF.DefineSetting("DetachedPhysmassRatio",     false,    "Detached entities affecting mass ratio has been %s.", ACF.BooleanDataCallback())
 
 	ACF.DefineSetting("WorkshopContent",      true,   "Workshop content downloading has been %s.", ACF.BooleanDataCallback())
@@ -198,8 +211,13 @@ do -- ACF global vars
 	-- Miscellaneous Sound Stuff
 	ACF.SpeedOfSound 		 = 343 * ACF.MeterToInch -- in Meters per Second. Source internally uses inches(or units) so we have to convert
 													 -- Actually this would vary as a function of temperature and air pressure, but this should suffice for now
+	-- acf_engine exclusive constants
+	ACF.MaxSounds            = 16 -- Maximum amount of sounds per engine is allowed to play in interpolation. 
+	ACF.MaxSoundBanks        = 16 -- Maximum amount of soundbanks that an engine can have.
+	ACF.NetSoundRPMBitLimit  = 14 -- Maximum networked size of an engine's RPM in bits (IF SET TOO LOW, ENGINE'S WILL HAVE LIMITED SOUND PITCH RANGE)
+
 	-- Fuzes
-	ACF.MinFuzeCaliber       = 20 -- Minimum caliber in millimeters that can be fuzed
+	ACF.MinFuzeCaliber       = 25 -- Minimum caliber in millimeters that can be fuzed
 
 	-- Reload Mechanics
 	ACF.BaseReload         = 1 -- Minimum reload time. Time it takes to move around a weightless projectile
@@ -219,6 +237,14 @@ do -- ACF global vars
 
 		gmod_wire_expression2 = true,
 		gmod_wire_hologram    = true,
+		gmod_wire_customprop  = true,
+		gmod_wire_pod         = true,
+		gmod_wire_cameracontroller = true,
+		gmod_wire_egp_hud     = true,
+		gmod_wire_value       = true,
+		gmod_wire_gate        = true,
+		gmod_wire_latch       = true,
+		gmod_wire_hydraulic   = true,
 
 		phys_bone_follower    = true,
 		prop_dynamic          = true,
@@ -432,6 +458,7 @@ elseif CLIENT then
 	CreateClientConVar("acf_show_entity_info", 1, true, false, "Defines under what conditions the info bubble on ACF entities will be shown. 0 = Never, 1 = When not seated, 2 = Always", 0, 2)
 	CreateClientConVar("acf_cl_particlemul", 1, true, true, "Multiplier for the density of ACF effects.", 0.1, 1)
 	CreateClientConVar("acf_mobilityropelinks", 0, true, true, "Toggles the visibility of the links connecting mobility components.")
+	CreateClientConVar("acf_drawtruevisuals", 0, true, true, "Enables/disables drawing the true visuals of contraptions. This does not apply to just ACF entities or contraptions, and will apply to everything out at the time. Its purpose is to counter 'facades', where people will make physical armor smaller than the visual model of the contraption.")
 	-- CreateClientConVar("acf_advancedmobilityropelinks", 0, true, true, "Uses generated models to represent mobility links.")
 	CreateClientConVar("acf_maxroundsdisplay", 16, true, false, "Maximum rounds to display before using bulk display (0 to only display bulk)", 0, 5000)
 	CreateClientConVar("acf_drawboxes", 1, true, false, "Whether or not to draw hitboxes on ACF entities", 0, 1)

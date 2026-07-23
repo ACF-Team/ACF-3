@@ -7,12 +7,15 @@ local isfunction = isfunction
 local isstring   = isstring
 local istable    = istable
 local unpack     = unpack
+
+-- This is just to get us out of the hell that is the class system.
 local Classes    = ACF.Classes
 local Entities   = Classes.Entities
 
 --- Table mapping entity class names to their class tables
 --- @type table<string, table>
-local Entries    = Classes.GetOrCreateEntries(Entities)
+local Entries    = Entities.Entries or {}
+Entities.Entries = Entries
 
 --- Represents the arguments of an entity class (and information about them)
 --- Note: For older parts of the code base, restrictions are done outside the API, so that may be empty.
@@ -202,7 +205,7 @@ function BooleanType.CreateMenuItem(ACF_Panel, Ctx, Text)
 	return CheckBox
 end
 
-
+-- These should be removed in a future class rewrite
 local SimpleClassType = Entities.AddUserArgumentType("SimpleClass")
 function SimpleClassType.Validator(Ctx, Value)
 	local Specs = Ctx:GetSpecs()
@@ -981,7 +984,11 @@ function Entities.AutoRegister(ENT)
 			end
 		end
 
-		local _, SpawnedEntity = Entities.Spawn(Class, Player, Pos, Angle, UserData, true)
+		local success, SpawnedEntity = Entities.Spawn(Class, Player, Pos, Angle, UserData, true)
+		if not success then
+			ErrorNoHaltWithStack(SpawnedEntity)
+			return
+		end
 
 		if ShouldTransferLegacyData then
 			for _, KeyName in ipairs(ReadKeys) do
@@ -1063,7 +1070,44 @@ function Entities.GetArguments(Class)
 end
 
 -- Entity classes use the simple class system
-Classes.AddSimpleFunctions(Entities, Entries)
+-- As we are trying to deprecate it, the code for that has been repeated here.
+-- In the future, this file should just be refactored entirely.
+
+--- Gets the entry from the namespace with the given ID
+--- @param ID string The ID of the entry
+--- @return table | nil # The entry
+function Entities.Get(ID) return isstring(ID) and Entries[ID] or nil end
+
+--- Gets all the entries in the namespace  
+--- If aliases exist in the namespace, they will be ignored in the returned table
+--- @return table<string,table> # A table mapping the an entry's ID to itself 
+function Entities.GetEntries()
+	local Result = {}
+	for _, V in pairs(Entries) do Result[V.ID] = V end
+	return Result
+end
+
+--- Gets the stored entries table
+--- Returns the original reference
+--- Allows the class system to restore itself later
+--- @return table # The stored entries table
+function Entities.GetStored() return Entries end
+
+--- Gets all the entries in the namespace  
+--- If aliases exist in the namespace, they will be included in the returned table
+--- @return table<number,table> # An "array" (e.g. {class1,class2,...}) containing entries
+function Entities.GetList()
+	local Result = {}
+	local Count  = 0
+
+	for _, V in pairs(Entries) do
+		Count = Count + 1
+
+		Result[Count] = V
+	end
+
+	return Result
+end
 
 if CLIENT then return end
 

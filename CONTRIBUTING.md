@@ -26,9 +26,11 @@
 
 - Support is always appreciated. If you fixed or added something you're free to start a [new pull request](https://github.com/ACF-Team/ACF-3/compare).
 
-- All pull requests that added and/or modified something inside the lua folder will be linted. You'll have to rectify your code in case it doesn't pass the test.
+- All pull requests that add and/or modify something inside the lua folder will be linted. You'll have to rectify your code in case it doesn't pass the tests.
 
 - All pull requests will be reviewed by the developer team before being accepted and later merged into the addon. Try to cooperate whenever it's required.
+
+- Please clearly indicate if any part of your contribution is AI generated.
 
 ## Do you have any questions?
 
