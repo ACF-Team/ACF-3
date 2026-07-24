@@ -253,12 +253,13 @@ do -- Processing adjustable sounds (for example, engine noises)
 	end)
 end
 
-local cos = math.cos
-local _PI = math.pi
 -- Fade function taken from:
 -- https://dsp.stackexchange.com/questions/37477/understanding-equal-power-crossfades
 -- https://dsp.stackexchange.com/questions/14754/equal-power-crossfade
 function Sounds.Fade(N, Min, Mid, Max)
+	local cos = math.cos
+	local _PI = math.pi
+
 	if N < Min or N > Max then return 0 end
 
 	if N > Mid then
@@ -268,35 +269,48 @@ function Sounds.Fade(N, Min, Mid, Max)
 	return cos((1 - ((N - Min) / (Mid - Min))) * (_PI / 2))
 end
 
-local Remap = math.Remap
 -- This is where the magic to interpolate sounds happen.
 -- In order to make yourself a better idea of what this does you can consult the image below:
 -- https://i.imgur.com/KaFmaMf.png
 local function DoPitchVolumeAtRPM(Origin, Throttle, RPM)
-	local Fade = Sounds.Fade -- idk if this is faster to do, but given this is a hot path, might as well be...
+	local Fade  = Sounds.Fade -- idk if this is faster to do, but given this is a hot path, might as well be...
+	local Remap = math.Remap
+	local abs   = math.abs
+
 	local SoundObjects = Origin.SoundObjects
 	if not SoundObjects or table.IsEmpty(SoundObjects) then return end
 
-	-- TODO(TMF): Potentially add some mechanism here to check for any differences and only update those
 	for _, SoundBank in ipairs(SoundObjects) do
 		local Entity = SoundBank.Entity
 		if not IsValid(Entity) then Entity = Origin end
 
 		local OffVolume = SoundBank.OffThrottle
 		local OnVolume = SoundBank.OnThrottle
+		local SoundCount = #SoundBank.Sounds
 
 		for Idx, SoundTable in ipairs(SoundBank.Sounds) do
 			if not SoundTable.RPM then continue end
-			Entity.Sound = SoundTable.Sound
 
 			local AddCurveWidth = SoundTable.Width or 0
 			local EnginePitch = SoundTable.Pitch or 1
-			local Min    = Idx == 1 and -1000000 or SoundBank.Sounds[Clamp(Idx - 1 - AddCurveWidth, 1, ACF.MaxSounds)].RPM
+			local Min    = Idx == 1 and -1000000 or SoundBank.Sounds[Clamp(Idx - 1 - AddCurveWidth, 1, SoundCount)].RPM
 			local Mid    = SoundTable.RPM
-			local Max    = Idx == #SoundBank.Sounds and 1000000 or SoundBank.Sounds[Clamp(Idx + 1 + AddCurveWidth, 1, ACF.MaxSounds)].RPM
+			local Max    = Idx == SoundCount and 1000000 or SoundBank.Sounds[Clamp(Idx + 1 + AddCurveWidth, 1, SoundCount)].RPM
 			local Curve  = Fade(RPM, Min, Mid, Max)
 			local Volume = Curve * Remap(Throttle, 0, 100, OffVolume, OnVolume) * (SoundTable.Volume or 1)
 			local Pitch  = (RPM / SoundTable.RPM) * EnginePitch
+			local LastPitch  = SoundTable.LastPitch
+			local LastVolume = SoundTable.LastVolume
+
+			-- Don't even bother updating if neither value has changed meaningfully since the last update
+			if LastPitch and LastVolume and abs(Pitch - LastPitch) < 0.5 and abs(Volume - LastVolume) < 0.01 then
+				continue -- Yeah...
+			end
+
+			SoundTable.LastPitch = Pitch
+			SoundTable.LastVolume = Volume
+
+			Entity.Sound = SoundTable.Sound
 
 			Sounds.UpdateAdjustableSound(Entity, Pitch, Volume)
 		end
