@@ -1,4 +1,73 @@
 local Sounds = ACF.Utilities.Sounds
+local Clock  = ACF.Utilities.Clock
+
+local Clamp = math.Clamp
+local max   = math.max
+
+do -- Doppler effect
+	local LocalPlayer = LocalPlayer
+	local IsValid = IsValid
+
+	local SpeedOfSound = ACF.SpeedOfSound
+	local MinimumDenominator = SpeedOfSound * 0.1 -- Floor for the denominator below, so an extreme closing speed can't blow the ratio up towards infinity or flip its sign
+
+	-- Lets store our last entity positions in this weak table so whenever the entity that had its data stored gets removed, does so from this table too.
+	local LastPosition = setmetatable({}, {__mode = "k"})
+
+	-- Given the fact that Ent:GetPos() is a method of ENTITY but Ent:GetVelocity() is a method of PHYSOBJ, simply calling the previous function wont work
+	-- for parented entities(they don't have any physobj's) so instead we have to manually calculate the velocity of our sound source. 
+	local function GetVelocity(Ent, Pos)
+		local Time = Clock.CurTime
+		local Last = LastPosition[Ent]
+
+		if Last and Last.Time == Time then return Last.Velocity end
+
+		local Velocity = vector_origin
+
+		if Last then
+			local DeltaTime = Time - Last.Time
+			if DeltaTime > 0 then
+				Velocity = (Pos - Last.Pos) / DeltaTime
+
+				-- In the case that a teleport (spawning, respawning, prop repositioning) happens, 
+				-- it'd cause a naughty one tick velocity spike, so lets prevent that. 
+				if Velocity:Length() > SpeedOfSound * 2 then
+					Velocity = vector_origin
+				end
+			end
+		end
+
+		LastPosition[Ent] = {Pos = Pos, Time = Time, Velocity = Velocity}
+
+		return Velocity
+	end
+
+	--- Computes a pitch multiplier representing the Doppler shift caused by Origin's motion relative to the local player.
+	--- @param Origin table The entity the sound is actually playing from
+	--- @return number A multiplier to apply to the sound's base pitch
+	function Sounds.GetDopplerPitchMultiplier(Origin)
+		local Ply = LocalPlayer()
+		if not IsValid(Ply) or not IsValid(Origin) then return 1 end
+
+		local PlayerPos = Ply:EyePos()
+		local SourcePos = Origin:GetPos()
+
+		local Dir = SourcePos - PlayerPos
+		local Dist = Dir:Length()
+		if Dist < 1 then return 1 end  -- Right on top of the source
+
+		Dir = Dir / Dist
+
+		local RelativeVelocity = GetVelocity(Origin, SourcePos) - GetVelocity(Ply, PlayerPos)
+		local VelocityTowardsPlayer = -RelativeVelocity:Dot(Dir)
+
+		local Denominator = max(SpeedOfSound - VelocityTowardsPlayer, MinimumDenominator)
+		-- Sanity clamp so a sudden teleport/velocity spike, can't send the pitch to an absurd extreme for a tick
+		local Factor = Clamp(SpeedOfSound / Denominator, 0.5, 2)
+
+		return Factor
+	end
+end
 
 do -- Valid sound check
 	local file     = file
@@ -115,6 +184,7 @@ do -- Processing adjustable sounds (for example, engine noises)
 		if not Sound then return end
 
 		Volume = Volume * ACF.Volume
+		Pitch  = Clamp(Pitch * Sounds.GetDopplerPitchMultiplier(Origin), 1, 255) -- Doppler effect
 
 		if Sound:IsPlaying() then
 			Sound:ChangePitch(Pitch, 0.05)
@@ -199,7 +269,6 @@ function Sounds.Fade(N, Min, Mid, Max)
 end
 
 local Remap = math.Remap
-local Clamp = math.Clamp
 -- This is where the magic to interpolate sounds happen.
 -- In order to make yourself a better idea of what this does you can consult the image below:
 -- https://i.imgur.com/KaFmaMf.png
@@ -311,8 +380,8 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 
 	local _BIT_NUM_SOUNDBANKS = ACF.GetNearestPowerOfTwo(ACF.MaxSoundBanks)
 	-- For multiple sounds creation
-	net.Receive("ACF_Sounds_AdjustableCreate_Multi", function()
-		-- print("Received " .. len .. " bits from \"ACF_Sounds_AdjustableCreate_Multi\" for sound creation!") -- Debug print
+	net.Receive("ACF_Sounds_AdjustableCreate_Multi", function(len)
+		print("Received " .. len .. " bits from \"ACF_Sounds_AdjustableCreate_Multi\" for sound creation!") -- Debug print
 		local Origin = net.ReadEntity()
 		local Exhaust = net.ReadEntity()
 		local SoundBankCount = net.ReadUInt(_BIT_NUM_SOUNDBANKS)
