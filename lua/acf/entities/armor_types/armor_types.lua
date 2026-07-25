@@ -1,6 +1,8 @@
 local ACF       = ACF
 local Types     = ACF.Classes.ArmorTypes
 
+-- Name       : full display name
+-- ShortName  : abbreviated display name, used where space is limited (e.g. the cost comparison grid)
 -- Density stored in kg/m^3
 -- CostMul    : points per m^3
 -- HealthMul  : health pool per unit volume
@@ -17,6 +19,7 @@ local Types     = ACF.Classes.ArmorTypes
 local Armor = Types.Register("Default")
 function Armor:OnLoaded()
     self.Name        = "Default"
+    self.ShortName   = "Default"
     self.Description = "Used as a default material for entities. Not intended to provide any protection."
     self.SuppressLoad = true
     self.Density     = 100
@@ -31,6 +34,7 @@ end
 local Armor = Types.Register("Flesh")
 function Armor:OnLoaded()
     self.Name        = "Flesh"
+    self.ShortName   = "Flesh"
     self.Description = "Soft tissue, used to represent crew members. Lab-grown for your convenience."
     self.Density     = 1100 -- https://www.sciencedirect.com/topics/immunology-and-microbiology/body-density
     self.CostMul     = 5
@@ -44,6 +48,7 @@ end
 local Armor = Types.Register("Diesel")
 function Armor:OnLoaded()
     self.Name        = "Diesel"
+    self.ShortName   = "Diesel"
     self.Description = "Diesel fuel, provides some protection against shaped charges. Doesn't explode, unlike petrol and Li-Ion batteries."
     self.SuppressLoad = true
     self.Density     = 745 -- lua/acf/entities/fuel_types/diesel.lua (0.745 kg/L)
@@ -58,6 +63,7 @@ end
 local Armor = Types.Register("Petrol")
 function Armor:OnLoaded()
     self.Name        = "Petrol"
+    self.ShortName   = "Petrol"
     self.Description = "Petrol fuel, provides negligible protection. Prone to detonate when penetrated or damaged."
     self.SuppressLoad = true
     self.Density     = 832 -- lua/acf/entities/fuel_types/petrol.lua (0.832 kg/L)
@@ -72,6 +78,7 @@ end
 local Armor = Types.Register("LiIon")
 function Armor:OnLoaded()
     self.Name        = "Li-Ion Battery"
+    self.ShortName   = "Li-Ion"
     self.Description = "Lithium-ion battery cells. Prone to detonate when penetrated or damaged."
     self.SuppressLoad = true
     self.Density     = 3890 -- lua/acf/entities/fuel_types/electric.lua (3.89 kg/L)
@@ -86,6 +93,7 @@ end
 local Armor = Types.Register("Aluminum")
 function Armor:OnLoaded()
     self.Name        = "Aluminum"
+    self.ShortName   = "Aluminum"
     self.Description = "Decent protection for its price and density."
     self.Density     = 2700 -- https://en.wikipedia.org/wiki/Aluminium
     self.CostMul     = 30
@@ -99,6 +107,7 @@ end
 local Armor = Types.Register("RHA")
 function Armor:OnLoaded()
     self.Name        = "RHA"
+    self.ShortName   = "RHA"
     self.Description = "Rolled Homogeneous Armor. The standard by which all other armor types are measured."
     self.Density     = 7840 -- https://metalzenith.com/blogs/steel-properties/rha-steel-properties-and-key-applications-in-defense
     self.CostMul     = 39.2 -- Reference: 0.005 points/kg
@@ -112,6 +121,7 @@ end
 local Armor = Types.Register("GunSteel")
 function Armor:OnLoaded()
     self.Name        = "Gun Steel"
+    self.ShortName   = "Gun Steel"
     self.Description = "Material intended to represent guns. Much healthier than components, but worse in protection per unit volume for balance reasons."
     self.SuppressLoad = true
     self.Density     = 7840 -- https://metalzenith.com/blogs/steel-properties/rha-steel-properties-and-key-applications-in-defense
@@ -126,6 +136,7 @@ end
 local Armor = Types.Register("Component")
 function Armor:OnLoaded()
     self.Name        = "Component"
+    self.ShortName   = "Component"
     self.Description = "Material intended to represent components. Better protection than Gun Steel, but worse health for balance reasons."
     self.SuppressLoad = true
     self.Density     = 2700 -- https://en.wikipedia.org/wiki/Aluminium
@@ -140,6 +151,7 @@ end
 local Armor = Types.Register("Rubber")
 function Armor:OnLoaded()
     self.Name        = "Rubber"
+    self.ShortName   = "Rubber"
     self.Description = "Very cheap and light, but offers very little protection."
     self.Density     = 1500 -- * https://rubberandseal.com/what-is-the-density-of-rubber-sheets/
     self.CostMul     = 12
@@ -153,6 +165,7 @@ end
 local Armor = Types.Register("Textolite")
 function Armor:OnLoaded()
     self.Name        = "Textolite"
+    self.ShortName   = "Textolite"
     self.Description = "Layered fibrous laminate material. Not much protection, but is cheap and light."
     self.Density     = 1800 -- * http://www.china-anza.com/2-1-7-textolite-3025.html
     self.CostMul     = 35
@@ -166,6 +179,7 @@ end
 local Armor = Types.Register("DU")
 function Armor:OnLoaded()
     self.Name        = "Depleted Uranium"
+    self.ShortName   = "DU"
     self.Description = "Expensive and dense with high protection."
     self.Density     = 19050 -- https://en.wikipedia.org/wiki/Uranium
     self.CostMul     = 69.3
@@ -179,6 +193,7 @@ end
 local Armor = Types.Register("SiliconCarbide")
 function Armor:OnLoaded()
     self.Name        = "Silicon Carbide"
+    self.ShortName   = "SiC"
     self.Description = "Excellent protection, but brittle and expensive."
     self.Density     = 3210 -- https://en.wikipedia.org/wiki/Silicon_carbide
     self.CostMul     = 80
@@ -192,6 +207,7 @@ end
 local Armor = Types.Register("LightERA")
 function Armor:OnLoaded()
     self.Name        = "Light ERA"
+    self.ShortName   = "Light ERA"
     self.Description = "Explosive Reactive Armor. Effective primarily against shaped charges. Will explode when hit with enough energy."
     self.Density     = 5000 -- * https://below-the-turret-ring.blogspot.com/2016/04/explosive-reactive-armor-some-history.html
     self.CostMul     = 39.7
@@ -210,6 +226,7 @@ end
 local Armor = Types.Register("HeavyERA")
 function Armor:OnLoaded()
     self.Name        = "Heavy ERA"
+    self.ShortName   = "Heavy ERA"
     self.Description = "Heavy Explosive Reactive Armor. Offers better protection against kinetic threats and takes more energy to detonate than Light ERA, but is twice as dense and more expensive."
     self.Density     = 10000 -- * https://below-the-turret-ring.blogspot.com/2016/04/explosive-reactive-armor-some-history.html
     self.CostMul     = 47.1
