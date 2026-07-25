@@ -156,9 +156,9 @@ function Armor:OnLoaded()
     self.Description = "Layered fibrous laminate material. Not much protection, but is cheap and light."
     self.Density     = 1800 -- * http://www.china-anza.com/2-1-7-textolite-3025.html
     self.CostMul     = 35
-    self.HealthMul   = 0.318878
-    self.KineticMul  = 0.4
-    self.ChemicalMul = 1.3
+    self.HealthMul   = 0.4
+    self.KineticMul  = 0.5
+    self.ChemicalMul = 1.5
     self.SpallMul    = 0.3
 end
 
@@ -181,8 +181,8 @@ function Armor:OnLoaded()
     self.Name        = "Silicon Carbide"
     self.Description = "Excellent protection, but brittle and expensive."
     self.Density     = 3210 -- https://en.wikipedia.org/wiki/Silicon_carbide
-    self.CostMul     = 80 -- Expensive to manufacture
-    self.HealthMul   = 0.153061 -- Brittle
+    self.CostMul     = 80
+    self.HealthMul   = 0.153061
     self.KineticMul  = 2.2
     self.ChemicalMul = 1.6
     self.SpallMul    = 1.5
@@ -195,13 +195,14 @@ function Armor:OnLoaded()
     self.Description = "Explosive Reactive Armor. Effective primarily against shaped charges. Will explode when hit with enough energy."
     self.Density     = 5000 -- * https://below-the-turret-ring.blogspot.com/2016/04/explosive-reactive-armor-some-history.html
     self.CostMul     = 39.7
-    self.HealthMul   = 0.318878
+    self.HealthMul   = 0.23
     self.KineticMul  = 0.3
     self.ChemicalMul = 3.0
+    self.PassiveMul  = 0.2
     self.SpallMul    = 0.1
 
     self.IsExplosive        = true
-    self.ExplosiveThreshold = 100 -- KJ; sensitive, will trigger off autocannon-grade rounds and up
+    self.ExplosiveThreshold = 100
     self.ExplosiveFiller    = 0.01
 end
 
@@ -212,12 +213,13 @@ function Armor:OnLoaded()
     self.Description = "Heavy Explosive Reactive Armor. Offers better protection against kinetic threats and takes more energy to detonate than Light ERA, but is twice as dense and more expensive."
     self.Density     = 10000 -- * https://below-the-turret-ring.blogspot.com/2016/04/explosive-reactive-armor-some-history.html
     self.CostMul     = 47.1
-    self.HealthMul   = 0.765306
+    self.HealthMul   = 0.55
     self.KineticMul  = 1.33
     self.ChemicalMul = 2.0
+    self.PassiveMul  = 0.5
     self.SpallMul    = 0.2
 
     self.IsExplosive        = true
-    self.ExplosiveThreshold = 500 -- KJ; needs a heavier penetrator to set off
+    self.ExplosiveThreshold = 500
     self.ExplosiveFiller    = 0.01
 end
