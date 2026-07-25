@@ -19,6 +19,7 @@ AddCSLuaFile("armormeshmodules/armor_trace.lua")
 AddCSLuaFile("armormeshmodules/recursive_trace.lua")
 AddCSLuaFile("armormeshmodules/grid_scan.lua")
 AddCSLuaFile("armormeshmodules/contraption_readout.lua")
+AddCSLuaFile("armormeshmodules/cost_comparison.lua")
 
 include("armormeshmodules/contraption_readout.lua")
 
@@ -64,6 +65,7 @@ if CLIENT then
 	local ArmorTrace            = include("armormeshmodules/armor_trace.lua")
 	local DoRecursiveArmorTrace = include("armormeshmodules/recursive_trace.lua")(ArmorTrace, GetClassFilter)
 	local DoArmorScan           = include("armormeshmodules/grid_scan.lua")(ArmorTrace, GetClassFilter, ScanResolutionMin, ScanResolutionMax, ScanSizeMin, ScanSizeMax)
+	local BuildCostComparison   = include("armormeshmodules/cost_comparison.lua")
 
 	function TOOL:LeftClick(_) return true end
 	function TOOL:RightClick(_) return true end
@@ -105,6 +107,9 @@ if CLIENT then
 		local MatKinetic  = Base:AddLabel()
 		local MatChemical = Base:AddLabel()
 		local MatCost     = Base:AddLabel()
+
+		local CostBase = Base:AddCollapsible("Cost Comparison", false)
+		BuildCostComparison(CostBase, ArmorTypes)
 
 		function Materials:OnSelect(Index, _, Data)
 			if self.Selected == Data then return end
