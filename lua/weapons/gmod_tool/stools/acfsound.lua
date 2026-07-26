@@ -110,9 +110,18 @@ local function SetSoundData(Ply, Entity, Support)
 	local Class = Entity:GetClass()
 	if not Class then return end
 
+	local MenuMode = Ply:GetInfoNum("acf_soundmenu_mode", 1)
+
 	if Class == "acf_engine" then
 		-- This gets called everytime you spawn a entity, and also if you try to set with one sound, which will be wrong for engines, so lets ignore that
 		if not Support.GetSoundBanks or not Support.SetSoundBanks or not Support.ResetSoundBanks then return end
+
+		-- Prevent anyone from setting sounds with any other menu. 
+		if MenuMode ~= 2 then
+			Notify.EntityWarningToPlayer(Entity, Ply, "Wrong Sound Replacer Menu!", "Engines require the 'Engines - Multiple interpolated' menu option.") -- TODO: Localize me!
+			return
+		end
+
 		-- Simple call just to get the client's sound menu data 
 		DoSoundBankData(Ply, _, true)
 		do -- Receives any datavars from the client, which matches what's seen regarding any values on the menu, and sets the soundbank
@@ -164,8 +173,14 @@ local function SetSoundData(Ply, Entity, Support)
 			end)
 		end
 	else
-		local Sound = Ply:GetInfo("wire_soundemitter_sound")
-		local Pitch = Ply:GetInfoNum("acfsound_pitch", 1)
+		-- Prevent anyone from setting sounds with any other menu. 
+		if MenuMode ~= 1 then
+			Notify.EntityWarningToPlayer(Entity, Ply, "Wrong Sound Replacer Menu!", "This Entity requires the 'Generic - One Sound.' menu option.") -- TODO: Localize me!
+			return
+		end
+
+		local Sound  = Ply:GetInfo("wire_soundemitter_sound")
+		local Pitch  = Ply:GetInfoNum("acfsound_pitch", 1)
 		local Volume = Ply:GetInfoNum("acfsound_volume", 1)
 
 		Support.SetSound(Entity, {

@@ -394,8 +394,8 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 
 	local _BIT_NUM_SOUNDBANKS = ACF.GetNearestPowerOfTwo(ACF.MaxSoundBanks)
 	-- For multiple sounds creation
-	net.Receive("ACF_Sounds_AdjustableCreate_Multi", function(len)
-		print("Received " .. len .. " bits from \"ACF_Sounds_AdjustableCreate_Multi\" for sound creation!") -- Debug print
+	net.Receive("ACF_Sounds_AdjustableCreate_Multi", function()
+		-- print("Received " .. len .. " bits from \"ACF_Sounds_AdjustableCreate_Multi\" for sound creation!") -- Debug print
 		local Origin = net.ReadEntity()
 		local Exhaust = net.ReadEntity()
 		local SoundBankCount = net.ReadUInt(_BIT_NUM_SOUNDBANKS)

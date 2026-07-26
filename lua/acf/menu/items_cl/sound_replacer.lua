@@ -3,6 +3,11 @@ local Sounds = ACF.Utilities.Sounds
 local GetClientData, SetClientData = ACF.GetClientData, ACF.SetClientData
 local GetClientNumber, GetClientString = ACF.GetClientNumber, ACF.GetClientString
 
+if CLIENT then
+	-- Keeps track of the client's currently selected submenu. 
+	CreateClientConVar("acf_soundmenu_mode", 1, true, true)
+end
+
 	--- Generates the menu used in the Sound Replacer tool.
 	--- @param Panel panel The base panel to build the menu off of.
 function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
@@ -17,10 +22,10 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 	OptionSelectionBox:Dock(TOP)
 	OptionSelectionBox:SetTall(Menu.ButtonHeight)
 	OptionSelectionBox:AddChoice("Generic - One sound. ", 1) -- TODO: Localize me!
-	--OptionSelectionBox:AddChoice("Weapons - Start/Loop/Stop. ", 2)
-	--OptionSelectionBox:AddChoice("Engines - Simple interpolated. ", 3)
-	OptionSelectionBox:AddChoice("Engines - Multiple interpolated. ", 4) -- TODO: Localize me!
+	OptionSelectionBox:AddChoice("Engines - Multiple interpolated. ", 2) -- TODO: Localize me!
+	OptionSelectionBox:AddChoice("Weapons - Start/Loop/Stop. ", 3) -- TODO: Localize me!
 	OptionSelectionBox.OnSelect = function(_, Index, _)
+		RunConsoleCommand("acf_soundmenu_mode", tostring(Index))
 		Menu:StartTemporal(Panel)
 		Menu:ClearTemporal(Panel)
 		Menu:CreateSubMenu(Index) -- Build the sub menu
@@ -501,19 +506,7 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 				local PitchSlider = self:AddSlider("#tool.acfsound.pitch", 0.1, 2, 2)
 					PitchSlider:SetConVar("acfsound_pitch")
 			end,
-			-- Second panel, Weapons - Start/Loop/Stop. New menu with three text entries labeled as "Start", "Loop", "End" respectively, to put the sound paths
-			-- Layout is similar to the first option
-			--[[[2] = function()
-				self:AddLabel("This is the second panel, I don't know what to add here yet but you can imagine its gonna be something nice, so stay tuned!")
-
-			end,
-			-- Third panel, Engines - Simple interpolated. New menu with a Slider that creates N amount of text entries to put the sound paths
-			-- Layout is similar to the first option
-			[3] = function()
-				self:AddLabel("This is the third panel, I don't know what to add here yet but you can imagine its gonna be something fantastic, so stay tuned!")
-
-			end,]]--
-			-- Fourth panel, Engines - Custom interpolated. New menu with a button to add up to 16 sound paths, with configurable pitch, volume and width for each sound
+			-- Second panel, Engines - Multiple interpolated. New menu with a button to add up to 16 sound paths, with configurable pitch, volume and width for each sound
 			-- Has a graph at the top of the list to better visualise how they play at a determined engine RPM
 			[2] = function() -- MARK: Multiple sounds
 				self:AddLabel("Play multiple interpolated sounds exclusively for ACF engines.") -- TODO: Localize me!
@@ -832,6 +825,11 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 					Panel:SetValue(Value)
 				end)
 
+			end,
+			-- Third panel, Weapons - Start/Loop/Stop. New menu with three text entries labeled as "Start", "Loop", "End" respectively, to put the sound paths
+			-- Layout is similar to the first option
+			[3] = function() -- MARK: Weapon Sounds
+				self:AddLabel("This is the third panel, Nothing here was added just yet but you can imagine its gonna be something nice, so stay tuned!")
 			end
 		}
 		local Switch = Case[Num]
