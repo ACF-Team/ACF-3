@@ -132,15 +132,16 @@ local TickInterval = engine.TickInterval
 local function GetSoundCount(Engine)
 	if not Engine.SoundBanks then return 1 end
 
-	local SoundBankCount = 0
 	local TotalSounds = 0
 
 	for _, V in ipairs(Engine.SoundBanks) do
-		TotalSounds = TotalSounds + #V.Sounds
+		-- Check if our value is actually a table with a valid format.
+		if istable(V) and istable(V.Sounds) then
+			TotalSounds = TotalSounds + #V.Sounds
+		end
 	end
 
-	SoundBankCount = #Engine.SoundBanks
-	return SoundBankCount, TotalSounds
+	return #Engine.SoundBanks, TotalSounds
 end
 
 local function GetNextFuelTank(Engine)
@@ -682,7 +683,7 @@ function ENT:UpdateSoundBank(SelfTbl)
 		return
 	end
 
-	local SoundBankCount, SoundCount = GetSoundCount(self)
+	local SoundBankCount, SoundCount = GetSoundCount(SelfTbl)
 
 	-- Exit early if only one soundbank was found and has an empty soundpath
 	if SoundBankCount == 1 and SoundCount == 1 and SoundBanks[1].Sounds[1].Path == "" then return end
@@ -691,6 +692,9 @@ function ENT:UpdateSoundBank(SelfTbl)
 
 	local Throttle = Round(SelfTbl.Throttle, 2) * 100
 	local RPM = Round(SelfTbl.FlyRPM)
+
+	-- Update the overlay if our engine is off. 
+	if not SelfTbl.Active then self:UpdateOverlay() end
 
 	Sounds.SendMultipleAdjustableSounds(self, false, Throttle, RPM)
 end

@@ -193,7 +193,7 @@ local function SetSoundData(Ply, Entity, Support)
 	end
 end
 
--- Duplicator playback applier
+-- A function to parse and apply the entity's stored sound data whenever its spawned by the duplicator
 local function ApplySoundDuplicatorData(_, Entity, Data)
 	if CLIENT then return end
 	if not IsValid(Entity) then return end
@@ -207,6 +207,24 @@ local function ApplySoundDuplicatorData(_, Entity, Data)
 
 	if Class == "acf_engine" then
 		if not Support.SetSoundBanks then return end
+		if not istable(Data) then return end
+
+		-- Migrate old single sound data into our new soundbank table format
+		if isstring(Data[1]) then
+			Data = {{
+				Sounds = {{
+					RPM    = (Entity.IdleRPM + Entity.LimitRPM) / 2,
+					Path   = Data[1] or "",
+					Pitch  = ACF.CheckNumber(Data[2], 1) * 100,
+					Volume = ACF.CheckNumber(Data[3], 1),
+				}}
+			}}
+		end
+
+		-- Validate the stored data, early escape if there's corrupted/invalid sound table format
+		for _, Bank in ipairs(Data) do
+			if not istable(Bank) or not istable(Bank.Sounds) then return end
+		end
 
 		Support.SetSoundBanks(Entity, Data)
 	else
