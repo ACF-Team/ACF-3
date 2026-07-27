@@ -211,10 +211,16 @@ local function ApplySoundDuplicatorData(_, Entity, Data)
 
 		-- Migrate old single sound data into our new soundbank table format
 		if isstring(Data[1]) then
+			-- These fields might not be populated just yet when the duplicator entity modifiers run, so a fallback is needed.
+			-- These only work for single sound engines, so whatever RPM value will just work in the mean time. 
+			local Idle    = Entity.IdleRPM or 800
+			local Redline = Entity.LimitRPM or 6000
+			local Path    = Data[1]
+
 			Data = {{
 				Sounds = {{
-					RPM    = (Entity.IdleRPM + Entity.LimitRPM) / 2,
-					Path   = Data[1] or "",
+					RPM    = (Idle + Redline) / 2,
+					Path   = Path,
 					Pitch  = ACF.CheckNumber(Data[2], 1) * 100,
 					Volume = ACF.CheckNumber(Data[3], 1),
 				}}

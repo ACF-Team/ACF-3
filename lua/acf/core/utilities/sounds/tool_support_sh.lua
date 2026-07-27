@@ -30,6 +30,15 @@ Sounds.acf_gun = {
 	end
 }
 
+-- Ugli boye, just to check if we had a previously muted engine 
+local function IsMutedSoundBanks(SoundBanks)
+	return istable(SoundBanks)
+		and #SoundBanks == 1
+		and istable(SoundBanks[1].Sounds)
+		and #SoundBanks[1].Sounds == 1
+		and SoundBanks[1].Sounds[1].Path == ""
+end
+
 Sounds.acf_engine = {
 	GetSoundBanks = function(Ent)
 		return {
@@ -41,9 +50,9 @@ Sounds.acf_engine = {
 
 		Ent:UpdateSoundBank()
 
-		-- Given the fact that we now have changed the soundtable data, we have to forcefully rebroadcast it back to the clients
+		-- Given the fact that we now have changed the soundtable data, we have to forcefully rebroadcast it back to any clients
 		-- within PAS, because otherwise they'll keep hearing the old sounds until they happen to leave and reenter the PAS.
-		if SERVER then
+		if SERVER and not IsMutedSoundBanks(Ent.SoundBanks) then
 			ACF.Utilities.Sounds.CreateMultipleAdjustableSounds(Ent, Ent.SoundBanks)
 		end
 	end,
@@ -53,7 +62,7 @@ Sounds.acf_engine = {
 		Ent:UpdateSoundBank()
 
 		-- Same here if we reset.
-		if SERVER then
+		if SERVER and not IsMutedSoundBanks(Ent.SoundBanks) then
 			ACF.Utilities.Sounds.CreateMultipleAdjustableSounds(Ent, Ent.SoundBanks)
 		end
 	end
