@@ -197,7 +197,7 @@ function Armor:OnLoaded()
     self.Description = "Excellent protection, but brittle and expensive."
     self.Density     = 3210 -- https://en.wikipedia.org/wiki/Silicon_carbide
     self.CostMul     = 80
-    self.HealthMul   = 0.153061
+    self.HealthMul   = 0.05
     self.KineticMul  = 2.2
     self.ChemicalMul = 1.6
     self.SpallMul    = 1.5
