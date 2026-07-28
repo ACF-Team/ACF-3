@@ -317,7 +317,27 @@ do -- Spawn and Update functions
 		Entity.ClassData         = Class
 		Entity.Exhaust 			 = Engine.Exhaust or Entity
 		Entity.DefaultSoundBanks = Engine.SoundBanks or {}
-		Entity.SoundBanks 		 = Engine.SoundBanks or {}
+
+		-- Old single sound engines need to be converted to the new table format. Not that without this everything inherently breaks,
+		-- because there are more safeguards along the path. But this is to fix a bug with the overlay... 
+		if table.IsEmpty(Entity.DefaultSoundBanks) then
+			local Idle = Engine.RPM.Idle
+			local Redline = Engine.RPM.Limit
+
+			Entity.SoundBanks = {{
+				Sounds = {{
+					RPM    = (Idle + Redline) / 2,
+					Path   = Engine.Sound,
+					Pitch  = 100,
+					Volume = 1,
+				}}
+			}}
+
+			Entity.DefaultSoundBanks = Entity.SoundBanks -- Set our default soundbank too
+		else
+			Entity.SoundBanks = Entity.DefaultSoundBanks
+		end
+
 		Entity.SoundBankCount,
 		Entity.SoundCount	     = GetSoundCount(Engine)
 		Entity.DefaultSound      = Engine.Sound
@@ -357,7 +377,7 @@ do -- Spawn and Update functions
 
 		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 
-		--calculate base fuel usage
+		-- Calculate base fuel usage
 		if Type.CalculateFuelUsage then
 			Entity.FuelUse = Type.CalculateFuelUsage(Entity)
 		else
@@ -590,12 +610,12 @@ function ENT:ACF_UpdateOverlayState(State)
 	if SoundBankCount == 0 then
 		State:AddWarning("No soundbanks were detected!")
 	else
-		State:AddKeyValue("SoundBanks", self.SoundBankCount)
+		State:AddKeyValue("SoundBanks", SoundBankCount)
 	end
 	if TotalSoundsCount == 0 then
 		State:AddWarning("This engine is muted!")
 	else
-		State:AddKeyValue("Total Sounds", self.SoundCount)
+		State:AddKeyValue("Total Sounds", TotalSoundsCount)
 	end
 end
 
@@ -665,6 +685,7 @@ function ENT:UpdateSoundBank(SelfTbl)
 	local SoundBanks = SelfTbl.SoundBanks
 
 	-- Populate a placeholder SoundTable if none is found for the engine
+	-- TODO: Is this even necessary anymore?
 	if table.IsEmpty(SoundBanks) then
 		if table.IsEmpty(SelfTbl.DefaultSoundBanks) then
 			local Idle = SelfTbl.IdleRPM
