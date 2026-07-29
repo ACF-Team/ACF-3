@@ -3,6 +3,29 @@ local Sounds = ACF.Utilities.Sounds
 local GetClientData, SetClientData = ACF.GetClientData, ACF.SetClientData
 local GetClientNumber, GetClientString = ACF.GetClientNumber, ACF.GetClientString
 
+-- Fixes the order of a panel that's parented and has many siblings, like a list(Think of them as if we were applying "Display: inline;" styling), so when  
+-- you click into a focusable control (DNumberWang, DTextEntry), the call to RequestFocus() doesn't send them to the very end of the list, because internally
+-- it calls MoveToFront(). Pinning an explicit ZPos helps keeping dock order in place, re-asserting it whenever RequestFocus fires undoes the MoveToFront bump 
+-- immediately instead of letting it disturb the layout and messing up everything.
+--- @param Panel table The panel to pin
+--- @param ZPos integer The fixed dock order position to keep enforcing
+--- @param Focusable? boolean Whether this panel can be clicked to edit (hooks RequestFocus if so)
+local function LockDockOrder(Panel, ZPos, Focusable)
+	Panel:SetZPos(ZPos)
+
+	if not Focusable then return end
+
+	local OldRequestFocus = Panel.RequestFocus
+	function Panel:RequestFocus()
+		if OldRequestFocus then OldRequestFocus(self) end
+
+		self:SetZPos(ZPos)
+
+		local Parent = self:GetParent()
+		if IsValid(Parent) then Parent:InvalidateLayout(true) end
+	end
+end
+
 if CLIENT then
 	-- Keeps track of the client's currently selected submenu. 
 	CreateClientConVar("acf_soundmenu_mode", 1, true, true)
@@ -209,6 +232,11 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 			local VolumeWang, VolumeLabel = self:AddNumberWang("Volume:", 0, 1, 2) -- TODO: Localize me!
 			local WidthWang, WidthLabel = self:AddNumberWang("Width:", 0, 15, 0) -- TODO: Localize me!
 
+			local RPMWangBase = RPMWang:GetParent()
+			local PitchWangBase = PitchWang:GetParent()
+			local VolumeWangBase = VolumeWang:GetParent()
+			local WidthWangBase = WidthWang:GetParent()
+
 			BaseMainPanel:DockMargin(0, 0, 0, 0)
 			BaseMainPanel:DockPadding(0, 0, 0, 0)
 
@@ -223,16 +251,19 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 			BotDiv:Dock(BOTTOM)
 
 			RPMLabel:SetParent(TopDiv)
-			RPMLabel:DockMargin(0, 0, 0, 0)
+			-- RPMLabel:DockMargin(0, 0, 0, 0)
 			RPMLabel:Dock(LEFT)
 			RPMLabel:SetTextColor(TextColor)
+			RPMLabel:SizeToContentsX(4)
+			LockDockOrder(RPMLabel, 1)
 
 			RPMWang:SetParent(TopDiv)
 			RPMWang:SetWide(48) -- Equivalent to 00000 + up/down buttons at font size = 16 + padding
-			RPMWang:DockMargin(-30, 0, 0, 0)
+			RPMWang:DockMargin(0, 0, 0, 0)
 			RPMWang:Dock(LEFT)
 			RPMWang:SetValue(GetClientNumber("RPM@SB" .. SBPanelID .. "-" .. PanelID, DefaultRPM))
 			RPMWang:SetClientData("RPM@SB" .. SBPanelID .. "-" .. PanelID, "OnValueChanged")
+			LockDockOrder(RPMWang, 2, true)
 			RPMWang:DefineSetter(function(Panel, _, _, Value)
 				local Min = PanelID == 1 and 0 or GetClientNumber("RPM@SB" .. SBPanelID .. "-" .. (PanelID - 1))
 				local Max = PanelID == #VPPanel and _MAX_NET_SOUND_RPM or GetClientNumber("RPM@SB" .. SBPanelID .. "-" .. (PanelID + 1))
@@ -241,9 +272,12 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 				Panel:SetValue(Value)
 			end)
 
+			if IsValid(RPMWangBase) then RPMWangBase:Remove() end
+
 			PathLabel:SetParent(TopDiv)
 			PathLabel:Dock(LEFT)
 			PathLabel:SetTextColor(TextColor)
+			LockDockOrder(PathLabel, 3)
 
 			PathText:SetParent(TopDiv)
 			PathText:Dock(FILL)
@@ -251,6 +285,7 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 			PathText:SetTall(Menu.ButtonHeight)
 			PathText:SetValue(GetClientString("Path@SB" .. SBPanelID .. "-" .. PanelID, DefaultPath))
 			PathText:SetClientData("Path@SB" .. SBPanelID .. "-" .. PanelID, "OnValueChange")
+			LockDockOrder(PathText, 4, true)
 			PathText:DefineSetter(function(Panel, _, _, Value)
 				local IsValid = Sounds.IsValidSound
 
@@ -269,6 +304,7 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 			ParseIcon:DockMargin(3, 3, 3, 3)
 			ParseIcon:SetImage("icon16/accept.png")
 			ParseIcon:SetSize(16, 16)
+			LockDockOrder(ParseIcon, 5)
 
 			ClearButton:Dock(RIGHT)
 			ClearButton:DockMargin(3, 3, 3, 3)
@@ -276,6 +312,7 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 			ClearButton:SetTooltip("Reset all the values from this panel.") -- TODO: Localize me!
 			ClearButton:SetStretchToFit(false)
 			ClearButton:SetSize(16, 16)
+			LockDockOrder(ClearButton, 6)
 			ClearButton.DoClick = function()
 				SetClientData("RPM@SB" .. SBPanelID .. "-" .. PanelID, DefaultRPM)
 				SetClientData("Path@SB" .. SBPanelID .. "-" .. PanelID, DefaultPath)
@@ -284,13 +321,13 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 				SetClientData("Width@SB" .. SBPanelID .. "-" .. PanelID, DefaultWidth)
 			end
 
-			SearchButton:Center()
 			SearchButton:Dock(RIGHT)
 			SearchButton:DockMargin(3, 3, 3, 3)
 			SearchButton:SetImage("icon16/application_view_list.png")
 			SearchButton:SetTooltip("Open sound browser.") -- TODO: Localize me!
 			SearchButton:SetStretchToFit(false)
 			SearchButton:SetSize(16, 16)
+			LockDockOrder(SearchButton, 7)
 			SearchButton.DoClick = function()
 				RunConsoleCommand("wire_sound_browser_open")
 			end
@@ -298,45 +335,60 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 			PitchLabel:SetParent(BotDiv)
 			PitchLabel:Dock(LEFT)
 			PitchLabel:SetTextColor(TextColor)
+			PitchLabel:SizeToContentsX(4)
+			LockDockOrder(PitchLabel, 1)
 
 			-- TODO(TMF): Add tooltip to the panels below!
 			PitchWang:SetParent(BotDiv)
 			PitchWang:SetWide(40) -- Equivalent to 000 + up/down buttons at font size = 16 + padding
-			PitchWang:DockMargin(-30, 0, 4, 0)
+			PitchWang:DockMargin(0, 0, 4, 0)
 			PitchWang:Dock(LEFT)
 			PitchWang:SetValue(GetClientNumber("Pitch@SB" .. SBPanelID .. "-" .. PanelID, DefaultPitch))
 			PitchWang:SetClientData("Pitch@SB" .. SBPanelID .. "-" .. PanelID, "OnValueChanged")
+			LockDockOrder(PitchWang, 2, true)
 			PitchWang:DefineSetter(function(Panel, _, _, Value)
 				Panel:SetValue(Value)
 			end)
 
+			if IsValid(PitchWangBase) then PitchWangBase:Remove() end
+
 			VolumeLabel:SetParent(BotDiv)
 			VolumeLabel:Dock(LEFT)
 			VolumeLabel:SetTextColor(TextColor)
+			VolumeLabel:SizeToContentsX(4)
+			LockDockOrder(VolumeLabel, 3)
 
 			VolumeWang:SetParent(BotDiv)
 			VolumeWang:SetWide(40) -- Equivalent to 0.00 + up/down buttons at font size = 16 + padding
-			VolumeWang:DockMargin(-16, 0, 4, 0)
+			VolumeWang:DockMargin(0, 0, 4, 0)
 			VolumeWang:Dock(LEFT)
 			VolumeWang:SetValue(GetClientNumber("Volume@SB" .. SBPanelID .. "-" .. PanelID, DefaultVolume))
 			VolumeWang:SetClientData("Volume@SB" .. SBPanelID .. "-" .. PanelID, "OnValueChanged")
+			LockDockOrder(VolumeWang, 4, true)
 			VolumeWang:DefineSetter(function(Panel, _, _, Value)
 				Panel:SetValue(Value)
 			end)
 
+			if IsValid(VolumeWangBase) then VolumeWangBase:Remove() end
+
 			WidthLabel:SetParent(BotDiv)
 			WidthLabel:Dock(LEFT)
 			WidthLabel:SetTextColor(TextColor)
+			WidthLabel:SizeToContentsX(4)
+			LockDockOrder(WidthLabel, 5)
 
 			WidthWang:SetParent(BotDiv)
 			WidthWang:SetWide(32) -- Equivalent to 00 + up/down buttons at font size = 16 + padding
-			WidthWang:DockMargin(-24, 0, 4, 0)
+			WidthWang:DockMargin(0, 0, 4, 0)
 			WidthWang:Dock(LEFT)
 			WidthWang:SetValue(GetClientNumber("Width@SB" .. SBPanelID .. "-" .. PanelID, DefaultWidth))
 			WidthWang:SetClientData("Width@SB" .. SBPanelID .. "-" .. PanelID, "OnValueChanged")
+			LockDockOrder(WidthWang, 6, true)
 			WidthWang:DefineSetter(function(Panel, _, _, Value)
 				Panel:SetValue(Value)
 			end)
+
+			if IsValid(WidthWangBase) then WidthWangBase:Remove() end
 
 			table.insert(VPPanel, MainPanel) -- Insert this panel to keep count of them panels
 			return MainPanel
@@ -538,7 +590,9 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 				local BankSlider = GraphPanel:Add(self:AddComboBox())
 				local PanelBottom = GraphPanel:Add(self:AddPanel("ACF_Panel"))
 				local IdleWang, IdleLabel = self:AddNumberWang("Idle:", 0, 2000, 0)
+				local IdleWangBase = IdleWang:GetParent()
 				local RedlineWang, RedlineLabel = self:AddNumberWang("Redline:", 0, _MAX_NET_SOUND_RPM, 0)
+				local RedlineWangBase = RedlineWang:GetParent()
 				local RPMSlider = GraphPanel:Add(self:AddSlider("RPM", 0, _MAX_NET_SOUND_RPM))
 				local VolumeSlider = GraphPanel:Add(self:AddSlider("#tool.acfsound.volume", 0.1, 1, 2))
 				local SoundPre = GraphPanel:Add(self:AddPanel("ACF_Panel"))
@@ -604,11 +658,13 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 
 				IdleLabel:SetParent(PanelBottom)
 				IdleLabel:Dock(LEFT)
+				LockDockOrder(IdleLabel, 1)
 
 				IdleWang:SetParent(PanelBottom)
 				IdleWang:Dock(LEFT)
 				IdleWang:SetClientData("Idle", "OnValueChanged")
 				IdleWang:SetValue(DefaultIdle) -- I shouldn't need to do this but oh well, here we go...
+				LockDockOrder(IdleWang, 2, true)
 				IdleWang:DefineSetter(function(Panel, _, _, Value)
 					Panel:SetMinMax(0, 2000) -- I shouldn't even need to do this!
 					Panel:SetValue(Value)
@@ -618,9 +674,12 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 					return Value
 				end)
 
+				if IsValid(IdleWangBase) then IdleWangBase:Remove() end
+
 				RedlineLabel:SetParent(PanelBottom)
 				RedlineLabel:Dock(LEFT)
 				RedlineLabel:DockMargin(8, 4, 0, 0)
+				LockDockOrder(RedlineLabel, 3)
 
 				RedlineWang:SetParent(PanelBottom)
 				RedlineWang:Dock(LEFT)
@@ -628,6 +687,7 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 				RedlineWang:SetMinMax(GetClientNumber("Idle"), _MAX_NET_SOUND_RPM)
 				RedlineWang:SetClientData("Redline", "OnValueChanged")
 				RedlineWang:SetValue(DefaultRedline)
+				LockDockOrder(RedlineWang, 4, true)
 				RedlineWang:DefineSetter(function(Panel, _, _, Value)
 					Panel:SetValue(Value)
 					IdleWang:SetMax(math.min(2000, Value))
@@ -637,6 +697,8 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 
 					return Value
 				end)
+
+				if IsValid(RedlineWangBase) then RedlineWangBase:Remove() end
 
 				RPMSlider:Dock(TOP)
 				RPMSlider:SetWide(Menu.Wide)
