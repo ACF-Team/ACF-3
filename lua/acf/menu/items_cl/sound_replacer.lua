@@ -691,7 +691,7 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 				RedlineWang:DefineSetter(function(Panel, _, _, Value)
 					Panel:SetValue(Value)
 					IdleWang:SetMax(math.min(2000, Value))
-					SoundGraph:SetXRange(0, Value + 1000)
+					SoundGraph:SetXRange(0, math.Clamp(Value + 1000, 0, _MAX_NET_SOUND_RPM + 1000))
 					SoundGraph:SetXSpacing(Value < 1000 and 100 or 1000)
 					Current.Graph.Redline = Value
 
