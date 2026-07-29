@@ -13,6 +13,8 @@ TOOL.Information = {
 }
 
 local Notify = ACF.Utilities.Notify
+local _BIT_NUM_SOUNDBANKS = ACF.GetHighestPowerOfTwo(ACF.MaxSoundBanks)
+local _BIT_NUM_SOUNDS = ACF.GetHighestPowerOfTwo(ACF.MaxSounds)
 
 -- NOTE(TMF): I would have used concommands just to set clients data, however i didn't feel like using them here since i don't know how to use them lol
 -- So instead i went the dumb, hard and convoluted way and network the data needed back and forth
@@ -41,13 +43,13 @@ local function DoSoundBankData(Ply, Data, Loopback)
 			local SoundBanks = Data
 			local SoundBankCount = #SoundBanks.SoundBanks
 
-			net.WriteUInt(SoundBankCount, 3)
+			net.WriteUInt(SoundBankCount, _BIT_NUM_SOUNDBANKS)
 
 			for _, Bank in ipairs(SoundBanks.SoundBanks) do
 				net.WriteBool(Bank.PlaysAtExhaust or false)
 				net.WriteUInt((Bank.OffThrottle or 0.25) * 100, 8) -- Sending the approximate volume as an int to reduce message size
 				net.WriteUInt((Bank.OnThrottle or 1) * 100, 8)  -- Same here
-				net.WriteUInt(#Bank.Sounds, 4)
+				net.WriteUInt(#Bank.Sounds, _BIT_NUM_SOUNDS)
 
 				for _, Sound in ipairs(Bank.Sounds) do
 					net.WriteUInt(Sound.RPM, ACF.NetSoundRPMBitLimit)
@@ -127,14 +129,14 @@ local function SetSoundData(Ply, Entity, Support)
 		do -- Receives any datavars from the client, which matches what's seen regarding any values on the menu, and sets the soundbank
 			local SoundTable = {}
 			net.Receive("ACF_SoundMenu_Set_Multi", function ()
-				local BankCount = net.ReadUInt(3)
+				local BankCount = net.ReadUInt(_BIT_NUM_SOUNDBANKS)
 				local IsValidEntity = IsValid(Entity)
 
 				for I = 1, BankCount do
 					local PlayAtExhaust = net.ReadBool()
 					local OffThrottle = net.ReadUInt(8) * 0.01 -- Reduce the size down to a float
 					local OnThrottle = net.ReadUInt(8) * 0.01 -- Same here
-					local SoundCount = net.ReadUInt(4)
+					local SoundCount = net.ReadUInt(_BIT_NUM_SOUNDS)
 
 					-- Prevent an expensive operation if the entity received wasn't valid. We still want to read the remaining data though
 					if IsValidEntity then
@@ -170,6 +172,8 @@ local function SetSoundData(Ply, Entity, Support)
 				-- Store AFTER the data actually arrives, and store the real SoundTable
 				-- and not before this callback has had a chance to populate it.
 				duplicator.StoreEntityModifier(Entity, "acf_replacesound", SoundTable)
+
+				Notify.NoticeToPlayer(Ply, "Successfully replaced engine sounds!") -- TODO: Localize me!
 			end)
 		end
 	else
@@ -190,6 +194,8 @@ local function SetSoundData(Ply, Entity, Support)
 		})
 
 		duplicator.StoreEntityModifier(Entity, "acf_replacesound", { Sound, Pitch or 1, Volume or 1 })
+
+		Notify.NoticeToPlayer(Ply, "Successfully replaced entity sound!") -- TODO: Localize me!
 	end
 end
 
@@ -313,8 +319,12 @@ function TOOL:Reload(Trace)
 	if Class == "acf_engine" then
 		if not Trace.Entity.SoundBanks then return true end
 		Support.ResetSoundBanks(Trace.Entity)
+
+		Notify.NoticeToPlayer(Owner, "Successfully resetted engine sounds.") -- TODO: Localize me!
 	else
 		Support.ResetSound(Trace.Entity)
+
+		Notify.NoticeToPlayer(Owner, "Successfully resetted entity sound.") -- TODO: Localize me!
 	end
 
 	return true

@@ -899,6 +899,8 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 	end
 
 	do -- MARK: Networking
+		local _BIT_NUM_SOUNDBANKS = ACF.GetHighestPowerOfTwo(ACF.MaxSoundBanks)
+		local _BIT_NUM_SOUNDS = ACF.GetHighestPowerOfTwo(ACF.MaxSounds)
 		-- SoundBank networking entity data reception and menu population
 		-- Receives data just to set the option of the selection box
 		net.Receive("ACF_SoundMenu_Send_ID", function()
@@ -912,7 +914,7 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 			local Feedback = net.ReadBool()
 
 			if not Feedback then -- Get the data from the entity and populate menu
-				local SoundBankCount = net.ReadUInt(3)
+				local SoundBankCount = net.ReadUInt(_BIT_NUM_SOUNDBANKS)
 
 				SetClientData("SoundBankSlider", SoundBankCount)
 
@@ -920,7 +922,7 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 					local PlayAtExhaust = net.ReadBool()
 					local OffThrottle = net.ReadUInt(8)
 					local OnThrottle = net.ReadUInt(8)
-					local SoundCount = net.ReadUInt(4)
+					local SoundCount = net.ReadUInt(_BIT_NUM_SOUNDS)
 
 					SetClientData("PlayAtExhaust " .. SB, PlayAtExhaust)
 					SetClientData("OffThrottle " .. SB, OffThrottle * 0.01) -- Reduce the received value down to a float
@@ -944,7 +946,7 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 			else -- Gets any datavars and networks them back to the server
 				net.Start("ACF_SoundMenu_Set_Multi")
 					local BankCount = GetClientData("SoundBankSlider", 1)
-					net.WriteUInt(BankCount, 3)
+					net.WriteUInt(BankCount, _BIT_NUM_SOUNDBANKS)
 
 					for SB = 1, BankCount do
 						local PlaysAtExhaust = GetClientData("PlayAtExhaust " .. SB, false)
@@ -956,7 +958,7 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 						net.WriteUInt(OnThrottle, 8)  -- Same here
 
 						local SoundCount = GetClientData("SoundsAtSoundBank " .. SB)
-						net.WriteUInt(SoundCount, 4)
+						net.WriteUInt(SoundCount, _BIT_NUM_SOUNDS)
 
 						for S = 1, SoundCount do
 							net.WriteUInt(GetClientNumber("RPM@SB" .. SB .. "-" .. S), ACF.NetSoundRPMBitLimit)

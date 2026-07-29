@@ -96,7 +96,8 @@ end
 
 do -- Multiple, Interpolated sounds
 	local function WriteSoundTableAsPayload(Origin, SoundTable)
-		local _BIT_NUM_SOUNDBANKS = ACF.GetNearestPowerOfTwo(ACF.MaxSoundBanks)
+		local _BIT_NUM_SOUNDBANKS = ACF.GetHighestPowerOfTwo(ACF.MaxSoundBanks)
+		local _BIT_NUM_SOUNDS = ACF.GetHighestPowerOfTwo(ACF.MaxSounds)
 
 		net.WriteEntity(Origin)
 		net.WriteEntity(Origin.Exhaust)
@@ -115,7 +116,7 @@ do -- Multiple, Interpolated sounds
 
 			net.WriteUInt(OffThrottle, 8)
 			net.WriteUInt(OnThrottle, 8)
-			net.WriteUInt(SoundCount, 4)
+			net.WriteUInt(SoundCount, _BIT_NUM_SOUNDS)
 
 			for _, V in ipairs(Bank.Sounds) do
 				local RPM = V.RPM

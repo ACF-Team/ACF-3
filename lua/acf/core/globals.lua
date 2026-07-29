@@ -113,11 +113,11 @@ end
 
 do -- Generic global funcs
 	-- Get the nearest binary step of a number. Useful for getting the nearest bit value to network stuff.
-	function ACF.GetNearestPowerOfTwo(Num)
+	function ACF.GetHighestPowerOfTwo(Num)
 		if Num <= 0 then return 1 end
-		-- Calculate log base 2 and round to the nearest whole number
-		local exponent = math.floor(math.log(Num, 2) + 0.5)
-		return 2 ^ exponent
+
+		local exponent = math.ceil(math.log(Num + 1) / math.log(2))
+		return exponent
 	end
 end
 

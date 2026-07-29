@@ -685,7 +685,6 @@ function ENT:UpdateSoundBank(SelfTbl)
 	local SoundBanks = SelfTbl.SoundBanks
 
 	-- Populate a placeholder SoundTable if none is found for the engine
-	-- TODO: Is this even necessary anymore?
 	if table.IsEmpty(SoundBanks) then
 		if table.IsEmpty(SelfTbl.DefaultSoundBanks) then
 			local Idle = SelfTbl.IdleRPM
@@ -701,6 +700,7 @@ function ENT:UpdateSoundBank(SelfTbl)
 		else
 			SelfTbl.SoundBanks = SelfTbl.DefaultSoundBanks
 		end
+		self:UpdateOverlay() -- Update the overlay too!
 		return
 	end
 
