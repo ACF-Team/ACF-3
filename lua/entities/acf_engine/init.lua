@@ -1099,6 +1099,7 @@ do	-- NET SURFER 2.0
 		if IsEntityValid(Entity) then
 			local Outputs    = {}
 			local FuelTanks  = {}
+			local ExhaustEnt = Entity.Exhaust
 			local Driveshaft = Entity.Out.Pos
 
 			if next(Entity.Gearboxes) then
@@ -1115,6 +1116,7 @@ do	-- NET SURFER 2.0
 
 			net.Start("ACF_RequestEngineInfo")
 				net.WriteEntity(Entity)
+				net.WriteEntity(ExhaustEnt)
 				net.WriteVector(Driveshaft)
 				net.WriteUInt(#Outputs, 6)
 				net.WriteUInt(#FuelTanks, 6)
