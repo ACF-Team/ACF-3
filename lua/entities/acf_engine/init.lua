@@ -116,8 +116,10 @@ local Damage       = ACF.Damage
 local Utilities    = ACF.Utilities
 local Clock        = Utilities.Clock
 local Sounds       = Utilities.Sounds
+local Messages     = Utilities.Messages
 local Contraption  = ACF.Contraption
 local UnlinkSound  = "physics/metal/metal_box_impact_bullet%s.wav"
+local UnlinkExhSnd = "physics/metal/metal_sheet_impact_bullet%s.wav"
 local IsValid      = IsValid
 local Clamp        = math.Clamp
 local Round        = math.Round
@@ -142,6 +144,20 @@ local function GetSoundCount(Engine)
 	end
 
 	return #Engine.SoundBanks, TotalSounds
+end
+
+-- Unwires any wiremod inputs by its name from the entity
+local function UnwireInput(Entity, StringInput)
+	if not Entity and not IsValid(Entity) then return end
+	if not StringInput and not isstring(StringInput) then return end
+
+	local Input = Entity.Inputs and Entity.Inputs[StringInput]
+	if not Input then return end
+
+	-- Unwire the exhaust entity
+	if Input and IsValid(Input.Src) then
+		WireLib.Link_Clear(Entity, StringInput)
+	end
 end
 
 local function GetNextFuelTank(Engine)
@@ -192,6 +208,22 @@ local function CheckGearboxes(Engine)
 	end
 end
 
+local function CheckDistantExhaust(Engine)
+	local Exhaust = Engine.Exhaust
+	if not IsValid(Exhaust) or Exhaust == Engine then return end -- Nothing to check if it's unset or already defaulted to the engine itself
+
+	if Engine:GetPos():DistToSqr(Exhaust:GetPos()) > MaxDistance then
+		local Sound = UnlinkExhSnd:format(math.random(1, 2))
+
+		Sounds.SendSound(Engine, Sound, 100, 100, 1)
+		Sounds.SendSound(Exhaust, Sound, 100, 100, 1)
+
+		Engine.Exhaust = Engine
+
+		UnwireInput(Engine, "Exhaust")
+	end
+end
+
 local function SetActive(Entity, Value, EntTbl)
 	EntTbl = EntTbl or Entity:GetTable()
 	local ActBool = tobool(Value)
@@ -216,6 +248,7 @@ local function SetActive(Entity, Value, EntTbl)
 
 			CheckGearboxes(Entity)
 			CheckDistantFuelTanks(Entity)
+			CheckDistantExhaust(Entity)
 
 			Entity:CalcMassRatio(EntTbl)
 		end)
@@ -630,6 +663,17 @@ end)
 -- Non-directional for now...
 -- TODO: Eventually we might want to use an output angle, for particle effects coming out of this very entity or from the engine itself
 ACF.AddInputAction("acf_engine", "Exhaust", function(Entity, Value)
+	if IsValid(Value) and Entity:GetPos():DistToSqr(Value:GetPos()) > MaxDistance then
+		-- Wiring happened anyway and we have no control of that, so we have to unwire.
+		Entity.Exhaust = Entity
+		UnwireInput(Entity, "Exhaust")
+
+		local Owner = Entity:GetOwner()
+		Messages.SendChat(Owner, "Error", "This entity is too far away from the engine!")
+
+		return
+	end
+
 	Entity.Exhaust = Value
 end)
 
