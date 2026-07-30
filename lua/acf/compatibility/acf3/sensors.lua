@@ -30,11 +30,6 @@ local function Convert(Data, ClassName, DefaultOverride)
 		(UD and (UD.Radar or UD.Receiver or UD.Sensor or UD.Id)) or
 		Data.Radar or Data.Receiver or Data.Sensor or Data.Id
 
-	if not Old and type(Data.Data) == "table" then
-		local D = Data.Data
-		Old = D.Radar or D.Receiver or D.Sensor or D.Id
-	end
-
 	local FQN = (isstring(Old) and IDMap[Old]) or DefaultOverride or Defaults[ClassName]
 
 	UD = UD or {}

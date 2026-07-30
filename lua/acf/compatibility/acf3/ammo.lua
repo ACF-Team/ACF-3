@@ -40,9 +40,7 @@ local WeaponFQNTable = {
 	["AT-3 ASM"] = "ACF.Missiles.AntiTankGuided.AT-3",
 	["BGM-71E ASM"] = "ACF.Missiles.AntiTankGuided.BGM-71E",
 	["AGM-114 ASM"] = "ACF.Missiles.AntiTankGuided.AGM-114",
-	["AGM-114 ASM"] = "ACF.Missiles.AntiTankGuided.AGM-114",
 	["Ataka ASM"] = "ACF.Missiles.AntiTankGuided.Ataka",
-	["9M133 ASM"] = "ACF.Missiles.AntiTankGuided.9M133",
 	["9M133 ASM"] = "ACF.Missiles.AntiTankGuided.9M133",
 	["AT-2 ASM"] = "ACF.Missiles.AntiTankGuided.AT-2",
 
@@ -63,16 +61,12 @@ local WeaponFQNTable = {
 
 	["WalleyeGBU"] = "ACF.Missiles.GuidedBomb.WalleyeGBU",
 	["227kgGBU"] = "ACF.Missiles.GuidedBomb.227kgGBU",
-	["227kgGBU"] = "ACF.Missiles.GuidedBomb.227kgGBU",
 	["454kgGBU"] = "ACF.Missiles.GuidedBomb.454kgGBU",
-	["454kgGBU"] = "ACF.Missiles.GuidedBomb.454kgGBU",
-	["909kgGBU"] = "ACF.Missiles.GuidedBomb.909kgGBU",
 	["909kgGBU"] = "ACF.Missiles.GuidedBomb.909kgGBU",
 
 	["FIM-92 SAM"] = "ACF.Missiles.SurfaceToAir.FIM-92",
 	["Strela-1 SAM"] = "ACF.Missiles.SurfaceToAir.Strela-1",
 
-	["RS82 ASR"] = "ACF.Missiles.UnguidedRocket.RS82",
 	["RS82 ASR"] = "ACF.Missiles.UnguidedRocket.RS82",
 	["HVAR ASR"] = "ACF.Missiles.UnguidedRocket.HVAR",
 	["SPG-9 ASR"] = "ACF.Missiles.UnguidedRocket.SPG-9",

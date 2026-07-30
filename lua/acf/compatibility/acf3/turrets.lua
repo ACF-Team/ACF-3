@@ -35,12 +35,6 @@ local function ResolveOld(Data, Keys)
 	for _, Key in ipairs(Keys) do
 		if Data[Key] ~= nil then return Data[Key] end
 	end
-
-	if type(Data.Data) == "table" then
-		for _, Key in ipairs(Keys) do
-			if Data.Data[Key] ~= nil then return Data.Data[Key] end
-		end
-	end
 end
 
 local function MakeConverter(Field, DefaultFQN, NumberFields)
