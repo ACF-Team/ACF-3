@@ -17,11 +17,18 @@ function Entities.RegisterCompatPatch(ClassName, Revision, Fn)
 	List[Revision] = {Revision = Revision, Fn = Fn}
 end
 
-function Entities.RunCompatPatches(ClassName, FullEntityData)
+function Entities.RunCompatPatches(ClassName, FullEntityData, AfterRevision)
 	local List = Entities.CompatPatches[ClassName]
 	if not List then return end
 	for _, Patch in SortedPairsByMemberValue(List, "Revision") do
-		Patch.Fn(FullEntityData)
+		if AfterRevision == nil or Patch.Revision >= AfterRevision then
+			Patch.Fn(FullEntityData)
+			if FullEntityData.Class ~= ClassName then
+				-- The compat patch changed its class.
+				Entities.RunCompatPatches(FullEntityData.Class, FullEntityData, Patch.Revision)
+				return
+			end
+		end
 	end
 end
 
