@@ -296,8 +296,9 @@ end
 do -- ASSUMING DIRECT CONTROL
 
 	local BlockedTools = {
-		proper_clipping	= true,
-		makespherical	= true
+		proper_clipping		= true,
+		improved_clipping	= true,
+		makespherical		= true
 	}
 
 	local BlockedGroups = {
@@ -324,14 +325,21 @@ do -- ASSUMING DIRECT CONTROL
 		if Entity.IsACFEntity then return false end
 	end)
 
-	-- This, if allowed, will block ProperClipping from putting clips on any ACF entities, except for procedural armor
+	-- This, if allowed, will prevent ImprovedClipping (e.g. via its E2 functions) from putting clips on any ACF entities, except for procedural armor
+	hook.Add("ImprovedClipping_CanClip", "ACF Block ImprovedClipping", function(Entity)
+		if not ACF.LegalChecks then return end
+		if Entity.IsACFArmor then return end
+		if Entity.IsACFEntity then return false end
+	end)
+
+
+	-- This, if allowed, will block ProperClipping/ImprovedClipping from putting clips on any ACF entities, except for procedural armor
 	hook.Add("CanTool", "ACF Block ProperClipping", function(_, Trace, Tool)
 		if not ACF.LegalChecks then return end
 
 		if not BlockedTools[Tool] then return end
 
-		-- Special case, allow this but block on everything else
-		if Trace.Entity.IsACFArmor and Tool == "proper_clipping" then return true end
+		if Trace.Entity.IsACFArmor and (Tool == "proper_clipping" or Tool == "improved_clipping") then return true end
 
 		if Trace.Entity.IsACFEntity then return false end
 	end)
