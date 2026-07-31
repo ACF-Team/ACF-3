@@ -281,7 +281,7 @@ local function DoPitchVolumeAtRPM(Origin, Throttle, RPM)
 	if not SoundObjects or table.IsEmpty(SoundObjects) then return end
 
 	for _, SoundBank in ipairs(SoundObjects) do
-		local Entity = SoundBank.Entity
+		local Entity = SoundBank.PlayAtEntity
 		if not IsValid(Entity) then Entity = Origin end
 
 		local OffVolume = SoundBank.OffThrottle
@@ -383,11 +383,13 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 
 		for Idx, Bank in ipairs(Origin.SoundObjects) do
 			for _, Snd in ipairs(Bank.Sounds) do
-				Snd.Sound:Stop()
+				-- Check if it exists first, clients that failed to create the sound wont have the sound object, so nothing occurs. 
+				if Snd.Sound then
+					Snd.Sound:Stop()
+				end
 			end
 			Origin.SoundObjects[Idx] = nil
 		end
-		Origin.Sound      	  = nil -- Just in case
 		Origin.SoundCount 	  = 0
 		Origin.SoundBankCount = 0
 	end
