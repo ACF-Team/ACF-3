@@ -230,7 +230,7 @@ do -- Random timer crew stuff
 
 		TraceConfig.start = ReferenceBreechPos
 		TraceConfig.endpos = CurrentBreechPos
-		TraceConfig.filter = function(x) return not (x == self or x == ENTITY.GetParent(self) or x.noradius or x.IsACFAutoloader or ENTITY.GetOwner(x) ~= ENTITY.GetOwner(self) or x:IsPlayer() or ACF.GlobalFilter[ENTITY.GetClass(x)] or SelfTbl.RotationFilter[x]) end
+		TraceConfig.filter = function(x) return not (x == self or x == ENTITY.GetParent(self) or x.noradius or ENTITY.GetOwner(x) ~= ENTITY.GetOwner(self) or x:IsPlayer() or ACF.GlobalFilter[ENTITY.GetClass(x)] or SelfTbl.RotationFilter[x]) end
 		TraceLine(TraceConfig)
 
 		if TraceResult.Hit then
