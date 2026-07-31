@@ -319,6 +319,8 @@ end
 
 do -- Multiple Engine Sounds(ex. Interpolated sounds)
 	local IsValid = IsValid
+	local Messages = ACF.Utilities.Messages
+
 	 -- Weak keyed table so it doesn't stay around when its awaiting a request to arrive and the entity gets removed.
 	local PendingSoundRequests = setmetatable({}, {__mode = "k"})
 
@@ -334,29 +336,62 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 		net.SendToServer()
 	end
 
+	-- Create the sound adjustable by pitch and volume. It is created mute so it remains ready to be manipulated later.
+	local function CreateSound(Entity, Path, Pitch)
+		local Sound = Sounds.CreateAdjustableSound(Entity, Path, Pitch or 100, 0)
+
+		if not Sound then return end
+		return Sound
+	end
+
 	--- Creates many sounds from a table, and stores their entries in the Origin's entity.
 	--- Reuses existing methods to create and update sounds.
 	--- @param Origin table The entity to play the sounds from
 	--- @param SoundTable table The networked table with nested table containing rpm, sound path, pitch, volume, width and empty sound
 	function Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable)
-		local SoundTable = SoundTable
-		local SoundBankCount = 0
-		local SoundCount = 0
+		local SoundTable       = SoundTable
+		local SoundBankErrored = 0
+		local SoundBankCount   = 0
+		local SoundCount       = 0
 
-		for _, SoundBankTable in ipairs(SoundTable) do
+		for BankIdx, SoundBankTable in ipairs(SoundTable) do
 			local Entity = SoundBankTable.PlayAtEntity
 			if not IsValid(Entity) then continue end -- Just in case
 
-			for _, SndTable in ipairs(SoundBankTable.Sounds) do
-				local Sound = Sounds.CreateAdjustableSound(Entity,
-				SndTable.Path,
-				SndTable.Pitch or 100, 0) -- Create the sound deafened
+			local HasErrored = false
 
-				if not Sound then
-					print("Failed to create sound for entity " .. tostring(Entity) .. ". Sound path does not exist!")
-					continue
+			for _, SndTable in ipairs(SoundBankTable.Sounds) do
+				if not HasErrored then
+					local Sound = CreateSound(Entity, SndTable.Path, SndTable.Pitch)
+
+					-- Invalidate the entire soundbank at the very first error
+					if not Sound then
+						SoundBankErrored = SoundBankErrored + 1
+						HasErrored = true
+						continue
+					end
+
+					SoundCount = SoundCount + 1
+					SndTable.Sound = Sound
 				end
-				SndTable.Sound = Sound
+			end
+
+			-- If an error happened, clear this soundtable and instead create a default sound.
+			-- TODO: We should be networking the default sound table instead!
+			if HasErrored then
+				SoundTable[BankIdx].Sounds = {}
+
+				local Sound = CreateSound(Entity, "vehicles/junker/jnk_fourth_cruise_loop2.wav", 100)
+
+				SoundTable[BankIdx].Sounds = {{
+					RPM = 5000,
+					Path = "vehicles/junker/jnk_fourth_cruise_loop2.wav",
+					Pitch = 100,
+					Volume = 1,
+					Width = 0,
+					Sound = Sound
+				}}
+
 				SoundCount = SoundCount + 1
 			end
 			-- Sort the table by the rpm before moving on, so it can be iterated in sequential order
@@ -365,10 +400,16 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 			SoundBankCount = SoundBankCount + 1
 		end
 
+		if #SoundTable == SoundBankCount and SoundBankErrored ~= 0 then
+			local Message = SoundBankErrored ~= 1 and tostring(SoundBankErrored .. " sound banks") or tostring(SoundBankErrored .. "sound bank")
+			Messages.PrintChat("Error", ("Failed to create sounds for %s, at %s. Resetting to default sound."):format(Message, Origin))
+		end
+
 		Origin.SoundBankCount = SoundBankCount
 		Origin.SoundObjects = SoundTable
 		Origin.SoundCount = SoundCount
 		PendingSoundRequests[Origin] = nil -- Our response arrived, clear the request.
+
 		-- Ensuring that the sounds can't stick around if the server doesn't properly ask for them to be destroyed
 		Origin:CallOnRemove("ACF_ForceStopMultipleAdjustableSounds", function(Entity)
 			Sounds.DeleteMultipleAdjustableSounds(Entity, true)
