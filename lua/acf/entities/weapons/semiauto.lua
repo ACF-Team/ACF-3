@@ -39,8 +39,8 @@ Weapons.Register("SA", {
 	BreechConfigs = {
 		MeasuredCaliber = 7.6,
 		Locations = {
-			{Name = "Vertical Magazine", LPos = Vector(18.8166, -0, 12.2373), LAng = Angle(0, 0, 0), Width = 5.0628, Height = 16.6836},
-			{Name = "Horizontal Magazine", LPos = Vector(18.8166, -13.6, 0), LAng = Angle(0, 0, 0), Width = 17.563, Height = 5.563},
+			{Name = "Vertical Magazine", LPos = Vector(7.1, -0, 6.1187), LAng = Angle(90, 0, 0), Width = 5.0628, Height = 16.6836},
+			{Name = "Horizontal Magazine", LPos = Vector(7.1, -6.8, 0), LAng = Angle(0, 90, 0), Width = 17.563, Height = 5.563},
 		}
 	},
 	CostScalar	= 0.55
