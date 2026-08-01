@@ -289,7 +289,7 @@ elseif SERVER then
 		-- Convert legacy sprop armor entities into primitives within the captured dupe table
 		local BasePos = Target:GetPos() + Vector(0, 0, 24)
 		for index, ent in pairs(EntsByIndex) do
-			if ent:GetClass() == "prop_physics" and not ent._IsSpherical then
+			if ent:GetClass() == "prop_physics" and not ent._IsSpherical and not IsValid(ent:GetParent()) then
 				-- ACF_Armor_Legacy_Thickness is in millimeters; geometry here is all in inches
 				local Thickness = ent.ACF_Armor_Legacy_Thickness and (ent.ACF_Armor_Legacy_Thickness / 25.4)
 				local Primitive = ACF.SpropToPrimitive(ent, Thickness, BasePos)
