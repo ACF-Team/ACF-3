@@ -221,6 +221,8 @@ local function CheckDistantExhaust(Engine)
 		Engine.Exhaust = Engine
 
 		UnwireInput(Engine, "Exhaust")
+
+		Sounds.InvalidateSoundInfo(Engine)
 	end
 end
 
@@ -710,14 +712,6 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	self.PeakTorque = self.PeakTorqueHeld * TorqueMult
 
 	return HitRes
-end
-
--- Somehow this function is still being called somewhere upon this entity's creation 
--- Instead we simply redirect its data to the proper function call, even though this might be wasteful...
-function ENT:UpdateSound(SelfTbl)
-	SelfTbl = SelfTbl or self:GetTable()
-
-	self:UpdateSoundBank(SelfTbl)
 end
 
 -- The function to either create or update on the client the sounds of an engine by networking the necesary data.

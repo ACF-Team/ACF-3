@@ -507,6 +507,25 @@ do -- Multiple Engine Sounds(ex. Interpolated sounds)
 			DoPitchVolumeAtRPM(Origin, Throttle, RPM)
 		end
 	end)
+
+	net.Receive("ACF_Sounds_InvalidateEngineSoundInfo", function()
+		local Origin = net.ReadEntity()
+		if not IsValid(Origin) then return end
+		if not Origin.SoundObjects or table.IsEmpty(Origin.SoundObjects) then return end
+
+		for _, SoundBank in ipairs(Origin.SoundObjects) do
+			if SoundBank.PlayAtEntity ~= Origin then
+				for _, Snd in ipairs(SoundBank.Sounds) do
+					-- Check if it exists first, then stop it
+					if Snd.Sound then
+						Snd.Sound:Stop()
+					end
+
+					Snd.Sound = nil
+				end
+			end
+		end
+	end)
 end
 	--- Returns a table of sound infomation depending on what the trace hit.
 	--- @param Data table The effect data relating to the projectile

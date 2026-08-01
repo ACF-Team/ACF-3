@@ -6,6 +6,7 @@ util.AddNetworkString("ACF_Sounds_AdjustableCreate")
 util.AddNetworkString("ACF_Sounds_Adjustable_Multi")
 util.AddNetworkString("ACF_Sounds_AdjustableCreate_Multi")
 util.AddNetworkString("ACF_Sounds_AdjustableRequest_Multi")
+util.AddNetworkString("ACF_Sounds_InvalidateEngineSoundInfo")
 
 	--- Sends a single, non-looping sound to all clients in the PAS.
 	--- @param Origin table | vector The source to play the sound from
@@ -205,5 +206,14 @@ do -- Multiple, Interpolated sounds
 			net.SendPAS(Origin:GetPos())
 			OriginTbl.SoundTimer = Time + 0.05
 		end
+	end
+
+	-- Sends an update to the client, invalidating current sound entity playback and force a sound removal, in case the exhaust has exceeded its distance limit. 
+	function Sounds.InvalidateSoundInfo(Origin)
+		if not IsValid(Origin) then return end
+
+		net.Start("ACF_Sounds_InvalidateEngineSoundInfo")
+			net.WriteEntity(Origin)
+		net.Broadcast()
 	end
 end
