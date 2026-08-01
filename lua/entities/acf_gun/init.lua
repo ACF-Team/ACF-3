@@ -119,7 +119,7 @@ do -- Random timer crew stuff
 			-- Check assuming 2 piece for now.
 			local ShellLength = ((SelfTbl.BulletData.PropLength or 0) + (SelfTbl.BulletData.ProjLength or 0)) / ACF.InchToCm / 2
 			local p1 = SelfTbl.BreechPos
-			local p2 = p1 - Vector(ShellLength, 0, 0)
+			local p2 = p1 - SelfTbl.BreechAng:Forward() * ShellLength
 			local wp1, wp2 = ENTITY.LocalToWorld(self, p1), ENTITY.LocalToWorld(self, p2)
 
 			TraceConfig.start = wp1
