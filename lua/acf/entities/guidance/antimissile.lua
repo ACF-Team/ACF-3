@@ -1,6 +1,6 @@
 local ACF       = ACF
 local Classes 	= ACF.Classes
-Classes.DefineClass("ACF.Missiles.Guidance.AntiMissile", "ACF.Missiles.AntiRadiation", function()
+Classes.DefineClass("ACF.Missiles.Guidance.AntiMissile", "ACF.Missiles.Guidance.AntiRadiation", function()
 	local BASE = BASE
 	CLASS.Name = "Anti-missile"
 	if CLIENT then

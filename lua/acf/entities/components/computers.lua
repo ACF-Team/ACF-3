@@ -94,8 +94,6 @@ do -- Joystick
 			local Mass  = Data.Mass
 
 			Menu:AddLabel(MenuText:format(Angle, Speed, Mass))
-
-			ACF.SetClientData("PrimaryClass", "acf_computer")
 		end
 		-- Serverside actions
 		CLASS.OnUpdate = function(Entity, _, _, Computer)
@@ -311,8 +309,6 @@ do -- Optical guidance computer
 			local Mass  = Data.Mass
 
 			Menu:AddLabel(MenuText:format(Pitch, Yaw, Speed, Focus, Mass))
-
-			ACF.SetClientData("PrimaryClass", "acf_computer")
 		end
 		-- Serverside actions
 		CLASS.OnUpdate = function(Entity, _, _, Computer)
@@ -520,8 +516,6 @@ do -- Laser guidance computer
 
 			Menu:AddLabel(MenuText:format(Pitch, Yaw, Speed, Mass))
 			Menu:AddLabel(LaserText:format(LaseTime, Cooldown))
-
-			ACF.SetClientData("PrimaryClass", "acf_computer")
 		end
 		-- Serverside actions
 		CLASS.OnUpdate = function(Entity, _, _, Computer)
@@ -768,8 +762,6 @@ do -- GPS transmitter
 		CLASS.CreateMenu = function(Data, Menu)
 			Menu:AddLabel("Mass : " .. Data.Mass .. " kg")
 			--Menu:AddLabel("This entity can be jammed.") -- Not yet
-
-			ACF.SetClientData("PrimaryClass", "acf_computer")
 		end
 		-- Serverside actions
 		CLASS.OnUpdate = function(Entity)

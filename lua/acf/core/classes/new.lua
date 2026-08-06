@@ -253,6 +253,24 @@ function Classes.GetTypeName(Class)
     return Class and getmetatable(Class).__CLASS_ID or "none"
 end
 
+local UnqualifiedNameCache = {}
+function Classes.FullyQualifiedNameToUnqualifiedName(Name)
+    Name = Name or ""
+
+    local UN = UnqualifiedNameCache[Name]
+    if not UN then
+        UN = Name:match("[^.]+$")
+        UnqualifiedNameCache[Name] = UN
+    end
+
+    return UN
+end
+
+function Classes.GetTypeUnqualifiedName(Class)
+    local Name = Classes.GetTypeName(Class)
+    return Classes.FullyQualifiedNameToUnqualifiedName(Name)
+end
+
 -- Returns a contiguous read-only array of fields
 function Classes.GetTypeFields(Class)
     return Class and getmetatable(Class).__FIELDS.List or ReadOnlyTable

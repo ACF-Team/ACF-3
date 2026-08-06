@@ -27,12 +27,7 @@ Classes.DefineClass("ACF.Missiles.Fuze.Timed", "ACF.Missiles.Fuze.Contact", func
 			BASE.AddMenuControls(self, Base, ToolData, ...)
 
 			local Timer = Base:AddSlider("Fuze Timer", self.MinTime, self.MaxTime, 2)
-			Timer:SetClientData("FuzeTimer", "OnValueChanged")
-			Timer:DefineSetter(function(Panel, _, _, Value)
-				Panel:SetValue(Value)
-
-				return Value
-			end)
+			ACF.MissileMenu.FuzeSlider(Timer, "FuzeTimer")
 		end
 	else
 		function CLASS:VerifyData(Weapon)

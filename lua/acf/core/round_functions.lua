@@ -128,14 +128,24 @@ function ACF.CalcArmor(Area, Ductility, Mass)
 	return (Mass * 1000 / Area / 0.78) / (1 + Ductility) ^ 0.5 * ACF.ArmorMod
 end
 
+local BlacklistCount = 0
+-- This is suboptimal. It works similarly to how engines do iirc for performance data, but still...
+-- TODO: Redo this as to be dynamic? Is that possible?
 function ACF.GetWeaponBlacklist(Whitelist)
 	local Result = {}
 
-	for _, TypeFQN in ipairs(Classes.GetSubtypeFQNs("ACF.Weapons.BaseWeapon")) do
-		if not Whitelist[TypeFQN] then
-			Result[TypeFQN] = true
+	BlacklistCount = BlacklistCount + 1
+	local HookName = "ACF Weapon Blacklist " .. BlacklistCount
+
+	hook.Add("ACF_OnLoadAddon", HookName, function()
+		for _, TypeFQN in ipairs(Classes.GetSubtypeFQNs("ACF.Weapons.BaseWeapon")) do
+			if not Whitelist[TypeFQN] then
+				Result[TypeFQN] = true
+			end
 		end
-	end
+
+		hook.Remove("ACF_OnLoadAddon", HookName)
+	end)
 
 	return Result
 end

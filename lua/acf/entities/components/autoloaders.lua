@@ -4,10 +4,7 @@ local Classes    = ACF.Classes
 -- Converts shell scale to model scale
 local RefSize = Vector(43.233333587646, 7.2349619865417, 7.2349619865417)
 
-function ACF.CreateAutoloaderMenu(_, Menu)
-    ACF.SetClientData("PrimaryClass", "acf_autoloader")
-    ACF.SetClientData("SecondaryClass", "N/A")
-
+function ACF.CreateAutoloaderMenu(_, Menu, Ctx)
     local MassLabel = Menu:AddLabel("")
     local AutoloaderSize = Vector(0, 0, 0)
 
@@ -24,33 +21,33 @@ function ACF.CreateAutoloaderMenu(_, Menu)
     end
 
     local CaliberSlider = Menu:AddSlider("Max Caliber (mm)", ACF.MinAutoloaderCaliber, ACF.MaxAutoloaderCaliber, 2)
-    CaliberSlider:SetClientData("AutoloaderCaliber", "OnValueChanged")
-    CaliberSlider:DefineSetter(function(Panel, _, _, Value)
+    function CaliberSlider:OnValueChanged(Value)
         local Size = math.Round(Value, 2)
 
-        Panel:SetValue(Size)
+        self:SetValue(Size)
 
         AutoloaderSize.y = Size / RefSize.y / ACF.InchToMm
         AutoloaderSize.z = Size / RefSize.z / ACF.InchToMm
 
         UpdateAutoloaderStats()
 
-        return Size
-    end)
+        Ctx:Set("AutoloaderCaliber", Size)
+    end
+    CaliberSlider:SetValue(Ctx:Get("AutoloaderCaliber") or ACF.MinAutoloaderCaliber)
 
     local LengthSlider = Menu:AddSlider("Length (cm)", ACF.MinAutoloaderLength, ACF.MaxAutoloaderLength, 2)
-    LengthSlider:SetClientData("AutoloaderLength", "OnValueChanged")
-    LengthSlider:DefineSetter(function(Panel, _, _, Value)
+    function LengthSlider:OnValueChanged(Value)
         local Length = math.Round(Value, 2)
 
-        Panel:SetValue(Length)
+        self:SetValue(Length)
 
         AutoloaderSize.x = (Length / RefSize.x * 10) / ACF.InchToMm
 
         UpdateAutoloaderStats()
 
-        return Length
-    end)
+        Ctx:Set("AutoloaderLength", Length)
+    end
+    LengthSlider:SetValue(Ctx:Get("AutoloaderLength") or ACF.MinAutoloaderLength)
 
     -- Helper text
     Menu:AddLabel("Set the max caliber and length to the dimensions of your shell (See ammo crate overlay).")

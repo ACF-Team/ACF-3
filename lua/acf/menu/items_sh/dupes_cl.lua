@@ -298,4 +298,10 @@ local function CreateMenu(Menu)
 	end
 end
 
-ACF.AddMenuItem(3, "#acf.menu.dupe", "#acf.menu.dupe", "arrow_down", CreateMenu)
+ACF.Menu.RegisterPage({
+	Category = "#acf.menu.dupe",
+	Name     = "#acf.menu.dupe",
+	Icon     = "arrow_down",
+	Order    = 3,
+	Build    = CreateMenu,
+})

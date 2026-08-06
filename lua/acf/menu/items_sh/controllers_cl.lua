@@ -1,23 +1,14 @@
 local ACF = ACF
 
-local function CreateMenu(Menu)
-	ACF.SetToolMode("acf_menu", "Spawner", "Controller")
-
-	ACF.SetClientData("PrimaryClass", "acf_controller")
-	ACF.SetClientData("SecondaryClass", "N/A")
-
+local function Build(Menu)
 	Menu:AddWikiLink("AIO Controllers", "docs/getting_started/first_tank/baseplate_aio.html")
 	Menu:AddWikiLink("AIO Car Steering", "docs/getting_started/first_car.html")
 
 	Menu:AddTitle("All-In-One Controllers")
 	Menu:AddLabel("Allows you to easily setup a tank without requiring a complex wiring setup.")
 
-	local PreviewSettings = {
-		FOV = 120,
-		Height = 120,
-	}
 	local Preview = Menu:AddModelPreview("models/hunter/plates/plate025x025.mdl", true, "Primary")
-	Preview:UpdateSettings(PreviewSettings)
+	Preview:UpdateSettings({ FOV = 120, Height = 120 })
 
 	local Instructions = Menu:AddCollapsible("Instructions", true, "icon16/computer_add.png")
 	Instructions:AddLabel("Place down the controller. Link each for the given effects: ")
@@ -48,8 +39,21 @@ local function CreateMenu(Menu)
 
 	local TroubleShooting = Menu:AddCollapsible("Troubleshooting", false, "icon16/computer_error.png")
 	TroubleShooting:AddLabel("If you're using a single gearbox, make sure all your forward gears come before your reverse gears in the readout.")
-
-	ACF.SetClientData("AIOUseDefaults", true, true)
 end
 
-ACF.AddMenuItem(62, "#acf.menu.entities", "Controllers", "joystick", CreateMenu)
+ACF.Menu.RegisterPage({
+	ID       = "acf_controller",
+	Category = "#acf.menu.entities",
+	Name     = "Controllers",
+	Icon     = "joystick",
+	Order    = 62,
+
+	Contexts = { Controller = "acf_controller" },
+
+	Actions = {
+		{ Bind = "left",  Context = "Controller", Preview = true, Desc = "Spawn a new AIO controller, or update the one you're aiming at." },
+		{ Bind = "right", Commit = "link", Desc = "Select entities, then a controller, to link them (hold R to unlink)." },
+	},
+
+	Build = Build,
+})

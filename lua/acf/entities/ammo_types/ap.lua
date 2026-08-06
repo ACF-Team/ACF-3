@@ -350,16 +350,9 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function()
 			Effects.CreateEffect("ACF_Ricochet", EffectTable)
 		end
 
-		function CLASS:OnCreateCrateInformation(_, Label)
-			Label:TrackClientData("Projectile")
-			Label:TrackClientData("Propellant")
-		end
-
-		function CLASS:OnCreateAmmoInformation(Base, _, _)
+		function CLASS:OnCreateAmmoInformation(Base)
 			local RoundStats = Base:AddLabel()
-			RoundStats:TrackClientData("Projectile", "SetText")
-			RoundStats:TrackClientData("Propellant")
-			RoundStats:DefineSetter(function()
+			ACF.AmmoMenu.Reactive(RoundStats, function()
 				self:UpdateRoundData()
 
 				local Text		= language.GetPhrase("acf.menu.ammo.round_stats_ap")
@@ -367,17 +360,14 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function()
 				local ProjMass	= ACF.GetProperMass(self.BulletData.ProjMass)
 				local PropMass	= ACF.GetProperMass(self.BulletData.PropMass)
 
-				return Text:format(MuzzleVel, ProjMass, PropMass)
+				RoundStats:SetText(Text:format(MuzzleVel, ProjMass, PropMass))
 			end)
 
 			local MaxPenLabel = Base:AddLabel()
-			MaxPenLabel:TrackClientData("Projectile", "SetText")
-			MaxPenLabel:TrackClientData("Propellant")
-			MaxPenLabel:TrackClientData("FillerRatio")
-			MaxPenLabel:DefineSetter(function()
+			ACF.AmmoMenu.Reactive(MaxPenLabel, function()
 				local Text   = language.GetPhrase("acf.menu.ammo.pen_stats_ap")
 				local MaxPen = math.Round(self.GUIData.MaxPen, 2)
-				return Text:format(MaxPen)
+				MaxPenLabel:SetText(Text:format(MaxPen))
 			end)
 		end
 	end

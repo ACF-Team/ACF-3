@@ -21,12 +21,7 @@ Classes.DefineClass("ACF.Missiles.Fuze.Optical", "ACF.Missiles.Fuze.Contact", fu
 			BASE.AddMenuControls(self, Base, ToolData, ...)
 
 			local Distance = Base:AddSlider("Fuze Distance", self.MinDistance, self.MaxDistance, 2)
-			Distance:SetClientData("FuzeDistance", "OnValueChanged")
-			Distance:DefineSetter(function(Panel, _, _, Value)
-				Panel:SetValue(Value)
-
-				return Value
-			end)
+			ACF.MissileMenu.FuzeSlider(Distance, "FuzeDistance")
 		end
 	else
 		local TraceData = { start = true, endpos = true, filter = true }

@@ -2,8 +2,12 @@ DEFINE_BASECLASS("acf_base_simple")
 
 ENT.ACF_InvisibleToBallistics = true
 
--- The controller has no serialized config fields; it's driven entirely by NetworkVars (see below).
-ACF.Entities.AutoRegisterV2(function() end, "Controller", "Controllers")
+-- The controller's live settings are NetworkVars (see below). The only serialized field is a request
+-- for the default config, applied by init.lua's ACF_OnVerifyClientData on spawn (always true from the
+-- menu, matching the previous behavior).
+ACF.Entities.AutoRegisterV2(function()
+	MENU_FIELD("Boolean", "AIOUseDefaults", {Default = true})
+end, "Controller", "Controllers")
 
 ENT.Editable = true
 function ENT:SetupDataTables()

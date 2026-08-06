@@ -84,6 +84,15 @@ function PANEL:AddButton(Text, Command, ...)
 	return Panel
 end
 
+--- Builds and binds a control for a field of an ACF.Menu EntityContext, dispatched from the field's
+--- class metadata (see lua/acf/menu/framework/fields_cl.lua). Delegates to the framework function so
+--- the logic lives with the rest of the menu framework.
+function PANEL:AddField(Context, FieldName, Overrides)
+	if not (ACF.Menu and ACF.Menu.AddField) then return end
+
+	return ACF.Menu.AddField(self, Context, FieldName, Overrides)
+end
+
 function PANEL:AddCheckBox(Text, ConVar)
 	local Panel = self:AddPanel("DCheckBoxLabel")
 	Panel:SetText(Text or "Checkbox")

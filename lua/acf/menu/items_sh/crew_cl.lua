@@ -1,21 +1,35 @@
-local ACF		= ACF
-local Classes	= ACF.Classes
-local GetType	= Classes.GetTypeByName
+local ACF     = ACF
+local Classes = ACF.Classes
+local GetType = Classes.GetTypeByName
 
 local CREWTYPE_BASE  = "ACF.CrewTypes.BaseCrewType"
 local CREWMODEL_BASE = "ACF.CrewModels.BaseCrewModel"
 local CREWPOSE_BASE  = "ACF.CrewPoses.BaseCrewPose"
 
--- Crew classes are V2 (ACF.CrewTypes.*, etc.); the entity addresses them by short id (the FQN suffix).
+-- Crew classes are addressed by their short id (the FQN suffix); the entity stores those ids.
 local function ShortID(Class)
 	return Classes.GetTypeName(Class):match("[^.]+$")
 end
 
+-- Selects the combobox option whose class short-id matches Want (restores the persisted choice and
+-- fires OnSelect so labels/preview populate). Returns true if a match was chosen.
+local function SelectByShortID(Combo, Want)
+	if not (Combo.ListData and Want and Want ~= "") then return false end
+
+	for I, Data in ipairs(Combo.ListData.Choices) do
+		if ShortID(Data) == Want then
+			Combo:ChooseOptionID(I)
+			return true
+		end
+	end
+
+	return false
+end
+
 local table_empty = {}
 
--- todo: outfitter, fittr support?
--- local MODEL_SOURCE_STANDARD = 0
-
+-- Standard playermodel selector popup (self-contained UI; drives the passed panels, which are bound
+-- to the context). Ported verbatim from the old crew menu.
 local function OpenPmSelector(PlayerModelTxtbox, PlayerModelBodygroups, PlayerModelSkin)
 	local Selector = vgui.Create("DFrame")
 	Selector:SetSize(ScrW() / 2.25, ScrH() / 1.5)
@@ -41,18 +55,18 @@ local function OpenPmSelector(PlayerModelTxtbox, PlayerModelBodygroups, PlayerMo
 		ModelView:SetSize(400, 0)
 		ModelView:SetFOV(36)
 		ModelView:SetCamPos(Vector(-25, -50, 0))
-		ModelView:SetDirectionalLight(BOX_RIGHT, Color( 255, 160, 80, 255 ))
-		ModelView:SetDirectionalLight(BOX_LEFT, Color( 80, 160, 255, 255 ))
-		ModelView:SetAmbientLight(Vector( -64, -64, -64 ))
+		ModelView:SetDirectionalLight(BOX_RIGHT, Color(255, 160, 80, 255))
+		ModelView:SetDirectionalLight(BOX_LEFT, Color(80, 160, 255, 255))
+		ModelView:SetAmbientLight(Vector(-64, -64, -64))
 		ModelView:SetAnimated(true)
 		ModelView.Angles = angle_zero
-		ModelView:SetLookAt(Vector( -100, 0, -22 ))
+		ModelView:SetLookAt(Vector(-100, 0, -22))
 
 		local ModelListPnl = PlayermodelsPanel:Add("DPanel")
 		ModelListPnl:Dock(FILL)
-		ModelListPnl:DockPadding( 8, 8, 8, 8 )
+		ModelListPnl:DockPadding(8, 8, 8, 8)
 
-		local SearchBar = ModelListPnl:Add( "DTextEntry" )
+		local SearchBar = ModelListPnl:Add("DTextEntry")
 		SearchBar:Dock(TOP)
 		SearchBar:DockMargin(0, 0, 0, 8)
 		SearchBar:SetUpdateOnType(true)
@@ -85,7 +99,7 @@ local function OpenPmSelector(PlayerModelTxtbox, PlayerModelBodygroups, PlayerMo
 			util.PrecacheModel(Model)
 			ModelView:SetModel(Model)
 			PlayerModelTxtbox:SetValue(Model)
-			ModelView.Entity:SetPos(Vector( -100, 0, -61 ))
+			ModelView.Entity:SetPos(Vector(-100, 0, -61))
 
 			ExtraModelInfo:Clear()
 			local SkinSlider = ExtraModelInfo:Add("DNumSlider")
@@ -153,10 +167,10 @@ local function OpenPmSelector(PlayerModelTxtbox, PlayerModelBodygroups, PlayerMo
 			if self.bAnimated then self:RunAnimation() end
 
 			if self.Pressed then
-				local mx, my = input.GetCursorPos()
+				local mx = input.GetCursorPos()
 				self.Angles = self.Angles - Angle(0, ((self.PressX or mx) - mx) / 2, 0)
 
-				self.PressX, self.PressY = mx, my
+				self.PressX = mx
 			end
 
 			ent:SetAngles(self.Angles)
@@ -168,44 +182,33 @@ local function OpenPmSelector(PlayerModelTxtbox, PlayerModelBodygroups, PlayerMo
 	end
 end
 
-local function CreateMenu(Menu)
-	ACF.SetToolMode("acf_menu", "Spawner", "Component")
-
-	ACF.SetClientData("PrimaryClass", "acf_crew")
-	ACF.SetClientData("SecondaryClass", "N/A")
-	ACF.SetToolMode("acf_menu", "Spawner", "Crew")
+local function Build(Menu, Contexts)
+	local Crew = Contexts.Crew
 
 	Menu:AddTitle("#acf.menu.crew.settings")
 	Menu:AddPonderAddonCategory("acf", "tankbasics")
 
-	local CrewJob		= Menu:AddComboBox()
-	local CrewJobDesc	= Menu:AddLabel()
-	local CrewModel		= Menu:AddComboBox()
-	local CrewModelDesc	= Menu:AddLabel()
+	local CrewJob      = Menu:AddComboBox()
+	local CrewJobDesc  = Menu:AddLabel()
+	local CrewModel    = Menu:AddComboBox()
+	local CrewModelDesc = Menu:AddLabel()
 
-	local Base			= Menu:AddCollapsible("#acf.menu.crew.crew_info", nil, "icon16/group_edit.png")
-	local CrewName		= Base:AddTitle()
-	local CrewPreview	= Base:AddModelPreview(nil, true, "Primary")
-	local ReplaceOthers	= Base:AddCheckBox("#acf.menu.crew.replace_others")
-	local ReplaceSelf	= Base:AddCheckBox("#acf.menu.crew.replace_self")
-	local UseAnimation	= Base:AddCheckBox("#acf.menu.crew.use_animation")
+	local Base        = Menu:AddCollapsible("#acf.menu.crew.crew_info", nil, "icon16/group_edit.png")
+	local CrewName    = Base:AddTitle()
+	local CrewPreview = Base:AddModelPreview(nil, true, "Primary")
 
-	ReplaceOthers:SetClientData("ReplaceOthers", "OnChange")
-	ReplaceSelf:SetClientData("ReplaceSelf", "OnChange")
-	UseAnimation:SetClientData("UseAnimation", "OnChange")
+	Base:AddField(Crew, "ReplaceOthers", { Title = "#acf.menu.crew.replace_others" })
+	Base:AddField(Crew, "ReplaceSelf",   { Title = "#acf.menu.crew.replace_self" })
+	Base:AddField(Crew, "UseAnimation",  { Title = "#acf.menu.crew.use_animation" })
 
-	ReplaceOthers:SetChecked(true)
-	ReplaceSelf:SetChecked(true)
-	UseAnimation:SetChecked(false)
-
-	-- Thanks March <3
+	-- Playermodel text entry + selector button.
 	local _, _, PlayerModel = Base:AddTextEntry("Model")
-	PlayerModel:SetClientData("CrewPlayerModel", "OnValueChange")
+	PlayerModel:SetValue(Crew:Get("CrewPlayerModel") or "models/player/dod_german.mdl")
+	function PlayerModel:OnValueChange(Value) Crew:Set("CrewPlayerModel", Value) end
 	PlayerModel.OnLoseFocus = function(self)
 		DTextEntry.OnLoseFocus(self)
 		self:OnValueChange(self:GetText())
 	end
-	PlayerModel:SetValue("models/player/dod_german.mdl")
 
 	local SelectBtn = PlayerModel:GetParent():Add("DImageButton")
 	SelectBtn:Dock(RIGHT)
@@ -216,6 +219,7 @@ local function CreateMenu(Menu)
 	SelectBtn:SetSize(17, 32)
 	PlayerModel:MoveToFront()
 
+	-- Pose selector.
 	local PoseBase = Base:AddPanel("ACF_Panel")
 	local PoseLabel = PoseBase:AddLabel("Pose")
 	PoseLabel:Dock(LEFT)
@@ -224,42 +228,34 @@ local function CreateMenu(Menu)
 	local PlayerPose = PoseBase:AddComboBox()
 	function PlayerPose:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
-
-		self.ListData.Index	= Index
-		self.Selected		= Data
-
-		ACF.SetClientData("CrewPoseID", ShortID(Data))
+		self.ListData.Index = Index
+		self.Selected = Data
+		Crew:Set("CrewPoseID", ShortID(Data))
 	end
 
 	local _, _, PlayerModelBodygroups = Base:AddTextEntry("Bodygroups")
-	PlayerModelBodygroups:SetClientData("CrewPlayerModelBodygroups", "OnValueChange")
+	PlayerModelBodygroups:SetValue(Crew:Get("CrewPlayerModelBodygroups") or "")
+	function PlayerModelBodygroups:OnValueChange(Value) Crew:Set("CrewPlayerModelBodygroups", Value) end
 	PlayerModelBodygroups.OnLoseFocus = function(self)
 		DTextEntry.OnLoseFocus(self)
 		self:OnValueChange(self:GetText())
 	end
-	PlayerModelBodygroups:SetValue("")
 
-	local PlayerModelSkin = Base:AddNumberWang("Skin", 0, 63) -- I don't remember max skins in the engine? Should this be dynamic?
-	PlayerModelSkin:SetClientData("CrewPlayerModelSkin", "OnValueChanged")
-	PlayerModelSkin:SetValue(0)
+	local PlayerModelSkin = Base:AddField(Crew, "CrewPlayerModelSkin", { Title = "Skin", wang = true })
 
 	SelectBtn.DoClick = function() OpenPmSelector(PlayerModel, PlayerModelBodygroups, PlayerModelSkin) end
 
-	local Priority = Base:AddNumberWang("#acf.menu.crew.priority", ACF.CrewRepPrioMin, ACF.CrewRepPrioMax)
-	Priority:SetClientData("CrewPriority", "OnValueChanged")
-	Priority:SetValue(1)
+	Base:AddField(Crew, "CrewPriority",      { Title = "#acf.menu.crew.priority", wang = true })
+	Base:AddField(Crew, "ReplacedOnlyLower", { Title = "#acf.menu.crew.replaced_only_lower" })
 
-	local ReplacedOnlyLower = Base:AddCheckBox("#acf.menu.crew.replaced_only_lower")
-	ReplacedOnlyLower:SetClientData("ReplacedOnlyLower", "OnChange")
-
-	local Limits = Base:AddLabel()
-	local Whitelist = Base:AddLabel()
-	local Pose = Base:AddLabel()
-	local Mass = Base:AddLabel()
-	local Leans = Base:AddLabel()
+	local Limits        = Base:AddLabel()
+	local Whitelist     = Base:AddLabel()
+	local Pose          = Base:AddLabel()
+	local Mass          = Base:AddLabel()
+	local Leans         = Base:AddLabel()
 	local GEfficiencies = Base:AddLabel()
-	local GDamages = Base:AddLabel()
-	local ExtraNotes = Base:AddLabel()
+	local GDamages      = Base:AddLabel()
+	local ExtraNotes    = Base:AddLabel()
 
 	local Instructions = Menu:AddCollapsible("#acf.menu.crew.instructions", false, "icon16/user_comment.png")
 	for I = 1, 4 do
@@ -276,11 +272,16 @@ local function CreateMenu(Menu)
 		EffTypesInfo:AddLabel(language.GetPhrase("acf.menu.crew.types.desc" .. I))
 	end
 
+	local function UpdatePose()
+		if CrewModel.Selected and CrewJob.Selected then
+			Pose:SetText(language.GetPhrase("acf.menu.crew.model_efficiency"):format(CrewModel.Selected.BaseErgoScores[ShortID(CrewJob.Selected)] or 1))
+		end
+	end
+
 	function CrewJob:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
-
-		self.ListData.Index	= Index
-		self.Selected		= Data
+		self.ListData.Index = Index
+		self.Selected = Data
 
 		CrewName:SetText(Data.Name)
 		CrewJobDesc:SetText(Data.Description or "#acf.menu.no_description_provided")
@@ -288,54 +289,65 @@ local function CreateMenu(Menu)
 		Limits:SetText(language.GetPhrase("acf.menu.crew.max_per_contraption"):format(Data.LimitConVar.Amount))
 
 		local wl = {}
-		for K in pairs(Data.LinkHandlers or table_empty) do
-			wl[#wl + 1] = K
-		end
+		for K in pairs(Data.LinkHandlers or table_empty) do wl[#wl + 1] = K end
 		Whitelist:SetText(language.GetPhrase("acf.menu.crew.links_to"):format(table.concat(wl, ", ")))
 
 		Mass:SetText(language.GetPhrase("acf.menu.crew.mass_text"):format(Data.Mass))
 
 		if not Data.LeanInfo then Leans:SetText("#acf.menu.crew.lean_no_info")
-		else
-			Leans:SetText(language.GetPhrase("acf.menu.crew.lean_stats"):format(Data.LeanInfo.Min, Data.LeanInfo.Max))
-		end
+		else Leans:SetText(language.GetPhrase("acf.menu.crew.lean_stats"):format(Data.LeanInfo.Min, Data.LeanInfo.Max)) end
 
 		if not Data.GForceInfo.Efficiencies then GEfficiencies:SetText("#acf.menu.crew.gforce_no_info")
-		else
-			GEfficiencies:SetText(language.GetPhrase("acf.menu.crew.gforce_stats"):format(Data.GForceInfo.Efficiencies.Min, Data.GForceInfo.Efficiencies.Max))
-		end
+		else GEfficiencies:SetText(language.GetPhrase("acf.menu.crew.gforce_stats"):format(Data.GForceInfo.Efficiencies.Min, Data.GForceInfo.Efficiencies.Max)) end
 
 		if not Data.GForceInfo.Damages then GDamages:SetText("#acf.menu.crew.damage_no_info")
-		else
-			GDamages:SetText(language.GetPhrase("acf.menu.crew.damage_stats"):format(Data.GForceInfo.Damages.Min, Data.GForceInfo.Damages.Max))
-		end
+		else GDamages:SetText(language.GetPhrase("acf.menu.crew.damage_stats"):format(Data.GForceInfo.Damages.Min, Data.GForceInfo.Damages.Max)) end
 
 		ExtraNotes:SetText(Data.ExtraNotes or "#acf.menu.crew.no_extra_notes")
 
-		if CrewModel.Selected and CrewJob.Selected then Pose:SetText(language.GetPhrase("acf.menu.crew.model_efficiency"):format(CrewModel.Selected.BaseErgoScores[ShortID(CrewJob.Selected)] or 1)) end
+		UpdatePose()
 
-		ACF.SetClientData("CrewTypeID", ShortID(Data))
+		Crew:Set("CrewTypeID", ShortID(Data))
 	end
 
 	function CrewModel:OnSelect(Index, _, Data)
 		if self.Selected == Data then return end
-
-		self.ListData.Index	= Index
-		self.Selected		= Data
+		self.ListData.Index = Index
+		self.Selected = Data
 
 		CrewModelDesc:SetText(Data.Description or "#acf.menu.no_description_provided")
 
 		CrewPreview:UpdateModel(Data.Model)
 		CrewPreview:UpdateSettings(Data.Preview)
 
-		if CrewModel.Selected and CrewJob.Selected then Pose:SetText(language.GetPhrase("acf.menu.crew.model_efficiency"):format(CrewModel.Selected.BaseErgoScores[ShortID(CrewJob.Selected)] or 1)) end
+		UpdatePose()
 
-		ACF.SetClientData("CrewModelID", ShortID(Data))
+		Crew:Set("CrewModelID", ShortID(Data))
 	end
 
 	ACF.LoadSortedList(PlayerPose, Classes.GetChildren(GetType(CREWPOSE_BASE)), "Name")
 	ACF.LoadSortedList(CrewJob, Classes.GetChildren(GetType(CREWTYPE_BASE)), "Name", "Icon")
 	ACF.LoadSortedList(CrewModel, Classes.GetChildren(GetType(CREWMODEL_BASE)), "Name")
+
+	-- Restore persisted selections (fires OnSelect to populate labels/preview).
+	SelectByShortID(PlayerPose, Crew:Get("CrewPoseID"))
+	if not SelectByShortID(CrewJob, Crew:Get("CrewTypeID")) then CrewJob:ChooseOptionID(1) end
+	if not SelectByShortID(CrewModel, Crew:Get("CrewModelID")) then CrewModel:ChooseOptionID(1) end
 end
 
-ACF.AddMenuItem(61, "#acf.menu.entities", "#acf.menu.crew", "user_female", CreateMenu)
+ACF.Menu.RegisterPage({
+	ID       = "acf_crew",
+	Category = "#acf.menu.entities",
+	Name     = "#acf.menu.crew",
+	Icon     = "user_female",
+	Order    = 61,
+
+	Contexts = { Crew = "acf_crew" },
+
+	Actions = {
+		{ Bind = "left",  Context = "Crew", Preview = true, Desc = "Spawn a new crew member, or update the one you're aiming at." },
+		{ Bind = "right", Commit = "link", Desc = "Select entities, then a crew member, to link them (hold R to unlink)." },
+	},
+
+	Build = Build,
+})

@@ -1,21 +1,20 @@
 local ACF        = ACF
 local Classes    = ACF.Classes
 
-function ACF.CreateWaterjetMenu(_, Menu)
-    ACF.SetClientData("PrimaryClass", "acf_waterjet")
-    ACF.SetClientData("SecondaryClass", "N/A")
-
+function ACF.CreateWaterjetMenu(_, Menu, Ctx)
     local SizeX = Menu:AddSlider("Size", 0.5, 1, 2)
-    SizeX:SetClientData("WaterjetSize", "OnValueChanged")
-    SizeX:DefineSetter(function(Panel, _, _, Value)
+    function SizeX:OnValueChanged(Value)
         local X = math.Round(Value, 2)
 
-        Panel:SetValue(X)
+        self:SetValue(X)
 
         if Menu.ComponentPreview then
             Menu.ComponentPreview:SetModelScale(X, true)
         end
-    end)
+
+        Ctx:Set("WaterjetSize", X)
+    end
+    SizeX:SetValue(Ctx:Get("WaterjetSize") or 1)
 end
 
 Classes.DefineClass("ACF.Components.Waterjet", "ACF.Components.BaseComponent", function()

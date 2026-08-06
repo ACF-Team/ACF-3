@@ -134,32 +134,16 @@ Classes.DefineClass("ACF.Ammunition.FLR", "ACF.Ammunition.AP", function()
 			return false
 		end
 
-		function CLASS:OnCreateAmmoControls(Base, _, BulletData)
-			local FillerRatio = Base:AddSlider("Filler Ratio", 0, 1, 2)
-			FillerRatio:SetClientData("FillerRatio", "OnValueChanged")
-			FillerRatio:DefineSetter(function(_, _, Key, Value)
-				if Key == "FillerRatio" then
-					self.FillerRatio = math.Round(Value, 2)
-				end
-
+		function CLASS:OnCreateAmmoControls(Base)
+			ACF.AmmoMenu.Slider(Base, "Filler Ratio", 0, 1, 2, "FillerRatio", function(Value)
+				self.FillerRatio = math.Round(Value, 2)
 				self:UpdateRoundData()
-
-				return BulletData.FillerVol
 			end)
-		end
-
-		function CLASS:OnCreateCrateInformation(Base, Label, ...)
-			BASE.OnCreateCrateInformation(self, Base, Label, ...)
-
-			Label:TrackClientData("FillerRatio")
 		end
 
 		function CLASS:OnCreateAmmoInformation(Base, _, BulletData)
 			local RoundStats = Base:AddLabel()
-			RoundStats:TrackClientData("Projectile", "SetText")
-			RoundStats:TrackClientData("Propellant")
-			RoundStats:TrackClientData("FillerRatio")
-			RoundStats:DefineSetter(function()
+			ACF.AmmoMenu.Reactive(RoundStats, function()
 				self:UpdateRoundData()
 
 				local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s\nFlare Filler Mass : %s"
@@ -168,12 +152,11 @@ Classes.DefineClass("ACF.Ammunition.FLR", "ACF.Ammunition.AP", function()
 				local PropMass	= ACF.GetProperMass(BulletData.PropMass)
 				local Filler	= ACF.GetProperMass(BulletData.FillerMass)
 
-				return Text:format(MuzzleVel, ProjMass, PropMass, Filler)
+				RoundStats:SetText(Text:format(MuzzleVel, ProjMass, PropMass, Filler))
 			end)
 
 			local FillerStats = Base:AddLabel()
-			FillerStats:TrackClientData("FillerRatio", "SetText")
-			FillerStats:DefineSetter(function()
+			ACF.AmmoMenu.Reactive(FillerStats, function()
 				self:UpdateRoundData()
 
 				local Text		= "Burn Rate : %s/s\nBurn Duration : %s s\nDistraction Chance : %s"
@@ -181,7 +164,7 @@ Classes.DefineClass("ACF.Ammunition.FLR", "ACF.Ammunition.AP", function()
 				local Duration	= math.Round(BulletData.BurnTime, 2)
 				local Chance	= math.Round(BulletData.DistractChance * 100, 2) .. "%"
 
-				return Text:format(Rate, Duration, Chance)
+				FillerStats:SetText(Text:format(Rate, Duration, Chance))
 			end)
 		end
 	end

@@ -95,6 +95,12 @@ list.Set("DesktopWindows", "ACF3Scanner", {
 })
 
 -- TODO: Remove this sometime in 2026, that'll be enough time
-ACF.AddMenuItem(401, "#acf.menu.scanner", "#acf.menu.scanner.menu_name", "transmit", function(Panel)
-    Panel:AddTitle("This functionality has been moved to the Context Menu.")
-end)
+ACF.Menu.RegisterPage({
+    Category = "#acf.menu.scanner",
+    Name     = "#acf.menu.scanner.menu_name",
+    Icon     = "transmit",
+    Order    = 401,
+    Build    = function(Panel)
+        Panel:AddTitle("This functionality has been moved to the Context Menu.")
+    end,
+})

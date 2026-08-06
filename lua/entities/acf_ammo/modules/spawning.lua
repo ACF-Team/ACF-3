@@ -8,24 +8,29 @@ local HookRun      = hook.Run
 local Clamp        = math.Clamp
 local Floor        = math.floor
 
--- Missile weapons carry Guidance/Fuze as nested class-instance fields. On a menu spawn the selection
--- arrives as flat top-level ClientData (the chosen FQN under the field's own key + the sub-params under
--- their field keys); rebuild the instance here so the crate's weapon carries the chosen type + params,
--- mirroring how gun caliber is folded onto the weapon below. Dupes omit these top-level keys (the
--- values are already deserialized nested under the Weapon field), so an absent key leaves the existing
--- instance untouched.
+-- Missile weapons carry Guidance/Fuze as nested class-instance fields. The menu commit and dupes both
+-- deliver them already deserialized under the Weapon field (self:ACF_GetUserVar("Weapon")), so here we
+-- just validate that nested instance -- VerifyData clamps sub-params the field-level serializer can't
+-- (e.g. FuzeTimer/ArmingDelay, whose ranges are class/weapon-derived, not static field Options, and
+-- whose menu default of 0 sits below the class minimum). Legacy flat ClientData (the chosen FQN as a
+-- top-level key + flat sub-params) is still honoured as a fallback: rebuild the instance from it.
 local function FoldWeaponSubInstance(Weapon, FieldName, BaseFQN, Data)
 	local FQN = Data[FieldName]
-	if not isstring(FQN) then return end
 
-	local SubClass = Classes.GetTypeByName(FQN)
-	local BaseType = Classes.GetTypeByName(BaseFQN)
-	if not (SubClass and BaseType and Classes.IsAssignableTo(SubClass, BaseType)) then return end
+	if isstring(FQN) then
+		local SubClass = Classes.GetTypeByName(FQN)
+		local BaseType = Classes.GetTypeByName(BaseFQN)
+		if not (SubClass and BaseType and Classes.IsAssignableTo(SubClass, BaseType)) then return end
 
-	local Instance = Classes.Serialization.DeserializePartial(SubClass, Data)
-	if Instance.VerifyData then Instance:VerifyData(Weapon) end
+		local Instance = Classes.Serialization.DeserializePartial(SubClass, Data)
+		if Instance.VerifyData then Instance:VerifyData(Weapon) end
 
-	Weapon[FieldName] = Instance
+		Weapon[FieldName] = Instance
+		return
+	end
+
+	local Instance = Weapon[FieldName]
+	if Instance and Instance.VerifyData then Instance:VerifyData(Weapon) end
 end
 
 do -- IO

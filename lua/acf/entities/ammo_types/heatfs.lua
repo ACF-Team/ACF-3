@@ -130,30 +130,18 @@ Classes.DefineClass("ACF.Ammunition.HEATFS", "ACF.Ammunition.HEAT", function()
 		ACF.RegisterAmmoDecal("ACF.Ammunition.HEATFS", "damage/heat_pen", "damage/heat_rico", function(Caliber) return Caliber * 0.1667 end)
 
 		function CLASS:OnCreateAmmoControls(Base, _, BulletData)
-			local LinerAngle = Base:AddSlider("#acf.menu.ammo.liner_angle", self.GUIData.MinConeAng, 90, 1)
-			LinerAngle:SetClientData("LinerAngle", "OnValueChanged")
-			LinerAngle:TrackClientData("Projectile")
-			LinerAngle:DefineSetter(function(Panel, _, Key, Value)
-				if Key == "LinerAngle" then
-					self.LinerAngle = math.Round(Value, 2)
-				end
-
+			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.liner_angle", self.GUIData.MinConeAng, 90, 1, "LinerAngle", function(Value)
+				self.LinerAngle = math.Round(Value, 2)
 				self:UpdateRoundData()
-
+			end, function(Panel)
+				-- Min cone angle + clamped value depend on the round; re-clamp on any change.
 				Panel:SetMin(self.GUIData.MinConeAng)
 				Panel:SetValue(BulletData.ConeAng)
-
-				return BulletData.ConeAng
 			end)
 
-			local StandoffRatio = Base:AddSlider("#acf.menu.ammo.standoff_ratio", 0, 0.75, 2)
-			StandoffRatio:SetClientData("StandoffRatio", "OnValueChanged")
-			StandoffRatio:DefineSetter(function(_, _, _, Value)
+			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.standoff_ratio", 0, 0.75, 2, "StandoffRatio", function(Value)
 				self.StandoffRatio = math.Round(Value, 2)
-
 				self:UpdateRoundData()
-
-				return self.StandoffRatio
 			end)
 		end
 	end

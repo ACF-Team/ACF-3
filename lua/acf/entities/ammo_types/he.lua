@@ -117,10 +117,7 @@ Classes.DefineClass("ACF.Ammunition.HE", "ACF.Ammunition.APHE", function()
 
 		function CLASS:OnCreateAmmoInformation(Base, _, BulletData)
 			local RoundStats = Base:AddLabel()
-			RoundStats:TrackClientData("Projectile", "SetText")
-			RoundStats:TrackClientData("Propellant")
-			RoundStats:TrackClientData("FillerRatio")
-			RoundStats:DefineSetter(function()
+			ACF.AmmoMenu.Reactive(RoundStats, function()
 				self:UpdateRoundData()
 
 				local Text		= language.GetPhrase("acf.menu.ammo.round_stats_he")
@@ -129,12 +126,11 @@ Classes.DefineClass("ACF.Ammunition.HE", "ACF.Ammunition.APHE", function()
 				local PropMass	= ACF.GetProperMass(BulletData.PropMass)
 				local Filler	= ACF.GetProperMass(BulletData.FillerMass)
 
-				return Text:format(MuzzleVel, ProjMass, PropMass, Filler)
+				RoundStats:SetText(Text:format(MuzzleVel, ProjMass, PropMass, Filler))
 			end)
 
 			local FillerStats = Base:AddLabel()
-			FillerStats:TrackClientData("FillerRatio", "SetText")
-			FillerStats:DefineSetter(function()
+			ACF.AmmoMenu.Reactive(FillerStats, function()
 				self:UpdateRoundData()
 
 				local Text	   = language.GetPhrase("acf.menu.ammo.filler_stats_he")
@@ -142,7 +138,7 @@ Classes.DefineClass("ACF.Ammunition.HE", "ACF.Ammunition.APHE", function()
 				local FragMass = ACF.GetProperMass(self.GUIData.FragMass)
 				local FragVel  = math.Round(self.GUIData.FragVel, 2)
 
-				return Text:format(Blast, self.GUIData.Fragments, FragMass, FragVel)
+				FillerStats:SetText(Text:format(Blast, self.GUIData.Fragments, FragMass, FragVel))
 			end)
 		end
 	end

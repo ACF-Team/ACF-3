@@ -105,30 +105,16 @@ Classes.DefineClass("ACF.Ammunition.HP", "ACF.Ammunition.AP", function()
 	else
 		ACF.RegisterAmmoDecal("ACF.Ammunition.HP", "damage/ap_pen", "damage/ap_rico")
 
-		function CLASS:OnCreateAmmoControls(Base, _, BulletData)
-			local HollowRatio = Base:AddSlider("#acf.menu.ammo.hollow_ratio", 0, 1, 2)
-			HollowRatio:SetClientData("HollowRatio", "OnValueChanged")
-			HollowRatio:DefineSetter(function(_, _, _, Value)
+		function CLASS:OnCreateAmmoControls(Base)
+			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.hollow_ratio", 0, 1, 2, "HollowRatio", function(Value)
 				self.HollowRatio = math.Round(Value, 2)
-
 				self:UpdateRoundData()
-
-				return BulletData.CavVol
 			end)
-		end
-
-		function CLASS:OnCreateCrateInformation(Base, Label, ...)
-			BASE.OnCreateCrateInformation(self, Base, Label, ...)
-
-			Label:TrackClientData("HollowRatio")
 		end
 
 		function CLASS:OnCreateAmmoInformation(Base, _, BulletData)
 			local RoundStats = Base:AddLabel()
-			RoundStats:TrackClientData("Projectile", "SetText")
-			RoundStats:TrackClientData("Propellant")
-			RoundStats:TrackClientData("HollowRatio")
-			RoundStats:DefineSetter(function()
+			ACF.AmmoMenu.Reactive(RoundStats, function()
 				self:UpdateRoundData()
 
 				local Text		= language.GetPhrase("acf.menu.ammo.round_stats_ap")
@@ -136,28 +122,22 @@ Classes.DefineClass("ACF.Ammunition.HP", "ACF.Ammunition.AP", function()
 				local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
 				local PropMass	= ACF.GetProperMass(BulletData.PropMass)
 
-				return Text:format(MuzzleVel, ProjMass, PropMass)
+				RoundStats:SetText(Text:format(MuzzleVel, ProjMass, PropMass))
 			end)
 
 			local HollowStats = Base:AddLabel()
-			HollowStats:TrackClientData("Projectile", "SetText")
-			HollowStats:TrackClientData("Propellant")
-			HollowStats:TrackClientData("HollowRatio")
-			HollowStats:DefineSetter(function()
+			ACF.AmmoMenu.Reactive(HollowStats, function()
 				self:UpdateRoundData()
 
 				local Text	  = language.GetPhrase("acf.menu.ammo.hollow_stats_hp")
 				local Caliber = math.Round(BulletData.Diameter * 10, 2)
 				local Energy  = math.Round(self.GUIData.MaxKETransfert, 2)
 
-				return Text:format(Caliber, Energy)
+				HollowStats:SetText(Text:format(Caliber, Energy))
 			end)
 
 			local PenStats = Base:AddLabel()
-			PenStats:TrackClientData("Projectile", "SetText")
-			PenStats:TrackClientData("Propellant")
-			PenStats:TrackClientData("HollowRatio")
-			PenStats:DefineSetter(function()
+			ACF.AmmoMenu.Reactive(PenStats, function()
 				self:UpdateRoundData()
 
 				local Text     = language.GetPhrase("acf.menu.ammo.pen_stats_ap")
@@ -165,7 +145,7 @@ Classes.DefineClass("ACF.Ammunition.HP", "ACF.Ammunition.AP", function()
 				local R1P, R1V = self:GetRangedPenetration(BulletData, 300)
 				local R2V, R2P = self:GetRangedPenetration(BulletData, 800)
 
-				return Text:format(MaxPen, R1P, R1V, R2P, R2V)
+				PenStats:SetText(Text:format(MaxPen, R1P, R1V, R2P, R2V))
 			end)
 
 			Base:AddLabel("#acf.menu.ammo.approx_pen_warning")

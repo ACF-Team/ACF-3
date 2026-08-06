@@ -152,30 +152,16 @@ Classes.DefineClass("ACF.Ammunition.APHE", "ACF.Ammunition.AP", function()
 			Damage.explosionEffect(Position, Direction, Filler)
 		end
 
-		function CLASS:OnCreateAmmoControls(Base, _, BulletData)
-			local FillerRatio = Base:AddSlider("Filler Ratio", 0, 1, 2)
-			FillerRatio:SetClientData("FillerRatio", "OnValueChanged")
-			FillerRatio:DefineSetter(function(_, _, _, Value)
+		function CLASS:OnCreateAmmoControls(Base)
+			ACF.AmmoMenu.Slider(Base, "Filler Ratio", 0, 1, 2, "FillerRatio", function(Value)
 				self.FillerRatio = math.Round(Value, 2)
-
 				self:UpdateRoundData()
-
-				return BulletData.FillerVol
 			end)
-		end
-
-		function CLASS:OnCreateCrateInformation(Base, Label, ...)
-			BASE.OnCreateCrateInformation(self, Base, Label, ...)
-
-			Label:TrackClientData("FillerRatio")
 		end
 
 		function CLASS:OnCreateAmmoInformation(Base, _, BulletData)
 			local RoundStats = Base:AddLabel()
-			RoundStats:TrackClientData("Projectile", "SetText")
-			RoundStats:TrackClientData("Propellant")
-			RoundStats:TrackClientData("FillerRatio")
-			RoundStats:DefineSetter(function()
+			ACF.AmmoMenu.Reactive(RoundStats, function()
 				self:UpdateRoundData()
 
 				local Text		= language.GetPhrase("acf.menu.ammo.round_stats_he")
@@ -184,12 +170,11 @@ Classes.DefineClass("ACF.Ammunition.APHE", "ACF.Ammunition.AP", function()
 				local PropMass	= ACF.GetProperMass(BulletData.PropMass)
 				local Filler	= ACF.GetProperMass(BulletData.FillerMass)
 
-				return Text:format(MuzzleVel, ProjMass, PropMass, Filler)
+				RoundStats:SetText(Text:format(MuzzleVel, ProjMass, PropMass, Filler))
 			end)
 
 			local FillerStats = Base:AddLabel()
-			FillerStats:TrackClientData("FillerRatio", "SetText")
-			FillerStats:DefineSetter(function()
+			ACF.AmmoMenu.Reactive(FillerStats, function()
 				self:UpdateRoundData()
 
 				local Text	   = language.GetPhrase("acf.menu.ammo.filler_stats_he")
@@ -197,17 +182,14 @@ Classes.DefineClass("ACF.Ammunition.APHE", "ACF.Ammunition.AP", function()
 				local FragMass = ACF.GetProperMass(self.GUIData.FragMass)
 				local FragVel  = math.Round(self.GUIData.FragVel, 2)
 
-				return Text:format(Blast, self.GUIData.Fragments, FragMass, FragVel)
+				FillerStats:SetText(Text:format(Blast, self.GUIData.Fragments, FragMass, FragVel))
 			end)
 
-			local MaxPen = Base:AddLabel()
-			MaxPen:TrackClientData("Projectile", "SetText")
-			MaxPen:TrackClientData("Propellant")
-			MaxPen:TrackClientData("FillerRatio")
-			MaxPen:DefineSetter(function()
+			local MaxPenLabel = Base:AddLabel()
+			ACF.AmmoMenu.Reactive(MaxPenLabel, function()
 				local Text		= language.GetPhrase("acf.menu.ammo.pen_stats_ap")
 				local MaxPen	= math.Round(self.GUIData.MaxPen, 2)
-				return Text:format(MaxPen)
+				MaxPenLabel:SetText(Text:format(MaxPen))
 			end)
 		end
 	end

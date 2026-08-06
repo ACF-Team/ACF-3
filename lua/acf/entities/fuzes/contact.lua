@@ -32,12 +32,7 @@ Classes.DefineClass("ACF.Missiles.Fuze.Contact", "ACF.Missiles.Fuze", function()
 			local Min = ACF.GetGunValue(ToolData.Weapon, "ArmDelay") or self.MinDelay
 
 			local Delay = Base:AddSlider("Arming Delay", Min, self.MaxDelay, 2)
-			Delay:SetClientData("ArmingDelay", "OnValueChanged")
-			Delay:DefineSetter(function(Panel, _, _, Value)
-				Panel:SetValue(Value)
-
-				return Value
-			end)
+			ACF.MissileMenu.FuzeSlider(Delay, "ArmingDelay")
 		end
 	else
 		function CLASS:GetCost()

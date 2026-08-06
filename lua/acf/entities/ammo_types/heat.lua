@@ -445,48 +445,25 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function()
 		end
 
 		function CLASS:OnCreateAmmoControls(Base, _, BulletData)
-			local LinerAngle = Base:AddSlider("#acf.menu.ammo.liner_angle", self.GUIData.MinConeAng, 90, 1)
-			LinerAngle:SetClientData("LinerAngle", "OnValueChanged")
-			LinerAngle:TrackClientData("Projectile")
-			LinerAngle:DefineSetter(function(Panel, _, Key, Value)
-				if Key == "LinerAngle" then
-					self.LinerAngle = math.Round(Value, 2)
-				end
-
+			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.liner_angle", self.GUIData.MinConeAng, 90, 1, "LinerAngle", function(Value)
+				self.LinerAngle = math.Round(Value, 2)
 				self:UpdateRoundData()
-
+			end, function(Panel)
+				-- Min cone angle + clamped value depend on the round; re-clamp on any change.
 				Panel:SetMin(self.GUIData.MinConeAng)
 				Panel:SetValue(BulletData.ConeAng)
-
-				return BulletData.ConeAng
 			end)
 
 			-- Capped the max standoff at 0.4 for historical reasons
-			local StandoffRatio = Base:AddSlider("#acf.menu.ammo.standoff_ratio", 0, 0.2, 2)
-			StandoffRatio:SetClientData("StandoffRatio", "OnValueChanged")
-			StandoffRatio:DefineSetter(function(_, _, _, Value)
+			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.standoff_ratio", 0, 0.2, 2, "StandoffRatio", function(Value)
 				self.StandoffRatio = math.Round(Value, 2)
-
 				self:UpdateRoundData()
-
-				return self.StandoffRatio
 			end)
-		end
-
-		function CLASS:OnCreateCrateInformation(Base, Label, ...)
-			BASE.OnCreateCrateInformation(self, Base, Label, ...)
-
-			Label:TrackClientData("LinerAngle")
-			Label:TrackClientData("StandoffRatio")
 		end
 
 		function CLASS:OnCreateAmmoInformation(Base, _, BulletData)
 			local RoundStats = Base:AddLabel()
-			RoundStats:TrackClientData("Projectile", "SetText")
-			RoundStats:TrackClientData("Propellant")
-			RoundStats:TrackClientData("LinerAngle")
-			RoundStats:TrackClientData("StandoffRatio")
-			RoundStats:DefineSetter(function()
+			ACF.AmmoMenu.Reactive(RoundStats, function()
 				self:UpdateRoundData()
 
 				local Text		= language.GetPhrase("acf.menu.ammo.round_stats_he")
@@ -495,15 +472,11 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function()
 				local PropMass	= ACF.GetProperMass(BulletData.PropMass)
 				local Filler	= ACF.GetProperMass(BulletData.FillerMass)
 
-				return Text:format(MuzzleVel, ProjMass, PropMass, Filler)
+				RoundStats:SetText(Text:format(MuzzleVel, ProjMass, PropMass, Filler))
 			end)
 
 			local FillerStats = Base:AddLabel()
-			FillerStats:TrackClientData("Projectile", "SetText")
-			FillerStats:TrackClientData("Propellant")
-			FillerStats:TrackClientData("LinerAngle")
-			FillerStats:TrackClientData("StandoffRatio")
-			FillerStats:DefineSetter(function()
+			ACF.AmmoMenu.Reactive(FillerStats, function()
 				self:UpdateRoundData()
 
 				local Text	   = language.GetPhrase("acf.menu.ammo.filler_stats_he")
@@ -511,15 +484,11 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function()
 				local FragMass = ACF.GetProperMass(self.GUIData.FragMass)
 				local FragVel  = math.Round(self.GUIData.FragVel, 2)
 
-				return Text:format(Blast, self.GUIData.Fragments, FragMass, FragVel)
+				FillerStats:SetText(Text:format(Blast, self.GUIData.Fragments, FragMass, FragVel))
 			end)
 
 			local Penetrator = Base:AddLabel()
-			Penetrator:TrackClientData("Projectile", "SetText")
-			Penetrator:TrackClientData("Propellant")
-			Penetrator:TrackClientData("LinerAngle")
-			Penetrator:TrackClientData("StandoffRatio")
-			Penetrator:DefineSetter(function()
+			ACF.AmmoMenu.Reactive(Penetrator, function()
 				self:UpdateRoundData()
 
 				local Text     = language.GetPhrase("acf.menu.ammo.penetrator_heat")
@@ -528,15 +497,11 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function()
 				local MinVel   = math.Round(BulletData.JetMinVel, 0)
 				local MaxVel   = math.Round(BulletData.JetMaxVel, 0)
 
-				return Text:format(CuMass, JetMass, MinVel, MaxVel)
+				Penetrator:SetText(Text:format(CuMass, JetMass, MinVel, MaxVel))
 			end)
 
 			local PenStats = Base:AddLabel()
-			PenStats:TrackClientData("Projectile", "SetText")
-			PenStats:TrackClientData("Propellant")
-			PenStats:TrackClientData("LinerAngle")
-			PenStats:TrackClientData("StandoffRatio")
-			PenStats:DefineSetter(function()
+			ACF.AmmoMenu.Reactive(PenStats, function()
 				self:UpdateRoundData()
 
 				local Text   = language.GetPhrase("acf.menu.ammo.pen_stats_heat")
@@ -545,7 +510,7 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function()
 				local Standoff2 = math.Round(BulletData.BreakupDist * 1e3, 0)
 				local Pen2 = math.Round(self:GetPenetration(BulletData, BulletData.BreakupDist), 1)
 
-				return Text:format(Standoff1, Pen1, Standoff2, Pen2)
+				PenStats:SetText(Text:format(Standoff1, Pen1, Standoff2, Pen2))
 			end)
 		end
 	end

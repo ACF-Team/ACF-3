@@ -203,43 +203,24 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
 		end
 
 		function CLASS:OnCreateAmmoControls(Base, _, BulletData)
-			local Flechettes = Base:AddSlider("#acf.menu.ammo.flechette_amount", BulletData.MinFlechettes, BulletData.MaxFlechettes)
-			Flechettes:SetClientData("Flechettes", "OnValueChanged")
-			Flechettes:DefineSetter(function(Panel, _, _, Value)
+			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.flechette_amount", BulletData.MinFlechettes, BulletData.MaxFlechettes, nil, "Flechettes", function(Value)
 				self.Flechettes = math.floor(Value)
-
 				self:UpdateRoundData()
-
-				Panel:SetValue(BulletData.Flechettes)
-
-				return BulletData.Flechettes
+			end, function(Panel)
+				Panel:SetValue(BulletData.Flechettes) -- snap to the clamped flechette count
 			end)
 
-			local Spread = Base:AddSlider("#acf.menu.ammo.flechette_spread", BulletData.MinSpread, BulletData.MaxSpread, 2)
-			Spread:SetClientData("Spread", "OnValueChanged")
-			Spread:DefineSetter(function(Panel, _, _, Value)
+			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.flechette_spread", BulletData.MinSpread, BulletData.MaxSpread, 2, "Spread", function(Value)
 				self.Spread = Value
-
 				self:UpdateRoundData()
-
-				Panel:SetValue(BulletData.FlechetteSpread)
-
-				return BulletData.FlechetteSpread
+			end, function(Panel)
+				Panel:SetValue(BulletData.FlechetteSpread) -- snap to the clamped spread
 			end)
-		end
-
-		function CLASS:OnCreateCrateInformation(Base, Label, ...)
-			BASE.OnCreateCrateInformation(self, Base, Label, ...)
-
-			Label:TrackClientData("Flechettes")
 		end
 
 		function CLASS:OnCreateAmmoInformation(Menu, _, BulletData)
 			local RoundStats = Menu:AddLabel()
-			RoundStats:TrackClientData("Projectile", "SetText")
-			RoundStats:TrackClientData("Propellant")
-			RoundStats:TrackClientData("Flechettes")
-			RoundStats:DefineSetter(function()
+			ACF.AmmoMenu.Reactive(RoundStats, function()
 				self:UpdateRoundData()
 
 				local Text		= language.GetPhrase("acf.menu.ammo.round_stats_fl")
@@ -248,14 +229,11 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
 				local PropMass	= ACF.GetProperMass(BulletData.PropMass)
 				local FLMass	= ACF.GetProperMass(BulletData.FlechetteMass)
 
-				return Text:format(MuzzleVel, ProjMass, PropMass, FLMass)
+				RoundStats:SetText(Text:format(MuzzleVel, ProjMass, PropMass, FLMass))
 			end)
 
 			local PenStats = Menu:AddLabel()
-			PenStats:TrackClientData("Projectile", "SetText")
-			PenStats:TrackClientData("Propellant")
-			PenStats:TrackClientData("Flechettes")
-			PenStats:DefineSetter(function()
+			ACF.AmmoMenu.Reactive(PenStats, function()
 				self:UpdateRoundData()
 
 				local Text	   = language.GetPhrase("acf.menu.ammo.pen_stats_ap")
@@ -263,7 +241,7 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
 				local R1P, R1V = self:GetRangedPenetration(BulletData, 300)
 				local R2V, R2P = self:GetRangedPenetration(BulletData, 800)
 
-				return Text:format(MaxPen, R1P, R1V, R2P, R2V)
+				PenStats:SetText(Text:format(MaxPen, R1P, R1V, R2P, R2V))
 			end)
 		end
 	end

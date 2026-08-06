@@ -184,42 +184,21 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function()
 			Effects.CreateEffect("ACF_Smoke", EffectTable)
 		end
 
-		function CLASS:OnCreateAmmoControls(Base, _, BulletData)
-			local FillerRatio = Base:AddSlider("#acf.menu.ammo.filler_ratio", 0, 1, 2)
-			FillerRatio:SetClientData("FillerRatio", "OnValueChanged")
-			FillerRatio:DefineSetter(function(_, _, _, Value)
+		function CLASS:OnCreateAmmoControls(Base)
+			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.filler_ratio", 0, 1, 2, "FillerRatio", function(Value)
 				self.FillerRatio = math.Round(Value, 2)
-
 				self:UpdateRoundData()
-
-				return BulletData.FillerVol
 			end)
 
-			local SmokeWPRatio = Base:AddSlider("#acf.menu.ammo.wp_ratio", 0, 1, 2)
-			SmokeWPRatio:SetClientData("SmokeWPRatio", "OnValueChanged")
-			SmokeWPRatio:DefineSetter(function(_, _, _, Value)
+			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.wp_ratio", 0, 1, 2, "SmokeWPRatio", function(Value)
 				self.SmokeWPRatio = math.Round(Value, 2)
-
 				self:UpdateRoundData()
-
-				return BulletData.WPVol
 			end)
-		end
-
-		function CLASS:OnCreateCrateInformation(Base, Label, ...)
-			BASE.OnCreateCrateInformation(self, Base, Label, ...)
-
-			Label:TrackClientData("FillerRatio")
-			Label:TrackClientData("SmokeWPRatio")
 		end
 
 		function CLASS:OnCreateAmmoInformation(Menu, _, Data)
 			local RoundStats = Menu:AddLabel()
-			RoundStats:TrackClientData("Projectile", "SetText")
-			RoundStats:TrackClientData("Propellant")
-			RoundStats:TrackClientData("FillerRatio")
-			RoundStats:TrackClientData("SmokeWPRatio")
-			RoundStats:DefineSetter(function()
+			ACF.AmmoMenu.Reactive(RoundStats, function()
 				self:UpdateRoundData()
 
 				local Text		= language.GetPhrase("acf.menu.ammo.round_stats_ap")
@@ -227,34 +206,35 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function()
 				local ProjMass	= ACF.GetProperMass(Data.ProjMass)
 				local PropMass	= ACF.GetProperMass(Data.PropMass)
 
-				return Text:format(MuzzleVel, ProjMass, PropMass)
+				RoundStats:SetText(Text:format(MuzzleVel, ProjMass, PropMass))
 			end)
 
 			local SmokeStats = Menu:AddLabel()
-			SmokeStats:TrackClientData("FillerRatio", "SetText")
-			SmokeStats:TrackClientData("SmokeWPRatio")
-			SmokeStats:DefineSetter(function()
+			ACF.AmmoMenu.Reactive(SmokeStats, function()
 				self:UpdateRoundData()
 
 				local SMText, WPText = "", ""
 
+				-- The smoke/WP radius + life live on GUIData (see the ballistics graph), not BulletData.
+				local GUIData = self.GUIData
+
 				if Data.FillerMass > 0 then
 					local Text		  = language.GetPhrase("acf.menu.ammo.smoke_stats")
 					local SmokeMass	  = ACF.GetProperMass(Data.FillerMass)
-					local SmokeRadius = (Data.SMRadiusMin + Data.SMRadiusMax) * 0.5
+					local SmokeRadius = ((GUIData.SMRadiusMin or 0) + (GUIData.SMRadiusMax or 0)) * 0.5
 
-					SMText = Text:format(SmokeMass, SmokeRadius, Data.SMLife)
+					SMText = Text:format(SmokeMass, SmokeRadius, GUIData.SMLife or 0)
 				end
 
 				if Data.WPMass > 0 then
 					local Text	   = language.GetPhrase("acf.menu.ammo.wp_stats")
 					local WPMass   = ACF.GetProperMass(Data.WPMass)
-					local WPRadius = (Data.WPRadiusMin + Data.WPRadiusMax) * 0.5
+					local WPRadius = ((GUIData.WPRadiusMin or 0) + (GUIData.WPRadiusMax or 0)) * 0.5
 
-					WPText = Text:format(WPMass, WPRadius, Data.WPLife)
+					WPText = Text:format(WPMass, WPRadius, GUIData.WPLife or 0)
 				end
 
-				return SMText .. WPText
+				SmokeStats:SetText(SMText .. WPText)
 			end)
 		end
 	end

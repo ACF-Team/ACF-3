@@ -26,9 +26,9 @@ Classes.DefineClass("ACF.Missiles.FreeFallingBomb.50kg", "ACF.Missiles.FreeFalli
 	CLASS.ReloadTime	= 10
 	CLASS.Offset		= Vector(-6, 0, 0)
 	CLASS.Racks			= { ["ACF.Racks.1xRK_small"] = true, ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true, ["ACF.Racks.4xRK"] = true }
-	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
+	CLASS.Guidances		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Navigation	= "Chase"
-	CLASS.Fuzes			= { Contact = true, Optical = true}
+	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Optical"] = true}
 	CLASS.Agility		= 1
 	CLASS.ArmDelay		= 0.5
 	CLASS.Round			= {
@@ -67,9 +67,9 @@ Classes.DefineClass("ACF.Missiles.FreeFallingBomb.100kg", "ACF.Missiles.FreeFall
 	CLASS.ReloadTime	= 15
 	CLASS.Offset		= Vector(-6, 0, 0)
 	CLASS.Racks			= { ["ACF.Racks.1xRK_small"] = true, ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true, ["ACF.Racks.4xRK"] = true }
-	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
+	CLASS.Guidances		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Navigation	= "Chase"
-	CLASS.Fuzes			= { Contact = true, Optical = true}
+	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Optical"] = true}
 	CLASS.Agility		= 1
 	CLASS.ArmDelay		= 1
 	CLASS.Round			= {
@@ -108,9 +108,9 @@ Classes.DefineClass("ACF.Missiles.FreeFallingBomb.250kg", "ACF.Missiles.FreeFall
 	CLASS.ReloadTime	= 25
 	CLASS.Offset		= Vector(-14, 0, 0)
 	CLASS.Racks			= { ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true, ["ACF.Racks.3xRK"] = true, ["ACF.Racks.4xRK"] = true }
-	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
+	CLASS.Guidances		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Navigation	= "Chase"
-	CLASS.Fuzes			= { Contact = true, Optical = true}
+	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Optical"] = true}
 	CLASS.Agility		= 1
 	CLASS.ArmDelay		= 1
 	CLASS.Round			= {
@@ -149,9 +149,9 @@ Classes.DefineClass("ACF.Missiles.FreeFallingBomb.500kg", "ACF.Missiles.FreeFall
 	CLASS.ReloadTime	= 40
 	CLASS.Offset		= Vector(-14, 0, 0)
 	CLASS.Racks			= { ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true, ["ACF.Racks.4xRK"] = true }
-	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
+	CLASS.Guidances		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Navigation	= "Chase"
-	CLASS.Fuzes			= { Contact = true, Optical = true}
+	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Optical"] = true}
 	CLASS.Agility		= 1
 	CLASS.ArmDelay		= 2
 	CLASS.Round			= {
@@ -190,9 +190,9 @@ Classes.DefineClass("ACF.Missiles.FreeFallingBomb.1000kg", "ACF.Missiles.FreeFal
 	CLASS.ReloadTime	= 60
 	CLASS.Offset		= Vector(-10, 0, 0)
 	CLASS.Racks			= { ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true }
-	CLASS.Guidance		= { ["ACF.Missiles.Guidance.Dumb"] = true }
+	CLASS.Guidances		= { ["ACF.Missiles.Guidance.Dumb"] = true }
 	CLASS.Navigation	= "Chase"
-	CLASS.Fuzes			= { Contact = true, Optical = true}
+	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Optical"] = true}
 	CLASS.Agility		= 1
 	CLASS.ArmDelay		= 3
 	CLASS.Round			= {

@@ -65,4 +65,10 @@ local function CreateMenu(Menu)
 	end
 end
 
-ACF.AddMenuItem(1, "#acf.menu.about", "#acf.menu.updates", "newspaper", CreateMenu)
+ACF.Menu.RegisterPage({
+	Category = "#acf.menu.about",
+	Name     = "#acf.menu.updates",
+	Icon     = "newspaper",
+	Order    = 1,
+	Build    = CreateMenu,
+})

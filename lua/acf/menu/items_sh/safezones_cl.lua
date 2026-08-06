@@ -485,8 +485,6 @@ do
 	local function CreateMenu(Menu)
 		Menu:AddTitle("Safezones")
 
-		ACF.SetToolMode("acf_menu", "ZoneModifier", "Update")
-
 		local SafezonesBase = Menu:AddCollapsible("#acf.menu.permissions.safezones", nil, "icon16/lock_edit.png")
 		SafezonesBase:AddCheckBox("#acf.menu.permissions.safezones.enable"):LinkToServerData("EnableSafezones")
 		SafezonesBase:AddHelp("#acf.menu.permissions.safezones.enable_desc")
@@ -513,5 +511,28 @@ do
 		end)
 	end
 
-	ACF.AddMenuItem(3, "#acf.menu.permissions", "Safezones", "shield", CreateMenu)
+	-- Non-entity page: no Contexts/Actions. The safezone boundary/label rendering (formerly the
+	-- "ZoneModifier" tool operation) is now driven directly off this page being the active menu page.
+	ACF.Menu.RegisterPage({
+		ID       = "acf_safezones",
+		Category = "#acf.menu.permissions",
+		Name     = "Safezones",
+		Icon     = "shield",
+		Order    = 3,
+		Build    = CreateMenu,
+	})
+
+	local function OnSafezonePage()
+		return ACF.Menu.ActivePage ~= nil and ACF.Menu.ActivePage.ID == "acf_safezones"
+	end
+
+	hook.Add("PreDrawOpaqueRenderables", "ACF_OnRenderSafezones", function()
+		if not OnSafezonePage() then return end
+		Permissions.RenderSafezones()
+	end)
+
+	hook.Add("PostDrawHUD", "ACF_OnUpdateSafezones", function()
+		if not OnSafezonePage() then return end
+		Permissions.RenderSafezoneText()
+	end)
 end

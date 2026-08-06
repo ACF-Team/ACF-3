@@ -144,6 +144,52 @@ local function DeserializeValue(ElemType, Raw, Options)
     end
 end
 
+-- Coerces a single value to a field's element type, clamping numbers to Min/Max/Decimals exactly like the deserializer does. 
+-- Unlike DeserializeValue, this additionally accepts an already-constructed class instance for class-typed fields, the menu
+-- uses this when linking one context's live instance into another
+local function CoerceScalar(ElemType, Value, Options)
+    Options = Options or {}
+
+    if ElemType == "Entity" then
+        return ValidateEntity(Value, Options)
+    end
+
+    local ClassType = GetTypeByName(ElemType)
+
+    if ClassType and type(Value) == "table" and Value.GetType then
+        -- Already a live instance; accept it if it's assignable to the field's declared type.
+        local ActualType = Value:GetType()
+        if IsAssignableTo(ActualType, ClassType) and (not Options.OnlyAllowSubtypes or ActualType ~= ClassType) then
+            return Value
+        end
+        return nil
+    end
+
+    return DeserializeValue(ElemType, Value, Options)
+end
+
+-- Coerces/validates a value for a whole field definition {Type, Options}, honoring array types.
+-- Shared by the menu's EntityContext:Set and anything else that needs server-identical clamping w/o full deserialization
+function Serialization.CoerceField(FieldDef, Value)
+    if not FieldDef then return Value end
+
+    local ElemType, IsArray = ParseType(FieldDef.Type)
+    local Options = FieldDef.Options or {}
+
+    if IsArray then
+        if type(Value) ~= "table" then return {} end
+
+        local Arr = {}
+        for _, V in ipairs(Value) do
+            local Coerced = CoerceScalar(ElemType, V, Options)
+            if Coerced ~= nil then Arr[#Arr + 1] = Coerced end
+        end
+        return Arr
+    end
+
+    return CoerceScalar(ElemType, Value, Options)
+end
+
 local function ScalarDefault(ElemType, Options)
     local Default = Options.Default
     if Default == nil then return nil end

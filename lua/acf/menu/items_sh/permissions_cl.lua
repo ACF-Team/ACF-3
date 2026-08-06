@@ -52,7 +52,13 @@ do
 		end
 	end
 
-	ACF.AddMenuItem(1, "#acf.menu.permissions", "#acf.menu.permissions.player_permissions", "group_edit", CreateMenu)
+	ACF.Menu.RegisterPage({
+		Category = "#acf.menu.permissions",
+		Name     = "#acf.menu.permissions.player_permissions",
+		Icon     = "group_edit",
+		Order    = 1,
+		Build    = CreateMenu,
+	})
 end
 
 do
@@ -157,5 +163,11 @@ do
 		end
 	end
 
-	ACF.AddMenuItem(2, "#acf.menu.permissions", "#acf.menu.permissions.set_mode", "server_edit", CreateMenu)
+	ACF.Menu.RegisterPage({
+		Category = "#acf.menu.permissions",
+		Name     = "#acf.menu.permissions.set_mode",
+		Icon     = "server_edit",
+		Order    = 2,
+		Build    = CreateMenu,
+	})
 end
