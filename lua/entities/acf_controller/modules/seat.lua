@@ -59,6 +59,12 @@ local function OnActiveChanged(Controller, Ply, Active)
 	net.Start("ACF_Controller_CamInfo")
 	net.WriteTable(Controller.Filter or {})
 	net.Send(Ply)
+
+	if Active then
+		Controller:FLIR_OnEnter(Ply)
+	else
+		Controller:FLIR_OnExit(Ply)
+	end
 end
 
 local function OnKeyChanged(Controller, Key, Down)
