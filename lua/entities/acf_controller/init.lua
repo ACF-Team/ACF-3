@@ -66,6 +66,7 @@ ACF.ControllerKeyBindings = KEY_WIRE_BINDINGS
 
 local Inputs = {
 	"Filter (Filters out entities from the camera trace) [ARRAY]",
+	"FLIR (Enables/disables FLIR while in the baseplate seat)"
 }
 
 local ADDITIONAL_OUTPUTS = {
@@ -202,12 +203,39 @@ do
 		self:SetAngles(self:GetAngles() + Angle(0, -90, 0))
 	end
 
+	function ENT:FLIR_OnEnter(Player)
+		if not IsValid(Player) then return end
+		if Controller.UseWireFLIR then
+			FLIR.start(Player)
+		end
+	end
+
+	function ENT:FLIR_OnChange(Value)
+		local Player = self.Driver
+		if not IsValid(Player) then return end
+
+		FLIR.enable(Player, Value)
+	end
+
+	function ENT:FLIR_OnExit(Player)
+		if not IsValid(Player) then return end
+		if Controller.UseWireFLIR then
+			FLIR.stop(Player)
+		end
+	end
+
 	-- Handle Inputs
 	do
 		ACF.AddInputAction("acf_controller", "Filter", function(Controller, Value)
-			if Value == nil or not istable(Value) then return end
+			if Value == nil or not istable(Value) then Controller.UsesWireFilter = false return end
 			Controller.UsesWireFilter = true
 			Controller.Filter = Value
+		end)
+
+		ACF.AddInputAction("acf_controller", "FLIR", function(Controller, Value)
+			if Value == nil or not isnumber(Value) then return end
+			Controller.UseWireFLIR = Value ~= 0
+			Controller:FLIR_OnChange(Value ~= 0)
 		end)
 	end
 end
