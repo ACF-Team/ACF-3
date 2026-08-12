@@ -205,7 +205,7 @@ do
 
 	function ENT:FLIR_OnEnter(Player)
 		if not IsValid(Player) then return end
-		if Controller.UseWireFLIR then
+		if self.UseWireFLIR then
 			FLIR.start(Player)
 		end
 	end
@@ -219,7 +219,7 @@ do
 
 	function ENT:FLIR_OnExit(Player)
 		if not IsValid(Player) then return end
-		if Controller.UseWireFLIR then
+		if self.UseWireFLIR then
 			FLIR.stop(Player)
 		end
 	end
