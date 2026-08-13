@@ -52,6 +52,7 @@ local function EntityPiecewiseFn()
                     if Class == "base_anim" then Entity:SetColor(Visible) Entity:SetRenderMode(RENDERMODE_NORMAL) else Entity:SetNoDraw(false) end
                     Entity:SetColor(Visible)
                     Entity:SetMaterial("")
+                    Entity:SetSubMaterial()
                 end
             end
         end
