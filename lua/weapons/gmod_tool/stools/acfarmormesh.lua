@@ -382,12 +382,12 @@ elseif SERVER then
 		local MeshData = Entity.ACF_Volumetric_Mesh
 		if not MeshData then return end
 
+		local Materials = {}
 		for ConvexID in ipairs(MeshData.Convexes) do
 			local Material = Data.Materials[ConvexID]
-			if Material then
-				ACF.SetConvexMaterial(Entity, ConvexID, Material)
-			end
+			if Material then Materials[ConvexID] = Material end
 		end
+		ACF.SetConvexMaterials(Entity, Materials)
 	end)
 
 	-- Backwards compatibility: entities duplicated with the old armor system's "ACF_Armor" entity modifier
@@ -407,9 +407,11 @@ elseif SERVER then
 		Entity.ACF_Armor_Legacy_Thickness = Data.Thickness
 
 		if not Entity.ACF_Volumetric_Mesh then return end
+		local Materials = {}
 		for ConvexID in ipairs(Entity.ACF_Volumetric_Mesh.Convexes) do
-			if Material then ACF.SetConvexMaterial(Entity, ConvexID, "RHA") end
+			if Material then Materials[ConvexID] = "RHA" end
 		end
+		ACF.SetConvexMaterials(Entity, Materials)
 	end)
 
 	-- Keeps the toolgun's NW vars in sync with the convex under the player's crosshair, for client-side display.
@@ -482,9 +484,11 @@ elseif SERVER then
 
 		local Player = self:GetOwner()
 		if Player:KeyDown(IN_SPEED) then
+			local Materials = {}
 			for ConvexID in ipairs(Entity.ACF_Volumetric_Mesh.Convexes) do
-				ACF.SetConvexMaterial(Entity, ConvexID, Material, Player)
+				Materials[ConvexID] = Material
 			end
+			ACF.SetConvexMaterials(Entity, Materials, Player)
 		else
 			local Dir       = Player:GetAimVector()
 			local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)

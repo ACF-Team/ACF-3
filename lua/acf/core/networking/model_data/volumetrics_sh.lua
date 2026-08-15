@@ -9,6 +9,48 @@ local HealthMul = ACF.HealthCoef
 local ArmorCoef = ACF.ArmorCoef
 local ArmorTypes = ACF.Classes.ArmorTypes
 
+-- Networking: whenever a convex's material is set (serverside), the new material is sent straight to
+-- every client. No request/refresh cycle -- just send it the moment it changes.
+local MAX_CONVEXES  = 5 -- bits for the convex index field
+local MAX_MATERIALS = 5 -- bits for the material index field
+
+local ArmorTypeByIndex   = {} -- index (1-based int) -> armor type ID string
+local ArmorTypeIndexByID = {} -- armor type ID string -> index (1-based int)
+
+-- Built once after all armor types are registered; neither table changes after this.
+hook.Add("ACF_OnLoadAddon", "ACF_BuildArmorTypeIndex", function()
+    local List = ArmorTypes.GetList()
+    table.sort(List, function(A, B) return A.ID < B.ID end)
+
+    for I, Entry in ipairs(List) do
+        ArmorTypeByIndex[I]           = Entry.ID
+        ArmorTypeIndexByID[Entry.ID]  = I
+    end
+end)
+
+if SERVER then
+    util.AddNetworkString("ACF_ConvexMaterialSet")
+end
+
+if CLIENT then
+    net.Receive("ACF_ConvexMaterialSet", function()
+        local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
+        local Count    = net.ReadUInt(MAX_CONVEXES)
+
+        local Materials = {}
+        for _ = 1, Count do
+            local ConvexID = net.ReadUInt(MAX_CONVEXES)
+            local MatIndex = net.ReadUInt(MAX_MATERIALS)
+            Materials[ConvexID] = ArmorTypeByIndex[MatIndex] or "Default"
+        end
+
+        local Ent = Entity(EntIndex)
+        if not IsValid(Ent) then return end
+
+        ACF.SetConvexMaterials(Ent, Materials)
+    end)
+end
+
 -- TODO: Merge these lists with the other global ACF filters
 
 -- Classes we should compute the mesh for
@@ -34,28 +76,45 @@ local ArmorableClasses = {
 do
     local ArmorTypes = ACF.Classes.ArmorTypes
 
-    -- Sets the material of a convex, recalculating its mass, health pool, and the entity's aggregates.
-    function ACF.SetConvexMaterial(Entity, ConvexID, Material, Player, NoStore)
+    -- Sets the materials ({[ConvexID] = MaterialID, ...}) of one or more convexes.
+    -- Batches network updates.
+    -- Returns false if any convex was rejected (e.g. an explosive material on too large a convex)
+    function ACF.SetConvexMaterials(Entity, Materials, Player, NoStore)
         local MeshData = Entity.ACF_Volumetric_Mesh
         if not MeshData then return end
 
-        local Convex = MeshData.Convexes[ConvexID]
-        if not Convex then return end
+        Entity.ACF_Volumetric_Materials = Entity.ACF_Volumetric_Materials or {}
 
-        local ArmorType = ArmorTypes.Get(Material) or ArmorTypes.Get("Default")
+        local Changed  = {} -- ConvexID -> ArmorType.ID, for networking/storage
+        local AnyOK    = false
+        local AllOK    = true
 
-        if ArmorType.IsExplosive and Convex.Volume > ACF.MaxExplosiveConvexVolume then
-            if SERVER and IsValid(Player) then
-                ACF.Utilities.Messages.SendChat(Player, "Error", "Convex " .. ConvexID .. " is too large for an explosive material (limit: " .. ACF.MaxExplosiveConvexVolume .. " in³).")
+        for ConvexID, Material in pairs(Materials) do
+            local Convex = MeshData.Convexes[ConvexID]
+            if not Convex then continue end
+
+            local ArmorType = ArmorTypes.Get(Material) or ArmorTypes.Get("Default")
+
+            if ArmorType.IsExplosive and Convex.Volume > ACF.MaxExplosiveConvexVolume then
+                if SERVER and IsValid(Player) then
+                    ACF.Utilities.Messages.SendChat(Player, "Error", "Convex " .. ConvexID .. " is too large for an explosive material (limit: " .. ACF.MaxExplosiveConvexVolume .. " in³).")
+                end
+                AllOK = false
+                continue
             end
-            return false
+
+            Convex.Material    = ArmorType.ID
+            Convex.Mass        = Convex.Volume * CubicInchToM3 * ArmorType.Density -- Volume is in^3, Density is kg/m^3
+            Convex.MaxHealth   = Convex.Volume * ArmorType.HealthMul * HealthMul -- HealthMul bakes in material density
+            Convex.Health      = Convex.MaxHealth
+            Convex.IsExplosive = ArmorType.IsExplosive or nil -- Reactive armor; see Ballistics.DoReactiveArmor
+
+            Entity.ACF_Volumetric_Materials[ConvexID] = Convex.Material
+            Changed[ConvexID] = ArmorType.ID
+            AnyOK = true
         end
 
-        Convex.Material    = ArmorType.ID
-        Convex.Mass        = Convex.Volume * CubicInchToM3 * ArmorType.Density -- Volume is in^3, Density is kg/m^3
-        Convex.MaxHealth   = Convex.Volume * ArmorType.HealthMul * HealthMul -- HealthMul bakes in material density
-        Convex.Health      = Convex.MaxHealth
-        Convex.IsExplosive = ArmorType.IsExplosive or nil -- Reactive armor; see Ballistics.DoReactiveArmor
+        if not AnyOK then return AllOK end
 
         local TotalMass    = 0
         local HasReactive  = false
@@ -67,18 +126,48 @@ do
         MeshData.TotalMass         = TotalMass
         MeshData.HasReactiveArmor  = HasReactive -- Lets ballistics skip the reactive-armor check entirely for normal entities
 
-        Entity.ACF_Volumetric_Materials = Entity.ACF_Volumetric_Materials or {}
-        Entity.ACF_Volumetric_Materials[ConvexID] = Convex.Material
+        if SERVER then
+            local Count = 0
+            for _ in pairs(Changed) do Count = Count + 1 end
+            Count = math.min(Count, 31)
 
-        if SERVER and ArmorType.ID ~= "Default" then
-            if not NoStore then duplicator.StoreEntityModifier(Entity, "ACF_ArmorMesh", { Materials = Entity.ACF_Volumetric_Materials }) end
-            local EntACF = Entity.ACF
-            if EntACF then
-                ACF.Contraption.SetMass(Entity, TotalMass)
-            else
-                Entity:GetPhysicsObject():SetMass(TotalMass)
+            net.Start("ACF_ConvexMaterialSet")
+            net.WriteUInt(Entity:EntIndex(), MAX_EDICT_BITS)
+            net.WriteUInt(Count, MAX_CONVEXES)
+
+            local Sent = 0
+            for ConvexID, MaterialID in pairs(Changed) do
+                if Sent >= Count then break end
+                net.WriteUInt(ConvexID, MAX_CONVEXES)
+                net.WriteUInt(ArmorTypeIndexByID[MaterialID] or ArmorTypeIndexByID["Default"] or 1, MAX_MATERIALS)
+                Sent = Sent + 1
+            end
+            net.Broadcast()
+
+            local HasNonDefault = false
+            for _, MaterialID in pairs(Changed) do
+                if MaterialID ~= "Default" then HasNonDefault = true break end
+            end
+
+            if HasNonDefault then
+                if not NoStore then duplicator.StoreEntityModifier(Entity, "ACF_ArmorMesh", { Materials = Entity.ACF_Volumetric_Materials }) end
+
+                local EntACF = Entity.ACF
+                if EntACF then
+                    ACF.Contraption.SetMass(Entity, TotalMass)
+                else
+                    local Phys = Entity:GetPhysicsObject()
+                    if IsValid(Phys) then Phys:SetMass(TotalMass) end
+                end
             end
         end
+
+        return AllOK
+    end
+
+    -- Convenience wrapper for setting a single convex's material; see ACF.SetConvexMaterials.
+    function ACF.SetConvexMaterial(Entity, ConvexID, Material, Player, NoStore)
+        return ACF.SetConvexMaterials(Entity, { [ConvexID] = Material }, Player, NoStore)
     end
 
     function ProcessConvexes(Entity, Meshes)
@@ -116,6 +205,7 @@ do
         MeshData.TotalMass         = 0
         Entity.ACF_Volumetric_Mesh = MeshData
 
+        local Materials = {}
         for ConvexID in ipairs(MeshData.Convexes) do
             -- Priority: per-convex painted material > global material override > fixed ConvexMaterial > entity-type default.
             -- ACF_Volumetric_Material_Override covers entities converted from the old uniform-RHA system where the
@@ -124,9 +214,9 @@ do
             if not Entity.ACF_PreventArmoring then
                 Material = Entity.ACF_Volumetric_Material_Override or (Entity.ACF_Volumetric_Materials and Entity.ACF_Volumetric_Materials[ConvexID])
             end
-            Material = Material or Entity.ConvexMaterial or (Entity.IsACFEntity and "RHA" or "Default")
-            ACF.SetConvexMaterial(Entity, ConvexID, Material, nil, true)
+            Materials[ConvexID] = Material or Entity.ConvexMaterial or (Entity.IsACFEntity and "RHA" or "Default")
         end
+        ACF.SetConvexMaterials(Entity, Materials, nil, true)
     end
 
     local function ComputeVolumetricMesh(entity)
@@ -191,123 +281,6 @@ do
             end)
         end)
     end)
-end
-
--- Networking: sends per-entity convex materials to clients while they're looking at a contraption.
---
--- Materials can change after the initial look (a contraption still spawning in, or a later edit), so
--- the client just re-requests on a short interval for as long as it keeps looking at something. Lone
--- entities are always answered instantly; contraptions are throttled to CONTRAPTION_REFRESH_INTERVAL
--- since a full resync of every member is more expensive.
-do
-    local ArmorTypes         = ACF.Classes.ArmorTypes
-    local ArmorTypeByIndex   = {} -- index (1-based int) -> armor type ID string
-    local ArmorTypeIndexByID = {} -- armor type ID string -> index (1-based int)
-    local MAX_CONVEXES       = 5  -- bits for the convex count field
-    local MAX_MATERIALS      = 5  -- bits for the material index field
-    local REFRESH_INTERVAL             = 1 -- seconds between re-requests while still looking at something
-    local CONTRAPTION_REFRESH_INTERVAL = 5 -- seconds between contraption re-syncs to the same player
-
-    -- Built once after all armor types are registered; neither table changes after this.
-    hook.Add("ACF_OnLoadAddon", "ACF_BuildArmorTypeIndex", function()
-        local List = ArmorTypes.GetList()
-        table.sort(List, function(A, B) return A.ID < B.ID end)
-
-        for I, Entry in ipairs(List) do
-            ArmorTypeByIndex[I]       = Entry.ID
-            ArmorTypeIndexByID[Entry.ID] = I
-        end
-    end)
-
-    if SERVER then
-        util.AddNetworkString("ACF_EntityMaterials")
-        util.AddNetworkString("ACF_ContraptionMaterials_Request")
-
-        -- PlayerLastRequestTime guards against requests faster than REFRESH_INTERVAL.
-        -- PlayerLastContraptionSync adds the longer CONTRAPTION_REFRESH_INTERVAL throttle for contraptions.
-        local PlayerLastRequestTime     = {}
-        local PlayerLastContraptionSync = {}
-
-        hook.Add("PlayerDisconnected", "ACF_ClearPlayerVolumetricNetworkState", function(Player)
-            PlayerLastRequestTime[Player]     = nil
-            PlayerLastContraptionSync[Player] = nil
-        end)
-
-        -- Sends the convex materials of a single entity to a player.
-        -- Writes a uint5 convex count followed by a uint5 armor type index per convex.
-        function ACF.NetworkEntityMaterials(Entity, Player)
-            local MeshData = Entity.ACF_Volumetric_Mesh
-            if not MeshData then return end
-
-            local Convexes = MeshData.Convexes
-            local Count    = math.min(#Convexes, 31)
-
-            net.Start("ACF_EntityMaterials")
-            net.WriteUInt(Entity:EntIndex(), MAX_EDICT_BITS)
-            net.WriteUInt(Count, MAX_CONVEXES)
-            for I = 1, Count do
-                local Material = Convexes[I].Material or "Default"
-                net.WriteUInt(ArmorTypeIndexByID[Material] or ArmorTypeIndexByID["Default"] or 1, MAX_MATERIALS)
-            end
-            net.Send(Player)
-        end
-
-        net.Receive("ACF_ContraptionMaterials_Request", function(_, Player)
-            local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
-            local Ent      = Entity(EntIndex)
-            if not IsValid(Ent) then return end
-
-            local Now = CurTime()
-            if Now < (PlayerLastRequestTime[Player] or 0) + REFRESH_INTERVAL then return end
-            PlayerLastRequestTime[Player] = Now
-
-            local Contraption = Ent:CFW_GetContraption()
-
-            if Contraption then
-                if Now < (PlayerLastContraptionSync[Player] or 0) + CONTRAPTION_REFRESH_INTERVAL then return end
-                PlayerLastContraptionSync[Player] = Now
-
-                for ContraptionEnt in pairs(Contraption.ents) do
-                    ACF.NetworkEntityMaterials(ContraptionEnt, Player)
-                end
-            else
-                ACF.NetworkEntityMaterials(Ent, Player)
-            end
-        end)
-    end
-
-    if CLIENT then
-        local function RequestMaterials(Ent)
-            net.Start("ACF_ContraptionMaterials_Request")
-            net.WriteUInt(Ent:EntIndex(), MAX_EDICT_BITS)
-            net.SendToServer()
-        end
-
-        hook.Add("ACF_RenderContext_LookAtChanged", "ACF_NetworkContraptionMaterials", function(_, New)
-            if not IsValid(New) then return end
-            RequestMaterials(New)
-        end)
-
-        -- Keeps re-requesting for as long as the player is looking at something.
-        timer.Create("ACF_NetworkContraptionMaterials_Refresh", REFRESH_INTERVAL, 0, function()
-            local LookAt = ACF.RenderContext and ACF.RenderContext.LookAt
-            if IsValid(LookAt) then RequestMaterials(LookAt) end
-        end)
-
-        net.Receive("ACF_EntityMaterials", function()
-            local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
-            local Count    = net.ReadUInt(MAX_CONVEXES)
-            local Ent      = Entity(EntIndex)
-            local Valid    = IsValid(Ent)
-
-            for I = 1, Count do
-                local MatIndex = net.ReadUInt(MAX_MATERIALS)
-                if Valid then
-                    ACF.SetConvexMaterial(Ent, I, ArmorTypeByIndex[MatIndex] or "Default")
-                end
-            end
-        end)
-    end
 end
 
 -- Returns every triangle the ray pierces as { Pos, Normal, ConvexID, T, Entity, IsEntry }, unsorted.
