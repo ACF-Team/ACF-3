@@ -1,7 +1,6 @@
 include("shared.lua")
 
 ENT.DoNotDuplicate = true
-CFW.addParentDetour("acf_turret_rotator", "Turret")
 
 -- One can't exist without the other
 function ENT:OnRemove()

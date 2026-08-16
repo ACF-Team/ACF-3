@@ -356,8 +356,7 @@ do	-- CFW Hooks
 
 	-- Custom information to track on contraptions
 	-- Not all of this is directly related to cost
-	hook.Add("cfw.contraption.created", "ACF_CFW_CostTrack", function(Contraption)
-		-- print("cfw.contraption.created", Contraption)
+	hook.Add("cfw.contraption.init", "ACF_CFW_CostTrack", function(Contraption)
 		Contraption.AmmoTypes = {} -- Index ammo types (Estimate of firepower)
 		Contraption.MaxNominal = 0 -- Track max nominal (Estimate of armor)
 
@@ -365,7 +364,6 @@ do	-- CFW Hooks
 	end)
 
 	hook.Add("cfw.contraption.entityAdded", "ACF_CFW_CostTrack", function(Contraption, Entity)
-		-- print("cfw.contraption.entityAdded", Contraption, Entity)
 		if Entity.IsACFEntity then
 			if Entity.IsACFAmmoCrate then
 				Contraption.AmmoTypes[Entity.AmmoType] = true
@@ -375,15 +373,14 @@ do	-- CFW Hooks
 		end
 	end)
 
-	-- hook.Add("cfw.contraption.entityRemoved", "ACF_CFW_CostTrack", function(Contraption, Entity)
-	-- 	-- print("cfw.contraption.entityRemoved", Contraption, Entity)
-	-- end)
+	-- Transfer cost data when contraptions merge
+	hook.Add("cfw.contraption.merged", "ACF_CFW_CostTrack", function(absorbed, into)
+		if absorbed.AmmoTypes then
+			for ammoType in pairs(absorbed.AmmoTypes) do
+				into.AmmoTypes[ammoType] = true
+			end
+		end
 
-	-- hook.Add("cfw.contraption.merged", "ACF_CFW_CostTrack", function(Contraption, MergedInto)
-	-- 	-- print("cfw.contraption.merged", Contraption, MergedInto)
-	-- end)
-
-	-- hook.Add("cfw.contraption.removed", "ACF_CFW_CostTrack", function(Contraption)
-	-- 	-- print("cfw.contraption.removed", Contraption)
-	-- end)
+		into.MaxNominal = math.max(into.MaxNominal or 0, absorbed.MaxNominal or 0)
+	end)
 end
