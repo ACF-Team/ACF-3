@@ -31,6 +31,7 @@ Missiles.RegisterItem("50kgBOMB", "BOMB", {
 	Fuzes		= { Contact = true, Optical = true},
 	Agility		= 1,
 	ArmDelay	= 0.5,
+	HitDeviate	= false,
 	Round = {
 		Model           = "models/bombs/fab50.mdl",
 		MaxLength       = 109,
@@ -72,6 +73,7 @@ Missiles.RegisterItem("100kgBOMB", "BOMB", {
 	Fuzes		= { Contact = true, Optical = true},
 	Agility		= 1,
 	ArmDelay	= 1,
+	HitDeviate	= false,
 	Round = {
 		Model           = "models/bombs/fab100.mdl",
 		MaxLength       = 106,
@@ -113,6 +115,7 @@ Missiles.RegisterItem("250kgBOMB", "BOMB", {
 	Fuzes		= { Contact = true, Optical = true},
 	Agility		= 1,
 	ArmDelay	= 1,
+	HitDeviate	= false,
 	Round = {
 		Model           = "models/bombs/fab250.mdl",
 		MaxLength       = 145,
@@ -154,6 +157,7 @@ Missiles.RegisterItem("500kgBOMB", "BOMB", {
 	Fuzes		= { Contact = true, Optical = true},
 	Agility		= 1,
 	ArmDelay	= 2,
+	HitDeviate	= false,
 	Round = {
 		Model           = "models/bombs/fab500.mdl",
 		MaxLength       = 240,
@@ -195,6 +199,7 @@ Missiles.RegisterItem("1000kgBOMB", "BOMB", {
 	Fuzes		= { Contact = true, Optical = true},
 	Agility		= 1,
 	ArmDelay	= 3,
+	HitDeviate	= false,
 	Round = {
 		Model           = "models/bombs/an_m66.mdl",
 		MaxLength       = 270,

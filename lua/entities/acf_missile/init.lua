@@ -396,6 +396,7 @@ function ACF.MakeMissile(Player, Pos, Ang, Rack, MountPoint, Crate)
 	Missile.ForcedArmor     = Round.Armor
 	Missile.Effect          = Data.Effect or Class.Effect
 	Missile.NoDamage        = Rack.ProtectMissile or Data.NoDamage
+	Missile.HitDeviate      = Data.HitDeviate
 	Missile.ExhaustPos      = Data.ExhaustPos or Vector()
 	Missile.Bodygroups      = Data.Bodygroups
 	Missile.RackModel       = Rack.MissileModel or Round.RackModel
@@ -746,7 +747,7 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 		-- The missile will be considered destroyed when it gets penetrated.
 		if DmgResult.Penetration > self.ForcedArmor then
 			-- New death mechanic for ASM,AAM,ARM,SAM,ARTY,FFAR
-			if self.EntType == "Anti-Tank Guided Missiles" or self.EntType == "Air-To-Air Missiles" or self.EntType == "Anti-Radiation Missiles" or self.EntType == "Surface-To-Air Missiles" or self.EntType == "Artillery Rockets" or self.EntType == "Folding-Fin Aerial Rockets" then
+			if Missile.HitDeviate then
 				BulletData.Type = "HP"
 				self:SetNW2String("AmmoType", "HP")
 				self.UseGuidance = nil

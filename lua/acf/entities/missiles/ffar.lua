@@ -30,6 +30,7 @@ Missiles.RegisterItem("40mmFFAR", "FFAR", {
 	Fuzes		= { Contact = true, Timed = true },
 	Agility     = 1,
 	ArmDelay	= 0.1,
+	HitDeviate	= true,
 	Round = {
 		Model           = "models/missiles/ffar_40mm.mdl",
 		RackModel       = "models/missiles/ffar_40mm_closed.mdl",
@@ -71,6 +72,7 @@ Missiles.RegisterItem("57mmFFAR", "FFAR", {
 	Fuzes		= { Contact = true, Timed = true },
 	Agility		= 1,
 	ArmDelay	= 0.1,
+	HitDeviate	= true,
 	Round = {
 		Model           = "models/missiles/ffar_70mm.mdl",
 		RackModel       = "models/missiles/ffar_70mm_closed.mdl",
@@ -112,6 +114,7 @@ Missiles.RegisterItem("70mmFFAR", "FFAR", {
 	Fuzes		= { Contact = true, Timed = true },
 	Agility		= 0.05,
 	ArmDelay	= 0.1,
+	HitDeviate	= true,
 	Round = {
 		Model           = "models/missiles/ffar_70mm.mdl",
 		RackModel       = "models/missiles/ffar_70mm_closed.mdl",
@@ -153,6 +156,7 @@ Missiles.RegisterItem("80mmFFAR", "FFAR", {
 	Fuzes		= { Contact = true, Timed = true },
 	Agility		= 0.05,
 	ArmDelay	= 0.1,
+	HitDeviate	= true,
 	Round = {
 		Model           = "models/missiles/ffar_70mm.mdl",
 		RackModel       = "models/missiles/ffar_70mm_closed.mdl",
@@ -194,6 +198,7 @@ Missiles.RegisterItem("Zuni ASR", "FFAR", {
 	Fuzes		= { Contact = true, Timed = true, Optical = true, Radio = true, Altitude = true },
 	Agility		= 0.05,
 	ArmDelay	= 0.1,
+	HitDeviate	= true,
 	Round = {
 		Model           = "models/ghosteh/zuni.mdl",
 		RackModel       = "models/ghosteh/zuni_folded.mdl",

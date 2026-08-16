@@ -33,6 +33,7 @@ Missiles.RegisterItem("AIM-9 AAM", "AAM", {
 	ViewCone	= 30,
 	Agility		= 0.0017,
 	ArmDelay	= 0.2,
+	HitDeviate	= true,	
 	Round = {
 		Model           = "models/missiles/aim9m.mdl",
 		MaxLength       = 289,
@@ -76,6 +77,7 @@ Missiles.RegisterItem("AIM-120 AAM", "AAM", {
 	ViewCone	= 30,
 	Agility		= 0.006,
 	ArmDelay	= 0.2,
+	HitDeviate	= true,
 	Round = {
 		Model           = "models/missiles/aim120c.mdl",
 		MaxLength       = 370,
@@ -119,6 +121,7 @@ Missiles.RegisterItem("AIM-7 AAM", "AAM", {
 	ViewCone    = 20,
 	Agility     = 0.02,
 	ArmDelay    = 0.3,
+	HitDeviate	= true,
 	Round = {
 		Model           = "models/missiles/aim7f.mdl",
 		MaxLength       = 370,
@@ -162,6 +165,7 @@ Missiles.RegisterItem("AIM-54 AAM", "AAM", {
 	ViewCone	= 20,
 	Agility		= 0.02,
 	ArmDelay	= 0.4,
+	HitDeviate	= false,
 	Round = {
 		Model           = "models/missiles/aim54a.mdl",
 		MaxLength       = 400,
