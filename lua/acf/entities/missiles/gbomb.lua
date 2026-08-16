@@ -29,6 +29,7 @@ Missiles.RegisterItem("100kgGBOMB", "GBOMB", {
 	Navigation  = "Chase",
 	Fuzes		= { Contact = true, Optical = true},
 	ArmDelay	= 1,
+	HitDeviate	= false,
 	Round = {
 		Model           = "models/missiles/micro.mdl",
 		MaxLength       = 100,
@@ -68,6 +69,7 @@ Missiles.RegisterItem("250kgGBOMB", "GBOMB", {
 	Navigation  = "Chase",
 	Fuzes		= { Contact = true, Optical = true},
 	ArmDelay	= 1,
+	HitDeviate	= false,
 	Round = {
 		Model           = "models/missiles/fab250.mdl",
 		MaxLength       = 150,
