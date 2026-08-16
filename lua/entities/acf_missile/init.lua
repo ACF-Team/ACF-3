@@ -747,7 +747,7 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 		-- The missile will be considered destroyed when it gets penetrated.
 		if DmgResult.Penetration > self.ForcedArmor then
 			-- New death mechanic for ASM,AAM,ARM,SAM,ARTY,FFAR
-			if Missile.HitDeviate then
+			if self.HitDeviate then
 				BulletData.Type = "HP"
 				self:SetNW2String("AmmoType", "HP")
 				self.UseGuidance = nil
