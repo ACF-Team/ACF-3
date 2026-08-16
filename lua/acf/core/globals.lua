@@ -162,7 +162,7 @@ do -- ACF global vars
 	ACF.DefineSetting("AllowDynamicLinking",       false,    "Dynamic ACF linking has been %s.", ACF.BooleanDataCallback(), true)
 	ACF.DefineSetting("LethalEntityPlayerChecks",  true,     "Lethal entity player checks have been %s.", ACF.BooleanDataCallback(), false)
 	ACF.DefineSetting("ShowFunMenu",               true,     "The Fun Entities menu option has been %s.", ACF.BooleanDataCallback(), true)
-	ACF.DefineSetting("DetachedPhysmassRatio",     false,    "Detached entities affecting mass ratio has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("DetachedPhysmassRatio",     false,    "Detached entities affecting mass ratio has been %s.", ACF.BooleanDataCallback(), true)
 
 	ACF.DefineSetting("WorkshopContent",      true,   "Workshop content downloading has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("WorkshopExtras",       false,  "Extra Workshop content downloading has been %s.", ACF.BooleanDataCallback())
