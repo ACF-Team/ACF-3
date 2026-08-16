@@ -128,35 +128,35 @@ end
 
 -- TARGET  : SetPos
 -- METHODS : Expression 2, Starfall (Entity & Physobj bindings)
--- ON CALL : If target is an ACF entity, allow the call to go through, but disable the entire family.
+-- ON CALL : If target is an ACF entity, allow the call to go through, but disable the entire contraption.
 -- We do it this way to allow user-created building tools to work, while still
 -- providing programmatic enforcement during combat. 
 local function SetPosDetours()
     do
         local Func Func = Detours.Expression2("e:setPos(v)", function(Scope, Args, ...)
-            local CalledOnCalleeOwned = IfEntManipulationOnACFEntity_ThenDisableFamily(Scope.player, Args[1], "e:setPos(v)")
-            if CalledOnCalleeOwned then return Func(Scope, Args, ...) end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Args[1], "e:setPos(v)") then return end
+            return Func(Scope, Args, ...)
         end)
     end
     do
         local Func Func = Detours.Expression2("b:setPos(v)", function(Scope, Args, ...)
             local Ent = E2Lib.isValidBone(Args[1])
-            local CalledOnCalleeOwned = IfEntManipulationOnACFEntity_ThenDisableFamily(Scope.player, Ent, "b:setPos(v)")
-            if CalledOnCalleeOwned then return Func(Scope, Args, ...) end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Ent, "b:setPos(v)") then return end
+            return Func(Scope, Args, ...)
         end)
     end
 
     do
         local Func Func = Detours.Starfall("instance.Types.Entity.Methods.setPos", function(Instance, Ent, ...)
-            local CalledOnCalleeOwned = IfEntManipulationOnACFEntity_ThenDisableFamily(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:setPos(v)")
-            if CalledOnCalleeOwned then return Func(Instance, Ent, ...) end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:setPos(v)") then return end
+            return Func(Instance, Ent, ...)
         end)
     end
 
     do
         local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.setPos", function(Instance, PhysObj, ...)
-            local CalledOnCalleeOwned = IfPhysObjManipulationOnACFEntity_ThenDisableFamily(Instance.player, Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setPos(v)")
-            if CalledOnCalleeOwned then return Func(Instance, PhysObj, ...) end
+            if not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setPos(v)") then return end
+            return Func(Instance, PhysObj, ...)
         end)
     end
 end

@@ -31,6 +31,7 @@ Missiles.RegisterItem("Type 63 RA", "ARTY", {
 	ViewCone	= 180,
 	Agility		= 0.08,
 	ArmDelay	= 0.2,
+	HitDeviate	= false,
 	Round = {
 		Model           = "models/missiles/glatgm/mgm51.mdl",
 		MaxLength       = 80,
@@ -73,6 +74,7 @@ Missiles.RegisterItem("SAKR-10 RA", "ARTY", {
 	Agility		= 0.001,
 	ViewCone	= 45,
 	ArmDelay	= 0.4,
+	HitDeviate	= true,
 	Round = {
 		Model           = "models/missiles/hvar_folded.mdl",
 		RackModel       = "models/missiles/hvar_folded.mdl",
@@ -116,6 +118,7 @@ Missiles.RegisterItem("SS-40 RA", "ARTY", {
 	Agility		= 0.004,
 	ViewCone	= 45,
 	ArmDelay	= 0.6,
+	HitDeviate	= false,
 	Round = {
 		Model           = "models/missiles/hvar_folded.mdl",
 		RackModel       = "models/missiles/hvar_folded.mdl",

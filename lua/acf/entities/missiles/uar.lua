@@ -32,6 +32,7 @@ Missiles.RegisterItem("RS82 ASR", "UAR", {
 	Fuzes		= { Contact = true, Timed = true },
 	Agility     = 1,
 	ArmDelay	= 0.3,
+	HitDeviate	= true,
 	Bodygroups = {
 		warhead = {
 			DataSource = function(Entity)
@@ -87,6 +88,7 @@ Missiles.RegisterItem("HVAR ASR", "UAR", {
 	Fuzes		= { Contact = true, Timed = true },
 	Agility     = 1,
 	ArmDelay	= 0.3,
+	HitDeviate	= true,
 	Round = {
 		Model           = "models/missiles/hvar.mdl",
 		RackModel       = "models/missiles/hvar_folded.mdl",
@@ -131,6 +133,7 @@ Missiles.RegisterItem("SPG-9 ASR", "UAR", {
 	Fuzes		= { Contact = true },
 	Agility     = 1,
 	ArmDelay	= 0, -- :)
+	HitDeviate	= false,
 	Round = {
 		Model           = "models/missiles/rs82.mdl",
 		RackModel       = "models/missiles/rs82.mdl",
@@ -176,6 +179,7 @@ Missiles.RegisterItem("S-24 ASR", "UAR", {
 	SkinIndex	= { HEAT = 0, HE = 1 },
 	Agility     = 1,
 	ArmDelay	= 0.3,
+	HitDeviate	= false,
 	Round = {
 		Model           = "models/missiles/s24.mdl",
 		MaxLength       = 233,
@@ -216,6 +220,7 @@ Missiles.RegisterItem("RW61 ASR", "UAR", {
 	Fuzes		= { Contact = true, Optical = true },
 	Agility		= 1,
 	ArmDelay	= 0.2,
+	HitDeviate	= false,
 	Round = {
 		Model           = "models/missiles/RW61M.mdl",
 		RackModel       = "models/missiles/RW61M.mdl",
