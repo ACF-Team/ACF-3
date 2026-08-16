@@ -32,6 +32,7 @@ Missiles.RegisterItem("WalleyeGBU", "GBU", {
 	ViewCone	= 120,
 	Agility		= 0.04,
 	ArmDelay	= 1,
+	HitDeviate	= false,
 	Round = {
 		Model           = "models/bombs/gbu/agm62.mdl",
 		MaxLength       = 345,
@@ -75,6 +76,7 @@ Missiles.RegisterItem("227kgGBU", "GBU", {
 	ViewCone	= 80,
 	Agility		= 0.015,
 	ArmDelay	= 1,
+	HitDeviate	= false,
 	Bodygroups = {
 		guidance = {
 			DataSource = function(Entity)
@@ -134,6 +136,7 @@ Missiles.RegisterItem("454kgGBU", "GBU", {
 	ViewCone	= 80,
 	Agility		= 0.03,
 	ArmDelay	= 1,
+	HitDeviate	= false,
 	Bodygroups = {
 		guidance = {
 			DataSource = function(Entity)
@@ -193,6 +196,7 @@ Missiles.RegisterItem("909kgGBU", "GBU", {
 	ViewCone	= 80,
 	Agility		= 0.05,
 	ArmDelay	= 3,
+	HitDeviate	= false,
 	Bodygroups = {
 		guidance = {
 			DataSource = function(Entity)

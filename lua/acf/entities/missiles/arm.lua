@@ -34,6 +34,7 @@ Missiles.RegisterItem("AGM-122 ASM", "ARM", {
 	ViewCone	= 20,
 	Agility		= 0.0018,
 	ArmDelay	= 0.2,
+	HitDeviate	= true,
 	Round = {
 		Model           = "models/missiles/aim9.mdl",
 		MaxLength       = 287,
@@ -76,6 +77,7 @@ Missiles.RegisterItem("AGM-45 ASM", "ARM", {
 	ViewCone	= 10,
 	Agility		= 0.012,
 	ArmDelay	= 0.3,
+	HitDeviate	= true,
 	Round = {
 		Model           = "models/missiles/aim120.mdl",
 		MaxLength       = 305,

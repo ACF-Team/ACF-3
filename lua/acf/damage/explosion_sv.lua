@@ -89,6 +89,9 @@ local function getRandomPos(Entity)
 
 	local Model    = Entity:GetModel()
 	local Data     = ModelData.GetModelData(Model) -- Used instead of GetModelMesh, which does a full copy
+
+	if not Data then return Entity:GetPos() end
+
 	local Mesh     = Data.Mesh                     -- Accessing the raw mesh, read-only
 	local Hull     = Mesh[random(1, #Mesh)]        -- Random hull
 	local TriCount = floor(#Hull / 3)              -- Number of triangles in the hull
@@ -316,7 +319,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		end
 
 		do -- Fragment damage
-			local FragHit = floor(Fragments * AreaFraction)
+			local FragHit = math.ceil(Fragments * AreaFraction)
 
 			if FragHit > 0 then
 				local Loss      = BaseFragV * Distance / Radius

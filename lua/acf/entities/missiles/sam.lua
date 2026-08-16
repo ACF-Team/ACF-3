@@ -32,6 +32,7 @@ Missiles.RegisterItem("FIM-92 SAM", "SAM", {
 	ViewCone	= 30,
 	Agility		= 0.0002,
 	ArmDelay	= 0.2,
+	HitDeviate	= true,
 	Round = {
 		Model           = "models/missiles/fim_92.mdl",
 		RackModel       = "models/missiles/fim_92_folded.mdl",
@@ -74,6 +75,7 @@ Missiles.RegisterItem("Strela-1 SAM", "SAM", {
 	ViewCone	= 40,
 	Agility		= 0.0006,
 	ArmDelay	= 0.2,
+	HitDeviate	= true,
 	Round = {
 		Model           = "models/missiles/9m31.mdl",
 		RackModel       = "models/missiles/9m31f.mdl",
