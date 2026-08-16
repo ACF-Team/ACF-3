@@ -33,7 +33,7 @@ Missiles.RegisterItem("AIM-9 AAM", "AAM", {
 	ViewCone	= 30,
 	Agility		= 0.0017,
 	ArmDelay	= 0.2,
-	HitDeviate	= true,	
+	HitDeviate	= true,
 	Round = {
 		Model           = "models/missiles/aim9m.mdl",
 		MaxLength       = 289,
