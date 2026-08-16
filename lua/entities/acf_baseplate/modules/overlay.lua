@@ -12,6 +12,9 @@ function ENT:ACF_UpdateOverlayState(State)
 		State:AddLabel("Alt + E Entry Disabled")
 	end
 
+	State:AddKeyValue("Network Optimization", self:ACF_GetUserVar("NetworkOptimization") and "Enabled" or "Disabled")
+	State:AddKeyValue("Unfreeze On Entry", self:ACF_GetUserVar("UnfreezeOnEntry") and "Enabled" or "Disabled")
+
 	if BaseplateType.ID == "Recreational" then
 		State:AddKeyValue("Recreational Explosions", self:ACF_GetUserVar("ExplodeOnCollisions") and "Enabled" or "Disabled")
 	end

@@ -32,6 +32,7 @@ Missiles.RegisterItem("AT-3 ASM", "ATGM", {
 	SkinIndex	= { HEAT = 0, HE = 1 },
 	Agility		= 0.0005,
 	ArmDelay	= 0.1,
+	HitDeviate	= true,
 	Round = {
 		Model           = "models/missiles/at3.mdl",
 		MaxLength       = 86,
@@ -75,6 +76,7 @@ Missiles.RegisterItem("BGM-71E ASM", "ATGM", {
 	Fuzes		= { Contact = true },
 	Agility		= 0.00024,
 	ArmDelay	= 0.1,
+	HitDeviate	= true,
 	Round = {
 		Model           = "models/missiles/bgm_71e.mdl",
 		RackModel       = "models/missiles/bgm_71e_round.mdl",
@@ -121,6 +123,7 @@ Missiles.RegisterItem("AGM-114 ASM", "ATGM", {
 	SeekCone	= 10,
 	Agility		= 0.0008,
 	ArmDelay	= 0.5,
+	HitDeviate	= true,
 	Bodygroups = {
 		guidance = {
 			DataSource = function(Entity)
@@ -180,6 +183,7 @@ Missiles.RegisterItem("Ataka ASM", "ATGM", {
 	ViewCone	= 45,
 	Agility		= 0.00072,
 	ArmDelay	= 0.1,
+	HitDeviate	= true,
 	NoDamage    = true,
 	Round = {
 		Model           = "models/missiles/9m120.mdl",
@@ -226,6 +230,7 @@ Missiles.RegisterItem("9M133 ASM", "ATGM", {
 	ViewCone	= 20,
 	Agility		= 0.0004,
 	ArmDelay	= 0.1,
+	HitDeviate	= true,
 	Bodygroups = {
 		fins = {
 			DataSource = function()
@@ -286,6 +291,7 @@ Missiles.RegisterItem("AT-2 ASM", "ATGM", {
 	ViewCone	= 90,
 	Agility		= 0.00035,
 	ArmDelay	= 0.1,
+	HitDeviate	= true,
 	Round = {
 		Model           = "models/missiles/at2.mdl",
 		MaxLength       = 116,

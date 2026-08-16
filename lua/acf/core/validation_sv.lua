@@ -76,6 +76,9 @@ function ACF.IsLegal(Entity)
 end
 
 function ACF.DisableEntity(Entity, Reason, Message, Timeout)
+	local DisableFn = Entity.Disable
+	if not DisableFn then return end
+
 	local Owner = Entity:CPPIGetOwner()
 
 	local Disabled = Entity.Disabled
@@ -86,7 +89,7 @@ function ACF.DisableEntity(Entity, Reason, Message, Timeout)
 			Message = Message
 		}
 
-		Entity:Disable() -- Let the entity know it's disabled
+		DisableFn(Entity) -- Let the entity know it's disabled
 		if Entity.UpdateOverlay then Entity:UpdateOverlay(true) end -- Update overlay if it has one (Passes true to update overlay instantly)
 		if IsValid(Owner) and tobool(Owner:GetInfo("acf_legalhints")) then -- Notify the owner
 			if Reason == "Not Solid" then -- Thank you garry, very cool

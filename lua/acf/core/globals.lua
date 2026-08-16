@@ -163,11 +163,10 @@ do -- ACF global vars
 
 	ACF.DefineSetting("AllowFunEnts",              true,     "Fun Entities have been %s.", ACF.BooleanDataCallback(), true)
 	ACF.DefineSetting("AllowArbitraryParents",     false,    "Arbitrary parenting has been %s.", ACF.BooleanDataCallback(), true)
-	ACF.DefineSetting("AllowSpecialEngines",       true,     "Special engines have been %s.", ACF.BooleanDataCallback(), true)
 	ACF.DefineSetting("AllowDynamicLinking",       false,    "Dynamic ACF linking has been %s.", ACF.BooleanDataCallback(), true)
 	ACF.DefineSetting("LethalEntityPlayerChecks",  true,     "Lethal entity player checks have been %s.", ACF.BooleanDataCallback(), false)
 	ACF.DefineSetting("ShowFunMenu",               true,     "The Fun Entities menu option has been %s.", ACF.BooleanDataCallback(), true)
-	ACF.DefineSetting("DetachedPhysmassRatio",     false,    "Detached entities affecting mass ratio has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("DetachedPhysmassRatio",     false,    "Detached entities affecting mass ratio has been %s.", ACF.BooleanDataCallback(), true)
 
 	ACF.DefineSetting("WorkshopContent",      true,   "Workshop content downloading has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("WorkshopExtras",       false,  "Extra Workshop content downloading has been %s.", ACF.BooleanDataCallback())
@@ -249,6 +248,13 @@ do -- ACF global vars
 		gmod_wire_expression2 = true,
 		gmod_wire_hologram    = true,
 		gmod_wire_customprop  = true,
+		gmod_wire_pod         = true,
+		gmod_wire_cameracontroller = true,
+		gmod_wire_egp_hud     = true,
+		gmod_wire_value       = true,
+		gmod_wire_gate        = true,
+		gmod_wire_latch       = true,
+		gmod_wire_hydraulic   = true,
 
 		phys_bone_follower    = true,
 		prop_dynamic          = true,

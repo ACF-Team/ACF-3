@@ -559,9 +559,7 @@ function ENT:UpdateOutputs(SelfTbl)
 end
 
 function ENT:ACF_UpdateOverlayState(State)
-	if not ACF.AllowSpecialEngines and self.IsSpecial then
-		State:AddError("Disabled: Special engines are disabled.")
-	elseif self.Active then
+	if self.Active then
 		State:AddSuccess("Active")
 	else
 		State:AddWarning("Idle")
@@ -751,8 +749,6 @@ function ENT:CalcRPM(SelfTbl)
 	-- Reusing these entity table pointers helps us cut down on __index calls
 	-- This helps to massively improve performance throughout the entire drivetrain
 	SelfTbl = SelfTbl or ENTITY.GetTable(self)
-
-	if not ACF.AllowSpecialEngines and SelfTbl.IsSpecial then return end
 
 	local ClockTime  = Clock.CurTime
 	local DeltaTime  = ClockTime - SelfTbl.LastThink
