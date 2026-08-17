@@ -785,12 +785,19 @@ do -- Metamethods --------------------------------
 		end
 
 		-- Logging contraption wide bullet filter
+		local BulletFilterClasses = {
+			acf_gun = true,
+			acf_turret = true,
+		}
+
 		hook.Add("cfw.contraption.created", "ACF_CFW_BulletFilter", function(Contraption)
 			Contraption.BulletFilter = {}
+			Contraption.BarrelFilter = {}
 		end)
 
 		hook.Add("cfw.contraption.entityAdded", "ACF_CFW_BulletFilter", function(Contraption, Entity)
-			table.insert(Contraption.BulletFilter, Entity)
+			if BulletFilterClasses[Entity:GetClass()] then table.insert(Contraption.BulletFilter, Entity) end
+			table.insert(Contraption.BarrelFilter, Entity)
 		end)
 	end -----------------------------------------
 
@@ -917,7 +924,7 @@ do -- Metamethods --------------------------------
 			BulletData.Filter 			= Contraption and Contraption.BulletFilter or { self }
 			BulletData.Owner  			= SelfTbl.CurrentUser
 			BulletData.Gun	   			= self -- because other guns share this table
-			BulletData.Pos, IsBlocked   = self:BarrelCheck(BulletData.Filter)
+			BulletData.Pos, IsBlocked   = self:BarrelCheck(Contraption and Contraption.BarrelFilter or { self })
 			BulletData.Flight 			= Dir * BulletData.MuzzleVel * ACF.MeterToInch + Velocity
 			BulletData.Fuze   			= SelfTbl.Fuze -- Must be set when firing as the table is shared
 
