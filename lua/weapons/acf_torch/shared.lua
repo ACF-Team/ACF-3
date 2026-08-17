@@ -348,6 +348,8 @@ function SWEP:SecondaryAttack()
 
 		if not ConvexHit then return end
 
+		local OldHealth = Entity.ACF.Health
+
 		DmgResult:SetThickness(ConvexHit.GeoThick * ConvexHit.ArmorType.ChemicalMul)
 
 		DmgInfo:SetAttacker(Owner)
@@ -358,6 +360,10 @@ function SWEP:SecondaryAttack()
 		DmgInfo:SetConvexHits({ { ConvexID = ConvexHit.ConvexID, Volume = ConvexHit.GeoThick * 0.1 * DmgResult:GetArea() / ACF.InchToCmCu } })
 
 		Damage.doPropDamage(Entity, DmgResult, DmgInfo)
+
+		if Entity.ACF_OnDamaged then
+			Entity:ACF_OnDamaged(_, OldHealth, _, Entity.ACF.Health)
+		end
 
 		local EffectTable = {
 			Magnitude = 1,
