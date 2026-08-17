@@ -297,9 +297,14 @@ function SWEP:PrimaryAttack()
 			local ConvexHit = ACF.GetConvexHit(Ent, HitPos, Dir, true)
 			if not ConvexHit then continue end
 
+			local OldHealth = Ent.ACF.Health
 			DmgInfo:SetConvexHits({ { ConvexID = ConvexHit.ConvexID, Volume = -(ConvexHit.GeoThick * 0.1 * DmgResult:GetArea() / ACF.InchToCmCu) } })
 			Damage.doPropDamage(Ent, DmgResult, DmgInfo)
 			Healed = true
+
+			if Entity.ACF_OnRepaired then
+				Entity:ACF_OnRepaired(_, OldHealth, _, Ent.ACF.Health)
+			end
 		end
 
 		if not Healed then return end
