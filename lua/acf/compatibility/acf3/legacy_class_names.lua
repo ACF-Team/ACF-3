@@ -1,3 +1,6 @@
+-- These are new class names -> pre-autoregister + class rework names.
+-- They exist for some parts of user-land (mostly Starfall/E2 bindings, but also some AIO HUD elements)
+
 local ACF = ACF
 
 local LegacyClassNames = {
@@ -381,6 +384,12 @@ local LegacyClassNames = {
     ["ACF.Missiles.UnguidedRocket.SPG-9"]   = "SPG-9 ASR",
 }
 
-function ACF.GetLegacyClassName(FQN)
-    return LegacyClassNames[FQN] or ACF.Classes.FullyQualifiedNameToUnqualifiedName(FQN)
+-- This will return one of the following:
+-- 1. If the FQN was previously available as a different type in legacy, then the previous name is given.
+-- 2. If the FQN is new before the class rework, it passes it to FullyQualifiedNameToUnqualifiedName, which
+--    will return a legacy-style class name.
+-- This should only be used in places like API functions for user code (starfall, E2) where we don't want
+-- to break really old E2's. It can also be used (conservatively) in some HUD functions like AIO.
+function ACF.GetLegacyStyleClassName(FQN)
+    return LegacyClassNames[FQN] or ACF.Classes.FullyQualifiedNameToUnqualifiedName(FQN) or ""
 end

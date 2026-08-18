@@ -1,11 +1,3 @@
--- This entire file needs to change a bit for the class rework,
--- we likely will have to break some user expectations so those should be
--- done at the end and documented properly
--- Breaking changes so far:
---[[
-	- Ammo types now return their fully qualified names and not their previous short identifiers. Ie. APHE -> ACF.Ammunition.APHE
-]]
-
 -- [ To Do ] --
 
 -- #general
@@ -274,7 +266,7 @@ function acf_library.listAllAmmoTypes()
 	local Result = {}
 
 	for K, V in ipairs(List) do
-		Result[K] = V
+		Result[K] = ACF.GetLegacyStyleClassName(V)
 	end
 
 	return Result
@@ -282,12 +274,12 @@ end
 
 -- The class/item two-tier grouping no longer exists; the "class" list variants now return the same
 -- flat subtype list as their non-class siblings so existing chips keep working. IDs are now FQNs.
-local function ListSubtypeFQNs(BaseFQN)
+local function ListSubtypeUnqualifiedNames(BaseFQN)
 	local List   = Classes.GetSubtypeFQNs(BaseFQN)
 	local Result = {}
 
 	for K, V in ipairs(List) do
-		Result[K] = V
+		Result[K] = ACF.GetLegacyStyleClassName(V)
 	end
 
 	return Result
@@ -297,49 +289,49 @@ end
 -- @shared
 -- @return table The list of engine classes
 function acf_library.listAllEngineClasses()
-	return ListSubtypeFQNs("ACF.Engines.BaseEngine")
+	return ListSubtypeUnqualifiedNames("ACF.Engines.BaseEngine")
 end
 
 --- Returns a list of every registered ACF engine
 -- @shared
 -- @return table The list of engines
 function acf_library.listAllEngines()
-	return ListSubtypeFQNs("ACF.Engines.BaseEngine")
+	return ListSubtypeUnqualifiedNames("ACF.Engines.BaseEngine")
 end
 
 --- Returns a list of every registered ACF fuel type
 -- @shared
 -- @return table The list of fuel types
 function acf_library.listAllFuelTypes()
-	return ListSubtypeFQNs("ACF.FuelTypes.FuelType")
+	return ListSubtypeUnqualifiedNames("ACF.FuelTypes.FuelType")
 end
 
 --- Returns a list of every registered ACF gearbox class
 -- @shared
 -- @return table The list of gearbox classes
 function acf_library.listAllGearboxClasses()
-	return ListSubtypeFQNs("ACF.Gearboxes.BaseGearbox")
+	return ListSubtypeUnqualifiedNames("ACF.Gearboxes.BaseGearbox")
 end
 
 --- Returns a list of every registered ACF gearbox
 -- @shared
 -- @return table The list of gearboxes
 function acf_library.listAllGearboxes()
-	return ListSubtypeFQNs("ACF.Gearboxes.BaseGearbox")
+	return ListSubtypeUnqualifiedNames("ACF.Gearboxes.BaseGearbox")
 end
 
 --- Returns a list of every registered ACF weapon class
 -- @shared
 -- @return table The list of weapon classes
 function acf_library.listAllWeaponClasses()
-	return ListSubtypeFQNs("ACF.Guns.BaseGun")
+	return ListSubtypeUnqualifiedNames("ACF.Guns.BaseGun")
 end
 
 --- Returns a list of every registered ACF weapon
 -- @shared
 -- @return table The list of weapons
 function acf_library.listAllWeapons()
-	return ListSubtypeFQNs("ACF.Guns.BaseGun")
+	return ListSubtypeUnqualifiedNames("ACF.Guns.BaseGun")
 end
 
 --- Returns the specifications of an ACF ammo type
@@ -1966,7 +1958,7 @@ if SERVER then
 
 		local BulletData = This.BulletData
 
-		return BulletData and BulletData.WeaponType or ""
+		return ACF.GetLegacyStyleClassName(BulletData and BulletData.WeaponType or "")
 	end
 
 	--- Returns the BulletData table of the ammo in an ACF ammo crate
@@ -2036,7 +2028,7 @@ if SERVER then
 
 		local BulletData = This.BulletData
 
-		return BulletData and BulletData.AmmoType or ""
+		return ACF.GetLegacyStyleClassName(BulletData and BulletData.AmmoType or "")
 	end
 
 	--- Returns the caliber of an ammo or gun

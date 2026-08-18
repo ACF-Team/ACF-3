@@ -1045,7 +1045,7 @@ e2function string entity:acfRoundType()
 
 	local BulletData = this.BulletData
 
-	return BulletData and BulletData.WeaponType or ""
+	return ACF.GetLegacyStyleClassName(BulletData and BulletData.WeaponType or "")
 end
 
 -- Returns the type of ammo in a crate or gun
@@ -1055,7 +1055,7 @@ e2function string entity:acfAmmoType()
 
 	local BulletData = this.BulletData
 
-	return BulletData and BulletData.AmmoType or ""
+	return ACF.GetLegacyStyleClassName(BulletData and BulletData.AmmoType or "")
 end
 
 -- Returns the caliber of an ammo
