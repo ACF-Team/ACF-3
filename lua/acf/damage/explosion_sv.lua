@@ -406,7 +406,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		end
 
 		do -- Fragment damage
-			local FragHit = math.ceil(Fragments * AreaFraction)
+			local FragHit = math.ceil(Fragments * SolidAngle)
 
 			if FragHit > 0 then
 				local FragDmg = Objects.DamageResult(FragArea, FragPen, FragThickness, HitAngle, nil, Fragments)
