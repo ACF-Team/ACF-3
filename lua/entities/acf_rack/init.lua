@@ -617,7 +617,7 @@ do -- Entity Overlay ----------------------------
 		local Delay  = math.Round(self.FireDelay, 2)
 		local Reload = math.Round(self.ReloadTime, 2)
 		local Bullet = self.BulletData
-		local Ammo   = (Bullet.WeaponType and (Bullet.WeaponType .. " ") or "") .. (Bullet.AmmoType or "Empty")
+		local Ammo   = (Bullet.WeaponType and (ACF.GetLegacyStyleClassName(Bullet.WeaponType) .. " ") or "") .. (Bullet.AmmoType and ACF.GetLegacyStyleClassName(Bullet.AmmoType) or "Empty")
 		local Status = self.State
 
 		local Error = false

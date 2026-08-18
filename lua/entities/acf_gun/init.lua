@@ -1170,7 +1170,7 @@ do -- Metamethods --------------------------------
 	do -- Overlay -------------------------------
 		function ENT:ACF_UpdateOverlayState(State)
 			local SelfTbl = ENTITY.GetTable(self)
-			local AmmoType  = SelfTbl.BulletData.AmmoType .. (SelfTbl.BulletData.Tracer ~= 0 and "-T" or "")
+			local AmmoType  = ACF.GetLegacyStyleClassName(SelfTbl.BulletData.AmmoType) .. (SelfTbl.BulletData.Tracer ~= 0 and "-T" or "")
 			local Firerate  = math.floor(60 / SelfTbl.ReloadTime)
 			local CrateAmmo = 0
 			if next(SelfTbl.OverlayErrors) then
