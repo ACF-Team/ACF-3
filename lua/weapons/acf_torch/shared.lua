@@ -361,8 +361,8 @@ function SWEP:SecondaryAttack()
 
 		Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 
-		if Entity.ACF_OnDamaged then
-			Entity:ACF_OnDamaged(_, OldHealth, _, Entity.ACF.Health)
+		if Entity.ACF_OnDamage then
+			Entity:ACF_OnDamage(DmgResult, DmgInfo)
 		end
 
 		local EffectTable = {

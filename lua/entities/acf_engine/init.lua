@@ -590,8 +590,11 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	if self.ACF.Health <= 0 then TorqueMult = 0 end -- Destroyed engines produce no power
 
 	self.PeakTorque = self.PeakTorqueHeld * TorqueMult
-
 	return HitRes
+end
+
+function ENT:ACF_OnRepaired()
+	self.PeakTorque = self.PeakTorqueHeld
 end
 
 function ENT:UpdateSound(SelfTbl)
@@ -731,6 +734,7 @@ function ENT:Think()
 
 	if not SelfTbl.Active then return end
 	if SelfTbl.Disabled then return end
+	if SelfTbl.ACF.Health <= 0 then return end
 
 	self:CalcRPM(SelfTbl)
 
