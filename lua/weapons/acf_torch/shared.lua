@@ -348,8 +348,6 @@ function SWEP:SecondaryAttack()
 
 		if not ConvexHit then return end
 
-		local OldHealth = Entity.ACF.Health
-
 		DmgResult:SetThickness(ConvexHit.GeoThick * ConvexHit.ArmorType.ChemicalMul)
 
 		DmgInfo:SetAttacker(Owner)
