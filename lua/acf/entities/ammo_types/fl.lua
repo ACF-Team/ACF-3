@@ -1,9 +1,7 @@
 local ACF   	= ACF
 local Classes   = ACF.Classes
 
-Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function()
-	local BASE = BASE
-
+Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function(CLASS, BASE)
 	CLASS.Name		     = "Flechette"
 	CLASS.SpawnIcon       = "acf/icons/shell_fl.png"
 	CLASS.Bodygroup       = 10 -- CANISTER bodygroup index for crate/menu

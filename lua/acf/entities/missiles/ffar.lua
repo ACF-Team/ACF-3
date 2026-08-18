@@ -1,5 +1,5 @@
 local Classes = ACF.Classes
-Classes.DefineClass("ACF.Missiles.FoldingFinRocket", "ACF.Missiles.BaseMissile", function()
+Classes.DefineClass("ACF.Missiles.FoldingFinRocket", "ACF.Missiles.BaseMissile", function(CLASS)
 	CLASS.Name			= "Folding-Fin Aerial Rockets"
 	CLASS.ID			= "FFAR"
 	CLASS.Description	= "Small rockets which fit in tubes or pods. Rapid-firing and versatile."
@@ -14,7 +14,7 @@ Classes.DefineClass("ACF.Missiles.FoldingFinRocket", "ACF.Missiles.BaseMissile",
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.FoldingFinRocket.40mm", "ACF.Missiles.FoldingFinRocket", function()
+Classes.DefineClass("ACF.Missiles.FoldingFinRocket.40mm", "ACF.Missiles.FoldingFinRocket", function(CLASS)
 	CLASS.Name			= "40mm Pod Rocket"
 	CLASS.Description	= "A tiny, unguided rocket. Useful for anti-infantry, smoke and suppression. Folding fins allow the rocket to be stored in pods, which defend them from damage."
 	CLASS.Model			= "models/missiles/ffar_40mm.mdl"
@@ -55,7 +55,7 @@ Classes.DefineClass("ACF.Missiles.FoldingFinRocket.40mm", "ACF.Missiles.FoldingF
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.FoldingFinRocket.57mm", "ACF.Missiles.FoldingFinRocket", function()
+Classes.DefineClass("ACF.Missiles.FoldingFinRocket.57mm", "ACF.Missiles.FoldingFinRocket", function(CLASS)
 	CLASS.Name			= "57mm Pod Rocket"
 	CLASS.Description	= "A small, spammy rocket with light anti-armor capabilities. Works well on technicals."
 	CLASS.Model			= "models/missiles/ffar_40mm.mdl"
@@ -96,7 +96,7 @@ Classes.DefineClass("ACF.Missiles.FoldingFinRocket.57mm", "ACF.Missiles.FoldingF
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.FoldingFinRocket.70mm", "ACF.Missiles.FoldingFinRocket", function()
+Classes.DefineClass("ACF.Missiles.FoldingFinRocket.70mm", "ACF.Missiles.FoldingFinRocket", function(CLASS)
 	CLASS.Name			= "70mm Pod Rocket"
 	CLASS.Description	= "A small, unguided rocket. Useful against light vehicles and infantry. Folding fins allow the rocket to be stored in pods, which defend them from damage."
 	CLASS.Model			= "models/missiles/ffar_70mm.mdl"
@@ -137,7 +137,7 @@ Classes.DefineClass("ACF.Missiles.FoldingFinRocket.70mm", "ACF.Missiles.FoldingF
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.FoldingFinRocket.80mm", "ACF.Missiles.FoldingFinRocket", function()
+Classes.DefineClass("ACF.Missiles.FoldingFinRocket.80mm", "ACF.Missiles.FoldingFinRocket", function(CLASS)
 	CLASS.Name			= "80mm Rocket Pod"
 	CLASS.Description	= "A large aerial rocket designed for use against ground targets. Good HEAT performance."
 	CLASS.Model			= "models/missiles/ffar_70mm.mdl"
@@ -178,7 +178,7 @@ Classes.DefineClass("ACF.Missiles.FoldingFinRocket.80mm", "ACF.Missiles.FoldingF
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.FoldingFinRocket.Zuni", "ACF.Missiles.FoldingFinRocket", function()
+Classes.DefineClass("ACF.Missiles.FoldingFinRocket.Zuni", "ACF.Missiles.FoldingFinRocket", function(CLASS)
 	CLASS.Name			= "127mm Pod Rocket"
 	CLASS.Description	= "A heavy 5in air to surface unguided rocket, able to provide heavy suppressive fire in a single pass."
 	CLASS.Model			= "models/ghosteh/zuni.mdl"

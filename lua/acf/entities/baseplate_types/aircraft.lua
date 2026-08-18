@@ -1,4 +1,4 @@
-ACF.Classes.DefineClass("ACF.Baseplates.Aircraft", "ACF.Baseplates.BaseplateType", function()
+ACF.Classes.DefineClass("ACF.Baseplates.Aircraft", "ACF.Baseplates.BaseplateType", function(CLASS, BASE)
 	CLASS.Name        = "Aircraft"
 	CLASS.Icon        = "icon16/weather_clouds.png"
 	CLASS.Description = "A baseplate designed for aircraft."

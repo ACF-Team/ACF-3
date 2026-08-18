@@ -1,5 +1,5 @@
 local Classes = ACF.Classes
-Classes.DefineClass("ACF.Missiles.Artillery", "ACF.Missiles.BaseMissile", function()
+Classes.DefineClass("ACF.Missiles.Artillery", "ACF.Missiles.BaseMissile", function(CLASS)
 	CLASS.Name			= "Artillery Rockets"
 	CLASS.ID 			= "ARTY"
 	CLASS.Description	= "Artillery rockets provide massive HE delivery over a broad area, with arcing ballistic trajectories and limited guidance."
@@ -14,7 +14,7 @@ Classes.DefineClass("ACF.Missiles.Artillery", "ACF.Missiles.BaseMissile", functi
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.Artillery.Type63", "ACF.Missiles.Artillery", function()
+Classes.DefineClass("ACF.Missiles.Artillery.Type63", "ACF.Missiles.Artillery", function(CLASS)
 	CLASS.Name			= "Type 63 Rocket"
 	CLASS.Description	= "A common artillery rocket in the third world, able to be launched from a variety of platforms with a painful whallop and a very arced trajectory."
 	CLASS.Model			= "models/missiles/glatgm/mgm51.mdl"
@@ -56,7 +56,7 @@ Classes.DefineClass("ACF.Missiles.Artillery.Type63", "ACF.Missiles.Artillery", f
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.Artillery.SAKR-10", "ACF.Missiles.Artillery", function()
+Classes.DefineClass("ACF.Missiles.Artillery.SAKR-10", "ACF.Missiles.Artillery", function(CLASS)
 	CLASS.Name			= "SAKR-10 Rocket"
 	CLASS.Description	= "A short-range but formidable artillery rocket, based upon the Grad. Well suited to the backs of trucks."
 	CLASS.Model			= "models/missiles/hvar_folded.mdl"
@@ -99,7 +99,7 @@ Classes.DefineClass("ACF.Missiles.Artillery.SAKR-10", "ACF.Missiles.Artillery", 
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.Artillery.SS-40", "ACF.Missiles.Artillery", function()
+Classes.DefineClass("ACF.Missiles.Artillery.SS-40", "ACF.Missiles.Artillery", function(CLASS)
 	CLASS.Name			= "SS-40 Rocket"
 	CLASS.Description	= "A large, heavy, guided artillery rocket for taking out stationary or dug-in targets. Slow to load, slow to fire, slow to guide, and slow to arrive."
 	CLASS.Model			= "models/missiles/hvar_folded.mdl"

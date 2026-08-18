@@ -1,4 +1,4 @@
-ACF.Classes.DefineClass("ACF.FuelTypes.Diesel", "ACF.FuelTypes.FuelType", function()
+ACF.Classes.DefineClass("ACF.FuelTypes.Diesel", "ACF.FuelTypes.FuelType", function(CLASS)
     CLASS.ID          = "Diesel"
     CLASS.Name        = "Diesel Fuel"
     CLASS.Density     = 0.745

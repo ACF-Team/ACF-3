@@ -1,5 +1,5 @@
 local Classes = ACF.Classes
-Classes.DefineClass("ACF.Missiles.GuidedBomb", "ACF.Missiles.BaseMissile", function()
+Classes.DefineClass("ACF.Missiles.GuidedBomb", "ACF.Missiles.BaseMissile", function(CLASS)
 	CLASS.Name			= "Guided Bomb Units"
 	CLASS.ID			= "GBU"
 	CLASS.Description	= "Similar to a regular bomb, but able to be guided in flight to a vector coordinate. Most useful versus hard, unmoving targets."
@@ -14,7 +14,7 @@ Classes.DefineClass("ACF.Missiles.GuidedBomb", "ACF.Missiles.BaseMissile", funct
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.GuidedBomb.Walleye", "ACF.Missiles.GuidedBomb", function()
+Classes.DefineClass("ACF.Missiles.GuidedBomb.Walleye", "ACF.Missiles.GuidedBomb", function(CLASS)
 	CLASS.Name			= "AGM-62 Walleye"
 	CLASS.Description	= "An early TV guided bomb, used over Vietnam by American strike aircraft."
 	CLASS.Model			= "models/bombs/gbu/agm62.mdl"
@@ -56,7 +56,7 @@ Classes.DefineClass("ACF.Missiles.GuidedBomb.Walleye", "ACF.Missiles.GuidedBomb"
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.GuidedBomb.227kg", "ACF.Missiles.GuidedBomb", function()
+Classes.DefineClass("ACF.Missiles.GuidedBomb.227kg", "ACF.Missiles.GuidedBomb", function(CLASS)
 	CLASS.Name			= "227kg GBU-12 Paveway II"
 	CLASS.Description	= "Based on the Mk 82 500-pound general-purpose bomb, but with the addition of a nose-mounted laser seeker and fins for guidance."
 	CLASS.Model			= "models/bombs/gbu/gbu12.mdl"
@@ -116,7 +116,7 @@ Classes.DefineClass("ACF.Missiles.GuidedBomb.227kg", "ACF.Missiles.GuidedBomb", 
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.GuidedBomb.454kg", "ACF.Missiles.GuidedBomb", function()
+Classes.DefineClass("ACF.Missiles.GuidedBomb.454kg", "ACF.Missiles.GuidedBomb", function(CLASS)
 	CLASS.Name			= "454kg GBU-16 Paveway II"
 	CLASS.Description	= "Based on the Mk 83 general-purpose bomb, but with laser seeker and wings for guidance."
 	CLASS.Model			= "models/bombs/gbu/gbu16.mdl"
@@ -174,7 +174,7 @@ Classes.DefineClass("ACF.Missiles.GuidedBomb.454kg", "ACF.Missiles.GuidedBomb", 
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.GuidedBomb.909kg", "ACF.Missiles.GuidedBomb", function()
+Classes.DefineClass("ACF.Missiles.GuidedBomb.909kg", "ACF.Missiles.GuidedBomb", function(CLASS)
 	CLASS.Name			= "909kg GBU-10 Paveway II"
 	CLASS.Description	= "Based on the Mk 84 general-purpose bomb, but with laser seeker and wings for guidance."
 	CLASS.Model			= "models/bombs/gbu/gbu10.mdl"

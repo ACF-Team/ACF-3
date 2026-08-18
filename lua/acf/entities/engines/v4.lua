@@ -1,11 +1,11 @@
 local ACF     = ACF
 local Classes = ACF.Classes
-Classes.DefineClass("ACF.Engines.V4", "ACF.Engines.BaseEngine", function()
+Classes.DefineClass("ACF.Engines.V4", "ACF.Engines.BaseEngine", function(CLASS)
 	CLASS.Name = "V4 Engine"
 end)
 
 do -- Diesel Engines
-	Classes.DefineClass("ACF.Engines.1.9L-V4", "ACF.Engines.V4", function()
+	Classes.DefineClass("ACF.Engines.1.9L-V4", "ACF.Engines.V4", function(CLASS)
 		CLASS.Name		 = "1.9L V4 Diesel"
 		CLASS.Description	 = "#acf.descs.engines.v4.1_9"
 		CLASS.Model		 = "models/engines/v4s.mdl"
@@ -24,7 +24,7 @@ do -- Diesel Engines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.3.3L-V4", "ACF.Engines.V4", function()
+	Classes.DefineClass("ACF.Engines.3.3L-V4", "ACF.Engines.V4", function(CLASS)
 		CLASS.Name		 = "3.3L V4 Diesel"
 		CLASS.Description	 = "#acf.descs.engines.v4.3_3"
 		CLASS.Model		 = "models/engines/v4m.mdl"

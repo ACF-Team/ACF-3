@@ -1,8 +1,7 @@
 local ACF       = ACF
 local Sounds    = ACF.Utilities.Sounds
 local Classes 	= ACF.Classes
-Classes.DefineClass("ACF.Missiles.Guidance.WireMCLOS", "ACF.Missiles.Guidance.RadioMCLOS", function()
-	local BASE = BASE
+Classes.DefineClass("ACF.Missiles.Guidance.WireMCLOS", "ACF.Missiles.Guidance.RadioMCLOS", function(CLASS, BASE)
 	CLASS.Name = "Wire (MCLOS)"
 
 	function CLASS:Configure(Missile)

@@ -1,7 +1,7 @@
 local ACF   	= ACF
 local Classes   = ACF.Classes
 
-Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function()
+Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLASS)
 	CLASS.Name		 = "Armor Piercing"
 	CLASS.SpawnIcon   = "acf/icons/shell_ap.png"
 	CLASS.Description = "#acf.descs.ammo.ap"

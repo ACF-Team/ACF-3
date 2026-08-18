@@ -1,7 +1,7 @@
 local ACF        = ACF
 local Classes   = ACF.Classes
 
-Classes.DefineClass("ACF.Components.GuidanceComputer", "ACF.Components.BaseComponent", function()
+Classes.DefineClass("ACF.Components.GuidanceComputer", "ACF.Components.BaseComponent", function(CLASS)
 	CLASS.Name   = "Guidance Computer"
 	CLASS.Entity = "acf_computer"
 	CLASS.LimitConVar = {
@@ -73,7 +73,7 @@ end
 do -- Joystick
 	local MenuText = "Joystick bounds : +-%s degrees\nJoystick speed : %s degrees/s\nMass : %s kg"
 
-	Classes.DefineClass("ACF.Components.Joystick", "ACF.Components.GuidanceComputer", function()
+	Classes.DefineClass("ACF.Components.Joystick", "ACF.Components.GuidanceComputer", function(CLASS)
 		CLASS.Name        = "Joystick"
 		CLASS.Description = "A small joystick, used to manually guide anti-tank missiles and munitions."
 		CLASS.Model       = "models/weapons/w_slam.mdl"
@@ -279,7 +279,7 @@ do -- Optical guidance computer
 		end
 	end)
 
-	Classes.DefineClass("ACF.Components.OpticalGuidanceComputer", "ACF.Components.GuidanceComputer", function()
+	Classes.DefineClass("ACF.Components.OpticalGuidanceComputer", "ACF.Components.GuidanceComputer", function(CLASS)
 		CLASS.Name        = "Optical Guidance Computer"
 		CLASS.Description = "Fully analog guidance computer. Unlike the laser guidance computer, it takes a few seconds for it to aim and focus properly."
 		CLASS.Model       = "models/props_lab/monitor01b.mdl"
@@ -481,7 +481,7 @@ do -- Laser guidance computer
 	local LaserText = "Lasing time : %s seconds\nCooldown : %s seconds"
 	local Clock     = ACF.Utilities.Clock
 
-	Classes.DefineClass("ACF.Components.LaserGuidanceComputer", "ACF.Components.GuidanceComputer", function()
+	Classes.DefineClass("ACF.Components.LaserGuidanceComputer", "ACF.Components.GuidanceComputer", function(CLASS)
 		CLASS.Name        = "Laser Guidance Computer"
 		CLASS.Description = "Modern equivalent to the analog guidance computer, provides faster and more accurate measurements. Can be also used as a laser target designator."
 		CLASS.Model       = "models/props_lab/monitor01b.mdl"
@@ -746,7 +746,7 @@ end
 do -- GPS transmitter
 	local ZERO = Vector()
 
-	Classes.DefineClass("ACF.Components.GPSTransmitter", "ACF.Components.GuidanceComputer", function()
+	Classes.DefineClass("ACF.Components.GPSTransmitter", "ACF.Components.GuidanceComputer", function(CLASS)
 		CLASS.Name        = "GPS Transmitter"
 		CLASS.Description = "A transmitter for GPS-based guided munitions."
 		CLASS.Model       = "models/props_lab/reciever01a.mdl"

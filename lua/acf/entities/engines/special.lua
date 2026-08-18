@@ -2,13 +2,13 @@ local ACF     = ACF
 local Classes = ACF.Classes
 
 -- IsSpecial is a class field (set below); the engine entity reads it off the engine instance.
-Classes.DefineClass("ACF.Engines.SP", "ACF.Engines.BaseEngine", function()
+Classes.DefineClass("ACF.Engines.SP", "ACF.Engines.BaseEngine", function(CLASS)
 	CLASS.Name = "Special Engine"
 	CLASS.IsSpecial = true
 end)
 
 do -- Special Rotary Engines
-	Classes.DefineClass("ACF.Engines.2.6L-Wankel", "ACF.Engines.SP", function()
+	Classes.DefineClass("ACF.Engines.2.6L-Wankel", "ACF.Engines.SP", function(CLASS)
 		CLASS.Name		 = "2.6L Rotary"
 		CLASS.Description	 = "#acf.descs.engines.sp.2_6"
 		CLASS.Model		 = "models/engines/wankel_4_med.mdl"
@@ -29,7 +29,7 @@ do -- Special Rotary Engines
 end
 
 do -- Special I2 Engines
-	Classes.DefineClass("ACF.Engines.0.9L-I2", "ACF.Engines.SP", function()
+	Classes.DefineClass("ACF.Engines.0.9L-I2", "ACF.Engines.SP", function(CLASS)
 		CLASS.Name		 = "0.9L I2 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.sp.0_9"
 		CLASS.Model		 = "models/engines/inline2s.mdl"
@@ -50,7 +50,7 @@ do -- Special I2 Engines
 end
 
 do -- Special I4 Engines
-	Classes.DefineClass("ACF.Engines.1.0L-I4", "ACF.Engines.SP", function()
+	Classes.DefineClass("ACF.Engines.1.0L-I4", "ACF.Engines.SP", function(CLASS)
 		CLASS.Name		 = "1.0L I4 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.sp.1_0"
 		CLASS.Model		 = "models/engines/inline4s.mdl"
@@ -70,7 +70,7 @@ do -- Special I4 Engines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.1.9L-I4", "ACF.Engines.SP", function()
+	Classes.DefineClass("ACF.Engines.1.9L-I4", "ACF.Engines.SP", function(CLASS)
 		CLASS.Name		 = "1.9L I4 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.sp.1_9"
 		CLASS.Model		 = "models/engines/inline4s.mdl"
@@ -91,7 +91,7 @@ do -- Special I4 Engines
 end
 
 do -- Special V4 Engines
-	Classes.DefineClass("ACF.Engines.1.8L-V4", "ACF.Engines.SP", function()
+	Classes.DefineClass("ACF.Engines.1.8L-V4", "ACF.Engines.SP", function(CLASS)
 		CLASS.Name		 = "1.8L V4 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.sp.1_8"
 		CLASS.Model		 = "models/engines/v4s.mdl"
@@ -112,7 +112,7 @@ do -- Special V4 Engines
 end
 
 do -- Special I6 Engines
-	Classes.DefineClass("ACF.Engines.3.8-I6", "ACF.Engines.SP", function()
+	Classes.DefineClass("ACF.Engines.3.8-I6", "ACF.Engines.SP", function(CLASS)
 		CLASS.Name		 = "3.8L I6 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.sp.3_8"
 		CLASS.Model		 = "models/engines/inline6m.mdl"
@@ -133,7 +133,7 @@ do -- Special I6 Engines
 end
 
 do -- Special V6 Engines
-	Classes.DefineClass("ACF.Engines.2.4L-V6", "ACF.Engines.SP", function()
+	Classes.DefineClass("ACF.Engines.2.4L-V6", "ACF.Engines.SP", function(CLASS)
 		CLASS.Name		 = "2.4L V6 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.sp.2_4"
 		CLASS.Model		 = "models/engines/v6small.mdl"
@@ -154,7 +154,7 @@ do -- Special V6 Engines
 end
 
 do -- Special V8 Engines
-	Classes.DefineClass("ACF.Engines.2.9-V8", "ACF.Engines.SP", function()
+	Classes.DefineClass("ACF.Engines.2.9-V8", "ACF.Engines.SP", function(CLASS)
 		CLASS.Name		 = "2.9L V8 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.sp.2_9"
 		CLASS.Model		 = "models/engines/v8s.mdl"
@@ -173,7 +173,7 @@ do -- Special V8 Engines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.7.2-V8", "ACF.Engines.SP", function()
+	Classes.DefineClass("ACF.Engines.7.2-V8", "ACF.Engines.SP", function(CLASS)
 		CLASS.Name		 = "7.2L V8 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.sp.7_2"
 		CLASS.Model		 = "models/engines/v8m.mdl"
@@ -194,7 +194,7 @@ do -- Special V8 Engines
 end
 
 do -- Special V10 Engines
-	Classes.DefineClass("ACF.Engines.5.3-V10", "ACF.Engines.SP", function()
+	Classes.DefineClass("ACF.Engines.5.3-V10", "ACF.Engines.SP", function(CLASS)
 		CLASS.Name		 = "5.3L V10 Special"
 		CLASS.Description	 = "#acf.descs.engines.sp.5_3"
 		CLASS.Model		 = "models/engines/v10sml.mdl"
@@ -215,7 +215,7 @@ do -- Special V10 Engines
 end
 
 do -- Special V12 Engines
-	Classes.DefineClass("ACF.Engines.3.0-V12", "ACF.Engines.SP", function()
+	Classes.DefineClass("ACF.Engines.3.0-V12", "ACF.Engines.SP", function(CLASS)
 		CLASS.Name		 = "3.0L V12 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.sp.3_0"
 		CLASS.Model		 = "models/engines/v12s.mdl"

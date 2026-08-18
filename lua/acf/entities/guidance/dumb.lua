@@ -1,5 +1,5 @@
 local Classes 	= ACF.Classes
-Classes.DefineClass("ACF.Missiles.Guidance.Dumb", "ACF.Missiles.Guidance", function()
+Classes.DefineClass("ACF.Missiles.Guidance.Dumb", "ACF.Missiles.Guidance", function(CLASS)
 	CLASS.Name = "Dumb"
 
 	function CLASS:Configure() end

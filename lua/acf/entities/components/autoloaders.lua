@@ -57,7 +57,7 @@ function ACF.CreateAutoloaderMenu(_, Menu, Ctx)
     Menu:AddLabel("Aiming at the autoloader with the menu tool will show a line between the autoloader and the gun's breech. Use this to help align them.")
 end
 
-Classes.DefineClass("ACF.Components.Autoloader", "ACF.Components.BaseComponent", function()
+Classes.DefineClass("ACF.Components.Autoloader", "ACF.Components.BaseComponent", function(CLASS)
     CLASS.Name        = "Autoloader"
     CLASS.Description  = "An automatic ammunition loading system."
     CLASS.Model        = "models/acf/autoloader_tractorbeam.mdl"

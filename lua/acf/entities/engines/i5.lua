@@ -1,12 +1,12 @@
 local ACF     = ACF
 local Classes = ACF.Classes
 
-Classes.DefineClass("ACF.Engines.I5", "ACF.Engines.BaseEngine", function()
+Classes.DefineClass("ACF.Engines.I5", "ACF.Engines.BaseEngine", function(CLASS)
 	CLASS.Name = "Inline 5 Engine"
 end)
 
 do -- Petrol Engines
-	Classes.DefineClass("ACF.Engines.2.3-I5", "ACF.Engines.I5", function()
+	Classes.DefineClass("ACF.Engines.2.3-I5", "ACF.Engines.I5", function(CLASS)
 		CLASS.Name		 = "2.3L I5 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.i5.2_3"
 		CLASS.Model		 = "models/engines/inline5s.mdl"
@@ -25,7 +25,7 @@ do -- Petrol Engines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.3.9-I5", "ACF.Engines.I5", function()
+	Classes.DefineClass("ACF.Engines.3.9-I5", "ACF.Engines.I5", function(CLASS)
 		CLASS.Name		 = "3.9L I5 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.i5.3_9"
 		CLASS.Model		 = "models/engines/inline5m.mdl"
@@ -46,7 +46,7 @@ do -- Petrol Engines
 end
 
 do -- Diesel Engines
-	Classes.DefineClass("ACF.Engines.2.9-I5", "ACF.Engines.I5", function()
+	Classes.DefineClass("ACF.Engines.2.9-I5", "ACF.Engines.I5", function(CLASS)
 		CLASS.Name		 = "2.9L I5 Diesel"
 		CLASS.Description	 = "#acf.descs.engines.i5.2_9"
 		CLASS.Model		 = "models/engines/inline5s.mdl"
@@ -65,7 +65,7 @@ do -- Diesel Engines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.4.1-I5", "ACF.Engines.I5", function()
+	Classes.DefineClass("ACF.Engines.4.1-I5", "ACF.Engines.I5", function(CLASS)
 		CLASS.Name		 = "4.1L I5 Diesel"
 		CLASS.Description	 = "#acf.descs.engines.i5.4_1"
 		CLASS.Model		 = "models/engines/inline5m.mdl"

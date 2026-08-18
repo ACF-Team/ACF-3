@@ -3,7 +3,7 @@ local Classes         = ACF.Classes
 local Countermeasures = ACF.Countermeasures
 local Trace           = ACF.trace
 
-Classes.DefineClass("ACF.Sensors.Receiver.Warning", "ACF.Sensors.Receiver", function()
+Classes.DefineClass("ACF.Sensors.Receiver.Warning", "ACF.Sensors.Receiver", function(CLASS)
 	CLASS.Name       = "Warning Receiver"
 	CLASS.ID         = "WARN-Receiver"
 	CLASS.Entity     = "acf_receiver"
@@ -50,7 +50,7 @@ do -- Laser Receiver
 		return not Trace(TraceData).Hit
 	end
 
-	Classes.DefineClass("ACF.Sensors.Receiver.Warning.Laser", "ACF.Sensors.Receiver.Warning", function()
+	Classes.DefineClass("ACF.Sensors.Receiver.Warning.Laser", "ACF.Sensors.Receiver.Warning", function(CLASS)
 		CLASS.Name        = "Laser Warning Receiver"
 		CLASS.ID          = "LAS-Receiver"
 		CLASS.Description  = "An optical unit designed to detect laser sources and give a precise direction."
@@ -113,7 +113,7 @@ do -- Radar Receiver
 		return not Trace(TraceData).Hit
 	end
 
-	Classes.DefineClass("ACF.Sensors.Receiver.Warning.Radar", "ACF.Sensors.Receiver.Warning", function()
+	Classes.DefineClass("ACF.Sensors.Receiver.Warning.Radar", "ACF.Sensors.Receiver.Warning", function(CLASS)
 		CLASS.Name        = "Radar Warning Receiver"
 		CLASS.ID          = "RAD-Receiver"
 		CLASS.Description  = "An unit designed to detect radar sources and give a vague direction."

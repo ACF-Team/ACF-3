@@ -1,5 +1,5 @@
 local Classes 	= ACF.Classes
-Classes.DefineClass("ACF.Missiles.Guidance.RadioMCLOS", "ACF.Missiles.Guidance.Dumb", function()
+Classes.DefineClass("ACF.Missiles.Guidance.RadioMCLOS", "ACF.Missiles.Guidance.Dumb", function(CLASS)
 	CLASS.Name = "Radio (MCLOS)"
 	function CLASS:Configure(Missile)
 		self.Source = Missile.Launcher

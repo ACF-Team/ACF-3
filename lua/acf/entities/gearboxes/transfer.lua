@@ -3,7 +3,7 @@ local Classes   = ACF.Classes
 
 local Gear2SW = 20
 
-Classes.DefineClass("ACF.Gearboxes.Transfer", "ACF.Gearboxes.BaseGearbox", function()
+Classes.DefineClass("ACF.Gearboxes.Transfer", "ACF.Gearboxes.BaseGearbox", function(CLASS)
 	CLASS.Name			= "Transfer Case"
 	CLASS.CreateMenu	= ACF.ManualGearboxMenu
 	CLASS.Gears = {
@@ -13,7 +13,7 @@ Classes.DefineClass("ACF.Gearboxes.Transfer", "ACF.Gearboxes.BaseGearbox", funct
 end)
 
 do -- Scalable gearboxes
-	Classes.DefineClass("ACF.Gearboxes.2Gear-L", "ACF.Gearboxes.Transfer", function()
+	Classes.DefineClass("ACF.Gearboxes.2Gear-L", "ACF.Gearboxes.Transfer", function(CLASS)
 		CLASS.Name			= "Transfer Case, Inline"
 		CLASS.Description	= "2 speed gearbox. Useful for low/high range and tank turning."
 		CLASS.ID			= "2Gear-L"
@@ -27,7 +27,7 @@ do -- Scalable gearboxes
 		}
 	end)
 
-	Classes.DefineClass("ACF.Gearboxes.2Gear-T", "ACF.Gearboxes.Transfer", function()
+	Classes.DefineClass("ACF.Gearboxes.2Gear-T", "ACF.Gearboxes.Transfer", function(CLASS)
 		CLASS.Name			= "Transfer Case"
 		CLASS.Description	= "2 speed gearbox. Useful for low/high range and tank turning."
 		CLASS.ID			= "2Gear-T"

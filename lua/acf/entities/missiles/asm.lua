@@ -1,5 +1,5 @@
 local Classes = ACF.Classes
-Classes.DefineClass("ACF.Missiles.AntiTankGuided", "ACF.Missiles.BaseMissile", function()
+Classes.DefineClass("ACF.Missiles.AntiTankGuided", "ACF.Missiles.BaseMissile", function(CLASS)
 	CLASS.Name			= "Anti-Tank Guided Missiles"
 	CLASS.ID			= "ATGM"
 	CLASS.Description	= "Missiles specialized on destroying heavily armored vehicles."
@@ -14,7 +14,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided", "ACF.Missiles.BaseMissile", f
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.AntiTankGuided.AT-3", "ACF.Missiles.AntiTankGuided", function()
+Classes.DefineClass("ACF.Missiles.AntiTankGuided.AT-3", "ACF.Missiles.AntiTankGuided", function(CLASS)
 	CLASS.Name			= "9M14 Malyutka"
 	CLASS.Description	= "The 9M14 Malyutka (AT-3 Sagger) is a short-range wire-guided anti-tank missile."
 	CLASS.Model			= "models/missiles/at3.mdl"
@@ -59,7 +59,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.AT-3", "ACF.Missiles.AntiTankGu
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.AntiTankGuided.BGM-71E", "ACF.Missiles.AntiTankGuided", function()
+Classes.DefineClass("ACF.Missiles.AntiTankGuided.BGM-71E", "ACF.Missiles.AntiTankGuided", function(CLASS)
 	CLASS.Name			= "BGM-71E TOW"
 	CLASS.Description	= "The BGM-71E TOW is a medium-range wire guided anti-tank missile."
 	CLASS.Model			= "models/missiles/bgm_71e.mdl"
@@ -102,7 +102,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.BGM-71E", "ACF.Missiles.AntiTan
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.AntiTankGuided.AGM-114", "ACF.Missiles.AntiTankGuided", function()
+Classes.DefineClass("ACF.Missiles.AntiTankGuided.AGM-114", "ACF.Missiles.AntiTankGuided", function(CLASS)
 	CLASS.Name			= "AGM-114 Hellfire"
 	CLASS.Description	= "The AGM-114 Hellfire is a heavy air-to-surface missile, used often by American aircraft."
 	CLASS.Model			= "models/missiles/agm_114.mdl"
@@ -162,7 +162,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.AGM-114", "ACF.Missiles.AntiTan
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.AntiTankGuided.Ataka", "ACF.Missiles.AntiTankGuided", function()
+Classes.DefineClass("ACF.Missiles.AntiTankGuided.Ataka", "ACF.Missiles.AntiTankGuided", function(CLASS)
 	CLASS.Name			= "9M120 Ataka"
 	CLASS.Description	= "The 9M120 Ataka (AT-9 Spiral-2) is a heavy air-to-surface missile, used often by soviet helicopters and ground vehicles."
 	CLASS.Model			= "models/missiles/9m120.mdl"
@@ -209,7 +209,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.Ataka", "ACF.Missiles.AntiTankG
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.AntiTankGuided.9M133", "ACF.Missiles.AntiTankGuided", function()
+Classes.DefineClass("ACF.Missiles.AntiTankGuided.9M133", "ACF.Missiles.AntiTankGuided", function(CLASS)
 	CLASS.Name			= "9M133 Kornet"
 	CLASS.Description	= "The 9M133 Kornet (AT-14 Spriggan) is an extremely powerful antitank missile."
 	CLASS.Model			= "models/kali/weapons/kornet/parts/9m133 kornet missile.mdl"
@@ -265,7 +265,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.9M133", "ACF.Missiles.AntiTankG
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.AntiTankGuided.AT-2", "ACF.Missiles.AntiTankGuided", function()
+Classes.DefineClass("ACF.Missiles.AntiTankGuided.AT-2", "ACF.Missiles.AntiTankGuided", function(CLASS)
 	CLASS.Name			= "9M17 Fleyta"
 	CLASS.Description	= "The 9M17 Fleyta (AT-2 Sagger) is a powerful radio command medium-range antitank missile, intended for use on helicopters and anti tank vehicles. It has a more powerful warhead and longer range than the AT-3 at the cost of weight and agility."
 	CLASS.Model			= "models/missiles/at2.mdl"

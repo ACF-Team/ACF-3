@@ -1,4 +1,4 @@
-ACF.Classes.DefineClass("ACF.ContainerShapes.Cylinder", "ACF.ContainerShapes.BaseContainerShape", function()
+ACF.Classes.DefineClass("ACF.ContainerShapes.Cylinder", "ACF.ContainerShapes.BaseContainerShape", function(CLASS)
     CLASS.ID     = "Cylinder"
     CLASS.Name   = "Cylinder"
     CLASS.Model  = "models/acf/core/s_fuel_cyl.mdl"

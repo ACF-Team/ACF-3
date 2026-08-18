@@ -1,4 +1,4 @@
-ACF.Classes.DefineClass("ACF.ContainerShapes.BaseContainerShape", function()
+ACF.Classes.DefineClass("ACF.ContainerShapes.BaseContainerShape", function(CLASS)
     CLASS.ID    = "BaseContainerShape"
     CLASS.Name  = "Container Shape"
     CLASS.Model = ""

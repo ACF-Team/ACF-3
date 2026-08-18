@@ -1,4 +1,4 @@
-ACF.Classes.DefineClass("ACF.Weapons.BaseWeapon", function()
+ACF.Classes.DefineClass("ACF.Weapons.BaseWeapon", function(CLASS)
     -- Returns true if Other is a weapon of the same type as self.
     -- Subtypes (e.g. scalable guns) extend this with additional checks like caliber.
     -- Works on both class tables and instances since GetType is inherited.

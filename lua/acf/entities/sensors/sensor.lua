@@ -3,7 +3,7 @@ local Classes = ACF.Classes
 
 Classes.DefineClass("ACF.Sensors.Sensor", function() end)
 
-Classes.DefineClass("ACF.Sensors.Radar", "ACF.Sensors.Sensor", function()
+Classes.DefineClass("ACF.Sensors.Radar", "ACF.Sensors.Sensor", function(CLASS)
 	-- Shared info panel for every radar group (Item is the selected item class).
 	function CLASS.CreateMenu(Menu, Item)
 		local ViewCone  = (Item.ViewCone or 180) * 2
@@ -13,7 +13,7 @@ Classes.DefineClass("ACF.Sensors.Radar", "ACF.Sensors.Sensor", function()
 	end
 end)
 
-Classes.DefineClass("ACF.Sensors.Receiver", "ACF.Sensors.Sensor", function()
+Classes.DefineClass("ACF.Sensors.Receiver", "ACF.Sensors.Sensor", function(CLASS)
 	function CLASS.CreateMenu(Menu, Item)
 		Menu:AddLabel(string.format("Mass : %s kg\n", Item.Mass))
 	end

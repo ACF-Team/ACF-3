@@ -1,9 +1,7 @@
 local ACF       = ACF
 local Classes   = ACF.Classes
 
-Classes.DefineClass("ACF.Ammunition.HEATFS", "ACF.Ammunition.HEAT", function()
-	local BASE = BASE
-
+Classes.DefineClass("ACF.Ammunition.HEATFS", "ACF.Ammunition.HEAT", function(CLASS, BASE)
 	CLASS.Name		 = "High Explosive Anti-Tank Fin Stabilized"
 	CLASS.SpawnIcon   = "acf/icons/shell_heatfs.png"
 	CLASS.Bodygroup   = 9 -- HEATFS bodygroup index

@@ -1,6 +1,6 @@
 local ACF     = ACF
 
-ACF.Classes.DefineClass("ACF.Guns.GrenadeLauncher", "ACF.Guns.BaseScalableGun", function()
+ACF.Classes.DefineClass("ACF.Guns.GrenadeLauncher", "ACF.Guns.BaseScalableGun", function(CLASS)
 	CLASS.Name       		= "Grenade Launcher"
 	CLASS.ID				= "GL"
 	CLASS.IsWeapon			= true

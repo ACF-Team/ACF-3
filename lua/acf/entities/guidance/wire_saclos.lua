@@ -1,5 +1,5 @@
 local Classes = ACF.Classes
-Classes.DefineClass("ACF.Missiles.Guidance.WireSACLOS", "ACF.Missiles.Guidance.WireMCLOS", function()
+Classes.DefineClass("ACF.Missiles.Guidance.WireSACLOS", "ACF.Missiles.Guidance.WireMCLOS", function(CLASS)
 	CLASS.Name = "Wire (SACLOS)"
 	if CLIENT then
 		CLASS.Description = "This guidance package allows you to control the direction of the missile using a computer's aiming position."

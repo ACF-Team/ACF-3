@@ -1,7 +1,7 @@
 local Notify     = ACF.Utilities.Notify
 local EmptyTable = {}
 
-ACF.Classes.DefineClass("ACF.Baseplates.Recreational", "ACF.Baseplates.BaseplateType", function()
+ACF.Classes.DefineClass("ACF.Baseplates.Recreational", "ACF.Baseplates.BaseplateType", function(CLASS, BASE)
 	CLASS.Name        = "Recreational"
 	CLASS.Icon        = "icon16/car_add.png"
 	CLASS.Description = "A baseplate designed for non combat use (e.g. cars).\nWeapons and ammo will be removed. Fuel consumption rate set to 1."

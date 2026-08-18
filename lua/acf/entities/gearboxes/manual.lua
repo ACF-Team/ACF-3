@@ -9,7 +9,7 @@ local StWB = 0.75 -- Straight weight bonus mulitplier
 local Gear4ST = 1000
 local StTB = 1.25 -- Straight torque bonus multiplier
 
-Classes.DefineClass("ACF.Gearboxes.Manual", "ACF.Gearboxes.BaseGearbox", function()
+Classes.DefineClass("ACF.Gearboxes.Manual", "ACF.Gearboxes.BaseGearbox", function(CLASS)
 	CLASS.Name			= "Manual"
 	CLASS.CreateMenu	= ACF.ManualGearboxMenu
 	CLASS.CanSetGears	= true
@@ -20,7 +20,7 @@ Classes.DefineClass("ACF.Gearboxes.Manual", "ACF.Gearboxes.BaseGearbox", functio
 end)
 
 do -- Scalable Gearboxes
-	Classes.DefineClass("ACF.Gearboxes.Manual-L", "ACF.Gearboxes.Manual", function()
+	Classes.DefineClass("ACF.Gearboxes.Manual-L", "ACF.Gearboxes.Manual", function(CLASS)
 		CLASS.Name			= "Manual, Inline"
 		CLASS.Description	= "A standard inline gearbox that requires manual gear shifting."
 		CLASS.ID			= "Manual-L"
@@ -34,7 +34,7 @@ do -- Scalable Gearboxes
 		}
 	end)
 
-	Classes.DefineClass("ACF.Gearboxes.Manual-T", "ACF.Gearboxes.Manual", function()
+	Classes.DefineClass("ACF.Gearboxes.Manual-T", "ACF.Gearboxes.Manual", function(CLASS)
 		CLASS.Name			= "Manual, Transaxial"
 		CLASS.Description	= "A standard transaxial gearbox that requires manual gear shifting."
 		CLASS.ID			= "Manual-T"
@@ -48,7 +48,7 @@ do -- Scalable Gearboxes
 		}
 	end)
 
-	Classes.DefineClass("ACF.Gearboxes.Manual-ST", "ACF.Gearboxes.Manual", function()
+	Classes.DefineClass("ACF.Gearboxes.Manual-ST", "ACF.Gearboxes.Manual", function(CLASS)
 		CLASS.Name			= "Manual, Straight"
 		CLASS.Description	= "A standard straight-through gearbox that requires manual gear shifting."
 		CLASS.ID			= "Manual-ST"

@@ -1,7 +1,7 @@
 local ACF       = ACF
 local Classes   = ACF.Classes
 
-Classes.DefineClass("ACF.Components.BaseComponent", function()
+Classes.DefineClass("ACF.Components.BaseComponent", function(CLASS)
     function CLASS.__inherited(NewClass)
         if not NewClass.LimitConVar then
             NewClass.LimitConVar = {

@@ -1,9 +1,7 @@
 
 local Classes = ACF.Classes
-Classes.DefineClass("ACF.Missiles.Fuze.Timed", "ACF.Missiles.Fuze.Contact", function()
+Classes.DefineClass("ACF.Missiles.Fuze.Timed", "ACF.Missiles.Fuze.Contact", function(CLASS, BASE)
 	CLASS.Name = "Timed"
-	local BASE = BASE
-
 	CLASS.MinTime = 1
 	CLASS.MaxTime = 30
 

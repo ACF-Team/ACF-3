@@ -1,11 +1,11 @@
 local ACF     = ACF
 local Classes = ACF.Classes
-Classes.DefineClass("ACF.Engines.V8", "ACF.Engines.BaseEngine", function()
+Classes.DefineClass("ACF.Engines.V8", "ACF.Engines.BaseEngine", function(CLASS)
 	CLASS.Name = "V8 Engine"
 end)
 
 do -- Petrol Engines
-	Classes.DefineClass("ACF.Engines.5.7-V8", "ACF.Engines.V8", function()
+	Classes.DefineClass("ACF.Engines.5.7-V8", "ACF.Engines.V8", function(CLASS)
 		CLASS.Name		 = "5.7L V8 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.v8.5_7"
 		CLASS.Model		 = "models/engines/v8s.mdl"
@@ -24,7 +24,7 @@ do -- Petrol Engines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.9.0-V8", "ACF.Engines.V8", function()
+	Classes.DefineClass("ACF.Engines.9.0-V8", "ACF.Engines.V8", function(CLASS)
 		CLASS.Name		 = "9.0L V8 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.v8.9_0"
 		CLASS.Model		 = "models/engines/v8m.mdl"
@@ -43,7 +43,7 @@ do -- Petrol Engines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.18.0-V8", "ACF.Engines.V8", function()
+	Classes.DefineClass("ACF.Engines.18.0-V8", "ACF.Engines.V8", function(CLASS)
 		CLASS.Name		 = "18.0L V8 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.v8.18_0"
 		CLASS.Model		 = "models/engines/v8l.mdl"
@@ -64,7 +64,7 @@ do -- Petrol Engines
 end
 
 do -- Diesel Engines
-	Classes.DefineClass("ACF.Engines.4.5-V8", "ACF.Engines.V8", function()
+	Classes.DefineClass("ACF.Engines.4.5-V8", "ACF.Engines.V8", function(CLASS)
 		CLASS.Name		 = "4.5L V8 Diesel"
 		CLASS.Description	 = "#acf.descs.engines.v8.4_5"
 		CLASS.Model		 = "models/engines/v8s.mdl"
@@ -83,7 +83,7 @@ do -- Diesel Engines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.7.8-V8", "ACF.Engines.V8", function()
+	Classes.DefineClass("ACF.Engines.7.8-V8", "ACF.Engines.V8", function(CLASS)
 		CLASS.Name		 = "7.8L V8 Diesel"
 		CLASS.Description	 = "#acf.descs.engines.v8.7_8"
 		CLASS.Model		 = "models/engines/v8m.mdl"
@@ -102,7 +102,7 @@ do -- Diesel Engines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.19.0-V8", "ACF.Engines.V8", function()
+	Classes.DefineClass("ACF.Engines.19.0-V8", "ACF.Engines.V8", function(CLASS)
 		CLASS.Name		 = "19.0L V8 Diesel"
 		CLASS.Description	 = "#acf.descs.engines.v8.19_0"
 		CLASS.Model		 = "models/engines/v8l.mdl"

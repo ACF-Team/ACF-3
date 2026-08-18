@@ -17,7 +17,7 @@ local function AddPerformanceData(Engine)
     ACF.AddEnginePerformanceData(Engine)
 end
 
-Classes.DefineClass("ACF.Engines.BaseEngine", function()
+Classes.DefineClass("ACF.Engines.BaseEngine", function(CLASS)
     local CLASS = CLASS
 
     CLASS.Sound = "vehicles/junker/jnk_fourth_cruise_loop2.wav"

@@ -1,5 +1,5 @@
 local Classes = ACF.Classes
-Classes.DefineClass("ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.BaseRack", function(CLASS)
     CLASS.EntType = "Rack"
     function CLASS.__inherited(NewClass)
         if not NewClass.LimitConVar then

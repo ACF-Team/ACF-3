@@ -1,12 +1,12 @@
 local ACF     = ACF
 local Classes = ACF.Classes
 
-Classes.DefineClass("ACF.Engines.I2", "ACF.Engines.BaseEngine", function()
+Classes.DefineClass("ACF.Engines.I2", "ACF.Engines.BaseEngine", function(CLASS)
 	CLASS.Name = "Inline 2 Engine"
 end)
 
 do
-	Classes.DefineClass("ACF.Engines.0.8L-I2", "ACF.Engines.I2", function()
+	Classes.DefineClass("ACF.Engines.0.8L-I2", "ACF.Engines.I2", function(CLASS)
 		CLASS.Name		 = "0.8L I2 Diesel"
 		CLASS.Description	 = "#acf.descs.engines.i2.0_8"
 		CLASS.Model		 = "models/engines/inline2s.mdl"
@@ -25,7 +25,7 @@ do
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.10.0-I2", "ACF.Engines.I2", function()
+	Classes.DefineClass("ACF.Engines.10.0-I2", "ACF.Engines.I2", function(CLASS)
 		CLASS.Name		 = "10.0L I2 Diesel"
 		CLASS.Description	 = "#acf.descs.engines.i2.10_0"
 		CLASS.Model		 = "models/engines/inline2b.mdl"

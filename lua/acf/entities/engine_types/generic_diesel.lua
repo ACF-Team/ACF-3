@@ -1,6 +1,6 @@
 local ACF         = ACF
 local Classes     = ACF.Classes
-Classes.DefineClass("ACF.EngineTypes.GenericDiesel", "ACF.EngineTypes.BaseEngineType", function()
+Classes.DefineClass("ACF.EngineTypes.GenericDiesel", "ACF.EngineTypes.BaseEngineType", function(CLASS)
 	CLASS.Name        = "Generic Diesel Engine"
 	CLASS.Efficiency  = 0.243 --up to 0.274
 	CLASS.TorqueScale = 0.35

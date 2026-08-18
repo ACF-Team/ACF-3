@@ -3,9 +3,7 @@ local Classes   = ACF.Classes
 local Damage    = ACF.Damage
 local Clock 	= ACF.Utilities.Clock
 
-Classes.DefineClass("ACF.Ammunition.APHE", "ACF.Ammunition.AP", function()
-	local BASE = BASE
-
+Classes.DefineClass("ACF.Ammunition.APHE", "ACF.Ammunition.AP", function(CLASS, BASE)
 	CLASS.Name		 = "Armor Piercing High Explosive"
 	CLASS.SpawnIcon   = "acf/icons/shell_aphe.png"
 	CLASS.Bodygroup   = 1 -- APHE bodygroup index

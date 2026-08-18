@@ -1,9 +1,7 @@
 local ACF       = ACF
 local Classes   = ACF.Classes
 
-Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function()
-	local BASE = BASE
-
+Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function(CLASS, BASE)
 	CLASS.Name		 = "Smoke"
 	CLASS.SpawnIcon   = "acf/icons/shell_smoke.png"
 	CLASS.Bodygroup   = 6 -- WP bodygroup index

@@ -4,7 +4,7 @@ local GetType    = Classes.GetTypeByName
 
 local Classes   = ACF.Classes
 
-Classes.DefineClass("ACF.Components.SupplyCrate", "ACF.Components.BaseComponent", function()
+Classes.DefineClass("ACF.Components.SupplyCrate", "ACF.Components.BaseComponent", function(CLASS)
 	CLASS.Name        = "Supply Crate"
 	CLASS.Description = "A scalable container that supplies fuel and ammo."
 	CLASS.Model       = "models/acf/core/s_fuel.mdl"

@@ -1,9 +1,7 @@
 local ACF   	= ACF
 local Classes   = ACF.Classes
 
-Classes.DefineClass("ACF.Ammunition.APCR", "ACF.Ammunition.AP", function()
-	local BASE = BASE
-
+Classes.DefineClass("ACF.Ammunition.APCR", "ACF.Ammunition.AP", function(CLASS, BASE)
 	CLASS.Name		 = "Armor Piercing Composite Rigid"
 	CLASS.SpawnIcon   = "acf/icons/shell_apcr.png"
 	CLASS.Bodygroup   = 2 -- APCR bodygroup index

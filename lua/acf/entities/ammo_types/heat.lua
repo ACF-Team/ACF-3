@@ -4,9 +4,7 @@ local Damage    = ACF.Damage
 local Debug		= ACF.Debug
 local Clock 	= ACF.Utilities.Clock
 
-Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function()
-	local BASE = BASE
-
+Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function(CLASS, BASE)
 	CLASS.Name		 = "High Explosive Anti-Tank"
 	CLASS.SpawnIcon   = "acf/icons/shell_heat.png"
 	CLASS.Bodygroup   = 8 -- HEAT bodygroup index

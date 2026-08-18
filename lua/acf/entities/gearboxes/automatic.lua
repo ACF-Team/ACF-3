@@ -28,7 +28,7 @@ local function InitGearbox(Gearbox)
 	Gearbox:ChangeDrive(1)
 end
 
-Classes.DefineClass("ACF.Gearboxes.Auto", "ACF.Gearboxes.BaseGearbox", function()
+Classes.DefineClass("ACF.Gearboxes.Auto", "ACF.Gearboxes.BaseGearbox", function(CLASS)
 	CLASS.Name			= "Automatic"
 	CLASS.CreateMenu	= ACF.AutomaticGearboxMenu
 	CLASS.CanSetGears 	= true
@@ -122,7 +122,7 @@ Classes.DefineClass("ACF.Gearboxes.Auto", "ACF.Gearboxes.BaseGearbox", function(
 end)
 
 do -- Scalable Gearboxes
-	Classes.DefineClass("ACF.Gearboxes.Auto-L", "ACF.Gearboxes.Auto", function()
+	Classes.DefineClass("ACF.Gearboxes.Auto-L", "ACF.Gearboxes.Auto", function(CLASS)
 		CLASS.Name			= "Automatic, Inline"
 		CLASS.Description	= "An inline gearbox capable of automatically shifting gears based on speed."
 		CLASS.ID			= "Auto-L"
@@ -136,7 +136,7 @@ do -- Scalable Gearboxes
 		}
 	end)
 
-	Classes.DefineClass("ACF.Gearboxes.Auto-T", "ACF.Gearboxes.Auto", function()
+	Classes.DefineClass("ACF.Gearboxes.Auto-T", "ACF.Gearboxes.Auto", function(CLASS)
 		CLASS.Name			= "Automatic, Transaxial"
 		CLASS.Description	= "A transaxial gearbox capable of automatically shifting gears based on speed."
 		CLASS.ID			= "Auto-T"
@@ -150,7 +150,7 @@ do -- Scalable Gearboxes
 		}
 	end)
 
-	Classes.DefineClass("ACF.Gearboxes.Auto-ST", "ACF.Gearboxes.Auto", function()
+	Classes.DefineClass("ACF.Gearboxes.Auto-ST", "ACF.Gearboxes.Auto", function(CLASS)
 		CLASS.Name			= "Automatic, Straight"
 		CLASS.Description	= "A straight-through gearbox capable of automatically shifting gears based on speed."
 		CLASS.ID			= "Auto-ST"

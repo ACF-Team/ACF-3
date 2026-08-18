@@ -1,11 +1,11 @@
 local ACF     = ACF
 local Classes = ACF.Classes
-Classes.DefineClass("ACF.Engines.V12", "ACF.Engines.BaseEngine", function()
+Classes.DefineClass("ACF.Engines.V12", "ACF.Engines.BaseEngine", function(CLASS)
 	CLASS.Name = "V12 Engine"
 end)
 
 do -- Petrol Engines
-	Classes.DefineClass("ACF.Engines.4.6-V12", "ACF.Engines.V12", function()
+	Classes.DefineClass("ACF.Engines.4.6-V12", "ACF.Engines.V12", function(CLASS)
 		CLASS.Name		 = "4.6L V12 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.v12.4_6"
 		CLASS.Model		 = "models/engines/v12s.mdl"
@@ -24,7 +24,7 @@ do -- Petrol Engines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.7.0-V12", "ACF.Engines.V12", function()
+	Classes.DefineClass("ACF.Engines.7.0-V12", "ACF.Engines.V12", function(CLASS)
 		CLASS.Name		 = "7.0L V12 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.v12.7_0"
 		CLASS.Model		 = "models/engines/v12m.mdl"
@@ -43,7 +43,7 @@ do -- Petrol Engines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.13.0-V12", "ACF.Engines.V12", function()
+	Classes.DefineClass("ACF.Engines.13.0-V12", "ACF.Engines.V12", function(CLASS)
 		CLASS.Name		 = "13.0L V12 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.v12.13_0"
 		CLASS.Model		 = "models/engines/v12m.mdl"
@@ -62,7 +62,7 @@ do -- Petrol Engines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.23.0-V12", "ACF.Engines.V12", function()
+	Classes.DefineClass("ACF.Engines.23.0-V12", "ACF.Engines.V12", function(CLASS)
 		CLASS.Name		 = "23.0L V12 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.v12.23_0"
 		CLASS.Model		 = "models/engines/v12l.mdl"
@@ -83,7 +83,7 @@ do -- Petrol Engines
 end
 
 do -- Diesel Engines
-	Classes.DefineClass("ACF.Engines.4.0-V12", "ACF.Engines.V12", function()
+	Classes.DefineClass("ACF.Engines.4.0-V12", "ACF.Engines.V12", function(CLASS)
 		CLASS.Name		 = "4.0L V12 Diesel"
 		CLASS.Description	 = "#acf.descs.engines.v12.4_0"
 		CLASS.Model		 = "models/engines/v12s.mdl"
@@ -102,7 +102,7 @@ do -- Diesel Engines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.9.2-V12", "ACF.Engines.V12", function()
+	Classes.DefineClass("ACF.Engines.9.2-V12", "ACF.Engines.V12", function(CLASS)
 		CLASS.Name		 = "9.2L V12 Diesel"
 		CLASS.Description	 = "#acf.descs.engines.v12.9_2"
 		CLASS.Model		 = "models/engines/v12m.mdl"
@@ -121,7 +121,7 @@ do -- Diesel Engines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.21.0-V12", "ACF.Engines.V12", function()
+	Classes.DefineClass("ACF.Engines.21.0-V12", "ACF.Engines.V12", function(CLASS)
 		CLASS.Name		 = "21.0L V12 Diesel"
 		CLASS.Description	 = "#acf.descs.engines.v12.21_0"
 		CLASS.Model		 = "models/engines/v12l.mdl"

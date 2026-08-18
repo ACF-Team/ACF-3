@@ -1,8 +1,6 @@
 local ACF   	= ACF
 local Classes   = ACF.Classes
-Classes.DefineClass("ACF.Ammunition.HE", "ACF.Ammunition.APHE", function()
-	local BASE = BASE
-
+Classes.DefineClass("ACF.Ammunition.HE", "ACF.Ammunition.APHE", function(CLASS, BASE)
 	CLASS.Name		 = "High Explosive"
 	CLASS.SpawnIcon   = "acf/icons/shell_he.png"
 	CLASS.Bodygroup   = 5 -- HE bodygroup index

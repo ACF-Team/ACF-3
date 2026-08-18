@@ -1,12 +1,12 @@
 local ACF     = ACF
 local Classes = ACF.Classes
 
-Classes.DefineClass("ACF.Engines.I1", "ACF.Engines.BaseEngine", function()
+Classes.DefineClass("ACF.Engines.I1", "ACF.Engines.BaseEngine", function(CLASS)
 	CLASS.Name = "Single Cylinder Engine"
 end)
 
 do
-	Classes.DefineClass("ACF.Engines.0.25-I1", "ACF.Engines.I1", function()
+	Classes.DefineClass("ACF.Engines.0.25-I1", "ACF.Engines.I1", function(CLASS)
 		CLASS.Name		 = "250cc Single Cylinder"
 		CLASS.Description	 = "#acf.descs.engines.i1.0_25"
 		CLASS.Model		 = "models/engines/1cylsml.mdl"
@@ -25,7 +25,7 @@ do
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.0.5-I1", "ACF.Engines.I1", function()
+	Classes.DefineClass("ACF.Engines.0.5-I1", "ACF.Engines.I1", function(CLASS)
 		CLASS.Name		 = "500cc Single Cylinder"
 		CLASS.Description	 = "#acf.descs.engines.i1.0_5"
 		CLASS.Model		 = "models/engines/1cylmed.mdl"
@@ -44,7 +44,7 @@ do
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.1.3-I1", "ACF.Engines.I1", function()
+	Classes.DefineClass("ACF.Engines.1.3-I1", "ACF.Engines.I1", function(CLASS)
 		CLASS.Name		 = "1300cc Single Cylinder"
 		CLASS.Description	 = "#acf.descs.engines.i1.1_3"
 		CLASS.Model		 = "models/engines/1cylbig.mdl"

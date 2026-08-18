@@ -62,7 +62,7 @@ Classes.AddSboxLimit({
 	Text   = "Maximum amount of ACF crew members a player can create."
 })
 
-Classes.DefineClass("ACF.CrewTypes.Loader", "ACF.CrewTypes.BaseCrewType", function()
+Classes.DefineClass("ACF.CrewTypes.Loader", "ACF.CrewTypes.BaseCrewType", function(CLASS)
 	CLASS.Name        = "Loader"
 	CLASS.Icon		= "icon16/wand.png"
 	CLASS.Description = "Loaders affect the reload rate of your guns. Link them to gun(s). They prefer standing."
@@ -114,7 +114,7 @@ Classes.DefineClass("ACF.CrewTypes.Loader", "ACF.CrewTypes.BaseCrewType", functi
 	CLASS.EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, ACF.Classes.GetTypeByName("ACF.Baseplates.GroundVehicle")) end
 end)
 
-Classes.DefineClass("ACF.CrewTypes.Gunner", "ACF.CrewTypes.BaseCrewType", function()
+Classes.DefineClass("ACF.CrewTypes.Gunner", "ACF.CrewTypes.BaseCrewType", function(CLASS)
 	CLASS.Name        = "Gunner"
 	CLASS.Icon		= "icon16/gun.png"
 	CLASS.Description = "Gunners affect the accuracy of your gun. Link them to acf turret rings or baseplates. They prefer sitting."
@@ -166,7 +166,7 @@ Classes.DefineClass("ACF.CrewTypes.Gunner", "ACF.CrewTypes.BaseCrewType", functi
 	CLASS.EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, ACF.Classes.GetTypeByName("ACF.Baseplates.GroundVehicle")) end
 end)
 
-Classes.DefineClass("ACF.CrewTypes.Driver", "ACF.CrewTypes.BaseCrewType", function()
+Classes.DefineClass("ACF.CrewTypes.Driver", "ACF.CrewTypes.BaseCrewType", function(CLASS)
 	CLASS.Name        = "Driver"
 	CLASS.Icon		= "icon16/car.png"
 	CLASS.Description = "Drivers affect the fuel efficiency of your engines. Link them to acf baseplates. They prefer sitting."
@@ -211,7 +211,7 @@ Classes.DefineClass("ACF.CrewTypes.Driver", "ACF.CrewTypes.BaseCrewType", functi
 	CLASS.EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, ACF.Classes.GetTypeByName("ACF.Baseplates.GroundVehicle")) end
 end)
 
-Classes.DefineClass("ACF.CrewTypes.Commander", "ACF.CrewTypes.BaseCrewType", function()
+Classes.DefineClass("ACF.CrewTypes.Commander", "ACF.CrewTypes.BaseCrewType", function(CLASS)
 	CLASS.Name        = "Commander"
 	CLASS.Icon		= "icon16/medal_gold_1.png"
 	CLASS.Description = "Commanders coordinate the crew. Works without linking. They prefer sitting."
@@ -283,7 +283,7 @@ Classes.DefineClass("ACF.CrewTypes.Commander", "ACF.CrewTypes.BaseCrewType", fun
 	CLASS.EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, ACF.Classes.GetTypeByName("ACF.Baseplates.GroundVehicle")) end
 end)
 
-Classes.DefineClass("ACF.CrewTypes.Pilot", "ACF.CrewTypes.BaseCrewType", function()
+Classes.DefineClass("ACF.CrewTypes.Pilot", "ACF.CrewTypes.BaseCrewType", function(CLASS)
 	CLASS.Name        = "Pilot"
 	CLASS.Icon		= "icon16/weather_clouds.png"
 	CLASS.Description = "Pilots can sustain higher G tolerances but weigh more (life support systems and G suits). You should only use these on aircraft."

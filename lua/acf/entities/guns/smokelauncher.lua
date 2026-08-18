@@ -1,6 +1,6 @@
 local ACF     = ACF
 
-ACF.Classes.DefineClass("ACF.Guns.SmokeLauncher", "ACF.Guns.BaseScalableGun", function()
+ACF.Classes.DefineClass("ACF.Guns.SmokeLauncher", "ACF.Guns.BaseScalableGun", function(CLASS)
 	CLASS.Name        	= "Smoke Launcher"
 	CLASS.ID 			= "SL"
 	CLASS.IsWeapon		= true

@@ -1,5 +1,5 @@
 local Classes = ACF.Classes
-Classes.DefineClass("ACF.Missiles.FreeFallingBomb", "ACF.Missiles.BaseMissile", function()
+Classes.DefineClass("ACF.Missiles.FreeFallingBomb", "ACF.Missiles.BaseMissile", function(CLASS)
 	CLASS.Name			= "Free Falling Bombs"
 	CLASS.ID			= "BOMB"
 	CLASS.Description	= "Despite their lack of guidance and sophistication, they are exceptionally destructive on impact relative to their weight."
@@ -14,7 +14,7 @@ Classes.DefineClass("ACF.Missiles.FreeFallingBomb", "ACF.Missiles.BaseMissile", 
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.FreeFallingBomb.50kg", "ACF.Missiles.FreeFallingBomb", function()
+Classes.DefineClass("ACF.Missiles.FreeFallingBomb.50kg", "ACF.Missiles.FreeFallingBomb", function(CLASS)
 	CLASS.Name			= "50kg Free Falling Bomb"
 	CLASS.Description	= "Old WW2 100lb bomb, most effective vs exposed infantry and light trucks."
 	CLASS.Model			= "models/bombs/fab50.mdl"
@@ -55,7 +55,7 @@ Classes.DefineClass("ACF.Missiles.FreeFallingBomb.50kg", "ACF.Missiles.FreeFalli
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.FreeFallingBomb.100kg", "ACF.Missiles.FreeFallingBomb", function()
+Classes.DefineClass("ACF.Missiles.FreeFallingBomb.100kg", "ACF.Missiles.FreeFallingBomb", function(CLASS)
 	CLASS.Name			= "100kg Free Falling Bomb"
 	CLASS.Description	= "An old 250lb WW2 bomb, as used by Soviet bombers to destroy enemies of the Motherland."
 	CLASS.Model			= "models/bombs/fab100.mdl"
@@ -96,7 +96,7 @@ Classes.DefineClass("ACF.Missiles.FreeFallingBomb.100kg", "ACF.Missiles.FreeFall
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.FreeFallingBomb.250kg", "ACF.Missiles.FreeFallingBomb", function()
+Classes.DefineClass("ACF.Missiles.FreeFallingBomb.250kg", "ACF.Missiles.FreeFallingBomb", function(CLASS)
 	CLASS.Name			= "250kg Free Falling Bomb"
 	CLASS.Description	= "A heavy 500lb bomb, widely used as a tank buster on various WW2 aircraft."
 	CLASS.Model			= "models/bombs/fab250.mdl"
@@ -137,7 +137,7 @@ Classes.DefineClass("ACF.Missiles.FreeFallingBomb.250kg", "ACF.Missiles.FreeFall
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.FreeFallingBomb.500kg", "ACF.Missiles.FreeFallingBomb", function()
+Classes.DefineClass("ACF.Missiles.FreeFallingBomb.500kg", "ACF.Missiles.FreeFallingBomb", function(CLASS)
 	CLASS.Name			= "500kg Free Falling Bomb"
 	CLASS.Description	= "A 1000lb bomb, as found in the heavy bombers of late WW2. Best used against fortifications or immobile targets."
 	CLASS.Model			= "models/bombs/fab500.mdl"
@@ -178,7 +178,7 @@ Classes.DefineClass("ACF.Missiles.FreeFallingBomb.500kg", "ACF.Missiles.FreeFall
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.FreeFallingBomb.1000kg", "ACF.Missiles.FreeFallingBomb", function()
+Classes.DefineClass("ACF.Missiles.FreeFallingBomb.1000kg", "ACF.Missiles.FreeFallingBomb", function(CLASS)
 	CLASS.Name			= "1000kg Free Falling Bomb"
 	CLASS.Description	= "A 2000lb bomb. As close to a nuke as you can get in ACF, this munition will turn everything it touches to ashes. Handle with care."
 	CLASS.Model			= "models/bombs/an_m66.mdl"

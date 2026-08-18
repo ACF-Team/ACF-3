@@ -2,9 +2,7 @@ local ACF   	= ACF
 local Classes   = ACF.Classes
 local Effects   = ACF.Utilities.Effects
 
-Classes.DefineClass("ACF.Ammunition.GLATGM", "ACF.Ammunition.HEATFS", function()
-	local BASE = BASE
-
+Classes.DefineClass("ACF.Ammunition.GLATGM", "ACF.Ammunition.HEATFS", function(CLASS, BASE)
 	CLASS.Name		 = "Gun-Launched Anti-Tank Missile"
 	CLASS.SpawnIcon   = "acf/icons/shell_glatgm.png"
 	CLASS.Description = "A missile fired from a gun. While slower than a traditional shell, it makes up for that with guidance."

@@ -1,5 +1,5 @@
 local Classes = ACF.Classes
-Classes.DefineClass("ACF.Missiles.AirToAir", "ACF.Missiles.BaseMissile", function()
+Classes.DefineClass("ACF.Missiles.AirToAir", "ACF.Missiles.BaseMissile", function(CLASS)
 	CLASS.Name			= "Air-To-Air Missiles"
 	CLASS.ID 			= "AAM"
 	CLASS.Description	= "Missiles specialized for air-to-air flight. They have varying range, but are agile, can be radar-guided, and withstand difficult launch angles well."
@@ -14,7 +14,7 @@ Classes.DefineClass("ACF.Missiles.AirToAir", "ACF.Missiles.BaseMissile", functio
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.AirToAir.AIM-9", "ACF.Missiles.AirToAir", function()
+Classes.DefineClass("ACF.Missiles.AirToAir.AIM-9", "ACF.Missiles.AirToAir", function(CLASS)
 	CLASS.Name			= "AIM-9 Sidewinder"
 	CLASS.Description	= "Agile and reliable with a rather underwhelming effective range, this homing missile is the weapon of choice for dogfights."
 	CLASS.Model			= "models/missiles/aim9m.mdl"
@@ -57,7 +57,7 @@ Classes.DefineClass("ACF.Missiles.AirToAir.AIM-9", "ACF.Missiles.AirToAir", func
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.AirToAir.AIM-120", "ACF.Missiles.AirToAir", function()
+Classes.DefineClass("ACF.Missiles.AirToAir.AIM-120", "ACF.Missiles.AirToAir", function(CLASS)
 	CLASS.Name			= "AIM-120 AMRAAM"
 	CLASS.Description	= "Burns hot and fast, with a good reach, but harder to lock with. This long-range missile is sure to deliver one heck of a blast upon impact."
 	CLASS.Model			= "models/missiles/aim120c.mdl"
@@ -100,7 +100,7 @@ Classes.DefineClass("ACF.Missiles.AirToAir.AIM-120", "ACF.Missiles.AirToAir", fu
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.AirToAir.AIM-7", "ACF.Missiles.AirToAir", function()
+Classes.DefineClass("ACF.Missiles.AirToAir.AIM-7", "ACF.Missiles.AirToAir", function(CLASS)
 	CLASS.Name        	= "AIM-7 Sparrow"
 	CLASS.Description 	= "This well-aged early BVR missile has been worn on the hip of every raging fighter since '53. But don't be mislead, this ain't your granddaddy's Sparrow"
 	CLASS.Model       	= "models/missiles/aim7f.mdl"
@@ -143,7 +143,7 @@ Classes.DefineClass("ACF.Missiles.AirToAir.AIM-7", "ACF.Missiles.AirToAir", func
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.AirToAir.AIM-54", "ACF.Missiles.AirToAir", function()
+Classes.DefineClass("ACF.Missiles.AirToAir.AIM-54", "ACF.Missiles.AirToAir", function(CLASS)
 	CLASS.Name			= "AIM-54 Phoenix"
 	CLASS.Description	= "A BEEFY god-tier anti-bomber weapon, made with Jimmy Carter's repressed rage. Getting hit with one of these is a significant emotional event that is hard to avoid if you're flying high."
 	CLASS.Model			= "models/missiles/aim54a.mdl"

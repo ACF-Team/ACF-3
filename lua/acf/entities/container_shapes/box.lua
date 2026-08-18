@@ -1,4 +1,4 @@
-ACF.Classes.DefineClass("ACF.ContainerShapes.Box", "ACF.ContainerShapes.BaseContainerShape", function()
+ACF.Classes.DefineClass("ACF.ContainerShapes.Box", "ACF.ContainerShapes.BaseContainerShape", function(CLASS)
     CLASS.ID    = "Box"
     CLASS.Name  = "Box"
     CLASS.Model = "models/acf/core/s_fuel.mdl"

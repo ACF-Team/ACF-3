@@ -1,11 +1,11 @@
 local ACF     = ACF
 local Classes = ACF.Classes
-Classes.DefineClass("ACF.Engines.V10", "ACF.Engines.BaseEngine", function()
+Classes.DefineClass("ACF.Engines.V10", "ACF.Engines.BaseEngine", function(CLASS)
 	CLASS.Name = "V10 Engine"
 end)
 
 do
-	Classes.DefineClass("ACF.Engines.4.3-V10", "ACF.Engines.V10", function()
+	Classes.DefineClass("ACF.Engines.4.3-V10", "ACF.Engines.V10", function(CLASS)
 		CLASS.Name		 = "4.3L V10 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.v10.4_3"
 		CLASS.Model		 = "models/engines/v10sml.mdl"
@@ -24,7 +24,7 @@ do
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.8.0-V10", "ACF.Engines.V10", function()
+	Classes.DefineClass("ACF.Engines.8.0-V10", "ACF.Engines.V10", function(CLASS)
 		CLASS.Name		 = "8.0L V10 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.v10.8_0"
 		CLASS.Model		 = "models/engines/v10med.mdl"
@@ -43,7 +43,7 @@ do
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.22.0-V10", "ACF.Engines.V10", function()
+	Classes.DefineClass("ACF.Engines.22.0-V10", "ACF.Engines.V10", function(CLASS)
 		CLASS.Name		 = "22.0L V10 Multifuel"
 		CLASS.Description	 = "#acf.descs.engines.v10.22_0"
 		CLASS.Model		 = "models/engines/v10big.mdl"

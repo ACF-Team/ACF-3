@@ -16,7 +16,7 @@ function ACF.CreateGroundLoaderMenu(Data, Menu)
     end
 end
 
-Classes.DefineClass("ACF.Components.GroundLoader", "ACF.Components.BaseComponent", function()
+Classes.DefineClass("ACF.Components.GroundLoader", "ACF.Components.BaseComponent", function(CLASS)
     CLASS.Name        = "Ground Loader"
     CLASS.Description = "An entity capable of linking to ammo crates and loading racks within line of sight and range. Must be stationary to function."
     CLASS.Model       = "models/props_vehicles/generatortrailer01.mdl"

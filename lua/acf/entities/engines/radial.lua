@@ -1,11 +1,11 @@
 local ACF     = ACF
 local Classes = ACF.Classes
-Classes.DefineClass("ACF.Engines.R7", "ACF.Engines.BaseEngine", function()
+Classes.DefineClass("ACF.Engines.R7", "ACF.Engines.BaseEngine", function(CLASS)
 	CLASS.Name = "Radial 7 Engine"
 end)
 
 do
-	Classes.DefineClass("ACF.Engines.3.8-R7", "ACF.Engines.R7", function()
+	Classes.DefineClass("ACF.Engines.3.8-R7", "ACF.Engines.R7", function(CLASS)
 		CLASS.Name		 = "3.8L R7 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.r7.3_8"
 		CLASS.Model		 = "models/engines/radial7s.mdl"
@@ -24,7 +24,7 @@ do
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.11.0-R7", "ACF.Engines.R7", function()
+	Classes.DefineClass("ACF.Engines.11.0-R7", "ACF.Engines.R7", function(CLASS)
 		CLASS.Name		 = "11.0L R7 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.r7.11_0"
 		CLASS.Model		 = "models/engines/radial7m.mdl"
@@ -43,7 +43,7 @@ do
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.8.0-R7", "ACF.Engines.R7", function()
+	Classes.DefineClass("ACF.Engines.8.0-R7", "ACF.Engines.R7", function(CLASS)
 		CLASS.Name		 = "8.0L R7 Diesel"
 		CLASS.Description	 = "#acf.descs.engines.r7.8_0"
 		CLASS.Model		 = "models/engines/radial7m.mdl"
@@ -62,7 +62,7 @@ do
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.24.0-R7", "ACF.Engines.R7", function()
+	Classes.DefineClass("ACF.Engines.24.0-R7", "ACF.Engines.R7", function(CLASS)
 		CLASS.Name		 = "24.0L R7 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.r7.24_0"
 		CLASS.Model		 = "models/engines/radial7l.mdl"

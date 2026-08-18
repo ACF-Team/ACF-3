@@ -1,9 +1,7 @@
 local ACF   	= ACF
 local Classes   = ACF.Classes
 
-Classes.DefineClass("ACF.Ammunition.FLR", "ACF.Ammunition.AP", function()
-	local BASE = BASE
-
+Classes.DefineClass("ACF.Ammunition.FLR", "ACF.Ammunition.AP", function(CLASS, BASE)
 	CLASS.Name		 = "Flare"
 	CLASS.SpawnIcon   = "acf/icons/shell_flare.png"
 	CLASS.Description = "A countermeasure for infrared guided munitions."

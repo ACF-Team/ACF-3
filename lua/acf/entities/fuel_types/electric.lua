@@ -1,4 +1,4 @@
-ACF.Classes.DefineClass("ACF.FuelTypes.Electric", "ACF.FuelTypes.FuelType", function()
+ACF.Classes.DefineClass("ACF.FuelTypes.Electric", "ACF.FuelTypes.FuelType", function(CLASS)
     CLASS.ID         = "Electric"
     CLASS.Name       = "Lit-Ion Battery"
     CLASS.Density    = 3.89

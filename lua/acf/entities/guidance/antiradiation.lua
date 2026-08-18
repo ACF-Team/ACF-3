@@ -1,7 +1,6 @@
 local ACF       = ACF
 local Classes 	= ACF.Classes
-Classes.DefineClass("ACF.Missiles.Guidance.AntiRadiation", "ACF.Missiles.Guidance.Laser", function()
-	local BASE = BASE
+Classes.DefineClass("ACF.Missiles.Guidance.AntiRadiation", "ACF.Missiles.Guidance.Laser", function(CLASS, BASE)
 	CLASS.Name = "Anti-radiation"
 	function CLASS:Configure(Missile)
 		BASE.Configure(self, Missile)

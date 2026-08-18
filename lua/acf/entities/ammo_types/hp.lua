@@ -1,9 +1,7 @@
 local ACF       = ACF
 local Classes   = ACF.Classes
 
-Classes.DefineClass("ACF.Ammunition.HP", "ACF.Ammunition.AP", function()
-	local BASE = BASE
-
+Classes.DefineClass("ACF.Ammunition.HP", "ACF.Ammunition.AP", function(CLASS, BASE)
 	CLASS.Name		 = "Hollow Point"
 	CLASS.SpawnIcon   = "acf/icons/shell_hp.png"
 	CLASS.Bodygroup   = 0 -- Use AP bodygroup (no specific HP variant)

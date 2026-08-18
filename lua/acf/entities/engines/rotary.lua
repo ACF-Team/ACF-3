@@ -1,11 +1,11 @@
 local ACF     = ACF
 local Classes = ACF.Classes
-Classes.DefineClass("ACF.Engines.R", "ACF.Engines.BaseEngine", function()
+Classes.DefineClass("ACF.Engines.R", "ACF.Engines.BaseEngine", function(CLASS)
 	CLASS.Name = "Rotary Engine"
 end)
 
 do
-	Classes.DefineClass("ACF.Engines.900cc-R", "ACF.Engines.R", function()
+	Classes.DefineClass("ACF.Engines.900cc-R", "ACF.Engines.R", function(CLASS)
 		CLASS.Name		 = "0.9L Rotary"
 		CLASS.Description	 = "#acf.descs.engines.r.0_9"
 		CLASS.Model		 = "models/engines/wankel_2_small.mdl"
@@ -24,7 +24,7 @@ do
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.1.3L-R", "ACF.Engines.R", function()
+	Classes.DefineClass("ACF.Engines.1.3L-R", "ACF.Engines.R", function(CLASS)
 		CLASS.Name		 = "1.3L Rotary"
 		CLASS.Description	 = "#acf.descs.engines.r.1_3"
 		CLASS.Model		 = "models/engines/wankel_2_med.mdl"
@@ -43,7 +43,7 @@ do
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.2.0L-R", "ACF.Engines.R", function()
+	Classes.DefineClass("ACF.Engines.2.0L-R", "ACF.Engines.R", function(CLASS)
 		CLASS.Name		 = "2.0L Rotary"
 		CLASS.Description	 = "#acf.descs.engines.r.2_0"
 		CLASS.Model		 = "models/engines/wankel_3_med.mdl"

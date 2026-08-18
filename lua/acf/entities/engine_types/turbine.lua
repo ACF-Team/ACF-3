@@ -1,6 +1,6 @@
 local ACF         = ACF
 local Classes     = ACF.Classes
-Classes.DefineClass("ACF.EngineTypes.Turbine", "ACF.EngineTypes.BaseEngineType", function()
+Classes.DefineClass("ACF.EngineTypes.Turbine", "ACF.EngineTypes.BaseEngineType", function(CLASS)
 	CLASS.Name        = "Generic Turbine"
 	CLASS.Efficiency  = 0.375 -- previously 0.231
 	CLASS.TorqueScale = 0.2

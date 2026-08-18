@@ -2,12 +2,12 @@ local ACF     = ACF
 local Classes = ACF.Classes
 
 do -- Electric Motors
-	Classes.DefineClass("ACF.Engines.EL", "ACF.Engines.BaseEngine", function()
+	Classes.DefineClass("ACF.Engines.EL", "ACF.Engines.BaseEngine", function(CLASS)
 		CLASS.Name		= "Electric Motor"
 		CLASS.Description	= "#acf.descs.engines.el"
 	end)
 
-	Classes.DefineClass("ACF.Engines.Electric-Small", "ACF.Engines.EL", function()
+	Classes.DefineClass("ACF.Engines.Electric-Small", "ACF.Engines.EL", function(CLASS)
 		CLASS.Name		 = "Small Electric Motor"
 		CLASS.Description	 = "#acf.descs.engines.el.small"
 		CLASS.Model		 = "models/engines/emotorsmall.mdl"
@@ -28,7 +28,7 @@ do -- Electric Motors
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.Electric-Medium", "ACF.Engines.EL", function()
+	Classes.DefineClass("ACF.Engines.Electric-Medium", "ACF.Engines.EL", function(CLASS)
 		CLASS.Name		 = "Medium Electric Motor"
 		CLASS.Description	 = "#acf.descs.engines.el.medium"
 		CLASS.Model		 = "models/engines/emotormed.mdl"
@@ -49,7 +49,7 @@ do -- Electric Motors
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.Electric-Large", "ACF.Engines.EL", function()
+	Classes.DefineClass("ACF.Engines.Electric-Large", "ACF.Engines.EL", function(CLASS)
 		CLASS.Name		 = "Large Electric Motor"
 		CLASS.Description	 = "#acf.descs.engines.el.large"
 		CLASS.Model		 = "models/engines/emotorlarge.mdl"
@@ -69,12 +69,12 @@ do -- Electric Motors
 end
 
 do -- Electric Standalone Motors
-	Classes.DefineClass("ACF.Engines.EL-S", "ACF.Engines.BaseEngine", function()
+	Classes.DefineClass("ACF.Engines.EL-S", "ACF.Engines.BaseEngine", function(CLASS)
 		CLASS.Name		= "Electric Standalone Motor"
 		CLASS.Description	= "#acf.descs.engines.el.standalone"
 	end)
 
-	Classes.DefineClass("ACF.Engines.Electric-Tiny-NoBatt", "ACF.Engines.EL-S", function()
+	Classes.DefineClass("ACF.Engines.Electric-Tiny-NoBatt", "ACF.Engines.EL-S", function(CLASS)
 		CLASS.Name		 = "Tiny Electric Standalone Motor"
 		CLASS.Description	 = "#acf.descs.engines.el.standalone.tiny"
 		CLASS.Model		 = "models/engines/emotor-standalone-tiny.mdl"
@@ -95,7 +95,7 @@ do -- Electric Standalone Motors
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.Electric-Small-NoBatt", "ACF.Engines.EL-S", function()
+	Classes.DefineClass("ACF.Engines.Electric-Small-NoBatt", "ACF.Engines.EL-S", function(CLASS)
 		CLASS.Name		 = "Small Electric Standalone Motor"
 		CLASS.Description	 = "#acf.descs.engines.el.standalone.small"
 		CLASS.Model		 = "models/engines/emotor-standalone-sml.mdl"
@@ -116,7 +116,7 @@ do -- Electric Standalone Motors
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.Electric-Medium-NoBatt", "ACF.Engines.EL-S", function()
+	Classes.DefineClass("ACF.Engines.Electric-Medium-NoBatt", "ACF.Engines.EL-S", function(CLASS)
 		CLASS.Name		 = "Medium Electric Standalone Motor"
 		CLASS.Description	 = "#acf.descs.engines.el.standalone.medium"
 		CLASS.Model		 = "models/engines/emotor-standalone-mid.mdl"
@@ -137,7 +137,7 @@ do -- Electric Standalone Motors
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.Electric-Large-NoBatt", "ACF.Engines.EL-S", function()
+	Classes.DefineClass("ACF.Engines.Electric-Large-NoBatt", "ACF.Engines.EL-S", function(CLASS)
 		CLASS.Name		 = "Large Electric Standalone Motor"
 		CLASS.Description	 = "#acf.descs.engines.el.standalone.large"
 		CLASS.Model		 = "models/engines/emotor-standalone-big.mdl"

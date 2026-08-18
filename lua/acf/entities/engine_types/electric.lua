@@ -1,6 +1,6 @@
 local ACF         = ACF
 local Classes     = ACF.Classes
-Classes.DefineClass("ACF.EngineTypes.Electric", "ACF.EngineTypes.BaseEngineType", function()
+Classes.DefineClass("ACF.EngineTypes.Electric", "ACF.EngineTypes.BaseEngineType", function(CLASS)
 	CLASS.Name        = "Generic Electric Engine"
 	CLASS.Efficiency  = 0.85 --percent efficiency converting chemical kw into mechanical kw
 	CLASS.TorqueScale = 0.5

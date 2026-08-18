@@ -1,6 +1,6 @@
 local ACF = ACF
 
-ACF.Classes.DefineClass("ACF.Piledrivers.Piledriver", function()
+ACF.Classes.DefineClass("ACF.Piledrivers.Piledriver", function(CLASS)
 	CLASS.Name        	= "Piledriver"
 	CLASS.ShortName   	= "PD"
 	CLASS.Description 	= "#acf.descs.weapons.pd"

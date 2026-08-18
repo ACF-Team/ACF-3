@@ -1,5 +1,5 @@
 local Classes = ACF.Classes
-Classes.DefineClass("ACF.Missiles.GlidingBomb", "ACF.Missiles.BaseMissile", function()
+Classes.DefineClass("ACF.Missiles.GlidingBomb", "ACF.Missiles.BaseMissile", function(CLASS)
 	CLASS.Name			= "Gliding Bombs"
 	CLASS.ID			= "GBOMB"
 	CLASS.Description	= "Similar to regular free falling bombs, gliding bombs are capable of travelling longer distances."
@@ -14,7 +14,7 @@ Classes.DefineClass("ACF.Missiles.GlidingBomb", "ACF.Missiles.BaseMissile", func
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.GlidingBomb.100kg", "ACF.Missiles.GlidingBomb", function()
+Classes.DefineClass("ACF.Missiles.GlidingBomb.100kg", "ACF.Missiles.GlidingBomb", function(CLASS)
 	CLASS.Name			= "100kg Glide Bomb"
 	CLASS.Description	= "A 200-pound bomb, fitted with fins for a longer reach. Well suited to dive bombing, but bulkier and heavier from its fins."
 	CLASS.Model			= "models/missiles/micro.mdl"
@@ -53,7 +53,7 @@ Classes.DefineClass("ACF.Missiles.GlidingBomb.100kg", "ACF.Missiles.GlidingBomb"
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.GlidingBomb.250kg", "ACF.Missiles.GlidingBomb", function()
+Classes.DefineClass("ACF.Missiles.GlidingBomb.250kg", "ACF.Missiles.GlidingBomb", function(CLASS)
 	CLASS.Name			= "250kg Glide Bomb"
 	CLASS.Description	= "A heavy 500lb bomb, fitted with fins for a gliding trajectory better suited to striking point targets."
 	CLASS.Model			= "models/missiles/fab250.mdl"

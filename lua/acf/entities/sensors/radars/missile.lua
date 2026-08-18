@@ -2,7 +2,7 @@ local ACF             = ACF
 local Classes         = ACF.Classes
 local Countermeasures = ACF.Countermeasures
 
-Classes.DefineClass("ACF.Sensors.Radar.Missile", "ACF.Sensors.Radar", function()
+Classes.DefineClass("ACF.Sensors.Radar.Missile", "ACF.Sensors.Radar", function(CLASS)
 	CLASS.Name       = "Missile Radar"
 	CLASS.ID         = "AM-Radar"
 	CLASS.Entity     = "acf_radar"
@@ -21,7 +21,7 @@ Classes.DefineClass("ACF.Sensors.Radar.Missile", "ACF.Sensors.Radar", function()
 end)
 
 do -- Directional radars
-	Classes.DefineClass("ACF.Sensors.Radar.Missile.SmallDirectional", "ACF.Sensors.Radar.Missile", function()
+	Classes.DefineClass("ACF.Sensors.Radar.Missile.SmallDirectional", "ACF.Sensors.Radar.Missile", function(CLASS)
 		CLASS.Name        = "Small Directional Missile Radar"
 		CLASS.ID          = "SmallDIR-AM"
 		CLASS.Description  = "A lightweight directional radar with a smaller view cone."
@@ -34,7 +34,7 @@ do -- Directional radars
 		CLASS.Preview     = { FOV = 105 }
 	end)
 
-	Classes.DefineClass("ACF.Sensors.Radar.Missile.MediumDirectional", "ACF.Sensors.Radar.Missile", function()
+	Classes.DefineClass("ACF.Sensors.Radar.Missile.MediumDirectional", "ACF.Sensors.Radar.Missile", function(CLASS)
 		CLASS.Name        = "Medium Directional Missile Radar"
 		CLASS.ID          = "MediumDIR-AM"
 		CLASS.Description  = "A directional radar with a regular view cone."
@@ -47,7 +47,7 @@ do -- Directional radars
 		CLASS.Preview     = { FOV = 110 }
 	end)
 
-	Classes.DefineClass("ACF.Sensors.Radar.Missile.LargeDirectional", "ACF.Sensors.Radar.Missile", function()
+	Classes.DefineClass("ACF.Sensors.Radar.Missile.LargeDirectional", "ACF.Sensors.Radar.Missile", function(CLASS)
 		CLASS.Name        = "Large Directional Missile Radar"
 		CLASS.ID          = "LargeDIR-AM"
 		CLASS.Description  = "A heavy directional radar with a large view cone."
@@ -62,7 +62,7 @@ do -- Directional radars
 end
 
 do -- Spherical radars
-	Classes.DefineClass("ACF.Sensors.Radar.Missile.SmallSpherical", "ACF.Sensors.Radar.Missile", function()
+	Classes.DefineClass("ACF.Sensors.Radar.Missile.SmallSpherical", "ACF.Sensors.Radar.Missile", function(CLASS)
 		CLASS.Name        = "Small Spherical Missile Radar"
 		CLASS.ID          = "SmallOMNI-AM"
 		CLASS.Description  = "A lightweight omni-directional radar with a smaller range."
@@ -75,7 +75,7 @@ do -- Spherical radars
 		CLASS.Preview     = { FOV = 120 }
 	end)
 
-	Classes.DefineClass("ACF.Sensors.Radar.Missile.MediumSpherical", "ACF.Sensors.Radar.Missile", function()
+	Classes.DefineClass("ACF.Sensors.Radar.Missile.MediumSpherical", "ACF.Sensors.Radar.Missile", function(CLASS)
 		CLASS.Name        = "Medium Spherical Missile Radar"
 		CLASS.ID          = "MediumOMNI-AM"
 		CLASS.Description  = "A omni-directional radar with a regular range."
@@ -88,7 +88,7 @@ do -- Spherical radars
 		CLASS.Preview     = { FOV = 120 }
 	end)
 
-	Classes.DefineClass("ACF.Sensors.Radar.Missile.LargeSpherical", "ACF.Sensors.Radar.Missile", function()
+	Classes.DefineClass("ACF.Sensors.Radar.Missile.LargeSpherical", "ACF.Sensors.Radar.Missile", function(CLASS)
 		CLASS.Name        = "Large Spherical Missile Radar"
 		CLASS.ID          = "LargeOMNI-AM"
 		CLASS.Description  = "A heavy omni-directional radar with a large range."

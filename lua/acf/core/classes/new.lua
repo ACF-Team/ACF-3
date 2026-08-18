@@ -115,8 +115,6 @@ do
 
         if NewClass.OnInit then
             local Environment = {}
-            Environment.CLASS = NewClass
-            Environment.BASE  = BaseClass
 
             local function AddField(Menu, FieldType, Name, Options)
                 local NewClassMT = getmetatable(NewClass)
@@ -168,7 +166,7 @@ do
             setmetatable(Environment, {__index = _G})
             setfenv(NewClass.OnInit, Environment)
 
-            NewClass.OnInit()
+            NewClass.OnInit(NewClass, BaseClass)
             ClassMeta.__inherited = NewClass.__inherited
         end
         -- Just in case GetType is no longer the same function...

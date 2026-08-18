@@ -1,4 +1,4 @@
-ACF.Classes.DefineClass("ACF.ContainerShapes.Sphere", "ACF.ContainerShapes.BaseContainerShape", function()
+ACF.Classes.DefineClass("ACF.ContainerShapes.Sphere", "ACF.ContainerShapes.BaseContainerShape", function(CLASS)
     CLASS.ID    = "Sphere"
     CLASS.Name  = "Sphere"
     CLASS.Model = "models/acf/core/s_sphere.mdl"

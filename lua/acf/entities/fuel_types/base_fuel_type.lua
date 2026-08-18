@@ -1,6 +1,6 @@
 local Classes = ACF.Classes
 
-Classes.DefineClass("ACF.FuelTypes.FuelType", function()
+Classes.DefineClass("ACF.FuelTypes.FuelType", function(CLASS)
     CLASS.ID          = "FuelType"
     CLASS.Name        = "Fuel Type"
     CLASS.Density     = 0.832 -- kg per liter (or kg per kWh for electric)

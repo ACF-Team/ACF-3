@@ -1,6 +1,6 @@
 local ACF     = ACF
 
-ACF.Classes.DefineClass("ACF.Guns.FlareLauncher", "ACF.Guns.BaseGun", function()
+ACF.Classes.DefineClass("ACF.Guns.FlareLauncher", "ACF.Guns.BaseGun", function(CLASS)
 	CLASS.Name        	= "Flare Launcher"
 	CLASS.ID          	= "FGL"
 	CLASS.IsWeapon		= true
@@ -33,7 +33,7 @@ ACF.Classes.DefineClass("ACF.Guns.FlareLauncher", "ACF.Guns.BaseGun", function()
 	}
 end)
 
-ACF.Classes.DefineClass("ACF.Guns.40mmFlareLauncher", "ACF.Guns.FlareLauncher", function()
+ACF.Classes.DefineClass("ACF.Guns.40mmFlareLauncher", "ACF.Guns.FlareLauncher", function(CLASS)
 	CLASS.Name				= "40mm Flare Launcher"
 	CLASS.ID				= "40mmFGL"
 	CLASS.IsWeaponOption	= true

@@ -17,7 +17,7 @@ function ACF.CreateWaterjetMenu(_, Menu, Ctx)
     SizeX:SetValue(Ctx:Get("WaterjetSize") or 1)
 end
 
-Classes.DefineClass("ACF.Components.Waterjet", "ACF.Components.BaseComponent", function()
+Classes.DefineClass("ACF.Components.Waterjet", "ACF.Components.BaseComponent", function(CLASS)
     CLASS.Name        = "Water Jet"
     CLASS.Description  = "Entity capable of aiding with movement in water."
     CLASS.Model        = "models/maxofs2d/hover_propeller.mdl"

@@ -1,13 +1,13 @@
 local ACF     = ACF
 local Classes = ACF.Classes
 
-Classes.DefineClass("ACF.Engines.GT", "ACF.Engines.BaseEngine", function()
+Classes.DefineClass("ACF.Engines.GT", "ACF.Engines.BaseEngine", function(CLASS)
 	CLASS.Name = "Gas Turbine"
 	CLASS.Description	= "#acf.descs.engines.gt"
 end)
 
 do -- Forward-facing Gas Turbines
-	Classes.DefineClass("ACF.Engines.Turbine-Small", "ACF.Engines.GT", function()
+	Classes.DefineClass("ACF.Engines.Turbine-Small", "ACF.Engines.GT", function(CLASS)
 		CLASS.Name		 = "Small Gas Turbine"
 		CLASS.Description	 = "#acf.descs.engines.gt.small"
 		CLASS.Model		 = "models/engines/gasturbine_s.mdl"
@@ -28,7 +28,7 @@ do -- Forward-facing Gas Turbines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.Turbine-Medium", "ACF.Engines.GT", function()
+	Classes.DefineClass("ACF.Engines.Turbine-Medium", "ACF.Engines.GT", function(CLASS)
 		CLASS.Name		 = "Medium Gas Turbine"
 		CLASS.Description	 = "#acf.descs.engines.gt.medium"
 		CLASS.Model		 = "models/engines/gasturbine_m.mdl"
@@ -49,7 +49,7 @@ do -- Forward-facing Gas Turbines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.Turbine-Large", "ACF.Engines.GT", function()
+	Classes.DefineClass("ACF.Engines.Turbine-Large", "ACF.Engines.GT", function(CLASS)
 		CLASS.Name		 = "Large Gas Turbine"
 		CLASS.Description	 = "#acf.descs.engines.gt.large"
 		CLASS.Model		 = "models/engines/gasturbine_l.mdl"
@@ -72,7 +72,7 @@ do -- Forward-facing Gas Turbines
 end
 
 do -- Transaxial Gas Turbines
-	Classes.DefineClass("ACF.Engines.Turbine-Small-Trans", "ACF.Engines.GT", function()
+	Classes.DefineClass("ACF.Engines.Turbine-Small-Trans", "ACF.Engines.GT", function(CLASS)
 		CLASS.Name		 = "Small Transaxial Gas Turbine"
 		CLASS.Description	 = "#acf.descs.engines.gt.small_trans"
 		CLASS.Model		 = "models/engines/turbine_s.mdl"
@@ -94,7 +94,7 @@ do -- Transaxial Gas Turbines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.Turbine-Medium-Trans", "ACF.Engines.GT", function()
+	Classes.DefineClass("ACF.Engines.Turbine-Medium-Trans", "ACF.Engines.GT", function(CLASS)
 		CLASS.Name		 = "Medium Transaxial Gas Turbine"
 		CLASS.Description	 = "#acf.descs.engines.gt.medium_trans"
 		CLASS.Model		 = "models/engines/turbine_m.mdl"
@@ -116,7 +116,7 @@ do -- Transaxial Gas Turbines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.Turbine-Large-Trans", "ACF.Engines.GT", function()
+	Classes.DefineClass("ACF.Engines.Turbine-Large-Trans", "ACF.Engines.GT", function(CLASS)
 		CLASS.Name		 = "Large Transaxial Gas Turbine"
 		CLASS.Description	 = "#acf.descs.engines.gt.large_trans"
 		CLASS.Model		 = "models/engines/turbine_l.mdl"
@@ -139,13 +139,13 @@ do -- Transaxial Gas Turbines
 	end)
 end
 
-Classes.DefineClass("ACF.Engines.GGT", "ACF.Engines.BaseEngine", function()
+Classes.DefineClass("ACF.Engines.GGT", "ACF.Engines.BaseEngine", function(CLASS)
 	CLASS.Name = "Ground Gas Turbine"
 	CLASS.Description	= "#acf.descs.engines.ggt"
 end)
 
 do -- Forward-facing Ground Gas Turbines
-	Classes.DefineClass("ACF.Engines.Turbine-Ground-Small", "ACF.Engines.GGT", function()
+	Classes.DefineClass("ACF.Engines.Turbine-Ground-Small", "ACF.Engines.GGT", function(CLASS)
 		CLASS.Name		 = "Small Ground Gas Turbine"
 		CLASS.Description	 = "#acf.descs.engines.ggt.small"
 		CLASS.Model		 = "models/engines/gasturbine_s.mdl"
@@ -166,7 +166,7 @@ do -- Forward-facing Ground Gas Turbines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.Turbine-Ground-Medium", "ACF.Engines.GGT", function()
+	Classes.DefineClass("ACF.Engines.Turbine-Ground-Medium", "ACF.Engines.GGT", function(CLASS)
 		CLASS.Name		 = "Medium Ground Gas Turbine"
 		CLASS.Description	 = "#acf.descs.engines.ggt.medium"
 		CLASS.Model		 = "models/engines/gasturbine_m.mdl"
@@ -188,7 +188,7 @@ do -- Forward-facing Ground Gas Turbines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.Turbine-Ground-Large", "ACF.Engines.GGT", function()
+	Classes.DefineClass("ACF.Engines.Turbine-Ground-Large", "ACF.Engines.GGT", function(CLASS)
 		CLASS.Name		 = "Large Ground Gas Turbine"
 		CLASS.Description	 = "#acf.descs.engines.ggt.large"
 		CLASS.Model		 = "models/engines/gasturbine_l.mdl"
@@ -212,7 +212,7 @@ do -- Forward-facing Ground Gas Turbines
 end
 
 do -- Transaxial Ground Gas Turbines
-	Classes.DefineClass("ACF.Engines.Turbine-Small-Ground-Trans", "ACF.Engines.GGT", function()
+	Classes.DefineClass("ACF.Engines.Turbine-Small-Ground-Trans", "ACF.Engines.GGT", function(CLASS)
 		CLASS.Name		 = "Small Transaxial Ground Gas Turbine"
 		CLASS.Description	 = "#acf.descs.engines.ggt.small_trans"
 		CLASS.Model		 = "models/engines/turbine_s.mdl"
@@ -234,7 +234,7 @@ do -- Transaxial Ground Gas Turbines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.Turbine-Medium-Ground-Trans", "ACF.Engines.GGT", function()
+	Classes.DefineClass("ACF.Engines.Turbine-Medium-Ground-Trans", "ACF.Engines.GGT", function(CLASS)
 		CLASS.Name		 = "Medium Transaxial Ground Gas Turbine"
 		CLASS.Description	 = "#acf.descs.engines.ggt.medium_trans"
 		CLASS.Model		 = "models/engines/turbine_m.mdl"
@@ -257,7 +257,7 @@ do -- Transaxial Ground Gas Turbines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.Turbine-Large-Ground-Trans", "ACF.Engines.GGT", function()
+	Classes.DefineClass("ACF.Engines.Turbine-Large-Ground-Trans", "ACF.Engines.GGT", function(CLASS)
 		CLASS.Name		 = "Large Transaxial Ground Gas Turbine"
 		CLASS.Description	 = "#acf.descs.engines.ggt.large_trans"
 		CLASS.Model		 = "models/engines/turbine_l.mdl"

@@ -1,7 +1,7 @@
 local ACF     = ACF
 local Classes = ACF.Classes
 
-Classes.DefineClass("ACF.Sensors.Radar.Targeting", "ACF.Sensors.Radar", function()
+Classes.DefineClass("ACF.Sensors.Radar.Targeting", "ACF.Sensors.Radar", function(CLASS)
 	CLASS.Name       = "Targeting Radar"
 	CLASS.ID         = "TGT-Radar"
 	CLASS.Entity     = "acf_radar"
@@ -20,7 +20,7 @@ Classes.DefineClass("ACF.Sensors.Radar.Targeting", "ACF.Sensors.Radar", function
 end)
 
 do -- Directional radars
-	Classes.DefineClass("ACF.Sensors.Radar.Targeting.SmallDirectional", "ACF.Sensors.Radar.Targeting", function()
+	Classes.DefineClass("ACF.Sensors.Radar.Targeting.SmallDirectional", "ACF.Sensors.Radar.Targeting", function(CLASS)
 		CLASS.Name        = "Small Directional Radar"
 		CLASS.ID          = "SmallDIR-TGT"
 		CLASS.Description  = "A lightweight directional radar with a smaller view cone."
@@ -33,7 +33,7 @@ do -- Directional radars
 		CLASS.Preview     = { FOV = 105 }
 	end)
 
-	Classes.DefineClass("ACF.Sensors.Radar.Targeting.MediumDirectional", "ACF.Sensors.Radar.Targeting", function()
+	Classes.DefineClass("ACF.Sensors.Radar.Targeting.MediumDirectional", "ACF.Sensors.Radar.Targeting", function(CLASS)
 		CLASS.Name        = "Medium Directional Radar"
 		CLASS.ID          = "MediumDIR-TGT"
 		CLASS.Description  = "A directional radar with a regular view cone."
@@ -46,7 +46,7 @@ do -- Directional radars
 		CLASS.Preview     = { FOV = 110 }
 	end)
 
-	Classes.DefineClass("ACF.Sensors.Radar.Targeting.LargeDirectional", "ACF.Sensors.Radar.Targeting", function()
+	Classes.DefineClass("ACF.Sensors.Radar.Targeting.LargeDirectional", "ACF.Sensors.Radar.Targeting", function(CLASS)
 		CLASS.Name        = "Large Directional Radar"
 		CLASS.ID          = "LargeDIR-TGT"
 		CLASS.Description  = "A heavy directional radar with a large view cone."
@@ -65,7 +65,7 @@ do -- Directional radars
 end
 
 do -- Spherical radars
-	Classes.DefineClass("ACF.Sensors.Radar.Targeting.SmallSpherical", "ACF.Sensors.Radar.Targeting", function()
+	Classes.DefineClass("ACF.Sensors.Radar.Targeting.SmallSpherical", "ACF.Sensors.Radar.Targeting", function(CLASS)
 		CLASS.Name        = "Small Spherical Radar"
 		CLASS.ID          = "SmallOMNI-TGT"
 		CLASS.Description  = "A lightweight omni-directional radar with a smaller range."
@@ -78,7 +78,7 @@ do -- Spherical radars
 		CLASS.Preview     = { FOV = 120 }
 	end)
 
-	Classes.DefineClass("ACF.Sensors.Radar.Targeting.MediumSpherical", "ACF.Sensors.Radar.Targeting", function()
+	Classes.DefineClass("ACF.Sensors.Radar.Targeting.MediumSpherical", "ACF.Sensors.Radar.Targeting", function(CLASS)
 		CLASS.Name        = "Medium Spherical Radar"
 		CLASS.ID          = "MediumOMNI-TGT"
 		CLASS.Description  = "A omni-directional radar with a regular range."
@@ -91,7 +91,7 @@ do -- Spherical radars
 		CLASS.Preview     = { FOV = 120 }
 	end)
 
-	Classes.DefineClass("ACF.Sensors.Radar.Targeting.LargeSpherical", "ACF.Sensors.Radar.Targeting", function()
+	Classes.DefineClass("ACF.Sensors.Radar.Targeting.LargeSpherical", "ACF.Sensors.Radar.Targeting", function(CLASS)
 		CLASS.Name        = "Large Spherical Radar"
 		CLASS.ID          = "LargeOMNI-TGT"
 		CLASS.Description  = "A heavy omni-directional radar with a large range."

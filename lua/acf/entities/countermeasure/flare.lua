@@ -3,7 +3,7 @@ local Classes 			= ACF.Classes
 local Countermeasures = ACF.Countermeasures or {}
 ACF.Countermeasures = Countermeasures
 
-Classes.DefineClass("ACF.Countermeasures.Flare", "ACF.Countermeasures.BaseCountermeasure", function()
+Classes.DefineClass("ACF.Countermeasures.Flare", "ACF.Countermeasures.BaseCountermeasure", function(CLASS)
 	CLASS.AppliesTo = {
 		["ACF.Missiles.Guidance.Infrared"] = true,
 		["ACF.Missiles.Guidance.ActiveRadar"] = true,

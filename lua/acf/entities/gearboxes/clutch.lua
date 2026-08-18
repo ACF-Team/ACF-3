@@ -10,7 +10,7 @@ local CST = 3000
 -- General description
 local CDesc = "A standalone clutch for when a full size gearbox is unnecessary or too long."
 
-Classes.DefineClass("ACF.Gearboxes.Clutch", "ACF.Gearboxes.BaseGearbox", function()
+Classes.DefineClass("ACF.Gearboxes.Clutch", "ACF.Gearboxes.BaseGearbox", function(CLASS)
 	CLASS.Name		= "Clutch"
 	CLASS.CreateMenu	= ACF.ManualGearboxMenu
 	CLASS.Gears = {
@@ -20,7 +20,7 @@ Classes.DefineClass("ACF.Gearboxes.Clutch", "ACF.Gearboxes.BaseGearbox", functio
 end)
 
 do -- Scalable Clutch
-	Classes.DefineClass("ACF.Gearboxes.Clutch-S", "ACF.Gearboxes.Clutch", function()
+	Classes.DefineClass("ACF.Gearboxes.Clutch-S", "ACF.Gearboxes.Clutch", function(CLASS)
 		CLASS.Name			= "Clutch, Straight"
 		CLASS.Description	= CDesc
 		CLASS.ID			= "Clutch-S"

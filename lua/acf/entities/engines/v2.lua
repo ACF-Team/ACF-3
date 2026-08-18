@@ -1,11 +1,11 @@
 local ACF     = ACF
 local Classes = ACF.Classes
-Classes.DefineClass("ACF.Engines.V2", "ACF.Engines.BaseEngine", function()
+Classes.DefineClass("ACF.Engines.V2", "ACF.Engines.BaseEngine", function(CLASS)
 	CLASS.Name = "V-Twin Engine"
 end)
 
 do -- Petrol Engines
-	Classes.DefineClass("ACF.Engines.0.6-V2", "ACF.Engines.V2", function()
+	Classes.DefineClass("ACF.Engines.0.6-V2", "ACF.Engines.V2", function(CLASS)
 		CLASS.Name		 = "600cc V-Twin"
 		CLASS.Description	 = "#acf.descs.engines.v2.0_6"
 		CLASS.Model		 = "models/engines/v-twins2.mdl"
@@ -24,7 +24,7 @@ do -- Petrol Engines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.1.2-V2", "ACF.Engines.V2", function()
+	Classes.DefineClass("ACF.Engines.1.2-V2", "ACF.Engines.V2", function(CLASS)
 		CLASS.Name		 = "1200cc V-Twin"
 		CLASS.Description	 = "#acf.descs.engines.v2.1_2"
 		CLASS.Model		 = "models/engines/v-twinm2.mdl"
@@ -43,7 +43,7 @@ do -- Petrol Engines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.2.4-V2", "ACF.Engines.V2", function()
+	Classes.DefineClass("ACF.Engines.2.4-V2", "ACF.Engines.V2", function(CLASS)
 		CLASS.Name		 = "2400cc V-Twin"
 		CLASS.Description	 = "#acf.descs.engines.v2.2_4"
 		CLASS.Model		 = "models/engines/v-twinl2.mdl"

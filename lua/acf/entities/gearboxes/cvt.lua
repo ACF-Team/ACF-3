@@ -20,7 +20,7 @@ local function InitGearbox(Gearbox)
 	WireLib.TriggerOutput(Gearbox, "Max Target RPM", Gears.MaxRPM)
 end
 
-Classes.DefineClass("ACF.Gearboxes.CVT", "ACF.Gearboxes.BaseGearbox", function()
+Classes.DefineClass("ACF.Gearboxes.CVT", "ACF.Gearboxes.BaseGearbox", function(CLASS)
 	CLASS.Name		= "CVT"
 	CLASS.CreateMenu	= ACF.CVTGearboxMenu
 	CLASS.Gears = {
@@ -75,7 +75,7 @@ Classes.DefineClass("ACF.Gearboxes.CVT", "ACF.Gearboxes.BaseGearbox", function()
 end)
 
 do -- Scalable Gearboxes
-	Classes.DefineClass("ACF.Gearboxes.CVT-L", "ACF.Gearboxes.CVT", function()
+	Classes.DefineClass("ACF.Gearboxes.CVT-L", "ACF.Gearboxes.CVT", function(CLASS)
 		CLASS.Name			= "CVT, Inline"
 		CLASS.Description	= "An inline gearbox capable of keeping an engine within a specified RPM range by constantly adjusting the gear ratio."
 		CLASS.ID			= "CVT-L"
@@ -89,7 +89,7 @@ do -- Scalable Gearboxes
 		}
 	end)
 
-	Classes.DefineClass("ACF.Gearboxes.CVT-T", "ACF.Gearboxes.CVT", function()
+	Classes.DefineClass("ACF.Gearboxes.CVT-T", "ACF.Gearboxes.CVT", function(CLASS)
 		CLASS.Name			= "CVT, Transaxial"
 		CLASS.Description	= "A transaxial gearbox capable of keeping an engine within a specified RPM range by constantly adjusting the gear ratio."
 		CLASS.ID			= "CVT-T"
@@ -103,7 +103,7 @@ do -- Scalable Gearboxes
 		}
 	end)
 
-	Classes.DefineClass("ACF.Gearboxes.CVT-ST", "ACF.Gearboxes.CVT", function()
+	Classes.DefineClass("ACF.Gearboxes.CVT-ST", "ACF.Gearboxes.CVT", function(CLASS)
 		CLASS.Name			= "CVT, Straight"
 		CLASS.Description	= "A straight-through gearbox capable of keeping an engine within a specified RPM range by constantly adjusting the gear ratio."
 		CLASS.ID			= "CVT-ST"

@@ -1,6 +1,6 @@
 local Classes = ACF.Classes
 
-Classes.DefineClass("ACF.Racks.40mm7xPOD", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.40mm7xPOD", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "7x 40mm FFAR Pod"
 	CLASS.Description	= "A lightweight pod for small rockets which is vulnerable to shots and explosions."
 	CLASS.Model		= "models/missiles/launcher7_40mm.mdl"
@@ -26,7 +26,7 @@ Classes.DefineClass("ACF.Racks.40mm7xPOD", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.57mm16xPOD", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.57mm16xPOD", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "16x 57mm FFAR Pod"
 	CLASS.Description	= "A lightweight pod for small rockets which is vulnerable to shots and explosions."
 	CLASS.Model		= "models/failz/ub_16.mdl"
@@ -62,7 +62,7 @@ Classes.DefineClass("ACF.Racks.57mm16xPOD", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.57mm32xPOD", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.57mm32xPOD", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "32x 57mm FFAR Pod"
 	CLASS.Description	= "A lightweight pod for small rockets which is vulnerable to shots and explosions."
 	CLASS.Model		= "models/failz/ub_32.mdl"
@@ -114,7 +114,7 @@ Classes.DefineClass("ACF.Racks.57mm32xPOD", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.70mm7xPOD", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.70mm7xPOD", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "7x 70mm FFAR Pod"
 	CLASS.Description	= "A lightweight pod for rockets which is vulnerable to shots and explosions."
 	CLASS.Model		= "models/missiles/launcher7_70mm.mdl"
@@ -141,7 +141,7 @@ Classes.DefineClass("ACF.Racks.70mm7xPOD", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.70mm19xPOD", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.70mm19xPOD", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "19x 70mm FFAR Pod"
 	CLASS.Description	= "A lightweight pod for rockets which is vulnerable to shots and explosions."
 	CLASS.Model		= "models/failz/lau_61.mdl"
@@ -180,7 +180,7 @@ Classes.DefineClass("ACF.Racks.70mm19xPOD", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.80mm20xPOD", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.80mm20xPOD", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "20x 80mm FFAR Pod"
 	CLASS.Description	= "A lightweight pod for rockets which is vulnerable to shots and explosions."
 	CLASS.Model		= "models/failz/b8.mdl"
@@ -220,7 +220,7 @@ Classes.DefineClass("ACF.Racks.80mm20xPOD", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.1xBGM-71E", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.1xBGM-71E", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "TOW Launch Tube"
 	CLASS.Description	= "A single BGM-71E round."
 	CLASS.Model		= "models/missiles/bgm_71e_round.mdl"
@@ -242,7 +242,7 @@ Classes.DefineClass("ACF.Racks.1xBGM-71E", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.2xBGM-71E", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.2xBGM-71E", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "Dual TOW Launch Tube"
 	CLASS.Description	= "A BGM-71E rack designed to carry 2 rounds."
 	CLASS.Model		= "models/missiles/bgm_71e_2xrk.mdl"
@@ -265,7 +265,7 @@ Classes.DefineClass("ACF.Racks.2xBGM-71E", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.4xBGM-71E", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.4xBGM-71E", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "Quad TOW Launch Tube"
 	CLASS.Description	= "A BGM-71E rack designed to carry 4 rounds."
 	CLASS.Model		= "models/missiles/bgm_71e_4xrk.mdl"
@@ -289,7 +289,7 @@ Classes.DefineClass("ACF.Racks.4xBGM-71E", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.380mmRW61", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.380mmRW61", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "380mm Rocket Mortar"
 	CLASS.Description	= "A lightweight pod for rocket-asisted mortars which is vulnerable to shots and explosions."
 	CLASS.Model		= "models/launcher/rw61.mdl"
@@ -307,7 +307,7 @@ Classes.DefineClass("ACF.Racks.380mmRW61", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.3xUARRK", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.3xUARRK", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "Triple Launch Tube"
 	CLASS.Description	= "A lightweight rack for bombs which is vulnerable to shots and explosions."
 	CLASS.Model		= "models/missiles/rk3uar.mdl"
@@ -330,7 +330,7 @@ Classes.DefineClass("ACF.Racks.3xUARRK", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.6xUARRK", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.6xUARRK", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "6x Launch Tube"
 	CLASS.Description	= "6-pack of death, used to efficiently carry artillery rockets"
 	CLASS.Model		= "models/missiles/6pod_rk.mdl"
@@ -356,7 +356,7 @@ Classes.DefineClass("ACF.Racks.6xUARRK", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.1xFIM-92", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.1xFIM-92", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "Stinger Launch Tube"
 	CLASS.Description	= "An FIM-92 rack designed to carry 1 missile."
 	CLASS.Model		= "models/missiles/fim_92_1xrk.mdl"
@@ -377,7 +377,7 @@ Classes.DefineClass("ACF.Racks.1xFIM-92", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.2xFIM-92", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.2xFIM-92", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "Dual Stinger Launch Tube"
 	CLASS.Description	= "An FIM-92 rack designed to carry 2 missiles."
 	CLASS.Model		= "models/missiles/fim_92_2xrk.mdl"
@@ -399,7 +399,7 @@ Classes.DefineClass("ACF.Racks.2xFIM-92", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.4xFIM-92", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.4xFIM-92", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "Quad Stinger Launch Tube"
 	CLASS.Description	= "An FIM-92 rack designed to carry 4 missiles."
 	CLASS.Model		= "models/missiles/fim_92_4xrk.mdl"
@@ -422,7 +422,7 @@ Classes.DefineClass("ACF.Racks.4xFIM-92", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.1xStrela-1", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.1xStrela-1", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "Strela Launch Tube"
 	CLASS.Description	= "An 9M31 rack designed to carry 1 missile."
 	CLASS.Model		= "models/missiles/9m31_rk1.mdl"
@@ -442,7 +442,7 @@ Classes.DefineClass("ACF.Racks.1xStrela-1", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.2xStrela-1", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.2xStrela-1", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "Dual Strela Launch Tube"
 	CLASS.Description	= "An 9M31 rack designed to carry 2 missiles."
 	CLASS.Model		= "models/missiles/9m31_rk2.mdl"
@@ -463,7 +463,7 @@ Classes.DefineClass("ACF.Racks.2xStrela-1", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.4xStrela-1", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.4xStrela-1", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "Quad Strela Launch Tube"
 	CLASS.Description	= "An 9m31 rack designed to carry 4 missiles."
 	CLASS.Model		= "models/missiles/9m31_rk4.mdl"
@@ -486,7 +486,7 @@ Classes.DefineClass("ACF.Racks.4xStrela-1", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.1xAtaka", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.1xAtaka", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "Ataka Launch Tube"
 	CLASS.Description	= "An 9M120 rack designed to carry 1 missile."
 	CLASS.Model		= "models/missiles/9m120_rk1.mdl"
@@ -509,7 +509,7 @@ Classes.DefineClass("ACF.Racks.1xAtaka", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.1xSPG9", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.1xSPG9", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "SPG-9 Launch Tube"
 	CLASS.Description	= "Launch tube for SPG-9 recoilless rocket."
 	CLASS.Model		= "models/spg9/spg9.mdl"
@@ -532,7 +532,7 @@ Classes.DefineClass("ACF.Racks.1xSPG9", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.1xKornet", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.1xKornet", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "Kornet Launch Tube"
 	CLASS.Description	= "Launch tube for Kornet antitank missile."
 	CLASS.Model		= "models/kali/weapons/kornet/parts/9m133 kornet tube.mdl"
@@ -553,7 +553,7 @@ Classes.DefineClass("ACF.Racks.1xKornet", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.127mm4xPOD", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.127mm4xPOD", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "Quad Zuni Rocket Pod"
 	CLASS.Description	= "LAU-10/A Pod for the Zuni rocket."
 	CLASS.Model		= "models/ghosteh/lau10.mdl"

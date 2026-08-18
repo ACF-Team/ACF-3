@@ -1,5 +1,5 @@
 local Classes = ACF.Classes
-Classes.DefineClass("ACF.Missiles.SurfaceToAir", "ACF.Missiles.BaseMissile", function()
+Classes.DefineClass("ACF.Missiles.SurfaceToAir", "ACF.Missiles.BaseMissile", function(CLASS)
 	CLASS.Name			= "Surface-To-Air Missiles"
 	CLASS.ID			= "SAM"
 	CLASS.Description	= "Missiles specialized for surface-to-air operation, and well suited to lower altitude operation against ground attack aircraft."
@@ -14,7 +14,7 @@ Classes.DefineClass("ACF.Missiles.SurfaceToAir", "ACF.Missiles.BaseMissile", fun
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.SurfaceToAir.FIM-92", "ACF.Missiles.SurfaceToAir", function()
+Classes.DefineClass("ACF.Missiles.SurfaceToAir.FIM-92", "ACF.Missiles.SurfaceToAir", function(CLASS)
 	CLASS.Name			= "FIM-92 Stinger"
 	CLASS.Description	= "The FIM-92 Stinger is a lightweight and versatile close-range air defense missile."
 	CLASS.Model			= "models/missiles/fim_92.mdl"
@@ -56,7 +56,7 @@ Classes.DefineClass("ACF.Missiles.SurfaceToAir.FIM-92", "ACF.Missiles.SurfaceToA
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.SurfaceToAir.Strela-1", "ACF.Missiles.SurfaceToAir", function()
+Classes.DefineClass("ACF.Missiles.SurfaceToAir.Strela-1", "ACF.Missiles.SurfaceToAir", function(CLASS)
 	CLASS.Name			= "9M31 Strela-1"
 	CLASS.Description	= "The 9M31 Strela-1 (SA-9 Gaskin) is a medium-range homing SAM, best suited to ground vehicles or stationary units."
 	CLASS.Model			= "models/missiles/9m31.mdl"

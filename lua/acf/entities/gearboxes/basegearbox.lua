@@ -1,7 +1,7 @@
 local ACF         = ACF
 local Classes     = ACF.Classes
 
-Classes.DefineClass("ACF.Gearboxes.BaseGearbox", function()
+Classes.DefineClass("ACF.Gearboxes.BaseGearbox", function(CLASS)
     CLASS.Sound = "buttons/lever7.wav"
     function CLASS.__inherited(NewClass)
         if not NewClass.LimitConVar then

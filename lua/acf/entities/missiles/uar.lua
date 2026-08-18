@@ -1,5 +1,5 @@
 local Classes = ACF.Classes
-Classes.DefineClass("ACF.Missiles.UnguidedRocket", "ACF.Missiles.BaseMissile", function()
+Classes.DefineClass("ACF.Missiles.UnguidedRocket", "ACF.Missiles.BaseMissile", function(CLASS)
 	CLASS.Name			= "Unguided Aerial Rockets"
 	CLASS.ID			= "UAR"
 	CLASS.Description	= "Rockets which fit in racks, useful for rocket artillery."
@@ -14,7 +14,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket", "ACF.Missiles.BaseMissile", f
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.UnguidedRocket.RS82", "ACF.Missiles.UnguidedRocket", function()
+Classes.DefineClass("ACF.Missiles.UnguidedRocket.RS82", "ACF.Missiles.UnguidedRocket", function(CLASS)
 	CLASS.Name			= "RS-82 Rocket"
 	CLASS.Description	= "A small, unguided rocket, often used in multiple-launch artillery as well as for attacking pinpoint ground targets."
 	CLASS.Model			= "models/missiles/rs82.mdl"
@@ -69,7 +69,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.RS82", "ACF.Missiles.UnguidedRo
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.UnguidedRocket.HVAR", "ACF.Missiles.UnguidedRocket", function()
+Classes.DefineClass("ACF.Missiles.UnguidedRocket.HVAR", "ACF.Missiles.UnguidedRocket", function(CLASS)
 	CLASS.Name			= "HVAR Rocket"
 	CLASS.Description	= "A medium, unguided rocket. More bang than the RS82, at the cost of size and weight."
 	CLASS.Model			= "models/missiles/hvar.mdl"
@@ -115,7 +115,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.HVAR", "ACF.Missiles.UnguidedRo
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.UnguidedRocket.SPG-9", "ACF.Missiles.UnguidedRocket", function()
+Classes.DefineClass("ACF.Missiles.UnguidedRocket.SPG-9", "ACF.Missiles.UnguidedRocket", function(CLASS)
 	CLASS.Name			= "SPG-9 Rocket"
 	CLASS.Description	= "A recoilless rocket launcher similar to an RPG or Grom."
 	CLASS.Model			= "models/munitions/round_100mm_mortar_shot.mdl"
@@ -158,7 +158,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.SPG-9", "ACF.Missiles.UnguidedR
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.UnguidedRocket.S-24", "ACF.Missiles.UnguidedRocket", function()
+Classes.DefineClass("ACF.Missiles.UnguidedRocket.S-24", "ACF.Missiles.UnguidedRocket", function(CLASS)
 	CLASS.Name			= "S-24 Rocket"
 	CLASS.Description	= "A big, unguided rocket. Mostly used by late cold war era attack planes and helicopters."
 	CLASS.Model			= "models/missiles/s24.mdl"
@@ -200,7 +200,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.S-24", "ACF.Missiles.UnguidedRo
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.UnguidedRocket.RW61", "ACF.Missiles.UnguidedRocket", function()
+Classes.DefineClass("ACF.Missiles.UnguidedRocket.RW61", "ACF.Missiles.UnguidedRocket", function(CLASS)
 	CLASS.Name			= "Raketenwerfer 61"
 	CLASS.Description	= "A heavy, demolition-oriented rocket-assisted mortar, devastating against field works but takes a very long time to load."
 	CLASS.Model			= "models/missiles/RW61M.mdl"

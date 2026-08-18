@@ -36,7 +36,7 @@ local function WillUseSmallModel(Size) return Size <= 12.5 end
 Classes.DefineClass("ACF.Turrets.Component", function() end)
 
 do	-- Turret drives
-	Classes.DefineClass("ACF.Turrets.Drive", "ACF.Turrets.Component", function()
+	Classes.DefineClass("ACF.Turrets.Drive", "ACF.Turrets.Component", function(CLASS)
 		CLASS.Name        = "Turrets"
 		CLASS.ID          = "1-Turret"
 		CLASS.SpawnModel  = "models/acf/core/t_ring.mdl"
@@ -161,7 +161,7 @@ do	-- Turret drives
 	end)
 
 	do	-- Horizontal turret component
-		Classes.DefineClass("ACF.Turrets.Drive.Horizontal", "ACF.Turrets.Drive", function()
+		Classes.DefineClass("ACF.Turrets.Drive.Horizontal", "ACF.Turrets.Drive", function(CLASS)
 			CLASS.Name        = "Horizontal Turret"
 			CLASS.ID          = "Turret-H"
 			CLASS.Description  = "#acf.descs.turrets.horizontal"
@@ -264,7 +264,7 @@ do	-- Turret drives
 	end
 
 	do	-- Vertical turret component
-		Classes.DefineClass("ACF.Turrets.Drive.Vertical", "ACF.Turrets.Drive", function()
+		Classes.DefineClass("ACF.Turrets.Drive.Vertical", "ACF.Turrets.Drive", function(CLASS)
 			CLASS.Name        = "Vertical Turret"
 			CLASS.ID          = "Turret-V"
 			CLASS.Description  = "#acf.descs.turrets.vertical"
@@ -361,7 +361,7 @@ do	-- Turret drives
 end
 
 do	-- Turret motors
-	Classes.DefineClass("ACF.Turrets.Motor", "ACF.Turrets.Component", function()
+	Classes.DefineClass("ACF.Turrets.Motor", "ACF.Turrets.Component", function(CLASS)
 		CLASS.Name        = "Motors"
 		CLASS.ID          = "2-Motor"
 		CLASS.SpawnModel  = "models/acf/core/t_drive_e.mdl"
@@ -386,7 +386,7 @@ do	-- Turret motors
 
 		-- Electric motor
 
-		Classes.DefineClass("ACF.Turrets.Motor.Electric", "ACF.Turrets.Motor", function()
+		Classes.DefineClass("ACF.Turrets.Motor.Electric", "ACF.Turrets.Motor", function(CLASS)
 			CLASS.Name        = "Electric Motor"
 			CLASS.ID          = "Motor-ELC"
 			CLASS.Description  = "#acf.descs.motors.electric"
@@ -422,7 +422,7 @@ do	-- Turret motors
 
 		-- Hydraulic motor
 
-		Classes.DefineClass("ACF.Turrets.Motor.Hydraulic", "ACF.Turrets.Motor", function()
+		Classes.DefineClass("ACF.Turrets.Motor.Hydraulic", "ACF.Turrets.Motor", function(CLASS)
 			CLASS.Name        = "Hydraulic Motor"
 			CLASS.ID          = "Motor-HYD"
 			CLASS.Description  = "#acf.descs.motors.hydraulic"
@@ -459,7 +459,7 @@ do	-- Turret motors
 end
 
 do	-- Turret gyroscopes
-	Classes.DefineClass("ACF.Turrets.Gyro", "ACF.Turrets.Component", function()
+	Classes.DefineClass("ACF.Turrets.Gyro", "ACF.Turrets.Component", function(CLASS)
 		CLASS.Name        = "Gyroscopes"
 		CLASS.ID          = "3-Gyro"
 		CLASS.SpawnModel  = "models/bull/various/gyroscope.mdl"
@@ -476,7 +476,7 @@ do	-- Turret gyroscopes
 			Dual-axis should be parented to or share the same parent as the horizontal turret drive (MUST be linked to a vertical AND horizontal turret drive, can not mix types)
 		]]
 
-		Classes.DefineClass("ACF.Turrets.Gyro.Single", "ACF.Turrets.Gyro", function()
+		Classes.DefineClass("ACF.Turrets.Gyro.Single", "ACF.Turrets.Gyro", function(CLASS)
 			CLASS.Name        = "Single Axis Turret Gyro"
 			CLASS.ID          = "1-Gyro"
 			CLASS.Description  = "#acf.descs.gyros.single"
@@ -490,7 +490,7 @@ do	-- Turret gyroscopes
 			CLASS.IsDual = false
 		end)
 
-		Classes.DefineClass("ACF.Turrets.Gyro.Dual", "ACF.Turrets.Gyro", function()
+		Classes.DefineClass("ACF.Turrets.Gyro.Dual", "ACF.Turrets.Gyro", function(CLASS)
 			CLASS.Name        = "Dual Axis Turret Gyro"
 			CLASS.ID          = "2-Gyro"
 			CLASS.Description  = "#acf.descs.gyros.dual"
@@ -507,7 +507,7 @@ do	-- Turret gyroscopes
 end
 
 do	-- Turret computers
-	Classes.DefineClass("ACF.Turrets.Computer", "ACF.Turrets.Component", function()
+	Classes.DefineClass("ACF.Turrets.Computer", "ACF.Turrets.Component", function(CLASS)
 		CLASS.Name        = "Computers"
 		CLASS.ID          = "4-Computer"
 		CLASS.SpawnModel  = "models/acf/core/t_computer.mdl"
@@ -525,7 +525,7 @@ do	-- Turret computers
 	]]
 
 	do	-- Computers
-		Classes.DefineClass("ACF.Turrets.Computer.Direct", "ACF.Turrets.Computer", function()
+		Classes.DefineClass("ACF.Turrets.Computer.Direct", "ACF.Turrets.Computer", function(CLASS)
 			CLASS.Name        = "Direct Ballistics Computer"
 			CLASS.ID          = "DIR-BalComp"
 			CLASS.Description = "#acf.descs.computers.direct"
@@ -561,7 +561,7 @@ do	-- Turret computers
 			}
 		end)
 
-		Classes.DefineClass("ACF.Turrets.Computer.Indirect", "ACF.Turrets.Computer", function()
+		Classes.DefineClass("ACF.Turrets.Computer.Indirect", "ACF.Turrets.Computer", function(CLASS)
 			CLASS.Name        = "Indirect Ballistics Computer"
 			CLASS.ID          = "IND-BalComp"
 			CLASS.Description  = "#acf.descs.computers.indirect"

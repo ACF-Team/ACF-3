@@ -1,7 +1,6 @@
 local Classes = ACF.Classes
 
-Classes.DefineClass("ACF.Missiles.BaseMissile", "ACF.Weapons.BaseWeapon", function()
-    local BASE = BASE
+Classes.DefineClass("ACF.Missiles.BaseMissile", "ACF.Weapons.BaseWeapon", function(CLASS, BASE)
     CLASS.IsScalable 	= false
 
     MENU_FIELD("ACF.Missiles.Guidance", "Guidance",     {OnlyAllowSubtypes = true, InstantiateTypeForDefault = "ACF.Missiles.Guidance.Dumb"})

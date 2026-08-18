@@ -1,12 +1,12 @@
 local ACF     = ACF
 local Classes = ACF.Classes
 
-Classes.DefineClass("ACF.Engines.I6", "ACF.Engines.BaseEngine", function()
+Classes.DefineClass("ACF.Engines.I6", "ACF.Engines.BaseEngine", function(CLASS)
 	CLASS.Name = "Inline 6 Engine"
 end)
 
 do -- Petrol Engines
-	Classes.DefineClass("ACF.Engines.2.2-I6", "ACF.Engines.I6", function()
+	Classes.DefineClass("ACF.Engines.2.2-I6", "ACF.Engines.I6", function(CLASS)
 		CLASS.Name		 = "2.2L I6 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.i6.2_2"
 		CLASS.Model		 = "models/engines/inline6s.mdl"
@@ -25,7 +25,7 @@ do -- Petrol Engines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.4.8-I6", "ACF.Engines.I6", function()
+	Classes.DefineClass("ACF.Engines.4.8-I6", "ACF.Engines.I6", function(CLASS)
 		CLASS.Name		 = "4.8L I6 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.i6.4_8"
 		CLASS.Model		 = "models/engines/inline6m.mdl"
@@ -44,7 +44,7 @@ do -- Petrol Engines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.17.2-I6", "ACF.Engines.I6", function()
+	Classes.DefineClass("ACF.Engines.17.2-I6", "ACF.Engines.I6", function(CLASS)
 		CLASS.Name		 = "17.2L I6 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.i6.17_2"
 		CLASS.Model		 = "models/engines/inline6l.mdl"
@@ -65,7 +65,7 @@ do -- Petrol Engines
 end
 
 do -- Diesel Engines
-	Classes.DefineClass("ACF.Engines.3.0-I6", "ACF.Engines.I6", function()
+	Classes.DefineClass("ACF.Engines.3.0-I6", "ACF.Engines.I6", function(CLASS)
 		CLASS.Name		 = "3.0L I6 Diesel"
 		CLASS.Description	 = "#acf.descs.engines.i6.3_0"
 		CLASS.Model		 = "models/engines/inline6s.mdl"
@@ -84,7 +84,7 @@ do -- Diesel Engines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.6.5-I6", "ACF.Engines.I6", function()
+	Classes.DefineClass("ACF.Engines.6.5-I6", "ACF.Engines.I6", function(CLASS)
 		CLASS.Name		 = "6.5L I6 Diesel"
 		CLASS.Description	 = "#acf.descs.engines.i6.6_5"
 		CLASS.Model		 = "models/engines/inline6m.mdl"
@@ -103,7 +103,7 @@ do -- Diesel Engines
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.20.0-I6", "ACF.Engines.I6", function()
+	Classes.DefineClass("ACF.Engines.20.0-I6", "ACF.Engines.I6", function(CLASS)
 		CLASS.Name		 = "20.0L I6 Diesel"
 		CLASS.Description	 = "#acf.descs.engines.i6.20_0"
 		CLASS.Model		 = "models/engines/inline6l.mdl"

@@ -2,7 +2,7 @@ local ACF     = ACF
 local Classes = ACF.Classes
 local Clock   = ACF.Utilities.Clock
 
-Classes.DefineClass("ACF.Missiles.Fuze.Contact", "ACF.Missiles.Fuze", function()
+Classes.DefineClass("ACF.Missiles.Fuze.Contact", "ACF.Missiles.Fuze", function(CLASS)
 	CLASS.Name = "Contact"
 	CLASS.MinDelay = 0
 	CLASS.MaxDelay = 10

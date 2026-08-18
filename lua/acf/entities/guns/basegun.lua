@@ -1,6 +1,6 @@
 local Classes = ACF.Classes
 
-Classes.DefineClass("ACF.Guns.BaseGun", "ACF.Weapons.BaseWeapon", function()
+Classes.DefineClass("ACF.Guns.BaseGun", "ACF.Weapons.BaseWeapon", function(CLASS)
 	CLASS.Cleanup 			= "acf_gun"
 	CLASS.IsScalable 		= false
 	-- IsWeapon marks a class that shows up in the weapon menu's class list (replaces the old group classes).
@@ -30,8 +30,7 @@ Classes.DefineClass("ACF.Guns.BaseGun", "ACF.Weapons.BaseWeapon", function()
 	end
 end)
 
-Classes.DefineClass("ACF.Guns.BaseScalableGun", "ACF.Guns.BaseGun", function()
-	local BASE = BASE
+Classes.DefineClass("ACF.Guns.BaseScalableGun", "ACF.Guns.BaseGun", function(CLASS, BASE)
 	CLASS.IsScalable = true
 
 	MENU_FIELD("Number", "Caliber",	{Default = 50})

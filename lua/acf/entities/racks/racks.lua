@@ -1,6 +1,6 @@
 local Classes = ACF.Classes
 
-Classes.DefineClass("ACF.Racks.1xRK", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.1xRK", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "Single Munition Rack"
 	CLASS.Description	= "A rather long but light rack that can hold a single missile or bomb."
 	CLASS.Model		= "models/missiles/rkx1.mdl"
@@ -19,7 +19,7 @@ Classes.DefineClass("ACF.Racks.1xRK", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.1xRK_small", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.1xRK_small", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "Small Single Munition Rack"
 	CLASS.Description	= "A shorter version of the regular single munition rack, tends to be limited to smaller munitions."
 	CLASS.Model		= "models/missiles/rkx1_sml.mdl"
@@ -38,7 +38,7 @@ Classes.DefineClass("ACF.Racks.1xRK_small", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.2xRK", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.2xRK", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "Dual Munitions Rack"
 	CLASS.Description	= "A rather lightweight rack with two mounting points separated horizontally."
 	CLASS.Model		= "models/missiles/rack_double.mdl"
@@ -57,7 +57,7 @@ Classes.DefineClass("ACF.Racks.2xRK", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.3xRK", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.3xRK", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "Triple Munitions Rack"
 	CLASS.Description	= "Based on the BRU-42 Triple Ejector Rack, it can hold up to three bombs."
 	CLASS.Model		= "models/missiles/bomb_3xrk.mdl"
@@ -77,7 +77,7 @@ Classes.DefineClass("ACF.Racks.3xRK", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.4xRK", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.4xRK", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "Quad Munitions Rack"
 	CLASS.Description	= "Despite its rather small size, it can hold up to 4 different munitions."
 	CLASS.Model		= "models/missiles/rack_quad.mdl"
@@ -98,7 +98,7 @@ Classes.DefineClass("ACF.Racks.4xRK", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.2x AGM-114", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.2x AGM-114", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "Dual Hellfire Rack"
 	CLASS.Description	= "Based on the upper section of the M299 Launcher, can load up to two missiles."
 	CLASS.Model		= "models/missiles/agm_114_2xrk.mdl"
@@ -118,7 +118,7 @@ Classes.DefineClass("ACF.Racks.2x AGM-114", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.4x AGM-114", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.4x AGM-114", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "Quad Hellfire Rack"
 	CLASS.Description	= "Based on the M299 Launcher, it's capable of loading up to four missiles."
 	CLASS.Model		= "models/missiles/agm_114_4xrk.mdl"
@@ -139,7 +139,7 @@ Classes.DefineClass("ACF.Racks.4x AGM-114", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.1xAT3RK", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.1xAT3RK", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "Single 9M14 Rack"
 	CLASS.Description	= "Based on the 9P111 Portable Launcher, it can load a single 9M14 missile."
 	CLASS.Model		= "models/missiles/at3rk.mdl"
@@ -155,7 +155,7 @@ Classes.DefineClass("ACF.Racks.1xAT3RK", "ACF.Racks.BaseRack", function()
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.1xAT3RKS", "ACF.Racks.BaseRack", function()
+Classes.DefineClass("ACF.Racks.1xAT3RKS", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "Single 9M14 Rail"
 	CLASS.Description	= "Consisting of only the launch rail, it can be used to carry a single 9M14 missile on any kind of vehicle."
 	CLASS.Model		= "models/missiles/at3rs.mdl"

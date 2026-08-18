@@ -14,7 +14,7 @@ local function InitGearbox(Gearbox)
 	Gearbox:SetBodygroup(1, 1)
 end
 
-Classes.DefineClass("ACF.Gearboxes.DoubleDiff", "ACF.Gearboxes.BaseGearbox", function()
+Classes.DefineClass("ACF.Gearboxes.DoubleDiff", "ACF.Gearboxes.BaseGearbox", function(CLASS)
 	CLASS.Name			= "Double Differential"
 	CLASS.CreateMenu	= ACF.ManualGearboxMenu
 	CLASS.Gears = {
@@ -35,7 +35,7 @@ Classes.DefineClass("ACF.Gearboxes.DoubleDiff", "ACF.Gearboxes.BaseGearbox", fun
 end)
 
 do -- Transaxial Gearboxes
-	Classes.DefineClass("ACF.Gearboxes.DoubleDiff-T", "ACF.Gearboxes.DoubleDiff", function()
+	Classes.DefineClass("ACF.Gearboxes.DoubleDiff-T", "ACF.Gearboxes.DoubleDiff", function(CLASS)
 		CLASS.Name			= "Double Differential"
 		CLASS.Description	= "A light duty regenerative steering transmission."
 		CLASS.ID			= "DoubleDiff-T"

@@ -7,7 +7,7 @@ local Classes = ACF.Classes
 
 Classes.DefineClass("ACF.CrewModels.BaseCrewModel", function() end)
 
-Classes.DefineClass("ACF.CrewModels.Standing", "ACF.CrewModels.BaseCrewModel", function()
+Classes.DefineClass("ACF.CrewModels.Standing", "ACF.CrewModels.BaseCrewModel", function(CLASS)
     CLASS.Name = "Standing Crew Member"
     CLASS.Description = "This posture best suits a loader."
     CLASS.Model = "models/chairs_playerstart/standingpose.mdl"
@@ -30,7 +30,7 @@ Classes.DefineClass("ACF.CrewModels.Standing", "ACF.CrewModels.BaseCrewModel", f
     }
 end)
 
-Classes.DefineClass("ACF.CrewModels.Sitting", "ACF.CrewModels.BaseCrewModel", function()
+Classes.DefineClass("ACF.CrewModels.Sitting", "ACF.CrewModels.BaseCrewModel", function(CLASS)
     CLASS.Name = "Sitting Crew Member"
     CLASS.Description = "This posture best suits a driver/gunner."
     CLASS.Model = "models/chairs_playerstart/sitpose.mdl"
@@ -53,7 +53,7 @@ Classes.DefineClass("ACF.CrewModels.Sitting", "ACF.CrewModels.BaseCrewModel", fu
     }
 end)
 
-Classes.DefineClass("ACF.CrewModels.SittingLarge", "ACF.CrewModels.BaseCrewModel", function()
+Classes.DefineClass("ACF.CrewModels.SittingLarge", "ACF.CrewModels.BaseCrewModel", function(CLASS)
     CLASS.Name = "Sitting Large Crew Member"
     CLASS.Description = "This posture best suits a driver/gunner in larger vehicles."
     CLASS.Model = "models/acf/core/c_seated_l.mdl"
@@ -75,7 +75,7 @@ Classes.DefineClass("ACF.CrewModels.SittingLarge", "ACF.CrewModels.BaseCrewModel
     }
 end)
 
-Classes.DefineClass("ACF.CrewModels.SittingMedium", "ACF.CrewModels.BaseCrewModel", function()
+Classes.DefineClass("ACF.CrewModels.SittingMedium", "ACF.CrewModels.BaseCrewModel", function(CLASS)
     CLASS.Name = "Sitting Medium Crew Member"
     CLASS.Description = "This posture best suits a driver/gunner in medium vehicles."
     CLASS.Model = "models/acf/core/c_seated_m.mdl"
@@ -97,7 +97,7 @@ Classes.DefineClass("ACF.CrewModels.SittingMedium", "ACF.CrewModels.BaseCrewMode
     }
 end)
 
-Classes.DefineClass("ACF.CrewModels.SittingSmall", "ACF.CrewModels.BaseCrewModel", function()
+Classes.DefineClass("ACF.CrewModels.SittingSmall", "ACF.CrewModels.BaseCrewModel", function(CLASS)
     CLASS.Name = "Sitting Small Crew Member"
     CLASS.Description = "This posture best suits a driver/gunner in small vehicles."
     CLASS.Model = "models/acf/core/c_seated_s.mdl"
@@ -119,7 +119,7 @@ Classes.DefineClass("ACF.CrewModels.SittingSmall", "ACF.CrewModels.BaseCrewModel
     }
 end)
 
-Classes.DefineClass("ACF.CrewModels.StandingLarge", "ACF.CrewModels.BaseCrewModel", function()
+Classes.DefineClass("ACF.CrewModels.StandingLarge", "ACF.CrewModels.BaseCrewModel", function(CLASS)
     CLASS.Name = "Standing Large Crew Member"
     CLASS.Description = "This posture best suits a driver/gunner in large vehicles."
     CLASS.Model = "models/acf/core/c_standing_l.mdl"
@@ -141,7 +141,7 @@ Classes.DefineClass("ACF.CrewModels.StandingLarge", "ACF.CrewModels.BaseCrewMode
     }
 end)
 
-Classes.DefineClass("ACF.CrewModels.StandingMedium", "ACF.CrewModels.BaseCrewModel", function()
+Classes.DefineClass("ACF.CrewModels.StandingMedium", "ACF.CrewModels.BaseCrewModel", function(CLASS)
     CLASS.Name = "Standing Medium Crew Member"
     CLASS.Description = "This posture best suits a driver/gunner in medium vehicles."
     CLASS.Model = "models/acf/core/c_standing_m.mdl"
@@ -163,7 +163,7 @@ Classes.DefineClass("ACF.CrewModels.StandingMedium", "ACF.CrewModels.BaseCrewMod
     }
 end)
 
-Classes.DefineClass("ACF.CrewModels.StandingSmall", "ACF.CrewModels.BaseCrewModel", function()
+Classes.DefineClass("ACF.CrewModels.StandingSmall", "ACF.CrewModels.BaseCrewModel", function(CLASS)
     CLASS.Name = "Standing Small Crew Member"
     CLASS.Description = "This posture best suits a driver/gunner in small vehicles."
     CLASS.Model = "models/acf/core/c_standing_s.mdl"

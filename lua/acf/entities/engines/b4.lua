@@ -1,12 +1,12 @@
 local ACF     = ACF
 local Classes = ACF.Classes
 
-Classes.DefineClass("ACF.Engines.B4", "ACF.Engines.BaseEngine", function()
+Classes.DefineClass("ACF.Engines.B4", "ACF.Engines.BaseEngine", function(CLASS)
 	CLASS.Name = "Flat 4 Engine"
 end)
 
 do
-	Classes.DefineClass("ACF.Engines.1.4-B4", "ACF.Engines.B4", function()
+	Classes.DefineClass("ACF.Engines.1.4-B4", "ACF.Engines.B4", function(CLASS)
 		CLASS.Name		 = "1.4L Flat 4 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.b4.1_4"
 		CLASS.Model		 = "models/engines/b4small.mdl"
@@ -25,7 +25,7 @@ do
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.2.1-B4", "ACF.Engines.B4", function()
+	Classes.DefineClass("ACF.Engines.2.1-B4", "ACF.Engines.B4", function(CLASS)
 		CLASS.Name		 = "2.1L Flat 4 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.b4.2_1"
 		CLASS.Model		 = "models/engines/b4small.mdl"
@@ -44,7 +44,7 @@ do
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.2.4-B4", "ACF.Engines.B4", function()
+	Classes.DefineClass("ACF.Engines.2.4-B4", "ACF.Engines.B4", function(CLASS)
 		CLASS.Name		 = "2.4L Flat 4 Multifuel"
 		CLASS.Description	 = "#acf.descs.engines.b4.2_4"
 		CLASS.Model		 = "models/engines/b4small.mdl"
@@ -63,7 +63,7 @@ do
 		}
 	end)
 
-	Classes.DefineClass("ACF.Engines.3.2-B4", "ACF.Engines.B4", function()
+	Classes.DefineClass("ACF.Engines.3.2-B4", "ACF.Engines.B4", function(CLASS)
 		CLASS.Name		 = "3.2L Flat 4 Petrol"
 		CLASS.Description	 = "#acf.descs.engines.b4.3_2" -- Ok
 		CLASS.Model		 = "models/engines/b4med.mdl"

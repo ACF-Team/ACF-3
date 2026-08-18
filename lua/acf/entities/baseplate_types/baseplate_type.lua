@@ -2,7 +2,7 @@ local Clock                       = ACF.Utilities.Clock
 local LastBaseplateExplosions     = {}
 local TIME_BETWEEN_HE_EXPLOSIONS  = 10
 
-ACF.Classes.DefineClass("ACF.Baseplates.BaseplateType", function()
+ACF.Classes.DefineClass("ACF.Baseplates.BaseplateType", function(CLASS)
 	function CLASS.BP_PhysicsCollideExplosion(Entity, Data)
 		local CanExplode = hook.Run("ACF_PreExplodeBaseplate", Entity)
 		if not CanExplode then return end

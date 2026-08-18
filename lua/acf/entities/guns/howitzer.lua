@@ -1,6 +1,6 @@
 local ACF     = ACF
 
-ACF.Classes.DefineClass("ACF.Guns.Howitzer", "ACF.Guns.BaseScalableGun", function()
+ACF.Classes.DefineClass("ACF.Guns.Howitzer", "ACF.Guns.BaseScalableGun", function(CLASS)
 	CLASS.Name        	= "Howitzer"
 	CLASS.ID 			= "HW"
 	CLASS.IsWeapon		= true

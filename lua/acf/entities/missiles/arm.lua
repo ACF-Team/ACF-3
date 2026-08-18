@@ -1,5 +1,5 @@
 local Classes = ACF.Classes
-Classes.DefineClass("ACF.Missiles.AntiRadiation", "ACF.Missiles.BaseMissile", function()
+Classes.DefineClass("ACF.Missiles.AntiRadiation", "ACF.Missiles.BaseMissile", function(CLASS)
 	CLASS.Name			= "Anti-Radiation Missiles"
 	CLASS.ID 			= "ARM"
 	CLASS.Description	= "Missiles specialized for Suppression of Enemy Air Defenses."
@@ -14,7 +14,7 @@ Classes.DefineClass("ACF.Missiles.AntiRadiation", "ACF.Missiles.BaseMissile", fu
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.AntiRadiation.AGM-122", "ACF.Missiles.AntiRadiation", function()
+Classes.DefineClass("ACF.Missiles.AntiRadiation.AGM-122", "ACF.Missiles.AntiRadiation", function(CLASS)
 	CLASS.Name			= "AGM-122 Sidearm"
 	CLASS.Description	= "A refurbished early-model AIM-9, for attacking ground targets."
 	CLASS.Model			= "models/missiles/aim9.mdl"
@@ -57,7 +57,7 @@ Classes.DefineClass("ACF.Missiles.AntiRadiation.AGM-122", "ACF.Missiles.AntiRadi
 	}
 end)
 
-Classes.DefineClass("ACF.Missiles.AntiRadiation.AGM-45", "ACF.Missiles.AntiRadiation", function()
+Classes.DefineClass("ACF.Missiles.AntiRadiation.AGM-45", "ACF.Missiles.AntiRadiation", function(CLASS)
 	CLASS.Name		= "AGM-45 Shrike"
 	CLASS.Description	= "Long range anti-SAM missile, built on the body of an AIM-7 Sparrow."
 	CLASS.Model		= "models/missiles/aim120.mdl"

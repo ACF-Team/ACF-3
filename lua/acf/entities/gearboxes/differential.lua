@@ -3,7 +3,7 @@ local Classes   = ACF.Classes
 
 local Gear1SW = 10
 
-Classes.DefineClass("ACF.Gearboxes.Differential", "ACF.Gearboxes.BaseGearbox", function()
+Classes.DefineClass("ACF.Gearboxes.Differential", "ACF.Gearboxes.BaseGearbox", function(CLASS)
 	CLASS.Name			= "Differential"
 	CLASS.CreateMenu	= ACF.ManualGearboxMenu
 	CLASS.Gears = {
@@ -13,7 +13,7 @@ Classes.DefineClass("ACF.Gearboxes.Differential", "ACF.Gearboxes.BaseGearbox", f
 end)
 
 do -- Scalable Gearboxes
-	Classes.DefineClass("ACF.Gearboxes.1Gear-L", "ACF.Gearboxes.Differential", function()
+	Classes.DefineClass("ACF.Gearboxes.1Gear-L", "ACF.Gearboxes.Differential", function(CLASS)
 		CLASS.Name			= "Differential, Inline"
 		CLASS.Description	= "An inline gearbox used to connect power from another gearbox to the wheels."
 		CLASS.ID			= "1Gear-L"
@@ -27,7 +27,7 @@ do -- Scalable Gearboxes
 		}
 	end)
 
-	Classes.DefineClass("ACF.Gearboxes.1Gear-T", "ACF.Gearboxes.Differential", function()
+	Classes.DefineClass("ACF.Gearboxes.1Gear-T", "ACF.Gearboxes.Differential", function(CLASS)
 		CLASS.Name			= "Differential, Transaxial"
 		CLASS.Description	= "A transaxial gearbox used to connect power from another gearbox to the wheels."
 		CLASS.ID			= "1Gear-T"

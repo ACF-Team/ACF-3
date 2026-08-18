@@ -1,6 +1,6 @@
 local Classes = ACF.Classes
 
-Classes.DefineClass("ACF.Ammunition.BaseAmmo", function()
+Classes.DefineClass("ACF.Ammunition.BaseAmmo", function(CLASS)
 	if SERVER then
 		-- Generic round-conversion wrapper shared by all ammo types. Operates on the instance:
 		-- reads its own round inputs + weapon back-reference (self.Weapon). Subtypes provide
