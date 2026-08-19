@@ -699,3 +699,56 @@ do
         return Aliases.Get("ACE_CrewTypes", CrewType)
     end
 end
+
+---------------------------------------------------------------------------------------------------------------------
+--  Pre-Merged Radars Compatibility
+--      Missile and Targeting Radars were merged into a single "Radar" class/item set that can
+--      detect both missiles and contraptions from one radar entity.
+--
+--      Breaking change introduced: August 17th, 2026
+---------------------------------------------------------------------------------------------------------------------
+do
+    -- Old antimissile radars only detected missiles and old targeting radars only detected
+    -- contraptions. Carried forward as explicit Overrides so old dupes retain their
+    -- original detection capability.
+    local AntimissileDetect = { DetectContraptions = false, DetectMissiles = true }
+    local TargetingDetect   = { DetectContraptions = true, DetectMissiles = false }
+
+    local function Radars_RegisterOldItem(OldID, NewID, Overrides)
+        Aliases.Register("PreMergeRadars_ItemChanges", OldID, { ID = NewID, Overrides = Overrides })
+    end
+
+    local function Radars_RegisterGroupChange(OldClass, NewClass)
+        Aliases.Register("PreMergeRadars_GroupChanges", OldClass, NewClass)
+    end
+
+    -- Exposed functions
+    Compatibility.Radars = Compatibility.Radars or {}
+
+    function Compatibility.Radars.CheckGroupItem(GroupItem)
+        return Aliases.Get("PreMergeRadars_ItemChanges", GroupItem)
+    end
+
+    function Compatibility.Radars.CheckGroup(Group)
+        return Aliases.Get("PreMergeRadars_GroupChanges", Group)
+    end
+
+    Radars_RegisterGroupChange("AM-Radar", "Radar")
+    Radars_RegisterGroupChange("TGT-Radar", "Radar")
+
+    -- Directional
+    Radars_RegisterOldItem("SmallDIR-AM", "SmallDIR", AntimissileDetect)
+    Radars_RegisterOldItem("SmallDIR-TGT", "SmallDIR", TargetingDetect)
+    Radars_RegisterOldItem("MediumDIR-AM", "MediumDIR", AntimissileDetect)
+    Radars_RegisterOldItem("MediumDIR-TGT", "MediumDIR", TargetingDetect)
+    Radars_RegisterOldItem("LargeDIR-AM", "LargeDIR", AntimissileDetect)
+    Radars_RegisterOldItem("LargeDIR-TGT", "LargeDIR", TargetingDetect)
+
+    -- Spherical
+    Radars_RegisterOldItem("SmallOMNI-AM", "SmallOMNI", AntimissileDetect)
+    Radars_RegisterOldItem("SmallOMNI-TGT", "SmallOMNI", TargetingDetect)
+    Radars_RegisterOldItem("MediumOMNI-AM", "MediumOMNI", AntimissileDetect)
+    Radars_RegisterOldItem("MediumOMNI-TGT", "MediumOMNI", TargetingDetect)
+    Radars_RegisterOldItem("LargeOMNI-AM", "LargeOMNI", AntimissileDetect)
+    Radars_RegisterOldItem("LargeOMNI-TGT", "LargeOMNI", TargetingDetect)
+end

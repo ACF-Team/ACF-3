@@ -62,7 +62,7 @@ local function CreateMenu(Menu)
 		local CustomMenu = Data.CreateMenu or ClassData.CreateMenu
 
 		if CustomMenu then
-			CustomMenu(Data, Base)
+			CustomMenu(Data, Base, Menu)
 		end
 
 		Menu:EndTemporal(Base)

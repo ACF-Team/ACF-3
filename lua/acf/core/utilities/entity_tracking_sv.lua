@@ -125,3 +125,48 @@ function ACF.GetEntitiesInSphere(Position, Radius, Contraption)
 
 	return Result
 end
+
+--- Tests every tracked contraption against a list of shapes (cones and/or spheres) in a single pass, instead
+--- of iterating the tracked contraption pool once per shape. Intended for aggregating many radars' detection
+--- zones at once (e.g. a Radar Synchronizer batching same-rate-group radars) where a naive per-radar call to
+--- GetEntitiesInCone or GetEntitiesInSphere would mean one full iteration of the tracked pool per radar.
+--- @param Shapes table An array of shape entries: {Radar = <key>, Position = Vector, Direction = Vector, Degrees = number} for a cone, or {Radar = <key>, Position = Vector, Radius = number} for a sphere.
+--- @param Contraption table|nil If supplied, candidates belonging to this contraption are skipped for every shape (self filter).
+--- @return table<Entity, table> A table mapping matched entities to an array of the Radar keys (from Shapes) whose geometry matched them.
+function ACF.GetEntitiesInShapes(Shapes, Contraption)
+	local Result = {}
+
+	for Con in pairs(Contraptions) do
+		local Entity = Con.Ancestor
+		if not IsValid(Entity) then continue end
+		local EntityContraption = Entity:CFW_GetContraption()
+		if Contraption and EntityContraption == Contraption then continue end
+
+		if ACF.LegalChecks and Entity:GetClass() == "acf_baseplate" and Entity.Disabled then continue end
+
+		local EntPos = Entity:GetPos()
+
+		for _, Shape in ipairs(Shapes) do
+			local Matched
+
+			if Shape.Degrees then -- Cone
+				Matched = Countermeasures.ConeContainsPos(Shape.Position, Shape.Direction, Shape.Degrees, EntPos)
+			else -- Sphere
+				Matched = Shape.Position:DistToSqr(EntPos) <= (Shape.Radius * Shape.Radius)
+			end
+
+			if Matched then
+				local List = Result[Entity]
+
+				if not List then
+					List = {}
+					Result[Entity] = List
+				end
+
+				List[#List + 1] = Shape.Radar
+			end
+		end
+	end
+
+	return Result
+end

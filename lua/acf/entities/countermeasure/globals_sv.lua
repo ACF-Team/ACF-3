@@ -107,6 +107,44 @@ function Countermeasures.GetMissilesInSphere(Position, Radius)
 	return Result
 end
 
+--- Tests every active missile against a list of shapes (cones and/or spheres) in a single pass, instead of
+--- iterating the active missile pool once per shape. See ACF.GetEntitiesInShapes for the contraption side
+--- equivalent and the batching use case (e.g. a Radar Synchronizer batching same-rate-group radars).
+--- @param Shapes table An array of shape entries: {Radar = <key>, Position = Vector, Direction = Vector, Degrees = number} for a cone, or {Radar = <key>, Position = Vector, Radius = number} for a sphere.
+--- @return table<Entity, table> A table mapping matched missiles to an array of the Radar keys (from Shapes) whose geometry matched them.
+function Countermeasures.GetMissilesInShapes(Shapes)
+	local Result = {}
+
+	for Missile in pairs(Missiles) do
+		if not IsValid(Missile) then continue end
+
+		local MissilePos = Missile:GetPos()
+
+		for _, Shape in ipairs(Shapes) do
+			local Matched
+
+			if Shape.Degrees then -- Cone
+				Matched = Countermeasures.ConeContainsPos(Shape.Position, Shape.Direction, Shape.Degrees, MissilePos)
+			else -- Sphere
+				Matched = Shape.Position:DistToSqr(MissilePos) <= (Shape.Radius * Shape.Radius)
+			end
+
+			if Matched then
+				local List = Result[Missile]
+
+				if not List then
+					List = {}
+					Result[Missile] = List
+				end
+
+				List[#List + 1] = Shape.Radar
+			end
+		end
+	end
+
+	return Result
+end
+
 -- Tests flare distraction effect upon all undistracted missiles, but does not perform the effect itself.  Returns a list of potentially affected missiles.
 -- argument is the bullet in the acf bullet table which represents the flare - not the cm_flare object!
 function Countermeasures.GetAllMissilesWhichCanSee(Position)
