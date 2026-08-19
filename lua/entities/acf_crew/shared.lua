@@ -1,8 +1,6 @@
 DEFINE_BASECLASS("acf_base_simple")
 
-ACF.Entities.AutoRegisterV2(function()
-	-- Crew classes (type/model/pose) are V2 DefineClass subtypes addressed by their short id (the FQN
-	-- suffix); the entity stores the ids and resolves the classes at runtime (see init.lua).
+ACF.Entities.AutoRegisterV2(function(CLASS)
 	MENU_FIELD("String",  "CrewTypeID",                {Default = "Commander"})
 	MENU_FIELD("String",  "CrewModelID",               {Default = "Sitting"})
 	MENU_FIELD("String",  "CrewPoseID",                {Default = ""})

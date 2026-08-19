@@ -3,7 +3,7 @@ DEFINE_BASECLASS("acf_base_simple")
 ENT.Author      = "Bubbus"
 ENT.IsACFWeapon = true
 
-ACF.Entities.AutoRegisterV2(function()
+ACF.Entities.AutoRegisterV2(function(CLASS)
 	-- The rack/launcher type this entity represents (ACF.Racks.*). The missiles it loads come from
 	-- linked crates, not from a field here.
 	MENU_FIELD("ACF.Racks.BaseRack", "Rack", {OnlyAllowSubtypes = true, InstantiateTypeForDefault = "ACF.Racks.1xRK"})

@@ -1,6 +1,6 @@
 DEFINE_BASECLASS("acf_base_simple")
 
-ACF.Entities.AutoRegisterV2(function()
+ACF.Entities.AutoRegisterV2(function(CLASS)
 	-- The engine type this entity represents. Engines aren't scalable, so this is the only config field.
 	MENU_FIELD("ACF.Engines.BaseEngine", "Engine", {OnlyAllowSubtypes = true, InstantiateTypeForDefault = "ACF.Engines.5.7-V8"})
 
