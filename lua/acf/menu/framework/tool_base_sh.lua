@@ -78,9 +78,25 @@ function ACF.Menu.GetGhostClasses()
 	return Primary, Secondary or "N/A"
 end
 
---- Installs the menu tool's client behavior. The server needs no tool methods -- spawns/links arrive
---- through the ACF_MenuCommit net layer, not tool clicks.
 function ACF.Menu.SetupTool(Tool)
+	function Tool:LeftClick()
+		if CLIENT and IsFirstTimePredicted() then
+			local Page = ACF.Menu.ActivePage
+			if Page and Page.Actions then ACF.Menu.DoClientAction("left") end
+		end
+
+		return true
+	end
+
+	function Tool:RightClick()
+		if CLIENT and IsFirstTimePredicted() then
+			local Page = ACF.Menu.ActivePage
+			if Page and Page.Actions then ACF.Menu.DoClientAction("right") end
+		end
+
+		return true
+	end
+
 	if not CLIENT then return end
 
 	local Category = GetConVar("acf_tool_category")
@@ -93,28 +109,6 @@ function ACF.Menu.SetupTool(Tool)
 			ACF.ReleaseGhostEntity(self)
 			self._MenuGhostActive = false
 		end
-	end
-
-	function Tool:LeftClick()
-		local Page = ACF.Menu.ActivePage
-
-		if Page and Page.Actions then
-			if IsFirstTimePredicted() then ACF.Menu.DoClientAction("left") end
-			return true
-		end
-
-		return false
-	end
-
-	function Tool:RightClick()
-		local Page = ACF.Menu.ActivePage
-
-		if Page and Page.Actions then
-			if IsFirstTimePredicted() then ACF.Menu.DoClientAction("right") end
-			return true
-		end
-
-		return false
 	end
 
 	function Tool:Think()
