@@ -76,13 +76,12 @@ end)
 local Radars	  = ACF.ActiveRadars
 local Damage      = ACF.Damage
 local Sounds      = ACF.Utilities.Sounds
+local RadarHelpers = ACF.RadarHelpers
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
-local TraceData	  = { start = true, endpos = true, mask = MASK_SOLID_BRUSHONLY, filter = {} }
 local Indexes	  = {}
 local Unused	  = {}
 local IndexCount  = 0
-local Trace       = ACF.trace
 local TimerExists = timer.Exists
 local TimerCreate = timer.Create
 local TimerRemove = timer.Remove
@@ -133,13 +132,6 @@ local function SetSequence(Entity, Active)
 	Entity.AutomaticFrameAdvance = Active
 end
 
-local function CheckLOS(Start, End)
-	TraceData.start = Start
-	TraceData.endpos = End
-
-	return not Trace(TraceData).Hit
-end
-
 local function GetEntityIndex(Entity)
 	if Indexes[Entity] then return Indexes[Entity] end
 
@@ -162,37 +154,6 @@ local function GetEntityIndex(Entity)
 	end)
 
 	return EntID
-end
-
-local function GetEntityOwner(Owner, Entity)
-	-- If radar info is restricted and the radar owner doesn't have permissions on this entity then return Unknown
-	if ACF.RestrictRadarInfo and (not IsValid(Owner) or not Entity:CPPICanTool(Owner)) then
-		return "Unknown"
-	end
-
-	local EntOwner = Entity:CPPIGetOwner()
-
-	if not IsValid(EntOwner) then
-		EntOwner = EntOwner == game.GetWorld() and "World" or "Unknown"
-	else
-		EntOwner = EntOwner:GetName()
-	end
-
-	return EntOwner
-end
-
--- Minimum target size (in inches) detectable at a given distance, given the radar's own MinSizeAtRange
--- (the smallest target it can see at its own max range) and Range. Scales down toward 0 as distance
--- approaches 0, so all radars can see small targets up close, but only larger radars can see
--- small targets far away. Non linear to mimic how realistic detection strength falls off with range
-local MinSizeExponent = 1.5
-
-local function GetMinDetectableSize(Entity, EntDist)
-	local MinSizeAtRange = Entity.MinSizeAtRange
-
-	if not MinSizeAtRange or not Entity.Range then return 0 end
-
-	return MinSizeAtRange * (EntDist / Entity.Range) ^ MinSizeExponent
 end
 
 local function ScanForEntities(Entity)
@@ -223,27 +184,15 @@ local function ScanForEntities(Entity)
 	for Ent in pairs(Detected) do
 		local EntPos = Ent.ACF_Position or Ent:GetPos()
 
-		if CheckLOS(Origin, EntPos) and (math.Rand(0, 1) >= (EntDamage / 10)) then
+		if RadarHelpers.CheckLOS(Origin, EntPos) and (math.Rand(0, 1) >= (EntDamage / 10)) then
 			local EntDist = Origin:Distance(EntPos)
+			local EntSize, EntType = RadarHelpers.GetEntSizeAndType(Ent)
 
-			local EntSize = 0
-			local EntType
-
-			if Ent.IsACFMissile then
-				EntSize = (Ent.Caliber or 0) / ACF.InchToMm
-				EntType = "Missile"
-			elseif Ent:CFW_GetContraption() then
-				local Mins, Maxs, _ = Ent:CFW_GetContraption():GetAABB()
-				EntSize = (Maxs - Mins):Length()
-				EntType = "Contraption"
-			end
-			EntSize = math.Round(EntSize) -- Round to nearest inch
-
-			if EntSize < GetMinDetectableSize(Entity, EntDist) then continue end
+			if EntSize < RadarHelpers.GetMinDetectableSize(Entity, EntDist) then continue end
 
 			local EntSpread = VectorRand(-Spread, Spread)
 			local EntVel = Ent.ACF_Velocity or Ent:GetVelocity()
-			local Owner = GetEntityOwner(Entity.Owner, Ent)
+			local Owner = RadarHelpers.GetEntityOwner(Entity.Owner, Ent)
 			local Index = GetEntityIndex(Ent)
 
 			EntPos = EntPos + EntSpread
@@ -722,6 +671,31 @@ function ENT:ACF_UpdateOverlayState(State)
 		Detects = "Missiles"
 	end
 	State:AddKeyValue("Detects", Detects)
+end
+
+do -- Duplicator support
+	function ENT:PreEntityCopy()
+		if IsValid(self.SyncSource) then
+			duplicator.StoreEntityModifier(self, "ACFRadarSync", { self.SyncSource:EntIndex() })
+		end
+
+		self.BaseClass.PreEntityCopy(self)
+	end
+
+	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+		local EntMods = Ent.EntityMods
+
+		if EntMods.ACFRadarSync then
+			local _, EntIndex = next(EntMods.ACFRadarSync)
+			local Sync = CreatedEntities[EntIndex]
+
+			if IsValid(Sync) then Sync:Link(self) end
+
+			EntMods.ACFRadarSync = nil
+		end
+
+		self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
+	end
 end
 
 function ENT:OnRemove()

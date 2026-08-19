@@ -144,28 +144,7 @@ function ACF.GetEntitiesInShapes(Shapes, Contraption)
 
 		if ACF.LegalChecks and Entity:GetClass() == "acf_baseplate" and Entity.Disabled then continue end
 
-		local EntPos = Entity:GetPos()
-
-		for _, Shape in ipairs(Shapes) do
-			local Matched
-
-			if Shape.Degrees then -- Cone
-				Matched = Countermeasures.ConeContainsPos(Shape.Position, Shape.Direction, Shape.Degrees, EntPos)
-			else -- Sphere
-				Matched = Shape.Position:DistToSqr(EntPos) <= (Shape.Radius * Shape.Radius)
-			end
-
-			if Matched then
-				local List = Result[Entity]
-
-				if not List then
-					List = {}
-					Result[Entity] = List
-				end
-
-				List[#List + 1] = Shape.Radar
-			end
-		end
+		Countermeasures.MatchShapes(Result, Entity, Entity:GetPos(), Shapes)
 	end
 
 	return Result

@@ -7,10 +7,9 @@ local ACF         = ACF
 local Contraption = ACF.Contraption
 local Damage      = ACF.Damage
 local Sounds      = ACF.Utilities.Sounds
+local RadarHelpers = ACF.RadarHelpers
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
-local TraceData   = { start = true, endpos = true, mask = MASK_SOLID_BRUSHONLY, filter = {} }
-local Trace       = ACF.trace
 local TimerCreate = timer.Create
 local TimerRemove = timer.Remove
 local hook        = hook
@@ -49,39 +48,6 @@ local function GetEntityIndex(Entity)
 	return EntID
 end
 
-local function GetEntityOwner(Owner, Entity)
-	if ACF.RestrictRadarInfo and (not IsValid(Owner) or not Entity:CPPICanTool(Owner)) then
-		return "Unknown"
-	end
-
-	local EntOwner = Entity:CPPIGetOwner()
-
-	if not IsValid(EntOwner) then
-		EntOwner = EntOwner == game.GetWorld() and "World" or "Unknown"
-	else
-		EntOwner = EntOwner:GetName()
-	end
-
-	return EntOwner
-end
-
-local function CheckLOS(Start, End)
-	TraceData.start = Start
-	TraceData.endpos = End
-
-	return not Trace(TraceData).Hit
-end
-
-local MinSizeExponent = 1.5
-
-local function GetMinDetectableSize(Radar, EntDist)
-	local MinSizeAtRange = Radar.MinSizeAtRange
-
-	if not MinSizeAtRange or not Radar.Range then return 0 end
-
-	return MinSizeAtRange * (EntDist / Radar.Range) ^ MinSizeExponent
-end
-
 local function ClearTargets(Entity)
 	local TargetInfo = Entity.TargetInfo
 	local Targets = Entity.Targets
@@ -115,8 +81,9 @@ local function GetBestMatchingRadar(MatchedRadars)
 end
 
 -- Rewrites this Synchronizer's combined Targets/TargetInfo from the current BatchResults snapshot and
--- re-fires wire outputs. Safe to call with an empty BatchResults (e.g. all radars unlinked)
-local function RefreshOutputs(Entity)
+-- re-fires wire outputs. Safe to call with an empty BatchResults (e.g. all radars unlinked). Clk only
+-- bumps when the calling batch itself confirmed a detection this cycle
+local function RefreshOutputs(Entity, BatchDetected)
 	local TargetInfo = Entity.TargetInfo
 	local Targets = Entity.Targets
 
@@ -182,8 +149,8 @@ local function RefreshOutputs(Entity)
 	end
 	WireLib.TriggerOutput(Entity, "Linked Radars", LinkedCount)
 
-	-- Only bump Clk on batches that actually found something
-	if Count > 0 then
+	-- Only bump Clk when this specific batch confirmed a detection
+	if BatchDetected then
 		WireLib.TriggerOutput(Entity, "Clk", engine.TickCount())
 	end
 
@@ -236,7 +203,7 @@ local function RunBatch(Entity, GroupRadars)
 		if Radar.DetectMissiles then MissileShapes[#MissileShapes + 1] = Shape end
 	end
 
-	if #ContraptionShapes == 0 and #MissileShapes == 0 then return RefreshOutputs(Entity) end
+	if #ContraptionShapes == 0 and #MissileShapes == 0 then return RefreshOutputs(Entity, false) end
 
 	local Matches = #ContraptionShapes > 0 and ACF.GetEntitiesInShapes(ContraptionShapes) or {}
 
@@ -263,27 +230,15 @@ local function RunBatch(Entity, GroupRadars)
 		local Origin = Radar:LocalToWorld(Radar.Origin)
 		local EntPos = Ent.ACF_Position or Ent:GetPos()
 
-		if not CheckLOS(Origin, EntPos) then continue end
+		if not RadarHelpers.CheckLOS(Origin, EntPos) then continue end
 
 		local EntDamage = Radar.Damage or 0
 		if math.Rand(0, 1) < (EntDamage / 10) then continue end
 
 		local EntDist = Origin:Distance(EntPos)
+		local EntSize, EntType = RadarHelpers.GetEntSizeAndType(Ent)
 
-		local EntSize = 0
-		local EntType
-
-		if Ent.IsACFMissile then
-			EntSize = (Ent.Caliber or 0) / ACF.InchToMm
-			EntType = "Missile"
-		elseif Ent:CFW_GetContraption() then
-			local Mins, Maxs, _ = Ent:CFW_GetContraption():GetAABB()
-			EntSize = (Maxs - Mins):Length()
-			EntType = "Contraption"
-		end
-		EntSize = math.Round(EntSize)
-
-		if EntSize < GetMinDetectableSize(Radar, EntDist) then continue end
+		if EntSize < RadarHelpers.GetMinDetectableSize(Radar, EntDist) then continue end
 
 		local Spread = ACF.MaxDamageInaccuracy * EntDamage
 		local EntSpread = VectorRand(-Spread, Spread)
@@ -292,7 +247,7 @@ local function RunBatch(Entity, GroupRadars)
 		Confirmed[Ent] = true
 
 		Entity.BatchResults[Ent] = {
-			Owner    = GetEntityOwner(Entity.Owner, Ent),
+			Owner    = RadarHelpers.GetEntityOwner(Entity.Owner, Ent),
 			Position = EntPos + EntSpread,
 			Velocity = EntVel + EntSpread,
 			Distance = EntDist,
@@ -312,7 +267,7 @@ local function RunBatch(Entity, GroupRadars)
 		end
 	end
 
-	RefreshOutputs(Entity)
+	RefreshOutputs(Entity, next(Confirmed) ~= nil)
 end
 
 -- Regroups this Synchronizer's linked radars by their exact ThinkTicks, so radars are never sped up or
@@ -343,7 +298,7 @@ local function RebuildRateGroups(Entity)
 
 	if not next(Groups) then
 		-- No active linked radars left
-		RefreshOutputs(Entity)
+		RefreshOutputs(Entity, false)
 
 		return
 	end
