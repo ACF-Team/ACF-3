@@ -77,7 +77,7 @@ function Countermeasures.GetMissilesInCone(Position, Direction, Degrees)
 	local Result = {}
 
 	for Missile in pairs(Missiles) do
-		if not IsValid(Missile) then
+		if not IsValid(Missile) or Missile.Broken then
 			continue
 		end
 
@@ -95,7 +95,7 @@ function Countermeasures.GetMissilesInSphere(Position, Radius)
 	local RadiusSqr = Radius * Radius
 
 	for Missile in pairs(Missiles) do
-		if not IsValid(Missile) then
+		if not IsValid(Missile) or Missile.Broken then
 			continue
 		end
 
@@ -116,7 +116,9 @@ function Countermeasures.GetMissilesInShapes(Shapes)
 	local Result = {}
 
 	for Missile in pairs(Missiles) do
-		if not IsValid(Missile) then continue end
+		if not IsValid(Missile) or Missile.Broken then
+			continue
+		end
 
 		Countermeasures.MatchShapes(Result, Missile, Missile:GetPos(), Shapes)
 	end

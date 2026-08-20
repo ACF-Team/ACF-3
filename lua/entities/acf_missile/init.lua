@@ -730,6 +730,7 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 				BulletData.Type = "HP"
 				self:SetNW2String("AmmoType", "HP")
 				self.UseGuidance = nil
+				self.Broken = true -- Missile has broken up; radars shouldn't be able to detect it anymore
 				local MissileAngles = self.CurDir:Angle()
 				local LocalSpin  = VectorRand(-15, 15) / Ratio
 				self.RotAxis = MissileAngles:Up() * LocalSpin.z + MissileAngles:Right() * LocalSpin.y + MissileAngles:Forward() * LocalSpin.x
