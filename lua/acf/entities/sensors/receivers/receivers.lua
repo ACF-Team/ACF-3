@@ -91,13 +91,12 @@ do -- Radar Receiver
 		local ReceiverOrigin = Receiver:LocalToWorld(Receiver.Origin)
 
 		for k in pairs(ACF.ActiveRadars) do -- Radar entities
-			if k.EntType ~= "Targeting Radar" then continue end
 			local RadarOrigin = k:LocalToWorld(k.Origin)
 
-			if k.Range then -- Spherical
-				if RadarOrigin:DistToSqr(ReceiverOrigin) <= (k.Range ^ 2) then RadarSource[k] = true end
-			else -- Directional
+			if k.ConeDegs then -- Directional
 				if Countermeasures.ConeContainsPos(RadarOrigin, k:GetForward(), k.ConeDegs, ReceiverOrigin) then RadarSource[k] = true end
+			else -- Spherical
+				if RadarOrigin:DistToSqr(ReceiverOrigin) <= (k.Range ^ 2) then RadarSource[k] = true end
 			end
 		end
 

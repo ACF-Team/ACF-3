@@ -4,8 +4,6 @@ local Guidance  = Guidances.Register("Semi-Active Radar", "Anti-missile")
 if CLIENT then
 	Guidance.Description = "This guidance package uses a radar to detect contraptions and guides the munition towards the most centered one it can find."
 else
-	Guidance.RadarType = "TGT-Radar"
-
 	function Guidance:GetCost()
 		return 5
 	end
@@ -27,6 +25,8 @@ else
 		local Target, TargetPos
 
 		for Entity, Data in pairs(Targets) do
+			if Data.Type ~= "Contraption" then continue end
+
 			local EntPos   = Data.Position
 			local Distance = Position:DistToSqr(EntPos)
 
