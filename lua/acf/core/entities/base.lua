@@ -39,7 +39,7 @@ do -- Spawning and updating
 			Entity:UpdateOverlay(true)
 		end
 
-		if Entity.Outputs and Entity.Outputs.Entity then
+		if Entity.ACF_StaticWireOutputs and Entity.ACF_StaticWireOutputs.Entity then
 			WireLib.TriggerOutput(Entity, "Entity", Entity)
 		end
 
