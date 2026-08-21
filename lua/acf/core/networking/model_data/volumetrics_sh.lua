@@ -234,7 +234,7 @@ do
             if not entity.ACF_PreventArmoring then
                 Material = entity.ACF_Volumetric_Material_Override or (entity.ACF_Volumetric_Materials and entity.ACF_Volumetric_Materials[ConvexID])
             end
-            Materials[ConvexID] = Material or entity.ConvexMaterial or (entity.IsACFEntity and "RHA" or "Default")
+            Materials[ConvexID] = Material or entity.ConvexMaterial
         end
         ACF.SetConvexMaterials(entity, Materials, nil, true)
 

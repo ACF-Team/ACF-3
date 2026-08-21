@@ -7,3 +7,4 @@ ENT.IsACFEntity   = true
 ENT.ACF_PreventArmoring = true
 ENT.ACF_KillableButIndestructible = true
 ENT.ACF_HealthUpdatesWireOverlay = true
+ENT.ConvexMaterial = "Component"

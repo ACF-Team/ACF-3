@@ -6,6 +6,5 @@ ENT.WireDebugName = "ACF Rack"
 ENT.PluralName    = "ACF Racks"
 ENT.IsACFRack        = true
 ENT.IsACFWeapon      = true
-ENT.ConvexMaterial    = "Component"
 
 cleanup.Register("acf_rack")
