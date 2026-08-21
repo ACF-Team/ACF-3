@@ -740,6 +740,7 @@ do
 		-- TODO: CLEAN THIS UP
 		-- Check how many crew remain and kill the owner if there are none left
 		local Contraption = self:CFW_GetContraption()
+		if not Contraption then return end
 		local Crews = Contraption and Contraption.Crews
 		local Alive = 0
 		if Crews then

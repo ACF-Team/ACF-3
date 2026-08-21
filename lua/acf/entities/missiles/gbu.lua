@@ -32,6 +32,7 @@ Classes.DefineClass("ACF.Missiles.GuidedBomb.Walleye", "ACF.Missiles.GuidedBomb"
 	CLASS.ViewCone		= 120
 	CLASS.Agility		= 0.04
 	CLASS.ArmDelay		= 1
+	CLASS.HitDeviate	= false
 	CLASS.Round			= {
 		Model           	= "models/bombs/gbu/agm62.mdl",
 		MaxLength       	= 345,
@@ -75,6 +76,7 @@ Classes.DefineClass("ACF.Missiles.GuidedBomb.227kg", "ACF.Missiles.GuidedBomb", 
 	CLASS.ViewCone		= 80
 	CLASS.Agility		= 0.015
 	CLASS.ArmDelay		= 1
+	CLASS.HitDeviate	= false
 	CLASS.Bodygroups	= {
 		guidance = {
 			DataSource = function(Entity)
@@ -134,6 +136,7 @@ Classes.DefineClass("ACF.Missiles.GuidedBomb.454kg", "ACF.Missiles.GuidedBomb", 
 	CLASS.ViewCone		= 80
 	CLASS.Agility		= 0.03
 	CLASS.ArmDelay		= 1
+	CLASS.HitDeviate	= false
 	CLASS.Bodygroups	= {
 		guidance = {
 			DataSource = function(Entity)
@@ -193,6 +196,7 @@ Classes.DefineClass("ACF.Missiles.GuidedBomb.909kg", "ACF.Missiles.GuidedBomb", 
 	CLASS.ViewCone		= 80
 	CLASS.Agility		= 0.05
 	CLASS.ArmDelay		= 3
+	CLASS.HitDeviate	= false
 	CLASS.Bodygroups	= {
 		guidance = {
 			DataSource = function(Entity)

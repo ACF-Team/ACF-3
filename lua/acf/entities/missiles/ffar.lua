@@ -30,6 +30,7 @@ Classes.DefineClass("ACF.Missiles.FoldingFinRocket.40mm", "ACF.Missiles.FoldingF
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Timed"] = true }
 	CLASS.Agility		= 1
 	CLASS.ArmDelay		= 0.1
+	CLASS.HitDeviate	= true
 	CLASS.Round			= {
 		Model           	= "models/missiles/ffar_40mm.mdl",
 		RackModel       	= "models/missiles/ffar_40mm_closed.mdl",
@@ -71,6 +72,7 @@ Classes.DefineClass("ACF.Missiles.FoldingFinRocket.57mm", "ACF.Missiles.FoldingF
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Timed"] = true }
 	CLASS.Agility		= 1
 	CLASS.ArmDelay		= 0.1
+	CLASS.HitDeviate	= true
 	CLASS.Round			= {
 		Model           	= "models/missiles/ffar_70mm.mdl",
 		RackModel       	= "models/missiles/ffar_70mm_closed.mdl",
@@ -112,6 +114,7 @@ Classes.DefineClass("ACF.Missiles.FoldingFinRocket.70mm", "ACF.Missiles.FoldingF
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Timed"] = true }
 	CLASS.Agility		= 0.05
 	CLASS.ArmDelay		= 0.1
+	CLASS.HitDeviate	= true
 	CLASS.Round			= {
 		Model           	= "models/missiles/ffar_70mm.mdl",
 		RackModel       	= "models/missiles/ffar_70mm_closed.mdl",
@@ -153,6 +156,7 @@ Classes.DefineClass("ACF.Missiles.FoldingFinRocket.80mm", "ACF.Missiles.FoldingF
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Timed"] = true }
 	CLASS.Agility		= 0.05
 	CLASS.ArmDelay		= 0.1
+	CLASS.HitDeviate	= true
 	CLASS.Round			= {
 		Model           	= "models/missiles/ffar_70mm.mdl",
 		RackModel       	= "models/missiles/ffar_70mm_closed.mdl",
@@ -194,6 +198,7 @@ Classes.DefineClass("ACF.Missiles.FoldingFinRocket.Zuni", "ACF.Missiles.FoldingF
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Timed"] = true, ["ACF.Missiles.Fuze.Optical"] = true, ["ACF.Missiles.Fuze.Radio"] = true, ["ACF.Missiles.Fuze.Altitude"] = true }
 	CLASS.Agility		= 0.05
 	CLASS.ArmDelay		= 0.1
+	CLASS.HitDeviate	= true
 	CLASS.Round			= {
 		Model           	= "models/ghosteh/zuni.mdl",
 		RackModel       	= "models/ghosteh/zuni_folded.mdl",

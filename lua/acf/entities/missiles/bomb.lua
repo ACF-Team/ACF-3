@@ -31,6 +31,7 @@ Classes.DefineClass("ACF.Missiles.FreeFallingBomb.50kg", "ACF.Missiles.FreeFalli
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Optical"] = true}
 	CLASS.Agility		= 1
 	CLASS.ArmDelay		= 0.5
+	CLASS.HitDeviate	= false
 	CLASS.Round			= {
 		Model           	= "models/bombs/fab50.mdl",
 		MaxLength       	= 109,
@@ -72,6 +73,7 @@ Classes.DefineClass("ACF.Missiles.FreeFallingBomb.100kg", "ACF.Missiles.FreeFall
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Optical"] = true}
 	CLASS.Agility		= 1
 	CLASS.ArmDelay		= 1
+	CLASS.HitDeviate	= false
 	CLASS.Round			= {
 		Model           	= "models/bombs/fab100.mdl",
 		MaxLength       	= 106,
@@ -113,6 +115,7 @@ Classes.DefineClass("ACF.Missiles.FreeFallingBomb.250kg", "ACF.Missiles.FreeFall
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Optical"] = true}
 	CLASS.Agility		= 1
 	CLASS.ArmDelay		= 1
+	CLASS.HitDeviate	= false
 	CLASS.Round			= {
 		Model           	= "models/bombs/fab250.mdl",
 		MaxLength       	= 145,
@@ -154,6 +157,7 @@ Classes.DefineClass("ACF.Missiles.FreeFallingBomb.500kg", "ACF.Missiles.FreeFall
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Optical"] = true}
 	CLASS.Agility		= 1
 	CLASS.ArmDelay		= 2
+	CLASS.HitDeviate	= false
 	CLASS.Round			= {
 		Model           	= "models/bombs/fab500.mdl",
 		MaxLength       	= 240,
@@ -195,6 +199,7 @@ Classes.DefineClass("ACF.Missiles.FreeFallingBomb.1000kg", "ACF.Missiles.FreeFal
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Optical"] = true}
 	CLASS.Agility		= 1
 	CLASS.ArmDelay		= 3
+	CLASS.HitDeviate	= false
 	CLASS.Round			= {
 		Model           	= "models/bombs/an_m66.mdl",
 		MaxLength       	= 270,

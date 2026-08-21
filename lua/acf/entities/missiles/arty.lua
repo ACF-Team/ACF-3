@@ -31,6 +31,7 @@ Classes.DefineClass("ACF.Missiles.Artillery.Type63", "ACF.Missiles.Artillery", f
 	CLASS.ViewCone		= 180
 	CLASS.Agility		= 0.08
 	CLASS.ArmDelay		= 0.2
+	CLASS.HitDeviate  	= false
 	CLASS.Round 		= {
 		Model           	= "models/missiles/glatgm/mgm51.mdl",
 		MaxLength       	= 80,
@@ -73,6 +74,7 @@ Classes.DefineClass("ACF.Missiles.Artillery.SAKR-10", "ACF.Missiles.Artillery", 
 	CLASS.Agility		= 0.001
 	CLASS.ViewCone		= 45
 	CLASS.ArmDelay		= 0.4
+	CLASS.HitDeviate  	= true
 	CLASS.Round 		= {
 		Model           	= "models/missiles/hvar_folded.mdl",
 		RackModel       	= "models/missiles/hvar_folded.mdl",
@@ -116,6 +118,7 @@ Classes.DefineClass("ACF.Missiles.Artillery.SS-40", "ACF.Missiles.Artillery", fu
 	CLASS.Agility		= 0.004
 	CLASS.ViewCone		= 45
 	CLASS.ArmDelay		= 0.6
+	CLASS.HitDeviate  	= false
 	CLASS.Round 		= {
 		Model           	= "models/missiles/hvar_folded.mdl",
 		RackModel       	= "models/missiles/hvar_folded.mdl",

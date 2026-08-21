@@ -32,6 +32,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.AT-3", "ACF.Missiles.AntiTankGu
 	CLASS.SkinIndex		= { HEAT = 0, HE = 1 }
 	CLASS.Agility		= 0.0005
 	CLASS.ArmDelay		= 0.1
+	CLASS.HitDeviate	= true
 	CLASS.Round			= {
 		Model           	= "models/missiles/at3.mdl",
 		MaxLength       	= 86,
@@ -75,6 +76,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.BGM-71E", "ACF.Missiles.AntiTan
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true }
 	CLASS.Agility		= 0.00024
 	CLASS.ArmDelay		= 0.1
+	CLASS.HitDeviate	= true
 	CLASS.Round			= {
 		Model           	= "models/missiles/bgm_71e.mdl",
 		RackModel       	= "models/missiles/bgm_71e_round.mdl",
@@ -121,6 +123,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.AGM-114", "ACF.Missiles.AntiTan
 	CLASS.SeekCone		= 10
 	CLASS.Agility		= 0.0008
 	CLASS.ArmDelay		= 0.5
+	CLASS.HitDeviate	= true
 	CLASS.Bodygroups	= {
 		guidance = {
 			DataSource = function(Entity)
@@ -180,6 +183,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.Ataka", "ACF.Missiles.AntiTankG
 	CLASS.ViewCone		= 45
 	CLASS.Agility		= 0.00072
 	CLASS.ArmDelay		= 0.1
+	CLASS.HitDeviate	= true
 	CLASS.NoDamage		= true
 	CLASS.Round			= {
 		Model           	= "models/missiles/9m120.mdl",
@@ -226,6 +230,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.9M133", "ACF.Missiles.AntiTankG
 	CLASS.ViewCone		= 20
 	CLASS.Agility		= 0.0004
 	CLASS.ArmDelay		= 0.1
+	CLASS.HitDeviate	= true
 	CLASS.Bodygroups	= {
 		fins = {
 			DataSource = function()
@@ -283,6 +288,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.AT-2", "ACF.Missiles.AntiTankGu
 	CLASS.ViewCone		= 90
 	CLASS.Agility		= 0.00035
 	CLASS.ArmDelay		= 0.1
+	CLASS.HitDeviate	= true
 	CLASS.Round			= {
 		Model           	= "models/missiles/at2.mdl",
 		MaxLength       	= 116,

@@ -32,6 +32,7 @@ Classes.DefineClass("ACF.Missiles.SurfaceToAir.FIM-92", "ACF.Missiles.SurfaceToA
 	CLASS.ViewCone		= 30
 	CLASS.Agility		= 0.0002
 	CLASS.ArmDelay		= 0.2
+	CLASS.HitDeviate	= true
 	CLASS.Round			= {
 		Model           	= "models/missiles/fim_92.mdl",
 		RackModel       	= "models/missiles/fim_92_folded.mdl",
@@ -74,6 +75,7 @@ Classes.DefineClass("ACF.Missiles.SurfaceToAir.Strela-1", "ACF.Missiles.SurfaceT
 	CLASS.ViewCone		= 40
 	CLASS.Agility		= 0.0006
 	CLASS.ArmDelay		= 0.2
+	CLASS.HitDeviate	= true
 	CLASS.Round			= {
 		Model           	= "models/missiles/9m31.mdl",
 		RackModel       	= "models/missiles/9m31f.mdl",

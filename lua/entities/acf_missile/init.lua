@@ -404,6 +404,7 @@ function ACF.MakeMissile(Player, Pos, Ang, Rack, MountPoint, Crate)
 	Missile.ForcedArmor     = Round.Armor
 	Missile.Effect          = Data.Effect or Class.Effect
 	Missile.NoDamage        = Rack.ProtectMissile or Data.NoDamage
+	Missile.HitDeviate      = Data.HitDeviate
 	Missile.ExhaustPos      = Data.ExhaustPos or Vector()
 	Missile.Bodygroups      = Data.Bodygroups
 	Missile.RackModel       = Rack.MissileModel or Round.RackModel
@@ -743,18 +744,53 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 
 		return HitRes
 	elseif HitRes then
+		--If the missile is still on a rack it will be ignored
+		if not self.Launched then
+			return HitRes
+		end
+
 		local Ratio      = self.ACF.Health / self.ACF.MaxHealth
 		local BulletData = self.BulletData
 
-		-- The missile should detonate when it gets penetrated.
+		-- The missile will be considered destroyed when it gets penetrated.
 		if DmgResult.Penetration > self.ForcedArmor then
-			if BulletData.AmmoType == "ACF.Ammunition.HEAT" then
-				BulletData.AmmoType = "ACF.Ammunition.HE"
+			-- New death mechanic for ASM,AAM,ARM,SAM,ARTY,FFAR
+			if self.HitDeviate then
+				BulletData.AmmoType = "ACF.Ammunition.HP"
+				self:SetNW2String("AmmoType", "ACF.Ammunition.HP")
+				self.UseGuidance = nil
+				local MissileAngles = self.CurDir:Angle()
+				local LocalSpin  = VectorRand(-15, 15) / Ratio
+				self.RotAxis = MissileAngles:Up() * LocalSpin.z + MissileAngles:Right() * LocalSpin.y + MissileAngles:Forward() * LocalSpin.x
+				self.TorqueMul = 98
 
-				self:SetNW2String("AmmoType", "ACF.Ammunition.HE")
+				timer.Simple(Ratio,
+					function()
+						if not IsValid(self) then
+							return
+						end
+
+						self:SetNoDraw(true)
+						self:SetNotSolid(true)
+
+						local Effect = EffectData()
+						Effect:SetOrigin(self:GetPos())
+						Effect:SetRadius(BulletData.Caliber)
+						Effect:SetScale(BulletData.FillerMass or 1)
+						util.Effect("ACF_Explosion", Effect)
+
+						local GibModel	= "models/gibs/metal_gib%s.mdl"
+						self:SetNW2String("FlightModel", GibModel:format(math.random(1, 5)))
+						DetonateMissile(self, Owner)
+					end
+				)
+			else -- Old instant death mechanic for BOMB,GBOMB,GBU,UAR
+				if BulletData.AmmoType == "ACF.Ammunition.HEAT" then
+					BulletData.AmmoType = "ACF.Ammunition.HE"
+					self:SetNW2String("AmmoType", "ACF.Ammunition.HE")
+				end
+				DetonateMissile(self, Owner)
 			end
-			DetonateMissile(self, Owner)
-
 			return HitRes
 		end
 

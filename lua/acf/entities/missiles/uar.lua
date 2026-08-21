@@ -32,6 +32,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.RS82", "ACF.Missiles.UnguidedRo
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Timed"] = true }
 	CLASS.Agility		= 1
 	CLASS.ArmDelay		= 0.3
+	CLASS.HitDeviate	= true
 	CLASS.Bodygroups	= {
 		warhead = {
 			DataSource = function(Entity)
@@ -87,6 +88,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.HVAR", "ACF.Missiles.UnguidedRo
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Timed"] = true }
 	CLASS.Agility		= 1
 	CLASS.ArmDelay		= 0.3
+	CLASS.HitDeviate	= true
 	CLASS.Round			= {
 		Model           	= "models/missiles/hvar.mdl",
 		RackModel       	= "models/missiles/hvar_folded.mdl",
@@ -131,6 +133,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.SPG-9", "ACF.Missiles.UnguidedR
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true }
 	CLASS.Agility		= 1
 	CLASS.ArmDelay		= 0 -- :)
+	CLASS.HitDeviate	= false
 	CLASS.Round			= {
 		Model           	= "models/missiles/rs82.mdl",
 		RackModel       	= "models/missiles/rs82.mdl",
@@ -176,6 +179,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.S-24", "ACF.Missiles.UnguidedRo
 	CLASS.SkinIndex		= { HEAT = 0, HE = 1 }
 	CLASS.Agility		= 1
 	CLASS.ArmDelay		= 0.3
+	CLASS.HitDeviate	= false
 	CLASS.Round			= {
 		Model           	= "models/missiles/s24.mdl",
 		MaxLength       	= 233,
@@ -216,6 +220,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.RW61", "ACF.Missiles.UnguidedRo
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Optical"] = true }
 	CLASS.Agility		= 1
 	CLASS.ArmDelay		= 0.2
+	CLASS.HitDeviate	= false
 	CLASS.Round			= {
 		Model           	= "models/missiles/RW61M.mdl",
 		RackModel       	= "models/missiles/RW61M.mdl",

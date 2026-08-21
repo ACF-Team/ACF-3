@@ -29,6 +29,7 @@ Classes.DefineClass("ACF.Missiles.GlidingBomb.100kg", "ACF.Missiles.GlidingBomb"
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Optical"] = true}
 	CLASS.ArmDelay		= 1
+	CLASS.HitDeviate	= false
 	CLASS.Round			= {
 		Model           	= "models/missiles/micro.mdl",
 		MaxLength       	= 100,
@@ -68,6 +69,7 @@ Classes.DefineClass("ACF.Missiles.GlidingBomb.250kg", "ACF.Missiles.GlidingBomb"
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Optical"] = true}
 	CLASS.ArmDelay		= 1
+	CLASS.HitDeviate	= false
 	CLASS.Round			= {
 		Model           	= "models/missiles/fab250.mdl",
 		MaxLength       	= 150,

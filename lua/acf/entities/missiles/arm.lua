@@ -34,6 +34,7 @@ Classes.DefineClass("ACF.Missiles.AntiRadiation.AGM-122", "ACF.Missiles.AntiRadi
 	CLASS.ViewCone		= 20
 	CLASS.Agility		= 0.0018
 	CLASS.ArmDelay		= 0.2
+	CLASS.HitDeviate  	= true
 	CLASS.Round 		= {
 		Model           	= "models/missiles/aim9.mdl",
 		MaxLength       	= 287,
@@ -76,6 +77,7 @@ Classes.DefineClass("ACF.Missiles.AntiRadiation.AGM-45", "ACF.Missiles.AntiRadia
 	CLASS.ViewCone	= 10
 	CLASS.Agility		= 0.012
 	CLASS.ArmDelay	= 0.3
+	CLASS.HitDeviate  = true
 	CLASS.Round = {
 		Model           	= "models/missiles/aim120.mdl",
 		MaxLength       	= 305,

@@ -33,6 +33,7 @@ Classes.DefineClass("ACF.Missiles.AirToAir.AIM-9", "ACF.Missiles.AirToAir", func
 	CLASS.ViewCone		= 30
 	CLASS.Agility		= 0.0017
 	CLASS.ArmDelay		= 0.2
+	CLASS.HitDeviate  	= true
 	CLASS.Round 		= {
 		Model           	= "models/missiles/aim9m.mdl",
 		MaxLength       	= 289,
@@ -76,6 +77,7 @@ Classes.DefineClass("ACF.Missiles.AirToAir.AIM-120", "ACF.Missiles.AirToAir", fu
 	CLASS.ViewCone		= 30
 	CLASS.Agility		= 0.006
 	CLASS.ArmDelay		= 0.2
+	CLASS.HitDeviate  	= true
 	CLASS.Round 		= {
 		Model           	= "models/missiles/aim120c.mdl",
 		MaxLength       	= 370,
@@ -119,6 +121,7 @@ Classes.DefineClass("ACF.Missiles.AirToAir.AIM-7", "ACF.Missiles.AirToAir", func
 	CLASS.ViewCone    	= 20
 	CLASS.Agility     	= 0.02
 	CLASS.ArmDelay    	= 0.3
+	CLASS.HitDeviate  	= true
 	CLASS.Round 		= {
 		Model           	= "models/missiles/aim7f.mdl",
 		MaxLength       	= 370,
@@ -162,6 +165,7 @@ Classes.DefineClass("ACF.Missiles.AirToAir.AIM-54", "ACF.Missiles.AirToAir", fun
 	CLASS.ViewCone		= 20
 	CLASS.Agility		= 0.02
 	CLASS.ArmDelay		= 0.4
+	CLASS.HitDeviate  	= false
 	CLASS.Round 		= {
 		Model           	= "models/missiles/aim54a.mdl",
 		MaxLength       	= 400,
