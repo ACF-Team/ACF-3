@@ -244,7 +244,7 @@ do
             -- ACF_Volumetric_Material_Override covers entities converted from the old uniform-RHA system where the
             -- convex count may change after initialization (e.g. hollow cube primitives start solid, reinitialize hollow).
             local Material = entity.ACF_Volumetric_Materials and entity.ACF_Volumetric_Materials[ConvexID]
-            if not entity.ACF_PreventArmoring then
+            if not entity.ACF_PreventArmoring and entity.ACF_Volumetric_Material_Override then
                 Material = entity.ACF_Volumetric_Material_Override
             end
             Materials[ConvexID] = Material or entity.ConvexMaterial or "Default"
