@@ -9,7 +9,7 @@ TOOL.ConfigName	 = ""
 TOOL.Information = {
 	{ name = "left" },
 	{ name = "right" },
-	{ name = "", icon2 = "gui/info", },
+	{ name = "shift", icon2 = "gui/info", },
 	{ name = "reload" }
 }
 

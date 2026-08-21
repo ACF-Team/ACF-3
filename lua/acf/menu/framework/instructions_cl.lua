@@ -47,8 +47,8 @@ function ACF.Menu.DrawInstructions(Instructions)
 	draw.TexturedQuad({ texture = Gradient, x = 0, y = Y, w = ScrW() / 3, h = #Instructions * 26, color = Color(0, 0, 0, 230) })
 
 	for I, Instruction in ipairs(Instructions) do
-		local YO = (Y + ((I - 1) * 26)) + 2
-		local XO = 64
+		local YO = (Y + ((I - 1) * 24)) + 2
+		local XO = 50
 
 		for _, Piece in ipairs(Instruction) do
 			if Piece.Type == IPTYPE_ICON then
@@ -61,9 +61,9 @@ function ACF.Menu.DrawInstructions(Instructions)
 			elseif Piece.Type == IPTYPE_INPUT then
 				for I2, Key in ipairs(Piece.Combo) do
 					if I2 ~= 1 then
-						XO = XO + 8
+						XO = XO - 44
 						draw.TextShadow({ text = "+", font = "ACF.ToolMenu.Key", pos = { XO, YO }, xalign = TEXT_ALIGN_CENTER, yalign = TEXT_ALIGN_TOP, color = color_white }, 1, 50)
-						XO = XO + 8
+						XO = XO + 4
 					end
 
 					if MOUSE_BUTTONS[Key] then
@@ -74,7 +74,7 @@ function ACF.Menu.DrawInstructions(Instructions)
 					else
 						surface.SetFont("ACF.ToolMenu.Key")
 						local TSX, TSY = surface.GetTextSize(Key)
-						TSX = TSX + 12
+						TSX = TSX + 8
 
 						surface.SetMaterial(CacheIcon("gui/key.png"))
 						surface.SetDrawColor(255, 255, 255)
@@ -83,11 +83,11 @@ function ACF.Menu.DrawInstructions(Instructions)
 							surface.DrawTexturedRect(XO, YO, 16, 16)
 						else
 							-- Stretch the keycap while keeping its edges intact (9-slice on X).
-							surface.DrawTexturedRectUV(XO, YO, 8, 16, 0, 0, 0.5, 1)
-							surface.DrawTexturedRectUV(XO + 8, YO, TSX - 16, 16, 0.5, 0, 0.5, 1)
-							surface.DrawTexturedRectUV(XO + (TSX - 8), YO, 8, 16, 0.5, 0, 1, 1)
+							surface.DrawTexturedRectUV(XO - TSX - 8, YO, 8, 16, 0, 0, 0.5, 1)
+							surface.DrawTexturedRectUV(XO - TSX, YO, TSX - 16, 16, 0.5, 0, 0.5, 1)
+							surface.DrawTexturedRectUV(XO - 16, YO, 8, 16, 0.5, 0, 1, 1)
 
-							draw.TextShadow({ text = Key, font = "ACF.ToolMenu.Key", pos = { XO + (TSX / 2), YO + (TSY / 2) }, xalign = TEXT_ALIGN_CENTER, yalign = TEXT_ALIGN_CENTER, color = Color(45, 45, 45) }, 1, 50)
+							draw.TextShadow({ text = Key, font = "ACF.ToolMenu.Key", pos = { XO - (TSX / 2) - 8, YO + (TSY / 2) }, xalign = TEXT_ALIGN_CENTER, yalign = TEXT_ALIGN_CENTER, color = Color(45, 45, 45) }, 1, 50)
 						end
 
 						XO = XO + TSX
@@ -96,7 +96,7 @@ function ACF.Menu.DrawInstructions(Instructions)
 
 				XO = XO + 8
 			elseif Piece.Type == IPTYPE_TEXT then
-				local TX = draw.TextShadow({ text = Phrase(Piece.Text), font = "GModToolHelp", pos = { XO, YO }, color = color_white }, 1)
+				local TX = draw.TextShadow({ text = Phrase(Piece.Text), font = "GModToolHelp", pos = { XO - 4, YO }, color = color_white }, 1)
 				XO = XO + TX + 8
 			end
 		end
