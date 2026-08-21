@@ -82,9 +82,20 @@ do
     -- Returns false if any convex was rejected (e.g. an explosive material on too large a convex)
     function ACF.SetConvexMaterials(Entity, Materials, Player, NoStore)
         local MeshData = Entity.ACF_Volumetric_Mesh
-        if not MeshData then return end
 
         Entity.ACF_Volumetric_Materials = Entity.ACF_Volumetric_Materials or {}
+
+        if not MeshData then
+            -- Mesh hasn't been computed yet (e.g. the client received a networked material update
+            -- before its own ComputeVolumetricMesh ran). Stash the materials so ComputeVolumetricMesh
+            -- picks them up once the mesh exists, instead of silently dropping them.
+            for ConvexID, Material in pairs(Materials) do
+                print("SetConvexMaterial", Entity, ConvexID, Material)
+                local ArmorType = ArmorTypes.Get(Material) or ArmorTypes.Get("Default")
+                Entity.ACF_Volumetric_Materials[ConvexID] = ArmorType.ID
+            end
+            return
+        end
 
         local Changed  = {} -- ConvexID -> ArmorType.ID, for networking/storage
         local AnyOK    = false
@@ -175,6 +186,8 @@ do
         if not IsValid(entity) then return end
         if not entity.IsACFEntity and not ArmorableClasses[entity:GetClass()] then return end
 
+        -- print("ComputeVolumetricMesh", entity)
+
         -- NOTE: I HATE THIS SO MUCH... ONLY PRIMITIVES AND SCALEABLES HAVE VALID CLIENTSIDE PHYSOBJs...
         local Mesh
         local PhysObj = entity:GetPhysicsObject()
@@ -230,11 +243,11 @@ do
             -- Priority: per-convex painted material > global material override > fixed ConvexMaterial > entity-type default.
             -- ACF_Volumetric_Material_Override covers entities converted from the old uniform-RHA system where the
             -- convex count may change after initialization (e.g. hollow cube primitives start solid, reinitialize hollow).
-            local Material
+            local Material = entity.ACF_Volumetric_Materials and entity.ACF_Volumetric_Materials[ConvexID]
             if not entity.ACF_PreventArmoring then
-                Material = entity.ACF_Volumetric_Material_Override or (entity.ACF_Volumetric_Materials and entity.ACF_Volumetric_Materials[ConvexID])
+                Material = entity.ACF_Volumetric_Material_Override
             end
-            Materials[ConvexID] = Material or entity.ConvexMaterial
+            Materials[ConvexID] = Material or entity.ConvexMaterial or "Default"
         end
         ACF.SetConvexMaterials(entity, Materials, nil, true)
 
