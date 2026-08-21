@@ -71,6 +71,7 @@ local ArmorableClasses = {
     primitive_ladder = true,
     primitive_rail_silder = true,
     primitive_airfoil = true,
+    primitive_convex_hull = true,
 }
 
 do
