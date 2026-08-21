@@ -170,7 +170,26 @@ do
         return ACF.SetConvexMaterials(Entity, { [ConvexID] = Material }, Player, NoStore)
     end
 
-    function ProcessConvexes(Entity, Meshes)
+    local function ComputeVolumetricMesh(entity)
+        if not IsValid(entity) then return end
+        if not entity.IsACFEntity and not ArmorableClasses[entity:GetClass()] then return end
+
+        -- NOTE: I HATE THIS SO MUCH... ONLY PRIMITIVES AND SCALEABLES HAVE VALID CLIENTSIDE PHYSOBJs...
+        local Mesh
+        local PhysObj = entity:GetPhysicsObject()
+
+        -- This is fine on the client, but not fine on the server
+        if SERVER and not IsValid(PhysObj) then return end
+
+        -- Sanitized version of GetMeshConvexes
+        if IsValid(PhysObj) then Mesh = ModelData.SanitizeMesh(PhysObj) end
+
+        -- Fallback if no physobj exists on the client
+        if CLIENT and not IsValid(PhysObj) then Mesh = ModelData.GetModelMesh(entity:GetModel(), ModelData.GetEntityScale(entity)) end
+
+        -- TODO: Fix the error that forced me to do this...
+        local Meshes = Mesh or {}
+
         local MeshData = { Convexes = {} }
 
         for _, Convex in ipairs(Meshes) do
@@ -198,12 +217,12 @@ do
                 Mass      = 0,
                 Health    = 0,
                 MaxHealth = 0,
-                Entity    = Entity,
+                Entity    = entity,
             }
         end
 
         MeshData.TotalMass         = 0
-        Entity.ACF_Volumetric_Mesh = MeshData
+        entity.ACF_Volumetric_Mesh = MeshData
 
         local Materials = {}
         for ConvexID in ipairs(MeshData.Convexes) do
@@ -211,33 +230,12 @@ do
             -- ACF_Volumetric_Material_Override covers entities converted from the old uniform-RHA system where the
             -- convex count may change after initialization (e.g. hollow cube primitives start solid, reinitialize hollow).
             local Material
-            if not Entity.ACF_PreventArmoring then
-                Material = Entity.ACF_Volumetric_Material_Override or (Entity.ACF_Volumetric_Materials and Entity.ACF_Volumetric_Materials[ConvexID])
+            if not entity.ACF_PreventArmoring then
+                Material = entity.ACF_Volumetric_Material_Override or (entity.ACF_Volumetric_Materials and entity.ACF_Volumetric_Materials[ConvexID])
             end
-            Materials[ConvexID] = Material or Entity.ConvexMaterial or (Entity.IsACFEntity and "RHA" or "Default")
+            Materials[ConvexID] = Material or entity.ConvexMaterial or (entity.IsACFEntity and "RHA" or "Default")
         end
-        ACF.SetConvexMaterials(Entity, Materials, nil, true)
-    end
-
-    local function ComputeVolumetricMesh(entity)
-        if not IsValid(entity) then return end
-        if not entity.IsACFEntity and not ArmorableClasses[entity:GetClass()] then return end
-
-        -- NOTE: I HATE THIS SO MUCH... ONLY PRIMITIVES AND SCALEABLES HAVE VALID CLIENTSIDE PHYSOBJs...
-        local Mesh
-        local PhysObj = entity:GetPhysicsObject()
-
-        -- This is fine on the client, but not fine on the server
-        if SERVER and not IsValid(PhysObj) then return end
-
-        -- Sanitized version of GetMeshConvexes
-        if IsValid(PhysObj) then Mesh = ModelData.SanitizeMesh(PhysObj) end
-
-        -- Fallback if no physobj exists on the client
-        if CLIENT and not IsValid(PhysObj) then Mesh = ModelData.GetModelMesh(entity:GetModel(), ModelData.GetEntityScale(entity)) end
-
-        -- TODO: Fix the error that forced me to do this...
-        ProcessConvexes(entity, Mesh or {})
+        ACF.SetConvexMaterials(entity, Materials, nil, true)
 
         -- ACF entities track their total health as the sum of their convexes' health, separately from the
         -- per-convex health that armorable props (e.g. prop_physics) take damage on directly.
