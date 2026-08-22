@@ -146,6 +146,7 @@ do -- Spawn and update function
 		Entity.OverlayTitle = Computer.OnOverlayTitle or Class.OnOverlayTitle
 		Entity.OverlayBody  = Computer.OnOverlayBody or Class.OnOverlayBody
 		Entity.OnDamaged    = Computer.OnDamaged or Class.OnDamaged
+		Entity.OnRepaired   = Computer.OnRepaired or Class.OnRepaired
 		Entity.OnEnabled    = Computer.OnEnabled or Class.OnEnabled
 		Entity.OnDisabled   = Computer.OnDisabled or Class.OnDisabled
 		Entity.OnThink      = Computer.OnThink or Class.OnThink
@@ -283,6 +284,12 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	end
 
 	return HitRes
+end
+
+function ENT:ACF_OnRepaired()
+	if self.OnRepaired then
+		self:OnRepaired()
+	end
 end
 
 function ENT:Enable()

@@ -36,7 +36,7 @@ function ENT:CanRestock()
 
 	if SelfTbl.Disabled then return false end
 	if not SelfTbl.Load then return false end
-	if SelfTbl.Damaged then return false end
+	if SelfTbl.ACF.Health == 0 then return false end
 	if SelfTbl.IsBelted then return false end
 
 	return SelfTbl.Amount < SelfTbl.Capacity

@@ -5,6 +5,7 @@ ENT.WireDebugName = "ACF Weapon"
 ENT.PluralName    = "ACF Weapons"
 ENT.IsACFGun      = true
 ENT.IsACFWeapon      = true
+ENT.ConvexMaterial = "GunSteel"
 
 cleanup.Register("acf_gun")
 cleanup.Register("acf_smokelauncher")

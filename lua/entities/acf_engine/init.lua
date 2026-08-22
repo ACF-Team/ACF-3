@@ -579,25 +579,6 @@ ACF.AddInputAction("acf_engine", "Active", function(Entity, Value)
 	SetActive(Entity, tobool(Value), Entity:GetTable())
 end)
 
-function ENT:ACF_Activate(Recalc)
-	local PhysObj = self.ACF.PhysObj
-	local Mass    = PhysObj:GetMass()
-	local Area    = PhysObj:GetSurfaceArea() * ACF.InchToCmSq
-	local Armour  = Mass * 1000 / Area / 0.78 * ACF.ArmorMod -- Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
-	local Health  = Area / ACF.Threshold
-	local Percent = 1
-
-	if Recalc and self.ACF.Health and self.ACF.MaxHealth then
-		Percent = self.ACF.Health / self.ACF.MaxHealth
-	end
-
-	self.ACF.Area      = Area
-	self.ACF.Health    = Health * Percent * self.HealthMult
-	self.ACF.MaxHealth = Health * self.HealthMult
-	self.ACF.Armour    = Armour * (0.5 + Percent * 0.5)
-	self.ACF.MaxArmour = Armour
-	self.ACF.Type      = "Prop"
-end
 
 --This function needs to return HitRes
 function ENT:ACF_OnDamage(DmgResult, DmgInfo)
@@ -606,9 +587,14 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	-- Adjusting performance based on damage
 	local TorqueMult = Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, self.TorqueScale, 1)
 
-	self.PeakTorque = self.PeakTorqueHeld * TorqueMult
+	if self.ACF.Health <= 0 then TorqueMult = 0 end -- Destroyed engines produce no power
 
+	self.PeakTorque = self.PeakTorqueHeld * TorqueMult
 	return HitRes
+end
+
+function ENT:ACF_OnRepaired()
+	self.PeakTorque = self.PeakTorqueHeld
 end
 
 function ENT:UpdateSound(SelfTbl)
@@ -748,6 +734,7 @@ function ENT:Think()
 
 	if not SelfTbl.Active then return end
 	if SelfTbl.Disabled then return end
+	if SelfTbl.ACF.Health <= 0 then return end
 
 	self:CalcRPM(SelfTbl)
 

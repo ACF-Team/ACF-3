@@ -178,7 +178,10 @@ do -- Serverside settings
 			Base:AddHelp("#acf.menu.settings.general.allow_dynamic_linking_desc")
 
 		Base:AddSlider("#acf.menu.settings.general.max_thickness"):            LinkToServerData("MaxThickness")
-		Base:AddSlider("#acf.menu.settings.general.health_factor"):            LinkToServerData("HealthFactor")
+		Base:AddSlider("#acf.menu.settings.general.armor_factor"):             LinkToServerData("ArmorCoef")
+		Base:AddSlider("#acf.menu.settings.general.health_factor"):            LinkToServerData("HealthCoef")
+		Base:AddSlider("#acf.menu.settings.general.damage_factor"):            LinkToServerData("DamageCoef")
+		Base:AddSlider("#acf.menu.settings.general.blast_damage_factor"):      LinkToServerData("DamageBlastCoef")
 		Base:AddSlider("#acf.menu.settings.general.fuel_factor"):              LinkToServerData("FuelFactor")
 		Base:AddSlider("#acf.menu.settings.general.max_driveshaft_angle"):     LinkToServerData("MaxDriveshaftAngle")
 
@@ -198,6 +201,20 @@ do -- Serverside settings
 		Base:AddCheckBox("#acf.menu.settings.weapons.rack_fire"):            LinkToServerData("RacksCanFire")
 		Base:AddCheckBox("#acf.menu.settings.weapons.baseplate_damage"):     LinkToServerData("AllowBaseplateDamage")
 		Base:AddSlider("#acf.menu.settings.weapons.squishy_mult"):           LinkToServerData("SquishyDamageMult")
+	end)
+
+	ACF.AddServerSettings(76, "Kill Feed & Log", function(Base)
+		Base:AddCheckBox("Kill Feed Cost Display"):LinkToServerData("EnableKillFeedCost")
+			Base:AddHelp("Shows each player's contraption point cost next to their name in the kill feed.")
+
+		Base:AddSlider("Kill Log Disk-Write Interval (Seconds)"):LinkToServerData("KillLogFlushInterval")
+			Base:AddHelp("How often pending kills are flushed to disk.")
+
+		Base:AddSlider("Kill Log Max Sessions"):LinkToServerData("KillLogMaxSessions")
+			Base:AddHelp("How many past sessions the kill log keeps before deleting the oldest.")
+
+		Base:AddSlider("Kill Log Query Cooldown (Seconds)"):LinkToServerData("KillLogQueryCooldown")
+			Base:AddHelp("How long a player must wait between kill log queries.")
 	end)
 
 	ACF.AddServerSettings(101, "#acf.menu.settings.entity_pushing", function(Base)

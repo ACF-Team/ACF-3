@@ -22,7 +22,7 @@ else
 	Guidance.MinDistance = 38750 -- Squared, ~5 meters
 
 	function Guidance:GetCost()
-		return 2
+		return 4
 	end
 
 	function Guidance:UpdateTarget(Missile)

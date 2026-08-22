@@ -690,27 +690,6 @@ function ENT:OnRemove()
 	WireLib.Remove(self)
 end
 
-function ENT:ACF_Activate(Recalc)
-	local PhysObj = self.ACF.PhysObj
-	local Area    = PhysObj:GetSurfaceArea() * ACF.InchToCmSq
-	local Armor   = self.ForcedArmor
-	local Health  = Area / ACF.Threshold
-	local Percent = 1
-
-	if Recalc and self.ACF.Health and self.ACF.MaxHealth then
-		Percent = self.ACF.Health / self.ACF.MaxHealth
-	end
-
-	self.ACF.Area      = Area
-	self.ACF.Ductility = 0
-	self.ACF.Health    = Health * Percent
-	self.ACF.MaxHealth = Health
-	self.ACF.Armour    = Armor * (0.5 + Percent * 0.5)
-	self.ACF.MaxArmour = Armor * ACF.ArmorMod
-	self.ACF.Mass      = self.ForcedMass
-	self.ACF.Type      = "Prop"
-end
-
 function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	if self.Detonated or self.NoDamage then
 		return {
@@ -751,6 +730,7 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 				BulletData.Type = "HP"
 				self:SetNW2String("AmmoType", "HP")
 				self.UseGuidance = nil
+				self.Broken = true -- Missile has broken up; radars shouldn't be able to detect it anymore
 				local MissileAngles = self.CurDir:Angle()
 				local LocalSpin  = VectorRand(-15, 15) / Ratio
 				self.RotAxis = MissileAngles:Up() * LocalSpin.z + MissileAngles:Right() * LocalSpin.y + MissileAngles:Forward() * LocalSpin.x

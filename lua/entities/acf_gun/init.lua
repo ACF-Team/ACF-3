@@ -119,7 +119,7 @@ do -- Random timer crew stuff
 			-- Check assuming 2 piece for now.
 			local ShellLength = ((SelfTbl.BulletData.PropLength or 0) + (SelfTbl.BulletData.ProjLength or 0)) / ACF.InchToCm / 2
 			local p1 = SelfTbl.BreechPos
-			local p2 = p1 - Vector(ShellLength, 0, 0)
+			local p2 = p1 - SelfTbl.BreechAng:Forward() * ShellLength
 			local wp1, wp2 = ENTITY.LocalToWorld(self, p1), ENTITY.LocalToWorld(self, p2)
 
 			TraceConfig.start = wp1
@@ -785,12 +785,19 @@ do -- Metamethods --------------------------------
 		end
 
 		-- Logging contraption wide bullet filter
+		local BulletFilterClasses = {
+			acf_gun = true,
+			acf_turret = true,
+		}
+
 		hook.Add("cfw.contraption.created", "ACF_CFW_BulletFilter", function(Contraption)
 			Contraption.BulletFilter = {}
+			Contraption.BarrelFilter = {}
 		end)
 
 		hook.Add("cfw.contraption.entityAdded", "ACF_CFW_BulletFilter", function(Contraption, Entity)
-			table.insert(Contraption.BulletFilter, Entity)
+			if BulletFilterClasses[Entity:GetClass()] then table.insert(Contraption.BulletFilter, Entity) end
+			table.insert(Contraption.BarrelFilter, Entity)
 		end)
 	end -----------------------------------------
 
@@ -832,6 +839,7 @@ do -- Metamethods --------------------------------
 
 			if not SelfTbl.Firing then return false end -- Nobody is holding the trigger
 			if SelfTbl.Disabled then return false end -- Disabled
+			if SelfTbl.ACF.Health <= 0 then return false end -- Destroyed
 
 			if SelfTbl.State ~= "Loaded" then -- Weapon is not loaded
 				if SelfTbl.State == "Empty" and not SelfTbl.Retry then
@@ -916,7 +924,7 @@ do -- Metamethods --------------------------------
 			BulletData.Filter 			= Contraption and Contraption.BulletFilter or { self }
 			BulletData.Owner  			= SelfTbl.CurrentUser
 			BulletData.Gun	   			= self -- because other guns share this table
-			BulletData.Pos, IsBlocked   = self:BarrelCheck(BulletData.Filter)
+			BulletData.Pos, IsBlocked   = self:BarrelCheck(Contraption and Contraption.BarrelFilter or { self })
 			BulletData.Flight 			= Dir * BulletData.MuzzleVel * ACF.MeterToInch + Velocity
 			BulletData.Fuze   			= SelfTbl.Fuze -- Must be set when firing as the table is shared
 
@@ -1341,28 +1349,6 @@ do -- Metamethods --------------------------------
 	end
 
 	do -- Misc ----------------------------------
-		function ENT:ACF_Activate(Recalc)
-			local SelfTbl = ENTITY.GetTable(self)
-			local SelfACF = SelfTbl.ACF
-
-			local PhysObj = SelfACF.PhysObj
-			local Area    = PhysObj:GetSurfaceArea() * ACF.InchToCmSq
-			local Armour  = SelfTbl.Caliber * ACF.ArmorMod
-			local Health  = Area / ACF.Threshold
-			local Percent = 1
-
-			if Recalc and SelfACF.Health and SelfACF.MaxHealth then
-				Percent = SelfACF.Health / SelfACF.MaxHealth
-			end
-
-			SelfACF.Area      = Area
-			SelfACF.Health    = Health * Percent
-			SelfACF.MaxHealth = Health
-			SelfACF.Armour    = Armour * (0.5 + Percent * 0.5)
-			SelfACF.MaxArmour = Armour
-			SelfACF.Type      = "Prop"
-		end
-
 		function ENT:SetState(State)
 			self.State = State
 

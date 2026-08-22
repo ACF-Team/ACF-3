@@ -222,17 +222,6 @@ e2function number entity:acfPropHealth()
 	return Health and Round(Health, 2) or 0
 end
 
--- Returns the current armor of an entity
-e2function number entity:acfPropArmor()
-	if not validPhysics(this) then return 0 end
-	if RestrictInfo(self, this) then return 0 end
-	if not ACF.Check(this) then return 0 end
-
-	local Armor = this.ACF.Armour
-
-	return Armor and Round(Armor, 2) or 0
-end
-
 -- Returns the max health of an entity
 e2function number entity:acfPropHealthMax()
 	if not validPhysics(this) then return 0 end
@@ -242,17 +231,6 @@ e2function number entity:acfPropHealthMax()
 	local MaxHealth = this.ACF.MaxHealth
 
 	return MaxHealth and Round(MaxHealth, 2) or 0
-end
-
--- Returns the max armor of an entity
-e2function number entity:acfPropArmorMax()
-	if not validPhysics(this) then return 0 end
-	if RestrictInfo(self, this) then return 0 end
-	if not ACF.Check(this) then return 0 end
-
-	local MaxArmor = this.ACF.MaxArmour
-
-	return MaxArmor and Round(MaxArmor, 2) or 0
 end
 
 -- Returns the current health percentage of an entity
@@ -266,26 +244,57 @@ e2function number entity:acfPropHealthPercent()
 	return PercHealth and Round(PercHealth, 2) or 0
 end
 
--- Returns the current armor percentage of an entity
-e2function number entity:acfPropArmorPercent()
+-- Returns the current health of a specific convex of an entity
+e2function number entity:acfConvexHealth(number ConvexID)
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not ACF.Check(this) then return 0 end
 
-	local PercArmor = this.ACF.Armour / this.ACF.MaxArmour
+	local MeshData = this.ACF_Volumetric_Mesh
+	if not MeshData then return 0 end
 
-	return PercArmor and Round(PercArmor, 2) or 0
+	local Convex = MeshData.Convexes[floor(ConvexID)]
+	if not Convex then return 0 end
+
+	return Round(Convex.Health, 2)
 end
 
--- Returns the ductility of an entity
-e2function number entity:acfPropDuctility()
+-- Returns the max health of a specific convex of an entity
+e2function number entity:acfConvexHealthMax(number ConvexID)
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not ACF.Check(this) then return 0 end
 
-	local Ductility = this.ACF.Ductility
+	local MeshData = this.ACF_Volumetric_Mesh
+	if not MeshData then return 0 end
 
-	return Ductility and Ductility * 100 or 0
+	local Convex = MeshData.Convexes[floor(ConvexID)]
+	if not Convex then return 0 end
+
+	return Round(Convex.MaxHealth, 2)
+end
+
+-- Returns the health percentage of a specific convex of an entity
+e2function number entity:acfConvexHealthPercent(number ConvexID)
+	if not validPhysics(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+
+	local MeshData = this.ACF_Volumetric_Mesh
+	if not MeshData then return 0 end
+
+	local Convex = MeshData.Convexes[floor(ConvexID)]
+	if not Convex or Convex.MaxHealth == 0 then return 0 end
+
+	return Round(Convex.Health / Convex.MaxHealth, 2)
+end
+
+-- Returns the number of convexes of an entity
+e2function number entity:acfConvexCount()
+	if not validPhysics(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+
+	local MeshData = this.ACF_Volumetric_Mesh
+	if not MeshData then return 0 end
+
+	return #MeshData.Convexes
 end
 
 __e2setcost(10)
@@ -301,10 +310,10 @@ e2function number ranger:acfEffectiveArmor()
 	if RestrictInfo(self, this.Entity) then return 0 end
 	if not ACF.Check(this.Entity) then return 0 end
 
-	local Armor    = this.Entity.ACF.Armour
-	local HitAngle = ACF.GetHitAngle(this, this.HitPos - this.StartPos)
+	local Direction = (this.HitPos - this.StartPos):GetNormalized()
+	local ConvexHit = ACF.GetConvexHit(this.Entity, this.HitPos, Direction)
 
-	return Round(Armor / math.abs(math.cos(math.rad(HitAngle))), 2)
+	return ConvexHit and Round(ConvexHit.GeoThick, 2) or 0
 end
 
 __e2setcost(20)

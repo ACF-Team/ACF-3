@@ -5,10 +5,9 @@ if CLIENT then
 	Guidance.Description = "This guidance package uses a radar to detect missiles and guides the munition towards the most centered one it can find."
 else
 	local Countermeasures = ACF.Classes.Countermeasures
-	Guidance.RadarType = "AM-Radar"
 
 	function Guidance:GetCost()
-		return 1
+		return 3
 	end
 
 	function Guidance:GetRadar()
@@ -18,7 +17,6 @@ else
 
 		if not IsValid(Radar) then return end
 		if not Radar.Scanning then return end
-		if Radar.ClassType ~= self.RadarType then return end
 
 		return Radar
 	end
@@ -65,6 +63,7 @@ else
 		local Target, TargetPos
 
 		for Entity, Data in pairs(Targets) do
+			if Data.Type ~= "Missile" then continue end
 			if Missile == Entity then continue end
 			if Entity.IsAntiMissile then continue end
 

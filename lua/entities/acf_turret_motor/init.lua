@@ -209,25 +209,6 @@ do	-- Metamethods and other important stuff
 			if self.Turret then self.Turret:UpdateTurretSlew() end
 		end
 
-		function ENT:ACF_Activate(Recalc)
-			local PhysObj	= self.ACF.PhysObj
-			local Area		= PhysObj:GetSurfaceArea() * ACF.InchToCmSq
-			local Armour	= self.ScaledArmor
-			local Health	= Area / ACF.Threshold
-			local Percent	= 1
-
-			if Recalc and self.ACF.Health and self.ACF.MaxHealth then
-				Percent = self.ACF.Health / self.ACF.MaxHealth
-			end
-
-			self.ACF.Area		= Area
-			self.ACF.Health		= Health * Percent
-			self.ACF.MaxHealth	= Health
-			self.ACF.Armour		= Armour * (0.5 + Percent * 0.5)
-			self.ACF.MaxArmour	= Armour
-			self.ACF.Type		= "Prop"
-		end
-
 		function ENT:SetActive(Active, Reason)
 			self.Active = Active
 			self.InactiveReason = Reason

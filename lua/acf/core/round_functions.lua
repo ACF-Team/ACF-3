@@ -113,6 +113,19 @@ function ACF.Penetration(Speed, Mass, Caliber)
 	return Constant * Mass ^ 0.55 * Caliber ^ -0.65 * Speed ^ 1.1 * ACF.InchToMm
 end
 
+-- Inverse of ACF.Penetration, solved for Speed (Penetration in mm, Mass in kg, Caliber in mm, returns speed in m/s)
+function ACF.CalcSpeed(Penetration, Mass, Caliber)
+	local Constant = 0.0004689
+
+	Mass        = Mass * 2.20462 -- From kg to lb
+	Caliber     = Caliber * ACF.MmToInch
+	Penetration = Penetration * ACF.MmToInch
+
+	local Speed = (Penetration / (Constant * Mass ^ 0.55 * Caliber ^ -0.65)) ^ (1 / 1.1)
+
+	return Speed / 3.28084 -- From ft/s to m/s
+end
+
 function ACF.MuzzleVelocity(PropMass, ProjMass, Efficiency)
 	local Energy = PropMass * ACF.PropImpetus * (Efficiency or 1) * 1000 -- In joules
 
@@ -126,11 +139,6 @@ function ACF.Kinetic(Speed, Mass)
 		Kinetic = Mass * 0.5 * Speed ^ 2 * 0.001, --Energy in KiloJoules
 		Momentum = Speed * Mass,
 	}
-end
-
--- changes here will be automatically reflected in the armor properties tool
-function ACF.CalcArmor(Area, Ductility, Mass)
-	return (Mass * 1000 / Area / 0.78) / (1 + Ductility) ^ 0.5 * ACF.ArmorMod
 end
 
 local Weaponry = {

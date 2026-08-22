@@ -7,7 +7,7 @@ else
 	local ZERO = Vector()
 
 	function Guidance:GetCost()
-		return 2
+		return 5
 	end
 
 	function Guidance:CheckComputer()

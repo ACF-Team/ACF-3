@@ -10,9 +10,12 @@ local GhostData = {Secondary = {
 	Scale = Vector(1, 1, 1),
 }}
 
-local GraphRed    = Color(200, 65, 65)
-local GraphBlue   = Color(65, 65, 200)
-local GraphRedAlt = Color(255, 65, 65)
+-- Shared graph colors, referenced by each ammo type's PlotAmmoGraph method
+ACF.GraphColors = ACF.GraphColors or {
+	Red    = Color(200, 65, 65),
+	Blue   = Color(65, 65, 200),
+	RedAlt = Color(255, 65, 65),
+}
 
 ---Gets a key-value table of all the ammo type objects a given weapon class can make use of.
 ---@param Class string The ammo type ID that will be checked.
@@ -39,19 +42,6 @@ local function GetWeaponClass(ToolData)
 
 	return Classes.GetGroup(Destiny, ToolData.Weapon)
 end
-
----Returns the mass of a hollow box given the current size and armor thickness expected for it.
----The size of the box will be calculated from projectile counts and current ammo configuration.
----The thickness of the empty box will be defined by the ACF.ContainerArmor global variable.
----@return number Mass The mass of the hollow box.
-local function GetEmptyMass()
-	local Armor          = ACF.ContainerArmor * ACF.MmToInch
-	local ExteriorVolume = BoxSize.x * BoxSize.y * BoxSize.z
-	local InteriorVolume = math.max(0, (BoxSize.x - 2 * Armor) * (BoxSize.y - 2 * Armor) * (BoxSize.z - 2 * Armor))
-
-	return math.Round((ExteriorVolume - InteriorVolume) * 0.13, 2)
-end
-
 
 ---Calculates the maximum count values for all axes based on round dimensions and packing
 ---@param CountY number Current Y count (for Z axis packing)
@@ -369,11 +359,10 @@ local function AddCrateInformation(Base, ToolData)
 			Rounds = CountX * CountY * CountZ
 		end
 
-		local Empty     = GetEmptyMass()
 		local Load      = math.floor(BulletData.CartMass * Rounds)
-		local Mass      = ACF.GetProperMass(math.floor(Empty + Load))
+		local Mass      = ACF.GetProperMass(Load)
 
-		return CrateText:format(ACF.ContainerArmor, Mass, Rounds)
+		return CrateText:format(Mass, Rounds)
 	end)
 
 	if Ammo.OnCreateCrateInformation then
@@ -483,84 +472,9 @@ local function AddGraph(Base, ToolData)
 
 		local Ammo = AmmoTypes.Get(ToolData.AmmoType)
 
-		if ToolData.AmmoType == "HEAT" or ToolData.AmmoType == "HEATFS" then
-			local PassiveStandoffPen = Ammo:GetPenetration(BulletData, BulletData.Standoff)
-			local BreakupDistPen = Ammo:GetPenetration(BulletData, BulletData.BreakupDist)
-
-			Panel:SetYRange(0, math.max(BreakupDistPen, PassiveStandoffPen) * 1.5)
-			Panel:SetXRange(0, BulletData.BreakupDist * 1000 * 2.5) -- HEAT/HEATFS doesn't care how long the shell has been flying for penetration, just the instant it detonates
-			--Panel:SetXRange(0,60000)
-
-			Panel:SetXLabel("#acf.menu.ammo.standoff")
-
-			--Panel:PlotLimitLine(language.GetPhrase("acf.menu.ammo.passive"), false, BulletData.Standoff * 1000, GraphBlue)
-			--Panel:PlotLimitLine(language.GetPhrase("acf.menu.ammo.breakup"), false, BulletData.BreakupDist * 1000, GraphRed)
-
-			Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.passive"), BulletData.Standoff * 1000, PassiveStandoffPen, GraphBlue)
-			Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.breakup"), BulletData.BreakupDist * 1000, BreakupDistPen, GraphRed)
-
-			Panel:PlotFunction(PenetrationText, GraphRedAlt, function(X)
-				return Ammo:GetPenetration(BulletData, X / 1000)
-			end)
-		elseif ToolData.AmmoType == "HE" then
-			local BlastRadiusText = language.GetPhrase("acf.menu.ammo.blast_radius")
-
-			Panel:SetYLabel(BlastRadiusText)
-			Panel:SetXLabel("")
-
-			Panel:SetYSpacing(10)
-
-			Panel:SetXRange(0, 10)
-			Panel:SetYRange(0, BulletData.BlastRadius * 2)
-
-			Panel:PlotLimitLine(BlastRadiusText, true, BulletData.BlastRadius, GraphRed)
-
-			Panel:PlotFunction(BlastRadiusText, GraphRed, function()
-				return BulletData.BlastRadius
-			end)
-		elseif ToolData.AmmoType == "SM" then
-			Panel:SetYLabel("#acf.menu.ammo.smoke_radius")
-			Panel:SetXLabel("#acf.menu.ammo.time")
-
-			Panel:SetYSpacing(10)
-			Panel:SetXSpacing(5)
-
-			local WPTime = BulletData.WPLife or 0
-			local SFTime = BulletData.SMLife or 0
-
-			local MinWP = BulletData.WPRadiusMin or 0
-			local MaxWP = BulletData.WPRadiusMax or 0
-
-			local MinSF = BulletData.SMRadiusMin or 0
-			local MaxSF = BulletData.SMRadiusMax or 0
-
-			Panel:SetXRange(0, math.max(WPTime, SFTime) * 1.1)
-			Panel:SetYRange(0, math.max(MaxWP, MaxSF) * 1.1)
-
-			if WPTime > 0 then
-				Panel:PlotLimitFunction(language.GetPhrase("acf.menu.ammo.wp_filler"), 0, WPTime, GraphBlue, function(X)
-					return Lerp(X / WPTime, MinWP, MaxWP)
-				end)
-
-				Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.wp_max_radius"), WPTime, MaxWP, GraphBlue)
-			end
-
-			if SFTime > 0 then
-				Panel:PlotLimitFunction(language.GetPhrase("acf.menu.ammo.smoke_filler"), 0, SFTime, GraphRed, function(X)
-					return Lerp(X / SFTime, MinSF, MaxSF)
-				end)
-
-				Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.smoke_max_radius"), SFTime, MaxSF, GraphRed)
-			end
-		else
-			Panel:SetYRange(0, math.ceil(BulletData.MaxPen or 0) * 1.1)
-
-			Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.300m"), 300, Ammo:GetRangedPenetration(BulletData, 300), GraphBlue)
-			Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.800m"), 800, Ammo:GetRangedPenetration(BulletData, 800), GraphBlue)
-
-			Panel:PlotFunction(PenetrationText, GraphRedAlt, function(X)
-				return Ammo:GetRangedPenetration(BulletData, X)
-			end)
+		-- Each ammo type draws its own graph; see Ammo:PlotAmmoGraph in the respective ammo_types file
+		if Ammo.PlotAmmoGraph then
+			Ammo:PlotAmmoGraph(Panel, ToolData, BulletData)
 		end
 	end)
 

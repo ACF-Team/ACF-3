@@ -23,12 +23,12 @@ end
 
 function Ammo:GetDisplayData(Data)
 	local FragMass	= Data.ProjMass - Data.FillerMass
-	local Fragments	= math.max(math.floor((Data.FillerMass / FragMass) * ACF.HEFrag), 2)
+	local FragInfo	= ACF.Damage.getFragmentInfo(Data.FillerMass, FragMass) -- Single source of truth shared with the damage code
 	local Display   = {
 		BlastRadius = Data.FillerMass ^ 0.33 * 8,
-		Fragments   = Fragments,
-		FragMass    = FragMass / Fragments,
-		FragVel     = (Data.FillerMass * ACF.HEPower * 1000 / (FragMass / Fragments) / Fragments) ^ 0.5,
+		Fragments   = FragInfo.Count,
+		FragMass    = FragInfo.Mass,
+		FragVel     = FragInfo.Velocity * ACF.InchToMeter, -- in/s (sim units) to m/s for display
 	}
 
 	hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
@@ -115,6 +115,31 @@ if SERVER then
 	end
 else
 	ACF.RegisterAmmoDecal("HE", "damage/he_pen", "damage/he_rico")
+
+	-- Ammo menu graph: fragment penetration over distance from the detonation.
+	function Ammo:PlotAmmoGraph(Panel, _, BulletData)
+		local Damage     = ACF.Damage
+		local PenText    = language.GetPhrase("acf.menu.ammo.penetration")
+		local BlastRadius = BulletData.BlastRadius -- Fragments reach zero velocity here; distance shares the same units
+		local FillerMass  = BulletData.FillerMass
+		local FragMass    = BulletData.ProjMass - FillerMass
+
+		local Radius = math.max(BlastRadius, 1)
+		local MaxPen = math.max(Damage.getFragmentPenetration(FillerMass, FragMass, BlastRadius, 0), 1)
+
+		Panel:SetYLabel(PenText)
+		Panel:SetXLabel("#acf.menu.ammo.distance")
+
+		Panel:SetXRange(0, Radius)
+		Panel:SetYRange(0, MaxPen * 1.1)
+
+		Panel:SetXSpacing(Radius / 10)
+		Panel:SetYSpacing(MaxPen * 1.1 / 10)
+
+		Panel:PlotFunction(PenText, ACF.GraphColors.RedAlt, function(X)
+			return Damage.getFragmentPenetration(FillerMass, FragMass, BlastRadius, X)
+		end)
+	end
 
 	function Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
 		local RoundStats = Base:AddLabel()

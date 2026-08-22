@@ -44,6 +44,7 @@ if SERVER then
 	ACF.AddInputAction("acf_computer", "Lase", function(Entity, Value)
 		if Entity.Lasing == nil then return end
 		if Entity.OnCooldown then return end
+		if Entity.ACF.Health <= 0 then return end -- Destroyed
 
 		Value = tobool(Value)
 
@@ -147,6 +148,9 @@ do -- Joystick
 		OnDamaged = function(Entity)
 			Entity.Spread = 1 - math.Round(Entity.ACF.Health / Entity.ACF.MaxHealth, 2)
 		end,
+		OnRepaired = function(Entity)
+			Entity.Spread = 0
+		end,
 		OnEnabled = function(Entity)
 			local Inputs = Entity.Inputs
 			local Pitch  = Inputs.InputPitch
@@ -165,6 +169,8 @@ do -- Joystick
 			Entity:TriggerInput("Yaw", 0)
 		end,
 		OnThink = function(Entity)
+			if Entity.ACF.Health <= 0 then return end -- Destroyed
+
 			local Speed = Entity.MoveSpeed * engine.TickInterval()
 
 			if Entity.Pitch ~= Entity.InputPitch then
@@ -393,6 +399,9 @@ do -- Optical guidance computer
 		OnDamaged = function(Entity)
 			Entity.Spread = 1 - math.Round(Entity.ACF.Health / Entity.ACF.MaxHealth, 2)
 		end,
+		OnRepaired = function(Entity)
+			Entity.Spread = 0
+		end,
 		OnEnabled = function(Entity)
 			local Inputs = Entity.Inputs
 			local Pitch  = Inputs.InputPitch
@@ -411,6 +420,8 @@ do -- Optical guidance computer
 			Entity:TriggerInput("Yaw", 0)
 		end,
 		OnThink = function(Entity)
+			if Entity.ACF.Health <= 0 then return end -- Destroyed
+
 			local Tick  = engine.TickInterval()
 			local Speed = Entity.MoveSpeed * Tick * math.Rand(Entity.Spread, 1)
 			local Focus = Entity.FocusSpeed * Tick * math.Rand(Entity.Spread, 1)
@@ -619,6 +630,9 @@ do -- Laser guidance computer
 		OnDamaged = function(Entity)
 			Entity.Spread = 1 - math.Round(Entity.ACF.Health / Entity.ACF.MaxHealth, 2)
 		end,
+		OnRepaired = function(Entity)
+			Entity.Spread = 0
+		end,
 		OnEnabled = function(Entity)
 			local Inputs = Entity.Inputs
 			local Lase   = Inputs.Lase
@@ -643,6 +657,19 @@ do -- Laser guidance computer
 			Entity:TriggerInput("Yaw", 0)
 		end,
 		OnThink = function(Entity)
+			if Entity.ACF.Health <= 0 then -- Destroyed
+				if Entity.Lasing then
+					Entity.Lasing = false
+
+					Entity:SetNW2Bool("Lasing", false)
+
+					WireLib.TriggerOutput(Entity, "Lasing", 0)
+					Entity:UpdateOverlay()
+				end
+
+				return
+			end
+
 			local Tick  = engine.TickInterval()
 			local Speed = Entity.MoveSpeed * Tick
 			local Changed
@@ -804,6 +831,9 @@ do -- GPS transmitter
 		end,
 		OnDamaged = function(Entity)
 			Entity.Spread = ACF.MaxDamageInaccuracy * (1 - math.Round(Entity.ACF.Health / Entity.ACF.MaxHealth, 2))
+		end,
+		OnRepaired = function(Entity)
+			Entity.Spread = 0
 		end,
 		OnEnabled = function(Entity)
 			local Coordinates = Entity.Inputs.Coordinates

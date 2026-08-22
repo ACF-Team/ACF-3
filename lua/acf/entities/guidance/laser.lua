@@ -21,7 +21,7 @@ else
 	local Lasers    = ACF.ActiveLasers
 
 	function Guidance:GetCost()
-		return 3
+		return 5
 	end
 
 	function Guidance.GetDirectionDot(Missile, TargetPos)

@@ -53,16 +53,14 @@ Components.RegisterItem("RFL-UNIT", "SP-RFL", {
 		local SupplySize = Vector(DefaultX, DefaultY, DefaultZ)
 
 		local function UpdateSupplyText()
-			local Wall = ACF.ContainerArmor * ACF.MmToInch
 			local Shape = ACF.GetClientData("SupplyShape") or "Box"
 
-			local Volume, Area = ACF.ContainerShapes[Shape](SupplySize, Wall)
+			local Volume = ACF.ContainerShapes[Shape](SupplySize)
 
 			local Capacity = Volume * ACF.gCmToKgIn
-			local EmptyMass = Area * Wall * ACF.InchToCmCu * ACF.SteelDensity
 			local TransferRate = ACF.SupplyMassRate * (Volume / 1000)
 
-			CapacityLabel:SetText(string.format("Capacity : %s kg\nEmpty Mass : %s kg\nTransfer Rate : %s kg/s", math.Round(Capacity, 2), math.Round(EmptyMass, 2), math.Round(TransferRate, 2)))
+			CapacityLabel:SetText(string.format("Capacity : %s kg\nTransfer Rate : %s kg/s", math.Round(Capacity, 2), math.Round(TransferRate, 2)))
 
 			if Menu.ComponentPreview then
 				Menu.ComponentPreview:SetModelScale(SupplySize)

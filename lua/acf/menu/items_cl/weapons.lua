@@ -1,7 +1,8 @@
-local ACF       = ACF
-local Weapons   = ACF.Classes.Weapons
-local ModelData = ACF.ModelData
-local Current   = {}
+local ACF        = ACF
+local Weapons    = ACF.Classes.Weapons
+local ModelData  = ACF.ModelData
+local ArmorTypes = ACF.Classes.ArmorTypes
+local Current    = {}
 local CreateControl, IsScalable
 
 ---Wrapper function to update the entity preview panel with a given weapon entry object.
@@ -173,19 +174,20 @@ end
 ---@param Weapon table<string, any> The weapon item object to get informatio from, not necessary for scalable weapons.
 ---@return number Mass The expected mass.
 local function GetMass(_, Caliber, Class, Weapon)
-	if Weapon then return Weapon.Mass end
+	local Density = ArmorTypes.Get("GunSteel").Density
 
-	local Model = Class.Model
-	local Base  = ModelData.GetModelVolume(Model)
-
-	if not Base then
-		return 0
+	if Weapon then
+		local Volume = ModelData.GetModelVolume(Weapon.Model)
+		if not Volume then return 0 end
+		return math.Round(Volume * ACF.InchToMCu * Density)
 	end
 
-	local Scale  = Caliber / Class.Caliber.Base
-	local Scaled = ModelData.GetModelVolume(Model, Scale)
+	local Scale  = Caliber / Class.Caliber.Base * (Class.ScaleFactor or 1)
+	local Volume = ModelData.GetModelVolume(Class.Model, Scale)
 
-	return math.Round(Class.Mass * Scaled / Base)
+	if not Volume then return 0 end
+
+	return math.Round(Volume * ACF.InchToMCu * Density)
 end
 
 local function CreateMenu(Menu)

@@ -77,7 +77,7 @@ function Countermeasures.GetMissilesInCone(Position, Direction, Degrees)
 	local Result = {}
 
 	for Missile in pairs(Missiles) do
-		if not IsValid(Missile) then
+		if not IsValid(Missile) or Missile.Broken then
 			continue
 		end
 
@@ -95,13 +95,32 @@ function Countermeasures.GetMissilesInSphere(Position, Radius)
 	local RadiusSqr = Radius * Radius
 
 	for Missile in pairs(Missiles) do
-		if not IsValid(Missile) then
+		if not IsValid(Missile) or Missile.Broken then
 			continue
 		end
 
 		if Position:DistToSqr(Missile:GetPos()) <= RadiusSqr then
 			Result[Missile] = true
 		end
+	end
+
+	return Result
+end
+
+--- Tests every active missile against a list of shapes (cones and/or spheres) in a single pass, instead of
+--- iterating the active missile pool once per shape. See ACF.GetEntitiesInShapes for the contraption side
+--- equivalent and the batching use case (e.g. a Radar Synchronizer batching same-rate-group radars).
+--- @param Shapes table An array of shape entries: {Radar = <key>, Position = Vector, Direction = Vector, Degrees = number} for a cone, or {Radar = <key>, Position = Vector, Radius = number} for a sphere.
+--- @return table<Entity, table> A table mapping matched missiles to an array of the Radar keys (from Shapes) whose geometry matched them.
+function Countermeasures.GetMissilesInShapes(Shapes)
+	local Result = {}
+
+	for Missile in pairs(Missiles) do
+		if not IsValid(Missile) or Missile.Broken then
+			continue
+		end
+
+		Countermeasures.MatchShapes(Result, Missile, Missile:GetPos(), Shapes)
 	end
 
 	return Result
@@ -132,6 +151,41 @@ function Countermeasures.ConeContainsPos(ConePos, ConeDir, Degrees, Position)
 	local Direction = (Position - ConePos):GetNormalized()
 
 	return ConeDir:Dot(Direction) >= MinimumDot
+end
+
+--- Tests a single position against one shape (cone or sphere).
+--- @param Shape table {Position, Direction, Degrees} for a cone, or {Position, Radius} for a sphere.
+--- @param Position vector The world position being tested.
+--- @return boolean
+function Countermeasures.ShapeContainsPos(Shape, Position)
+	if Shape.Degrees then -- Cone
+		return Countermeasures.ConeContainsPos(Shape.Position, Shape.Direction, Shape.Degrees, Position)
+	end
+
+	-- Sphere
+	return Shape.Position:DistToSqr(Position) <= (Shape.Radius * Shape.Radius)
+end
+
+--- Tests one entity's position against a list of shapes and records every match into Result, keyed by
+--- entity, as an array of the matching shapes' Radar tags. Shared by GetMissilesInShapes and
+--- ACF.GetEntitiesInShapes.
+--- @param Result table The table being built up across all entities.
+--- @param Entity Entity The entity being tested.
+--- @param Position vector The entity's world position.
+--- @param Shapes table Array of shapes, see ShapeContainsPos.
+function Countermeasures.MatchShapes(Result, Entity, Position, Shapes)
+	for _, Shape in ipairs(Shapes) do
+		if Countermeasures.ShapeContainsPos(Shape, Position) then
+			local List = Result[Entity]
+
+			if not List then
+				List = {}
+				Result[Entity] = List
+			end
+
+			List[#List + 1] = Shape.Radar
+		end
+	end
 end
 
 local function ApplyCountermeasure(Missile, Guidance, CounterMeasure)

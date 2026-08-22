@@ -191,6 +191,45 @@ else
 		Effects.CreateEffect("ACF_Smoke", EffectTable)
 	end
 
+	-- Ammo menu graph: smoke and WP cloud radius over time.
+	function Ammo:PlotAmmoGraph(Panel, _, BulletData)
+		local Colors = ACF.GraphColors
+
+		Panel:SetYLabel("#acf.menu.ammo.smoke_radius")
+		Panel:SetXLabel("#acf.menu.ammo.time")
+
+		Panel:SetYSpacing(10)
+		Panel:SetXSpacing(5)
+
+		local WPTime = BulletData.WPLife or 0
+		local SFTime = BulletData.SMLife or 0
+
+		local MinWP = BulletData.WPRadiusMin or 0
+		local MaxWP = BulletData.WPRadiusMax or 0
+
+		local MinSF = BulletData.SMRadiusMin or 0
+		local MaxSF = BulletData.SMRadiusMax or 0
+
+		Panel:SetXRange(0, math.max(WPTime, SFTime) * 1.1)
+		Panel:SetYRange(0, math.max(MaxWP, MaxSF) * 1.1)
+
+		if WPTime > 0 then
+			Panel:PlotLimitFunction(language.GetPhrase("acf.menu.ammo.wp_filler"), 0, WPTime, Colors.Blue, function(X)
+				return Lerp(X / WPTime, MinWP, MaxWP)
+			end)
+
+			Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.wp_max_radius"), WPTime, MaxWP, Colors.Blue)
+		end
+
+		if SFTime > 0 then
+			Panel:PlotLimitFunction(language.GetPhrase("acf.menu.ammo.smoke_filler"), 0, SFTime, Colors.Red, function(X)
+				return Lerp(X / SFTime, MinSF, MaxSF)
+			end)
+
+			Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.smoke_max_radius"), SFTime, MaxSF, Colors.Red)
+		end
+	end
+
 	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
 		local FillerRatio = Base:AddSlider("#acf.menu.ammo.filler_ratio", 0, 1, 2)
 		FillerRatio:SetClientData("FillerRatio", "OnValueChanged")

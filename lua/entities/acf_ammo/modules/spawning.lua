@@ -547,7 +547,7 @@ do -- Spawn/Update/Remove
 			self.RoundData:OnLast(self)
 		end
 
-		if self.Damaged then
+		if self.ACF.Health == 0 then
 			timer.Remove("ACF Crate Cookoff " .. self:EntIndex())
 
 			self:Detonate()
@@ -562,17 +562,6 @@ do -- Spawn/Update/Remove
 		end
 	end
 
-	function ENT:OnResized(Size)
-		local A = ACF.ContainerArmor * ACF.MmToInch
-		local ExteriorVolume = Size.x * Size.y * Size.z
-		local InteriorVolume = math.max(0, (Size.x - 2 * A) * (Size.y - 2 * A) * (Size.z - 2 * A))
-
-		local Volume = ExteriorVolume - InteriorVolume
-		local Mass   = Volume * 0.13
-
-		self.EmptyMass = Mass
-	end
-
 	Entities.Register("acf_ammo", ACF.MakeAmmo, "Weapon", "Caliber", "AmmoType", "AmmoShape", "Size", "AmmoStage", "CrateProjectilesX", "CrateProjectilesY", "CrateProjectilesZ")
 
 	ACF.RegisterLinkSource("acf_ammo", "Weapons")
@@ -583,7 +572,9 @@ do -- Overlay
 		local Tracer = self.BulletData.Tracer ~= 0 and "-T" or ""
 		local AmmoType = self.BulletData.Type .. Tracer
 
-		if next(self.Weapons) then
+		if self.ACF.Health == 0 then
+			State:AddError("Destroyed")
+		elseif next(self.Weapons) then
 			if self:CanConsume() then
 				State:AddSuccess("Providing Ammo")
 			elseif self.Amount ~= 0 then

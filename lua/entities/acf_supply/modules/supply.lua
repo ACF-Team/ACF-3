@@ -34,7 +34,7 @@ end
 local function CanSupply(Supply, Target, Distance2)
 	if Supply == Target then return false end
 	if Target.Disabled then return false end
-	if Target.Damaged then return false end
+	if Target.ACF.Health == 0 then return false end
 
 	local Amount = Target.Amount
 	local Cap    = Target.Capacity

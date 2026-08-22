@@ -141,6 +141,7 @@ function ENT:Calc(InputRPM)
 
 	if not SelfTbl.InWater then return 0 end
 	if not IsValid(SelfTbl.Ancestor) then return 0 end
+	if SelfTbl.ACF.Health <= 0 then return 0 end -- Destroyed
 
 	local HealthRatio = SelfTbl.ACF.Health / SelfTbl.ACF.MaxHealth
 	local N = InputRPM / (2 * math.pi) -- Rotation rate (Rad/s)
@@ -157,6 +158,7 @@ function ENT:Act(Torque, _, MassRatio, FlyRPM)
 
 	if not SelfTbl.InWater then return end
 	if not IsValid(SelfTbl.Ancestor) then return end
+	if SelfTbl.ACF.Health <= 0 then return end -- Destroyed
 
 	local HealthRatio = SelfTbl.ACF.Health / SelfTbl.ACF.MaxHealth
 	local N = FlyRPM / (2 * math.pi) -- Rotation rate (Rad/s)

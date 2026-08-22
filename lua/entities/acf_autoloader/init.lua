@@ -151,17 +151,19 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 
 	local BreechPos = Gun:LocalToWorld(Gun.BreechPos)
 	local BreechAng = Gun:LocalToWorldAngles(Gun.BreechAng)
+	local GunForward = Gun:GetForward()
 	-- debugoverlay.Cross(BreechPos, 5, 5, Color(255, 0, 0), true)
 	-- debugoverlay.Cross(BreechPos + BreechAng:Forward() * 10, 5, 5, Color(255, 0, 0), true)
 
 	local AutoloaderPos = self:GetPos()
 	local AmmoPos = Ammo:GetPos()
 
-	-- TODO: maybe check position too later?
+	-- Autoloader must sit where the magazine would feed from...
 	local DiffNorm = (BreechPos - AutoloaderPos):GetNormalized()
-	local GunDiffAngle = math.deg(math.acos(DiffNorm:Dot(BreechAng:Forward())))
-	local ALDiffAngle = math.deg(math.acos(DiffNorm:Dot(self:GetForward())))
-	local GunArmAngle = GunDiffAngle + ALDiffAngle
+	local PositionAngle = math.deg(math.acos(DiffNorm:Dot(BreechAng:Forward())))
+	-- ...but ram shells in the same direction the gun fires them
+	local RamAngle = math.deg(math.acos(self:GetForward():Dot(GunForward)))
+	local GunArmAngle = PositionAngle + RamAngle
 	local GunArmAngleAligned = GunArmAngle < ACF.AutoloaderMaxAngleDiff
 	self.OverlayWarnings.GunArmAlignment = not GunArmAngleAligned and "Autoloader is not aligned\nWith the breech of: " .. (tostring(Gun) or "<INVALID ENTITY???>") .. "\nDeviation: " .. math.Round(GunArmAngle, 2) .. ", Acceptable: " .. ACF.AutoloaderMaxAngleDiff or nil
 	self:UpdateOverlay()
@@ -203,25 +205,6 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 
 	local HealthScore = self.ACF.Health / self.ACF.MaxHealth
 	return 2 * HorizontalScore * VerticalScore * AngularScore * HealthScore
-end
-
-function ENT:ACF_Activate(Recalc)
-	local PhysObj	= self.ACF.PhysObj
-	local Area		= PhysObj:GetSurfaceArea() * ACF.InchToCmSq
-	local Armour	= 1
-	local Health	= (Area / ACF.Threshold) * 0.5
-	local Percent	= 1
-
-	if Recalc and self.ACF.Health and self.ACF.MaxHealth then
-		Percent = self.ACF.Health / self.ACF.MaxHealth
-	end
-
-	self.ACF.Area		= Area
-	self.ACF.Health		= Health * Percent
-	self.ACF.MaxHealth	= Health
-	self.ACF.Armour		= Armour * Percent
-	self.ACF.MaxArmour	= Armour
-	self.ACF.Type		= "Prop"
 end
 
 function ENT:GetCost()

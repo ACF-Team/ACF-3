@@ -1,0 +1,334 @@
+local ACF = ACF
+local IsValid = IsValid
+
+TOOL.Category   = (ACF and ACF.CustomToolCategory and ACF.CustomToolCategory:GetBool()) and "ACF" or "Construction"
+TOOL.Name       = "#tool.acfvolumetrizedupe.name"
+TOOL.Command    = nil
+TOOL.ConfigName = ""
+TOOL.Information = {
+	{ name = "left0", stage = 0 },
+}
+
+if CLIENT then
+	language.Add("tool.acfvolumetrizedupe.name", "ACF Volumetrize Dupe")
+	language.Add("tool.acfvolumetrizedupe.desc", "Area copies and pastes the targeted ACF baseplate's contraption through Advanced Duplicator 2")
+	language.Add("tool.acfvolumetrizedupe.left0", "Area copy and paste the targeted ACF baseplate's contraption")
+elseif SERVER then
+	local Notify = ACF.Utilities.Notify
+
+	local SpropPrimitiveConversions = {}
+
+	-- Registers a conversion function for sprop models matching the given pattern
+	local function RegisterConversion(pattern, convert)
+		table.insert(SpropPrimitiveConversions, { pattern = pattern, convert = convert })
+	end
+
+	-- Returns the conversion function for the given sprop pattern
+	local function GetSpropConversion(Model)
+		for _, v in ipairs(SpropPrimitiveConversions) do
+			if string.find(Model, v.pattern) then return v.convert end
+		end
+	end
+
+	-- Returns the local size of the entity's physics object
+	local function GetLocalSize(Entity)
+		local AMi, AMa = Entity:GetPhysicsObject():GetAABB()
+		return AMa - AMi
+	end
+
+	-- Resizes Size along its thinnest local axis to Thickness (if given), returning the
+	-- world Pos adjusted so the face furthest from BasePos stays put.
+	local function ApplyThinAxisThickness(Entity, Size, Thickness, BasePos, OverridePos)
+		local Pos = OverridePos or Entity:GetPos()
+
+		local ThinAxis = 1
+		if Size[2] < Size[ThinAxis] then ThinAxis = 2 end
+		if Size[3] < Size[ThinAxis] then ThinAxis = 3 end
+
+		local AxisDir
+		if ThinAxis == 1 then AxisDir = Entity:GetForward()
+		elseif ThinAxis == 2 then AxisDir = Entity:GetRight()
+		else AxisDir = Entity:GetUp() end
+
+		if (Pos - BasePos):Dot(AxisDir) < 0 then AxisDir = -AxisDir end
+
+		if Thickness then
+			local OriginalThickness = Size[ThinAxis]
+			Pos            = Pos + AxisDir * (Thickness - OriginalThickness) * -0.5
+			Size[ThinAxis] = Thickness
+		end
+
+		return Pos
+	end
+
+	-- Permutes RawSize's axes according to Perm then scales elementwise by Mul; used by
+	-- ComputeShapePose to turn a RawSize into a Size or Pos offset vector.
+	local function PermuteScale(RawSize, Perm, Mul)
+		return Vector(RawSize[Perm[1]], RawSize[Perm[2]], RawSize[Perm[3]]) * Mul
+	end
+
+	-- Every GenConvert* builder below derives its Size/Pos/Angle from RawSize the same way, optionally
+	-- resizing Pos/Size along the thinnest axis to Thickness; this is that shared computation, leaving
+	-- each builder to only assemble its Type/DT.
+	local function ComputeShapePose(Entity, SizePerm, SizeMul, PosPerm, PosMul, Ang, Thickness, BasePos, ThinAxisThickness)
+		local RawSize = GetLocalSize(Entity)
+		local Size = PermuteScale(RawSize, SizePerm, SizeMul)
+		local Pos = Entity:LocalToWorld(PermuteScale(RawSize, PosPerm, PosMul))
+		if ThinAxisThickness then Pos = ApplyThinAxisThickness(Entity, Size, Thickness, BasePos, Pos) end
+		local Angle = Entity:LocalToWorldAngles(Ang)
+		return Size, Pos, Angle
+	end
+
+	-- Builds a "simple" shape converter
+	local function GenConvertSimple(Type, SizePerm, SizeMul, PosPerm, PosMul, Ang, DT, ThinAxisThickness)
+		return function(Entity, Thickness, BasePos)
+			local Size, Pos, Angle = ComputeShapePose(Entity, SizePerm, SizeMul, PosPerm, PosMul, Ang, Thickness, BasePos, ThinAxisThickness)
+			return { Type = Type, Pos = Pos, Angle = Angle, Size = Size, DT = DT }
+		end
+	end
+
+	-- Rectangles/Cuboids
+	local ConvertCube = GenConvertSimple("cube", {1, 2, 3}, Vector(1, 1, 1), {1, 1, 1}, Vector(0, 0, 0), Angle(0, 0, 0),
+		{ PrimMESHSMOOTH = 0, PrimTX = 0, PrimTY = 0 }, true)
+	RegisterConversion("sprops/rectangles", ConvertCube)
+	RegisterConversion("sprops/cuboids", ConvertCube)
+
+	-- Cylinders
+	RegisterConversion("sprops/cylinders", GenConvertSimple("cylinder", {1, 2, 3}, Vector(1, 1, 1), {1, 1, 1}, Vector(0, 0, 0), Angle(0, 0, 0),
+		{ PrimMAXSEG = 16, PrimMESHSMOOTH = 65, PrimNUMSEG = 16, PrimTX = 0, PrimTY = 0 }))
+
+	-- Cones
+	RegisterConversion("sprops/misc/cones", GenConvertSimple("cone", {1, 2, 3}, Vector(1, 1, 1), {1, 1, 3}, Vector(0, 0, 0.5), Angle(0, 0, 0),
+		{ PrimMAXSEG = 16, PrimMESHSMOOTH = 45, PrimNUMSEG = 16, PrimTX = 0, PrimTY = 0 }))
+
+	-- Pyramids (a cube tapered to a point via PrimTX/PrimTY, same Pos/Size/Angle as cones)
+	RegisterConversion("sprops/misc/pyramids", GenConvertSimple("cube", {1, 2, 3}, Vector(1, 1, 1), {1, 1, 3}, Vector(0, 0, 0.5), Angle(0, 0, 0),
+		{ PrimMAXSEG = 16, PrimMESHSMOOTH = 45, PrimNUMSEG = 16, PrimTX = 1, PrimTY = 1 }))
+
+	-- Domes
+	RegisterConversion("sprops/misc/domes", GenConvertSimple("dome", {1, 2, 3}, Vector(1, 1, 2), {1, 1, 1}, Vector(0, 0, 0), Angle(0, 0, 0),
+		{ PrimMESHSMOOTH = 65, PrimSUBDIV = 32 }))
+
+	-- Spheres
+	RegisterConversion("models/sprops/geometry/sphere_", GenConvertSimple("sphere", {1, 2, 3}, Vector(1, 1, 1), {1, 1, 1}, Vector(0, 0, 0), Angle(0, 0, 0),
+		{ PrimMESHSMOOTH = 65, PrimSUBDIV = 32 }))
+
+	-- Triangles
+	RegisterConversion("sprops/triangles.-rtri_", GenConvertSimple("wedge", {1, 2, 3}, Vector(1, 1, 1), {1, 1, 1}, Vector(0, 0, 0), Angle(0, 0, 0),
+		{ PrimMESHSMOOTH = 0, PrimTX = 0.5, PrimTY = 0 }))
+
+	-- Triangle Prism
+	RegisterConversion("sprops/prisms/tri/.-/tprism_", GenConvertSimple("wedge", {1, 2, 3}, Vector(1, 1, 1), {1, 1, 1}, Vector(0, 0, 0), Angle(0, 0, 0),
+		{ PrimMESHSMOOTH = 0, PrimTX = 0.5, PrimTY = 0 }))
+
+	-- Quarter/Half/Full sqhole
+
+	-- Builds a sqhole converter: permuting RawSize's axes via a Perm then scaling elementwise by a Mul
+	local function GenConvertSqHole(SizePerm, SizeMul, PosPerm, PosMul, Ang, NumSeg)
+		return function(Entity, Thickness, BasePos)
+			local Size, Pos, Angle = ComputeShapePose(Entity, SizePerm, SizeMul, PosPerm, PosMul, Ang, Thickness, BasePos, true)
+			return {
+				Type = "cube_hole", Pos = Pos, Angle = Angle, Size = Size,
+				DT = { PrimDT = 4, PrimMESHSMOOTH = 65, PrimNUMSEG = NumSeg, PrimSUBDIV = 16 }
+			}
+		end
+	end
+
+	-- Normal/thin use "q/h/(nothing)sqhole_"; superthin drops the "sq" for a bare "q/h/fhole_".
+	local ConvertQuarterSqHole = GenConvertSqHole({3, 1, 2}, Vector(2, 2, 1), {3, 2, 1}, Vector(-0.5, 0, -0.5), Angle(90, 0, 90), 1)
+	RegisterConversion("sprops/misc/sq_holes/.-qsqhole_", ConvertQuarterSqHole)
+	RegisterConversion("sprops/misc/sq_holes/superthin/.-qhole_", ConvertQuarterSqHole)
+
+	local ConvertHalfSqHole = GenConvertSqHole({3, 1, 2}, Vector(2, 1, 1), {1, 1, 1}, Vector(0, 0, -0.25), Angle(90, 0, 90), 2)
+	RegisterConversion("sprops/misc/sq_holes/.-hsqhole_", ConvertHalfSqHole)
+	RegisterConversion("sprops/misc/sq_holes/superthin/.-hhole_", ConvertHalfSqHole)
+
+	local ConvertFullSqHole = GenConvertSqHole({1, 3, 2}, Vector(1, 1, 1), {1, 1, 1}, Vector(0, 0, 0), Angle(0, 0, 90), 4)
+	RegisterConversion("sprops/misc/sq_holes/.-sqhole_", ConvertFullSqHole)
+	RegisterConversion("sprops/misc/sq_holes/superthin/.-fhole_", ConvertFullSqHole)
+
+	-- Quarter/Half/Full tube
+	-- Builds a tube converter similar to above
+	local function GenConvertTube(SizePerm, SizeMul, PosPerm, PosMul, Ang, NumSeg)
+		return function(Entity, Thickness)
+			local Size, Pos, Angle = ComputeShapePose(Entity, SizePerm, SizeMul, PosPerm, PosMul, Ang)
+			return {
+				Type = "tube", Pos = Pos, Angle = Angle, Size = Size,
+				DT = { PrimDT = Thickness or 3, PrimMAXSEG = 16, PrimMESHSMOOTH = 65, PrimNUMSEG = NumSeg, PrimTX = 0, PrimTY = 0 }
+			}
+		end
+	end
+
+	RegisterConversion("sprops/misc/tubes.-/.-/t?_?q_?tube_", GenConvertTube({1, 1, 2}, Vector(2, 2, 1), {1, 1, 1}, Vector(0.5, 0, -0.5), Angle(0, 0, 90), 4))
+	RegisterConversion("sprops/misc/tubes.-/.-/t?_?h_?tube_", GenConvertTube({1, 1, 2}, Vector(1, 1, 1), {1, 1, 3}, Vector(0, 0, -0.5), Angle(90, 0, 90), 8))
+	RegisterConversion("sprops/misc/tubes.-/.-tube_", GenConvertTube({1, 3, 2}, Vector(1, 1, 1), {1, 1, 1}, Vector(0, 0, 0), Angle(0, 0, 90), 16))
+
+	-- Quarter/Half/Full disc
+	-- Builds a disc converter similar to above
+	local function GenConvertDisc(SizePerm, SizeMul, PosPerm, PosMul, Ang, NumSeg)
+		return function(Entity)
+			local Size, Pos, Angle = ComputeShapePose(Entity, SizePerm, SizeMul, PosPerm, PosMul, Ang)
+			return {
+				Type = "cylinder", Pos = Pos, Angle = Angle, Size = Size,
+				DT = { PrimMAXSEG = 16, PrimMESHSMOOTH = 65, PrimNUMSEG = NumSeg, PrimTX = 0, PrimTY = 0 }
+			}
+		end
+	end
+
+	RegisterConversion("sprops/geometry/.-qdisc_", GenConvertDisc({1, 1, 2}, Vector(2, 2, 1), {3, 1, 1}, Vector(-0.5, 0, -0.5), Angle(90, 0, 90), 4))
+	RegisterConversion("sprops/geometry/.-hdisc_", GenConvertDisc({1, 1, 2}, Vector(1, 1, 1), {1, 1, 1}, Vector(0, 0, -0.25), Angle(90, 0, 90), 8))
+	RegisterConversion("sprops/geometry/.-fdisc_", GenConvertDisc({1, 1, 2}, Vector(1, 1, 1), {1, 1, 1}, Vector(0, 0, 0), Angle(0, 0, 90), 16))
+
+	-- Quarter/Half/Full ring
+	-- Same output shape as the tube conversions above, so GenConvertTube is reused directly.
+	RegisterConversion("sprops/geometry/.-qring_", GenConvertTube({1, 1, 2}, Vector(2, 2, 1), {3, 1, 1}, Vector(0.5, 0, -0.5), Angle(0, 0, 90), 4))
+	RegisterConversion("sprops/geometry/.-hring_", GenConvertTube({1, 1, 2}, Vector(1, 1, 1), {1, 1, 1}, Vector(0, 0, -0.25), Angle(90, 0, 90), 8))
+	RegisterConversion("sprops/geometry/.-fring_", GenConvertTube({1, 1, 2}, Vector(1, 1, 1), {1, 1, 1}, Vector(0, 0, 0), Angle(0, 0, 90), 16))
+
+	-- Builds the DT (networked var) table Primitive entities restore themselves from on paste, starting
+	-- from the conversion function's own Overrides (its per-type Prim* vars, mirroring the defaults
+	-- Primitive's own tool applies on spawn -- see lua/primitive/entities/shapes.lua) since pasted
+	-- primitives skip that setup and rely entirely on this DT table to restore their networked vars.
+	local function BuildPrimitiveDT(Type, Size, Overrides)
+		local DT = Overrides and table.Copy(Overrides) or {}
+
+		DT.PrimTYPE      = Type
+		DT.PrimSIZE      = Size
+		DT.PrimMESHPHYS  = true
+		DT.PrimMESHUV    = 48
+		DT.PrimMESHENUMS = 1
+		DT.PrimMESHPOS   = vector_origin
+		DT.PrimMESHROT   = angle_zero
+
+		return DT
+	end
+
+	function ACF.SpropToPrimitive(Entity, Thickness, BasePos)
+		if not IsValid(Entity:GetPhysicsObject()) then return nil end
+
+		local Convert = GetSpropConversion(Entity:GetModel())
+		if not Convert then return nil end
+
+		return Convert(Entity, Thickness, BasePos)
+	end
+
+	-- Swaps a captured AdvDupe2 entity entry into a primitive_shape, matching how ConvertBaseplate swaps
+	-- a captured entry's Class between acf_baseplate/prop_physics. PhysicsObjects[0] carries the actual
+	-- restore position/angle (Pos/Angle are recomputed from it on paste), and DT carries the primitive's
+	-- networked vars, restored via Entity:RestoreNetworkVars on creation.
+	local function ApplyPrimitiveToDupeEntry(Data, Entity, Primitive)
+		Data.Class = "primitive_shape"
+		Data.Model = "models/combine_helicopter/helicopter_bomb01.mdl"
+		Data.Pos   = Primitive.Pos
+		Data.Angle = Primitive.Angle
+		Data.DT    = BuildPrimitiveDT(Primitive.Type, Primitive.Size, Primitive.DT)
+
+		Data.PhysicsObjects[0].Pos   = Primitive.Pos
+		Data.PhysicsObjects[0].Angle = Primitive.Angle
+
+		-- Re-express each proper_clipping plane against the primitive's new pose, replacing the stale
+		-- modifiers AreaCopy captured. proper_clipping cross-checks its two duplicator formats on paste,
+		-- so both must be written and agree; compat `d` equals the distance since the OBB center is the origin.
+		if Entity.ClipData and next(Entity.ClipData) then
+			Data.EntityMods = Data.EntityMods or {}
+
+			local OldPos, OldAngle = Entity:GetPos(), Entity:GetAngles()
+
+			local Native, Compat = {}, {}
+			for i, clip in ipairs(Entity.ClipData) do
+				local WorldNorm = Vector(clip.norm)
+				WorldNorm:Rotate(OldAngle)
+				local WorldPoint = OldPos + WorldNorm * clip.dist
+
+				local _, LocalAng = WorldToLocal(vector_origin, WorldNorm:Angle(), vector_origin, Primitive.Angle)
+				local Norm = LocalAng:Forward()
+				local Dist = WorldNorm:Dot(WorldPoint - Primitive.Pos)
+
+				Native[i] = { Norm, Dist, clip.inside, clip.physics }
+				Compat[i] = { n = Norm:Angle(), d = Dist, inside = clip.inside, new = true }
+			end
+
+			Data.EntityMods["proper_clipping"] = Native
+			Data.EntityMods["clips"] = Compat
+		end
+	end
+
+	-- TODO: What can we merge between this and ACF.ConvertBaseplate?
+
+	-- Round-trips the targeted baseplate's contraption through an AdvDupe2 area copy/paste, converting any
+	-- legacy sprop armor entities into primitives along the way.
+	function ACF.ConvertVolumetric(Player, Target)
+		if not AdvDupe2 then return false, "Advanced Duplicator 2 is not installed" end
+
+		if not IsValid(Target) then return false, "Invalid target" end
+
+		local Owner = Target:CPPIGetOwner()
+		if not IsValid(Owner) or Owner ~= Player then return false, "You do not own this entity" end
+
+		local PhysObj = Target:GetPhysicsObject()
+		if not IsValid(PhysObj) then return false, "Entity is not physical" end
+
+		if Target:GetClass() ~= "acf_baseplate" then
+			return false, "Incompatible entity class '" .. Target:GetClass() .. "'"
+		end
+
+		-- Determine which entities to area copy
+		local EntsByIndex = {}
+		local Contraption = Target:CFW_GetContraption()
+		if Contraption then
+			-- Save everything including turrets through contraption data
+			for ent, _ in pairs(Contraption.ents) do EntsByIndex[ent:EntIndex()] = ent end
+		else
+			-- Otherwise, just the baseplate entity
+			EntsByIndex[Target:EntIndex()] = Target
+		end
+
+		-- Perform the area copy and retrieve the dupe table
+		local Entities, Constraints = AdvDupe2.duplicator.AreaCopy(Player, EntsByIndex, vector_origin, false)
+
+		-- Convert legacy sprop armor entities into primitives within the captured dupe table
+		local BasePos = Target:GetPos() + Vector(0, 0, 24)
+		for index, ent in pairs(EntsByIndex) do
+			if ent:GetClass() == "prop_physics" and not ent._IsSpherical and not IsValid(ent:GetParent()) then
+				-- ACF_Armor_Legacy_Thickness is in millimeters; geometry here is all in inches
+				local Thickness = ent.ACF_Armor_Legacy_Thickness and (ent.ACF_Armor_Legacy_Thickness / 25.4)
+				local Primitive = ACF.SpropToPrimitive(ent, Thickness, BasePos)
+				if Primitive then
+					ApplyPrimitiveToDupeEntry(Entities[index], ent, Primitive)
+				else
+					Notify.WarningToPlayer(Player, string.format("[ACF Volumetrize] No primitive mapping for model '%s' (entity %d)", ent:GetModel(), index))
+				end
+			end
+		end
+
+		-- Delete everything now
+		for k, _ in pairs(Entities) do
+			local e = Entity(k)
+			if IsValid(e) then e:Remove() end
+		end
+
+		-- Paste the dupe back, with any swapped-in primitives included
+		AdvDupe2.duplicator.Paste(Owner, Entities, Constraints, vector_origin, angle_zero, vector_origin, true)
+
+		return true
+	end
+
+	function TOOL:LeftClick(Trace)
+		local Entity = Trace.Entity
+		if not IsValid(Entity) then return false end
+
+		local Player = self:GetOwner()
+		local Success, Message = ACF.ConvertVolumetric(Player, Entity)
+
+		if not Success then
+			Notify.WarningToPlayer(Player, "Could not volumetrize", Message)
+			return false
+		end
+
+		Notify.NoticeToPlayer(Player, "Successfully volumetrized the dupe.")
+
+		return true
+	end
+
+	function TOOL:RightClick(_) return false end
+end
