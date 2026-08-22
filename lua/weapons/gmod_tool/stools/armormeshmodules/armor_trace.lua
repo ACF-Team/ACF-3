@@ -10,11 +10,9 @@ end
 
 local MaxTraceDist = 32768
 
--- Gathers every meshed entity along the whole ray in one FindAlongRay pass (same shape as the
--- test_trace concommand in volumetrics_sh.lua) and resolves their convex stacks together, instead
--- of walking one physically-traced entity at a time. A non-filtered IsACFEntity found along the
--- ray still cuts the scan short at its OBB entry point, same as before; anything else without a
--- mesh is just transparent to the scan now rather than acting as a silent hard stop.
+-- Gathers every meshed entity along the ray in one FindAlongRay pass and resolves their convex
+-- stacks together, like the test_trace concommand in volumetrics_sh.lua.
+-- Stops at the first ACF entity hit, which is only shown as the "End" marker.
 local function GetArmorLayers(StartTrace, Dir, Filter)
 	local Layers = {}
 	local Start  = StartTrace.HitPos - Dir * 2 -- same backoff ACF.GetConvexHits uses
@@ -22,35 +20,24 @@ local function GetArmorLayers(StartTrace, Dir, Filter)
 	local FoundEnts = ents.FindAlongRay(Start, Start + Dir * MaxTraceDist)
 
 	local Intersections = {}
-	local TerminalEntity, TerminalT
-
 	for _, Entity in ipairs(FoundEnts) do
-		local Class = Entity:GetClass()
+		if Filter[Entity:GetClass()] then continue end
 
-		if Entity.IsACFEntity and not Filter[Class] then
-			local HitPos = util.IntersectRayWithOBB(Start, Dir * MaxTraceDist, Entity:GetPos(), Entity:GetAngles(), Entity:OBBMins(), Entity:OBBMaxs())
-
-			if HitPos then
-				local T = (HitPos - Start):Dot(Dir)
-
-				if not TerminalT or T < TerminalT then
-					TerminalT      = T
-					TerminalEntity = Entity
-				end
-			end
-		elseif Entity.ACF_Volumetric_Mesh then
-			local Hits = ACF.RayIntersectMesh(Entity, Start, Dir, true)
-
-			for _, Hit in ipairs(Hits) do
-				Intersections[#Intersections + 1] = Hit
-			end
+		local Hits = ACF.RayIntersectMesh(Entity, Start, Dir, true)
+		for _, Hit in ipairs(Hits) do
+			Intersections[#Intersections + 1] = Hit
 		end
 	end
 
 	local Hits = ACF.ResolveConvexStack(Intersections, Dir)
 
+	local TerminalEntity
 	for _, Hit in ipairs(Hits) do
-		if TerminalT and (Hit.EntryPos - Start):Dot(Dir) >= TerminalT then break end
+		-- The first ACF entity hit ends the scan and is not added as an armor layer.
+		if Hit.Entity.IsACFEntity then
+			TerminalEntity = Hit.Entity
+			break
+		end
 
 		local Convex = Hit.Entity.ACF_Volumetric_Mesh.Convexes[Hit.ConvexID]
 
