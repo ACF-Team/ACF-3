@@ -32,7 +32,6 @@ do -- Spawning
 
 	function ENT:ACF_PostSpawn()
 		self:TriggerInput("Active", 1)
-		WireLib.TriggerOutput(self, "Entity", self)
 	end
 end
 

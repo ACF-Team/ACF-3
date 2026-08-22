@@ -47,7 +47,6 @@ end
 function ENT:ACF_PostSpawn(_, _, _, ClientData)
 	ACF.Contraption.SetMass(self, 200)
 	WireIO.SetupOutputs(self, Outputs, ClientData)
-	WireLib.TriggerOutput(self, "Entity", self)
 
 	self.TrackedRacks  = {}
 	self.TrackData = {}

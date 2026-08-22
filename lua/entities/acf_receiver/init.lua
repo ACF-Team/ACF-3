@@ -111,8 +111,6 @@ do -- Spawning
 	end
 
 	function ENT:ACF_PostSpawn()
-		WireLib.TriggerOutput(self, "Entity", self)
-
 		SetActive(self, true)
 	end
 end

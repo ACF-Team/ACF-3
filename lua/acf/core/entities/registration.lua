@@ -152,7 +152,6 @@ local function PrepareSpawnFunctions(ENT, ClassName)
         hook.Run("ACF_OnSpawnEntity", ClassName, Entity, ClientData)
 
         Entity:ACF_UpdateEntityData(ClientData)
-
         if Entity.ACF_PostSpawn then Entity:ACF_PostSpawn(Player, Pos, Angle, ClientData) end
         if IsMenuSpawn and Entity.ACF_PostMenuSpawn then Entity:ACF_PostMenuSpawn() end
 

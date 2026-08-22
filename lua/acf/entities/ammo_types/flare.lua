@@ -76,7 +76,7 @@ Classes.DefineClass("ACF.Ammunition.FLR", "ACF.Ammunition.AP", function(CLASS, B
 		local Ballistics      = ACF.Ballistics
 		local Clock           = ACF.Utilities.Clock
 		local Countermeasures = ACF.Countermeasures
-		local Conversion	= ACF.PointConversion
+		local Conversion	  = ACF.PointConversion
 
 		function CLASS:GetCost(BulletData)
 			return ((BulletData.ProjMass - BulletData.FillerMass) * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.FlareMix)

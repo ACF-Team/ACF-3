@@ -37,7 +37,7 @@ do -- Spawning
 
 	function ENT:ACF_PostSpawn()
 		self:TriggerInput("Active", 1)
-		WireLib.TriggerOutput(self, "Entity", self)
+		self.BaseClass.ACF_PostSpawn(self)
 	end
 end
 
@@ -74,7 +74,6 @@ do -- Updating
 		-- ACF.Activate(self, true) is invoked automatically by ACF_UpdateEntityData after this.
 
 		WireLib.TriggerOutput(self, "Capacity", Round(self.Capacity, 2))
-		WireLib.TriggerOutput(self, "Entity", self)
 		WireLib.TriggerOutput(self, "Activated", self:CanConsume() and 1 or 0)
 	end
 end
