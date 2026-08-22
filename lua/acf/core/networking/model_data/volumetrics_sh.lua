@@ -90,7 +90,7 @@ do
             -- before its own ComputeVolumetricMesh ran). Stash the materials so ComputeVolumetricMesh
             -- picks them up once the mesh exists, instead of silently dropping them.
             for ConvexID, Material in pairs(Materials) do
-                print("SetConvexMaterial", Entity, ConvexID, Material)
+                -- print("SetConvexMaterial", Entity, ConvexID, Material)
                 local ArmorType = ArmorTypes.Get(Material) or ArmorTypes.Get("Default")
                 Entity.ACF_Volumetric_Materials[ConvexID] = ArmorType.ID
             end

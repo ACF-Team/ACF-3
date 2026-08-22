@@ -21,7 +21,6 @@ function Armor:OnLoaded()
     self.Name        = "Default"
     self.ShortName   = "Default"
     self.Description = "Used as a default material for entities. Not intended to provide any protection."
-    self.SuppressLoad = true
     self.Density     = 100
     self.CostMul     = 2.21
     self.HealthMul   = 0.0127551
