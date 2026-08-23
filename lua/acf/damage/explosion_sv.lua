@@ -12,6 +12,7 @@ local util       = util
 local math       = math
 local sqrt       = math.sqrt
 local floor      = math.floor
+local ceil	     = math.ceil
 local max        = math.max
 local min        = math.min
 local pi         = math.pi
@@ -345,7 +346,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		-- not gain extra total penetration from the old concave scaling curve.
 		local BlastPen = Damage.getBlastPenetration(PowerFraction * BlastArea, BlastArea)
 
-		local FragHit  = floor(Fragments * SolidAngle)
+		local FragHit  = ceil(Fragments * SolidAngle)
 		local FragPen  = 0
 
 		if FragHit > 0 then
@@ -406,7 +407,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		end
 
 		do -- Fragment damage
-			local FragHit = math.ceil(Fragments * SolidAngle)
+			local FragHit = ceil(Fragments * SolidAngle)
 
 			if FragHit > 0 then
 				local FragDmg = Objects.DamageResult(FragArea, FragPen, FragThickness, HitAngle, nil, Fragments)

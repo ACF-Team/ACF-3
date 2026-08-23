@@ -156,15 +156,16 @@ DefineScannerType("acf_receiver",              "ACF Warning Receiver",      Colo
 DefineScannerType("acf_groundloader",          "ACF Ground Loader",         Color(255, 166, 0),   "GL",  {})
 
 DefineScannerType("gmod_wire_expression2",     "Expression 2 Chip",         Color(230, 40, 40),   "E2",  {})
-DefineScannerType("gmod_wire_customprop",      "Expression 2-Created Prop", Color(255, 139, 139), "EP",  {})
+DefineScannerType("gmod_wire_customprop",      "Expression 2-Created Prop", Color(255, 139, 139), "EP",  {drawMesh = true})
 DefineScannerType("starfall_processor",        "Starfall Chip",             Color(100, 140, 230), "SF",  {})
-DefineScannerType("starfall_prop",             "Starfall-Created Prop",     Color(160, 200, 255), "SP",  {})
+DefineScannerType("starfall_prop",             "Starfall-Created Prop",     Color(160, 200, 255), "SP",  {drawMesh = true})
 
 DefineScannerType("primitive_shape",           "Primitive Shape",           Color(200, 200, 255), "PR",  {drawMesh = true})
 DefineScannerType("primitive_staircase",       "Primitive Staircase",       Color(200, 200, 255), "PRs", {drawMesh = true})
 DefineScannerType("primitive_ladder",          "Primitive Ladder",          Color(200, 200, 255), "PRl", {drawMesh = true})
 DefineScannerType("primitive_rail_slider",     "Primitive Rail Slider",     Color(200, 200, 255), "PRr", {drawMesh = true})
 DefineScannerType("primitive_airfoil",         "Primitive Airfoil",         Color(200, 200, 255), "PRa", {drawMesh = true})
+DefineScannerType("primitive_convex_hull",     "Primitive Convex Hull",     Color(200, 200, 255), "PRc", {drawMesh = true})
 
 local function NetStart(n)
     net_Start("ACF_Scanning_NetworkPacket")
