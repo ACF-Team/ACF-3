@@ -7,7 +7,7 @@ local DrawLine = surface.DrawLine
 local DrawOutlinedRect = surface.DrawOutlinedRect
 local DrawCircle = surface.DrawCircle
 
-local AmmoTypes    = ACF.Classes.AmmoTypes
+local Classes      = ACF.Classes
 
 local TraceLine = util.TraceLine
 local CurTime = CurTime
@@ -26,7 +26,7 @@ return function(State)
             Ent.PrimaryAmmoCountsByType[AmmoType] = 0
 
             Ent.MaterialsByType = Ent.MaterialsByType or {}
-            local IconName = AmmoTypes.Get(AmmoType).SpawnIcon -- Something bad has happened if this doesn't work
+            local IconName = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", AmmoType).SpawnIcon -- Something bad has happened if this doesn't work
             Ent.MaterialsByType[AmmoType] = Material(IconName)
 
             Ent.TypesSorted = Ent.TypesSorted or {}

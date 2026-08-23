@@ -367,7 +367,7 @@ do	-- CFW Hooks
 	hook.Add("cfw.contraption.entityAdded", "ACF_CFW_CostTrack", function(Contraption, Entity)
 		-- print("cfw.contraption.entityAdded", Contraption, Entity)
 		if Entity.IsACFEntity then
-			if Entity.IsACFAmmoCrate then
+			if Entity.IsACFAmmo then
 				Contraption.AmmoTypes[Entity.AmmoType] = true
 			end
 		elseif Entity.ACF then

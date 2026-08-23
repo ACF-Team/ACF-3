@@ -23,5 +23,3 @@ function ENT:DrawOverlay()
 		render.DrawWireframeSphere(Pos2, 2, 10, 10, Purple, true)
 	end
 end
-
-ACF.Classes.Entities.Register()

@@ -15,7 +15,15 @@ local Clock          = ACF.Utilities.Clock
 local Sounds         = ACF.Utilities.Sounds
 local Damage         = ACF.Damage
 local Debug			 = ACF.Debug
-local Missiles       = Classes.Missiles
+-- Missiles are V2 classes addressed by short id (FQN suffix, or CLASS.ID for groups).
+local function GetMissileClass(ID)
+	local Direct = Classes.GetSubtypeByName("ACF.Missiles.BaseMissile", ID)
+	if Direct then return Direct end
+
+	for _, Class in ipairs(Classes.GetSubtypesAsList("ACF.Missiles.BaseMissile")) do
+		if Class.ID == ID or Classes.GetTypeName(Class):match("[^.]+$") == ID then return Class end
+	end
+end
 local InputActions   = ACF.GetInputActions("acf_missile")
 local hook           = hook
 local Inputs         = { "Detonate (Force the missile to explode.)" }
@@ -61,7 +69,7 @@ local function UpdateSkin(Missile)
 	if not BulletData then return end
 	if not Skins then return end
 
-	Missile:SetSkin(Skins[BulletData.Type] or 0)
+	Missile:SetSkin(Skins[BulletData.AmmoType] or 0)
 end
 
 local function LaunchEffect(Missile)
@@ -344,9 +352,9 @@ ACF.AddInputAction("acf_missile", "Detonate", function(Entity, Value)
 
 	if Value ~= 0 then
 		local BulletData = Entity.BulletData
-		if BulletData.Type == "HEAT" then
-			BulletData.Type = "HE"
-			Entity:SetNW2String("AmmoType", "HE")
+		if BulletData.AmmoType == "ACF.Ammunition.HEAT" then
+			BulletData.AmmoType = "ACF.Ammunition.HE"
+			Entity:SetNW2String("AmmoType", "ACF.Ammunition.HE")
 		end
 		Entity:Detonate(true)
 	end
@@ -357,8 +365,8 @@ end)
 -- TODO: Make ACF Missiles compliant with ACF legal checks. How to deal with SetNoDraw and SetNotSolid tho
 function ACF.MakeMissile(Player, Pos, Ang, Rack, MountPoint, Crate)
 	local BulletData = Crate.BulletData
-	local Class      = Classes.GetGroup(Missiles, BulletData.Id)
-	local Data       = Class.Lookup[BulletData.Id]
+	local Data       = GetMissileClass(BulletData.WeaponType)
+	local Class      = Data and Classes.GetBaseClass(Data)
 	local Round      = Data.Round
 	local Length     = Data.Length
 	local Caliber    = Data.Caliber
@@ -473,16 +481,16 @@ function ENT:CreateBulletData(Crate)
 	local Ammo = Crate.RoundData
 	local Data = {}
 
-	-- Creating a copy of the basic data stored on the crate
-	for _, V in ipairs(Crate.DataStore) do
-		Data[V] = Crate[V]
+	local LiveData = Crate.ACF_LiveData
+	if LiveData then
+		for _, Field in ipairs(Classes.GetTypeFields(LiveData:GetType())) do
+			Data[Field.Name] = LiveData[Field.Name]
+		end
 	end
-
-	Data.Destiny = ACF.FindWeaponrySource(Data.Weapon)
 
 	self.ToolData          = Data
 	self.RoundData         = Ammo
-	self.BulletData        = Ammo:ServerConvert(Data)
+	self.BulletData        = Ammo:ServerConvert()
 	self.BulletData.Crate  = self:EntIndex()
 	self.BulletData.Owner  = self:GetPlayer()
 	self.BulletData.Gun    = self
@@ -655,7 +663,7 @@ function ENT:Detonate(Destroyed)
 
 	local Bullet = Ballistics.CreateBullet(BulletData)
 
-	if BulletData.Type ~= "HEAT" then
+	if BulletData.AmmoType ~= "ACF.Ammunition.HEAT" then
 		ACF.DoReplicatedPropHit(self, Bullet)
 	end
 end
@@ -727,10 +735,10 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	if HitRes.Kill then
 		local BulletData = self.BulletData
 
-		if BulletData.Type == "HEAT" then
-			BulletData.Type = "HE"
+		if BulletData.AmmoType == "ACF.Ammunition.HEAT" then
+			BulletData.AmmoType = "ACF.Ammunition.HE"
 
-			self:SetNW2String("AmmoType", "HE")
+			self:SetNW2String("AmmoType", "ACF.Ammunition.HE")
 		end
 		DetonateMissile(self, Owner)
 
@@ -748,8 +756,8 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 		if DmgResult.Penetration > self.ForcedArmor then
 			-- New death mechanic for ASM,AAM,ARM,SAM,ARTY,FFAR
 			if self.HitDeviate then
-				BulletData.Type = "HP"
-				self:SetNW2String("AmmoType", "HP")
+				BulletData.AmmoType = "ACF.Ammunition.HP"
+				self:SetNW2String("AmmoType", "ACF.Ammunition.HP")
 				self.UseGuidance = nil
 				local MissileAngles = self.CurDir:Angle()
 				local LocalSpin  = VectorRand(-15, 15) / Ratio
@@ -777,9 +785,9 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 					end
 				)
 			else -- Old instant death mechanic for BOMB,GBOMB,GBU,UAR
-				if BulletData.Type == "HEAT" then
-					BulletData.Type = "HE"
-					self:SetNW2String("AmmoType", "HE")
+				if BulletData.AmmoType == "ACF.Ammunition.HEAT" then
+					BulletData.AmmoType = "ACF.Ammunition.HE"
+					self:SetNW2String("AmmoType", "ACF.Ammunition.HE")
 				end
 				DetonateMissile(self, Owner)
 			end

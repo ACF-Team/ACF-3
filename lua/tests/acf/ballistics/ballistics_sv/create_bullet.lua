@@ -8,7 +8,7 @@ return {
 
     beforeEach = function( State )
         State.TestAmmo = {}
-        stub( ACF.Classes.AmmoTypes, "Get" ).returns( State.TestAmmo )
+        stub( ACF.Classes, "GetSubtypeByName" ).returns( State.TestAmmo )
         stub( ACF.Ballistics, "BulletClient" )
         stub( ACF.Ballistics, "CalcBulletFlight" )
 
