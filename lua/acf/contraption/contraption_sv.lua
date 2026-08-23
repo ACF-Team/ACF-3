@@ -399,8 +399,15 @@ do -- ASSUMING DIRECT CONTROL
 				if Ent.IsACFEntity and not Ent.ACF_UserWeighable and Ent.ACF then Contraption.SetMass(Ent, Ent.ACF.Mass) return end
 
 				if Ent.ACF_Volumetric_Mesh and not Ent.ACF_UserWeighable then
-					SetMass(self, Ent.ACF_Volumetric_Mesh.TotalMass)
-					return
+					local HasNonDefault = false
+					for _, MaterialID in pairs(Ent.ACF_Volumetric_Materials or {}) do
+						if MaterialID ~= "Default" then HasNonDefault = true break end
+					end
+
+					if HasNonDefault then
+						SetMass(self, Ent.ACF_Volumetric_Mesh.TotalMass)
+						return
+					end
 				end
 
 				if Ent.ACF_OnMassChange then
