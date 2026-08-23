@@ -25,6 +25,24 @@ local function FindAction(Page, Bind)
 	end
 end
 
+-- Single player hack!!!
+if game.SinglePlayer() then
+	if SERVER then
+		util.AddNetworkString("ACF_Menu_SPAction")
+		function ACF.Menu.SendSPAction(Button)
+			net.Start("ACF_Menu_SPAction")
+			net.WriteString(Button)
+			net.Broadcast()
+		end
+	else
+		net.Receive("ACF_Menu_SPAction", function()
+			ACF.Menu.DoClientAction(net.ReadString())
+		end)
+	end
+else
+	function ACF.Menu.SendSPAction() error("ACF.Menu.SendSPAction called in non-singleplayer game") end
+end
+
 --- Client side of an action press: resolves the action from button + modifiers and commits it.
 function ACF.Menu.DoClientAction(Button)
 	local Page = ACF.Menu.ActivePage
@@ -80,6 +98,12 @@ end
 
 function ACF.Menu.SetupTool(Tool)
 	function Tool:LeftClick()
+		if game.SinglePlayer() then
+			-- not predicted, this is an annoying hack
+			ACF.Menu.SendSPAction("left")
+			return true
+		end
+
 		if CLIENT and IsFirstTimePredicted() then
 			local Page = ACF.Menu.ActivePage
 			if Page and Page.Actions then ACF.Menu.DoClientAction("left") end
@@ -89,6 +113,12 @@ function ACF.Menu.SetupTool(Tool)
 	end
 
 	function Tool:RightClick()
+		if game.SinglePlayer() then
+			-- not predicted, this is an annoying hack
+			ACF.Menu.SendSPAction("right")
+			return true
+		end
+
 		if CLIENT and IsFirstTimePredicted() then
 			local Page = ACF.Menu.ActivePage
 			if Page and Page.Actions then ACF.Menu.DoClientAction("right") end
