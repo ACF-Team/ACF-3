@@ -39,10 +39,6 @@ do -- Spawning and updating
 			Entity:UpdateOverlay(true)
 		end
 
-		if Entity.Outputs and Entity.Outputs.Entity then
-			WireLib.TriggerOutput(Entity, "Entity", Entity)
-		end
-
 		ACF.CheckLegal(Entity)
 
 		return true, Entity

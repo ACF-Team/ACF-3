@@ -156,6 +156,11 @@ local function PrepareSpawnFunctions(ENT, ClassName)
         if IsMenuSpawn and Entity.ACF_PostMenuSpawn then Entity:ACF_PostMenuSpawn() end
 
         Entity.ACF_UserData = ClientData or {} -- to allow entity fetching later
+
+        if Entity.Outputs and Entity.Outputs.Entity then
+            WireLib.TriggerOutput(Entity, "Entity", Entity)
+        end
+
         return Entity
     end
 
