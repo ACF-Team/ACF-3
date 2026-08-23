@@ -37,7 +37,6 @@ do -- Spawning
 
 	function ENT:ACF_PostSpawn()
 		self:TriggerInput("Active", 1)
-		self.BaseClass.ACF_PostSpawn(self)
 	end
 end
 
