@@ -94,6 +94,16 @@ do -- Clientside settings
 
 			return Value
 		end)
+
+		Base:AddLabel("#acf.menu.settings.effects_visual_elements.crew_revive")
+		local CrewSupplyColor = Base:AddPanel("DColorMixer")
+		CrewSupplyColor:SetColor(ACF.CrewSupplyColor)
+		CrewSupplyColor:SetClientData("CrewSupplyColor", "ValueChanged")
+		CrewSupplyColor:DefineSetter(function(_, _, _, Value)
+			ACF.CrewSupplyColor = Value
+
+			return Value
+		end)
 	end)
 
 	ACF.AddClientSettings(201, "#acf.menu.settings.legal_checks", function(Base)

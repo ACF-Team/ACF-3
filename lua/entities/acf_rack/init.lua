@@ -97,8 +97,7 @@ do
 		else
 			local Sum1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.CurrentCrate or self)
 			local Sum2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.CurrentCrate or self)
-			local Sum3 = ACF.WeightedLinkSum(self.CrewsByType.Pilot or {}, GetReloadEff, self, self.CurrentCrate or self)
-			self.LoadCrewMod = self.LoadCrewModOverride or math.Clamp(Sum1 + Sum2 + Sum3, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
+			self.LoadCrewMod = self.LoadCrewModOverride or math.Clamp(Sum1 + Sum2, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
 		end
 
 		-- Check space behind breech
@@ -147,21 +146,6 @@ do
 		return self.LoadCrewMod
 	end
 
-	function ENT:FindPropagator()
-		local Temp = self:GetParent()
-		if IsValid(Temp) and Temp:GetClass() == "acf_turret" and Temp.Turret == "Turret-V" then Temp = Temp:GetParent() end
-		if IsValid(Temp) and Temp:GetClass() == "acf_turret" and Temp.Turret == "Turret-H" then return Temp end
-		if IsValid(Temp) and Temp:GetClass() == "acf_baseplate" then return Temp end
-		return nil
-	end
-
-	function ENT:UpdateAccuracyMod(Config)
-		local Propagator = self:FindPropagator(Config)
-		local Val = Propagator and Propagator.AccuracyCrewMod or 0
-
-		self.AccuracyCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
-		return self.AccuracyCrewMod
-	end
 
 	function ENT:SetLoadModOverride(Efficiency)
 		self.LoadCrewModOverride = Efficiency
@@ -370,7 +354,6 @@ do -- Spawning and Updating --------------------
 		end
 
 		ACF.AugmentedTimer(function(Config) Rack:UpdateLoadMod(Config) end, function() return IsValid(Rack) end, nil, {MinTime = 0.5, MaxTime = 1})
-		ACF.AugmentedTimer(function(Config) Rack:UpdateAccuracyMod(Config) end, function() return IsValid(Rack) end, nil, {MinTime = 0.5, MaxTime = 1})
 
 		hook.Run("ACF_OnSpawnEntity", "acf_rack", Rack, Data, RackData)
 
@@ -758,7 +741,7 @@ do -- Firing -----------------------------------
 	end
 
 	function ENT:GetSpread()
-		return self.Spread * ACF.GunInaccuracyScale / (self.AccuracyCrewMod or 1)
+		return self.Spread * ACF.GunInaccuracyScale
 	end
 
 	function ENT:Shoot()

@@ -173,7 +173,7 @@ local Chapter = Storyboard:Chapter("Drivers")
 Chapter:AddDelay(1)
 
 local _, Name = Chapter:AddInstruction("Caption", {
-    Text = "Drivers affect the fuel consumption rate of your engines.\nLink and parent them to your baseplate.\nThey can only be linked to one entity.",
+    Text = "Drivers let your gearboxes apply engine torque at full effect.\nLink and parent them to your baseplate.\nThey can only be linked to one entity.",
     Position = Vector(0.5, 0.15, 0),
     KeepText = true,
 })
@@ -189,7 +189,7 @@ local Chapter = Storyboard:Chapter("Gunners")
 Chapter:AddDelay(1)
 
 local _, Name = Chapter:AddInstruction("Caption", {
-    Text = "Gunners affect the accuracy of your guns.\nLink and parent them to your turret ring/baseplate, whichever the guns are located on.\nThey can only be linked to one entity.",
+    Text = "Gunners let a weaponized turret update its aim freely, instead of only once every few seconds.\nLink and parent them to your turret ring.\nThey can only be linked to one entity.",
     Position = Vector(0.5, 0.15, 0),
     KeepText = true,
 })
@@ -233,7 +233,7 @@ Chapter:AddInstruction("HideText", {Name = Name}):DelayByLength()
 Chapter:AddDelay(1)
 
 local _, Name = Chapter:AddInstruction("Caption", {
-    Text = "They can be linked to guns and turret rings as you would with a loader and gunner.\nThis is for RWSes and the like, but it impacts their ability to command.",
+    Text = "They can be linked to guns and turret rings to fill in as a Loader or Gunner.\nThis is for RWSes and the like, but it impacts their ability to command.",
     Position = Vector(0.5, 0.15, 0),
     KeepText = true,
 })

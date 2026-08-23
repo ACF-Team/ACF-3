@@ -646,14 +646,14 @@ do -- Default turret menus
 			MaxDeg:SetValue(180)
 
 			if Data.ID == "Turret-V" then
-				MinDeg:SetMin(-85)
-				MaxDeg:SetMax(85)
+				MinDeg:SetMin(-90)
+				MaxDeg:SetMax(90)
 
-				MinDeg:SetValue(-85)
-				MaxDeg:SetValue(85)
+				MinDeg:SetValue(-90)
+				MaxDeg:SetValue(90)
 
-				ACF.SetClientData("MinDeg", -85)
-				ACF.SetClientData("MaxDeg", 85)
+				ACF.SetClientData("MinDeg", -90)
+				ACF.SetClientData("MaxDeg", 90)
 			else
 				ACF.SetClientData("MinDeg", -180)
 				ACF.SetClientData("MaxDeg", 180)
@@ -1009,6 +1009,22 @@ do -- Default turret menus
 			if Data.IsDual then
 				Menu:AddLabel("#acf.menu.gyros.dual_desc")
 			end
+
+			if Menu.ComponentPreview then
+				Menu.ComponentPreview:SetModelScale(1, true)
+			end
+		end
+	end
+
+	do	-- Turret Controllers
+		function ACF.CreateTurretControllerMenu(Data, Menu)
+			ACF.SetClientData("Controller", Data.ID)
+			ACF.SetClientData("Destiny", "TurretControllers")
+			ACF.SetClientData("PrimaryClass", "acf_turret_controller")
+			ACF.SetClientData("SecondaryClass", "N/A")
+
+			local MassText = language.GetPhrase("acf.menu.turrets.mass_text")
+			Menu:AddLabel(MassText:format(Data.Mass))
 
 			if Menu.ComponentPreview then
 				Menu.ComponentPreview:SetModelScale(1, true)

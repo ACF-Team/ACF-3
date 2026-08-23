@@ -19,7 +19,12 @@ function Turrets.Register(ID, Data)
 end
 
 function Turrets.RegisterItem(ID, ClassID, Data)
-	return Classes.AddGroupItem(ID, ClassID, Entries, Data)
+	local Item = Classes.AddGroupItem(ID, ClassID, Entries, Data)
+
+	-- Lets an item have its own spawn limit independent of the group, same as CrewTypes.Register
+	if Item.LimitConVar then Classes.AddSboxLimit(Item.LimitConVar) end
+
+	return Item
 end
 
 Classes.AddGroupedFunctions(Turrets, Entries)

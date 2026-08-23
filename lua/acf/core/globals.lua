@@ -114,6 +114,7 @@ end
 do -- ACF global vars
 	ACF.AmmoCrates           = ACF.AmmoCrates or {}
 	ACF.FuelTanks            = ACF.FuelTanks or {}
+	ACF.ActiveCrews          = ACF.ActiveCrews or {}
 	ACF.Repositories         = ACF.Repositories or {}
 	ACF.ClientData           = ACF.ClientData or {}
 	ACF.ServerData           = ACF.ServerData or {}
@@ -380,10 +381,17 @@ do -- ACF global vars
 	ACF.CrewCommanderCoef 	= 0.3	-- Portion of a crew's efficiency the commander provides
 	ACF.CrewSelfCoef 		= 1.0	-- Portion of a crew's efficiency they provide
 
+	ACF.DriverEfficiencyThreshold = 0.3	-- Minimum TotalEff a Driver/Pilot needs to grant full gearbox torque
+	ACF.GunnerEfficiencyThreshold = 0.3	-- Minimum TotalEff a Gunner/Commander/Pilot needs to render a turret controlled
+	ACF.UncontrolledAimUpdateInterval = 5	-- Seconds between aim input updates on an uncontrolled weaponized turret
+
 	ACF.CrewRepTimeBase 	= 3		-- Base time to replace a crew member
 	ACF.CrewRepDistToTime 	= 0.05 	-- Time it takes for crew to move one inch during replacement
 	ACF.CrewRepPrioMin 		= 1		-- Minimum priority for crew replacement
 	ACF.CrewRepPrioMax 		= 10	-- Maximum priority for crew replacement
+
+	ACF.CrewRegenFraction	= 0.05	-- Fraction of max health a living, non-full-health crew member regenerates roughly every 10 seconds
+	ACF.CrewSupplyColor	= Color(255, 80, 200, 10) -- The color to use for the crew revival supply effect
 
 	ACF.CrewSpaceLengthMod 	= 0.425	-- Changes contribution of shell length to ideal crew space
 	ACF.CrewSpaceCaliberMod = 1.0	-- Changes contribution of shell caliber to ideal crew space

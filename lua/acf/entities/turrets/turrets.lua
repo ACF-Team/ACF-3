@@ -46,7 +46,7 @@ do	-- Turret drives
 		LimitConVar	= {
 			Name	= "_acf_turret",
 			Amount	= 20,
-			Text	= "Maximum number of ACF turrets a player can create."
+			Text	= "Maximum number of ACF Turrets a player can create."
 		},
 		GetMass		= function(Data, Size)
 			return math.Round(math.max(Data.Mass * (Size / Data.Size.Base), 5) ^ 1.5, 1)
@@ -368,7 +368,7 @@ do	-- Turret motors
 		LimitConVar	= {
 			Name	= "_acf_turret_motor",
 			Amount	= 20,
-			Text	= "Maximum number of ACF turret components a player can create."
+			Text	= "Maximum number of ACF Turret Motors a player can create."
 		},
 
 		GetTorque	= function(Data, CompSize)
@@ -467,7 +467,7 @@ do	-- Turret gyroscopes
 		LimitConVar	= {
 			Name	= "_acf_turret_gyro",
 			Amount	= 20,
-			Text	= "Maximum number of ACF turret gyros a player can create."
+			Text	= "Maximum number of ACF Turret Gyros a player can create."
 		},
 	})
 
@@ -519,7 +519,7 @@ do	-- Turret computers
 		LimitConVar	= {
 			Name	= "_acf_turret_computer",
 			Amount	= 4,
-			Text	= "Maximum number of ACF turret computers a player can create."
+			Text	= "Maximum number of ACF Turret Computers a player can create."
 		},
 	})
 
@@ -589,4 +589,52 @@ do	-- Turret computers
 			},
 		})
 	end
+end
+
+do	-- Turret Controllers
+	Turrets.Register("5-Controller", {
+		Name		= "Turret Controllers",
+		SpawnModel  = "models/props_c17/tv_monitor01.mdl",
+		Description	= "#acf.descs.controllers",
+		Entity		= "acf_turret_controller",
+		CreateMenu	= ACF.CreateTurretControllerMenu,
+	})
+
+	Turrets.RegisterItem("Remote", "5-Controller", {
+		Name			= "Remote Turret Controller",
+		Description		= "#acf.descs.controllers.remote",
+		Model			= "models/props_c17/tv_monitor01.mdl",
+		IsRemote		= true,
+		LimitConVar		= {
+			Name	= "_acf_turret_controller_remote",
+			Amount	= 2,
+			Text	= "Maximum number of ACF Remote Turret Controllers a player can create."
+		},
+
+		Preview			= {
+			FOV = 90,
+		},
+
+		Mass			= 15,
+		Cost			= 10,
+	})
+
+	Turrets.RegisterItem("Lightweight", "5-Controller", {
+		Name			= "Lightweight Turret Controller",
+		Description		= "#acf.descs.controllers.lightweight",
+		Model			= "models/props_lab/powerbox02c.mdl",
+		IsRemote		= false,
+		LimitConVar		= {
+			Name	= "_acf_turret_controller_lightweight",
+			Amount	= 2,
+			Text	= "Maximum number of ACF Lightweight Turret Controllers a player can create."
+		},
+
+		Preview			= {
+			FOV = 90,
+		},
+
+		Mass			= 10,
+		Cost			= 5,
+	})
 end
