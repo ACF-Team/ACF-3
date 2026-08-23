@@ -398,6 +398,11 @@ do -- ASSUMING DIRECT CONTROL
 				-- Required due for AD2 support, if this isn't present then entities will never get set to their required weight on dupe paste
 				if Ent.IsACFEntity and not Ent.ACF_UserWeighable and Ent.ACF then Contraption.SetMass(Ent, Ent.ACF.Mass) return end
 
+				if Ent.ACF_Volumetric_Mesh and not Ent.ACF_UserWeighable then
+					SetMass(self, Ent.ACF_Volumetric_Mesh.TotalMass)
+					return
+				end
+
 				if Ent.ACF_OnMassChange then
 					Ent:ACF_OnMassChange(self:GetMass(), Mass)
 				end
