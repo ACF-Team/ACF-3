@@ -370,6 +370,7 @@ do -- ACF global vars
 	ACF.ContainerMinSize   = 6 -- Defines the shortest possible length of containers (fuel tanks, supply crates) for all their axises, in gmu
 	ACF.ContainerMaxSize   = 96 -- Defines the highest possible length of containers (fuel tanks, supply crates) for all their axises, in gmu
 	ACF.FuelSupplyColor    = Color(76, 201, 250, 10) -- The color to use for the fuel supply effect
+	ACF.CrewSupplyColor    = Color(255, 80, 200, 10) -- The color to use for the crew revival supply effect
 	ACF.LiIonED            = 0.458 -- li-ion energy density: kw hours / liter
 	ACF.SupplyDistance     = 300 -- Distance in which supply units distribute mass to containers.
 	ACF.SupplyMassRate     = 0.007017 -- kg per second per cubic inch of supply unit volume (no distance attenuation)
@@ -391,7 +392,6 @@ do -- ACF global vars
 	ACF.CrewRepPrioMax 		= 10	-- Maximum priority for crew replacement
 
 	ACF.CrewRegenFraction	= 0.05	-- Fraction of max health a living, non-full-health crew member regenerates roughly every 10 seconds
-	ACF.CrewSupplyColor	= Color(255, 80, 200, 10) -- The color to use for the crew revival supply effect
 
 	ACF.CrewSpaceLengthMod 	= 0.425	-- Changes contribution of shell length to ideal crew space
 	ACF.CrewSpaceCaliberMod = 1.0	-- Changes contribution of shell caliber to ideal crew space

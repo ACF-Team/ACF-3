@@ -390,8 +390,7 @@ do -- Random timer stuff
 		local GForceInfo = SelfTbl.CrewType.GForceInfo
 		local Effs = GForceInfo.Efficiencies
 
-		-- Commanders take Loader-accurate G-force penalties while performing a Loader's job,
-		-- since loading duty is just as sensitive to movement regardless of who's doing it
+		-- Commanders take Loader-accurate G-force penalties while performing Loader duty
 		if GForceInfo.LoaderEfficiencies then
 			local TargetsByType = SelfTbl.TargetsByType
 			local LinkedToGun = TargetsByType and TargetsByType.acf_gun and next(TargetsByType.acf_gun)
@@ -604,8 +603,7 @@ do
 
 		UpdateCrew(Entity, Data, CrewModel, CrewType)
 
-		-- Registered only after UpdateCrew has set Entity.CrewType, so acf_supply's Think never
-		-- sees a crew entity in ACF.ActiveCrews before its CrewType (and thus revive cost) exists
+		-- Registered after UpdateCrew so Entity.CrewType always exists by the time this is visible
 		ACF.ActiveCrews[Entity] = true
 
 		-- Run randomized timers
@@ -615,7 +613,7 @@ do
 		ACF.AugmentedTimer(function(cfg) ENT_UpdateMedFreq(Entity, cfg) end, function() return IsEntityValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1, Delay = 0.1})
 		ACF.AugmentedTimer(function(cfg) ENT_UpdateHighFreq(Entity, cfg) end, function() return IsEntityValid(Entity) end, nil, {MinTime = 0.1, MaxTime = 0.5, Delay = 0.1})
 		ACF.AugmentedTimer(function(cfg) ENT_EnforceLimits(Entity, cfg) end, function() return IsEntityValid(Entity) end, nil, {MinTime = 1, MaxTime = 2, Delay = 0.1})
-		ACF.AugmentedTimer(function(cfg) Entity:RegenerateHealth(cfg) end, function() return IsEntityValid(Entity) end, nil, {MinTime = 9, MaxTime = 11, Delay = 0.1})
+		Entity:StartRegenTimer()
 
 		hook.Add("Tick", "GForceCalculation" .. Entity:EntIndex(), function()
 			Entity:EnforceGForces(cfg)
@@ -725,8 +723,7 @@ do
 		self:KillCrew("npc/zombie/zombie_voice_idle6.wav")
 	end
 
-	-- Fully revives a dead crew member. Called by gamemodes like AAS, and by acf_supply when
-	-- resupplying a dead crew member in range.
+	-- Fully revives a dead crew member. Called by gamemodes like AAS and by acf_supply.
 	function ENT:Restore()
 		self.ACF.Health = self.ACF.MaxHealth
 		self.IsAlive = true
@@ -735,9 +732,17 @@ do
 		self:UpdateOverlay()
 	end
 
+	-- Timer only runs while the crew actually needs healing; DamageCrew re-arms it. In-combat
+	-- has no discrete end event, so it stays a cheap in-body check instead of a Depends condition
+	function ENT:StartRegenTimer()
+		local Entity = self
+
+		ACF.AugmentedTimer(function(cfg) Entity:RegenerateHealth(cfg) end, function()
+			return IsEntityValid(Entity) and Entity.IsAlive and Entity.ACF.Health < Entity.ACF.MaxHealth
+		end, nil, {MinTime = 10, MaxTime = 10, Delay = 0.1})
+	end
+
 	function ENT:RegenerateHealth()
-		if not self.IsAlive then return end
-		if self.ACF.Health >= self.ACF.MaxHealth then return end
 		if ACF.IsContraptionInCombat(self) then return end
 
 		self.ACF.Health = math.min(self.ACF.MaxHealth, self.ACF.Health + self.ACF.MaxHealth * ACF.CrewRegenFraction)
@@ -768,10 +773,8 @@ do
 		return nil
 	end
 
-	--- Attempts to replace self with another crew member. Searching for a candidate and
-	--- claiming it happen atomically here; the swap itself is only ever performed by
-	--- AttemptSwap after the move delay, which always re-searches rather than trusting
-	--- that the originally claimed candidate is still valid once the delay has passed.
+	--- Attempts to replace self with another crew member. AttemptSwap re-validates the
+	--- candidate after the move delay rather than trusting it's still valid.
 	function ENT:ReplaceCrew()
 		if self.ToBeReplaced or not self.ReplaceSelf then return end
 		self.ToBeReplaced = true
@@ -790,10 +793,8 @@ do
 		TimerSimple(ReplacementTime, function() self:AttemptSwap(Other) end)
 	end
 
-	--- Runs after the move delay elapses. Other is only a hint of who was originally
-	--- claimed. Both self and Other are re-validated here since either may have changed
-	--- state during the wait (died, got healed, got claimed by something else, etc);
-	--- if the original candidate no longer works, the whole search restarts fresh.
+	--- Runs after the move delay. Re-validates both sides in case either changed state during
+	--- the wait, restarting the search if Other no longer works.
 	function ENT:AttemptSwap(Other)
 		if IsValid(Other) then Other.ToReplace = false end
 		self.ToBeReplaced = false
@@ -836,6 +837,8 @@ do
 
 		if NewHealth == 0 and SelfTbl.IsAlive then
 			self:KillCrew(sound)
+		elseif NewHealth > 0 and NewHealth < SelfACF.MaxHealth then
+			self:StartRegenTimer()
 		end
 	end
 	ENT.DamageCrew = ENT_DamageCrew

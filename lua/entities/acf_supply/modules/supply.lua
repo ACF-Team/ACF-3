@@ -1,11 +1,15 @@
-local ACF           = ACF
-local Utilities     = ACF.Utilities
-local Clock         = Utilities.Clock
-local Sounds        = Utilities.Sounds
-local ActiveCrates  = ACF.AmmoCrates or {}
-local ActiveTanks   = ACF.FuelTanks or {}
-local ActiveCrews   = ACF.ActiveCrews or {}
-local SupplyDist2   = (ACF.SupplyDistance or 300) * (ACF.SupplyDistance or 300)
+local ACF               = ACF
+local Utilities         = ACF.Utilities
+local Clock             = Utilities.Clock
+local Sounds            = Utilities.Sounds
+local SupplyDist2       = (ACF.SupplyDistance or 300) * (ACF.SupplyDistance or 300)
+local ContraptionScanRate = 3 -- Seconds between rescans for nearby contraptions to resupply
+
+local SuppliableClasses = {
+	acf_ammo     = true,
+	acf_fueltank = true,
+	acf_crew     = true,
+}
 
 local function SupplyEffect(Entity, RefilledAmmo, RefilledFuel, RevivedCrew)
 	net.Start("ACF_SupplyEffect")
@@ -58,6 +62,30 @@ local function CanReviveCrew(Supply, Target, Distance2)
 	return Distance2 <= SupplyDist2
 end
 
+-- Finds nearby contraptions via FindInSphere instead of scanning every ammo/fuel/crew ent.
+-- Standalone ents get a pseudo-contraption (same fallback as Contraption.GetEnts)
+local function RefreshNearbyContraptions(Entity)
+	local Pos = Entity:GetPos()
+	local Nearby = {}
+
+	for _, Ent in ipairs(ents.FindInSphere(Pos, ACF.SupplyDistance)) do
+		if IsValid(Ent) and SuppliableClasses[Ent:GetClass()] then
+			local Contraption = Ent:CFW_GetContraption()
+
+			if not Contraption then
+				-- Cache the pseudo-contraption on the entity so standalone ents (no welds/parents)
+				-- don't get a new one built every rescan
+				Contraption = Ent.ACF_PseudoContraption or ACF.EntitiesToPseudoContraption({Ent})
+				Ent.ACF_PseudoContraption = Contraption
+			end
+
+			Nearby[Contraption] = true
+		end
+	end
+
+	Entity.NearbyContraptions = Nearby
+end
+
 function ENT:Enable()
 	if self.BaseClass.Enable then
 		self.BaseClass.Enable(self)
@@ -65,6 +93,8 @@ function ENT:Enable()
 
 	-- Start thinking when enabled
 	self.LastThink = Clock.CurTime
+	self.NearbyContraptions = self.NearbyContraptions or {}
+	RefreshNearbyContraptions(self)
 	self:NextThink(Clock.CurTime + 1)
 end
 
@@ -92,36 +122,45 @@ function ENT:Think()
 		return true
 	end
 
-	-- Search for targets to supply
+	if Now >= (self.NextContraptionScan or 0) then
+		self.NextContraptionScan = Now + ContraptionScanRate
+		RefreshNearbyContraptions(self)
+	end
+
+	-- Search for targets to supply, only within contraptions already known to be nearby
 	local Pos = self:GetPos()
 	local Recipients, Count = {}, 0
 
-	for Target in pairs(ActiveCrates) do
-		if IsValid(Target) then
-			local Dist2 = Pos:DistToSqr(Target:GetPos())
-			if CanSupply(self, Target, Dist2) then
-				Count = Count + 1
-				Recipients[Count] = Target
+	for Contraption in pairs(self.NearbyContraptions) do
+		local EntsByClass = Contraption.entsbyclass or {}
+
+		for Target in pairs(EntsByClass.acf_ammo or {}) do
+			if IsValid(Target) then
+				local Dist2 = Pos:DistToSqr(Target:GetPos())
+				if CanSupply(self, Target, Dist2) then
+					Count = Count + 1
+					Recipients[Count] = Target
+				end
 			end
 		end
-	end
 
-	for Target in pairs(ActiveTanks) do
-		if IsValid(Target) then
-			local Dist2 = Pos:DistToSqr(Target:GetPos())
-			if CanSupply(self, Target, Dist2) then
-				Count = Count + 1
-				Recipients[Count] = Target
+		for Target in pairs(EntsByClass.acf_fueltank or {}) do
+			if IsValid(Target) then
+				local Dist2 = Pos:DistToSqr(Target:GetPos())
+				if CanSupply(self, Target, Dist2) then
+					Count = Count + 1
+					Recipients[Count] = Target
+				end
 			end
 		end
-	end
 
-	for Target in pairs(ActiveCrews) do
-		if IsValid(Target) then
-			local Dist2 = Pos:DistToSqr(Target:GetPos())
-			if CanReviveCrew(self, Target, Dist2) then
-				Count = Count + 1
-				Recipients[Count] = Target
+		for Target in pairs(EntsByClass.acf_crew or {}) do
+			if IsValid(Target) then
+				local Dist2 = Pos:DistToSqr(Target:GetPos())
+				if CanReviveCrew(self, Target, Dist2) then
+					Count = Count + 1
+					Recipients[Count] = Target
+				end
 			end
 		end
 	end

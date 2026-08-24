@@ -31,8 +31,7 @@ local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 do -- Random timer crew stuff
 	local LightweightMassLimit = 250 -- kg. Turrets at or under this carried mass can be controlled by a shared-parent Gunner, or a Lightweight Turret Controller, without needing to be mounted on it
 
-	--- Whether a single Gunner-role crew member currently renders this turret controlled,
-	--- and whether that control should cascade to vertical drives mounted on it.
+	--- Whether Crew renders Turret controlled, and whether that cascades to vertical drives.
 	local function CrewGrantsControl(Turret, Crew)
 		if ENTITY.GetTable(Crew).TotalEff < ACF.GunnerEfficiencyThreshold then return false, false end
 
@@ -52,12 +51,8 @@ do -- Random timer crew stuff
 		return false, false
 	end
 
-	--- Renders this turret controlled based on whichever linked Gunner/Commander/Pilot
-	--- currently qualifies, OR-ed with an immediate horizontal ancestor's cascade if this is
-	--- a vertical drive. Each turret only ever sets its own IsControlled, never a sub-turret's,
-	--- to avoid two separate UpdateControlled calls racing to overwrite the same field.
-	--- A Lightweight Turret Controller linked directly to a turret always cascades too, since
-	--- it isn't "riding" the horizontal drive the way a mounted Gunner would be.
+	-- Each turret only ever sets its own IsControlled (never a sub-turret's), to avoid two
+	-- UpdateControlled calls racing to overwrite the same field.
 	local function HasActiveLightweightController(Turret)
 		for Controller in pairs(Turret.LightweightControllers or {}) do
 			if IsValid(Controller) and Controller:IsActive() then return true end
@@ -65,38 +60,37 @@ do -- Random timer crew stuff
 		return false
 	end
 
+	-- Whether any Gunner/Commander/Pilot crew linked to Turret grants control, or a Lightweight
+	-- Controller does. Cascade checks the cascade-to-vertical-drives result instead of self-control
+	local function IsGrantedControl(Turret, Cascade)
+		if HasActiveLightweightController(Turret) then return true end
+
+		local CrewsByType = Turret.CrewsByType
+		if not CrewsByType then return false end
+
+		for _, CrewType in ipairs({"Gunner", "Commander", "Pilot"}) do
+			for Crew in pairs(CrewsByType[CrewType] or {}) do
+				if not IsValid(Crew) then continue end
+
+				local Controls, Cascades = CrewGrantsControl(Turret, Crew)
+				if Cascade and Cascades then return true end
+				if not Cascade and Controls then return true end
+			end
+		end
+
+		return false
+	end
+
 	function ENT:UpdateControlled()
 		local SelfTbl = ENTITY.GetTable(self)
 		SelfTbl.CrewsByType = SelfTbl.CrewsByType or {}
 
-		local Controlled = HasActiveLightweightController(self)
-
-		if not Controlled then
-			for _, CrewType in ipairs({"Gunner", "Commander", "Pilot"}) do
-				for Crew in pairs(SelfTbl.CrewsByType[CrewType] or {}) do
-					if not IsValid(Crew) then continue end
-
-					local CrewControls = CrewGrantsControl(self, Crew)
-					if CrewControls then Controlled = true end
-				end
-			end
-		end
+		local Controlled = IsGrantedControl(self, false)
 
 		if not Controlled and SelfTbl.Turret == "Turret-V" then
 			local Ancestor = SelfTbl.ACF_TurretAncestor
 			if IsValid(Ancestor) and Ancestor.Turret == "Turret-H" then
-				if HasActiveLightweightController(Ancestor) then
-					Controlled = true
-				else
-					for _, CrewType in ipairs({"Gunner", "Commander", "Pilot"}) do
-						for Crew in pairs(Ancestor.CrewsByType and Ancestor.CrewsByType[CrewType] or {}) do
-							if not IsValid(Crew) then continue end
-
-							local _, CrewCascades = CrewGrantsControl(Ancestor, Crew)
-							if CrewCascades then Controlled = true end
-						end
-					end
-				end
+				Controlled = IsGrantedControl(Ancestor, true)
 			end
 		end
 
@@ -216,10 +210,8 @@ do	-- Spawn and Update funcs
 		Entity.DesiredVector = Vector()
 		Entity.DesiredDeg	= 0
 
-		-- Whether a qualifying Gunner/Commander/Pilot (or component) currently controls this
-		-- turret. Only matters while weaponized; an uncontrolled weaponized turret only accepts
-		-- a new aim input once every ACF.UncontrolledAimUpdateInterval seconds after the input
-		-- actually changes, rather than on a fixed clock unrelated to whether anything changed
+		-- Whether a Gunner/Commander/Pilot (or component) controls this turret; only matters
+		-- while weaponized (see InputDirection for what happens when uncontrolled)
 		Entity.IsControlled		= false
 		Entity.LastAimInputTime	= 0
 		Entity.LastRequestedDirection = nil
@@ -506,8 +498,7 @@ do	-- Spawn and Update funcs
 		local OldAncestor = SelfTbl.ACF_TurretAncestor
 		if not IsValid(OldAncestor) then return end
 
-		-- Notify the old ancestor even if it's no longer actually an ancestor (e.g. this
-		-- entity just unparented from it), so it can recompute mass/weaponized without us
+		-- Notify even if no longer actually an ancestor, so it can recompute without us
 		OldAncestor:UpdateTurretMass(false)
 
 		if not Contraption.HasAncestor(self, OldAncestor) then
@@ -535,8 +526,7 @@ do	-- Spawn and Update funcs
 			Entity.ACF_OnMassChange		= Proxy_ACF_OnMassChange
 			Entity.ACF_TurretAncestor	= Turret
 
-			-- Deletion doesn't reparent, so CFW_OnParented never fires for it. Notify the
-			-- ancestor here too, or a deleted weapon/dynamic entity leaves it stuck stale
+			-- Deletion doesn't reparent, so CFW_OnParented never fires for it
 			Entity:CallOnRemove("ACF_TurretAncestorNotify", function()
 				if IsValid(Turret) then Turret:UpdateTurretMass(false) end
 			end)
@@ -558,9 +548,8 @@ do	-- Spawn and Update funcs
 		acf_rack	= true
 	}
 
-	--- Refreshes IsWeaponized from direct children plus each sub-turret's own already-cached
-	--- value, then bubbles a change one hop up to ACF_TurretAncestor. Cheap: never recurses
-	--- into a sub-turret's subtree, only reads the boolean it already computed for itself.
+	--- Refreshes IsWeaponized and bubbles a change one hop up to ACF_TurretAncestor. Never
+	--- recurses into a sub-turret's subtree, only reads its already-cached IsWeaponized.
 	local function UpdateWeaponized(Entity, HasDirectWeapon)
 		local Weaponized = HasDirectWeapon
 
@@ -1016,9 +1005,8 @@ do -- Metamethods
 				duplicator.StoreEntityModifier(self, "ACFGyro", {SelfTbl.Gyro:EntIndex()})
 			end
 
-			-- Lightweight Turret Controllers. Stored turret-side, not controller-side, since
-			-- the controller's link has a periodic Check that would otherwise gate the very
-			-- first paste-time relink before contraption/mass data has settled
+			-- Stored turret-side since the controller's periodic link Check would otherwise
+			-- gate the very first paste-time relink before contraption/mass data has settled
 			if SelfTbl.LightweightControllers and next(SelfTbl.LightweightControllers) then
 				local Indices = {}
 				for Controller in pairs(SelfTbl.LightweightControllers) do
@@ -1091,8 +1079,7 @@ do -- Metamethods
 			SelfTbl.Manual		= false
 
 			if isangle(Direction) then
-				-- Copy before normalizing in place, Direction may still be stored as
-				-- LastRequestedDirection/PendingDirection and must not be mutated
+				-- Copy first, Direction may still be stored elsewhere and must not be mutated
 				local Normalized = Angle(Direction)
 				Normalized:Normalize()
 				SelfTbl.DesiredAngle = Normalized
@@ -1111,17 +1098,12 @@ do -- Metamethods
 			local SelfTbl = ENTITY.GetTable(self)
 			if SelfTbl.Disabled then return end
 
-			-- Nothing changed since the last request: no-op, don't touch the cooldown at all.
-			-- Wire/E2 typically re-sends the same value every tick, so this keeps a steady
-			-- unchanged input from ever starting/extending a wait
+			-- No-op on an unchanged value, so a steady wire input never touches the cooldown
 			if SelfTbl.LastRequestedDirection == Direction then return end
 			SelfTbl.LastRequestedDirection = Direction
 
-			-- A weaponized, uncontrolled turret only accepts a new aim target once every
-			-- ACF.UncontrolledAimUpdateInterval seconds after the input actually changes.
-			-- Stabilization and slewing towards the last accepted target continue every tick
-			-- regardless. A change that arrives mid-cooldown is remembered and applied the
-			-- moment the cooldown lapses, rather than being discarded outright
+			-- Uncontrolled weaponized turrets only accept a changed aim target once every
+			-- ACF.UncontrolledAimUpdateInterval seconds; stabilization/slewing continue as normal
 			if SelfTbl.IsWeaponized and not SelfTbl.IsControlled and Clock.CurTime < SelfTbl.LastAimInputTime + ACF.UncontrolledAimUpdateInterval then
 				SelfTbl.PendingDirection = Direction
 				return
@@ -1135,8 +1117,7 @@ do -- Metamethods
 		function ENT:Think() -- The meat and POE-TAE-TOES of the turret working
 			local SelfTbl = ENTITY.GetTable(self)
 
-			-- A direction that changed mid-cooldown was deferred rather than discarded.
-			-- Apply it as soon as the cooldown lapses, without waiting for another new input
+			-- Apply a deferred mid-cooldown change once the cooldown lapses
 			if SelfTbl.PendingDirection ~= nil and Clock.CurTime >= SelfTbl.LastAimInputTime + ACF.UncontrolledAimUpdateInterval then
 				SelfTbl.LastAimInputTime = Clock.CurTime
 				local Pending = SelfTbl.PendingDirection

@@ -1039,8 +1039,7 @@ do -- Movement -----------------------------------------
 		for Ent, Link in pairs(SelfTbl.Wheels) do
 			-- If the gearbox is braking, always
 			if not Braking or not Link.IsBraking then
-				-- DriverCrewMod only affects torque actually applied to a driven entity, not
-				-- AvailTq itself, so gearbox-to-gearbox transfer above stays unaffected
+				-- Applied here, not to AvailTq, so gearbox-to-gearbox transfer stays unaffected
 				local WheelTorque = Link.ReqTq * AvailTq * DriverCrewMod
 				ReactTq = ReactTq + WheelTorque
 
