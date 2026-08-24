@@ -114,6 +114,7 @@ end
 do -- ACF global vars
 	ACF.AmmoCrates           = ACF.AmmoCrates or {}
 	ACF.FuelTanks            = ACF.FuelTanks or {}
+	ACF.ActiveCrews          = ACF.ActiveCrews or {}
 	ACF.Repositories         = ACF.Repositories or {}
 	ACF.ClientData           = ACF.ClientData or {}
 	ACF.ServerData           = ACF.ServerData or {}
@@ -369,6 +370,7 @@ do -- ACF global vars
 	ACF.ContainerMinSize   = 6 -- Defines the shortest possible length of containers (fuel tanks, supply crates) for all their axises, in gmu
 	ACF.ContainerMaxSize   = 96 -- Defines the highest possible length of containers (fuel tanks, supply crates) for all their axises, in gmu
 	ACF.FuelSupplyColor    = Color(76, 201, 250, 10) -- The color to use for the fuel supply effect
+	ACF.CrewSupplyColor    = Color(255, 80, 200, 10) -- The color to use for the crew revival supply effect
 	ACF.LiIonED            = 0.458 -- li-ion energy density: kw hours / liter
 	ACF.SupplyDistance     = 300 -- Distance in which supply units distribute mass to containers.
 	ACF.SupplyMassRate     = 0.007017 -- kg per second per cubic inch of supply unit volume (no distance attenuation)
@@ -380,10 +382,21 @@ do -- ACF global vars
 	ACF.CrewCommanderCoef 	= 0.3	-- Portion of a crew's efficiency the commander provides
 	ACF.CrewSelfCoef 		= 1.0	-- Portion of a crew's efficiency they provide
 
+	ACF.DriverEfficiencyThreshold = 0.3	-- Minimum TotalEff a Driver/Pilot needs to grant full gearbox torque
+	ACF.GunnerEfficiencyThreshold = 0.3	-- Minimum TotalEff a Gunner/Commander/Pilot needs to render a turret controlled
+	ACF.UncontrolledAimUpdateInterval = 5	-- Seconds between aim input updates on an uncontrolled weaponized turret
+	ACF.WeaponClasses = { -- Entity classes that make a turret weaponized if directly parented to it
+		acf_gun		= true,
+		acf_rack	= true
+	}
+	ACF.LightweightTurretMassLimit = 250	-- kg. Turrets at or under this carried mass can be controlled by a shared-parent Gunner, or a Lightweight Turret Controller, without needing to be mounted on it
+
 	ACF.CrewRepTimeBase 	= 3		-- Base time to replace a crew member
 	ACF.CrewRepDistToTime 	= 0.05 	-- Time it takes for crew to move one inch during replacement
 	ACF.CrewRepPrioMin 		= 1		-- Minimum priority for crew replacement
 	ACF.CrewRepPrioMax 		= 10	-- Maximum priority for crew replacement
+
+	ACF.CrewRegenFraction	= 0.05	-- Fraction of max health a living, non-full-health crew member regenerates roughly every 10 seconds
 
 	ACF.CrewSpaceLengthMod 	= 0.425	-- Changes contribution of shell length to ideal crew space
 	ACF.CrewSpaceCaliberMod = 1.0	-- Changes contribution of shell caliber to ideal crew space

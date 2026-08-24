@@ -249,6 +249,14 @@ do -- Spawn and Update functions -----------------------
 		Entity.GearRatio = Entity.Gears[1] * Entity.FinalDrive
 	end
 
+	function ENT:UpdateDriverMod()
+		local Contraption = self:CFW_GetContraption()
+		local Baseplate = Contraption and Contraption.ACF_Baseplate
+		local Val = IsEntityValid(Baseplate) and Baseplate.DriverCrewMod or ACF.CrewFallbackCoef
+		self.DriverCrewMod = Clamp(Val, ACF.CrewFallbackCoef, 1)
+		return self.DriverCrewMod
+	end
+
 	local function CheckRopes(Entity, Target)
 		local NiceName = Target == "Wheels" and "Prop" or "Gearbox"
 		local Ropes = Entity[Target]
@@ -378,6 +386,7 @@ do -- Spawn and Update functions -----------------------
 		Entity.LClutch        = 1
 		Entity.RClutch        = 1
 		Entity.DataStore      = Entities.GetArguments("acf_gearbox")
+		Entity.DriverCrewMod  = ACF.CrewFallbackCoef
 
 		duplicator.ClearEntityModifier(Entity, "mass")
 
@@ -386,6 +395,8 @@ do -- Spawn and Update functions -----------------------
 		if Class.OnSpawn then
 			Class.OnSpawn(Entity, Data, Class, Gearbox)
 		end
+
+		ACF.AugmentedTimer(function(cfg) Entity:UpdateDriverMod(cfg) end, function() return IsEntityValid(Entity) end, nil, {MinTime = 0.1, MaxTime = 0.25})
 
 		hook.Run("ACF_OnSpawnEntity", "acf_gearbox", Entity, Data, Class, Gearbox)
 
@@ -1023,11 +1034,13 @@ do -- Movement -----------------------------------------
 		end
 
 		local Braking = SelfTbl.Braking
+		local DriverCrewMod = SelfTbl.DriverCrewMod or 1
 
 		for Ent, Link in pairs(SelfTbl.Wheels) do
 			-- If the gearbox is braking, always
 			if not Braking or not Link.IsBraking then
-				local WheelTorque = Link.ReqTq * AvailTq
+				-- Applied here, not to AvailTq, so gearbox-to-gearbox transfer stays unaffected
+				local WheelTorque = Link.ReqTq * AvailTq * DriverCrewMod
 				ReactTq = ReactTq + WheelTorque
 
 				Link:TransferWheel(Ent, WheelTorque, DeltaTime)
@@ -1046,7 +1059,7 @@ do -- Movement -----------------------------------------
 		end
 
 		for Effector, Link in pairs(SelfTbl.Effectors) do
-			Link:TransferEffector(Effector, Link.ReqTq * AvailTq, DeltaTime, MassRatio, FlyRPM)
+			Link:TransferEffector(Effector, Link.ReqTq * AvailTq * DriverCrewMod, DeltaTime, MassRatio, FlyRPM)
 		end
 
 		SelfTbl.LastActive = Clock.CurTime

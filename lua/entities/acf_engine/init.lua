@@ -229,20 +229,6 @@ local function SetActive(Entity, Value, EntTbl)
 	Entity:UpdateOutputs(EntTbl)
 end
 
-do -- Random timer crew stuff
-	function ENT:FindPropagator()
-		local Temp = self:GetParent()
-		if IsValid(Temp) and Temp:GetClass() == "acf_baseplate" then return Temp end
-		return nil
-	end
-
-	function ENT:UpdateFuelMod(cfg)
-		local Propagator = self:FindPropagator(cfg)
-		local Val = Propagator and Propagator.FuelCrewMod or 0
-		self.FuelCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
-		return self.FuelCrewMod
-	end
-end
 --===============================================================================================--
 
 do -- Spawn and Update functions
@@ -409,8 +395,6 @@ do -- Spawn and Update functions
 		if Class.OnSpawn then
 			Class.OnSpawn(Entity, Data, Class, Engine)
 		end
-
-		ACF.AugmentedTimer(function(cfg) Entity:UpdateFuelMod(cfg) end, function() return IsEntityValid(Entity) end, nil, {MinTime = 0.1, MaxTime = 0.25})
 
 		hook.Run("ACF_OnSpawnEntity", "acf_engine", Entity, Data, Class, Engine)
 
@@ -721,10 +705,10 @@ function ENT:GetConsumption(Throttle, RPM, FuelTank, SelfTbl)
 	if not IsEntityValid(FuelTank) then return 0 end
 
 	if SelfTbl.FuelType == "Electric" then
-		return Throttle * SelfTbl.FuelUse * SelfTbl.Torque * RPM * 1.05e-4 / SelfTbl.FuelCrewMod
+		return Throttle * SelfTbl.FuelUse * SelfTbl.Torque * RPM * 1.05e-4
 	else
 		local IdleConsumption = SelfTbl.PeakPower * 5e2
-		return SelfTbl.FuelUse * (IdleConsumption + Throttle * SelfTbl.Torque * RPM) / FuelTank.FuelDensity / SelfTbl.FuelCrewMod
+		return SelfTbl.FuelUse * (IdleConsumption + Throttle * SelfTbl.Torque * RPM) / FuelTank.FuelDensity
 	end
 end
 

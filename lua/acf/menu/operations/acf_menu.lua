@@ -380,6 +380,7 @@ ACF.CreateMenuOperation("1-Turret", "turret")
 ACF.CreateMenuOperation("2-Motor", "turret motor")
 ACF.CreateMenuOperation("3-Gyro", "turret gyroscope")
 ACF.CreateMenuOperation("4-Computer", "turret computer")
+ACF.CreateMenuOperation("5-Controller", "turret controller")
 
 local Notify = ACF.Utilities.Notify
 ACF.CreateMenuOperation("Baseplate", "baseplate", nil, {

@@ -4,14 +4,15 @@ local Clock         = Utilities.Clock
 local Sounds        = Utilities.Sounds
 local ActiveCrates  = ACF.AmmoCrates or {}
 local ActiveTanks   = ACF.FuelTanks or {}
+local ActiveCrews   = ACF.ActiveCrews or {}
 local SupplyDist2   = (ACF.SupplyDistance or 300) * (ACF.SupplyDistance or 300)
-local CombatTimeout = 30 / engine.TickInterval() -- 30 seconds
 
-local function SupplyEffect(Entity, RefilledAmmo, RefilledFuel)
+local function SupplyEffect(Entity, RefilledAmmo, RefilledFuel, RevivedCrew)
 	net.Start("ACF_SupplyEffect")
 		net.WriteEntity(Entity)
 		net.WriteBool(RefilledAmmo)
 		net.WriteBool(RefilledFuel)
+		net.WriteBool(RevivedCrew)
 	net.Broadcast()
 end
 
@@ -21,10 +22,10 @@ local function StopSupplyEffect(Entity)
 	net.Broadcast()
 end
 
-local function SetEffectState(Entity, Active, RefilledAmmo, RefilledFuel)
+local function SetEffectState(Entity, Active, RefilledAmmo, RefilledFuel, RevivedCrew)
 	if Active and not Entity.EffectActive then
 		Entity.EffectActive = true
-		SupplyEffect(Entity, RefilledAmmo, RefilledFuel)
+		SupplyEffect(Entity, RefilledAmmo, RefilledFuel, RevivedCrew)
 	elseif not Active and Entity.EffectActive then
 		Entity.EffectActive = nil
 		StopSupplyEffect(Entity)
@@ -41,11 +42,18 @@ local function CanSupply(Supply, Target, Distance2)
 
 	if (Cap - Amount) <= 0.005 then return false end -- Treat near-full as full to avoid micro top-ups
 
-	-- Check if target's contraption is in combat
-	local TC = Target:CFW_GetContraption()
-	if TC and TC.InCombat and (engine.TickCount() - TC.InCombat) < CombatTimeout then
-		return false -- Still in combat, cannot refill
-	end
+	if ACF.IsContraptionInCombat(Target) then return false end -- Still in combat, cannot refill
+
+	return Distance2 <= SupplyDist2
+end
+
+-- Crew don't have an Amount/Capacity to top up, they're either alive or they need a full revival
+local function CanReviveCrew(Supply, Target, Distance2)
+	if Supply == Target then return false end
+	if Target.Disabled then return false end
+	if Target.IsAlive then return false end
+
+	if ACF.IsContraptionInCombat(Target) then return false end
 
 	return Distance2 <= SupplyDist2
 end
@@ -108,6 +116,16 @@ function ENT:Think()
 		end
 	end
 
+	for Target in pairs(ActiveCrews) do
+		if IsValid(Target) then
+			local Dist2 = Pos:DistToSqr(Target:GetPos())
+			if CanReviveCrew(self, Target, Dist2) then
+				Count = Count + 1
+				Recipients[Count] = Target
+			end
+		end
+	end
+
 	if Count == 0 then
 		SetEffectState(self, false)
 		return true
@@ -121,22 +139,37 @@ function ENT:Think()
 
 	local PerTargetBudget = Budget / Count
 	local UsedBudget = 0
-	local RefilledAmmo, RefilledFuel = false, false
+	local RefilledAmmo, RefilledFuel, RevivedCrew = false, false, false
 
 	for i = 1, Count do
 		local Remaining = self.Amount - UsedBudget
 		if Remaining <= 0 then break end
 
-		local Target   = Recipients[i]
-		local UnitMass = Target:GetUnitMass()
-		local Need     = Target.Capacity - Target.Amount
+		local Target = Recipients[i]
 
 		-- Determine how much mass we can transfer to this target
 		local TransferMass = math.min(PerTargetBudget, Remaining)
 
-		if Target.IsACFAmmoCrate then
+		if Target.IsACFCrew then
+			-- Crew aren't topped up gradually, they're either alive or need a full revival.
+			-- Costs the crew member's own mass, same as any other resource this crate provides
+			local ReviveCost = Target.CrewType and Target.CrewType.Mass or 0
+
+			if TransferMass >= ReviveCost then
+				Target:Restore()
+				RevivedCrew = true
+
+				Sounds.SendSound(self, "items/medshot4.wav", 70, 100, 0.5)
+				Sounds.SendSound(Target, "items/medshot4.wav", 70, 100, 0.5)
+
+				UsedBudget = UsedBudget + ReviveCost
+			end
+		elseif Target.IsACFAmmoCrate then
 			-- For ammo crates: only whole cartridges can be transferred
 			-- If we can't transfer enough mass for a full cartridge, build it up until we can
+
+			local UnitMass = Target:GetUnitMass()
+			local Need     = Target.Capacity - Target.Amount
 
 			local Buffer = (self.MassBuffers[Target] or 0) + TransferMass -- Add mass to buffer
 			local Units  = math.min(math.floor(Buffer / UnitMass), Need) -- Check if we have enough in the buffer for at least one cartridge
@@ -166,7 +199,9 @@ function ENT:Think()
 			end
 		else
 			-- For fuel tanks, transfer any fractional amount. They're liquids after all!
-			local Units = math.min(TransferMass / UnitMass, Need)
+			local UnitMass = Target:GetUnitMass()
+			local Need     = Target.Capacity - Target.Amount
+			local Units    = math.min(TransferMass / UnitMass, Need)
 
 			Target:Consume(-Units)
 			RefilledFuel = true
@@ -184,7 +219,7 @@ function ENT:Think()
 	end
 
 	-- Show effect if we're trying to refill anything
-	SetEffectState(self, true, RefilledAmmo, RefilledFuel)
+	SetEffectState(self, true, RefilledAmmo, RefilledFuel, RevivedCrew)
 
 	if UsedBudget > 0 then
 		self:Consume(UsedBudget)

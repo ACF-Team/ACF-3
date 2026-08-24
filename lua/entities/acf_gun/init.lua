@@ -3,7 +3,6 @@ This is the main server side file for the gun entity.
 
 Crew relevant functions:
 - ENT:UpdateLoadMod(LastTime) -- Updates the load modifier for the gun
-- ENT:UpdateAccuracyMod(LastTime) -- Updates the accuracy modifier for the gun
 - ENT:FindNextCrate(Current, Check, ...) -- Finds the next crate that can be used for the gun
 ]]--
 
@@ -68,7 +67,6 @@ local function CheckUnloadable(v, Gun)
 	return CheckValid(v, Gun) and v:CanRestock() and ACF.BulletEquality(v.BulletData, Gun.BulletData)
 end
 
-local ENT_UpdateAccuracyMod
 local ENT_UpdateLoadMod
 local ENT_FindPropagator
 
@@ -110,8 +108,7 @@ do -- Random timer crew stuff
 		else
 			local Sum1 = ACF.WeightedLinkSum(SelfTbl.CrewsByType.Loader or {}, GetReloadEff, self, SelfTbl.CurrentCrate or self)
 			local Sum2 = ACF.WeightedLinkSum(SelfTbl.CrewsByType.Commander or {}, GetReloadEff, self, SelfTbl.CurrentCrate or self)
-			local Sum3 = ACF.WeightedLinkSum(SelfTbl.CrewsByType.Pilot or {}, GetReloadEff, self, SelfTbl.CurrentCrate or self)
-			SelfTbl.LoadCrewMod = math.Clamp(Sum1 + Sum2 + Sum3, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
+			SelfTbl.LoadCrewMod = math.Clamp(Sum1 + Sum2, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
 		end
 
 		-- Check space behind breech
@@ -183,16 +180,6 @@ do -- Random timer crew stuff
 		return Temp
 	end
 	ENT.FindPropagator = ENT_FindPropagator
-
-	function ENT_UpdateAccuracyMod(self, Config)
-		local Propagator    = ENT_FindPropagator(self, Config)
-		local SelfTbl       = ENTITY.GetTable(self)
-		local Val = IsValid(Propagator) and ENTITY.GetTable(Propagator).AccuracyCrewMod or 0
-
-		SelfTbl.AccuracyCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
-		return SelfTbl.AccuracyCrewMod
-	end
-	ENT.UpdateAccuracyMod = ENT_UpdateAccuracyMod
 
 	function ENT:UpdateRotationFilter()
 		local SelfTbl  = ENTITY.GetTable(self)
@@ -512,7 +499,6 @@ do -- Spawn and Update functions --------------------------------
 		end
 
 		ACF.AugmentedTimer(function(Config) ENT_UpdateLoadMod(Entity, Config) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
-		ACF.AugmentedTimer(function(Config) ENT_UpdateAccuracyMod(Entity, Config) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
 		ACF.AugmentedTimer(function(Config) Entity:CheckBreechClipping(Config) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2})
 		ACF.AugmentedTimer(function(Config) Entity:UpdateRotationFilter(Config) end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 2})
 
@@ -883,7 +869,7 @@ do -- Metamethods --------------------------------
 			local SpreadScale = ACF.SpreadScale
 			local IaccMult    = math.Clamp(((1 - SpreadScale) / 0.5) * ((SelfTbl.ACF.Health / SelfTbl.ACF.MaxHealth) - 1) + 1, 1, SpreadScale)
 
-			return SelfTbl.Spread * ACF.GunInaccuracyScale * IaccMult / (SelfTbl.AccuracyCrewMod or 1)
+			return SelfTbl.Spread * ACF.GunInaccuracyScale * IaccMult
 		end
 
 		function ENT:Shoot()

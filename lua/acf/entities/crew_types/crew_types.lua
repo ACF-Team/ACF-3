@@ -58,8 +58,8 @@ end
 CrewTypes.Register("Loader", {
 	Name        = "Loader",
 	Icon		= "icon16/wand.png",
-	Description = "Loaders affect the reload rate of your guns. Link them to gun(s). They prefer standing.",
-	ExtraNotes 	= "Loaders can be linked to any gun, but their focus is split between each. Viewing loaders with the acf menu tool will visualize the space they need for peak performance in purple.",
+	Description = "Loaders affect the reload rate of your weapons. Link them to ACF Guns or Missile Racks. They prefer standing poses.",
+	ExtraNotes 	= "Loaders can link to multiple ACF Guns or Missile Racks at once, but this will spread their focus between what they're linked to. Viewing loaders with the ACF Menu tool will visualize the space they need for peak performance in purple.",
 	Cost	= 1,
 	LimitConVar	= {			-- ConVar to limit the number of crew members of this type a player can have
 		Name	= "_acf_crew_loader",
@@ -72,11 +72,11 @@ CrewTypes.Register("Loader", {
 		Max = 90,			-- Worst efficiency after this angle (Degs)
 	},
 	GForceInfo = {
-		Efficiencies = {	-- Specifying this table enables G force efficiency calculations
-			Min = 0,		-- Best efficiency before this (Gs)
+		Efficiencies = {	-- Specifying this table enables G-force efficiency calculations
+			Min = 0.5,		-- Best efficiency before this (Gs)
 			Max = 3,		-- Worst efficiency after this (Gs)
 		},
-		Damages = {			-- Specifying this table enables G force damage calculations
+		Damages = {			-- Specifying this table enables G-force damage calculations
 			Min = 5,		-- Damage starts being applied after this (Gs)
 			Max = 9,		-- Instant death after this (Gs)
 		}
@@ -110,8 +110,8 @@ CrewTypes.Register("Loader", {
 CrewTypes.Register("Gunner", {
 	Name        = "Gunner",
 	Icon		= "icon16/gun.png",
-	Description = "Gunners affect the accuracy of your gun. Link them to acf turret rings or baseplates. They prefer sitting.",
-	ExtraNotes	= "Gunners can only be linked to one type of gun and their focus does not change.",
+	Description = "Gunners provide control over weaponized turrets, letting them update their aim freely. Link them to ACF Horizontal Turrets. They prefer sitting poses.",
+	ExtraNotes	= "Gunners can only be linked to one turret. Their control benefit can propagate to Vertical turrets which are parented to the Horizontal turret if the cumulative mass of the Horizontal turret is less than 250kg, the Gunner is directly parented to the Horizontal turret, or if the Gunner is also linked to a Remote Turret Controller.",
 	Cost	= 1,
 	LimitConVar	= {
 		Name	= "_acf_crew_gunner",
@@ -125,8 +125,8 @@ CrewTypes.Register("Gunner", {
 	},
 	GForceInfo = {
 		Efficiencies = {
-			Min = 0,	-- Best efficiency before this (Gs)
-			Max = 3,	-- Worst efficiency after this (Gs)
+			Min = 1,	-- Best efficiency before this (Gs)
+			Max = 4,	-- Worst efficiency after this (Gs)
 		},
 		Damages = {
 			Min = 5,	-- Damage starts being applied after this (Gs)
@@ -138,12 +138,6 @@ CrewTypes.Register("Gunner", {
 			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
 				if CheckCount(Crew) then return false, "Gunners can only link to one entity." end
 				if Target.Turret == "Turret-V" then return false, "Gunners cannot link to vertical drives." end
-				return true, "Crew linked."
-			end
-		},
-		acf_baseplate = {
-			CanLink = function(Crew) -- Called when a crew member tries to link to an entity
-				if CheckCount(Crew, "acf_baseplate") then return false, "Gunners can only link to one acf_baseplate." end
 				return true, "Crew linked."
 			end
 		}
@@ -162,8 +156,8 @@ CrewTypes.Register("Gunner", {
 CrewTypes.Register("Driver", {
 	Name        = "Driver",
 	Icon		= "icon16/car.png",
-	Description = "Drivers affect the fuel efficiency of your engines. Link them to acf baseplates. They prefer sitting.",
-	ExtraNotes	= "Drivers can be linked to any engine and their focus does not change.",
+	Description = "Drivers permit gearboxes to apply torque to wheels at full effect. Link them to ACF Baseplates. They prefer sitting poses.",
+	ExtraNotes	= "Drivers affect all gearboxes on a contraption.",
 	Cost	= 1,
 	LimitConVar	= {
 		Name	= "_acf_crew_driver",
@@ -177,8 +171,8 @@ CrewTypes.Register("Driver", {
 	},
 	GForceInfo = {
 		Efficiencies = {
-			Min = 0,	-- Best efficiency before this (Gs)
-			Max = 3,	-- Worst efficiency after this (Gs)
+			Min = 1,	-- Best efficiency before this (Gs)
+			Max = 4,	-- Worst efficiency after this (Gs)
 		},
 		Damages = {
 			Min = 5,	-- Damage starts being applied after this (Gs)
@@ -207,8 +201,8 @@ CrewTypes.Register("Driver", {
 CrewTypes.Register("Commander", {
 	Name        = "Commander",
 	Icon		= "icon16/medal_gold_1.png",
-	Description = "Commanders coordinate the crew. Works without linking. They prefer sitting.",
-	ExtraNotes 	= "You can link them to work like gunners/loaders to operate a RWS for example. However, this reduces their focus and their ability to command the other crew.",
+	Description = "Commanders coordinate the crew, providing an efficiency bonus, which works without linking. They prefer sitting poses.",
+	ExtraNotes 	= "Commanders can additionally be linked to ACF Horizontal Turrets to serve as Gunners, or to ACF Guns or Missile Racks to serve as Loaders. However, more tasks reduces their focus to put towards each individual task, and their ability to coordinate other crew members.",
 	Cost	= 2,
 	LimitConVar	= {
 		Name	= "_acf_crew_commander",
@@ -222,7 +216,13 @@ CrewTypes.Register("Commander", {
 	},
 	GForceInfo = {
 		Efficiencies = {
-			Min = 0,		-- Best efficiency before this (Gs)
+			Min = 1,		-- Best efficiency before this (Gs)
+			Max = 4,		-- Worst efficiency after this (Gs)
+		},
+		-- Used instead of Efficiencies while linked to a gun/rack, since loading duty is
+		-- as sensitive to movement as an actual Loader's, regardless of Commander's usual tolerance
+		LoaderEfficiencies = {
+			Min = 0.5,		-- Best efficiency before this (Gs)
 			Max = 3,		-- Worst efficiency after this (Gs)
 		},
 		Damages = {
@@ -279,8 +279,8 @@ CrewTypes.Register("Commander", {
 CrewTypes.Register("Pilot", {
 	Name        = "Pilot",
 	Icon		= "icon16/weather_clouds.png",
-	Description = "Pilots can sustain higher G tolerances but weigh more (life support systems and G suits). You should only use these on aircraft.",
-	ExtraNotes 	= "Pilots do not affect anything at the moment.",
+	Description = "Pilots can sustain higher G-forces than other crew types, but weigh more to represent life support systems and a G-suit. Only usable on aircraft.",
+	ExtraNotes 	= "Pilots can perform either Driver duty when linked to an ACF Baseplate or Gunner duty when linked to an ACF Horizontal Turret, but can only perform one job.",
 	Cost	= 5,
 	LimitConVar	= {
 		Name	= "_acf_crew_pilot",
@@ -295,14 +295,6 @@ CrewTypes.Register("Pilot", {
 		}
 	},
 	LinkHandlers = {
-		acf_gun = {
-			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") or CheckCount(Crew, "acf_rack") end,
-			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_gun") or CheckCount(Crew, "acf_rack") end,
-		},
-		acf_rack = {
-			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") or CheckCount(Crew, "acf_rack") end,
-			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_gun") or CheckCount(Crew, "acf_rack") end,
-		},
 		acf_turret = {
 			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
 				if CheckCount(Crew) then return false, "Pilot can only link to one entity." end
@@ -312,7 +304,7 @@ CrewTypes.Register("Pilot", {
 		},
 		acf_baseplate = {
 			CanLink = function(Crew) -- Called when a crew member tries to link to an entity
-				if CheckCount(Crew, "acf_baseplate") then return false, "Pilot can only link to one acf_baseplate." end
+				if CheckCount(Crew) then return false, "Pilot can only link to one entity." end
 				return true, "Crew linked."
 			end
 		}

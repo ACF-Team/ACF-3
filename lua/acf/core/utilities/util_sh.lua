@@ -1268,9 +1268,9 @@ end
 
 do
 	local VECTOR = FindMetaTable("Vector")
-	--- Sets up a table to track G forces. The vectors inside are mutable!! Be careful of that!!!!
+	--- Sets up a table to track G-forces. The vectors inside are mutable!! Be careful of that!!!!
 	--- (this is for performance reasons so we don't make thousands vectors per second potentially)
-	--- Use with ACF.UpdateGForceTracker to update the G force tracker.
+	--- Use with ACF.UpdateGForceTracker to update the G-force tracker.
 	--- @param pos? Vector The initial position
 	--- @param vel? Vector The initial velocity
 	--- @param accel? Vector The initial acceleration
@@ -1303,10 +1303,10 @@ do
 
 	local DeltaTime = engine.TickInterval()
 
-	--- Returns the G force given the current position and the time since the last update.
-	--- @param tbl table The table storing the G force tracker data
+	--- Returns the G-force given the current position and the time since the last update.
+	--- @param tbl table The table storing the G-force tracker data
 	--- @param newPos Vector The new position to update the tracker with
-	--- @return number, number The G force experienced and the delta time since the last update
+	--- @return number, number The G-force experienced and the delta time since the last update
 	function ACF.UpdateGForceTracker(tbl, newPos, sampleRate)
 		if not tbl then return end
 
