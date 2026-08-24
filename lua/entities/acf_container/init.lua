@@ -13,7 +13,6 @@ ENT.Spawnable      = false
 ENT.AdminSpawnable = false
 ENT.WireAmountName = "Amount" -- Default wire output name for amount (Can be aliased to "Fuel" or "Ammo" or whatever)
 
-
 function ENT:GetUnitMass()
 	-- Returns kg per unit (e.g., kg per round, kg per liter, kg per kWh)
 	return self.UnitMass or 1
@@ -84,9 +83,9 @@ end
 
 function ENT:ACF_Activate(Recalc)
 	local Wall  = ACF.ContainerArmor * ACF.MmToInch
-	local Shape = self.Shape or "Box"
-	local ShapeCalc = ACF.ContainerShapes[Shape]
-	local Size  = self.Size or (self.GetOriginalSize and self:GetOriginalSize())
+	local Shape = self:ACF_GetUserVar("Shape")
+	local ShapeCalc = Shape and Shape.ShapeCalculation
+	local Size  = self:GetSize() or (self.GetOriginalSize and self:GetOriginalSize())
 
 	if not ShapeCalc or not Size then return end
 
@@ -113,8 +112,10 @@ end
 
 function ENT:OnResized(Size)
 	local Wall = ACF.ContainerArmor * ACF.MmToInch
-	local Shape = self.Shape or "Box"
-	local _, SurfaceArea = ACF.ContainerShapes[Shape](Size, Wall)
+	local Shape = self:ACF_GetUserVar("Shape")
+	if not Shape or not Shape.ShapeCalculation then return end
+
+	local _, SurfaceArea = Shape.ShapeCalculation(Size, Wall)
 
 	self.EmptyMass = (SurfaceArea * Wall) * ACF.InchToCmCu * ACF.SteelDensity
 end
@@ -139,8 +140,10 @@ end
 -- Returns: Volume (cu in), Capacity (liters), EmptyMass (kg)
 function ENT:CalcVolumeAndCapacity(Size)
 	local Wall  = ACF.ContainerArmor * ACF.MmToInch
-	local Shape = self.Shape or "Box"
-	local ShapeCalc = ACF.ContainerShapes[Shape]
+	local Shape = self:ACF_GetUserVar("Shape")
+	local ShapeCalc = Shape and Shape.ShapeCalculation
+	if not ShapeCalc then return 0, 0, 0 end
+
 	local Volume, Area = ShapeCalc(Size, Wall)
 
 	local Capacity  = Volume * ACF.gCmToKgIn

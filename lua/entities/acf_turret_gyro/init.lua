@@ -8,162 +8,71 @@ include("shared.lua")
 local ACF			= ACF
 local Contraption	= ACF.Contraption
 local Classes		= ACF.Classes
-local Utilities		= ACF.Utilities
-local HookRun		= hook.Run
+
+local DefaultType = "ACF.Turrets.Gyro.Single"
 
 do	-- Spawn and Update funcs
-	local WireIO	= Utilities.WireIO
-	local Entities	= Classes.Entities
-	local Turrets	= Classes.Turrets
+	function ENT:ACF_PreSpawn(_, _, _, Data)
+		self.ACF = {}
 
-	local Outputs	= {
-		"Entity (The gyroscope itself.) [ENTITY]"
-	}
+		local Sel   = Data and Data.Gyro
+		local Class = Classes.GetTypeByName(Sel and Sel.Type or DefaultType) or Classes.GetTypeByName(DefaultType)
 
-	local function VerifyData(Data)
-		if not Data.Gyro then Data.Gyro = Data.Id end
-
-		local Class = Classes.GetGroup(Turrets, Data.Gyro)
-
-		if not Class then
-			Class = Turrets.Get("3-Gyro")
-
-			Data.Destiny	= "TurretGyros"
-			Data.Gyro		= "1-Gyro"
-		end
-
-		local Gyro = Turrets.GetItem(Class.ID, Data.Gyro)
-
-		if not Gyro then
-			Gyro = Turrets.GetItem(Class.ID, "1-Gyro")
-		end
-
-		Data.ID		= Gyro.ID
-		Data.IsDual	= Gyro.IsDual
+		Contraption.SetModel(self, Class.Model)
 	end
 
-	------------------
+	function ENT:ACF_PostUpdateEntityData()
+		local Gyro    = self:ACF_GetUserVar("Gyro")
+		local Class   = Gyro:GetType()
+		local Group   = Classes.GetBaseClass(Class)
+		local WasDual = self.IsDual
 
-	local function UpdateGyro(Entity, Data, Class, Gyro)
-		Contraption.SetModel(Entity, Gyro.Model)
+		Contraption.SetModel(self, Gyro.Model)
 
-		Entity:PhysicsInit(SOLID_VPHYSICS)
-		Entity:SetMoveType(MOVETYPE_VPHYSICS)
+		self:PhysicsInit(SOLID_VPHYSICS)
+		self:SetMoveType(MOVETYPE_VPHYSICS)
 
-		Entity.Name			= Gyro.Name
-		Entity.ShortName	= Gyro.ID
-		Entity.EntType		= Class.Name
-		Entity.ClassData	= Class
-		Entity.Class		= Class.ID
-		Entity.Gyro			= Data.Gyro
-		Entity.Active		= true
-		Entity.IsDual		= Gyro.IsDual
+		self.Name      = Gyro.Name
+		self.ShortName = Gyro.ID
+		self.EntType   = Group.Name
+		self.Class     = Group.ID
+		self.Gyro      = Gyro.ID
+		self.Active    = true
+		self.IsDual    = Gyro.IsDual
 
-		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Gyro)
+		self:SetNWString("WireName", "ACF " .. self.Name)
+		self:SetNWString("Class", self.Class)
 
-		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
-		Entity:SetNWString("Class", Entity.Class)
+		-- ACF.Activate(self, true) is invoked automatically by ACF_UpdateEntityData after this.
 
-		for _, v in ipairs(Entity.DataStore) do
-			Entity[v] = Data[v]
+		local Health    = self.ACF.Health
+		local MaxHealth = self.ACF.MaxHealth
+		self.DamageScale = (Health and MaxHealth) and math.max((Health / (MaxHealth * 0.75)) - 0.25 / 0.75, 0) or 1
+
+		Contraption.SetMass(self, Gyro.Mass)
+
+		if IsValid(self.Turret) then
+			self.Turret:UpdateTurretSlew()
 		end
 
-		ACF.Activate(Entity, true)
-
-		Entity.DamageScale	= math.max((Entity.ACF.Health / (Entity.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
-
-		Contraption.SetMass(Entity, Gyro.Mass)
-
-		if IsValid(Entity.Turret) then
-			Entity.Turret:UpdateTurretSlew()
-		end
-	end
-
-	function ACF.MakeTurretGyro(Player, Pos, Angle, Data)
-		VerifyData(Data)
-
-		local Class = Classes.GetGroup(Turrets, Data.Gyro)
-		local Limit	= Class.LimitConVar.Name
-
-		if not Player:CheckLimit(Limit) then return end
-
-		local Gyro	= Turrets.GetItem(Class.ID, Data.Gyro)
-
-		local CanSpawn	= HookRun("ACF_PreSpawnEntity", "acf_turret_gyro", Player, Data, Class, Gyro)
-
-		if CanSpawn == false then return end
-
-		local Entity = ents.Create("acf_turret_gyro")
-
-		if not IsValid(Entity) then return end
-
-		Player:AddCleanup(Class.Cleanup, Entity)
-		Player:AddCount(Limit, Entity)
-
-		Entity.ACF				= {}
-
-		Contraption.SetModel(Entity, Gyro.Model)
-
-		Entity:SetAngles(Angle)
-		Entity:SetPos(Pos)
-		Entity:Spawn()
-
-		Entity.DataStore		= Entities.GetArguments("acf_turret_gyro")
-
-		UpdateGyro(Entity, Data, Class, Gyro)
-
-		HookRun("ACF_OnSpawnEntity", "acf_turret_gyro", Entity, Data, Class, Gyro)
-
-		return Entity
-	end
-
-	Entities.Register("acf_turret_gyro", ACF.MakeTurretGyro, "Gyro")
-
-	function ENT:Update(Data)
-		VerifyData(Data)
-		local Extra = ""
-
-		local Class = Classes.GetGroup(Turrets, Data.Gyro)
-		local Gyro	= Turrets.GetItem(Class.ID, Data.Gyro)
-		local OldClass	= self.ClassData
-
-		local CanUpdate, Reason	= HookRun("ACF_PreUpdateEntity", "acf_turret_gyro", self, Data, Class, Gyro)
-
-		if CanUpdate == false then return CanUpdate, Reason end
-
-		HookRun("ACF_OnEntityLast", "acf_turret_gyro", self, OldClass)
-
-		ACF.SaveEntity(self)
-
-		UpdateGyro(self, Data, Class, Gyro)
-
-		ACF.RestoreEntity(self)
-
-		HookRun("ACF_OnUpdateEntity", "acf_turret_gyro", self, Data, Class, Gyro)
-
-		if Data.IsDual ~= self.IsDual then
-			self.IsDual = Data.IsDual
-
-			if Data.IsDual then
-				if IsValid(self.Turret) then self.Turret:Unlink(self) Extra = "\nUnlinked turret drive." end
+		-- When switching between single/dual axis on an existing gyro, drop the now-invalid links.
+		if WasDual ~= nil and WasDual ~= Gyro.IsDual then
+			if Gyro.IsDual then
+				if IsValid(self.Turret) then self.Turret:Unlink(self) end
 			else -- Not dual drive gyro
 				if IsValid(self["Turret-H"]) then
 					self["Turret-H"]:Link(self) -- Relink the horizontal drive as the primary drive, if available
 					self["Turret-H"]:Unlink(self)
-					Extra = "\nUnlinked horizontal drive, relinked as primary."
 				end
 
 				if IsValid(self["Turret-V"]) then
 					if not IsValid(self["Turret-H"]) then
 						self["Turret-V"]:Link(self)
-						Extra = "\nUnlinked vertical drive, relinked as primary."
-					else Extra = Extra .. "\nUnlinked vertical drive." end
+					end
 					self["Turret-V"]:Unlink(self)
 				end
 			end
 		end
-
-		return true, "Gyro updated successfully!" .. Extra
 	end
 end
 
@@ -182,8 +91,6 @@ do	-- Metamethods and other important stuff
 			else
 				State:AddError("Inactive: " .. self.InactiveReason)
 			end
-
-			return Status
 		end
 	end
 

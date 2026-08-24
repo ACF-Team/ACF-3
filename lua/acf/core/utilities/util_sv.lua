@@ -992,12 +992,11 @@ do
 	end
 
 	function ACF.EnforceBaseplateType(Entity, AllowedType)
-		AllowedType = ACF.Classes.BaseplateTypes.Get(AllowedType)
 		local Baseplate = ACF.GetEntityBaseplate(Entity)
 		if IsValid(Baseplate) then
-			local Type = Baseplate:ACF_GetUserVar("BaseplateType")
+			local Type = Baseplate:ACF_GetUserVar("BaseplateType"):GetType()
 			if Type ~= AllowedType then
-				Notify.WarningToPlayer(Entity:CPPIGetOwner(), string.format("%s was removed due to being on an invalid baseplate type", tostring(Entity)), string.format("Got %s, expected %s", Type and Type.ID or "none", AllowedType.ID))
+				Notify.WarningToPlayer(Entity:CPPIGetOwner(), string.format("%s was removed due to being on an invalid baseplate type", tostring(Entity)), string.format("Got %s, expected %s", ACF.Classes.GetTypeName(Type), AllowedType))
 				Entity:Remove()
 				return
 			end

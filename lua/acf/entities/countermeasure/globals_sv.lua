@@ -1,5 +1,6 @@
 local ACF             = ACF
-local Countermeasures = ACF.Classes.Countermeasures
+local Classes         = ACF.Classes
+local Countermeasures = ACF.Countermeasures
 local Bullets         = ACF.Ballistics.Bullets
 local Missiles        = ACF.ActiveMissiles
 
@@ -16,7 +17,7 @@ local function OnFlareSpawn(BulletData)
 end
 
 function Countermeasures.RegisterFlare(BulletData)
-	local Flare    = Countermeasures.Get("Flare")
+	local Flare    = Classes.GetTypeByName("ACF.Countermeasures.Flare")
 	local FlareObj = Flare()
 
 	BulletData.FlareUID = FlareUID
@@ -135,7 +136,7 @@ function Countermeasures.ConeContainsPos(ConePos, ConeDir, Degrees, Position)
 end
 
 local function ApplyCountermeasure(Missile, Guidance, CounterMeasure)
-	if not CounterMeasure.AppliesTo[Guidance.Name] then return end
+	if not CounterMeasure.AppliesTo[Classes.GetTypeName(Guidance:GetType())] then return end
 
 	local Override = CounterMeasure.ApplyAll(Missile, Guidance)
 
@@ -148,7 +149,7 @@ end
 function Countermeasures.ApplyCountermeasures(Missile, Guidance)
 	if Guidance.Override then return end
 
-	local List = Countermeasures.GetList()
+	local List = Classes.GetSubtypesAsList("ACF.Countermeasures.BaseCountermeasure")
 
 	for _, CounterMeasure in ipairs(List) do
 		if not CounterMeasure.ApplyContinuous then
@@ -164,7 +165,7 @@ end
 function Countermeasures.ApplySpawnCountermeasures(Missile, Guidance)
 	if Guidance.Override then return end
 
-	local List = Countermeasures.GetList()
+	local List = Classes.GetSubtypesAsList("ACF.Countermeasures.BaseCountermeasure")
 
 	for _, CounterMeasure in ipairs(List) do
 		if CounterMeasure.ApplyContinuous then

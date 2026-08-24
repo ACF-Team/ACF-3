@@ -9,7 +9,16 @@ language.Add("SBoxLimit__acf_computer", "You've reached the ACF Computer limit!"
 local ACF        = ACF
 local Classes    = ACF.Classes
 local Clock      = ACF.Utilities.Clock
-local Components = Classes.Components
+
+-- Components are V2 classes (ACF.Components.*) with no CLASS.ID; addressed by FQN suffix.
+local function GetComponentClass(ID)
+	local Direct = Classes.GetSubtypeByName("ACF.Components.BaseComponent", ID)
+	if Direct then return Direct end
+
+	for _, Class in ipairs(Classes.GetSubtypesAsList("ACF.Components.BaseComponent")) do
+		if Classes.GetTypeName(Class):match("[^.]+$") == ID then return Class end
+	end
+end
 
 function ENT:Initialize(...)
 	BaseClass.Initialize(self, ...)
@@ -19,17 +28,19 @@ end
 
 function ENT:Update()
 	local Id = self:GetNW2String("ID")
-	local Class = Classes.GetGroup(Components, Id)
-	local Data = Class.Lookup[Id]
+	local Data = GetComponentClass(Id)
+	if not Data then return end
+
+	local Class = Classes.GetBaseClass(Data)
 
 	if self.OnLast then
 		self:OnLast()
 	end
 
-	self.OnUpdate = Data.OnUpdateCL or Class.OnUpdateCL
-	self.OnLast = Data.OnLastCL or Class.OnLastCL
-	self.OnThink = Data.OnThinkCL or Class.OnThinkCL
-	self.OnDraw = Data.OnDrawCL or Class.OnDrawCL
+	self.OnUpdate = Data.OnUpdateCL
+	self.OnLast = Data.OnLastCL
+	self.OnThink = Data.OnThinkCL
+	self.OnDraw = Data.OnDrawCL
 
 	if self.OnUpdate then
 		self:OnUpdate(Class, Data)
