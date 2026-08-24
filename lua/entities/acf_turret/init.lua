@@ -29,8 +29,6 @@ local MaxLinkDistance = ACF.LinkDistance ^ 2
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 
 do -- Random timer crew stuff
-	local LightweightMassLimit = 250 -- kg. Turrets at or under this carried mass can be controlled by a shared-parent Gunner, or a Lightweight Turret Controller, without needing to be mounted on it
-
 	--- Whether Crew renders Turret controlled, and whether that cascades to vertical drives.
 	local function CrewGrantsControl(Turret, Crew)
 		if ENTITY.GetTable(Crew).TotalEff < ACF.GunnerEfficiencyThreshold then return false, false end
@@ -44,7 +42,7 @@ do -- Random timer crew stuff
 
 		if CrewParent == Turret:GetParent() then -- Shares a parent with the turret
 			local CarriedMass = (Turret.TurretData.TotalMass or 0) + (Turret.ACF.Mass or 0)
-			if CarriedMass <= LightweightMassLimit then return true, true end
+			if CarriedMass <= ACF.LightweightTurretMassLimit then return true, true end
 			return true, false -- Controls, but no cascade to vertical drives
 		end
 

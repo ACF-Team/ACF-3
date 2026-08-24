@@ -389,6 +389,7 @@ do -- ACF global vars
 		acf_gun		= true,
 		acf_rack	= true
 	}
+	ACF.LightweightTurretMassLimit = 250	-- kg. Turrets at or under this carried mass can be controlled by a shared-parent Gunner, or a Lightweight Turret Controller, without needing to be mounted on it
 
 	ACF.CrewRepTimeBase 	= 3		-- Base time to replace a crew member
 	ACF.CrewRepDistToTime 	= 0.05 	-- Time it takes for crew to move one inch during replacement

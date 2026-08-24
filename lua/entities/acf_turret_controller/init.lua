@@ -240,7 +240,6 @@ end
 
 do	-- Lightweight Turret Controllers link to acf_turret directly, no crew involved
 	local MaxDistance = 24 * 24 -- Only close-proximity linking is allowed, tighter than standard ACF.LinkDistance
-	local MassLimit = 250 -- Total mass a turret can carry (including itself) to still be controllable by a lightweight controller
 
 	ACF.RegisterLinkSource("acf_turret_controller", "Turret")
 
@@ -268,7 +267,7 @@ do	-- Lightweight Turret Controllers link to acf_turret directly, no crew involv
 		end
 
 		local CarriedMass = (Turret.TurretData and Turret.TurretData.TotalMass or 0) + (Turret.ACF and Turret.ACF.Mass or 0)
-		if CarriedMass > MassLimit then return false, "This turret is too heavy for a Lightweight Turret Controller." end
+		if CarriedMass > ACF.LightweightTurretMassLimit then return false, "This turret is too heavy for a Lightweight Turret Controller." end
 
 		return true
 	end)
