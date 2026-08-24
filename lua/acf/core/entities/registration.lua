@@ -268,6 +268,8 @@ function ACF.Entities.AutoRegisterV2(DefineFields, SingleName, PluralName)
         PrepareWiremodFunctions(ENT)
         PrepareSerializationFunctions(ENT, ExpectedClass)
         PrepareSpawnFunctions(ENT, ExpectedClass)
-        ENT.ACF_ClassDef = nil -- Otherwise hot reloading entities completely breaks lol
+        -- TODO: Why would the comment on the bottom be true? Was this the case previously?
+        -- (probably was doing something really dumb I guess)
+        -- ENT.ACF_ClassDef = nil -- Otherwise hot reloading entities completely breaks lol
     end)
 end
