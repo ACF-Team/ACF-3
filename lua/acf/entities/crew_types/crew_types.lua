@@ -125,7 +125,7 @@ CrewTypes.Register("Gunner", {
 	},
 	GForceInfo = {
 		Efficiencies = {
-			Min = 1.5,	-- Best efficiency before this (Gs)
+			Min = 1,	-- Best efficiency before this (Gs)
 			Max = 4,	-- Worst efficiency after this (Gs)
 		},
 		Damages = {
@@ -171,7 +171,7 @@ CrewTypes.Register("Driver", {
 	},
 	GForceInfo = {
 		Efficiencies = {
-			Min = 1.5,	-- Best efficiency before this (Gs)
+			Min = 1,	-- Best efficiency before this (Gs)
 			Max = 4,	-- Worst efficiency after this (Gs)
 		},
 		Damages = {
@@ -216,7 +216,7 @@ CrewTypes.Register("Commander", {
 	},
 	GForceInfo = {
 		Efficiencies = {
-			Min = 1.5,		-- Best efficiency before this (Gs)
+			Min = 1,		-- Best efficiency before this (Gs)
 			Max = 4,		-- Worst efficiency after this (Gs)
 		},
 		-- Used instead of Efficiencies while linked to a gun/rack, since loading duty is
