@@ -735,10 +735,15 @@ do
 	-- Timer only runs while the crew actually needs healing; DamageCrew re-arms it. In-combat
 	-- has no discrete end event, so it stays a cheap in-body check instead of a Depends condition
 	function ENT:StartRegenTimer()
+		if self.RegenTimerActive then return end
+		self.RegenTimerActive = true
+
 		local Entity = self
 
 		ACF.AugmentedTimer(function(cfg) Entity:RegenerateHealth(cfg) end, function()
-			return IsEntityValid(Entity) and Entity.IsAlive and Entity.ACF.Health < Entity.ACF.MaxHealth
+			local Needed = IsEntityValid(Entity) and Entity.IsAlive and Entity.ACF.Health < Entity.ACF.MaxHealth
+			if not Needed then Entity.RegenTimerActive = false end
+			return Needed
 		end, nil, {MinTime = 10, MaxTime = 10, Delay = 0.1})
 	end
 
