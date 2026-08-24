@@ -385,6 +385,10 @@ do -- ACF global vars
 	ACF.DriverEfficiencyThreshold = 0.3	-- Minimum TotalEff a Driver/Pilot needs to grant full gearbox torque
 	ACF.GunnerEfficiencyThreshold = 0.3	-- Minimum TotalEff a Gunner/Commander/Pilot needs to render a turret controlled
 	ACF.UncontrolledAimUpdateInterval = 5	-- Seconds between aim input updates on an uncontrolled weaponized turret
+	ACF.WeaponClasses = { -- Entity classes that make a turret weaponized if directly parented to it
+		acf_gun		= true,
+		acf_rack	= true
+	}
 
 	ACF.CrewRepTimeBase 	= 3		-- Base time to replace a crew member
 	ACF.CrewRepDistToTime 	= 0.05 	-- Time it takes for crew to move one inch during replacement

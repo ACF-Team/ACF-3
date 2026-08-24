@@ -543,11 +543,6 @@ do	-- Spawn and Update funcs
 		end
 	end
 
-	local WeaponTypes = {
-		acf_gun		= true,
-		acf_rack	= true
-	}
-
 	--- Refreshes IsWeaponized and bubbles a change one hop up to ACF_TurretAncestor. Never
 	--- recurses into a sub-turret's subtree, only reads its already-cached IsWeaponized.
 	local function UpdateWeaponized(Entity, HasDirectWeapon)
@@ -590,7 +585,7 @@ do	-- Spawn and Update funcs
 		for k in pairs(ChildList) do
 			local Class = k:GetClass()
 
-			if WeaponTypes[Class] then HasDirectWeapon = true end
+			if ACF.WeaponClasses[Class] then HasDirectWeapon = true end
 
 			k.ACF_TurretAncestor = nil
 			if Class == "acf_turret" then
