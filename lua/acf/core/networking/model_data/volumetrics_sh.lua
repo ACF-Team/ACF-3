@@ -207,17 +207,15 @@ do
         local MeshData = { Convexes = {} }
 
         for _, Convex in ipairs(Meshes) do
-            local Tris    = {}
-            local NormSum = Vector(0, 0, 0)
-            local Volume  = 0
+            local Tris   = {}
+            local Volume = 0
 
             for I = 1, #Convex, 3 do
                 local A = Convex[I]
                 local B = Convex[I + 1]
                 local C = Convex[I + 2]
 
-                NormSum = NormSum + (C - A):Cross(B - A) -- Outward-facing; GetMeshConvexes triangles wind such that (B-A)x(C-A) points inward
-                Volume  = Volume + A:Dot(B:Cross(C)) -- Scalar triple product gives 6 times the volume
+                Volume = Volume + A:Dot(B:Cross(C)) -- Scalar triple product gives 6 times the volume
 
                 Tris[#Tris + 1] = { A, B, C }
             end
@@ -226,7 +224,6 @@ do
             -- are filled in below by ACF.SetConvexMaterial.
             MeshData.Convexes[#MeshData.Convexes + 1] = {
                 Tris      = Tris,
-                Normal    = NormSum:GetNormalized(),
                 Volume    = math.abs(Volume) / 6, -- Verts are in inches (Source units), so this is in^3
                 Mass      = 0,
                 Health    = 0,
@@ -473,7 +470,7 @@ local function TestTrace( ply )
 
     local start = plyTr.StartPos
     local endpos = plyTr.HitPos + dir * 10000
-    local ents = ents.FindAlongRay( start, endpos)
+    local ents = ents.FindAlongRay(start, endpos)
 
     local Intersections = {}
     for _, ent in ipairs(ents) do
