@@ -519,7 +519,12 @@ do -- Metamethods --------------------------------
 
 			local EntityTbl = ENTITY.GetTable(Entity)
 			-- Roughly: Crate must be a possible propagator, with exceptions for machineguns and aircraft
-			if EntityTbl.IsBelted and EntityTbl.Weapon ~= "ACF.Guns.Machinegun" and not ENTITY.CFW_GetContraption(Entity):ACF_IsAircraft() and ENT_FindPropagator(Entity, CrateParent) ~= CrateParent then return false end
+			if EntityTbl.IsBelted
+				and Classes.GetTypeName(EntityTbl:ACF_GetUserVar("Weapon"):GetType()) ~= "ACF.Guns.Machinegun"
+				and not ENTITY.CFW_GetContraption(Entity):ACF_IsAircraft()
+				and ENT_FindPropagator(Entity, CrateParent) ~= CrateParent then
+					return false
+				end
 			return true
 		end
 
