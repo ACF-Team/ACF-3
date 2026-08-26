@@ -61,19 +61,19 @@ do
     function CONTRAPTION:ACF_IsGroundVehicle()
         local Baseplate = self.ACF_Baseplate
         if not IsValid(Baseplate) then return false end -- We have no way of knowing...
-        return ACF.Classes.GetTypeName(Baseplate:ACF_GetUserVar("BaseplateType"):GetType()) == "GroundVehicle"
+        return ACF.Classes.GetTypeName(Baseplate:ACF_GetUserVar("BaseplateType"):GetType()) == "ACF.Baseplates.GroundVehicle"
     end
 
     function CONTRAPTION:ACF_IsAircraft()
         local Baseplate = self.ACF_Baseplate
         if not IsValid(Baseplate) then return false end -- We have no way of knowing...
-        return ACF.Classes.GetTypeName(Baseplate:ACF_GetUserVar("BaseplateType"):GetType()) == "Aircraft"
+        return ACF.Classes.GetTypeName(Baseplate:ACF_GetUserVar("BaseplateType"):GetType()) == "ACF.Baseplates.Aircraft"
     end
 
     function CONTRAPTION:ACF_IsRecreational()
         local Baseplate = self.ACF_Baseplate
         if not IsValid(Baseplate) then return false end -- We have no way of knowing...
-        return ACF.Classes.GetTypeName(Baseplate:ACF_GetUserVar("BaseplateType"):GetType()) == "Recreational"
+        return ACF.Classes.GetTypeName(Baseplate:ACF_GetUserVar("BaseplateType"):GetType()) == "ACF.Baseplates.Recreational"
     end
 
     -- todo
