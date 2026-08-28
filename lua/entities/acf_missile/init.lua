@@ -364,6 +364,7 @@ end)
 
 -- TODO: Make ACF Missiles compliant with ACF legal checks. How to deal with SetNoDraw and SetNotSolid tho
 function ACF.MakeMissile(Player, Pos, Ang, Rack, MountPoint, Crate)
+	local Owner      = IsValid(Player) and Player or game.GetWorld()
 	local BulletData = Crate.BulletData
 	local Data       = GetMissileClass(BulletData.WeaponType)
 	local Class      = Data and Classes.GetBaseClass(Data)
@@ -372,7 +373,7 @@ function ACF.MakeMissile(Player, Pos, Ang, Rack, MountPoint, Crate)
 	local Caliber    = Data.Caliber
 	local Percent    = math.max(0.5, (BulletData.ProjLength + BulletData.PropLength) / Round.MaxLength)
 
-	local CanSpawn = hook.Run("ACF_PreSpawnEntity", "acf_missile", Player, Data, Class, Crate)
+	local CanSpawn = hook.Run("ACF_PreSpawnEntity", "acf_missile", Owner, Data, Class, Crate)
 	if CanSpawn == false then return false end
 
 	local Missile = ents.Create("acf_missile")
@@ -381,12 +382,12 @@ function ACF.MakeMissile(Player, Pos, Ang, Rack, MountPoint, Crate)
 	Missile:SetAngles(Rack:LocalToWorldAngles(Ang))
 	Missile:SetPos(Rack:LocalToWorld(Pos))
 	Missile:SetColor(Crate:GetColor())
-	Missile:CPPISetOwner(Player)
-	Missile:SetPlayer(Player)
+	Missile:CPPISetOwner(Owner)
+	Missile:SetPlayer(Owner)
 	Missile:SetParent(Rack)
 	Missile:Spawn()
 
-	Missile.Owner           = Player
+	Missile.Owner           = Owner
 	Missile.Name            = Data.Name
 	Missile.ShortName       = Data.ID
 	Missile.EntType         = Class.Name
