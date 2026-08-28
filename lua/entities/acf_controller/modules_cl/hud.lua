@@ -216,7 +216,7 @@ return function(State)
             local Mat = GetHUDMaterial(HUDMaterialPath)
             local w, h = Mat:Width() * Scale, Mat:Height() * Scale
             surface.SetMaterial(Mat)
-            surface.SetDrawColor(255, 255, 255, 255)
+            surface.SetDrawColor(Col)
             surface.DrawTexturedRect(x - w / 2, y - h / 2, w, h)
             return
         end
