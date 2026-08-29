@@ -16,6 +16,8 @@ function Ammo:OnLoaded()
 
 	-- Model definitions (FlightModel defaults to MenuModel, MenuModel defaults to CrateModel)
 	self.CrateModel  = "models/acf/munitions/cartridge.mdl"
+	-- Two piece rounds stow their propellant as a separate charge, so the shell is the cased half
+	self.TwoPieceCrateModel = "models/acf/munitions/cartridge_half.mdl"
 	self.MenuModel   = "models/acf/munitions/projectile.mdl"
 	self.Bodygroup   = 0 -- Bodygroup index for crate and menu models
 	self.MenuFOV     = 60 -- Default FOV for menu preview
@@ -24,13 +26,20 @@ end
 --- Default crate model path - used to detect ammo types with custom models
 local DefaultCrateModel = "models/acf/munitions/cartridge.mdl"
 
+--- The stock crate models, whose length runs along their own Z and so need the -90 pitch correction
+local StockCrateModels = {
+	["models/acf/munitions/cartridge.mdl"]      = true,
+	["models/acf/munitions/cartridge_half.mdl"] = true,
+}
+
 --- Resolves the model to use for a given context.
 --- Precedence: Weapon Round definition > Ammo type custom model > Mortar override > Default ammo model
 --- @param Context string The context: "Crate", "Menu", or "Flight"
 --- @param Class table|nil The weapon class
 --- @param Weapon table|nil The specific weapon entry
+--- @param TwoPiece boolean|nil Crate context only: swaps the stock cartridge for its cased half
 --- @return table|nil ModelInfo Table with Model, Offset, Bodygroup, NeedsRotation, FOV
-function Ammo:ResolveModel(Context, Class, Weapon)
+function Ammo:ResolveModel(Context, Class, Weapon, TwoPiece)
 	local Round = Weapon and Weapon.Round or (Class and Class.Round)
 
 	-- Priority 1: Weapon's Round definition (missiles, bombs, etc.)
@@ -106,7 +115,9 @@ function Ammo:ResolveModel(Context, Class, Weapon)
 		ModelPath = self.FlightModel or self.MenuModel or self.CrateModel
 		Bodygroup = self.FlightBodygroup or self.Bodygroup
 	else -- "Crate" or default
-		ModelPath = self.CrateModel
+		-- Only the stock cartridge has a half variant; ammo types with their own crate model
+		-- never reach here, having been handled as a custom model above
+		ModelPath = TwoPiece and self.TwoPieceCrateModel or self.CrateModel
 		Bodygroup = self.Bodygroup
 	end
 
@@ -114,7 +125,7 @@ function Ammo:ResolveModel(Context, Class, Weapon)
 
 	local ModelData = ACF.ModelData.GetModelData(ModelPath)
 	local Offset = ModelData.Center and Vector(-ModelData.Center.x, 0, 0) or Vector()
-	local NeedsRotation = ModelPath == DefaultCrateModel
+	local NeedsRotation = StockCrateModels[ModelPath] or false
 
 	return {
 		Model         = ModelPath,

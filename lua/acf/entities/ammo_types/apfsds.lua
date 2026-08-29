@@ -178,8 +178,9 @@ else
 
 		if Length <= 0 then return end
 
-		local Scale   = DrawW / Length
-		local BoreDia = math.min(BulletData.Caliber * Scale, (h - Margin * 2) * 0.6)
+		-- Cap Scale itself by the height budget so every shape shrinks uniformly, not just the radius.
+		local Scale   = math.min(DrawW / Length, ((h - Margin * 2) * 0.6) / BulletData.Caliber)
+		local BoreDia = BulletData.Caliber * Scale
 		local CenterY = h * 0.5
 
 		local Propellant = GeoPrim.New("Cylinder", { Radius = BulletData.Caliber * 0.5, Height = BulletData.PropLength })

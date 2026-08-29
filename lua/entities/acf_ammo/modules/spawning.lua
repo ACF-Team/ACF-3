@@ -102,6 +102,16 @@ do -- Spawn/Update/Remove
 				Ammo = AmmoTypes.Get(Data.AmmoType)
 			end
 
+			-- Hex packing is a user choice rather than something inferred from the arrangement
+			Data.HexPacking = tobool(Data.HexPacking)
+			Data.TwoPiece   = tobool(Data.TwoPiece)
+
+			-- Ammo crates only use a subset of the container shapes, and the volume lookup
+			-- downstream is unguarded, so anything else has to be caught here
+			if Data.AmmoShape ~= "Box" and not ACF.IsDrumShape(Data.AmmoShape) then
+				Data.AmmoShape = "Box"
+			end
+
 			if not isnumber(Data.AmmoStage) then
 				Data.AmmoStage = 1
 			end
@@ -123,26 +133,32 @@ do -- Spawn/Update/Remove
 		-- Convert current tool data once to get projectile geometry
 		local Bullet = Ammo:ServerConvert(Data)
 
-		-- Check if this is an ammo drum (cylinder shape)
-		local IsDrum = Data.AmmoShape == "Cylinder"
+		-- The shape picks the drum layout; nil means this is a plain box crate
+		local Layout     = ACF.GetDrumLayout(Data.AmmoShape)
+		local HexPacking = Data.HexPacking
 
-		if IsDrum then
+		if Layout then
 			local roundSize = ACF.GetRoundProperties(Class, Data, Bullet)
-			local minRounds = ACF.GetMinRoundsPerRing()
-			local maxRounds = ACF.GetMaxRoundsPerRing(roundSize, ACF.AmmoMaxWidth)
-			local maxLayers = ACF.GetMaxDrumLayers(roundSize, ACF.AmmoMaxLength)
+			local minPrimary = Layout.MinPrimary
+			local maxPrimary = Layout.GetMaxPrimary(roundSize, ACF.AmmoMaxWidth, HexPacking)
+			local maxStacks  = Layout.GetMaxStacks(roundSize, ACF.AmmoMaxLength, HexPacking)
 
-			local roundsPerRing = Clamp(Floor(tonumber(Data.CrateProjectilesX) or minRounds), minRounds, maxRounds)
-			local numLayers     = Clamp(Floor(tonumber(Data.CrateProjectilesZ) or 2), 1, maxLayers)
+			-- Primary means rounds per ring on a horizontal drum, but rings on a vertical one
+			local primary   = Clamp(Floor(tonumber(Data.CrateProjectilesX) or minPrimary), minPrimary, maxPrimary)
+			local numStacks = Clamp(Floor(tonumber(Data.CrateProjectilesZ) or 2), 1, maxStacks)
 
-			Data.CrateProjectilesX = roundsPerRing
-			Data.CrateProjectilesZ = numLayers
+			Data.CrateProjectilesX = primary
+			Data.CrateProjectilesZ = numStacks
 			Data.CrateProjectilesY = 1
-			Data.Size              = ACF.GetDrumDimensions(roundsPerRing, numLayers, roundSize)
+			Data.Size              = Layout.GetDimensions(primary, numStacks, roundSize, HexPacking)
 
 			Entity:SetSize(Data.Size)
 
-			return roundsPerRing * numLayers
+			local Rounds = Layout.GetPerDisk(primary) * numStacks
+			-- Floored with no minimum: an odd cell out holds half a round, and half a round is nothing
+			if Bullet.TwoPiece then Rounds = Floor(Rounds * 0.5) end
+
+			return Rounds
 		else
 			-- Standard box crate logic
 			local cx = tonumber(Data.CrateProjectilesX)
@@ -150,7 +166,7 @@ do -- Spawn/Update/Remove
 			local cz = tonumber(Data.CrateProjectilesZ)
 
 			if not (cx and cy and cz) then
-				cx, cy, cz = ACF.GetProjectileCountsFromCrateSize(Data.Size, Class, Data, Bullet)
+				cx, cy, cz = ACF.GetProjectileCountsFromCrateSize(Data.Size, Class, Data, Bullet, HexPacking)
 			end
 
 			cx = math.max(1, Floor(cx or 3))
@@ -159,7 +175,7 @@ do -- Spawn/Update/Remove
 
 			-- Clamp counts to maximum allowed dimensions
 			local roundSize = ACF.GetRoundProperties(Class, Data, Bullet)
-			local maxX, maxY, maxZ = ACF.GetMaxCounts(roundSize, ACF.AmmoMaxLength, ACF.AmmoMaxWidth, cy, cz)
+			local maxX, maxY, maxZ = ACF.GetMaxCounts(roundSize, ACF.AmmoMaxLength, ACF.AmmoMaxWidth, HexPacking)
 
 			cx = math.min(cx, maxX)
 			cy = math.min(cy, maxY)
@@ -171,11 +187,15 @@ do -- Spawn/Update/Remove
 			Data.CrateProjectilesZ = cz
 
 			-- Recompute and apply consistent crate size from final counts
-			Data.Size = ACF.GetCrateSizeFromProjectileCounts(cx, cy, cz, Class, Data, Bullet)
+			Data.Size = ACF.GetCrateSizeFromProjectileCounts(cx, cy, cz, Class, Data, Bullet, HexPacking)
 
 			Entity:SetSize(Data.Size)
 
-			return cx * cy * cz
+			local Rounds = cx * cy * cz
+			-- Floored with no minimum: an odd cell out holds half a round, and half a round is nothing
+			if Bullet.TwoPiece then Rounds = Floor(Rounds * 0.5) end
+
+			return Rounds
 		end
 	end
 
@@ -190,7 +210,7 @@ do -- Spawn/Update/Remove
 			local AmmoType = Entity.RoundData
 
 			-- Get model info from ammo type's unified resolver
-			local ModelInfo   = AmmoType:ResolveModel("Crate", Class, Weapon)
+			local ModelInfo   = AmmoType:ResolveModel("Crate", Class, Weapon, BulletData.TwoPiece)
 			local RoundModel  = ModelInfo.Model
 			local RoundOffset = ModelInfo.Offset
 			local Bodygroup   = ModelInfo.Bodygroup
@@ -207,6 +227,9 @@ do -- Spawn/Update/Remove
 				RoundDiameter = RoundDiameter / ACF.InchToCm
 			end
 
+			-- Two-piece ammo stores each piece separately, so the rendered shell is half the round's length.
+			if BulletData.TwoPiece then RoundLength = RoundLength * 0.5 end
+
 			Entity.IsBelted = BeltFed
 			ExtraData.AmmoStage = Data.AmmoStage
 			ExtraData.IsRound = true
@@ -221,12 +244,15 @@ do -- Spawn/Update/Remove
 			ExtraData.RoundOffset = RoundOffset
 			ExtraData.Bodygroup = Bodygroup
 			ExtraData.NeedsRotation = NeedsRotation
+			ExtraData.TwoPiece = BulletData.TwoPiece or false
+			ExtraData.HexPacking = Data.HexPacking or false
 
 			-- Drum-specific data
-			ExtraData.IsDrum = Entity.Shape == "Cylinder"
+			ExtraData.IsDrum = ACF.IsDrumShape(Entity.Shape)
 			if ExtraData.IsDrum then
-				ExtraData.RoundsPerRing = Entity.CrateProjectilesX
-				ExtraData.DrumLayers = Entity.CrateProjectilesZ
+				ExtraData.DrumShape = Entity.Shape
+				ExtraData.DrumPrimary = Entity.CrateProjectilesX
+				ExtraData.DrumStacks = Entity.CrateProjectilesZ
 			end
 		else
 			ExtraData = { Enabled = false }
@@ -267,8 +293,9 @@ do -- Spawn/Update/Remove
 					net.WriteBool(IsDrum)
 
 					if IsDrum then
-						net.WriteUInt(ExtraData.RoundsPerRing, 8)
-						net.WriteUInt(ExtraData.DrumLayers, 8)
+						net.WriteString(ExtraData.DrumShape)
+						net.WriteUInt(ExtraData.DrumPrimary, 8)
+						net.WriteUInt(ExtraData.DrumStacks, 8)
 					end
 
 					local HasModel = ExtraData.RoundModel ~= nil
@@ -282,6 +309,9 @@ do -- Spawn/Update/Remove
 
 					-- Send rotation flag (true = needs -90 degree rotation for cartridge models)
 					net.WriteBool(ExtraData.NeedsRotation)
+
+					net.WriteBool(ExtraData.TwoPiece)
+					net.WriteBool(ExtraData.HexPacking)
 				end
 
 			if Player then
@@ -351,7 +381,8 @@ do -- Spawn/Update/Remove
 
 		Entity:SetNWString("WireName", "ACF " .. (WireName or WeaponName .. " Ammo Crate"))
 
-		local Percentage = Entity.Capacity and Entity.Amount / Entity.Capacity or 1
+		-- Capacity can now be zero, and 0 is truthy in Lua, so test the value rather than its presence
+		local Percentage = (Entity.Capacity or 0) > 0 and Entity.Amount / Entity.Capacity or 1
 		local MagSize    = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 0
 
 		Entity.Capacity = Rounds
@@ -398,8 +429,8 @@ do -- Spawn/Update/Remove
 
 		-- Select model based on ammo shape
 		local Model
-		if Data.AmmoShape == "Cylinder" then
-			Model = ACF.ContainerShapeModels.Cylinder or "models/acf/core/s_fuel_cyl.mdl"
+		if ACF.IsDrumShape(Data.AmmoShape) then
+			Model = ACF.ContainerShapeModels[Data.AmmoShape] or "models/acf/core/s_fuel_cyl.mdl"
 		else
 			Model = "models/holograms/hq_rcube_thin.mdl"
 		end
@@ -487,8 +518,8 @@ do -- Spawn/Update/Remove
 		local NewShape = Data.AmmoShape or "Box"
 		if NewShape ~= OldShape then
 			local Model
-			if NewShape == "Cylinder" then
-				Model = ACF.ContainerShapeModels.Cylinder or "models/acf/core/s_fuel_cyl.mdl"
+			if ACF.IsDrumShape(NewShape) then
+				Model = ACF.ContainerShapeModels[NewShape] or "models/acf/core/s_fuel_cyl.mdl"
 			else
 				Model = "models/holograms/hq_rcube_thin.mdl"
 			end
@@ -562,7 +593,9 @@ do -- Spawn/Update/Remove
 		end
 	end
 
-	Entities.Register("acf_ammo", ACF.MakeAmmo, "Weapon", "Caliber", "AmmoType", "AmmoShape", "Size", "AmmoStage", "CrateProjectilesX", "CrateProjectilesY", "CrateProjectilesZ")
+	-- Anything not listed here is absent from Entity.DataStore, so it survives neither duping nor
+	-- the ACF copy tool. Ammo-type specific settings add themselves with Entities.AddArguments.
+	Entities.Register("acf_ammo", ACF.MakeAmmo, "Weapon", "Caliber", "AmmoType", "AmmoShape", "Size", "AmmoStage", "CrateProjectilesX", "CrateProjectilesY", "CrateProjectilesZ", "HexPacking", "TwoPiece")
 
 	ACF.RegisterLinkSource("acf_ammo", "Weapons")
 end
@@ -597,6 +630,13 @@ do -- Overlay
 		State:AddDivider()
 		State:AddSize("Storage (in projectiles)", CountX, CountY, CountZ)
 		State:AddKeyValue("Ammo Type", AmmoType)
+		State:AddKeyValue("Two Piece", self.BulletData.TwoPiece and "Yes" or "No")
+		State:AddKeyValue("Hex Packing", self.HexPacking and "Yes" or "No")
+
+		local Layout = ACF.GetDrumLayout(self.Shape)
+		if Layout then
+			State:AddKeyValue("Layout", Layout.Name)
+		end
 		State:AddProgressBar("Contents", self.Amount, self.Capacity)
 
 		local BulletData = self.BulletData

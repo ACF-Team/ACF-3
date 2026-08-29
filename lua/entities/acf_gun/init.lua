@@ -631,15 +631,6 @@ do -- Metamethods --------------------------------
 				return false, "The ammo type in this crate cannot be used for this weapon."
 			end
 
-			-- Drums (Cylinder shape) can only be used by automatic weapons
-			-- The menu shouldn't be letting someone spawn a drum like this, but just in case
-			if Crate.Shape == "Cylinder" then
-				local Class = This.ClassData
-				if not (Class and Class.IsAutomatic) then
-					return false, "Drums can only be used by automatic weapons."
-				end
-			end
-
 			if not BeltFedCheck(This, Crate) then return false, "Belt fed weapons must have their ammo crate mounted on the same turret ring/baseplate." end
 
 			return true

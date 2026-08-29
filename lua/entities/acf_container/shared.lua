@@ -9,7 +9,11 @@ ENT.IsACFContainer  = true
 local ShapeModels = {
 	Box      = "models/acf/core/s_fuel.mdl",
 	Sphere   = "models/acf/core/s_sphere.mdl",
-	Cylinder = "models/acf/core/s_fuel_cyl.mdl"
+	Cylinder = "models/acf/core/s_fuel_cyl.mdl",
+
+	-- Same hull as Cylinder; ammo crates use it to pack rounds standing on end.
+	-- Fuel tanks and supply crates list their shapes explicitly, so it stays ammo-only.
+	CylinderVertical = "models/acf/core/s_fuel_cyl.mdl"
 }
 
 -- Shape calculation functions
@@ -45,6 +49,9 @@ local ShapeCalculations = {
 		return ShapeCalculations.Cylinder(Size)
 	end,
 }
+
+-- Same hull, so the same volume formula
+ShapeCalculations.CylinderVertical = ShapeCalculations.Cylinder
 
 ACF.ContainerShapes      = ShapeCalculations
 ACF.ContainerShapeModels = ShapeModels
