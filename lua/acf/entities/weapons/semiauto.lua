@@ -17,8 +17,8 @@ Weapons.Register("SA", {
 	ReloadMod 	= 0.5, -- Load time multiplier. Represents the ease of manipulating the weapon's ammunition
 	TransferMult = 4, -- Thermal energy transfer rate
 	Round = {
-		MaxLength  = 36,
-		PropLength = 29.25,
+		MaxLength  = 50.29, -- 40x311mm (Bofors L/60): 447mm overall
+		PropLength = 40.86, -- Scaled with MaxLength to hold the propellant cap
 		CaseScale  = 1.39, -- 40x311mm (Bofors L/60): 55.62mm case over a 40mm projectile
 	},
 	Preview = {

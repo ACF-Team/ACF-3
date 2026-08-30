@@ -18,8 +18,8 @@ Weapons.Register("AC", {
 	TransferMult = 20, -- Thermal energy transfer rate
 	CyclicCeilMult = 2, -- How high above base cyclic the gun can be set to
 	Round = {
-		MaxLength  = 40, -- Relative to the Base caliber, in cm
-		PropLength = 32.5, -- Relative to the Base caliber, in cm
+		MaxLength  = 55.26, -- 35x228mm (Bushmaster III): 386.84mm overall. Relative to the Base caliber, in cm
+		PropLength = 44.9, -- Scaled with MaxLength to hold the propellant cap
 		CaseScale  = 1.37, -- 35x228mm (Bushmaster III): 48mm case over a 35mm projectile
 	},
 	Preview = {

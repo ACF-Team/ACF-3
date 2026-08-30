@@ -14,9 +14,9 @@ Weapons.Register("SC", {
 	ScaleFactor = 1.0, -- Corrective factor to account for improperly scaled base models
 	TransferMult = 4, -- Thermal energy transfer rate
 	Round = {
-		MaxLength  = 80,
-		PropLength = 65,
-		Efficiency = 0.8,
+		MaxLength  = 104.28, -- 90x353mm (Cockerill 90mm): 938.5mm overall
+		PropLength = 84.73, -- Scaled with MaxLength to hold the propellant cap
+		Efficiency = 0.7, -- Roughly half a cannon's barrel; velocity goes as L^0.25, so energy as L^0.5
 		CaseScale  = 1.04, -- 90x353mm (Cockerill 90mm): 94mm case over a 90mm projectile
 	},
 	Preview = {
