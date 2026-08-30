@@ -77,11 +77,16 @@ else
 		if Length <= 0 then return end
 
 		-- Cap Scale itself by the height budget so every shape shrinks uniformly, not just the radius.
-		local Scale   = math.min(DrawW / Length, ((h - Margin * 2) * 0.6) / BulletData.Caliber)
-		local BoreDia = BulletData.Caliber * Scale
+		-- The case, not the bore, is the widest part of a necked round, so it sets the budget.
+		local CaseDia = ACF.GetCaseDiameter(BulletData)
+
+		if CaseDia <= 0 then return end
+
+		local Scale   = math.min(DrawW / Length, ((h - Margin * 2) * 0.6) / CaseDia)
+		local MaxDia  = CaseDia * Scale
 		local CenterY = h * 0.5
 
-		local Propellant = GeoPrim.New("Cylinder", { Radius = BulletData.Caliber * 0.5, Height = BulletData.PropLength })
+		local Propellant = GeoPrim.New("Cylinder", { Radius = CaseDia * 0.5, Height = BulletData.PropLength })
 		Propellant:SetMaterial("Propellant")
 
 		-- Fused body, full bore diameter, wraps the core's entire length
@@ -93,16 +98,16 @@ else
 		Core:SetMaterial("Steel Core")
 
 		local X = Margin
-		X = Propellant:Draw(Panel, X, CenterY, Scale, BoreDia, Color(180, 150, 60), Color(30, 30, 30))
+		X = Propellant:Draw(Panel, X, CenterY, Scale, MaxDia, Color(180, 150, 60), Color(30, 30, 30))
 		local CoreX = X
-		Body:Draw(Panel, X, CenterY, Scale, BoreDia, Color(150, 150, 155), Color(30, 30, 30))
-		Core:Draw(Panel, CoreX, CenterY, Scale, BoreDia, Color(120, 120, 130), Color(30, 30, 30))
+		Body:Draw(Panel, X, CenterY, Scale, MaxDia, Color(150, 150, 155), Color(30, 30, 30))
+		Core:Draw(Panel, CoreX, CenterY, Scale, MaxDia, Color(120, 120, 130), Color(30, 30, 30))
 
 		-- Tracer drawn last (not as a Core child) so it takes hover priority and renders red, not gray.
 		if BulletData.Tracer and BulletData.Tracer > 0 then
 			local Tracer = GeoPrim.New("Cylinder", { Radius = BulletData.Diameter * 0.5, Height = BulletData.Tracer })
 			Tracer:SetMaterial("Tracer")
-			Tracer:Draw(Panel, CoreX, CenterY, Scale, BoreDia, Color(220, 40, 30), Color(30, 30, 30))
+			Tracer:Draw(Panel, CoreX, CenterY, Scale, MaxDia, Color(220, 40, 30), Color(30, 30, 30))
 		end
 	end
 end

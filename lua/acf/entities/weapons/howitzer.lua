@@ -17,6 +17,7 @@ Weapons.Register("HW", {
 		MaxLength  = 90,
 		PropLength = 90,
 		Efficiency = 0.65,
+		CaseScale  = 1, -- Bagged charges rather than a case, so nothing wider than the projectile
 	},
 	Preview = {
 		FOV = 65,

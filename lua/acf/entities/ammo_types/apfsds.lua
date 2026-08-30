@@ -179,11 +179,16 @@ else
 		if Length <= 0 then return end
 
 		-- Cap Scale itself by the height budget so every shape shrinks uniformly, not just the radius.
-		local Scale   = math.min(DrawW / Length, ((h - Margin * 2) * 0.6) / BulletData.Caliber)
-		local BoreDia = BulletData.Caliber * Scale
+		-- The case, not the bore, is the widest part of a necked round, so it sets the budget.
+		local CaseDia = ACF.GetCaseDiameter(BulletData)
+
+		if CaseDia <= 0 then return end
+
+		local Scale   = math.min(DrawW / Length, ((h - Margin * 2) * 0.6) / CaseDia)
+		local MaxDia  = CaseDia * Scale
 		local CenterY = h * 0.5
 
-		local Propellant = GeoPrim.New("Cylinder", { Radius = BulletData.Caliber * 0.5, Height = BulletData.PropLength })
+		local Propellant = GeoPrim.New("Cylinder", { Radius = CaseDia * 0.5, Height = BulletData.PropLength })
 		Propellant:SetMaterial("Propellant")
 
 		-- Discarding sabot, full bore diameter, only wraps the rear portion of the rod
@@ -197,13 +202,13 @@ else
 		Penetrator:SetMaterial("Tungsten Penetrator")
 
 		local X = Margin
-		X = Propellant:Draw(Panel, X, CenterY, Scale, BoreDia, Color(180, 150, 60), Color(30, 30, 30))
+		X = Propellant:Draw(Panel, X, CenterY, Scale, MaxDia, Color(180, 150, 60), Color(30, 30, 30))
 		local SabotX = X
 		-- Telescoped rounds have the rod reaching back into the propellant/case by TelescopeLength,
 		-- so the rod is drawn starting that far behind the sabot instead of flush with it.
 		local RodX = X - TelescopeLengthCm * Scale
-		Sabot:Draw(Panel, SabotX, CenterY, Scale, BoreDia, Color(150, 150, 155), Color(30, 30, 30))
-		Penetrator:Draw(Panel, RodX, CenterY, Scale, BoreDia, Color(90, 95, 100), Color(30, 30, 30))
+		Sabot:Draw(Panel, SabotX, CenterY, Scale, MaxDia, Color(150, 150, 155), Color(30, 30, 30))
+		Penetrator:Draw(Panel, RodX, CenterY, Scale, MaxDia, Color(90, 95, 100), Color(30, 30, 30))
 
 		-- Tracer, a colored segment at the very base of the rod -- behind the telescoped tail buried
 		-- in the case, not just behind the sabot -- drawn last (and not as a Rod child -- Draw() paints
@@ -212,7 +217,7 @@ else
 		if BulletData.Tracer and BulletData.Tracer > 0 then
 			local Tracer = GeoPrim.New("Cylinder", { Radius = BulletData.Diameter * 0.5, Height = BulletData.Tracer })
 			Tracer:SetMaterial("Tracer")
-			Tracer:Draw(Panel, RodX, CenterY, Scale, BoreDia, Color(220, 40, 30), Color(30, 30, 30))
+			Tracer:Draw(Panel, RodX, CenterY, Scale, MaxDia, Color(220, 40, 30), Color(30, 30, 30))
 		end
 	end
 end

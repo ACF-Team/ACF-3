@@ -20,6 +20,7 @@ Weapons.Register("AC", {
 	Round = {
 		MaxLength  = 40, -- Relative to the Base caliber, in cm
 		PropLength = 32.5, -- Relative to the Base caliber, in cm
+		CaseScale  = 1.37, -- 35x228mm (Bushmaster III): 48mm case over a 35mm projectile
 	},
 	Preview = {
 		Height = 80,

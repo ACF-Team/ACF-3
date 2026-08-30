@@ -282,7 +282,7 @@ do -- ACF global vars
 
 	-- Ammo
 	ACF.AmmoPadding          = 0.3 -- Ratio of wasted space to projectile case diameter
-	ACF.AmmoCaseScale        = 1 -- How much larger the diameter of the case is versus the projectile (necked cartridges, M829 is 1.4, .50 BMG is 1.6)
+	ACF.AmmoCaseScale        = 1 -- Fallback max case/projectile diameter ratio when a Round omits CaseScale
 	ACF.AmmoMinSize          = 6 -- Defines the shortest possible length of ammo crates for all their axises, in gmu
 	ACF.AmmoMaxLength        = 192 -- Defines the highest possible length of ammo crates for the X axis (length), in gmu
 	ACF.AmmoMaxWidth         = 96 -- Defines the highest possible width of ammo crates for the Y and Z axes (width/height), in gmu

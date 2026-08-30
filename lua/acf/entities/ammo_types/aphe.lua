@@ -159,8 +159,13 @@ else
 
 		if Length <= 0 then return end
 
-		local Scale      = DrawW / Length
-		local DiameterPx = math.min(Diameter * Scale, (h - Margin * 2) * 0.6)
+		-- Cap Scale by the case, the widest part, so the case/bore step survives the height budget
+		local CaseDia = ACF.GetCaseDiameter(BulletData)
+
+		if CaseDia <= 0 then return end
+
+		local Scale      = math.min(DrawW / Length, ((h - Margin * 2) * 0.6) / CaseDia)
+		local DiameterPx = CaseDia * Scale
 		local CenterY    = h * 0.5
 		local Radius     = Diameter * 0.5
 
@@ -174,7 +179,7 @@ else
 		local _, CavityLenCm, CavityRadius = ACF.RoundShellCapacity(BulletData.PropMass, BulletData.ProjArea, BulletData.Caliber, BulletData.ProjLength)
 		local FillerLenCm = CavityLenCm * FillerRatio
 
-		local Propellant = GeoPrim.New("Cylinder", { Radius = Radius, Height = BulletData.PropLength })
+		local Propellant = GeoPrim.New("Cylinder", { Radius = CaseDia * 0.5, Height = BulletData.PropLength })
 		Propellant:SetMaterial("Propellant")
 
 		-- Steel casing spans the whole body at the full outer radius, drawn first as the "hull" so
@@ -236,6 +241,7 @@ else
 		local RoundStats = Base:AddLabel()
 		RoundStats:TrackClientData("RoundLength", "SetText")
 		RoundStats:TrackClientData("PropRatio")
+		RoundStats:TrackClientData("CaseScale")
 		RoundStats:TrackClientData("FillerRatio")
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
@@ -265,6 +271,7 @@ else
 		local MaxPen = Base:AddLabel()
 		MaxPen:TrackClientData("RoundLength", "SetText")
 		MaxPen:TrackClientData("PropRatio")
+		MaxPen:TrackClientData("CaseScale")
 		MaxPen:TrackClientData("FillerRatio")
 		MaxPen:DefineSetter(function()
 			local Text		= language.GetPhrase("acf.menu.ammo.pen_stats_ap")

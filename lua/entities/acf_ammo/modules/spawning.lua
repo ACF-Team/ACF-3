@@ -221,7 +221,7 @@ do -- Spawn/Update/Remove
 			local RoundLength, RoundDiameter = ACF.GetModelDimensions(Round)
 
 			if not RoundLength then
-				RoundDiameter = Caliber * ACF.AmmoCaseScale * 0.1
+				RoundDiameter = Caliber * (BulletData.CaseScale or ACF.GetMaxCaseScale(Class, Weapon)) * 0.1
 				RoundLength = BulletData.RoundLength or (BulletData.PropLength + BulletData.ProjLength)
 				RoundLength = RoundLength / ACF.InchToCm
 				RoundDiameter = RoundDiameter / ACF.InchToCm

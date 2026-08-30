@@ -256,6 +256,7 @@ local function CreateMenu(Menu)
 
 	EntData:TrackClientData("RoundLength", "SetText")
 	EntData:TrackClientData("PropRatio")
+	EntData:TrackClientData("CaseScale") -- Reload time keys off CartMass, which necking moves
 	EntData:TrackClientData("Tracer")
 	EntData:TrackClientData("Caliber")
 	local function Update()

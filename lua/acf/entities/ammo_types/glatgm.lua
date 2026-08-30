@@ -134,6 +134,7 @@ else
 		local LinerAngle = Base:AddSlider("Liner Angle", BulletData.MinConeAng, 90, 1)
 		LinerAngle:SetClientData("LinerAngle", "OnValueChanged")
 		LinerAngle:TrackClientData("RoundLength")
+		LinerAngle:TrackClientData("CaseScale") -- MinConeAng derives from PropMass
 		LinerAngle:DefineSetter(function(Panel, _, Key, Value)
 			if Key == "LinerAngle" then
 				ToolData.LinerAngle = math.Round(Value, 2)
@@ -162,6 +163,7 @@ else
 		local RoundStats = Base:AddLabel()
 		RoundStats:TrackClientData("RoundLength", "SetText")
 		RoundStats:TrackClientData("PropRatio")
+		RoundStats:TrackClientData("CaseScale")
 		RoundStats:TrackClientData("LinerAngle")
 		RoundStats:TrackClientData("StandoffRatio")
 		RoundStats:DefineSetter(function()
@@ -197,6 +199,7 @@ else
 		local Penetrator = Base:AddLabel()
 		Penetrator:TrackClientData("RoundLength", "SetText")
 		Penetrator:TrackClientData("PropRatio")
+		Penetrator:TrackClientData("CaseScale")
 		Penetrator:TrackClientData("LinerAngle")
 		Penetrator:TrackClientData("StandoffRatio")
 		Penetrator:DefineSetter(function()
@@ -214,6 +217,7 @@ else
 		local PenStats = Base:AddLabel()
 		PenStats:TrackClientData("RoundLength", "SetText")
 		PenStats:TrackClientData("PropRatio")
+		PenStats:TrackClientData("CaseScale")
 		PenStats:TrackClientData("LinerAngle")
 		PenStats:TrackClientData("StandoffRatio")
 		PenStats:DefineSetter(function()

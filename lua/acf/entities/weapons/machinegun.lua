@@ -19,6 +19,7 @@ Weapons.Register("MG", {
 	Round = {
 		MaxLength  = 16,
 		PropLength = 13,
+		CaseScale  = 1.61, -- 12.7x99mm (.50 BMG): 20.4mm case over a 12.7mm projectile
 	},
 	Preview = {
 		Height = 60,

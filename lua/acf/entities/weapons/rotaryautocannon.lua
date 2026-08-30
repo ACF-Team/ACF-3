@@ -20,6 +20,7 @@ Weapons.Register("RAC", {
 	Round = {
 		MaxLength  = 16,
 		PropLength = 13,
+		CaseScale  = 1.46, -- 37x219mm (T250 rotary): 54mm case over a 37mm projectile
 	},
 	Preview = {
 		Height = 90,

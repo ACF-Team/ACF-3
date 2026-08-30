@@ -82,11 +82,16 @@ else
 		if Length <= 0 then return end
 
 		-- Cap Scale itself by the height budget so every shape shrinks uniformly, not just the radius.
-		local Scale   = math.min(DrawW / Length, ((h - Margin * 2) * 0.6) / BulletData.Caliber)
-		local BoreDia = BulletData.Caliber * Scale
+		-- The case, not the bore, is the widest part of a necked round, so it sets the budget.
+		local CaseDia = ACF.GetCaseDiameter(BulletData)
+
+		if CaseDia <= 0 then return end
+
+		local Scale   = math.min(DrawW / Length, ((h - Margin * 2) * 0.6) / CaseDia)
+		local MaxDia  = CaseDia * Scale
 		local CenterY = h * 0.5
 
-		local Propellant = GeoPrim.New("Cylinder", { Radius = BulletData.Caliber * 0.5, Height = BulletData.PropLength })
+		local Propellant = GeoPrim.New("Cylinder", { Radius = CaseDia * 0.5, Height = BulletData.PropLength })
 		Propellant:SetMaterial("Propellant")
 
 		-- Discarding sabot, full bore diameter, only wraps the rear portion of the dart
@@ -99,10 +104,10 @@ else
 		Penetrator:SetMaterial("Steel Penetrator")
 
 		local X = Margin
-		X = Propellant:Draw(Panel, X, CenterY, Scale, BoreDia, Color(180, 150, 60), Color(30, 30, 30))
+		X = Propellant:Draw(Panel, X, CenterY, Scale, MaxDia, Color(180, 150, 60), Color(30, 30, 30))
 		local DartX = X
-		Sabot:Draw(Panel, X, CenterY, Scale, BoreDia, Color(150, 150, 155), Color(30, 30, 30))
-		Penetrator:Draw(Panel, DartX, CenterY, Scale, BoreDia, Color(120, 120, 130), Color(30, 30, 30))
+		Sabot:Draw(Panel, X, CenterY, Scale, MaxDia, Color(150, 150, 155), Color(30, 30, 30))
+		Penetrator:Draw(Panel, DartX, CenterY, Scale, MaxDia, Color(120, 120, 130), Color(30, 30, 30))
 
 		-- Tracer, a colored segment at the base of the dart, drawn last (and not as a Dart child --
 		-- Draw() paints an entire subtree in one Color, so a child never gets a color of its own) so it
@@ -110,7 +115,7 @@ else
 		if BulletData.Tracer and BulletData.Tracer > 0 then
 			local Tracer = GeoPrim.New("Cylinder", { Radius = BulletData.Diameter * 0.5, Height = BulletData.Tracer })
 			Tracer:SetMaterial("Tracer")
-			Tracer:Draw(Panel, DartX, CenterY, Scale, BoreDia, Color(220, 40, 30), Color(30, 30, 30))
+			Tracer:Draw(Panel, DartX, CenterY, Scale, MaxDia, Color(220, 40, 30), Color(30, 30, 30))
 		end
 	end
 end

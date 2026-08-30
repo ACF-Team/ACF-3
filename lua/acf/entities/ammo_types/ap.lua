@@ -203,12 +203,13 @@ if SERVER then
 	local Entities   = Classes.Entities
 	local Conversion	= ACF.PointConversion
 
-	Entities.AddArguments("acf_ammo", "RoundLength", "PropRatio", "Tracer") -- Adding extra info to ammo crates
+	Entities.AddArguments("acf_ammo", "RoundLength", "PropRatio", "Tracer", "CaseScale") -- Adding extra info to ammo crates
 
 	function Ammo:OnLast(Entity)
 		Entity.RoundLength = nil
 		Entity.PropRatio = nil
 		Entity.Tracer = nil
+		Entity.CaseScale = nil
 
 		-- Cleanup the leftovers aswell (including pre-RoundLength/PropRatio legacy fields)
 		Entity.Projectile = nil
@@ -369,11 +370,16 @@ else
 
 		if Length <= 0 then return end
 
-		local Scale      = DrawW / Length
-		local DiameterPx = math.min(Diameter * Scale, (h - Margin * 2) * 0.6)
+		-- Cap Scale by the case, the widest part, so the case/bore step survives the height budget
+		local CaseDia = ACF.GetCaseDiameter(BulletData)
+
+		if CaseDia <= 0 then return end
+
+		local Scale      = math.min(DrawW / Length, ((h - Margin * 2) * 0.6) / CaseDia)
+		local DiameterPx = CaseDia * Scale
 		local CenterY    = h * 0.5
 
-		local Propellant = GeoPrim.New("Cylinder", { Radius = Diameter * 0.5, Height = BulletData.PropLength })
+		local Propellant = GeoPrim.New("Cylinder", { Radius = CaseDia * 0.5, Height = BulletData.PropLength })
 		Propellant:SetMaterial("Propellant")
 
 		local Penetrator = GeoPrim.New("Cylinder", { Radius = Diameter * 0.5, Height = BulletData.ProjLength })
@@ -450,12 +456,14 @@ else
 	function Ammo:OnCreateCrateInformation(_, Label)
 		Label:TrackClientData("RoundLength")
 		Label:TrackClientData("PropRatio")
+		Label:TrackClientData("CaseScale")
 	end
 
 	function Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
 		local RoundStats = Base:AddLabel()
 		RoundStats:TrackClientData("RoundLength", "SetText")
 		RoundStats:TrackClientData("PropRatio")
+		RoundStats:TrackClientData("CaseScale")
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
@@ -470,6 +478,7 @@ else
 		local MaxPenLabel = Base:AddLabel()
 		MaxPenLabel:TrackClientData("RoundLength", "SetText")
 		MaxPenLabel:TrackClientData("PropRatio")
+		MaxPenLabel:TrackClientData("CaseScale")
 		MaxPenLabel:TrackClientData("FillerRatio")
 		MaxPenLabel:TrackClientData("TelescopeRatio")
 		MaxPenLabel:DefineSetter(function()

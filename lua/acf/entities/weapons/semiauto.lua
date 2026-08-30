@@ -19,6 +19,7 @@ Weapons.Register("SA", {
 	Round = {
 		MaxLength  = 36,
 		PropLength = 29.25,
+		CaseScale  = 1.39, -- 40x311mm (Bofors L/60): 55.62mm case over a 40mm projectile
 	},
 	Preview = {
 		FOV = 70,

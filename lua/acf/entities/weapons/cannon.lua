@@ -57,6 +57,7 @@ Weapons.Register("C", {
 	Round = {
 		MaxLength  = 80,
 		PropLength = 65,
+		CaseScale  = 1.33, -- 120x570mm (M256): 160mm case over a 120mm projectile
 	},
 	Preview = {
 		Height = 50,

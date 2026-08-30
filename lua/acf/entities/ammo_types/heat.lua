@@ -484,11 +484,17 @@ else
 
 		if Length <= 0 then return end
 
-		local Scale      = DrawW / Length
-		local DiameterPx = math.min(Diameter * Scale, (h - Margin * 2) * 0.6)
+		-- Cap Scale by the case, the widest part, so the case/bore step survives the height budget
+		local CaseDia = ACF.GetCaseDiameter(BulletData)
+
+		if CaseDia <= 0 then return end
+
+		local Scale      = math.min(DrawW / Length, ((h - Margin * 2) * 0.6) / CaseDia)
+		local DiameterPx = CaseDia * Scale
+		local BoreDiaPx  = Diameter * Scale -- The warhead's own width, which the standoff probe keys off
 		local CenterY    = h * 0.5
 
-		local Propellant = GeoPrim.New("Cylinder", { Radius = Diameter * 0.5, Height = BulletData.PropLength })
+		local Propellant = GeoPrim.New("Cylinder", { Radius = CaseDia * 0.5, Height = BulletData.PropLength })
 		Propellant:SetMaterial("Propellant")
 
 		local Warhead = GeoPrim.New("Cylinder", { Radius = Diameter * 0.5, Height = BulletData.ProjLength })
@@ -512,8 +518,8 @@ else
 			local StandoffDiameterMm = math.Round(Diameter * 0.5 * 10)
 
 			surface.SetDrawColor(255, 200, 60, 120)
-			surface.DrawRect(X, CenterY - DiameterPx * 0.25, StandoffPx, DiameterPx * 0.5)
-			Panel:AddRegion(X, CenterY - DiameterPx * 0.25, StandoffPx, DiameterPx * 0.5, ("Standoff Probe\n%dx%d mm"):format(StandoffDiameterMm, StandoffMm))
+			surface.DrawRect(X, CenterY - BoreDiaPx * 0.25, StandoffPx, BoreDiaPx * 0.5)
+			Panel:AddRegion(X, CenterY - BoreDiaPx * 0.25, StandoffPx, BoreDiaPx * 0.5, ("Standoff Probe\n%dx%d mm"):format(StandoffDiameterMm, StandoffMm))
 		end
 	end
 
@@ -541,6 +547,7 @@ else
 		local LinerAngle = Base:AddSlider("#acf.menu.ammo.liner_angle", BulletData.MinConeAng, 90, 1)
 		LinerAngle:SetClientData("LinerAngle", "OnValueChanged")
 		LinerAngle:TrackClientData("RoundLength")
+		LinerAngle:TrackClientData("CaseScale") -- MinConeAng derives from PropMass
 		LinerAngle:DefineSetter(function(Panel, _, Key, Value)
 			if Key == "LinerAngle" then
 				ToolData.LinerAngle = math.Round(Value, 2)
@@ -578,6 +585,7 @@ else
 		local RoundStats = Base:AddLabel()
 		RoundStats:TrackClientData("RoundLength", "SetText")
 		RoundStats:TrackClientData("PropRatio")
+		RoundStats:TrackClientData("CaseScale")
 		RoundStats:TrackClientData("LinerAngle")
 		RoundStats:TrackClientData("LinerAngleRatio")
 		RoundStats:TrackClientData("StandoffRatio")
@@ -596,6 +604,7 @@ else
 		local FillerStats = Base:AddLabel()
 		FillerStats:TrackClientData("RoundLength", "SetText")
 		FillerStats:TrackClientData("PropRatio")
+		FillerStats:TrackClientData("CaseScale")
 		FillerStats:TrackClientData("LinerAngle")
 		FillerStats:TrackClientData("LinerAngleRatio")
 		FillerStats:TrackClientData("StandoffRatio")
@@ -613,6 +622,7 @@ else
 		local Penetrator = Base:AddLabel()
 		Penetrator:TrackClientData("RoundLength", "SetText")
 		Penetrator:TrackClientData("PropRatio")
+		Penetrator:TrackClientData("CaseScale")
 		Penetrator:TrackClientData("LinerAngle")
 		Penetrator:TrackClientData("LinerAngleRatio")
 		Penetrator:TrackClientData("StandoffRatio")
@@ -631,6 +641,7 @@ else
 		local PenStats = Base:AddLabel()
 		PenStats:TrackClientData("RoundLength", "SetText")
 		PenStats:TrackClientData("PropRatio")
+		PenStats:TrackClientData("CaseScale")
 		PenStats:TrackClientData("LinerAngle")
 		PenStats:TrackClientData("LinerAngleRatio")
 		PenStats:TrackClientData("StandoffRatio")

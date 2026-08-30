@@ -20,6 +20,7 @@ Weapons.Register("LAC", {
 	Round = {
 		MaxLength  = 32,
 		PropLength = 26,
+		CaseScale  = 1.08, -- 30x90mm (MK 108): 32.3mm case over a 30mm projectile
 	},
 	LongBarrel = {
 		Index    = 2,

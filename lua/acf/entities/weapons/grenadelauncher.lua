@@ -21,6 +21,7 @@ Weapons.Register("GL", {
 	Round = {
 		MaxLength  = 10,
 		PropLength = 1,
+		CaseScale  = 1, -- Straight-walled, case diameter is roughly the projectile diameter
 	},
 	Preview = {
 		FOV = 75,

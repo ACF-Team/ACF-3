@@ -122,11 +122,16 @@ else
 
 		if Length <= 0 then return end
 
-		local Scale      = DrawW / Length
-		local DiameterPx = math.min(Diameter * Scale, (h - Margin * 2) * 0.6)
+		-- Cap Scale by the case, the widest part, so the case/bore step survives the height budget
+		local CaseDia = ACF.GetCaseDiameter(BulletData)
+
+		if CaseDia <= 0 then return end
+
+		local Scale      = math.min(DrawW / Length, ((h - Margin * 2) * 0.6) / CaseDia)
+		local DiameterPx = CaseDia * Scale
 		local CenterY    = h * 0.5
 
-		local Propellant = GeoPrim.New("Cylinder", { Radius = Radius, Height = BulletData.PropLength })
+		local Propellant = GeoPrim.New("Cylinder", { Radius = CaseDia * 0.5, Height = BulletData.PropLength })
 		Propellant:SetMaterial("Propellant")
 
 		local Penetrator = GeoPrim.New("Cylinder", { Radius = Radius, Height = BulletData.ProjLength })
@@ -180,6 +185,7 @@ else
 		local RoundStats = Base:AddLabel()
 		RoundStats:TrackClientData("RoundLength", "SetText")
 		RoundStats:TrackClientData("PropRatio")
+		RoundStats:TrackClientData("CaseScale")
 		RoundStats:TrackClientData("HollowRatio")
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
@@ -195,6 +201,7 @@ else
 		local HollowStats = Base:AddLabel()
 		HollowStats:TrackClientData("RoundLength", "SetText")
 		HollowStats:TrackClientData("PropRatio")
+		HollowStats:TrackClientData("CaseScale")
 		HollowStats:TrackClientData("HollowRatio")
 		HollowStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
@@ -209,6 +216,7 @@ else
 		local PenStats = Base:AddLabel()
 		PenStats:TrackClientData("RoundLength", "SetText")
 		PenStats:TrackClientData("PropRatio")
+		PenStats:TrackClientData("CaseScale")
 		PenStats:TrackClientData("HollowRatio")
 		PenStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)

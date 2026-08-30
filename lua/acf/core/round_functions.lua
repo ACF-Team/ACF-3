@@ -4,6 +4,18 @@ local math     = math
 local MM_TO_CM = ACF.MmToInch * ACF.InchToCm -- Millimeters to centimeters
 
 
+--- Ceiling for ToolData.CaseScale: the widest a class lets a round's case neck out past its projectile
+function ACF.GetMaxCaseScale(Class, Weapon)
+	local Round = (Weapon and Weapon.Round) or (Class and Class.Round)
+
+	return (Round and Round.CaseScale) or ACF.AmmoCaseScale
+end
+
+--- Case outer diameter in cm, off bore caliber -- a subcaliber penetrator doesn't narrow the case
+function ACF.GetCaseDiameter(BulletData)
+	return (BulletData.Caliber or 0) * (BulletData.CaseScale or 1)
+end
+
 local function GetWeaponSpecs(ToolData)
 	local Source = Classes[ToolData.Destiny]
 	local Class  = Classes.GetGroup(Source, ToolData.Weapon)
@@ -22,11 +34,12 @@ local function GetWeaponSpecs(ToolData)
 		local Weapon = Source.GetItem(Class.ID, ToolData.Weapon)
 		local Round  = Weapon.Round
 
-		Result.Caliber    = Weapon.Caliber
-		Result.MaxLength  = Round.MaxLength
-		Result.PropLength = Round.PropLength
-		Result.ProjLength = Round.ProjLength
-		Result.Efficiency = Round.Efficiency
+		Result.Caliber      = Weapon.Caliber
+		Result.MaxLength    = Round.MaxLength
+		Result.PropLength   = Round.PropLength
+		Result.ProjLength   = Round.ProjLength
+		Result.Efficiency   = Round.Efficiency
+		Result.MaxCaseScale = ACF.GetMaxCaseScale(Class, Weapon)
 	else
 		local Bounds  = Class.Caliber
 		local Round   = Class.Round
@@ -34,11 +47,12 @@ local function GetWeaponSpecs(ToolData)
 		local Scale   = Caliber / Bounds.Base
 		local ProjLen = Round.ProjLength
 
-		Result.Caliber    = Caliber
-		Result.MaxLength  = Round.MaxLength * Scale
-		Result.PropLength = Round.PropLength * Scale
-		Result.ProjLength = ProjLen and ProjLen * Scale
-		Result.Efficiency = Round.Efficiency
+		Result.Caliber      = Caliber
+		Result.MaxLength    = Round.MaxLength * Scale
+		Result.PropLength   = Round.PropLength * Scale
+		Result.ProjLength   = ProjLen and ProjLen * Scale
+		Result.Efficiency   = Round.Efficiency
+		Result.MaxCaseScale = ACF.GetMaxCaseScale(Class)
 	end
 
 	return Result
@@ -50,21 +64,25 @@ function ACF.RoundBaseGunpowder(ToolData, Data)
 
 	if not Specs then return Data, GUIData end
 
-	local Length    = math.Round(Specs.MaxLength * (Data.LengthAdj or 1), 2)
-	local Radius    = Specs.Caliber * MM_TO_CM * 0.5 -- Radius in cm
-	local CaseScale = ToolData.CasingScale or ACF.AmmoCaseScale
+	local Length = math.Round(Specs.MaxLength * (Data.LengthAdj or 1), 2)
+	local Radius = Specs.Caliber * MM_TO_CM * 0.5 -- Radius in cm
 
 	Data.Caliber    = Specs.Caliber * MM_TO_CM -- Bullet caliber will have to stay in cm
 	Data.Diameter   = Data.Caliber * (Data.ProjScale or 1) -- Real caliber of the projectile
 	Data.ProjArea   = math.pi * (Radius * (Data.ProjScale or 1)) ^ 2
-	Data.PropArea   = math.pi * (Radius * (Data.PropScale or 1) * CaseScale) ^ 2
 	Data.Efficiency = Specs.Efficiency or 1
+
+	-- Un-necked case area; UpdateRoundSpecs scales it into PropArea, since only that re-runs per slider
+	Data.PropAreaBase = math.pi * (Radius * (Data.PropScale or 1)) ^ 2
+	Data.MaxCaseScale = Specs.MaxCaseScale or ACF.AmmoCaseScale
 
 	GUIData.MaxRoundLength = Length
 	GUIData.MinPropLength  = 0.01
 	GUIData.MinProjLength  = math.Round(Data.Caliber * 1.5, 2)
 	GUIData.MaxPropLength  = math.min(Specs.PropLength, Length - GUIData.MinProjLength)
 	GUIData.MaxProjLength  = math.min(Specs.ProjLength or Length, Length - GUIData.MinPropLength)
+	GUIData.MinCaseScale   = 1
+	GUIData.MaxCaseScale   = Data.MaxCaseScale
 
 	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
@@ -95,6 +113,17 @@ function ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 
 	Data.Tracer = ToolData.Tracer and math.Round(Data.Caliber * 0.15, 2) or 0
 	Data.TwoPiece = ToolData.TwoPiece or false
+
+	-- Defaults to 1 so pre-slider dupes aren't silently buffed, matching where AddSlider seeds the var
+	local MaxCaseScale = Data.MaxCaseScale or ACF.AmmoCaseScale
+	local CaseScale    = math.Clamp(ToolData.CaseScale or 1, 1, MaxCaseScale)
+
+	Data.CaseScale = CaseScale -- Case diameter is Caliber * CaseScale: the widest point of the round
+
+	-- Recomputed from the base, not scaled in place, so repeated slider updates don't compound
+	if Data.PropAreaBase then
+		Data.PropArea = Data.PropAreaBase * CaseScale * CaseScale
+	end
 
 	local MinLength   = GUIData.MinProjLength + GUIData.MinPropLength
 	local RoundLength = math.Clamp(ToolData.RoundLength or 0, MinLength, GUIData.MaxRoundLength)
@@ -330,7 +359,8 @@ do -- MARK: Ammo capacity
 			return Vector(Length, Diameter, Diameter)
 		end
 
-		Diameter = Caliber * ACF.AmmoCaseScale * MM_TO_CM
+		-- The case, not the projectile, sizes the cylinder the crate has to find room for
+		Diameter = Caliber * (BulletData.CaseScale or ACF.GetMaxCaseScale(Class, Weapon)) * MM_TO_CM
 		-- RoundLength, not PropLength + ProjLength -- ProjLength already includes any telescoped
 		-- overlap into the propellant, so summing them would double-count that overlap.
 		Length   = BulletData.RoundLength or (BulletData.PropLength + BulletData.ProjLength)

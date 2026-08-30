@@ -300,6 +300,19 @@ local function AddControls(Base, ToolData)
 		return Text:format(CurLength, MaxLength)
 	end)
 
+	-- What makes a round's stowed diameter exceed its caliber
+	local RoundDiameter = Base:AddLabel()
+	RoundDiameter:TrackClientData("Caliber", "SetText", "GetText")
+	RoundDiameter:TrackClientData("Weapon")
+	RoundDiameter:TrackClientData("CaseScale")
+	RoundDiameter:DefineSetter(function()
+		local Text      = language.GetPhrase("acf.menu.ammo.round_diameter")
+		local Caliber   = BulletData.Caliber or 0
+		local CaseScale = BulletData.CaseScale or 1
+
+		return Text:format(math.Round(Caliber * CaseScale, 2), math.Round(CaseScale, 2))
+	end)
+
 	-- RoundLength and PropRatio are the actual stored/networked round dimensions (see
 	-- round_functions.lua's ACF.UpdateRoundSpecs) -- ProjLength/PropLength are just derived from
 	-- them for display and mass/volume math. Each slider is bound straight to its own real
@@ -334,6 +347,22 @@ local function AddControls(Base, ToolData)
 		UpdateProjectileCountLimits(ToolData, BulletData, true)
 
 		return BulletData.PropRatio
+	end)
+
+	-- Classes allowing no necking cap at 1, leaving DNumSlider a degenerate min == max range
+	local CaseScale = Base:AddSlider("#acf.menu.ammo.case_scale", 1, BulletData.MaxCaseScale, 2)
+	CaseScale:SetClientData("CaseScale", "OnValueChanged")
+	CaseScale:DefineSetter(function(Panel, _, _, Value)
+		ToolData.CaseScale = Value
+
+		Ammo:UpdateRoundData(ToolData, BulletData)
+
+		Panel:SetValue(BulletData.CaseScale)
+
+		-- A wider case is a wider round, so the crate's projectile counts have to be refit
+		UpdateProjectileCountLimits(ToolData, BulletData, true)
+
+		return BulletData.CaseScale
 	end)
 
 	if Ammo.OnCreateAmmoControls then
@@ -378,6 +407,7 @@ local function AddCrateInformation(Base, ToolData)
 	-- Track projectile dimensions so crate size updates when ammo config changes
 	Crate:TrackClientData("RoundLength")
 	Crate:TrackClientData("PropRatio")
+	Crate:TrackClientData("CaseScale")
 	Crate:TrackClientData("Tracer")
 	Crate:DefineSetter(function()
 		UpdateBoxSizeFromProjectileCounts(ToolData, BulletData)
@@ -440,6 +470,7 @@ local function AddPenetrationTable(Base, ToolData)
 	PenTable.SetCellValue(5, 1, "60 " .. language.GetPhrase("acf.menu.ammo.pen_table_deg"))
 	PenTable:TrackClientData("RoundLength", "SetText")
 	PenTable:TrackClientData("PropRatio")
+	PenTable:TrackClientData("CaseScale")
 	PenTable:TrackClientData("FillerRatio")
 	PenTable:TrackClientData("LinerAngle")
 	PenTable:TrackClientData("LinerAngleRatio")
@@ -489,6 +520,7 @@ local function AddVisual(Base, ToolData)
 
 	Visual:TrackClientData("RoundLength")
 	Visual:TrackClientData("PropRatio")
+	Visual:TrackClientData("CaseScale")
 	Visual:TrackClientData("Tracer")
 	Visual:TrackClientData("FillerRatio")
 	Visual:TrackClientData("LinerAngle")
@@ -541,6 +573,7 @@ local function AddGraph(Base, ToolData)
 
 	Graph:TrackClientData("RoundLength")
 	Graph:TrackClientData("PropRatio")
+	Graph:TrackClientData("CaseScale")
 	Graph:TrackClientData("FillerRatio")
 	Graph:TrackClientData("LinerAngle")
 	Graph:TrackClientData("LinerAngleRatio")
@@ -817,6 +850,7 @@ function ACF.CreateAmmoMenu(Menu)
 	Size:TrackClientData("TwoPiece")
 	Size:TrackClientData("RoundLength") -- Update when round dimensions change
 	Size:TrackClientData("PropRatio")
+	Size:TrackClientData("CaseScale")
 	Size:TrackClientData("Tracer")
 	Size:DefineSetter(function()
 		-- Recalculate BoxSize to ensure we have the latest values

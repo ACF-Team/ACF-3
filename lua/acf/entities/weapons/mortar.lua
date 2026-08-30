@@ -17,6 +17,7 @@ Weapons.Register("MO", {
 	Round = {
 		MaxLength  = 40,
 		PropLength = 3,
+		CaseScale  = 1, -- Propellant rings sit under the fins, narrower than the projectile itself
 	},
 	Preview = {
 		Height = 80,

@@ -222,11 +222,17 @@ else
 
 		if Length <= 0 then return end
 
-		local Scale      = DrawW / Length
-		local DiameterPx = math.min(Diameter * Scale, (h - Margin * 2) * 0.6)
+		-- Cap Scale by the case, the widest part, so the case/bore step survives the height budget
+		local CaseDia = ACF.GetCaseDiameter(BulletData)
+
+		if CaseDia <= 0 then return end
+
+		local Scale      = math.min(DrawW / Length, ((h - Margin * 2) * 0.6) / CaseDia)
+		local DiameterPx = CaseDia * Scale
+		local BoreDiaPx  = Diameter * Scale -- The canister's own width, which the dart rows fill
 		local CenterY    = h * 0.5
 
-		local Propellant = GeoPrim.New("Cylinder", { Radius = Radius, Height = BulletData.PropLength })
+		local Propellant = GeoPrim.New("Cylinder", { Radius = CaseDia * 0.5, Height = BulletData.PropLength })
 		Propellant:SetMaterial("Propellant")
 
 		-- Canister body: a thin-walled cup carrying the flechette bundle
@@ -252,14 +258,14 @@ else
 		-- Illustrative rows of the packed flechette darts inside the cup (not a literal 1:1 count,
 		-- and not modeled as GeoPrim children -- it's a decorative pattern, not a physical shape
 		-- anything queries the volume of)
-		local DartDia = math.max(DiameterPx * 0.12, 2)
-		local Rows    = math.max(math.floor(DiameterPx / (DartDia * 1.4)), 1)
+		local DartDia = math.max(BoreDiaPx * 0.12, 2)
+		local Rows    = math.max(math.floor(BoreDiaPx / (DartDia * 1.4)), 1)
 		local InnerX  = ProjX + ProjW * 0.1
 		local InnerW  = ProjW * 0.8
 
 		surface.SetDrawColor(90, 95, 100)
 		for Row = 1, Rows do
-			local RowY = CenterY - DiameterPx * 0.5 + (Row - 0.5) * (DiameterPx / Rows)
+			local RowY = CenterY - BoreDiaPx * 0.5 + (Row - 0.5) * (BoreDiaPx / Rows)
 
 			surface.DrawRect(InnerX, RowY - DartDia * 0.5, InnerW, DartDia)
 		end
@@ -267,7 +273,7 @@ else
 		local InnerLengthMm = math.Round(BulletData.ProjLength * 0.8 * 10)
 		local InnerDiameterMm = math.Round(Radius * 2 * 10)
 
-		Panel:AddRegion(InnerX, CenterY - DiameterPx * 0.5, InnerW, DiameterPx, ("%d Flechettes (Steel Darts)\n%dx%d mm"):format(BulletData.Flechettes or 0, InnerDiameterMm, InnerLengthMm))
+		Panel:AddRegion(InnerX, CenterY - BoreDiaPx * 0.5, InnerW, BoreDiaPx, ("%d Flechettes (Steel Darts)\n%dx%d mm"):format(BulletData.Flechettes or 0, InnerDiameterMm, InnerLengthMm))
 	end
 
 	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
@@ -306,6 +312,7 @@ else
 		local RoundStats = Menu:AddLabel()
 		RoundStats:TrackClientData("RoundLength", "SetText")
 		RoundStats:TrackClientData("PropRatio")
+		RoundStats:TrackClientData("CaseScale")
 		RoundStats:TrackClientData("Flechettes")
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
@@ -322,6 +329,7 @@ else
 		local PenStats = Menu:AddLabel()
 		PenStats:TrackClientData("RoundLength", "SetText")
 		PenStats:TrackClientData("PropRatio")
+		PenStats:TrackClientData("CaseScale")
 		PenStats:TrackClientData("Flechettes")
 		PenStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
