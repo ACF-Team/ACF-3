@@ -128,10 +128,12 @@ function ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 	local MinLength   = GUIData.MinProjLength + GUIData.MinPropLength
 	local RoundLength = math.Clamp(ToolData.RoundLength or 0, MinLength, GUIData.MaxRoundLength)
 
-	-- The ratio's valid window shrinks as RoundLength approaches either component's own max,
-	-- so neither ProjLength nor PropLength can be pushed past its individual cap.
+	-- RatioMax is measured against MaxRoundLength, not RoundLength, so the propellant fraction is a
+	-- per-class constant rather than one that climbs as the round is shortened. Dividing the class's
+	-- fixed MaxPropLength by a shrinking RoundLength let any sub-maximum round reach a ratio of 1,
+	-- leaving a zero-length projectile and a zero ProjMass for MuzzleVelocity and DragCoef to divide by.
 	local RatioMin = math.max(0, 1 - GUIData.MaxProjLength / RoundLength)
-	local RatioMax = math.min(1, GUIData.MaxPropLength / RoundLength)
+	local RatioMax = math.min(1, GUIData.MaxPropLength / GUIData.MaxRoundLength)
 	local PropRatio = math.Clamp(ToolData.PropRatio or 0, RatioMin, RatioMax)
 
 	local PropLength = math.Round(RoundLength * PropRatio, 2)
