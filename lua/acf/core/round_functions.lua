@@ -399,7 +399,7 @@ do -- MARK: Ammo capacity
 			return Vector(arrangement.x, arrangement.y, arrangement.z) * roundSize, false
 		end
 
-		function ACF.GetRoundOffset(x, y, z, roundSize, arrangement, hexPack)
+		function ACF.GetRoundOffset(x, y, z, roundSize, hexPack)
 			local localX = (x - 1) * roundSize.x
 
 			if hexPack then

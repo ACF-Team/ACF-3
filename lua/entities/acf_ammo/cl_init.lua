@@ -325,7 +325,7 @@ do --MARK: Ammo rendering
 					for z = 1, fits.z do
 						-- Only create models we don't have yet
 						if index > previousSlots and index <= countSlots then
-							local localGridPos  = getRoundOffset( x, y, z, roundSize, fits, self.IsHexPacked )
+							local localGridPos  = getRoundOffset( x, y, z, roundSize, self.IsHexPacked )
 							local localModelPos = localStartPos + localGridPos + modelOffset
 
 							local slotPath, slotScale, slotBodygroup = GetSlotModel( z - 1 )
