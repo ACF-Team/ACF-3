@@ -5,6 +5,8 @@ local AmmoTypes = Classes.AmmoTypes
 local Ammo      = AmmoTypes.Register("APHE", "AP")
 local Clock 	= ACF.Utilities.Clock
 
+local MAX_FUZE_DELAY = 0.1 -- Longest delay a fuze can be set to, in seconds; also the menu slider's ceiling
+
 function Ammo:OnLoaded()
 	Ammo.BaseClass.OnLoaded(self)
 
@@ -12,6 +14,7 @@ function Ammo:OnLoaded()
 	self.SpawnIcon   = "acf/icons/shell_aphe.png"
 	self.Bodygroup   = 1 -- APHE bodygroup index
 	self.Description = "#acf.descs.ammo.aphe"
+	self.HasDelayFuze = true -- Can be given a penetration triggered delay fuze
 	self.Blacklist = {
 		GL = true,
 		MG = true,
@@ -27,6 +30,15 @@ function Ammo:GetPenetration(Bullet, Speed)
 	end
 
 	return ACF.Penetration(Speed, Bullet.ProjMass, Bullet.Diameter * 10) * (1 - Bullet.FillerRatio)
+end
+
+--- Inverse of GetPenetration; undoes the filler penalty so recovered speed doesn't lose pen per layer.
+function Ammo:CalcSpeed(Bullet, Penetration)
+	local Solid = 1 - Bullet.FillerRatio
+
+	if Solid <= 0 then return 0 end
+
+	return ACF.CalcSpeed(Penetration / Solid, Bullet.ProjMass, Bullet.Diameter * 10)
 end
 
 function Ammo:GetDisplayData(Data)
@@ -59,6 +71,12 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	Data.CartMass   = Data.PropMass + Data.ProjMass
 	Data.FillerRatio = math.Clamp(ToolData.FillerRatio, 0, 1)
 
+	-- Depth is capped by muzzle penetration, or arming would require more than the round can ever defeat.
+	local MaxPen = self:GetPenetration(Data, Data.MuzzleVel)
+
+	Data.PenFuze   = Data.CanFuze and math.Clamp(ToolData.PenFuze or 0, 0, MaxPen) or 0
+	Data.FuzeDelay = Data.PenFuze > 0 and math.Clamp(ToolData.FuzeDelay or 0, 0, MAX_FUZE_DELAY) or 0
+
 	hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
 
 	for K, V in pairs(self:GetDisplayData(Data)) do
@@ -87,6 +105,14 @@ function Ammo:VerifyData(ToolData)
 	if not isnumber(ToolData.FillerRatio) then
 		ToolData.FillerRatio = 1
 	end
+
+	if not isnumber(ToolData.PenFuze) then
+		ToolData.PenFuze = 0
+	end
+
+	if not isnumber(ToolData.FuzeDelay) then
+		ToolData.FuzeDelay = 0
+	end
 end
 
 if SERVER then
@@ -94,7 +120,7 @@ if SERVER then
 	local Objects  = Damage.Objects
 	local Conversion	= ACF.PointConversion
 
-	Entities.AddArguments("acf_ammo", "FillerRatio") -- Adding extra info to ammo crates
+	Entities.AddArguments("acf_ammo", "FillerRatio", "PenFuze", "FuzeDelay") -- Adding extra info to ammo crates
 
 	function Ammo:GetCost(BulletData)
 		return ((BulletData.ProjMass - BulletData.FillerMass) * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.CompB)
@@ -104,6 +130,8 @@ if SERVER then
 		Ammo.BaseClass.OnLast(self, Entity)
 
 		Entity.FillerRatio = nil
+		Entity.PenFuze     = nil
+		Entity.FuzeDelay   = nil
 
 		-- Cleanup the leftovers aswell
 		Entity.FillerMass  = nil
@@ -124,6 +152,65 @@ if SERVER then
 		local Data = self:GetDisplayData(BulletData)
 		State:AddNumber("Blast Radius", Data.BlastRadius, " m", 2)
 		State:AddNumber("Blast Energy", BulletData.FillerMass * ACF.HEPower, " kJ", 2)
+
+		if (BulletData.PenFuze or 0) > 0 then
+			State:AddNumber("Fuze Depth", BulletData.PenFuze, " mm RHA", 2)
+			State:AddNumber("Fuze Delay", BulletData.FuzeDelay, " s", 3)
+		end
+	end
+
+	--- Delay fuze: tracks armor defeated, then hands detonation to the flight loop's fuze timer once armed.
+	local function TrackPenFuze(Bullet, Result, Before, ExitPos)
+		-- Only a real penetration spends capacity; ACF-ignored targets also return "Penetrated" but change nothing.
+		if Result ~= "Penetrated" then return Result end
+
+		local Defeated = (Bullet.PenDefeated or 0) + (Before - Bullet:GetPenetration())
+
+		Bullet.PenDefeated = Defeated
+
+		if Defeated < Bullet.PenFuze then return Result end
+
+		Bullet.PenFuzeArmed = true
+
+		local Delay = Bullet.FuzeDelay or 0
+
+		-- No delay: detonate at the exit point now rather than waiting for the next tick boundary.
+		if Delay <= 0 then
+			Bullet.DetByFuze = true
+			Bullet.Pos       = ExitPos
+
+			return false
+		end
+
+		local Time = Clock.CurTime + Delay
+
+		-- Whichever fuze, the weapon's or this one, runs out first wins.
+		Bullet.Fuze = Bullet.Fuze and math.min(Bullet.Fuze, Time) or Time
+
+		return Result
+	end
+
+	function Ammo:PropImpact(Bullet, Trace)
+		if (Bullet.PenFuze or 0) <= 0 or Bullet.PenFuzeArmed then
+			return Ammo.BaseClass.PropImpact(self, Bullet, Trace)
+		end
+
+		local Before = Bullet:GetPenetration()
+		local Result = Ammo.BaseClass.PropImpact(self, Bullet, Trace)
+
+		return TrackPenFuze(Bullet, Result, Before, Bullet.ConvexHit and Bullet.ConvexHit.ExitPos or Trace.HitPos)
+	end
+
+	-- World penetration rescales Flight the same way, so GetPenetration() before/after still measures it; only NextPos (no ConvexHit here) differs.
+	function Ammo:WorldImpact(Bullet, Trace)
+		if (Bullet.PenFuze or 0) <= 0 or Bullet.PenFuzeArmed then
+			return Ammo.BaseClass.WorldImpact(self, Bullet, Trace)
+		end
+
+		local Before = Bullet:GetPenetration()
+		local Result = Ammo.BaseClass.WorldImpact(self, Bullet, Trace)
+
+		return TrackPenFuze(Bullet, Result, Before, Bullet.NextPos)
 	end
 
 	function Ammo:OnFlightEnd(Bullet, Trace)
@@ -229,6 +316,45 @@ else
 
 			return BulletData.FillerVol
 		end)
+
+		-- Skipped by HE (no penetration to fuze on) and below the timed fuze's caliber gate.
+		if not self.HasDelayFuze or not BulletData.CanFuze then return end
+
+		local function GetMaxDepth()
+			return math.max(BulletData.MaxPen or 0, 1)
+		end
+
+		-- Tracks anything that moves the round's penetration, since that's this slider's ceiling.
+		local PenFuze = Base:AddSlider("#acf.menu.ammo.pen_fuze", 0, GetMaxDepth(), 0)
+		PenFuze:SetClientData("PenFuze", "OnValueChanged")
+		PenFuze:TrackClientData("FillerRatio")
+		PenFuze:TrackClientData("RoundLength")
+		PenFuze:TrackClientData("PropRatio")
+		PenFuze:TrackClientData("CaseScale")
+		PenFuze:DefineSetter(function(Panel, _, Key, Value)
+			if Key == "PenFuze" then
+				ToolData.PenFuze = math.Round(Value)
+			end
+
+			self:UpdateRoundData(ToolData, BulletData)
+
+			Panel:SetMinMax(0, GetMaxDepth())
+			Panel:SetValue(BulletData.PenFuze)
+
+			return BulletData.PenFuze
+		end)
+
+		local FuzeDelay = Base:AddSlider("#acf.menu.ammo.fuze_delay", 0, MAX_FUZE_DELAY, 3)
+		FuzeDelay:SetClientData("FuzeDelay", "OnValueChanged")
+		FuzeDelay:DefineSetter(function(Panel, _, _, Value)
+			ToolData.FuzeDelay = math.Round(Value, 3)
+
+			self:UpdateRoundData(ToolData, BulletData)
+
+			Panel:SetValue(BulletData.FuzeDelay)
+
+			return BulletData.FuzeDelay
+		end)
 	end
 
 	function Ammo:OnCreateCrateInformation(Base, Label, ...)
@@ -277,6 +403,27 @@ else
 			local Text		= language.GetPhrase("acf.menu.ammo.pen_stats_ap")
 			local MaxPen	= math.Round(BulletData.MaxPen, 2)
 			return Text:format(MaxPen)
+		end)
+
+		local FuzeStats = Base:AddLabel()
+		FuzeStats:TrackClientData("PenFuze", "SetText")
+		FuzeStats:TrackClientData("FuzeDelay")
+		FuzeStats:TrackClientData("RoundLength")
+		FuzeStats:TrackClientData("PropRatio")
+		FuzeStats:TrackClientData("CaseScale")
+		FuzeStats:TrackClientData("FillerRatio")
+		FuzeStats:DefineSetter(function()
+			self:UpdateRoundData(ToolData, BulletData)
+
+			if BulletData.PenFuze <= 0 then
+				return language.GetPhrase("acf.menu.ammo.fuze_stats_none")
+			end
+
+			local Text  = language.GetPhrase("acf.menu.ammo.fuze_stats_aphe")
+			local Depth = math.Round(BulletData.PenFuze, 2)
+			local Delay = math.Round(BulletData.FuzeDelay, 3)
+
+			return Text:format(Depth, Delay)
 		end)
 	end
 end

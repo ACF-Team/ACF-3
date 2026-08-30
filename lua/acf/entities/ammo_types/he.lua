@@ -11,6 +11,7 @@ function Ammo:OnLoaded()
 	self.Bodygroup   = 5 -- HE bodygroup index
 	self.MortarBodygroup = 0 -- HE mortar submodel
 	self.Description = "#acf.descs.ammo.he"
+	self.HasDelayFuze = false -- Never penetrates, so there is nothing to fuze on
 	self.Blacklist = {
 		MG = true,
 		RAC = true,
