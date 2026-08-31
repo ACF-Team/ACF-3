@@ -293,8 +293,8 @@ do
 end
 
 -- Returns every triangle the ray pierces as { Pos, Normal, ConvexID, T, Entity, IsEntry }, unsorted.
--- IsEntry is true when the ray crosses into the face. The ray is a forward half-line: hits behind
--- Start clamp to T = 0 / Pos = Start, so a convex the ray began inside still yields an entry.
+-- IsEntry is true when the ray crosses into the face. The ray is a forward half-line, so a convex
+-- the ray began inside only yields its exit here; the missing entry is synthesized below at T = 0.
 -- Filter (optional): a per-entity set { [ConvexID] = true } of convexes to treat as transparent.
 function ACF.RayIntersectMesh(Entity, Start, Direction, IncludeDead, Filter)
     local MeshData = Entity.ACF_Volumetric_Mesh
@@ -302,6 +302,8 @@ function ACF.RayIntersectMesh(Entity, Start, Direction, IncludeDead, Filter)
 
     local Hits    = {}
     local NormDir = Direction:GetNormalized()
+    local MaxDist = 1e5 -- far beyond any convex mesh's extent, so the ray behaves as a half-line
+    local End     = Start + NormDir * MaxDist
 
     for ConvexID, Convex in ipairs(MeshData.Convexes) do
         if Convex.Health <= 0 and not IncludeDead then continue end -- destroyed convex is transparent to projectiles
@@ -314,23 +316,13 @@ function ACF.RayIntersectMesh(Entity, Start, Direction, IncludeDead, Filter)
             local B = Entity:LocalToWorld(Tri[2])
             local C = Entity:LocalToWorld(Tri[3])
 
-            -- GetMeshConvexes triangles wind such that (C-A)x(B-A) points outward (same as ProcessConvexes)
-            local Normal = (C - A):Cross(B - A):GetNormalized()
-
-            local P = util.IntersectRayWithPlane(Start, NormDir, A, Normal)
+            local P, Frac = util.IntersectRayWithTriangle(Start, End, A, B, C)
             if not P then continue end
 
-            -- Make sure the point is within the triangle, not just its plane
-            if (B - A):Cross(P - A):Dot(Normal) > 0 then continue end
-            if (C - B):Cross(P - B):Dot(Normal) > 0 then continue end
-            if (A - C):Cross(P - C):Dot(Normal) > 0 then continue end
-
-            -- Entry when the outward normal opposes the ray. Clamp hits behind Start onto it so a
-            -- convex the ray started inside still yields an entry at T = 0.
+            -- GetMeshConvexes triangles wind such that (C-A)x(B-A) points outward (same as ProcessConvexes)
+            local Normal  = (C - A):Cross(B - A):GetNormalized()
             local IsEntry = NormDir:Dot(Normal) < 0
-            local T       = (P - Start):Dot(NormDir)
-
-            if T < 0 then T = 0 P = Start end
+            local T       = Frac * MaxDist
 
             Hits[#Hits + 1] = { Pos = P, Normal = Normal, ConvexID = ConvexID, T = T, Entity = Entity, IsEntry = IsEntry }
         end
