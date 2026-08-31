@@ -588,17 +588,6 @@ do -- Terminal ballistics --------------------------
 		local Filter = table.Copy(Bullet.Filter)
 		if Trace.Entity:IsValid() then Filter[#Filter + 1] = Trace.Entity end
 
-		-- Inherit the parent's per-convex filter so fragments stay transparent to convexes the round already spent
-		local ConvexFilter
-		if Bullet.ConvexFilter then
-			ConvexFilter = {}
-			for Ent, Set in pairs(Bullet.ConvexFilter) do
-				local Copy = {}
-				for ID in pairs(Set) do Copy[ID] = true end
-				ConvexFilter[Ent] = Copy
-			end
-		end
-
 		-- Define a plane for the spread
 		local Right = FragDirInit:Cross(Vector(0, 0, 1)):GetNormalized()
 		local Up = FragDirInit:Cross(Right):GetNormalized()
@@ -616,28 +605,17 @@ do -- Terminal ballistics --------------------------
 			local SpreadDir = Up * SpreadRadius * math.cos(SpreadAngle) + Right * SpreadRadius * math.sin(SpreadAngle)
 			local FragDir = (FragDirInit + SpreadDir):GetNormalized()
 
-			Ballistics.CreateBullet({
-				Caliber    = FragSize,
-				Diameter   = FragSize,
-				-- Id         = Bullet.Id,
-				Type       = "AP",
-				Owner      = Bullet.Owner,
-				Entity     = Bullet.Entity,
-				-- Crate      = Bullet.Crate,
-				Gun        = Bullet.Gun,
-				Pos        = FragPos,
-				ProjArea   = ProjArea,
-				ProjMass   = FragMass,
+			Ballistics.CreateFragment({
+				Diameter = FragSize,
+				Owner    = Bullet.Owner,
+				Entity   = Bullet.Entity,
+				Gun      = Bullet.Gun,
+				Pos      = FragPos,
+				ProjArea = ProjArea,
+				ProjMass = FragMass,
 				DragCoef = DragCoef,
-				-- Tracer     = Bullet.Tracer,
-				LimitVel   = 800,
-				Ricochet   = 60,
-				ShovePower = 0.2,
-				Flight = FragDir * FragSpeed,
-				Filter = Filter,
-				ConvexFilter = ConvexFilter,
-				Hide = true,
-				IsSpall = true,
+				Flight   = FragDir * FragSpeed,
+				Filter   = Filter,
 			})
 		end
 	end
