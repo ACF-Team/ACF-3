@@ -107,6 +107,62 @@ if SERVER then
 else
 	ACF.RegisterAmmoDecal("HP", "damage/ap_pen", "damage/ap_rico")
 
+	-- Ammo menu visual: a steel penetrator with a hollow cavity drilled into the nose, sized from
+	-- ToolData.HollowRatio. Uses BulletData.Caliber for the body width rather than BulletData.Diameter --
+	-- that field is overloaded by UpdateRoundData to mean the round's *expanded* post-impact diameter
+	-- for the penetration formula, not the physical width of the unfired round.
+	function Ammo:DrawAmmoVisual(Panel, w, h, ToolData, BulletData)
+		local GeoPrim  = ACF.GeoPrim
+		local Margin   = 10
+		local DrawW    = w - Margin * 2
+		local Diameter = BulletData.Caliber
+		local Radius   = Diameter * 0.5
+
+		local Length = BulletData.ProjLength + BulletData.PropLength
+
+		if Length <= 0 then return end
+
+		-- Cap Scale by the case, the widest part, so the case/bore step survives the height budget
+		local CaseDia = ACF.GetCaseDiameter(BulletData)
+
+		if CaseDia <= 0 then return end
+
+		local Scale      = math.min(DrawW / Length, ((h - Margin * 2) * 0.6) / CaseDia)
+		local DiameterPx = CaseDia * Scale
+		local CenterY    = h * 0.5
+
+		local Propellant = GeoPrim.New("Cylinder", { Radius = CaseDia * 0.5, Height = BulletData.PropLength })
+		Propellant:SetMaterial("Propellant")
+
+		local Penetrator = GeoPrim.New("Cylinder", { Radius = Radius, Height = BulletData.ProjLength })
+		Penetrator:SetMaterial("Steel Penetrator")
+
+		-- Hollow point cavity: a notch drilled into the tip, sized off ToolData.HollowRatio. Apex
+		-- (Radius 0) buried CavityDepth behind the tip, mouth opening flush with the body's flat face.
+		local HollowRatio = math.Clamp(ToolData.HollowRatio or 0, 0, 1)
+
+		if HollowRatio > 0 then
+			local CavityDepthCm = Diameter * 0.8 * HollowRatio * 0.8
+			local Cavity = GeoPrim.New("Cone", { Radius = 0, TipRadius = Diameter * 0.3, Height = CavityDepthCm })
+			Cavity:SetVoid(true):SetMaterial("Hollow Cavity (Air)")
+			Penetrator:AddChild(Cavity, BulletData.ProjLength - CavityDepthCm)
+		end
+
+		local X = Margin
+		X = Propellant:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(180, 150, 60), Color(30, 30, 30))
+		local BodyStartX = X
+		Penetrator:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(120, 120, 130), Color(30, 30, 30))
+
+		-- Tracer, a colored segment at the base of the projectile, drawn last (and not as a Body child --
+		-- Draw() paints an entire subtree in one Color, so a child never gets a color of its own) so it
+		-- takes hover priority and actually renders red instead of inheriting the penetrator's gray.
+		if BulletData.Tracer and BulletData.Tracer > 0 then
+			local Tracer = GeoPrim.New("Cylinder", { Radius = Radius, Height = BulletData.Tracer })
+			Tracer:SetMaterial("Tracer")
+			Tracer:Draw(Panel, BodyStartX, CenterY, Scale, DiameterPx, Color(220, 40, 30), Color(30, 30, 30))
+		end
+	end
+
 	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
 		local HollowRatio = Base:AddSlider("#acf.menu.ammo.hollow_ratio", 0, 1, 2)
 		HollowRatio:SetClientData("HollowRatio", "OnValueChanged")
@@ -127,8 +183,9 @@ else
 
 	function Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
 		local RoundStats = Base:AddLabel()
-		RoundStats:TrackClientData("Projectile", "SetText")
-		RoundStats:TrackClientData("Propellant")
+		RoundStats:TrackClientData("RoundLength", "SetText")
+		RoundStats:TrackClientData("PropRatio")
+		RoundStats:TrackClientData("CaseScale")
 		RoundStats:TrackClientData("HollowRatio")
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
@@ -142,8 +199,9 @@ else
 		end)
 
 		local HollowStats = Base:AddLabel()
-		HollowStats:TrackClientData("Projectile", "SetText")
-		HollowStats:TrackClientData("Propellant")
+		HollowStats:TrackClientData("RoundLength", "SetText")
+		HollowStats:TrackClientData("PropRatio")
+		HollowStats:TrackClientData("CaseScale")
 		HollowStats:TrackClientData("HollowRatio")
 		HollowStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
@@ -156,8 +214,9 @@ else
 		end)
 
 		local PenStats = Base:AddLabel()
-		PenStats:TrackClientData("Projectile", "SetText")
-		PenStats:TrackClientData("Propellant")
+		PenStats:TrackClientData("RoundLength", "SetText")
+		PenStats:TrackClientData("PropRatio")
+		PenStats:TrackClientData("CaseScale")
 		PenStats:TrackClientData("HollowRatio")
 		PenStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)

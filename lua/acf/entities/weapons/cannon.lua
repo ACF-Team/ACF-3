@@ -55,8 +55,9 @@ Weapons.Register("C", {
 	ScaleFactor = 0.84, -- Corrective factor to account for improperly scaled base models
 	TransferMult = 4, -- Thermal energy transfer rate
 	Round = {
-		MaxLength  = 80,
-		PropLength = 65,
+		MaxLength  = 81.92, -- 120x570mm (M256): 983mm overall
+		PropLength = 66.56, -- Scaled with MaxLength to hold the propellant cap
+		CaseScale  = 1.33, -- 120x570mm (M256): 160mm case over a 120mm projectile
 	},
 	Preview = {
 		Height = 50,

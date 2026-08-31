@@ -16,6 +16,8 @@ function Ammo:OnLoaded()
 
 	-- Model definitions (FlightModel defaults to MenuModel, MenuModel defaults to CrateModel)
 	self.CrateModel  = "models/acf/munitions/cartridge.mdl"
+	-- Two piece rounds stow their propellant as a separate charge, so the shell is the cased half
+	self.TwoPieceCrateModel = "models/acf/munitions/cartridge_half.mdl"
 	self.MenuModel   = "models/acf/munitions/projectile.mdl"
 	self.Bodygroup   = 0 -- Bodygroup index for crate and menu models
 	self.MenuFOV     = 60 -- Default FOV for menu preview
@@ -24,13 +26,20 @@ end
 --- Default crate model path - used to detect ammo types with custom models
 local DefaultCrateModel = "models/acf/munitions/cartridge.mdl"
 
+--- The stock crate models, whose length runs along their own Z and so need the -90 pitch correction
+local StockCrateModels = {
+	["models/acf/munitions/cartridge.mdl"]      = true,
+	["models/acf/munitions/cartridge_half.mdl"] = true,
+}
+
 --- Resolves the model to use for a given context.
 --- Precedence: Weapon Round definition > Ammo type custom model > Mortar override > Default ammo model
 --- @param Context string The context: "Crate", "Menu", or "Flight"
 --- @param Class table|nil The weapon class
 --- @param Weapon table|nil The specific weapon entry
+--- @param TwoPiece boolean|nil Crate context only: swaps the stock cartridge for its cased half
 --- @return table|nil ModelInfo Table with Model, Offset, Bodygroup, NeedsRotation, FOV
-function Ammo:ResolveModel(Context, Class, Weapon)
+function Ammo:ResolveModel(Context, Class, Weapon, TwoPiece)
 	local Round = Weapon and Weapon.Round or (Class and Class.Round)
 
 	-- Priority 1: Weapon's Round definition (missiles, bombs, etc.)
@@ -106,7 +115,9 @@ function Ammo:ResolveModel(Context, Class, Weapon)
 		ModelPath = self.FlightModel or self.MenuModel or self.CrateModel
 		Bodygroup = self.FlightBodygroup or self.Bodygroup
 	else -- "Crate" or default
-		ModelPath = self.CrateModel
+		-- Only the stock cartridge has a half variant; ammo types with their own crate model
+		-- never reach here, having been handled as a custom model above
+		ModelPath = TwoPiece and self.TwoPieceCrateModel or self.CrateModel
 		Bodygroup = self.Bodygroup
 	end
 
@@ -114,7 +125,7 @@ function Ammo:ResolveModel(Context, Class, Weapon)
 
 	local ModelData = ACF.ModelData.GetModelData(ModelPath)
 	local Offset = ModelData.Center and Vector(-ModelData.Center.x, 0, 0) or Vector()
-	local NeedsRotation = ModelPath == DefaultCrateModel
+	local NeedsRotation = StockCrateModels[ModelPath] or false
 
 	return {
 		Model         = ModelPath,
@@ -178,13 +189,7 @@ function Ammo:BaseConvert(ToolData)
 end
 
 function Ammo:VerifyData(ToolData)
-	if not isnumber(ToolData.Projectile) then
-		ToolData.Projectile = ACF.CheckNumber(ToolData.RoundProjectile, 0)
-	end
-
-	if not isnumber(ToolData.Propellant) then
-		ToolData.Propellant = ACF.CheckNumber(ToolData.RoundPropellant, 0)
-	end
+	ACF.VerifyRoundLengthData(ToolData)
 
 	if ToolData.Tracer == nil then
 		local Data10 = ToolData.RoundData10
@@ -198,14 +203,17 @@ if SERVER then
 	local Entities   = Classes.Entities
 	local Conversion	= ACF.PointConversion
 
-	Entities.AddArguments("acf_ammo", "Projectile", "Propellant", "Tracer") -- Adding extra info to ammo crates
+	Entities.AddArguments("acf_ammo", "RoundLength", "PropRatio", "Tracer", "CaseScale") -- Adding extra info to ammo crates
 
 	function Ammo:OnLast(Entity)
+		Entity.RoundLength = nil
+		Entity.PropRatio = nil
+		Entity.Tracer = nil
+		Entity.CaseScale = nil
+
+		-- Cleanup the leftovers aswell (including pre-RoundLength/PropRatio legacy fields)
 		Entity.Projectile = nil
 		Entity.Propellant = nil
-		Entity.Tracer = nil
-
-		-- Cleanup the leftovers aswell
 		Entity.RoundProjectile = nil
 		Entity.RoundPropellant = nil
 		Entity.RoundData10 = nil
@@ -349,6 +357,49 @@ else
 		end)
 	end
 
+	-- Default ammo menu visual: a side profile of the case/projectile, built from a GeoPrim tree (see
+	-- acf/core/geo_prim_sh.lua) so the shape has one definition shared with any future volume queries.
+	-- Overridden by ammo types with a distinct shape (e.g. HEAT's shaped charge, APFSDS's sabot/rod).
+	function Ammo:DrawAmmoVisual(Panel, w, h, _, BulletData)
+		local GeoPrim  = ACF.GeoPrim
+		local Margin   = 10
+		local DrawW    = w - Margin * 2
+		local Diameter = BulletData.Diameter or BulletData.Caliber
+
+		local Length = BulletData.ProjLength + BulletData.PropLength
+
+		if Length <= 0 then return end
+
+		-- Cap Scale by the case, the widest part, so the case/bore step survives the height budget
+		local CaseDia = ACF.GetCaseDiameter(BulletData)
+
+		if CaseDia <= 0 then return end
+
+		local Scale      = math.min(DrawW / Length, ((h - Margin * 2) * 0.6) / CaseDia)
+		local DiameterPx = CaseDia * Scale
+		local CenterY    = h * 0.5
+
+		local Propellant = GeoPrim.New("Cylinder", { Radius = CaseDia * 0.5, Height = BulletData.PropLength })
+		Propellant:SetMaterial("Propellant")
+
+		local Penetrator = GeoPrim.New("Cylinder", { Radius = Diameter * 0.5, Height = BulletData.ProjLength })
+		Penetrator:SetMaterial("Steel Penetrator")
+
+		local X = Margin
+		X = Propellant:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(180, 150, 60), Color(30, 30, 30))
+		local BodyStartX = X
+		Penetrator:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(120, 120, 130), Color(30, 30, 30))
+
+		-- Tracer, a colored segment at the base of the projectile, drawn last (and not as a Body child --
+		-- Draw() paints an entire subtree in one Color, so a child never gets a color of its own) so it
+		-- takes hover priority and actually renders red instead of inheriting the penetrator's gray.
+		if BulletData.Tracer and BulletData.Tracer > 0 then
+			local Tracer = GeoPrim.New("Cylinder", { Radius = Diameter * 0.5, Height = BulletData.Tracer })
+			Tracer:SetMaterial("Tracer")
+			Tracer:Draw(Panel, BodyStartX, CenterY, Scale, DiameterPx, Color(220, 40, 30), Color(30, 30, 30))
+		end
+	end
+
 	function Ammo:OnCreateAmmoPreview(_, Setup, ToolData)
 		local Destiny = Classes[ToolData.Destiny or "Weapons"]
 		local Class = Classes.GetGroup(Destiny, ToolData.Weapon)
@@ -403,14 +454,16 @@ else
 	end
 
 	function Ammo:OnCreateCrateInformation(_, Label)
-		Label:TrackClientData("Projectile")
-		Label:TrackClientData("Propellant")
+		Label:TrackClientData("RoundLength")
+		Label:TrackClientData("PropRatio")
+		Label:TrackClientData("CaseScale")
 	end
 
 	function Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
 		local RoundStats = Base:AddLabel()
-		RoundStats:TrackClientData("Projectile", "SetText")
-		RoundStats:TrackClientData("Propellant")
+		RoundStats:TrackClientData("RoundLength", "SetText")
+		RoundStats:TrackClientData("PropRatio")
+		RoundStats:TrackClientData("CaseScale")
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
@@ -423,9 +476,11 @@ else
 		end)
 
 		local MaxPenLabel = Base:AddLabel()
-		MaxPenLabel:TrackClientData("Projectile", "SetText")
-		MaxPenLabel:TrackClientData("Propellant")
+		MaxPenLabel:TrackClientData("RoundLength", "SetText")
+		MaxPenLabel:TrackClientData("PropRatio")
+		MaxPenLabel:TrackClientData("CaseScale")
 		MaxPenLabel:TrackClientData("FillerRatio")
+		MaxPenLabel:TrackClientData("TelescopeRatio")
 		MaxPenLabel:DefineSetter(function()
 			local Text   = language.GetPhrase("acf.menu.ammo.pen_stats_ap")
 			local MaxPen = math.Round(BulletData.MaxPen, 2)

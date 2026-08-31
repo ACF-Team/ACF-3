@@ -234,6 +234,7 @@ do -- ACF global vars
 	ACF.BaseReload         = 1 -- Minimum reload time. Time it takes to move around a weightless projectile
 	ACF.MassToTime         = 0.25 -- Conversion of projectile mass to time be moved around
 	ACF.LengthToTime       = 0.025 -- Conversion of projectile length to time -- Emulating the added difficulty of manipulating a longer projectile
+	ACF.TwoPieceCount      = 2 -- Pieces a two piece round is loaded as. Each is that fraction of the round's mass and length, and each costs its own loading motion
 
 	-- External and Terminal Ballistics
 	ACF.DragDiv              = 80 -- Drag fudge factor
@@ -281,7 +282,7 @@ do -- ACF global vars
 
 	-- Ammo
 	ACF.AmmoPadding          = 0.3 -- Ratio of wasted space to projectile case diameter
-	ACF.AmmoCaseScale        = 1 -- How much larger the diameter of the case is versus the projectile (necked cartridges, M829 is 1.4, .50 BMG is 1.6)
+	ACF.AmmoCaseScale        = 1 -- Fallback max case/projectile diameter ratio when a Round omits CaseScale
 	ACF.AmmoMinSize          = 6 -- Defines the shortest possible length of ammo crates for all their axises, in gmu
 	ACF.AmmoMaxLength        = 192 -- Defines the highest possible length of ammo crates for the X axis (length), in gmu
 	ACF.AmmoMaxWidth         = 96 -- Defines the highest possible width of ammo crates for the Y and Z axes (width/height), in gmu

@@ -11,6 +11,7 @@ function Ammo:OnLoaded()
 	self.Bodygroup   = 5 -- HE bodygroup index
 	self.MortarBodygroup = 0 -- HE mortar submodel
 	self.Description = "#acf.descs.ammo.he"
+	self.HasDelayFuze = false -- Never penetrates, so there is nothing to fuze on
 	self.Blacklist = {
 		MG = true,
 		RAC = true,
@@ -143,8 +144,9 @@ else
 
 	function Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
 		local RoundStats = Base:AddLabel()
-		RoundStats:TrackClientData("Projectile", "SetText")
-		RoundStats:TrackClientData("Propellant")
+		RoundStats:TrackClientData("RoundLength", "SetText")
+		RoundStats:TrackClientData("PropRatio")
+		RoundStats:TrackClientData("CaseScale")
 		RoundStats:TrackClientData("FillerRatio")
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)

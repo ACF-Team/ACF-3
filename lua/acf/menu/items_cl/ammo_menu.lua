@@ -43,20 +43,65 @@ local function GetWeaponClass(ToolData)
 	return Classes.GetGroup(Destiny, ToolData.Weapon)
 end
 
+---Computes the crate/drum size for the given shape and projectile counts.
+---@param Shape string
+---@param CountX number
+---@param CountY number
+---@param CountZ number
+---@param Class table
+---@param ToolData table<string, any>
+---@param BulletData table
+local function GetSizeForShape(Shape, CountX, CountY, CountZ, Class, ToolData, BulletData)
+	local HexPack = ACF.GetClientBool("HexPacking", false)
+
+	if ACF.IsDrumShape(Shape) then
+		-- For drums: X = rounds per ring, Z = the layout's secondary axis
+		return ACF.GetDrumCrateSizeFromProjectileCounts(CountX, CountZ, Class, ToolData, BulletData, HexPack, Shape)
+	end
+
+	return ACF.GetCrateSizeFromProjectileCounts(CountX, CountY, CountZ, Class, ToolData, BulletData, HexPack)
+end
+
+---Returns how many complete rounds a crate of the given projectile counts holds.
+---Mirrors the server's own count in UpdateCrateSize: the counts are cells, and two piece ammo
+---stows the charge and the projectile in a cell each, so it takes two of them to make a round.
+---@param Shape string
+---@param CountX number
+---@param CountY number
+---@param CountZ number
+---@param TwoPiece boolean
+---@return number Rounds
+local function GetRoundCount(Shape, CountX, CountY, CountZ, TwoPiece)
+	local Layout = ACF.GetDrumLayout(Shape)
+	local Rounds
+
+	if Layout then
+		-- For drums X is the layout's primary count, which is not always a round count:
+		-- a vertical drum reads it as rings, so the layout works out the rounds per disk
+		Rounds = Layout.GetPerDisk(CountX) * CountZ
+	else
+		Rounds = CountX * CountY * CountZ
+	end
+
+	if TwoPiece then
+		Rounds = math.floor(Rounds * 0.5)
+	end
+
+	return Rounds
+end
+
 ---Calculates the maximum count values for all axes based on round dimensions and packing
----@param CountY number Current Y count (for Z axis packing)
----@param CountZ number Current Z count (for Y axis packing)
 ---@param ToolData table The current tool data
 ---@param BulletData table The current bullet data
 ---@return number, number, number MaxX, MaxY, MaxZ
-local function CalculateMaxCounts(CountY, CountZ, ToolData, BulletData)
+local function CalculateMaxCounts(ToolData, BulletData)
 	local Class = GetWeaponClass(ToolData)
 	if not (Class and BulletData) then return 50, 50, 50 end
 
 	local roundSize = ACF.GetCrateSizeFromProjectileCounts(1, 1, 1, Class, ToolData, BulletData)
 	if not roundSize then return 50, 50, 50 end
 
-	return ACF.GetMaxCounts(roundSize, ACF.AmmoMaxLength, ACF.AmmoMaxWidth, CountY, CountZ)
+	return ACF.GetMaxCounts(roundSize, ACF.AmmoMaxLength, ACF.AmmoMaxWidth, ACF.GetClientBool("HexPacking", false))
 end
 
 -- Store references to the count sliders so we can update them
@@ -77,20 +122,23 @@ local function UpdateProjectileCountLimits(ToolData, BulletData, SkipMissiles)
 	local CurrentY = ACF.GetClientNumber("CrateProjectilesY", 3)
 	local CurrentZ = ACF.GetClientNumber("CrateProjectilesZ", 3)
 	local Shape = ACF.GetClientString("AmmoShape", "Box")
+	local HexPack = ACF.GetClientBool("HexPacking", false)
 
 	local MinX = 1
 	local MaxX, MaxY, MaxZ
 
-	if Shape == "Cylinder" then
+	local Layout = ACF.GetDrumLayout(Shape)
+
+	if Layout then
 		local Class = GetWeaponClass(ToolData)
 
 		if Class and BulletData then
 			local roundSize = ACF.GetRoundProperties(Class, ToolData, BulletData)
 
 			if roundSize then
-				MinX = ACF.GetMinRoundsPerRing()
-				MaxX = ACF.GetMaxRoundsPerRing(roundSize, ACF.AmmoMaxWidth)
-				MaxZ = ACF.GetMaxDrumLayers(roundSize, ACF.AmmoMaxLength)
+				MinX = Layout.MinPrimary
+				MaxX = Layout.GetMaxPrimary(roundSize, ACF.AmmoMaxWidth, HexPack)
+				MaxZ = Layout.GetMaxStacks(roundSize, ACF.AmmoMaxLength, HexPack)
 			else
 				MaxX = 50
 				MaxZ = 50
@@ -103,7 +151,7 @@ local function UpdateProjectileCountLimits(ToolData, BulletData, SkipMissiles)
 		MaxY = 1
 	else
 		-- Standard box crate
-		MaxX, MaxY, MaxZ = CalculateMaxCounts(CurrentY, CurrentZ, ToolData, BulletData)
+		MaxX, MaxY, MaxZ = CalculateMaxCounts(ToolData, BulletData)
 	end
 
 	CountSliders.X:SetMin(MinX)
@@ -141,12 +189,7 @@ local function UpdateBoxSizeFromProjectileCounts(ToolData, BulletData)
 	local Shape  = ACF.GetClientString("AmmoShape", "Box")
 
 	if Class and BulletData then
-		if Shape == "Cylinder" then
-			-- For drums: X = rounds per ring, Z = layers
-			BoxSize = ACF.GetDrumCrateSizeFromProjectileCounts(CountX, CountZ, Class, ToolData, BulletData)
-		else
-			BoxSize = ACF.GetCrateSizeFromProjectileCounts(CountX, CountY, CountZ, Class, ToolData, BulletData)
-		end
+		BoxSize = GetSizeForShape(Shape, CountX, CountY, CountZ, Class, ToolData, BulletData)
 		-- Set the ammo size client data so it gets sent to the server
 		ACF.SetClientData("AmmoSizeX", BoxSize.x)
 		ACF.SetClientData("AmmoSizeY", BoxSize.y)
@@ -214,8 +257,8 @@ local function AddTracer(Base, ToolData)
 
 		Ammo:UpdateRoundData(ToolData, BulletData)
 
-		ACF.SetClientData("Projectile", BulletData.ProjLength)
-		ACF.SetClientData("Propellant", BulletData.PropLength)
+		ACF.SetClientData("RoundLength", BulletData.RoundLength)
+		ACF.SetClientData("PropRatio", BulletData.PropRatio)
 
 		Panel:SetValue(ToolData.Tracer)
 
@@ -247,56 +290,79 @@ local function AddControls(Base, ToolData)
 	if not Result then return end
 
 	local RoundLength = Base:AddLabel()
-	RoundLength:TrackClientData("Projectile", "SetText", "GetText")
-	RoundLength:TrackClientData("Propellant")
+	RoundLength:TrackClientData("RoundLength", "SetText", "GetText")
+	RoundLength:TrackClientData("PropRatio")
 	RoundLength:DefineSetter(function()
 		local Text = language.GetPhrase("acf.menu.ammo.round_length")
-		local CurLength = BulletData.ProjLength + BulletData.PropLength
+		local CurLength = math.Round(BulletData.RoundLength, 2)
 		local MaxLength = BulletData.MaxRoundLength
 
 		return Text:format(CurLength, MaxLength)
 	end)
 
-	local Projectile = Base:AddSlider("#acf.menu.ammo.projectile_length", 0, BulletData.MaxRoundLength, 2)
-	Projectile:SetClientData("Projectile", "OnValueChanged")
-	Projectile:DefineSetter(function(Panel, _, _, Value, IsTracked)
-		ToolData.Projectile = Value
+	-- What makes a round's stowed diameter exceed its caliber
+	local RoundDiameter = Base:AddLabel()
+	RoundDiameter:TrackClientData("Caliber", "SetText", "GetText")
+	RoundDiameter:TrackClientData("Weapon")
+	RoundDiameter:TrackClientData("CaseScale")
+	RoundDiameter:DefineSetter(function()
+		local Text      = language.GetPhrase("acf.menu.ammo.round_diameter")
+		local Caliber   = BulletData.Caliber or 0
+		local CaseScale = BulletData.CaseScale or 1
 
-		if not IsTracked then
-			BulletData.Priority = "Projectile"
-		end
-
-		Ammo:UpdateRoundData(ToolData, BulletData)
-
-		ACF.SetClientData("Propellant", BulletData.PropLength)
-
-		Panel:SetValue(BulletData.ProjLength)
-
-		-- Update projectile count limits when round dimensions change (skip for missiles)
-		UpdateProjectileCountLimits(ToolData, BulletData, true)
-
-		return BulletData.ProjLength
+		return Text:format(math.Round(Caliber * CaseScale, 2), math.Round(CaseScale, 2))
 	end)
 
-	local Propellant = Base:AddSlider("#acf.menu.ammo.propellant_length", 0, BulletData.MaxRoundLength, 2)
-	Propellant:SetClientData("Propellant", "OnValueChanged")
-	Propellant:DefineSetter(function(Panel, _, _, Value, IsTracked)
-		ToolData.Propellant = Value
-
-		if not IsTracked then
-			BulletData.Priority = "Propellant"
-		end
+	-- RoundLength and PropRatio are the actual stored/networked round dimensions (see
+	-- round_functions.lua's ACF.UpdateRoundSpecs) -- ProjLength/PropLength are just derived from
+	-- them for display and mass/volume math. Each slider is bound straight to its own real
+	-- ClientVar and only has to worry about its own value; ACF.UpdateRoundSpecs handles clamping
+	-- PropRatio's valid window against the current RoundLength (and vice versa) on its own, so
+	-- there's no cross-slider pushback needed here anymore.
+	local TotalLength = Base:AddSlider("#acf.menu.ammo.total_length", BulletData.MinProjLength + BulletData.MinPropLength, BulletData.MaxRoundLength, 2)
+	TotalLength:SetClientData("RoundLength", "OnValueChanged")
+	TotalLength:DefineSetter(function(Panel, _, _, Value)
+		ToolData.RoundLength = Value
 
 		Ammo:UpdateRoundData(ToolData, BulletData)
 
-		ACF.SetClientData("Projectile", BulletData.ProjLength)
-
-		Panel:SetValue(BulletData.PropLength)
+		Panel:SetValue(BulletData.RoundLength)
 
 		-- Update projectile count limits when round dimensions change (skip for missiles)
 		UpdateProjectileCountLimits(ToolData, BulletData, true)
 
-		return BulletData.PropLength
+		return BulletData.RoundLength
+	end)
+
+	local PropRatio = Base:AddSlider("#acf.menu.ammo.propellant_ratio", 0, 1, 3)
+	PropRatio:SetClientData("PropRatio", "OnValueChanged")
+	PropRatio:DefineSetter(function(Panel, _, _, Value)
+		ToolData.PropRatio = Value
+
+		Ammo:UpdateRoundData(ToolData, BulletData)
+
+		Panel:SetValue(BulletData.PropRatio)
+
+		-- Update projectile count limits when round dimensions change (skip for missiles)
+		UpdateProjectileCountLimits(ToolData, BulletData, true)
+
+		return BulletData.PropRatio
+	end)
+
+	-- Classes allowing no necking cap at 1, leaving DNumSlider a degenerate min == max range
+	local CaseScale = Base:AddSlider("#acf.menu.ammo.case_scale", 1, BulletData.MaxCaseScale, 2)
+	CaseScale:SetClientData("CaseScale", "OnValueChanged")
+	CaseScale:DefineSetter(function(Panel, _, _, Value)
+		ToolData.CaseScale = Value
+
+		Ammo:UpdateRoundData(ToolData, BulletData)
+
+		Panel:SetValue(BulletData.CaseScale)
+
+		-- A wider case is a wider round, so the crate's projectile counts have to be refit
+		UpdateProjectileCountLimits(ToolData, BulletData, true)
+
+		return BulletData.CaseScale
 	end)
 
 	if Ammo.OnCreateAmmoControls then
@@ -336,9 +402,12 @@ local function AddCrateInformation(Base, ToolData)
 	Crate:TrackClientData("CrateProjectilesY")
 	Crate:TrackClientData("CrateProjectilesZ")
 	Crate:TrackClientData("AmmoShape")
+	Crate:TrackClientData("HexPacking")
+	Crate:TrackClientData("TwoPiece")
 	-- Track projectile dimensions so crate size updates when ammo config changes
-	Crate:TrackClientData("Projectile")
-	Crate:TrackClientData("Propellant")
+	Crate:TrackClientData("RoundLength")
+	Crate:TrackClientData("PropRatio")
+	Crate:TrackClientData("CaseScale")
 	Crate:TrackClientData("Tracer")
 	Crate:DefineSetter(function()
 		UpdateBoxSizeFromProjectileCounts(ToolData, BulletData)
@@ -347,18 +416,13 @@ local function AddCrateInformation(Base, ToolData)
 		local Shape = ACF.GetClientString("AmmoShape", "Box")
 
 		-- Calculate rounds based on shape
-		local CountX = ACF.GetClientNumber("CrateProjectilesX", 3)
-		local CountY = ACF.GetClientNumber("CrateProjectilesY", 3)
-		local CountZ = ACF.GetClientNumber("CrateProjectilesZ", 3)
-		local Rounds
+		local CountX   = ACF.GetClientNumber("CrateProjectilesX", 3)
+		local CountY   = ACF.GetClientNumber("CrateProjectilesY", 3)
+		local CountZ   = ACF.GetClientNumber("CrateProjectilesZ", 3)
+		local TwoPiece = ACF.GetClientBool("TwoPiece", false)
+		local Rounds   = GetRoundCount(Shape, CountX, CountY, CountZ, TwoPiece)
 
-		if Shape == "Cylinder" then
-			-- For drums: X = rounds per ring, Z = layers
-			Rounds = CountX * CountZ
-		else
-			Rounds = CountX * CountY * CountZ
-		end
-
+		-- CartMass is the mass of a whole round, so it multiplies complete rounds, not cells
 		local Load      = math.floor(BulletData.CartMass * Rounds)
 		local Mass      = ACF.GetProperMass(Load)
 
@@ -404,11 +468,14 @@ local function AddPenetrationTable(Base, ToolData)
 	PenTable.SetCellValue(3, 1, "0 " .. language.GetPhrase("acf.menu.ammo.pen_table_deg"))
 	PenTable.SetCellValue(4, 1, "30 " .. language.GetPhrase("acf.menu.ammo.pen_table_deg"))
 	PenTable.SetCellValue(5, 1, "60 " .. language.GetPhrase("acf.menu.ammo.pen_table_deg"))
-	PenTable:TrackClientData("Projectile", "SetText")
-	PenTable:TrackClientData("Propellant")
+	PenTable:TrackClientData("RoundLength", "SetText")
+	PenTable:TrackClientData("PropRatio")
+	PenTable:TrackClientData("CaseScale")
 	PenTable:TrackClientData("FillerRatio")
 	PenTable:TrackClientData("LinerAngle")
+	PenTable:TrackClientData("LinerAngleRatio")
 	PenTable:TrackClientData("StandoffRatio")
+	PenTable:TrackClientData("TelescopeRatio")
 
 	PenTable:DefineSetter(function()
 		local Ranges = {0, 100, 250, 500, 800}
@@ -430,6 +497,56 @@ local function AddPenetrationTable(Base, ToolData)
 
 	Base:AddLabel("#acf.menu.ammo.pen_table_nominal")
 	Base:AddLabel("#acf.menu.ammo.approx_pen_warning")
+end
+
+---Creates the bullet visualizer panel on the ACF menu, drawing a schematic side profile of the current round.
+---@param Base userdata The panel being populated with the visualizer.
+---@param ToolData table<string, any> The copy of the local player's client data variables.
+local function AddVisual(Base, ToolData)
+	if Ammo.PreCreateAmmoVisual then
+		local Result = Ammo:PreCreateAmmoVisual(Base, ToolData, BulletData)
+
+		if not Result then return end
+	end
+
+	local Result = hook.Run("ACF_PreCreateAmmoVisual", Base, ToolData, Ammo, BulletData)
+
+	if not Result then return end
+
+	local Visual = Base:AddVisualizer()
+	Base.Visual = Visual
+	local MenuSizeX = Base:GetParent():GetParent():GetWide() -- Parent of the parent of this item should be the menu panel
+	Visual:SetSize(MenuSizeX, MenuSizeX * 0.3)
+
+	Visual:TrackClientData("RoundLength")
+	Visual:TrackClientData("PropRatio")
+	Visual:TrackClientData("CaseScale")
+	Visual:TrackClientData("Tracer")
+	Visual:TrackClientData("FillerRatio")
+	Visual:TrackClientData("LinerAngle")
+	Visual:TrackClientData("LinerAngleRatio")
+	Visual:TrackClientData("StandoffRatio")
+	Visual:TrackClientData("SmokeWPRatio")
+	Visual:TrackClientData("TelescopeRatio")
+
+	Visual:DefineSetter(function(Panel)
+		local Ammo = AmmoTypes.Get(ToolData.AmmoType)
+
+		-- Each ammo type draws its own bullet; see Ammo:DrawAmmoVisual in the respective ammo_types file
+		if Ammo.DrawAmmoVisual then
+			Panel:SetDrawFunc(function(self, w, h)
+				Ammo:DrawAmmoVisual(self, w, h, ToolData, BulletData)
+			end)
+		else
+			Panel:Clear()
+		end
+	end)
+
+	if Ammo.OnCreateAmmoVisual then
+		Ammo:OnCreateAmmoVisual(Base, ToolData, BulletData)
+	end
+
+	hook.Run("ACF_OnCreateAmmoVisual", Base, ToolData, Ammo, BulletData)
 end
 
 local function AddGraph(Base, ToolData)
@@ -454,12 +571,15 @@ local function AddGraph(Base, ToolData)
 	Graph:SetYSpacing(50)
 	Graph:SetFidelity(16)
 
-	Graph:TrackClientData("Projectile")
-	Graph:TrackClientData("Propellant")
+	Graph:TrackClientData("RoundLength")
+	Graph:TrackClientData("PropRatio")
+	Graph:TrackClientData("CaseScale")
 	Graph:TrackClientData("FillerRatio")
 	Graph:TrackClientData("LinerAngle")
+	Graph:TrackClientData("LinerAngleRatio")
 	Graph:TrackClientData("StandoffRatio")
 	Graph:TrackClientData("SmokeWPRatio")
+	Graph:TrackClientData("TelescopeRatio")
 
 	Graph:DefineSetter(function(Panel)
 		Panel:Clear()
@@ -520,6 +640,7 @@ function ACF.UpdateAmmoMenu(Menu)
 	hook.Run("ACF_OnCreateAmmoMenu", Base, ToolData, Ammo, BulletData)
 
 	AddPreview(Base, ToolData)
+	AddVisual(Base, ToolData)
 	AddControls(Base, ToolData)
 	AddInformation(Base, ToolData)
 	AddPenetrationTable(Base, ToolData)
@@ -531,37 +652,13 @@ function ACF.UpdateAmmoMenu(Menu)
 	UpdateProjectileCountLimits(ToolData, BulletData)
 end
 
----Updates the shape selector visibility based on whether the current weapon is automatic.
----Only automatic weapons can use drums.
+---Updates the shape selector visibility. Both Crate and Drum are available for every weapon type.
 ---@param Menu userdata The menu containing the shape selector.
 local function UpdateShapeSelector(Menu)
 	local ShapeList = Menu.AmmoShapeList
 	if not ShapeList then return end
 
-	local ToolData = ACF.GetAllClientData()
-	local Class = GetWeaponClass(ToolData)
-	local IsAutomatic = Class and Class.IsAutomatic
-
-	if IsAutomatic then
-		-- Show both options for automatic weapons
-		ShapeList:SetVisible(true)
-	else
-		-- Only show Crate for non-automatic weapons (hide drum option)
-		ShapeList:SetVisible(false)
-
-		-- Force shape to Crate if it was set to Drum
-		if ACF.GetClientString("AmmoShape", "Box") == "Cylinder" then
-			ACF.SetClientData("AmmoShape", "Box")
-			ShapeList:ChooseOptionID(1)
-
-			-- Reset slider visibility and labels for crate mode
-			if CountSliders.X and CountSliders.Y and CountSliders.Z then
-				CountSliders.X:SetVisible(true)
-				CountSliders.X:SetMin(1)
-				CountSliders.Y:SetVisible(true)
-			end
-		end
-	end
+	ShapeList:SetVisible(true)
 end
 
 ---Creates the basic information and panels on the ammunition menu.
@@ -580,20 +677,76 @@ function ACF.CreateAmmoMenu(Menu)
 	ACF.SetClientData("CrateProjectilesY", DefaultCountY, true)
 	ACF.SetClientData("CrateProjectilesZ", DefaultCountZ, true)
 
-	-- Shape selector (Crate or Drum)
+	-- Shape selector (Crate, or one of the drum layouts)
 	local ShapeList = ContainerBase:AddComboBox()
+	local ShapeIDs  = { Box = 1 }
+
 	ShapeList:AddChoice("Crate", "Box")
-	ShapeList:AddChoice("Drum", "Cylinder")
+
+	do
+		-- Drum shapes come from the layout registry so adding one only touches round_functions
+		local Keys = {}
+
+		for Key in pairs(ACF.DrumLayouts) do Keys[#Keys + 1] = Key end
+
+		table.sort(Keys)
+
+		for Index, Key in ipairs(Keys) do
+			ShapeList:AddChoice(ACF.DrumLayouts[Key].Name, Key)
+			ShapeIDs[Key] = Index + 1 -- "Crate" occupies slot 1
+		end
+	end
 
 	-- Store references for later updates
 	Menu.AmmoShapeList = ShapeList
 
 	-- Set default shape
 	local DefaultShape = ACF.GetClientString("AmmoShape", "Box")
-	ACF.SetClientData("AmmoShape", DefaultShape, true)
 
-	-- Select the correct shape in the combo box (1 = Box, 2 = Cylinder)
-	ShapeList:ChooseOptionID(DefaultShape == "Cylinder" and 2 or 1)
+	if DefaultShape ~= "Box" and not ACF.IsDrumShape(DefaultShape) then DefaultShape = "Box" end
+
+	ACF.SetClientData("AmmoShape", DefaultShape, true)
+	ShapeList:ChooseOptionID(ShapeIDs[DefaultShape] or 1)
+
+	---Both packing options only change how rounds are stowed, never how they fly, so they share
+	---a setter: re-derive the bullet data and let the crate resize around the new cell size.
+	local function ApplyPackingChange(Panel, Value)
+		Panel:SetValue(Value)
+
+		local ToolData = ACF.GetAllClientData()
+		local Class    = GetWeaponClass(ToolData)
+
+		if Class then
+			local CurrentAmmo = ACF.Classes.AmmoTypes.Get(ToolData.AmmoType)
+
+			if CurrentAmmo then
+				local NewBulletData = CurrentAmmo:ClientConvert(ToolData)
+
+				UpdateProjectileCountLimits(ToolData, NewBulletData)
+				UpdateBoxSizeFromProjectileCounts(ToolData, NewBulletData)
+			end
+		end
+
+		return Value
+	end
+
+	-- Hex packing staggers alternating rows/layers so they nest, trading arrangement for a tighter fit
+	local HexPacking = ContainerBase:AddCheckBox(language.GetPhrase("acf.menu.ammo.hex_packing"))
+	HexPacking:SetClientData("HexPacking", "OnChange")
+	HexPacking:DefineSetter(function(Panel, _, _, Value)
+		return ApplyPackingChange(Panel, Value)
+	end)
+
+	-- Two piece ammo stows the charge and projectile separately, halving the length of a cell.
+	-- Seed the data var first: SetClientData only takes the checkbox's own value when the var is
+	-- nil, so without this the box comes back ticked from whatever it was left on earlier.
+	ACF.SetClientData("TwoPiece", false, true)
+
+	local TwoPiece = ContainerBase:AddCheckBox(language.GetPhrase("acf.menu.ammo.two_piece"))
+	TwoPiece:SetClientData("TwoPiece", "OnChange")
+	TwoPiece:DefineSetter(function(Panel, _, _, Value)
+		return ApplyPackingChange(Panel, Value)
+	end)
 
 	-- Labels that change based on shape
 	local CountXLabel = "#acf.menu.ammo.projectiles_length"
@@ -627,25 +780,31 @@ function ACF.CreateAmmoMenu(Menu)
 		return Count
 	end)
 
-	-- Handle shape selection changes
-	function ShapeList:OnSelect(_, _, Data)
-		ACF.SetClientData("AmmoShape", Data)
+	---Relabels the count sliders for the given shape. Drums drop the Y axis entirely and let
+	---their layout name both remaining axes, since they mean different things per layout.
+	local function ApplyShapeToSliders(Shape)
+		local Layout = ACF.GetDrumLayout(Shape)
 
-		if Data == "Cylinder" then
-			-- For drums: X = rounds per ring, Y is hidden, Z = layers
-			CountX:SetVisible(true)
-			CountX:SetText("Projectiles (Per Ring)")
-			CountX:SetMin(6)
+		CountX:SetVisible(true)
+
+		if Layout then
+			CountX:SetText(Layout.PrimaryLabel)
+			CountX:SetMin(Layout.MinPrimary)
 			CountY:SetVisible(false)
-			CountZ:SetText("Projectiles (Stacks)")
+			CountZ:SetText(Layout.SecondaryLabel)
 		else
-			-- For crates: standard X/Y/Z counts
-			CountX:SetVisible(true)
 			CountX:SetText(language.GetPhrase(CountXLabel))
 			CountX:SetMin(1) -- Reset to crate minimum
 			CountY:SetVisible(true)
 			CountZ:SetText(language.GetPhrase(CountZLabel))
 		end
+	end
+
+	-- Handle shape selection changes
+	function ShapeList:OnSelect(_, _, Data)
+		ACF.SetClientData("AmmoShape", Data)
+
+		ApplyShapeToSliders(Data)
 
 		-- Update slider limits when shape changes (drums have different min/max)
 		local ToolData = ACF.GetAllClientData()
@@ -660,11 +819,8 @@ function ACF.CreateAmmoMenu(Menu)
 	end
 
 	-- Apply initial visibility based on default shape
-	if DefaultShape == "Cylinder" then
-		CountX:SetText("Projectiles (Per Ring)")
-		CountX:SetMin(6)
-		CountY:SetVisible(false)
-		CountZ:SetText("Projectiles (Stacks)")
+	if ACF.IsDrumShape(DefaultShape) then
+		ApplyShapeToSliders(DefaultShape)
 	end
 
 	local Capacity = ContainerBase:AddLabel("")
@@ -672,18 +828,15 @@ function ACF.CreateAmmoMenu(Menu)
 	Capacity:TrackClientData("CrateProjectilesY", "SetText")
 	Capacity:TrackClientData("CrateProjectilesZ", "SetText")
 	Capacity:TrackClientData("AmmoShape")
+	Capacity:TrackClientData("TwoPiece")
 	Capacity:DefineSetter(function()
-		local CountX = ACF.GetClientNumber("CrateProjectilesX", 3)
-		local CountY = ACF.GetClientNumber("CrateProjectilesY", 3)
-		local CountZ = ACF.GetClientNumber("CrateProjectilesZ", 3)
-		local Shape  = ACF.GetClientString("AmmoShape", "Box")
+		local CountX   = ACF.GetClientNumber("CrateProjectilesX", 3)
+		local CountY   = ACF.GetClientNumber("CrateProjectilesY", 3)
+		local CountZ   = ACF.GetClientNumber("CrateProjectilesZ", 3)
+		local Shape    = ACF.GetClientString("AmmoShape", "Box")
+		local TwoPiece = ACF.GetClientBool("TwoPiece", false)
 
-		local RoundCount
-		if Shape == "Cylinder" then
-			RoundCount = CountX * CountZ
-		else
-			RoundCount = CountX * CountY * CountZ
-		end
+		local RoundCount = GetRoundCount(Shape, CountX, CountY, CountZ, TwoPiece)
 
 		return "Capacity: " .. RoundCount .. (RoundCount == 1 and " round" or " rounds")
 	end)
@@ -693,8 +846,11 @@ function ACF.CreateAmmoMenu(Menu)
 	Size:TrackClientData("CrateProjectilesY", "SetText")
 	Size:TrackClientData("CrateProjectilesZ", "SetText")
 	Size:TrackClientData("AmmoShape")
-	Size:TrackClientData("Projectile") -- Update when round dimensions change
-	Size:TrackClientData("Propellant")
+	Size:TrackClientData("HexPacking")
+	Size:TrackClientData("TwoPiece")
+	Size:TrackClientData("RoundLength") -- Update when round dimensions change
+	Size:TrackClientData("PropRatio")
+	Size:TrackClientData("CaseScale")
 	Size:TrackClientData("Tracer")
 	Size:DefineSetter(function()
 		-- Recalculate BoxSize to ensure we have the latest values
@@ -709,17 +865,15 @@ function ACF.CreateAmmoMenu(Menu)
 				local CountZ = ACF.GetClientNumber("CrateProjectilesZ", 3)
 				local Shape = ACF.GetClientString("AmmoShape", "Box")
 
-				if Shape == "Cylinder" then
-					BoxSize = ACF.GetDrumCrateSizeFromProjectileCounts(CountX, CountZ, Class, ToolData, BulletData)
-				else
-					BoxSize = ACF.GetCrateSizeFromProjectileCounts(CountX, CountY, CountZ, Class, ToolData, BulletData)
-				end
+				BoxSize = GetSizeForShape(Shape, CountX, CountY, CountZ, Class, ToolData, BulletData)
 			end
 		end
 
-		local Shape = ACF.GetClientString("AmmoShape", "Box")
-		if Shape == "Cylinder" then
-			local SizeText = "Drum Size: Diameter %.2f x Height %.2f"
+		local Shape  = ACF.GetClientString("AmmoShape", "Box")
+		local Layout = ACF.GetDrumLayout(Shape)
+
+		if Layout then
+			local SizeText = Layout.Name .. " Size: Diameter %.2f x Height %.2f"
 			return SizeText:format(math.Round(BoxSize.x, 2), math.Round(BoxSize.z, 2))
 		else
 			local SizeText = "Crate Size: %.2f x %.2f x %.2f"

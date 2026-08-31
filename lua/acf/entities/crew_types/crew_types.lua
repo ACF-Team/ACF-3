@@ -30,7 +30,7 @@ local function FindLongestBullet(Crew)
 		if not IsValid(Gun) then continue end
 		for Crate in pairs(Gun.Crates) do
 			local BulletData = Crate.BulletData
-			local Length = BulletData.PropLength + BulletData.ProjLength
+			local Length = BulletData.RoundLength or (BulletData.PropLength + BulletData.ProjLength)
 			if Length > LongestLength then
 				LongestLength = Length
 				LongestBullet = BulletData

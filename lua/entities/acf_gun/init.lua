@@ -114,7 +114,7 @@ do -- Random timer crew stuff
 		-- Check space behind breech
 		if ACF.LegalChecks and SelfTbl.BulletData and SelfTbl.ClassData.BreechConfigs then
 			-- Check assuming 2 piece for now.
-			local ShellLength = ((SelfTbl.BulletData.PropLength or 0) + (SelfTbl.BulletData.ProjLength or 0)) / ACF.InchToCm / 2
+			local ShellLength = (SelfTbl.BulletData.RoundLength or ((SelfTbl.BulletData.PropLength or 0) + (SelfTbl.BulletData.ProjLength or 0))) / ACF.InchToCm / 2
 			local p1 = SelfTbl.BreechPos
 			local p2 = p1 - SelfTbl.BreechAng:Forward() * ShellLength
 			local wp1, wp2 = ENTITY.LocalToWorld(self, p1), ENTITY.LocalToWorld(self, p2)
@@ -631,15 +631,6 @@ do -- Metamethods --------------------------------
 				return false, "The ammo type in this crate cannot be used for this weapon."
 			end
 
-			-- Drums (Cylinder shape) can only be used by automatic weapons
-			-- The menu shouldn't be letting someone spawn a drum like this, but just in case
-			if Crate.Shape == "Cylinder" then
-				local Class = This.ClassData
-				if not (Class and Class.IsAutomatic) then
-					return false, "Drums can only be used by automatic weapons."
-				end
-			end
-
 			if not BeltFedCheck(This, Crate) then return false, "Belt fed weapons must have their ammo crate mounted on the same turret ring/baseplate." end
 
 			return true
@@ -1088,7 +1079,7 @@ do -- Metamethods --------------------------------
 				WireLib.TriggerOutput(self, "Ammo Type", BulletData.Type)
 				WireLib.TriggerOutput(self, "Shots Left", SelfTbl.CurrentShot)
 
-				ENTITY.SetNW2Int(self, "Length", SelfTbl.BulletData.PropLength + SelfTbl.BulletData.ProjLength)
+				ENTITY.SetNW2Int(self, "Length", SelfTbl.BulletData.RoundLength or (SelfTbl.BulletData.PropLength + SelfTbl.BulletData.ProjLength))
 				ENTITY.SetNW2Float(self, "Caliber", SelfTbl.BulletData.Caliber)
 				ENTITY.SetNW2Int(self, "BreechIndex", SelfTbl.BreechIndex or 1)
 
@@ -1165,7 +1156,7 @@ do -- Metamethods --------------------------------
 			SelfTbl.BulletData = Crate.BulletData
 
 			SelfTbl.CurrentCrate = Crate
-			ENTITY.SetNW2Int(self, "Length", SelfTbl.BulletData.PropLength + SelfTbl.BulletData.ProjLength)
+			ENTITY.SetNW2Int(self, "Length", SelfTbl.BulletData.RoundLength or (SelfTbl.BulletData.PropLength + SelfTbl.BulletData.ProjLength))
 			ENTITY.SetNW2Int(self, "Caliber", SelfTbl.BulletData.Caliber)
 			ENTITY.SetNW2Int(self, "BreechIndex", SelfTbl.BreechIndex or 1)
 

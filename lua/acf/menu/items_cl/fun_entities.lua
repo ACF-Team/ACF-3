@@ -26,7 +26,7 @@ do -- Piledrivers menu
 		ACF.SetClientData("SecondaryClass", "N/A")
 		ACF.SetClientData("Destiny", "Piledrivers")
 		ACF.SetClientData("AmmoType", "HP")
-		ACF.SetClientData("Propellant", 0)
+		ACF.SetClientData("PropRatio", 0)
 		ACF.SetClientData("Tracer", false)
 
 		ACF.SetToolMode("acf_menu", "Spawner", "Weapon")
@@ -64,7 +64,7 @@ do -- Piledrivers menu
 
 			Ammo.SpikeLength = Length
 
-			ACF.SetClientData("Projectile", Length)
+			ACF.SetClientData("RoundLength", Length)
 
 			BulletData = Ammo:ClientConvert(ACF.GetAllClientData())
 

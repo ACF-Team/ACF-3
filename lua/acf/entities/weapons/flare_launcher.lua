@@ -37,6 +37,7 @@ Weapons.RegisterItem("40mmFGL", "FGL", {
 	Round = {
 		MaxLength  = 9,
 		PropLength = 0.025,
+		CaseScale  = 1, -- Countermeasure, no meaningful propellant case
 	},
 	Preview = {
 		FOV = 115,

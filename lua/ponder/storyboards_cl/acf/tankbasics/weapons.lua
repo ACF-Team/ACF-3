@@ -76,8 +76,8 @@ Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Select AP ammo for t
 Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", ComboBoxName = "AmmoType", OptionID = 1}):DelayByLength()
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Set the projectile vs propellant length to optimize for penetration."}))
-Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.ammo.projectile_length", Value = 7.50}):DelayByLength()
-Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.ammo.propellant_length", Value = 32.50}):DelayByLength()
+Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.ammo.total_length", Value = 40.00}):DelayByLength()
+Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.ammo.propellant_ratio", Value = 0.8125}):DelayByLength()
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Set the number of projectiles the crate stores in each dimension."}))
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.ammo.projectiles_length", Value = 4}):DelayByLength()

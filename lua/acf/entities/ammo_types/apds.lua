@@ -68,4 +68,54 @@ if SERVER then
 	end
 else
 	ACF.RegisterAmmoDecal("APDS", "damage/apcr_pen", "damage/apcr_rico")
+
+	-- Ammo menu visual: a steel dart (BulletData.Diameter, scaled down to 45% of bore) riding inside
+	-- a full-bore aluminum sabot that wraps half of the dart's length, matching UpdateRoundData's mass split.
+	function Ammo:DrawAmmoVisual(Panel, w, h, _, BulletData)
+		local GeoPrim = ACF.GeoPrim
+		local Margin  = 10
+		local DrawW   = w - Margin * 2
+
+		local SabotLenCm = math.min(BulletData.ProjLength * 0.5, BulletData.ProjLength) -- matches the "1/2 of ProjLength" sabot volume assumed in UpdateRoundData
+		local Length = BulletData.ProjLength + BulletData.PropLength
+
+		if Length <= 0 then return end
+
+		-- Cap Scale itself by the height budget so every shape shrinks uniformly, not just the radius.
+		-- The case, not the bore, is the widest part of a necked round, so it sets the budget.
+		local CaseDia = ACF.GetCaseDiameter(BulletData)
+
+		if CaseDia <= 0 then return end
+
+		local Scale   = math.min(DrawW / Length, ((h - Margin * 2) * 0.6) / CaseDia)
+		local MaxDia  = CaseDia * Scale
+		local CenterY = h * 0.5
+
+		local Propellant = GeoPrim.New("Cylinder", { Radius = CaseDia * 0.5, Height = BulletData.PropLength })
+		Propellant:SetMaterial("Propellant")
+
+		-- Discarding sabot, full bore diameter, only wraps the rear portion of the dart
+		local Sabot = GeoPrim.New("Cylinder", { Radius = BulletData.Caliber * 0.5, Height = SabotLenCm })
+		Sabot:SetMaterial("Aluminum Sabot (Discarding)")
+
+		-- Steel dart, running the full length of the projectile. Drawn after the sabot at the same
+		-- starting X so it's the on-top, narrower shape within the overlap.
+		local Penetrator = GeoPrim.New("Cylinder", { Radius = BulletData.Diameter * 0.5, Height = BulletData.ProjLength })
+		Penetrator:SetMaterial("Steel Penetrator")
+
+		local X = Margin
+		X = Propellant:Draw(Panel, X, CenterY, Scale, MaxDia, Color(180, 150, 60), Color(30, 30, 30))
+		local DartX = X
+		Sabot:Draw(Panel, X, CenterY, Scale, MaxDia, Color(150, 150, 155), Color(30, 30, 30))
+		Penetrator:Draw(Panel, DartX, CenterY, Scale, MaxDia, Color(120, 120, 130), Color(30, 30, 30))
+
+		-- Tracer, a colored segment at the base of the dart, drawn last (and not as a Dart child --
+		-- Draw() paints an entire subtree in one Color, so a child never gets a color of its own) so it
+		-- takes hover priority and actually renders red instead of inheriting the penetrator's gray.
+		if BulletData.Tracer and BulletData.Tracer > 0 then
+			local Tracer = GeoPrim.New("Cylinder", { Radius = BulletData.Diameter * 0.5, Height = BulletData.Tracer })
+			Tracer:SetMaterial("Tracer")
+			Tracer:Draw(Panel, DartX, CenterY, Scale, MaxDia, Color(220, 40, 30), Color(30, 30, 30))
+		end
+	end
 end

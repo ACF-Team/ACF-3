@@ -26,6 +26,7 @@ Weapons.Register("SL", {
 	Round = {
 		MaxLength  = 17.5,
 		PropLength = 0.05,
+		CaseScale  = 1, -- Countermeasure, no meaningful propellant case
 	},
 	Preview = {
 		FOV = 75,
