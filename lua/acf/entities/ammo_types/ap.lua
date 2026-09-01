@@ -464,6 +464,7 @@ else
 		RoundStats:TrackClientData("RoundLength", "SetText")
 		RoundStats:TrackClientData("PropRatio")
 		RoundStats:TrackClientData("CaseScale")
+		RoundStats:TrackClientData("TelescopeRatio")
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
 
