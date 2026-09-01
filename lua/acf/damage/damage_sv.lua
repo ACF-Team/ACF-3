@@ -103,6 +103,7 @@ function Damage.getBulletDamage(Bullet, Trace)
 		-- The ballistics layer resolves the impact to a single convex (Bullet.ConvexHit) so each convex
 		-- is damaged as its own event. Older/meshless callers (blasts) fall back to summing every live convex.
 		local ConvexHit  = Bullet.ConvexHit
+		if ConvexHit and ConvexHit.Entity ~= Entity then ConvexHit = nil end -- Stale entry-hole hit from a different entity/convex
 		local ConvexHits = ConvexHit and { ConvexHit } or ACF.GetConvexHits(Entity, Trace.HitPos, NormDir)
 
 		local Penetration = Bullet:GetPenetration()
