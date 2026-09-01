@@ -4,7 +4,6 @@ ENT.PrintName      = "ACF Waterjet"
 ENT.WireDebugName  = "ACF Waterjet"
 ENT.PluralName     = "ACF Waterjets"
 ENT.ACF_Limit      = 4
-ENT.ACF_PreventArmoring = true
 
 -- Maps user var name to its type, whether it is client data and type specific arguments (all support defaults?)
 ENT.ACF_UserVars = {

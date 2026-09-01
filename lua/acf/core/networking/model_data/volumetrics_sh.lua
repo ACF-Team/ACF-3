@@ -161,7 +161,7 @@ do
                 if MaterialID ~= "Default" then HasNonDefault = true break end
             end
 
-            if HasNonDefault then
+            if HasNonDefault and not Entity.ACF_PreventArmoring then
                 if not NoStore then duplicator.StoreEntityModifier(Entity, "ACF_ArmorMesh", { Materials = Entity.ACF_Volumetric_Materials }) end
 
                 local EntACF = Entity.ACF
