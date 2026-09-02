@@ -6,13 +6,13 @@ TOOL.Name       = "#tool.acfvolumetrizedupe.name"
 TOOL.Command    = nil
 TOOL.ConfigName = ""
 TOOL.Information = {
-	{ name = "left0", stage = 0 },
+	{ name = "right0", stage = 0 },
 }
 
 if CLIENT then
 	language.Add("tool.acfvolumetrizedupe.name", "ACF Volumetrize Dupe")
 	language.Add("tool.acfvolumetrizedupe.desc", "Area copies and pastes the targeted ACF baseplate's contraption through Advanced Duplicator 2")
-	language.Add("tool.acfvolumetrizedupe.left0", "Area copy and paste the targeted ACF baseplate's contraption")
+	language.Add("tool.acfvolumetrizedupe.right0", "Area copy and paste the targeted ACF baseplate's contraption")
 elseif SERVER then
 	local Notify = ACF.Utilities.Notify
 
