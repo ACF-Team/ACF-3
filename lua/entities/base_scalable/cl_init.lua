@@ -66,7 +66,7 @@ do -- Size and scale setter methods
 		Entity.Matrix:SetScale(Scale)
 
 		Entity:EnableMatrix("RenderMultiply", Entity.Matrix)
-		Entity:PhysicsInitMultiConvex(Mesh, nil, Entity.ACF_MassCenterOverride)
+		Entity:PhysicsInitMultiConvex(Mesh, nil, Entity.ACF_MassCenterOverride or nil)
 		Entity:EnableCustomCollisions(true)
 		Entity:SetRenderBounds(Entity:GetCollisionBounds())
 		Entity:DrawShadow(false)

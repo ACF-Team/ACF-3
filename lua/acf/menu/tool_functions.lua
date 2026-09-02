@@ -88,7 +88,7 @@ do -- Ghost entity handling
 			GhostEnt:EnableMatrix("RenderMultiply", ScaleMatrix)
 
 			if ModelMesh then
-				GhostEnt:PhysicsInitMultiConvex(ModelMesh, nil, GhostEnt.ACF_MassCenterOverride)
+				GhostEnt:PhysicsInitMultiConvex(ModelMesh, nil, GhostEnt.ACF_MassCenterOverride or nil)
 				GhostEnt:EnableCustomCollisions(true)
 				GhostEnt:SetRenderBounds(GhostEnt:GetCollisionBounds())
 				GhostEnt:DrawShadow(false)

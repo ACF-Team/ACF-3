@@ -56,7 +56,7 @@ do -- Size and scale setter methods
 	local function ApplyScale(Entity, Data, Scale)
 		local Mesh = Data:GetMesh(Scale)
 
-		Entity:PhysicsInitMultiConvex(Mesh, nil, Entity.ACF_MassCenterOverride)
+		Entity:PhysicsInitMultiConvex(Mesh, nil, Entity.ACF_MassCenterOverride or nil)
 		Entity:SetMoveType(MOVETYPE_VPHYSICS)
 		Entity:SetSolid(SOLID_VPHYSICS)
 		Entity:EnableCustomCollisions(true)
