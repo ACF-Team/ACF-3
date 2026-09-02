@@ -18,8 +18,8 @@ Weapons.Register("RAC", {
 	ReloadMod 	= 0.5, -- Load time multiplier. Represents the ease of manipulating the weapon's ammunition
 	TransferMult = 10, -- Thermal energy transfer rate
 	Round = {
-		MaxLength  = 21.3, -- 37x219mm (T250 rotary): 394mm overall
-		PropLength = 17.3, -- Scaled with MaxLength to hold the propellant cap
+		MaxLength  = 16,
+		PropLength = 13,
 		CaseScale  = 1.46, -- 37x219mm (T250 rotary): 54mm case over a 37mm projectile
 	},
 	Preview = {

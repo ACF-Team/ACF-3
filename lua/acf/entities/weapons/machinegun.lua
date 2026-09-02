@@ -17,8 +17,8 @@ Weapons.Register("MG", {
 	TransferMult = 20, -- Thermal energy transfer rate
 	CyclicCeilMult = 2, -- How high above base cyclic the gun can be set to
 	Round = {
-		MaxLength  = 21.8, -- 12.7x99mm (.50 BMG): 138.4mm overall
-		PropLength = 17.71, -- Scaled with MaxLength to hold the propellant cap
+		MaxLength  = 16,
+		PropLength = 13,
 		CaseScale  = 1.61, -- 12.7x99mm (.50 BMG): 20.4mm case over a 12.7mm projectile
 	},
 	Preview = {
