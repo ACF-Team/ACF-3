@@ -292,6 +292,29 @@ do
     end)
 end
 
+if not util.IntersectRayWithTriangle then
+    -- Fallback for different versions of gmod... Rubat... if you can hear me...
+    function util.IntersectRayWithTriangle(RayStart, RayEnd, A, B, C)
+        local Dir    = RayEnd - RayStart
+        local Length = Dir:Length()
+        if Length == 0 then return nil end
+        Dir = Dir / Length
+
+        local Normal = (C - A):Cross(B - A):GetNormalized()
+        local Pos    = util.IntersectRayWithPlane(RayStart, Dir, A, Normal)
+        if not Pos then return nil end
+
+        if (B - A):Cross(Pos - A):Dot(Normal) > 0 then return nil end
+        if (C - B):Cross(Pos - B):Dot(Normal) > 0 then return nil end
+        if (A - C):Cross(Pos - C):Dot(Normal) > 0 then return nil end
+
+        local Frac = (Pos - RayStart):Dot(Dir) / Length
+        if Frac < 0 or Frac > 1 then return nil end
+
+        return Pos, Frac
+    end
+end
+
 -- Returns every triangle the ray pierces as { Pos, Normal, ConvexID, T, Entity, IsEntry }, unsorted.
 -- IsEntry is true when the ray crosses into the face. The ray is a forward half-line, so a convex
 -- the ray began inside only yields its exit here; the missing entry is synthesized below at T = 0.
