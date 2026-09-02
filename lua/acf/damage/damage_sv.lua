@@ -308,7 +308,9 @@ function Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 			EntACF.Health = math.Clamp(EntACF.Health - TotalChange, 0, EntACF.MaxHealth)
 		else
 			for _, Hit in ipairs(ConvexHits) do
-				local Convex       = MeshData.Convexes[Hit.ConvexID]
+				local Convex = MeshData.Convexes[Hit.ConvexID]
+				if not Convex then continue end -- Mesh may have been recomputed since these hits were gathered
+
 				local HealthChange = Hit.Volume * Coef
 
 				Convex.Health = math.Clamp(Convex.Health - HealthChange, 0, Convex.MaxHealth)
