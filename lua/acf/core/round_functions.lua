@@ -143,8 +143,9 @@ function ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 	-- propellant begins. The propellant isn't shortened by this -- it's bored out instead, so
 	-- PropVolume below is a hollow cylinder (solid minus the rod's core) over the telescoped length.
 	local TelescopeRatio  = math.Clamp(ToolData.TelescopeRatio or 0, 0, 1)
-	local TelescopeLength = math.Round(PropLength * TelescopeRatio, 2)
-	local ProjLength      = math.Round(RoundLength * (1 - PropRatio) + TelescopeLength, 2)
+	local BaseProjLength  = RoundLength * (1 - PropRatio)
+	local TelescopeLength = math.Round(math.min(PropLength * TelescopeRatio, GUIData.MaxProjLength - BaseProjLength), 2)
+	local ProjLength      = math.Round(BaseProjLength + TelescopeLength, 2)
 	local ProjVolume      = Data.ProjArea * ProjLength
 	local PropVolume      = math.max(0, Data.PropArea * PropLength - Data.ProjArea * TelescopeLength)
 
