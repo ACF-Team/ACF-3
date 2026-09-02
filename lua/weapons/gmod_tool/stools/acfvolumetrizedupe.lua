@@ -73,7 +73,7 @@ elseif SERVER then
 	local function ComputeShapePose(Entity, SizePerm, SizeMul, PosPerm, PosMul, Ang, Thickness, BasePos, ThinAxisThickness)
 		local RawSize = GetLocalSize(Entity)
 		local Size = PermuteScale(RawSize, SizePerm, SizeMul)
-		local Pos = Entity:LocalToWorld(PermuteScale(RawSize, PosPerm, PosMul))
+		local Pos = Entity:LocalToWorld(Entity:OBBCenter() + PermuteScale(RawSize, PosPerm, PosMul))
 		if ThinAxisThickness then Pos = ApplyThinAxisThickness(Entity, Size, Thickness, BasePos, Pos) end
 		local Angle = Entity:LocalToWorldAngles(Ang)
 		return Size, Pos, Angle
@@ -313,7 +313,7 @@ elseif SERVER then
 		return true
 	end
 
-	function TOOL:LeftClick(Trace)
+	function TOOL:RightClick(Trace)
 		local Entity = Trace.Entity
 		if not IsValid(Entity) then return false end
 
@@ -329,6 +329,4 @@ elseif SERVER then
 
 		return true
 	end
-
-	function TOOL:RightClick(_) return false end
 end
