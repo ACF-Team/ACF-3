@@ -731,6 +731,8 @@ function ACF.CreateAmmoMenu(Menu)
 	end
 
 	-- Hex packing staggers alternating rows/layers so they nest, trading arrangement for a tighter fit
+	ACF.SetClientData("HexPacking", false, true)
+
 	local HexPacking = ContainerBase:AddCheckBox(language.GetPhrase("acf.menu.ammo.hex_packing"))
 	HexPacking:SetClientData("HexPacking", "OnChange")
 	HexPacking:DefineSetter(function(Panel, _, _, Value)
