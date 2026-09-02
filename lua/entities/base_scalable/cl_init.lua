@@ -66,7 +66,7 @@ do -- Size and scale setter methods
 		Entity.Matrix:SetScale(Scale)
 
 		Entity:EnableMatrix("RenderMultiply", Entity.Matrix)
-		Entity:PhysicsInitMultiConvex(Mesh)
+		Entity:PhysicsInitMultiConvex(Mesh, nil, Entity.ACF_MassCenterOverride)
 		Entity:EnableCustomCollisions(true)
 		Entity:SetRenderBounds(Entity:GetCollisionBounds())
 		Entity:DrawShadow(false)
@@ -140,6 +140,7 @@ end
 net.Receive("ACF_Scalable_Entity", function()
 	local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
 	local Scale = Vector(net.ReadFloat(), net.ReadFloat(), net.ReadFloat())
+	local MassCenterOverride = net.ReadBool() and Vector(net.ReadFloat(), net.ReadFloat(), net.ReadFloat())
 	local Type  = net.ReadString()
 	local Path  = net.ReadString()
 
@@ -149,6 +150,7 @@ net.Receive("ACF_Scalable_Entity", function()
 			if not IsValid(Entity) then return end
 			if not Entity.IsScalable then return end
 
+			Entity.ACF_MassCenterOverride = MassCenterOverride
 			Entity:SetScaleData(Type, Path)
 			if not Entity:SetScale(Scale) then
 				Entity.SavedScale = Scale

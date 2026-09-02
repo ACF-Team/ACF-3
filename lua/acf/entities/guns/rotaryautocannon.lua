@@ -6,6 +6,7 @@ ACF.Classes.DefineClass("ACF.Guns.RotaryAutocannon", "ACF.Guns.BaseScalableGun",
 	CLASS.IsWeapon		= true
 	CLASS.Description 	= "#acf.descs.weapons.rac"
 	CLASS.Model       	= "models/rotarycannon/kw/20mmrac.mdl"
+	CLASS.MassCenter    = Vector(0, 0, 0)
 	CLASS.Sound       	= "acf_base/weapons/mg_fire3.mp3"
 	CLASS.MuzzleFlash 	= "mg_muzzleflash_noscale"
 	CLASS.IsAutomatic 	= true

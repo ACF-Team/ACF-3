@@ -7,6 +7,7 @@ ACF.Classes.DefineClass("ACF.Guns.Howitzer", "ACF.Guns.BaseScalableGun", functio
 	CLASS.Description 	= "#acf.descs.weapons.hw"
 	CLASS.Sound       	= "acf_base/weapons/howitzer_new2.mp3"
 	CLASS.Model       	= "models/howitzer/howitzer_105mm.mdl"
+	CLASS.MassCenter    = Vector(0, 0, 0)
 	CLASS.MuzzleFlash 	= "howie_muzzleflash_noscale"
 	CLASS.Mass        	= 860
 	CLASS.Spread      	= 0.1

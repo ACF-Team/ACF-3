@@ -292,6 +292,7 @@ do -- Spawn and Update functions --------------------------------
 
 		Entity.ACF.Model = Model
 
+		Entity.ACF_MassCenterOverride = Weapon and Weapon.MassCenter or Class.MassCenter
 		Entity:SetScaledModel(Model)
 		Entity:SetScale(Scale)
 

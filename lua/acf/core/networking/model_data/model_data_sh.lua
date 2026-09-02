@@ -30,7 +30,7 @@ end
 local function GetVolume(Mesh)
 	local Entity = ModelData.Entity
 
-	Entity:PhysicsInitMultiConvex(Mesh)
+	Entity:PhysicsInitMultiConvex(Mesh, nil, Entity.ACF_MassCenterOverride)
 
 	local PhysObj = Entity:GetPhysicsObject()
 

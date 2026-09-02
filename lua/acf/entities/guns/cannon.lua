@@ -6,6 +6,7 @@ ACF.Classes.DefineClass("ACF.Guns.Cannon", "ACF.Guns.BaseScalableGun", function(
 	CLASS.IsWeapon		= true
 	CLASS.Description 	= "#acf.descs.weapons.c"
 	CLASS.Model       	= "models/tankgun_new/tankgun_100mm.mdl"
+	CLASS.MassCenter    = Vector(0, 0, 0)
 	CLASS.Sound       	= "acf_base/weapons/cannon_new.mp3"
 	CLASS.MuzzleFlash 	= "cannon_muzzleflash_noscale"
 	CLASS.Mass        	= 2031

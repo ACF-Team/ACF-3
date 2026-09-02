@@ -25,6 +25,15 @@ local function TransmitScaleInfo(Entity, To)
 	net.WriteFloat(Scale[1])
 	net.WriteFloat(Scale[2])
 	net.WriteFloat(Scale[3])
+	if Entity.ACF_MassCenterOverride then
+		net.WriteBool(true)
+		net.WriteFloat(Entity.ACF_MassCenterOverride[1])
+		net.WriteFloat(Entity.ACF_MassCenterOverride[2])
+		net.WriteFloat(Entity.ACF_MassCenterOverride[3])
+	else
+		net.WriteBool(false)
+	end
+
 	net.WriteString(Data.Type)
 	net.WriteString(Data.Path)
 
@@ -47,7 +56,7 @@ do -- Size and scale setter methods
 	local function ApplyScale(Entity, Data, Scale)
 		local Mesh = Data:GetMesh(Scale)
 
-		Entity:PhysicsInitMultiConvex(Mesh)
+		Entity:PhysicsInitMultiConvex(Mesh, nil, Entity.ACF_MassCenterOverride)
 		Entity:SetMoveType(MOVETYPE_VPHYSICS)
 		Entity:SetSolid(SOLID_VPHYSICS)
 		Entity:EnableCustomCollisions(true)
