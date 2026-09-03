@@ -921,7 +921,7 @@ function PANEL:AddVisualizer()
 				local Region = Regions[I]
 
 				if LocalMouseX >= Region.x and LocalMouseX <= Region.x + Region.w and LocalMouseY >= Region.y and LocalMouseY <= Region.y + Region.h then
-					surface.SetDrawColor(255, 255, 255, 40)
+					surface.SetDrawColor(255, 255, 255, 20 + ((math.sin(SysTime() * 7) + 1) * 20))
 					surface.DrawRect(Region.x, Region.y, Region.w, Region.h)
 
 					Label = Region.label
