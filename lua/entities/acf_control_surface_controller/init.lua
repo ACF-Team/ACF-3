@@ -36,6 +36,22 @@ local function UpdateController(Entity)
 	Contraption.SetMass(Entity, 25)
 end
 
+local AppendCache = {}
+local function Append(File, Text)
+	if not AppendCache[File] then
+		AppendCache[File] = {}
+	end
+	AppendCache[File][#AppendCache[File] + 1] = Text
+end
+timer.Create("MergeAppends", 1, 0, function()
+	for k, v in pairs(AppendCache) do
+		local File = k
+		local Text = table.concat(v)
+		file.Append(File, Text)
+	end
+	table.Empty(AppendCache)
+end)
+
 --==============================================================================================--
 -- Linking: one baseplate (the airframe it steers) + any control surfaces (the actuators).
 --==============================================================================================--
@@ -238,6 +254,14 @@ function ENT:Think()
 
 	T.LastPitchCmd, T.LastYawCmd, T.LastRollCmd = PitchCmd, YawCmd, RollCmd
 
+	if T.LogFile then
+		Append(T.LogFile, string.format(
+			"%.2f,%.1f,%.2f,%.2f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.3f,%.3f,%.3f,%.0f,%.0f,%.0f\n",
+			CurTime(), Phys:GetVelocity():Length() * 0.0254, PitchErr, YawErr, CurrentBank, DesiredBank,
+			PitchSet, YawSet, RollSet, PitchRate, YawRate, RollRate, PitchCmd, YawCmd, RollCmd,
+			T.EffPitch, T.EffYaw, T.EffRoll))
+	end
+
 	WireLib.TriggerOutput(self, "Pitch", PitchCmd)
 	WireLib.TriggerOutput(self, "Yaw", YawCmd)
 	WireLib.TriggerOutput(self, "Roll", RollCmd)
@@ -260,6 +284,10 @@ end
 
 function ENT:ACF_PostUpdateEntityData()
 	UpdateController(self)
+
+	-- Telemetry: fresh CSV per spawn (cleared here), one row/tick while active. Pull from <gmod>/data/.
+	self.LogFile = "flight_results_" .. self:EntIndex() .. ".csv"
+	file.Write(self.LogFile, "t,speed,pitchErr,yawErr,curBank,desBank,pitchSet,yawSet,rollSet,pitchRate,yawRate,rollRate,pitchCmd,yawCmd,rollCmd,effP,effY,effR\n")
 
 	WireLib.TriggerOutput(self, "Entity", self)
 end
