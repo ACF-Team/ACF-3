@@ -148,6 +148,8 @@ end
 if SERVER then
 	local Conversion	= ACF.PointConversion
 
+	ACF.Classes.Entities.AddArguments("acf_ammo", "LinerAngleRatio") -- Adding extra info to ammo crates
+
 	function Ammo:GetCost(BulletData)
 		return (BulletData.CasingMass * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.Octol) + (BulletData.LinerMass * Conversion.Copper)
 	end
