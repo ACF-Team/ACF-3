@@ -222,8 +222,10 @@ do	-- Turret drives
 
 				-- Solves fresh each tick for the local yaw that points the Rotator at DesiredAngle,
 				-- given the Turret's current orientation, then expresses that as a gap relative to
-				-- the Rotator's actual transform
-				GetTargetBearing	= function(Turret, StabAmt)
+				-- the Rotator's actual transform. Takes StabAmt to match the pitch variant's call
+				-- signature below, but doesn't need it since the fresh solve already accounts for
+				-- mount drift.
+				GetTargetBearing	= function(Turret)
 					local TurretTbl = ENTITY.GetTable(Turret)
 					local Rotator = TurretTbl.Rotator
 
