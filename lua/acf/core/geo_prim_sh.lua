@@ -177,17 +177,39 @@ local Cylinder = DefineShape("Cylinder")
 -- cone's base (e.g. a projectile body meeting its nose cone) -- if only one side rounded outward, the
 -- seam between the two shapes would show a 1px step where the "same" radius resolved to different pixel
 -- widths.
+
 local function DrawRect(self, Panel, X, CenterY, Scale, MaxDiameterPx, LengthPx, DrawColor)
 	local RadiusPx = math.min(self:GetRadius() * Scale, MaxDiameterPx * 0.5)
 	local Top      = math.floor(CenterY - RadiusPx)
 	local Bottom   = math.ceil(CenterY + RadiusPx)
 
+	draw.NoTexture()
 	surface.SetDrawColor(DrawColor)
 	surface.DrawRect(X, Top, LengthPx, Bottom - Top)
 
 	if self.Material then
 		Panel:AddRegion(X, Top, LengthPx, Bottom - Top, self:GetRegionLabel())
 	end
+
+	return RadiusPx, Top, Bottom
+end
+
+local MATERIAL_CYLINDER_MAIN_GRADIENT   = Material("gui/center_gradient")
+local function DrawCylinder(self, Panel, X, CenterY, Scale, MaxDiameterPx, LengthPx, DrawColor)
+	local _, Top, Bottom = DrawRect(self, Panel, X, CenterY, Scale, MaxDiameterPx, LengthPx, DrawColor)
+
+	local GradientColor = DrawColor:Copy()
+	GradientColor:AddBrightness(0.2)
+	GradientColor.a = 255
+	surface.SetMaterial(MATERIAL_CYLINDER_MAIN_GRADIENT)
+	surface.SetDrawColor(GradientColor)
+
+	local Width = LengthPx
+	local Height = Bottom - Top
+
+	surface.SetMaterial(MATERIAL_CYLINDER_MAIN_GRADIENT)
+	surface.SetDrawColor(GradientColor)
+	surface.DrawTexturedRectRotated(X + (Width * 0.5), Top + (Height * 0.5), Height, Width, 90)
 end
 
 function Cylinder:GetLength()
@@ -203,7 +225,7 @@ function Cylinder:GetShapeVolume()
 	return math.pi * R * R * H
 end
 
-Cylinder.DrawShape = DrawRect
+Cylinder.DrawShape = DrawCylinder
 
 ----------------------------------------------------------------------------------------------------
 -- Cone: Params = { Radius, TipRadius, Height } -- a frustum; TipRadius defaults to 0 for a true point
