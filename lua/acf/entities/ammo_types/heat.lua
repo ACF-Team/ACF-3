@@ -365,7 +365,7 @@ if SERVER then
 				local JetResult = Damage.dealDamage(Ent, JetDmg, JetInfo)
 
 				if not Bullet.IsSpall and not Bullet.IsCookOff then
-					Ballistics.DoSpall(Bullet, TraceRes, JetResult, Speed)
+					Ballistics.DoSpall(Bullet, TraceRes, JetResult, Speed, JetInfo)
 				end
 
 				if JetResult.Kill then
