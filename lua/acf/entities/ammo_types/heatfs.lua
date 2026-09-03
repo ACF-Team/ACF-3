@@ -21,17 +21,6 @@ function Ammo:OnLoaded()
 	self.MaxStandoffRatio = 0.75
 end
 
-function Ammo:VerifyData(ToolData)
-	Ammo.BaseClass.VerifyData(self, ToolData)
-
-	-- HEAT's VerifyData above unconditionally re-defaults a legacy LinerAngle field HEATFS no longer
-	-- uses once LinerAngleRatio exists (see the migration in UpdateRoundData) -- clear it back out so
-	-- it doesn't linger as dead data in saved ToolData/dupes.
-	if isnumber(ToolData.LinerAngleRatio) then
-		ToolData.LinerAngle = nil
-	end
-end
-
 function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	GUIData = GUIData or Data
 
@@ -147,8 +136,6 @@ end
 
 if SERVER then
 	local Conversion	= ACF.PointConversion
-
-	ACF.Classes.Entities.AddArguments("acf_ammo", "LinerAngleRatio") -- Adding extra info to ammo crates
 
 	function Ammo:GetCost(BulletData)
 		return (BulletData.CasingMass * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.Octol) + (BulletData.LinerMass * Conversion.Copper)

@@ -91,7 +91,23 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	local WarheadLength   = FreeLength * (1 - ToolData.StandoffRatio)
 	local WarheadDiameter = 2 * FreeRadius
 	local MinConeAng      = math.deg(math.atan(FreeRadius / WarheadLength))
-	local LinerAngle      = math.Clamp(ToolData.LinerAngle, MinConeAng, 90) -- Cone angle is angle between cone walls, not between a wall and the center line
+
+	-- Migrates old ToolData saved with an absolute LinerAngle (degrees) to LinerAngleRatio below --
+	-- MinConeAng moves whenever RoundLength/StandoffRatio do, so an absolute angle would need
+	-- continual re-clamping against a moving target; the ratio's own bounds (0-1) never move, so it
+	-- doesn't. Needs MinConeAng, so this can only run here rather than in VerifyData. Runs once:
+	-- ToolData.LinerAngle is cleared immediately after conversion, so this never fires again.
+	if not isnumber(ToolData.LinerAngleRatio) then
+		if isnumber(ToolData.LinerAngle) then
+			ToolData.LinerAngleRatio = math.Remap(math.Clamp(ToolData.LinerAngle, MinConeAng, 90), MinConeAng, 90, 0, 1)
+			ToolData.LinerAngle = nil
+		else
+			ToolData.LinerAngleRatio = 1
+		end
+	end
+
+	local LinerAngleRatio = math.Clamp(ToolData.LinerAngleRatio, 0, 1)
+	local LinerAngle      = math.Remap(LinerAngleRatio, 0, 1, MinConeAng, 90) -- Cone angle is angle between cone walls, not between a wall and the center line
 	local LinerMass, ConeVol, ConeLength = self:ConeCalc(LinerAngle, FreeRadius)
 
 	-- Charge length increases jet velocity, but with diminishing returns. All explosive sorrounding the cone has 100% effectiveness,
@@ -123,18 +139,19 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 
 	GUIData.MinConeAng = MinConeAng
 
-	Data.ConeAng        = LinerAngle
-	Data.MinConeAng     = MinConeAng
-	Data.FillerMass     = FillerMass
+	Data.ConeAng         = LinerAngle
+	Data.MinConeAng      = MinConeAng
+	Data.LinerAngleRatio = LinerAngleRatio
+	Data.FillerMass      = FillerMass
 	local NonCasingVol  = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)
 	Data.CasingMass		= (GUIData.ProjVolume - NonCasingVol) * ACF.SteelDensity
-	Data.ProjMass       = Data.FillerMass + Data.CasingMass + LinerMass
-	Data.MuzzleVel      = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
+	Data.ProjMass        = Data.FillerMass + Data.CasingMass + LinerMass
+	Data.MuzzleVel       = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
 	Data.BoomFillerMass	= Data.FillerMass * ACF.HEATBoomConvert * ACF.CompBEquivalent -- In TNT equivalent
-	Data.LinerMass      = LinerMass
-	Data.JetMass        = JetMass
-	Data.JetMinVel      = JetMinVel
-	Data.JetMaxVel      = JetMaxVel
+	Data.LinerMass       = LinerMass
+	Data.JetMass         = JetMass
+	Data.JetMinVel       = JetMinVel
+	Data.JetMaxVel       = JetMaxVel
 	Data.JetAvgVel	  	= JetAvgVel
 	Data.BreakupTime    = BreakupTime
 	Data.Standoff       = Standoff
@@ -199,10 +216,6 @@ function Ammo:VerifyData(ToolData)
 	else
 		ToolData.StandoffRatio = math.Clamp(ToolData.StandoffRatio, 0, self.MaxStandoffRatio or 0.2)
 	end
-
-	if not isnumber(ToolData.LinerAngle) then
-		ToolData.LinerAngle = 90
-	end
 end
 
 if SERVER then
@@ -211,7 +224,7 @@ if SERVER then
 	local Objects    = Damage.Objects
 	local Conversion	= ACF.PointConversion
 
-	Entities.AddArguments("acf_ammo", "LinerAngle", "StandoffRatio") -- Adding extra info to ammo crates
+	Entities.AddArguments("acf_ammo", "LinerAngleRatio", "StandoffRatio") -- Adding extra info to ammo crates
 
 	function Ammo:GetCost(BulletData)
 		return (BulletData.CasingMass * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.CompB) + (BulletData.LinerMass * Conversion.Copper)
@@ -220,7 +233,7 @@ if SERVER then
 	function Ammo:OnLast(Entity)
 		Ammo.BaseClass.OnLast(self, Entity)
 
-		Entity.LinerAngle  = nil
+		Entity.LinerAngleRatio = nil
 
 		-- Cleanup the leftovers aswell
 		Entity.FillerMass = nil
@@ -544,21 +557,18 @@ else
 	end
 
 	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
-		local LinerAngle = Base:AddSlider("#acf.menu.ammo.liner_angle", BulletData.MinConeAng, 90, 1)
-		LinerAngle:SetClientData("LinerAngle", "OnValueChanged")
-		LinerAngle:TrackClientData("RoundLength")
-		LinerAngle:TrackClientData("CaseScale") -- MinConeAng derives from PropMass
-		LinerAngle:DefineSetter(function(Panel, _, Key, Value)
-			if Key == "LinerAngle" then
-				ToolData.LinerAngle = math.Round(Value, 2)
-			end
+		-- A ratio (0 = MinConeAng, the shallowest liner the current warhead geometry allows, 1 = a
+		-- flat 90 degrees) rather than an absolute angle -- MinConeAng shifts whenever RoundLength or
+		-- StandoffRatio change, so an absolute-angle slider would need its range/value re-clamped on
+		-- every update (as this one used to via Panel:SetMin); the ratio's own bounds never move.
+		local LinerAngleRatio = Base:AddSlider("#acf.menu.ammo.liner_angle_ratio", 0, 1, 2)
+		LinerAngleRatio:SetClientData("LinerAngleRatio", "OnValueChanged")
+		LinerAngleRatio:DefineSetter(function(_, _, _, Value)
+			ToolData.LinerAngleRatio = math.Round(Value, 2)
 
 			self:UpdateRoundData(ToolData, BulletData)
 
-			Panel:SetMin(BulletData.MinConeAng)
-			Panel:SetValue(BulletData.ConeAng)
-
-			return BulletData.ConeAng
+			return BulletData.LinerAngleRatio
 		end)
 
 		-- Capped the max standoff at 0.4 for historical reasons
@@ -576,7 +586,6 @@ else
 	function Ammo:OnCreateCrateInformation(Base, Label, ...)
 		Ammo.BaseClass.OnCreateCrateInformation(self, Base, Label, ...)
 
-		Label:TrackClientData("LinerAngle")
 		Label:TrackClientData("LinerAngleRatio")
 		Label:TrackClientData("StandoffRatio")
 	end
@@ -586,7 +595,6 @@ else
 		RoundStats:TrackClientData("RoundLength", "SetText")
 		RoundStats:TrackClientData("PropRatio")
 		RoundStats:TrackClientData("CaseScale")
-		RoundStats:TrackClientData("LinerAngle")
 		RoundStats:TrackClientData("LinerAngleRatio")
 		RoundStats:TrackClientData("StandoffRatio")
 		RoundStats:DefineSetter(function()
@@ -605,7 +613,6 @@ else
 		FillerStats:TrackClientData("RoundLength", "SetText")
 		FillerStats:TrackClientData("PropRatio")
 		FillerStats:TrackClientData("CaseScale")
-		FillerStats:TrackClientData("LinerAngle")
 		FillerStats:TrackClientData("LinerAngleRatio")
 		FillerStats:TrackClientData("StandoffRatio")
 		FillerStats:DefineSetter(function()
@@ -623,7 +630,6 @@ else
 		Penetrator:TrackClientData("RoundLength", "SetText")
 		Penetrator:TrackClientData("PropRatio")
 		Penetrator:TrackClientData("CaseScale")
-		Penetrator:TrackClientData("LinerAngle")
 		Penetrator:TrackClientData("LinerAngleRatio")
 		Penetrator:TrackClientData("StandoffRatio")
 		Penetrator:DefineSetter(function()
@@ -642,7 +648,6 @@ else
 		PenStats:TrackClientData("RoundLength", "SetText")
 		PenStats:TrackClientData("PropRatio")
 		PenStats:TrackClientData("CaseScale")
-		PenStats:TrackClientData("LinerAngle")
 		PenStats:TrackClientData("LinerAngleRatio")
 		PenStats:TrackClientData("StandoffRatio")
 		PenStats:DefineSetter(function()
