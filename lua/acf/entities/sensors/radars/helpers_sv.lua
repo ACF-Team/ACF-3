@@ -9,8 +9,9 @@ local Trace = ACF.trace
 -- Minimum target size (in inches) detectable at a given distance, given the radar's own MinSizeAtRange
 -- (the smallest target it can see at its own max range) and Range. Scales down toward 0 as distance
 -- approaches 0, so all radars can see small targets up close, but only larger radars can see
--- small targets far away. Non linear to mimic how realistic detection strength falls off with range
-local MinSizeExponent = 1.5
+-- small targets far away. Non linear to mimic how realistic detection strength falls off with range.
+-- Higher exponent = detection of small targets falls off faster with range (near targets barely change)
+local MinSizeExponent = 2
 
 function RadarHelpers.GetMinDetectableSize(Radar, EntDist)
 	local MinSizeAtRange = Radar.MinSizeAtRange

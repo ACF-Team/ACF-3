@@ -192,8 +192,8 @@ Missiles.RegisterItem("Ataka ASM", "ATGM", {
 		Armor           = 1,
 		ProjLength      = 17.5,
 		PropLength      = 68,
-		Thrust          = 230000, -- in kg*in/s^2
-		FuelConsumption = 0.03, -- in g/s/f
+		Thrust          = 210000, -- in kg*in/s^2
+		FuelConsumption = 0.032, -- in g/s/f
 		StarterPercent  = 0.2,
 		MaxAgilitySpeed = 200, -- in m/s
 		DragCoef        = 0.024,

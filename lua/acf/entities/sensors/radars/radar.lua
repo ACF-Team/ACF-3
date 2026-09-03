@@ -44,7 +44,7 @@ do -- Directional radars
 		Mass		= 35,
 		ViewCone	= 60,
 		Range		= 23622, -- ~600m
-		MinSizeAtRange = 10,
+		MinSizeAtRange = 24,
 		Origin		= "radar",
 		SwitchDelay	= 2,
 		ThinkTicks	= 3,
@@ -61,7 +61,7 @@ do -- Directional radars
 		Mass		= 120,
 		ViewCone	= 60,
 		Range		= 31496, -- ~800m
-		MinSizeAtRange = 5,
+		MinSizeAtRange = 14,
 		Origin		= "radar",
 		SwitchDelay	= 4,
 		ThinkTicks	= 3,
@@ -78,7 +78,7 @@ do -- Directional radars
 		Mass		= 220,
 		ViewCone	= 60,
 		Range		= 39370, -- ~1000m
-		MinSizeAtRange = 2,
+		MinSizeAtRange = 7,
 		Origin		= "radar",
 		SwitchDelay	= 8,
 		ThinkTicks	= 3,
@@ -120,7 +120,7 @@ do -- Spherical radars
 		Model		= "models/radar/radar_sp_sml.mdl",
 		Mass		= 80,
 		Range		= 18898, -- ~480m
-		MinSizeAtRange = 10,
+		MinSizeAtRange = 24,
 		Origin		= "radar",
 		SwitchDelay	= 3,
 		ThinkTicks	= 10,
@@ -136,7 +136,7 @@ do -- Spherical radars
 		Model		= "models/radar/radar_sp_mid.mdl",
 		Mass		= 210,
 		Range		= 25197, -- ~640m
-		MinSizeAtRange = 5,
+		MinSizeAtRange = 14,
 		Origin		= "radar",
 		SwitchDelay	= 6,
 		ThinkTicks	= 10,
@@ -152,7 +152,7 @@ do -- Spherical radars
 		Model		= "models/radar/radar_sp_big.mdl",
 		Mass		= 540,
 		Range		= 31496, -- ~800m
-		MinSizeAtRange = 2,
+		MinSizeAtRange = 7,
 		Origin		= "radar",
 		SwitchDelay	= 12,
 		ThinkTicks	= 10,
