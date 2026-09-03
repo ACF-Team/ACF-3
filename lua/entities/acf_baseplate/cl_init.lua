@@ -9,8 +9,43 @@ local ColorRed   = Color(255, 96, 87)
 local ColorGreen = Color(119, 255, 92)
 local ColorBlue  = Color(108, 184, 255)
 local ColorOrange = Color(255, 127, 0)
+local ColorYellow = Color(255, 224, 84)
+local ColorCyan   = Color(96, 226, 255)
 local VectorZ    = Vector(0, 0, 16)
 local North      = Vector(0, 1, 0)
+
+-- Aircraft build feedback: Centre of Mass (yellow) vs Centre of Lift (cyan) + the velocity vector, so
+-- builders can trim for stability (CoL a little behind the CoM = self-righting). Networked from the
+-- server flight sampler; only present on aircraft baseplates.
+function ENT:DrawAeroCenters()
+    if not self:GetNW2Bool("ACF_HasAero", false) then return end
+
+    local CoM = self:LocalToWorld(self:GetNW2Vector("ACF_CoM"))
+    local CoL = self:LocalToWorld(self:GetNW2Vector("ACF_CoL"))
+
+    cam.IgnoreZ(true)
+    render.SetColorMaterial()
+    render.DrawLine(CoM, CoL, ColorBlack, true)
+    render.DrawSphere(CoM, 5, 12, 12, ColorYellow)
+    render.DrawSphere(CoL, 5, 12, 12, ColorCyan)
+
+    local Vel = self:GetVelocity()
+    if Vel:LengthSqr() > 400 then
+        render.DrawBeam(CoM, CoM + Vel:GetNormalized() * 48, 1, 0, 1, ColorGreen)
+    end
+    cam.IgnoreZ(false)
+
+    local Margin = self:GetNW2Float("ACF_StaticMargin", 0)
+    cam.Start2D()
+        local MS = CoM:ToScreen()
+        local LS = CoL:ToScreen()
+        draw.SimpleTextOutlined("CoM", "ACF_Title", MS.x, MS.y - 12, ColorYellow, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, ColorBlack)
+        draw.SimpleTextOutlined("CoL", "ACF_Title", LS.x, LS.y + 12, ColorCyan, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, ColorBlack)
+        local Tag = Margin > 0.01 and "STABLE" or Margin < -0.01 and "UNSTABLE" or "NEUTRAL"
+        local Col = Margin > 0.01 and ColorGreen or Margin < -0.01 and ColorRed or ColorOrange
+        draw.SimpleTextOutlined(("Static margin: %+.0f%% (%s)"):format(Margin * 100, Tag), "ACF_Title", LS.x, LS.y + 28, Col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, ColorBlack)
+    cam.End2D()
+end
 
 function ENT:DrawGizmos()
     cam.IgnoreZ(true)
@@ -169,6 +204,8 @@ function ENT:Draw()
 
     if LookedAt then
         if HideInfo() then return end
+
+        self:DrawAeroCenters()
 
         if not RenderContext.InVehicle and RenderContext.PhysOrTool and RenderContext.InACFMenu then
             self:DrawGizmos()

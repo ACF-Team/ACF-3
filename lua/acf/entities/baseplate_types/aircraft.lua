@@ -3,6 +3,9 @@ ACF.Classes.DefineClass("ACF.Baseplates.Aircraft", "ACF.Baseplates.BaseplateType
 	CLASS.Icon        = "icon16/weather_clouds.png"
 	CLASS.Description = "A baseplate designed for aircraft."
 
+	-- Flags this baseplate as flyable so the flight controller (modules/flight.lua) acts on it.
+	CLASS.IsAircraft  = true
+
 	MENU_FIELD("Number", "GForceTicks", {Min = 1, Max = 7, Default = 1, Decimals = 0})
 
 	function CLASS.CreateMenu(SubMenu, NestedData, PushData)

@@ -24,6 +24,7 @@ ENT.ACF_StaticWireOutputs = {
 	"Vehicles (Seat for this entity, compatible with wire) [ARRAY]",
 	"Seat (The seat/pod of this baseplate) [ENTITY]",
 	"Driver (The player currently seated in this baseplate's seat) [ENTITY]",
+	"Airspeed (Aircraft only: current speed in m/s.)",
 }
 AddCSLuaFile("modules/autotest.lua")
 include("modules/autotest.lua")()
