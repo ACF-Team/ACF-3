@@ -108,7 +108,7 @@ end
 --- 0-1) are the authoritative state -- ProjLength/PropLength below are derived from them, and are
 --- the hook point for future mechanics (e.g. telescoping projectiles) that need ProjLength/PropLength
 --- to diverge from a simple RoundLength*(1-PropRatio)/RoundLength*PropRatio split.
-function ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
+function ACF.UpdateRoundSpecs(ToolData, Data, GUIData, CanTelescope)
 	GUIData = GUIData or Data
 
 	Data.Tracer = ToolData.Tracer and math.Round(Data.Caliber * 0.15, 2) or 0
@@ -142,7 +142,9 @@ function ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
 	-- reach back into a fraction of the propellant's length instead of stopping where the
 	-- propellant begins. The propellant isn't shortened by this -- it's bored out instead, so
 	-- PropVolume below is a hollow cylinder (solid minus the rod's core) over the telescoped length.
-	local TelescopeRatio  = math.Clamp(ToolData.TelescopeRatio or 0, 0, 1)
+	-- Gated by CanTelescope since ToolData is shared across ammo type switches, so a leftover
+	-- TelescopeRatio from APFSDS shouldn't silently telescope an ammo type that never offered the slider.
+	local TelescopeRatio  = CanTelescope and math.Clamp(ToolData.TelescopeRatio or 0, 0, 1) or 0
 	local BaseProjLength  = RoundLength * (1 - PropRatio)
 	local TelescopeLength = math.Round(math.min(PropLength * TelescopeRatio, GUIData.MaxProjLength - BaseProjLength), 2)
 	local ProjLength      = math.Round(BaseProjLength + TelescopeLength, 2)

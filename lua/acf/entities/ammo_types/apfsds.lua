@@ -80,7 +80,7 @@ end
 function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	GUIData = GUIData or Data
 
-	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
+	ACF.UpdateRoundSpecs(ToolData, Data, GUIData, true)
 
 	local Cylinder  = (math.pi * (Data.Caliber * 0.5) ^ 2) * Data.ProjLength * 0.25 -- A cylinder 1/4 the length of the projectile
 	local Hole		= Data.ProjArea * Data.ProjLength * 0.25 -- Volume removed by the hole the dart passes through
