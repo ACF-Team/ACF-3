@@ -138,12 +138,7 @@ function ACF.UpdateRoundSpecs(ToolData, Data, GUIData, CanTelescope)
 
 	local PropLength = math.Round(RoundLength * PropRatio, 2)
 
-	-- TelescopeRatio (0-1, defaults to 0 for ammo types that don't use it) lets the projectile
-	-- reach back into a fraction of the propellant's length instead of stopping where the
-	-- propellant begins. The propellant isn't shortened by this -- it's bored out instead, so
-	-- PropVolume below is a hollow cylinder (solid minus the rod's core) over the telescoped length.
-	-- Gated by CanTelescope since ToolData is shared across ammo type switches, so a leftover
-	-- TelescopeRatio from APFSDS shouldn't silently telescope an ammo type that never offered the slider.
+	-- TelescopeRatio lets the projectile bore into the propellant, gated by CanTelescope so a leftover value from APFSDS doesn't leak into other ammo types sharing this ToolData.
 	local TelescopeRatio  = CanTelescope and math.Clamp(ToolData.TelescopeRatio or 0, 0, 1) or 0
 	local BaseProjLength  = RoundLength * (1 - PropRatio)
 	local TelescopeLength = math.Round(math.min(PropLength * TelescopeRatio, GUIData.MaxProjLength - BaseProjLength), 2)

@@ -131,21 +131,15 @@ else
 	end
 
 	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
-		local LinerAngle = Base:AddSlider("Liner Angle", BulletData.MinConeAng, 90, 1)
-		LinerAngle:SetClientData("LinerAngle", "OnValueChanged")
-		LinerAngle:TrackClientData("RoundLength")
-		LinerAngle:TrackClientData("CaseScale") -- MinConeAng derives from PropMass
-		LinerAngle:DefineSetter(function(Panel, _, Key, Value)
-			if Key == "LinerAngle" then
-				ToolData.LinerAngle = math.Round(Value, 2)
-			end
+		-- A ratio (0 = MinConeAng, 1 = 90 degrees) rather than an absolute angle, matching HEAT's slider.
+		local LinerAngleRatio = Base:AddSlider("#acf.menu.ammo.liner_angle_ratio", 0, 1, 2)
+		LinerAngleRatio:SetClientData("LinerAngleRatio", "OnValueChanged")
+		LinerAngleRatio:DefineSetter(function(_, _, _, Value)
+			ToolData.LinerAngleRatio = math.Round(Value, 2)
 
 			self:UpdateRoundData(ToolData, BulletData)
 
-			Panel:SetMin(BulletData.MinConeAng)
-			Panel:SetValue(BulletData.ConeAng)
-
-			return BulletData.ConeAng
+			return BulletData.LinerAngleRatio
 		end)
 
 		local StandoffRatio = Base:AddSlider("Extra Standoff Ratio", 0, 0.4, 2)
@@ -164,7 +158,7 @@ else
 		RoundStats:TrackClientData("RoundLength", "SetText")
 		RoundStats:TrackClientData("PropRatio")
 		RoundStats:TrackClientData("CaseScale")
-		RoundStats:TrackClientData("LinerAngle")
+		RoundStats:TrackClientData("LinerAngleRatio")
 		RoundStats:TrackClientData("StandoffRatio")
 		RoundStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
@@ -183,7 +177,7 @@ else
 
 		local FillerStats = Base:AddLabel()
 		FillerStats:TrackClientData("FillerRatio", "SetText")
-		FillerStats:TrackClientData("LinerAngle")
+		FillerStats:TrackClientData("LinerAngleRatio")
 		FillerStats:TrackClientData("StandoffRatio")
 		FillerStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
@@ -200,7 +194,7 @@ else
 		Penetrator:TrackClientData("RoundLength", "SetText")
 		Penetrator:TrackClientData("PropRatio")
 		Penetrator:TrackClientData("CaseScale")
-		Penetrator:TrackClientData("LinerAngle")
+		Penetrator:TrackClientData("LinerAngleRatio")
 		Penetrator:TrackClientData("StandoffRatio")
 		Penetrator:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
@@ -218,7 +212,7 @@ else
 		PenStats:TrackClientData("RoundLength", "SetText")
 		PenStats:TrackClientData("PropRatio")
 		PenStats:TrackClientData("CaseScale")
-		PenStats:TrackClientData("LinerAngle")
+		PenStats:TrackClientData("LinerAngleRatio")
 		PenStats:TrackClientData("StandoffRatio")
 		PenStats:DefineSetter(function()
 			self:UpdateRoundData(ToolData, BulletData)
