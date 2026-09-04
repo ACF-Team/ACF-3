@@ -30,6 +30,11 @@ local BROADSIDE_CD = 1.1     -- drag for the non-forward (belly/side-on) cross-s
 local LIFT_FILL    = 0.4     -- fraction of the bounding planform acting as wing
 local MIN_FLOW     = 2       -- m/s below which the airframe makes negligible force
 
+-- Stability-augmentation rate damper (fraction of body angular rate bled per tick), airspeed-scaled.
+local DAMP_PER_MS  = 0.001   -- fraction per (m/s) of airspeed
+local DAMP_MIN     = 0.02    -- always keep a little damping (prevents low-speed spin lock-in)
+local DAMP_MAX     = 0.07    -- ceiling so fast flight isn't over-damped/mushy
+
 --==============================================================================================--
 -- Sampler: contraption shape (areas), Centre of Mass and Centre of Lift, on a jittered timer.
 --==============================================================================================--
@@ -219,6 +224,14 @@ local function ProcessAircraft(BP, BPTbl)
 	-- The wing: shape-derived lift/drag. A wing always makes lift when moving (no "active" flag). Control
 	-- surfaces apply their own forces from their own entities; the controller aims the craft via them.
 	ApplyAirframeAero(BP, Phys, Fwd, Right, Up, MassRatio)
+
+	-- Stability augmentation (a fly-by-wire rate damper). Bleed a small, airspeed-scaled fraction of the body
+	-- angular rate every tick. This is frame-agnostic (scales whatever GetAngleVelocity returns), so it damps
+	-- pitch/yaw/roll alike and, crucially, can arrest a yaw departure that a physically weak rudder never
+	-- could -- an underpowered-surface airframe can no longer wind up into an unrecoverable flat spin. It only
+	-- removes angular energy, so it cannot self-oscillate; the controller easily overcomes it in normal flight.
+	local Damp = Clamp(Speed * DAMP_PER_MS, DAMP_MIN, DAMP_MAX)
+	PHYSOBJ.AddAngleVelocity(Phys, PHYSOBJ.GetAngleVelocity(Phys) * -Damp)
 end
 
 hook.Add("Think", "ACF_Aircraft_FlightControl", function()

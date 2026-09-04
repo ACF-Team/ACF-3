@@ -184,6 +184,32 @@ local function Distribute(T, BPMass, Right, Up, Fwd, PitchCmd, YawCmd, RollCmd)
 	end
 end
 
+-- Snapshot of the airframe + every linked surface's geometry, so a bad build (tiny/mis-placed surfaces,
+-- weak inertia, etc.) is visible. Written to data/flight_build_<id>.txt, refreshed periodically.
+local function DumpBuild(self, T, BP, Phys, Right, Up, Fwd, BPMass)
+	local Con   = BP.CFW_GetContraption and BP:CFW_GetContraption()
+	local Total = (Con and Con.totalMass) or Phys:GetMass()
+	local I     = Phys:GetInertia()
+	local L = {
+		string.format("baseplate mass=%.1f  totalMass=%.1f  massRatio=%.3f", Phys:GetMass(), Total, Phys:GetMass() / Total),
+		string.format("inertia kg*m2 = %.2f, %.2f, %.2f  (pitch/Y? roll/X? yaw/Z? = engine local axes)", I.x, I.y, I.z),
+		string.format("planform m2 = %.2f", (BP.AeroAreas and BP.AeroAreas.Planform) or 0),
+		"surface: axis, area_m2, maxDeflDeg, Rx, Ry, Rz (in, from CoM), eff(sign=moment dir), health",
+	}
+	if T.Surfaces then
+		for S in pairs(T.Surfaces) do
+			if not IsValid(S) then continue end
+			local Axis = S.ControlAxis
+			local AV   = Axis == "Pitch" and Right or Axis == "Yaw" and Up or Fwd
+			local R    = S:GetPos() - BPMass
+			local Eff  = R:Cross(S:GetUp()):Dot(AV)
+			L[#L + 1] = string.format("%s, %.3f, %d, %.0f, %.0f, %.0f, %.1f, %.2f",
+				Axis, S.Area or 0, S.MaxDeflection or 0, R.x, R.y, R.z, Eff, S:GetHealthRatio())
+		end
+	end
+	file.Write("flight_build_" .. self:EntIndex() .. ".txt", table.concat(L, "\n"))
+end
+
 function ENT:Think()
 	local T = self:GetTable()
 	self:NextThink(CurTime())
@@ -214,14 +240,36 @@ function ENT:Think()
 	-- (their setpoints are the exact body-frame components of the rotation Fwd->Aim, so together they always
 	-- drive the nose onto target at any bank). The bank-to-turn roll below is secondary/for feel -- it does
 	-- not have to resolve the aim by itself, so yaw is never faded out (that just traps the pointing error).
-	local PitchSet = Clamp(P.AimRateGain * PitchErr, -P.AimRateMax, P.AimRateMax)
-	local YawSet   = Clamp(P.AimRateGain * YawErr,   -P.AimRateMax, P.AimRateMax)
+	local YawSet = Clamp(P.AimRateGain * YawErr, -P.AimRateMax, P.AimRateMax)
 
-	-- Roll is bank-to-turn: command a BANK ANGLE proportional to the turn (heading) error and hold it -- the
-	-- pitch pull carries the nose around. Driving a bank ANGLE (not "roll until the aim is overhead") means it
-	-- settles at a bank and returns to level as the error shrinks, so it can never wind into a continuous roll.
-	local DesiredBank = Clamp(P.SurfBankGain * YawErr, -P.SurfMaxBank, P.SurfMaxBank)
-	local RollSet     = Clamp(P.RollKp * (CurrentBank - DesiredBank), -P.RollRateMax, P.RollRateMax)
+	-- Energy protection: a sustained hard bank + pull bleeds airspeed; unchecked it mushes into a low-speed
+	-- stall/departure. As speed drops toward stall, ease the bank and the nose-up pull so the craft unloads
+	-- and keeps its energy. Full authority at/above TurnVRef, eased right off toward TurnVMin.
+	local VelW   = Phys:GetVelocity()
+	local Speed  = VelW:Length() * 0.0254
+	local Energy = Clamp((Speed - P.TurnVMin) / (P.TurnVRef - P.TurnVMin), 0.15, 1)
+
+	-- Roll (bank-to-turn), computed first so the pitch pull can unload while rolling. Command a BANK ANGLE
+	-- proportional to the turn (heading) error and hold it; it settles at a bank and returns to level as the
+	-- error shrinks, so it can't wind into a continuous roll. Bank is eased by Energy so a slow craft flattens.
+	local DesiredBank = Clamp(P.SurfBankGain * YawErr, -P.SurfMaxBank, P.SurfMaxBank) * Energy
+	local RollSet     = Clamp(P.RollKp * (CurrentBank - DesiredBank), -P.RollRateMaxCtl, P.RollRateMaxCtl)
+
+	-- Pitch, with three protections: (1) roll-pitch decoupling -- ease the nose-up pull while rolling hard so
+	-- a roll/reversal doesn't couple/adverse-yaw into a departure the (often weak) rudder can't arrest; (2)
+	-- energy -- ease the pull when slow; (3) AoA guard -- alpha is the airflow angle below the nose; cap the
+	-- nose-up rate as alpha nears stall, and past it the allowance goes negative so it actively unloads.
+	local RollUnload = Clamp(1 - math.abs(RollSet) / P.RollUnloadRate, 0.35, 1)
+	local PitchSet   = Clamp(P.AimRateGain * PitchErr, -P.AimRateMax, P.AimRateMax)
+
+	local Alpha = 0
+	if Speed > 0.5 then
+		local vd = VelW / VelW:Length()
+		Alpha = deg(atan2(-vd:Dot(Up), vd:Dot(Fwd)))
+	end
+	local PullLimit = (P.StallGuardAoA - Alpha) * P.AoAGuardGain
+	if PitchSet > 0 then PitchSet = PitchSet * Energy * RollUnload end
+	if PitchSet > PullLimit then PitchSet = Clamp(PullLimit, -P.AimRateMax, P.AimRateMax) end
 
 	-- Measured body rates: the angular velocity axis projected onto each body axis.
 	local AngVel    = Phys:LocalToWorldVector(Phys:GetAngleVelocity())
@@ -253,12 +301,15 @@ function ENT:Think()
 
 	T.LastPitchCmd, T.LastYawCmd, T.LastRollCmd = PitchCmd, YawCmd, RollCmd
 
+	T.LogTick = (T.LogTick or 0) + 1
+	if T.LogTick % 128 == 0 then DumpBuild(self, T, BP, Phys, Right, Up, Fwd, BPMass) end
+
 	if T.LogFile then
 		Append(T.LogFile, string.format(
-			"%.2f,%.1f,%.2f,%.2f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.3f,%.3f,%.3f,%.0f,%.0f,%.0f\n",
-			CurTime(), Phys:GetVelocity():Length() * 0.0254, PitchErr, YawErr, CurrentBank, DesiredBank,
+			"%.2f,%.1f,%.2f,%.2f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.3f,%.3f,%.3f,%.0f,%.0f,%.0f,%.1f,%.2f\n",
+			CurTime(), Speed, PitchErr, YawErr, CurrentBank, DesiredBank,
 			PitchSet, YawSet, RollSet, PitchRate, YawRate, RollRate, PitchCmd, YawCmd, RollCmd,
-			T.EffPitch, T.EffYaw, T.EffRoll))
+			T.EffPitch, T.EffYaw, T.EffRoll, Alpha, Energy))
 	end
 
 	WireLib.TriggerOutput(self, "Pitch", PitchCmd)
@@ -286,7 +337,7 @@ function ENT:ACF_PostUpdateEntityData()
 
 	-- Telemetry: fresh CSV per spawn (cleared here), one row/tick while active. Pull from <gmod>/data/.
 	self.LogFile = "flight_results_" .. self:EntIndex() .. ".csv"
-	file.Write(self.LogFile, "t,speed,pitchErr,yawErr,curBank,desBank,pitchSet,yawSet,rollSet,pitchRate,yawRate,rollRate,pitchCmd,yawCmd,rollCmd,effP,effY,effR\n")
+	file.Write(self.LogFile, "t,speed,pitchErr,yawErr,curBank,desBank,pitchSet,yawSet,rollSet,pitchRate,yawRate,rollRate,pitchCmd,yawCmd,rollCmd,effP,effY,effR,alpha,energy\n")
 
 	WireLib.TriggerOutput(self, "Entity", self)
 end

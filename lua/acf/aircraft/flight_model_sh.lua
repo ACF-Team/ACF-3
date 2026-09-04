@@ -37,16 +37,28 @@ FlightModel.Defaults = {
 	AimRateGain = 2.0,    -- target body rate (deg/s) per degree of pointing error (outer P loop)
 	AimRateMax  = 30,     -- cap on the commanded body rate (deg/s); kept feasible so it doesn't saturate
 	TrackGain   = 6.0,    -- desired angular acceleration (deg/s^2) per deg/s of rate error (inner loop)
-	SurfBankGain = 1.2,   -- commanded bank angle (deg) per degree of heading error (bank-to-turn, for feel)
-	SurfMaxBank  = 40,    -- cap on commanded bank angle (deg); gentle so it can't over-bank into a spiral
-	RollKp       = 4.0,   -- roll rate (deg/s) commanded per degree of bank-angle error (holds a bank)
+	SurfBankGain = 2.2,   -- commanded bank angle (deg) per degree of heading error: turn mainly by BANKING
+	                      -- (the strong roll+pitch axes) rather than leaning on the usually-weak rudder
+	SurfMaxBank  = 50,    -- cap on commanded bank angle (deg); AoA guard now prevents the over-bank spiral
+	RollKp       = 2.0,   -- roll rate (deg/s) commanded per degree of bank-angle error (holds a bank)
+	RollRateMaxCtl = 45,  -- cap on commanded roll rate (deg/s); gentle rolls stay coordinated so a reversal
+	                      -- doesn't generate adverse yaw / coupling a weak rudder can't arrest (flat spin)
+	RollUnloadRate = 50,  -- deg/s of commanded roll at which the nose-up pull is fully eased off, so the
+	                      -- craft unloads through a roll/reversal instead of coupling into a departure
+	StallGuardAoA  = 13,  -- deg; the controller will not pull the nose above this angle of attack (envelope
+	                      -- protection) so the wing can't be stalled into a spin at the end of a hard turn
+	AoAGuardGain   = 3.0, -- how hard the guard bleeds the allowed nose-up rate as AoA approaches the limit
+	TurnVRef       = 55,  -- m/s at/above which the craft may use full bank + pull (energy protection)
+	TurnVMin       = 22,  -- m/s toward which bank + nose-up pull are eased right off, so a sustained hard
+	                      -- turn can't bleed all its airspeed and mush into a low-speed departure
 	CmdSlew      = 10,    -- max change in a normalised axis command per second (anti-slam output limiter)
 	-- Airspeed-normalised authority: B = effectiveness (angular accel per unit deflection). It scales with
 	-- dynamic pressure (speed^2), so fast craft need little deflection and slow craft are sluggish -- correct,
 	-- and smooth. Deterministic (no learning), so it cannot collapse and bang-bang the surfaces.
 	EffRef     = 120,     -- effectiveness at the reference speed
 	RefSpeed   = 60,      -- m/s at which effectiveness equals EffRef
-	EffMin     = 40,      -- clamp floor (keeps deflection bounded at very low airspeed)
+	EffMin     = 70,      -- clamp floor: a low floor lets the loop gain (1/B) spike into overshoot on a
+	                      -- weak/slow axis, so keep it high enough that the controller stays gentle there
 	EffMax     = 3000,    -- clamp ceiling
 	-- Legacy online-estimator knobs (kept for the pure EstimateEffectiveness helper + its tests; the live
 	-- controller uses the deterministic airspeed law above).
@@ -199,7 +211,10 @@ end
 function FlightModel.EstimateEffectiveness(prevB, angAccelDegS2, deflection, p)
 	p = p or FlightModel.Defaults
 	local mag = deflection >= 0 and deflection or -deflection
-	if mag < p.EffMinDefl then return prevB end
+	-- No clean signal below EffMinDefl; and when SATURATED (near full deflection) we can't tell how much more
+	-- authority there is, so learning there wrongly collapses the estimate to the floor and the loop gain
+	-- spikes into bang-bang oscillation. Hold the estimate in both cases.
+	if mag < p.EffMinDefl or mag > 0.95 then return prevB end
 
 	local sample = angAccelDegS2 / deflection -- accel per unit deflection; sign should be positive
 	if sample <= 0 then return prevB end       -- transient / wrong-sign: ignore rather than corrupt B

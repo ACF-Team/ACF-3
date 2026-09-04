@@ -141,6 +141,7 @@ ok(approx(FM.DesiredBank(5), -FM.DesiredBank(-5)), "bank command is symmetric")
 
 -- === Online effectiveness estimator ===
 ok(approx(FM.EstimateEffectiveness(100, 50, 0.01), 100), "tiny deflection carries no signal (estimate held)")
+ok(approx(FM.EstimateEffectiveness(100, 20, 1.0), 100), "saturated deflection carries no clean signal (estimate held)")
 ok(FM.EstimateEffectiveness(100, 200, 0.5) > 100, "a sample above the estimate pulls it up")
 ok(FM.EstimateEffectiveness(300, 50, 0.5) < 300, "a sample below the estimate pulls it down")
 ok(approx(FM.EstimateEffectiveness(100, -80, 0.5), 100), "wrong-sign (accel opposes command) sample is rejected")
@@ -150,7 +151,7 @@ do
 	for _ = 1, 500 do B = FM.EstimateEffectiveness(B, 300 * 0.8, 0.8) end
 	ok(approx(B, 300, 5), "estimate converges to the plant's true effectiveness")
 end
-ok(FM.EstimateEffectiveness(100, 1e9, 1) <= P.EffMax, "runaway samples are clamped to EffMax")
+ok(FM.EstimateEffectiveness(100, 1e9, 0.5) <= P.EffMax, "runaway samples are clamped to EffMax")
 
 -- === Airspeed-normalised authority (deterministic, non-divergent) ===
 ok(approx(FM.AirspeedEffectiveness(P.RefSpeed), P.EffRef), "effectiveness equals EffRef at the reference speed")
