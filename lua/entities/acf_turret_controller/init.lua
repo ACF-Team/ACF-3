@@ -205,7 +205,7 @@ do	-- Metamethods
 		end
 
 		function ENT:GetCost()
-			return self.IsRemote and 10 or 5
+			return self.IsRemote and 60 or 5
 		end
 	end
 
