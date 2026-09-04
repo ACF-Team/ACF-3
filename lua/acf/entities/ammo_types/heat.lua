@@ -300,6 +300,9 @@ if SERVER then
 			-- If it's out of range, stop here
 			if Penetration == 0 then break end
 
+			-- Set to override Bullet:GetPenetration()
+			Bullet.PenetrationOverride = Penetration
+
 			-- Get the effective armor thickness
 			local BaseArmor = 0
 			local DamageDealt
@@ -364,7 +367,10 @@ if SERVER then
 				Bullet.Energy.Kinetic = ACF.Kinetic(Speed, Bullet.JetMass * JetMassPct).Kinetic * 1000
 				local JetResult = Damage.dealDamage(Ent, JetDmg, JetInfo)
 
-				if not Bullet.IsSpall and not Bullet.IsCookOff then
+				-- Only spall on layers the jet actually broke through with mass to spare.
+				local Overpenetrated = LostMassPct < JetMassPct
+
+				if (JetResult.Kill or Overpenetrated) and not Bullet.IsSpall and not Bullet.IsCookOff then
 					Ballistics.DoSpall(Bullet, TraceRes, JetResult, Speed, JetInfo)
 				end
 
