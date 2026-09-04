@@ -6,7 +6,29 @@ local Clock       = Utilities.Clock
 local Sounds      = Utilities.Sounds
 local TimerCreate = timer.Create
 
-local function CookoffCrate(Entity)
+local CookoffCrate
+
+local function StartCookoff(Entity, BurnTime)
+	local CanBurn = hook.Run("ACF_PreBurnAmmo", Entity)
+
+	if not CanBurn then
+		Entity:Detonate()
+
+		return
+	end
+
+	Entity.Burning = Clock.CurTime + BurnTime
+
+	local Interval = 0.01 + Entity.BulletData.RoundVolume ^ 0.5 / 100
+
+	TimerCreate("ACF Crate Cookoff " .. Entity:EntIndex(), Interval, 0, function()
+		if not IsValid(Entity) then return end
+
+		CookoffCrate(Entity)
+	end)
+end
+
+function CookoffCrate(Entity)
 	if Entity.Ammo < 1 or Entity.Burning < Clock.CurTime then -- Detonate when time is up or crate is out of ammo
 		timer.Remove("ACF Crate Cookoff " .. Entity:EntIndex())
 
@@ -47,13 +69,13 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 
 	local Inflictor, Attacker = DmgInfo.Inflictor, DmgInfo.Attacker
 
-	-- If killed: detonate immediately
-	if HitRes.Kill then
+	-- If destroyed outright: guarantee a cookoff instead of instant detonation
+	if self.ACF.Health <= 0 then
 		self.Attacker  = Attacker
 		self.Inflictor = Inflictor
 
-		if self.Amount > 0 then
-			self:Detonate()
+		if self.Amount > 0 and not self.Burning then
+			StartCookoff(self, 2) -- Short burn time, since the crate itself is already gone
 		end
 
 		return HitRes
@@ -65,30 +87,17 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	local Ratio = (HitRes.Damage / self.BulletData.RoundVolume) ^ 0.2
 
 	if (Ratio * self.Capacity / self.Amount) > math.random() then
-		local CanBurn = hook.Run("ACF_PreBurnAmmo", self)
-
 		self.Attacker = Attacker
 		self.Inflictor = Inflictor
 
-		if CanBurn then
-			self.Burning = Clock.CurTime + (5 - Ratio * 3) -- Time to cook off is 5 - (How filled it is * 3)
-
-			local Interval = 0.01 + self.BulletData.RoundVolume ^ 0.5 / 100
-
-			TimerCreate("ACF Crate Cookoff " .. self:EntIndex(), Interval, 0, function()
-				if not IsValid(self) then return end
-
-				CookoffCrate(self)
-			end)
-		else
-			self:Detonate()
-		end
+		StartCookoff(self, 5 - Ratio * 3) -- Time to cook off is 5 - (How filled it is * 3)
 	end
 
 	return HitRes
 end
 
 function ENT:Detonate(VisualOnly)
+	-- print("Detonating crate", self, self.Exploding, VisualOnly, self.Ammo, self.BulletData.RoundVolume, self.Ammo / math.max(self.Capacity, 1))
 	if self.Exploding then return end
 
 	local CanExplode = hook.Run("ACF_PreExplodeAmmo", self)
