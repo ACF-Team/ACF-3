@@ -213,7 +213,7 @@ function ENT:GetCost()
 	local R, H = AutoloaderSize.y, AutoloaderSize.x
 	local Volume = math.pi * R * R * H
 
-	return Volume * 2
+	return Volume * 8
 end
 
 function ENT:Think()
