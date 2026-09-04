@@ -81,6 +81,12 @@ function ACF.RoundBaseGunpowder(ToolData, Data)
 	GUIData.MinProjLength  = math.Round(Data.Caliber * 1.5, 2)
 	GUIData.MaxPropLength  = math.min(Specs.PropLength, Length - GUIData.MinProjLength)
 	GUIData.MaxProjLength  = math.min(Specs.ProjLength or Length, Length - GUIData.MinPropLength)
+	-- Missiles cap ProjLength/PropLength well below the airframe's MaxLength, and any round longer
+	-- than both components combined is unsatisfiable at every PropRatio. Guns are unaffected, since
+	-- their MaxProjLength alone already reaches Length.
+	GUIData.MaxRoundLength = math.min(Length, GUIData.MaxProjLength + GUIData.MaxPropLength)
+	-- Keeps the bounds consistent for missiles whose ProjLength spec sits below the caliber floor
+	GUIData.MinProjLength  = math.min(GUIData.MinProjLength, GUIData.MaxProjLength)
 	GUIData.MinCaseScale   = 1
 	GUIData.MaxCaseScale   = Data.MaxCaseScale
 
