@@ -83,7 +83,7 @@ else
 
 		-- Cap Scale itself by the height budget so every shape shrinks uniformly, not just the radius.
 		-- The case, not the bore, is the widest part of a necked round, so it sets the budget.
-		local CaseDia = ACF.GetCaseDiameter(BulletData)
+		local CaseDia = BulletData.CaseDiameter
 
 		if CaseDia <= 0 then return end
 

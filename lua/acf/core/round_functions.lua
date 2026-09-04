@@ -11,11 +11,6 @@ function ACF.GetMaxCaseScale(Class, Weapon)
 	return (Round and Round.CaseScale) or ACF.AmmoCaseScale
 end
 
---- Case outer diameter in cm, off bore caliber -- a subcaliber penetrator doesn't narrow the case
-function ACF.GetCaseDiameter(BulletData)
-	return (BulletData.Caliber or 0) * (BulletData.CaseScale or 1)
-end
-
 local function GetWeaponSpecs(ToolData)
 	local Source = Classes[ToolData.Destiny]
 	local Class  = Classes.GetGroup(Source, ToolData.Weapon)
@@ -124,7 +119,8 @@ function ACF.UpdateRoundSpecs(ToolData, Data, GUIData, CanTelescope)
 	local MaxCaseScale = Data.MaxCaseScale or ACF.AmmoCaseScale
 	local CaseScale    = math.Clamp(ToolData.CaseScale or 1, 1, MaxCaseScale)
 
-	Data.CaseScale = CaseScale -- Case diameter is Caliber * CaseScale: the widest point of the round
+	Data.CaseScale    = CaseScale
+	Data.CaseDiameter = Data.Caliber * CaseScale -- Widest point of the round, cased or not
 
 	-- Recomputed from the base, not scaled in place, so repeated slider updates don't compound
 	if Data.PropAreaBase then

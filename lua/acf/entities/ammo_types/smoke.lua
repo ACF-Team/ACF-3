@@ -206,7 +206,7 @@ else
 		if Length <= 0 then return end
 
 		-- Cap Scale by the case, the widest part, so the case/bore step survives the height budget
-		local CaseDia = ACF.GetCaseDiameter(BulletData)
+		local CaseDia = BulletData.CaseDiameter
 
 		if CaseDia <= 0 then return end
 

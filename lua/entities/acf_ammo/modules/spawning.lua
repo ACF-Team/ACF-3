@@ -645,6 +645,7 @@ do -- Overlay
 		State:AddHeader("Bullet Info", 2)
 
 		local Caliber = math.Round(BulletData.Caliber * 10, 2)
+		local ShellDiameter = math.Round(BulletData.CaseDiameter * 10, 2)
 		local Length  = math.Round(BulletData.RoundLength or (BulletData.ProjLength + BulletData.PropLength), 2)
 		if self.IsMissileAmmo then
 			local Class    	= Classes.GetGroup(Classes.Missiles, BulletData.Id)
@@ -652,7 +653,8 @@ do -- Overlay
 			local Round 	= Weapon and Weapon.Round
 			Length = Round.ActualLength * ACF.InchToCm
 		end
-		State:AddKeyValue("Shell dimensions", Caliber .. "mm x " .. Length .. "cm")
+
+		State:AddKeyValue("Shell dimensions", ShellDiameter .. "mm x " .. Length .. "cm")
 
 		local IdealReloadTime = math.Round(ACF.CalcReloadTime(Caliber, self.ClassData, self.Weapon, self.BulletData, self.Override), 2)
 		local IdealMagReloadTime = math.Round(ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.Weapon, self.BulletData, {MagSize = self.Amount}), 2)
