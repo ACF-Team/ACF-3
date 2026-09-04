@@ -94,8 +94,45 @@ ACF.RegisterClassUnlink("acf_control_surface_controller", "acf_control_surface",
 	return true, "Control surface unlinked successfully."
 end)
 
+-- Helicopter actuators: main rotors (driven by pitch/roll cyclic) and tail rotors (driven by yaw). Linking
+-- any rotor puts the controller in HELICOPTER mode (see Think): it points the nose with the rotor disc + tail
+-- instead of airplane-style bank-to-turn, and drops the airspeed-based protections that don't apply at hover.
+ACF.RegisterClassLink("acf_control_surface_controller", "acf_rotor", function(This, Rotor)
+	This.Rotors = This.Rotors or {}
+	if This.Rotors[Rotor] then return false, "This rotor is already linked to this controller!" end
+	This.Rotors[Rotor] = true
+	This:UpdateOverlay()
+	return true, "Main rotor linked successfully."
+end)
+
+ACF.RegisterClassUnlink("acf_control_surface_controller", "acf_rotor", function(This, Rotor)
+	if not (This.Rotors and This.Rotors[Rotor]) then return false, "This rotor is not linked to this controller!" end
+	This.Rotors[Rotor] = nil
+	if IsValid(Rotor) then Rotor:SetCyclic(0, 0) end
+	This:UpdateOverlay()
+	return true, "Main rotor unlinked successfully."
+end)
+
+ACF.RegisterClassLink("acf_control_surface_controller", "acf_tail_rotor", function(This, Tail)
+	This.TailRotors = This.TailRotors or {}
+	if This.TailRotors[Tail] then return false, "This tail rotor is already linked to this controller!" end
+	This.TailRotors[Tail] = true
+	This:UpdateOverlay()
+	return true, "Tail rotor linked successfully."
+end)
+
+ACF.RegisterClassUnlink("acf_control_surface_controller", "acf_tail_rotor", function(This, Tail)
+	if not (This.TailRotors and This.TailRotors[Tail]) then return false, "This tail rotor is not linked to this controller!" end
+	This.TailRotors[Tail] = nil
+	if IsValid(Tail) then Tail:SetYaw(0) end
+	This:UpdateOverlay()
+	return true, "Tail rotor unlinked successfully."
+end)
+
 ACF.RegisterLinkSource("acf_control_surface_controller", "Baseplate", true)
 ACF.RegisterLinkSource("acf_control_surface_controller", "Surfaces")
+ACF.RegisterLinkSource("acf_control_surface_controller", "Rotors")
+ACF.RegisterLinkSource("acf_control_surface_controller", "TailRotors")
 
 --==============================================================================================--
 -- Wire input: Active + the three interchangeable aim inputs. The last aim received is the one used.
@@ -156,31 +193,53 @@ local function ZeroOutputs(self, T)
 			if IsValid(Surface) then Surface:SetDeflection(0) else T.Surfaces[Surface] = nil end
 		end
 	end
+	if T.Rotors then
+		for Rotor in pairs(T.Rotors) do
+			if IsValid(Rotor) then Rotor:SetCyclic(0, 0) else T.Rotors[Rotor] = nil end
+		end
+	end
+	if T.TailRotors then
+		for Tail in pairs(T.TailRotors) do
+			if IsValid(Tail) then Tail:SetYaw(0) else T.TailRotors[Tail] = nil end
+		end
+	end
 end
 
 -- Distributes a normalised (-1..1) per-axis command to each linked surface, using the surface's geometric
 -- effectiveness about its axis so the sign (and aileron differential) is automatic, scaled to its max throw.
 local function Distribute(T, BPMass, Right, Up, Fwd, PitchCmd, YawCmd, RollCmd)
-	local Surfaces = T.Surfaces
-	if not Surfaces then return end
-
 	local FM = ACF.FlightModel
 
-	for Surface in pairs(Surfaces) do
-		if not IsValid(Surface) then Surfaces[Surface] = nil continue end
+	if T.Surfaces then
+		for Surface in pairs(T.Surfaces) do
+			if not IsValid(Surface) then T.Surfaces[Surface] = nil continue end
 
-		local Axis = Surface.ControlAxis
-		local Cmd, AxisVec
-		if Axis == "Pitch" then Cmd, AxisVec = PitchCmd, Right
-		elseif Axis == "Yaw" then Cmd, AxisVec = YawCmd, Up
-		else Cmd, AxisVec = RollCmd, Fwd end
+			local Axis = Surface.ControlAxis
+			local Cmd, AxisVec
+			if Axis == "Pitch" then Cmd, AxisVec = PitchCmd, Right
+			elseif Axis == "Yaw" then Cmd, AxisVec = YawCmd, Up
+			else Cmd, AxisVec = RollCmd, Fwd end
 
-		-- Effectiveness = (r x liftDir) . axis: the moment this surface makes about its axis per unit lift.
-		local R       = Surface:GetPos() - BPMass
-		local LiftDir = Surface:GetUp()
-		local Eff     = R:Cross(LiftDir):Dot(AxisVec)
+			-- Effectiveness = (r x liftDir) . axis: the moment this surface makes about its axis per unit lift.
+			local R       = Surface:GetPos() - BPMass
+			local LiftDir = Surface:GetUp()
+			local Eff     = R:Cross(LiftDir):Dot(AxisVec)
 
-		Surface:SetDeflection(FM.AllocateDeflection(Cmd, Eff) * (Surface.MaxDeflection or 20))
+			Surface:SetDeflection(FM.AllocateDeflection(Cmd, Eff) * (Surface.MaxDeflection or 20))
+		end
+	end
+
+	-- Helicopter actuators: main rotor takes pitch/roll as cyclic disc tilt (which pitches/rolls the fuselage
+	-- to point the nose), the tail rotor takes yaw. Same normalised commands the surfaces get.
+	if T.Rotors then
+		for Rotor in pairs(T.Rotors) do
+			if IsValid(Rotor) then Rotor:SetCyclic(PitchCmd, RollCmd) else T.Rotors[Rotor] = nil end
+		end
+	end
+	if T.TailRotors then
+		for Tail in pairs(T.TailRotors) do
+			if IsValid(Tail) then Tail:SetYaw(YawCmd) else T.TailRotors[Tail] = nil end
+		end
 	end
 end
 
@@ -271,6 +330,15 @@ function ENT:Think()
 	if PitchSet > 0 then PitchSet = PitchSet * Energy * RollUnload end
 	if PitchSet > PullLimit then PitchSet = Clamp(PullLimit, -P.AimRateMax, P.AimRateMax) end
 
+	-- HELICOPTER mode (any main rotor linked): point the nose directly with pitch + yaw (rotor cyclic tilts
+	-- the fuselage, tail rotor yaws it) and just hold wings level. Bank-to-turn and the airspeed-based stall/
+	-- energy protections are airplane-only -- at a hover they'd zero every command -- so they're bypassed.
+	if T.Rotors and next(T.Rotors) then
+		PitchSet = Clamp(P.AimRateGain * PitchErr, -P.AimRateMax, P.AimRateMax)
+		YawSet   = Clamp(P.AimRateGain * YawErr,   -P.AimRateMax, P.AimRateMax)
+		RollSet  = Clamp(P.RollKp * CurrentBank,   -P.RollRateMaxCtl, P.RollRateMaxCtl)
+	end
+
 	-- Measured body rates: the angular velocity axis projected onto each body axis.
 	local AngVel    = Phys:LocalToWorldVector(Phys:GetAngleVelocity())
 	local PitchRate = AngVel:Dot(Right)
@@ -323,8 +391,10 @@ end
 
 --==============================================================================================--
 function ENT:ACF_PreSpawn()
-	self.ACF      = {}
-	self.Surfaces = {}
+	self.ACF        = {}
+	self.Surfaces   = {}
+	self.Rotors     = {}
+	self.TailRotors = {}
 	self:SetScaledModel(PLACEHOLDER_MODEL)
 end
 
@@ -342,18 +412,22 @@ function ENT:ACF_PostUpdateEntityData()
 	WireLib.TriggerOutput(self, "Entity", self)
 end
 
+local function IndexList(Set)
+	if not Set then return nil end
+	local List = {}
+	for Ent in pairs(Set) do
+		if IsValid(Ent) then List[#List + 1] = Ent:EntIndex() end
+	end
+	return next(List) and List or nil
+end
+
 function ENT:PreEntityCopy()
 	local Info = {}
 
 	if IsValid(self.Baseplate) then Info.Baseplate = self.Baseplate:EntIndex() end
-
-	if self.Surfaces then
-		local List = {}
-		for Surface in pairs(self.Surfaces) do
-			if IsValid(Surface) then List[#List + 1] = Surface:EntIndex() end
-		end
-		if next(List) then Info.Surfaces = List end
-	end
+	Info.Surfaces   = IndexList(self.Surfaces)
+	Info.Rotors     = IndexList(self.Rotors)
+	Info.TailRotors = IndexList(self.TailRotors)
 
 	if next(Info) then duplicator.StoreEntityModifier(self, "ACFControlSurfaceController", Info) end
 end
@@ -367,10 +441,12 @@ function ENT:PostEntityPaste(_, Ent, CreatedEntities)
 		if IsValid(BP) then self:Link(BP) end
 	end
 
-	if Info.Surfaces then
-		for _, Index in ipairs(Info.Surfaces) do
-			local Surface = CreatedEntities[Index]
-			if IsValid(Surface) then self:Link(Surface) end
+	for _, Key in ipairs({ "Surfaces", "Rotors", "TailRotors" }) do
+		if Info[Key] then
+			for _, Index in ipairs(Info[Key]) do
+				local Linked = CreatedEntities[Index]
+				if IsValid(Linked) then self:Link(Linked) end
+			end
 		end
 	end
 
@@ -401,19 +477,27 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	return Damage.doPropDamage(self, DmgResult, DmgInfo)
 end
 
-function ENT:ACF_UpdateOverlayState(State)
-	local Count = 0
-	if self.Surfaces then
-		for Surface in pairs(self.Surfaces) do
-			if IsValid(Surface) then Count = Count + 1 else self.Surfaces[Surface] = nil end
+local function CountValid(Set)
+	local N = 0
+	if Set then
+		for Ent in pairs(Set) do
+			if IsValid(Ent) then N = N + 1 else Set[Ent] = nil end
 		end
 	end
+	return N
+end
 
+function ENT:ACF_UpdateOverlayState(State)
 	if IsValid(self.Baseplate) then
 		State:AddSuccess("Linked to a baseplate")
 	else
 		State:AddWarning("Not linked to a baseplate")
 	end
 
-	State:AddKeyValue("Control surfaces", Count)
+	local Rotors = CountValid(self.Rotors)
+	State:AddKeyValue("Mode", Rotors > 0 and "Helicopter" or "Fixed-wing")
+	State:AddKeyValue("Control surfaces", CountValid(self.Surfaces))
+	if Rotors > 0 or CountValid(self.TailRotors) > 0 then
+		State:AddKeyValue("Main / tail rotors", Rotors .. " / " .. CountValid(self.TailRotors))
+	end
 end
