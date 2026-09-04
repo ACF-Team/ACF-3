@@ -210,13 +210,12 @@ function ENT:Think()
 	local YawErr   = deg(Cross:Dot(Up))
 	local CurrentBank = deg(atan2(Right.z, Up.z))
 
-	-- Outer loop: pointing error -> target body rate (deg/s). Pitch points directly. YAW fades out as bank
-	-- increases: once banked, the aim's lateral offset is meant to be resolved by the pitch PULL (bank-to-
-	-- turn), and a pointing-based rudder command there points the *opposite* way (adverse yaw) and skids the
-	-- craft into a spin. Near wings-level the rudder points normally.
-	local YawFade  = Clamp(1 - math.abs(CurrentBank) / P.SurfMaxBank, 0, 1)
+	-- Outer loop: pointing error -> target body rate (deg/s). Pitch AND yaw both point directly at the aim
+	-- (their setpoints are the exact body-frame components of the rotation Fwd->Aim, so together they always
+	-- drive the nose onto target at any bank). The bank-to-turn roll below is secondary/for feel -- it does
+	-- not have to resolve the aim by itself, so yaw is never faded out (that just traps the pointing error).
 	local PitchSet = Clamp(P.AimRateGain * PitchErr, -P.AimRateMax, P.AimRateMax)
-	local YawSet   = Clamp(P.AimRateGain * YawErr * YawFade, -P.AimRateMax, P.AimRateMax)
+	local YawSet   = Clamp(P.AimRateGain * YawErr,   -P.AimRateMax, P.AimRateMax)
 
 	-- Roll is bank-to-turn: command a BANK ANGLE proportional to the turn (heading) error and hold it -- the
 	-- pitch pull carries the nose around. Driving a bank ANGLE (not "roll until the aim is overhead") means it

@@ -34,11 +34,11 @@ FlightModel.Defaults = {
 	-- Mouse-aim controller (the acf_control_surface_controller brain). No user-facing gains: the outer loop
 	-- turns a pointing error into a target body rate; the inner loop's authority is normalised by airspeed
 	-- (dynamic pressure), which is deterministic and can't diverge, so gains stay fixed and hands-off.
-	AimRateGain = 2.5,    -- target body rate (deg/s) per degree of pointing error (outer P loop)
-	AimRateMax  = 50,     -- cap on the commanded body rate (deg/s)
+	AimRateGain = 2.0,    -- target body rate (deg/s) per degree of pointing error (outer P loop)
+	AimRateMax  = 30,     -- cap on the commanded body rate (deg/s); kept feasible so it doesn't saturate
 	TrackGain   = 6.0,    -- desired angular acceleration (deg/s^2) per deg/s of rate error (inner loop)
-	SurfBankGain = 2.5,   -- commanded bank angle (deg) per degree of heading error (bank-to-turn)
-	SurfMaxBank  = 55,    -- cap on commanded bank angle (deg)
+	SurfBankGain = 1.2,   -- commanded bank angle (deg) per degree of heading error (bank-to-turn, for feel)
+	SurfMaxBank  = 40,    -- cap on commanded bank angle (deg); gentle so it can't over-bank into a spiral
 	RollKp       = 4.0,   -- roll rate (deg/s) commanded per degree of bank-angle error (holds a bank)
 	CmdSlew      = 10,    -- max change in a normalised axis command per second (anti-slam output limiter)
 	-- Airspeed-normalised authority: B = effectiveness (angular accel per unit deflection). It scales with
