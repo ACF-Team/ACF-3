@@ -3,11 +3,11 @@ local ACF  = ACF
 do	-- Radars
 	local Text = "View Cone : %s degrees\nView Range : %s\nMin. Target Size (at max range) : %s\nMass : %s kg\n"
 	local SizeColor = Color(255, 0, 0)
-	local FormulaText = "The minimum target size a radar can detect shrinks the closer a target gets. Smaller radars can only see small targets up close, while larger radars can see small targets much further out. A target smaller than the curve at its current distance won't be detected.\n\nMinimum detectable size = Min. Target Size x (Distance / View Range) ^ 1.5"
+	local FormulaText = "The minimum target size a radar can detect shrinks the closer a target gets. Smaller radars can only see small targets up close, while larger radars can see small targets much further out. A target smaller than the curve at its current distance won't be detected.\n\nMinimum detectable size = Min. Target Size x (Distance / View Range) ^ 2"
 	local DetectTypesText = "Radars can be set to detect Contraptions, Missiles, or both. Radars that can only detect one target type receive a slight cost discount."
 
-	-- Mirrors GetMinDetectableSize in lua/entities/acf_radar/init.lua; a target smaller than this, at this distance, won't be seen by the radar.
-	local MinSizeExponent = 1.5
+	-- Mirrors GetMinDetectableSize in lua/acf/entities/sensors/radars/helpers_sv.lua; a target smaller than this, at this distance, won't be seen by the radar.
+	local MinSizeExponent = 2
 	local function MinDetectableSize(MinSizeAtRange, Range, Dist)
 		if not MinSizeAtRange or not Range or Range <= 0 then return 0 end
 
