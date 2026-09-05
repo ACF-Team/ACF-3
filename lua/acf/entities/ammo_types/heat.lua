@@ -296,8 +296,8 @@ if SERVER then
 
 			if not Ballistics.TestFilter(Ent, Bullet) then TraceData.filter[#TraceData.filter + 1] = TraceRes.Entity continue end
 
-			-- Get the (full jet's) penetration
-			local Standoff    = (PenHitPos - JetStart):Length() * ACF.InchToMeter -- Back to m
+			-- Get the (full jet's) penetration. Floor Standoff so a dead convex's still-solid collision, hit again at ~0 distance, can't zero out GetPenetration and abort the whole jet.
+			local Standoff    = math.max((PenHitPos - JetStart):Length() * ACF.InchToMeter, 0.01)
 			local Penetration = self:GetPenetration(Bullet, Standoff) * math.max(0, JetMassPct)
 			-- If it's out of range, stop here
 			if Penetration == 0 then break end
@@ -356,6 +356,9 @@ if SERVER then
 			if DamageDealt == 0 then
 				-- This should probably be consolidated with damageresults later: lua\acf\damage\objects_sv\damage_result.lua
 				_Cavity = Cavity * (Penetration / EffectiveArmor) * 0.14
+
+				-- Each jet layer resolves its own convex chain above, so clear any stale entry convex from the original impact and let getBulletDamage re-derive it here.
+				Bullet.ConvexHit = nil
 
 				-- Damage result, Damage info
 				local JetDmg, JetInfo = Damage.getBulletDamage(Bullet, TraceRes)

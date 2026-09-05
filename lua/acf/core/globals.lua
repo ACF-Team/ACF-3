@@ -403,9 +403,6 @@ do -- ACF global vars
 	ACF.CrewSpaceLengthMod 	= 0.425	-- Changes contribution of shell length to ideal crew space
 	ACF.CrewSpaceCaliberMod = 1.0	-- Changes contribution of shell caliber to ideal crew space
 
-	ACF.CrewArmor 			= 5		-- How many millimeters of armor crew members have
-	ACF.CrewHealth 			= 4		-- How much health crew members have
-
 	ACF.CrewOxygen 			= 10	-- How many seconds can crew hold their breath for
 	ACF.CrewOxygenLossRate 	= 1		-- Multiplier for how fast crew regain their breath
 	ACF.CrewOxygenGainRate 	= 2		-- Multiplier for how fast crew regain their breath

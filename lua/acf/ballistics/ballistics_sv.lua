@@ -91,7 +91,7 @@ function Ballistics.CalcBulletFlight(Bullet)
 		Bullet:PostCalcFlight()
 	end
 
-	debugoverlay.Line(Bullet.Pos, Bullet.NextPos, 5, Bullet.Color)
+	debugoverlay.Line(Bullet.Pos, Bullet.NextPos, 15, Bullet.Color, true)
 	Bullet.Pos = Bullet.NextPos
 end
 
@@ -166,7 +166,10 @@ function Ballistics.CreateBullet(BulletData)
 	end
 
 	-- TODO: Make bullets use a metatable instead
+	-- Bullet.PenetrationOverride lets standoff-dependent ammo types (HEAT) report their real current penetration instead of the Standoff-less placeholder.
 	function Bullet:GetPenetration()
+		if Bullet.PenetrationOverride then return Bullet.PenetrationOverride end
+
 		local Ammo = AmmoTypes.Get(Bullet.Type)
 
 		return Ammo:GetPenetration(self)
@@ -547,12 +550,24 @@ do -- Terminal ballistics --------------------------
 		return false
 	end
 
+	-- Tuning constants for DoSpall; kept as locals (rather than ACF globals) so they can be edited and hot-reloaded from this file alone, without a full game restart.
+	local SpallFragFraction   = 0.01 -- Fraction of the spall energy budget that goes into forming countable fragments
+	local SpallEnergyFraction = 0.005 -- Fraction of the spall energy budget imparted to the ejected mass as kinetic energy
+	local SpallMinCone        = 30     -- Degrees, spall cone half angle with maximum overmatch (Loss near 0)
+	local SpallMaxCone        = 90    -- Degrees, spall cone half angle near the ballistic limit (Loss near 1)
+	local SpallAnglePower     = 2 -- Bias for angle sampling; higher packs more fragments near the cone axis
+	local SpallEnergyFalloff  = 2   -- Power of the cos(angle) energy falloff used to split speed across fragments
+
+	local SpallMinFragCount   = 1 -- Minimum number of fragments created; ensures at least one fragment is formed even with very low energy
+	local SpallMaxFragCount   = 20 -- Hard limit on the number of fragments created; prevents server overload from a single overmatch
+
 	function Ballistics.DoSpall(Bullet, Trace, HitRes, Speed, DmgInfo)
 		-- Only ever called during overpenetration
-		local Energy = Bullet.Energy.Kinetic -- Energy the projectile carries (J)
+		local Energy = Bullet.Energy.Kinetic -- Energy the projectile carries (kJ)
 
 		-- Spall is generated from the convex the bullet exited through; its material determines the removed mass and how readily it fragments
 		local RemovedMass
+		local Density
 		local SpallMul   = 1
 		local MeshData   = Trace.Entity.ACF_Volumetric_Mesh
 		local ConvexHits = DmgInfo and DmgInfo:GetConvexHits()
@@ -563,24 +578,33 @@ do -- Terminal ballistics --------------------------
 			local ArmorType = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("Default")
 
 			RemovedMass = ExitHit.Volume * ACF.InchToMCu * ArmorType.Density -- ExitHit.Volume is the actual penetration channel volume (in^3), Density is kg/m^3
+			Density     = ArmorType.Density * 1e-6 -- kg/m^3 to kg/cm^3, to match FragSize's cm-based units below
 			SpallMul    = ArmorType.SpallMul
 		else
 			RemovedMass = HitRes.Damage * ACF.RHADensity -- Damage is used as a proxy for volume (cm^3) and RHA density is in kg/cm^3
+			Density     = ACF.RHADensity
 		end
 
-		local RemovedArea = Bullet.ProjArea -- Area of the spall (cm^2)
+		if RemovedMass <= 0 then return end -- Nothing was actually removed, so there's no mass to turn into fragments
 
-		local FragsFormed = (Energy * 0.33 / 100) * SpallMul -- Roughly how willing the material is to spall
-		local FragCount = math.Clamp(math.floor(FragsFormed), 1, 30) -- Atleast 1, up to 30 fragments (let's not kill the server)
+		-- Both the fragment count and the fragments' kinetic energy are drawn from the penetrator's kinetic energy, scaled by how readily this material spalls.
+		local SpallEnergy = Energy * SpallMul -- kJ
+
+		local FragsFormed = SpallEnergy * SpallFragFraction
+		local FragCount = math.Clamp(math.floor(FragsFormed), SpallMinFragCount, SpallMaxFragCount) -- Atleast 1, up to 20 fragments (let's not kill the server)
+
+		print("ACF Spall: entity", Trace.Entity, "fragments", FragCount)
 
 		if FragCount < 1 then return end -- No fragments formed
 
-		-- Test values
-		local FragSize = RemovedArea / FragCount 	-- Area of the fragments (cm^2)
-		local FragMass = RemovedMass / FragCount 	-- Mass of the fragments (kg)
-		local FragSpeed = Speed * 0.25 				-- Speed of the fragments (u/s) (50% of the original speed)
+		local FragMassAvg = RemovedMass / FragCount 	-- Average mass of the fragments (kg)
+		local MottMu      = FragMassAvg / 2 			-- Mott's characteristic mass; mean fragment mass = 2*mu
 
-		local BaseCone = 10 * math.pow(FragSize, 1 / 3) -- Half angle of the spall cone (degrees) (Might depend on the material?)
+		-- Total kinetic energy budget for the spall, split per-fragment below so mass, angle and speed all vary together instead of one bulk speed for everyone.
+		local TotalFragEnergy = SpallEnergy * SpallEnergyFraction * 1000 -- kJ to J
+
+		-- Half angle of the spall cone: closer to the ballistic limit (Loss near 1) the plate barely fails and sprays debris wide, while heavy overmatch (Loss near 0) keeps debris close to the original flight direction.
+		local BaseCone = SpallMinCone + (SpallMaxCone - SpallMinCone) * HitRes.Loss
 		local FragPos = (Bullet.ConvexHit and Bullet.ConvexHit.ExitPos) or Trace.HitPos -- Spall originates at the convex the bullet exited through
 		local FragDirInit = Bullet.Flight:GetNormalized()
 
@@ -591,16 +615,41 @@ do -- Terminal ballistics --------------------------
 		-- Define a plane for the spread
 		local Right = FragDirInit:Cross(Vector(0, 0, 1)):GetNormalized()
 		local Up = FragDirInit:Cross(Right):GetNormalized()
-		local ConeTan = math.tan(math.rad(BaseCone)) -- "Width" of cone on the plane
 
-		-- Copied from AP ammotype definition
-		local ProjArea = math.pi * (FragSize / 2) ^ 2
-		local DragCoef = ProjArea * 0.0001 / FragMass
+		-- Sample fragment masses from Mott's distribution (m = mu * ln(1/u)^2, decreasing in u) and reuse the same draw for this fragment's cone angle (BaseCone * u^SpallAnglePower, increasing in u), so a heavy fragment naturally pairs with a small angle and a light one with a wide angle.
+		local Masses, Weights, MassSum, WeightSum = {}, {}, 0, 0
+		for i = 1, FragCount do
+			local U = 1 - math.random()
+
+			local Mass = math.max(MottMu * math.log(1 / U) ^ 2, 1e-6)
+			Masses[i] = Mass
+			MassSum = MassSum + Mass
+
+			local Angle = BaseCone * U ^ SpallAnglePower
+			local Weight = math.cos(math.rad(Angle)) ^ SpallEnergyFalloff
+			Weights[i] = { Angle = Angle, Weight = Weight }
+			WeightSum = WeightSum + Weight
+		end
+
+		-- Rescale so the sampled masses still sum to RemovedMass, since a small sample of fragments won't average to 2*mu exactly.
+		local MassScale = RemovedMass / MassSum
 
 		-- Create the fragments
-		for _ = 1, FragCount do
-			-- Uniform sampling of points on a circle defined by the cone on the plane
-			local SpreadRadius = ConeTan * math.sqrt(math.random())
+		for i = 1, FragCount do
+			local FragMass   = Masses[i] * MassScale
+			local FragVolume = FragMass / Density -- cm^3, assuming the fragment has the same density as the removed material
+			local FragSize   = (6 * FragVolume / math.pi) ^ (1 / 3) -- Diameter of a sphere of that volume (cm)
+
+			-- Copied from AP ammotype definition
+			local ProjArea = math.pi * (FragSize / 2) ^ 2
+			local DragCoef = ProjArea * 0.0001 / FragMass
+
+			-- This fragment's share of the total energy budget, via energy conservation (Speed = sqrt(2 * KE / Mass)), clamped to the impact speed since spall can't outrun its source.
+			local FragEnergy = TotalFragEnergy * Weights[i].Weight / WeightSum
+			local FragSpeed  = math.min((2 * FragEnergy / FragMass) ^ 0.5 * ACF.MeterToInch, Speed)
+
+			-- Point on a circle at this fragment's sampled angle, placed at a random rotation around the cone axis
+			local SpreadRadius = math.tan(math.rad(Weights[i].Angle))
 			local SpreadAngle = math.random() * 2 * math.pi
 			local SpreadDir = Up * SpreadRadius * math.cos(SpreadAngle) + Right * SpreadRadius * math.sin(SpreadAngle)
 			local FragDir = (FragDirInit + SpreadDir):GetNormalized()
