@@ -36,8 +36,8 @@ function Armor:OnLoaded()
     self.ShortName   = "Flesh"
     self.Description = "Soft tissue, used to represent crew members. Lab-grown for your convenience."
     self.Density     = 1100 -- https://www.sciencedirect.com/topics/immunology-and-microbiology/body-density
-    self.CostMul     = 3.75
-    self.HealthMul   = 0.0420918
+    self.CostMul     = 5
+    self.HealthMul   = 0.01
     self.KineticMul  = 0.03
     self.ChemicalMul = 0.03
     self.SpallMul    = 0.2
@@ -130,6 +130,20 @@ function Armor:OnLoaded()
     self.SpallMul    = 1.0
 end
 
+-- HHRHA
+local Armor = Types.Register("HHRHA")
+function Armor:OnLoaded()
+    self.Name        = "High Hardness RHA"
+    self.ShortName   = "HHRHA"
+    self.Description = "Harder than RHA, but more brittle."
+    self.Density     = 7850 -- https://metalzenith.com/blogs/steel-properties/rha-steel-properties-and-key-applications-in-defense
+    self.CostMul     = 38
+    self.HealthMul   = 0.75
+    self.KineticMul  = 1.25
+    self.ChemicalMul = 1.15
+    self.SpallMul    = 1.3
+end
+
 -- Gun Steel
 local Armor = Types.Register("GunSteel")
 function Armor:OnLoaded()
@@ -153,8 +167,8 @@ function Armor:OnLoaded()
     self.Description = "Material intended to represent components. Better protection than Gun Steel, but worse health for balance reasons."
     self.SuppressLoad = true
     self.Density     = 2700 -- https://en.wikipedia.org/wiki/Aluminium
-    self.CostMul     = 13.425
-    self.HealthMul   = 0.0688776
+    self.CostMul     = 17.9
+    self.HealthMul   = 0.03
     self.KineticMul  = 0.1
     self.ChemicalMul = 0.1
     self.SpallMul    = 1
