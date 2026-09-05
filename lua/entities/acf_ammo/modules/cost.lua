@@ -1,15 +1,12 @@
 
 --	Used for figuring costs for gamemode related activities
-function ENT:GetCost()
-	local selftbl	= self:GetTable()
 
-	--PrintTable(selftbl.BulletData)
-
-	--print(selftbl.Capacity, selftbl.BulletData.Type)
+--- Cost of one round. Per-round so a big crate can't dilute the seeker's cost away.
+function ENT:GetRoundCost()
+	local selftbl = self:GetTable()
+	local Cost    = selftbl.RoundData:GetCost(selftbl.BulletData)
 
 	if selftbl.IsMissileAmmo then
-		local Cost	= selftbl.Capacity * selftbl.RoundData:GetCost(selftbl.BulletData)
-
 		if selftbl.GuidanceData then
 			Cost = Cost + selftbl.GuidanceData:GetCost()
 		end
@@ -17,9 +14,11 @@ function ENT:GetCost()
 		if selftbl.FuzeData then
 			Cost = Cost + selftbl.FuzeData:GetCost()
 		end
-
-		return Cost
-	else
-		return selftbl.Capacity * selftbl.RoundData:GetCost(selftbl.BulletData)
 	end
+
+	return Cost
+end
+
+function ENT:GetCost()
+	return self.Capacity * self:GetRoundCost()
 end

@@ -81,7 +81,7 @@ function ACF.MakeGLATGM(Player, Gun, BulletData)
 	Entity.Caliber      = Caliber
 	Entity.Weapon       = Gun
 	Entity.BulletData   = table.Copy(BulletData)
-	Entity.ForcedArmor  = 5 -- All missiles should get 5mm
+	Entity.ForcedArmor  = 1 -- Flat 1mm, matching the thinnest missile airframes
 	Entity.ForcedMass   = BulletData.CartMass
 	Entity.UseGuidance  = true
 	Entity.ViewCone     = math.cos(math.rad(50)) -- Number inside is on degrees
@@ -144,12 +144,12 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 		local Ratio = self.ACF.Health / self.ACF.MaxHealth
 		local BulletData = self.BulletData
 
-		-- We give it a chance to explode when it gets penetrated aswell.
-		if math.random() > 0.55 * Ratio then
+		-- Destroyed once penetrated, matching acf_missile
+		if DmgResult.Penetration > self.ForcedArmor then
 			if BulletData.Type == "GLATGM" then
-			BulletData.Type = "HE"
+				BulletData.Type = "HE"
 
-			self:SetNW2String("AmmoType", "HE")
+				self:SetNW2String("AmmoType", "HE")
 			end
 			DetonateMissile(self, Owner)
 
