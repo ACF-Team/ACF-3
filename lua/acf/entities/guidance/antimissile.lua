@@ -1,14 +1,15 @@
 local Guidances = ACF.Classes.Guidances
 local Guidance  = Guidances.Register("Anti-missile", "Anti-radiation")
 
+-- Shared so the ammo menu can price missile rounds clientside.
+function Guidance:GetCost()
+	return 3
+end
+
 if CLIENT then
 	Guidance.Description = "This guidance package uses a radar to detect missiles and guides the munition towards the most centered one it can find."
 else
 	local Countermeasures = ACF.Classes.Countermeasures
-
-	function Guidance:GetCost()
-		return 3
-	end
 
 	function Guidance:GetRadar()
 		if not IsValid(self.Source) then return end

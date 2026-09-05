@@ -262,7 +262,7 @@ do -- Unit conversion
 		end
 	end
 
-	function ACF.GetProperMass(Kilograms)
+	function ACF.FormatMass(Kilograms)
 		local Unit, Mult = "g", 1000
 
 		if Kilograms >= 1000 then
@@ -272,6 +272,13 @@ do -- Unit conversion
 		end
 
 		return math.Round(Kilograms * Mult, 2) .. " " .. Unit
+	end
+
+	--- Formats a contraption cost the same way the menu and overlays present it.
+	--- @param Points number The cost in points
+	--- @return string Text The formatted cost
+	function ACF.FormatCost(Points)
+		return math.Round(Points or 0, 2) .. " pts"
 	end
 end
 --[[

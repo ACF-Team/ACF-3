@@ -168,9 +168,9 @@ else
 			local PeakVel	= math.Round(Velocity * 0.5, 2)
 			local LaunchVel = math.Round(Velocity * 0.2, 2)
 			local Accel     = math.Round(math.Clamp(BulletData.ProjMass / BulletData.PropMass + BulletData.Caliber / 7, 0.2, 10), 2)
-			local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
-			local PropMass	= ACF.GetProperMass(BulletData.PropMass)
-			local Filler	= ACF.GetProperMass(BulletData.FillerMass)
+			local ProjMass	= ACF.FormatMass(BulletData.ProjMass)
+			local PropMass	= ACF.FormatMass(BulletData.PropMass)
+			local Filler	= ACF.FormatMass(BulletData.FillerMass)
 
 			return Text:format(PeakVel, LaunchVel, Accel, ProjMass, PropMass, Filler)
 		end)
@@ -184,7 +184,7 @@ else
 
 			local Text	   = "Blast Radius : %s m\nFragments : %s\nFragment Mass : %s\nFragment Velocity : %s m/s"
 			local Blast	   = math.Round(BulletData.BlastRadius, 2)
-			local FragMass = ACF.GetProperMass(BulletData.FragMass)
+			local FragMass = ACF.FormatMass(BulletData.FragMass)
 			local FragVel  = math.Round(BulletData.FragVel, 2)
 
 			return Text:format(Blast, BulletData.Fragments, FragMass, FragVel)

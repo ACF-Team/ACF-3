@@ -43,7 +43,6 @@ if SERVER then
 
 	ACF.AddInputAction("acf_computer", "Lase", function(Entity, Value)
 		if Entity.Lasing == nil then return end
-		if Entity.OnCooldown then return end
 		if Entity.ACF.Health <= 0 then return end -- Destroyed
 
 		Value = tobool(Value)
@@ -72,13 +71,14 @@ if SERVER then
 end
 
 do -- Joystick
-	local MenuText = "Joystick bounds : +-%s degrees\nJoystick speed : %s degrees/s\nMass : %s kg"
+	local MenuText = "Joystick bounds : +-%s degrees\nJoystick speed : %s degrees/s\nMass : %s kg\nCost : %s"
 
 	Components.RegisterItem("CPR-Joystick", "GD-CPR", {
 		Name        = "Joystick",
 		Description = "A small joystick, used to manually guide anti-tank missiles and munitions.",
 		Model       = "models/weapons/w_slam.mdl",
 		Mass        = 7,
+		Cost        = 1,
 		MaxAngle    = 25,
 		Speed       = 50, -- Degrees per second
 		Offset      = Vector(0, -1.5, -0.25),
@@ -94,7 +94,7 @@ do -- Joystick
 			local Speed = Data.Speed
 			local Mass  = Data.Mass
 
-			Menu:AddLabel(MenuText:format(Angle, Speed, Mass))
+			Menu:AddLabel(MenuText:format(Angle, Speed, Mass, ACF.FormatCost(Data.Cost or 0)))
 
 			ACF.SetClientData("PrimaryClass", "acf_computer")
 		end,
@@ -266,7 +266,7 @@ do -- Joystick
 end
 
 do -- Optical guidance computer
-	local MenuText  = "Pitch bounds : +-%s degrees\nYaw bounds : +-%s degrees\nAim speed : %s degrees/s\nFocus speed : %s m/s\nMass : %s kg"
+	local MenuText  = "Pitch bounds : +-%s degrees\nYaw bounds : +-%s degrees\nAim speed : %s degrees/s\nFocus speed : %s m/s\nMass : %s kg\nCost : %s"
 	local TraceData = { start = true, endpos = true, filter = true }
 	local Computers = {}
 
@@ -292,6 +292,7 @@ do -- Optical guidance computer
 		Description = "Fully analog guidance computer. Unlike the laser guidance computer, it takes a few seconds for it to aim and focus properly.",
 		Model       = "models/props_lab/monitor01b.mdl",
 		Mass        = 43,
+		Cost        = 2,
 		Offset      = Vector(6, -1, 0),
 		Speed       = 10, -- Degrees per second
 		FocusSpeed  = 300, -- Meters per second
@@ -316,7 +317,7 @@ do -- Optical guidance computer
 			local Focus = Data.FocusSpeed
 			local Mass  = Data.Mass
 
-			Menu:AddLabel(MenuText:format(Pitch, Yaw, Speed, Focus, Mass))
+			Menu:AddLabel(MenuText:format(Pitch, Yaw, Speed, Focus, Mass, ACF.FormatCost(Data.Cost or 0)))
 
 			ACF.SetClientData("PrimaryClass", "acf_computer")
 		end,
@@ -420,7 +421,22 @@ do -- Optical guidance computer
 			Entity:TriggerInput("Yaw", 0)
 		end,
 		OnThink = function(Entity)
-			if Entity.ACF.Health <= 0 then return end -- Destroyed
+			if Entity.ACF.Health <= 0 then -- Destroyed
+				if Entity.Distance ~= 0 or Entity.HitPos ~= vector_origin then
+					Entity.Distance  = 0
+					Entity.HitPos    = Vector()
+					Entity.TraceDir  = Vector()
+					Entity.TracePos  = Entity.HitPos
+					Entity.TraceDist = Entity.Distance
+
+					WireLib.TriggerOutput(Entity, "Distance", 0)
+					WireLib.TriggerOutput(Entity, "HitPos", Vector())
+
+					Entity:UpdateOverlay()
+				end
+
+				return
+			end
 
 			local Tick  = engine.TickInterval()
 			local Speed = Entity.MoveSpeed * Tick * math.Rand(Entity.Spread, 1)
@@ -492,8 +508,7 @@ do -- Optical guidance computer
 end
 
 do -- Laser guidance computer
-	local MenuText  = "Pitch bounds : +-%s degrees\nYaw bounds : +-%s degrees\nAim speed : %s degrees/s\nMass : %s kg"
-	local LaserText = "Lasing time : %s seconds\nCooldown : %s seconds"
+	local MenuText  = "Pitch bounds : +-%s degrees\nYaw bounds : +-%s degrees\nAim speed : %s degrees/s\nMass : %s kg\nCost : %s"
 	local Clock     = ACF.Utilities.Clock
 
 	Components.RegisterItem("CPR-LSR", "GD-CPR", {
@@ -501,15 +516,12 @@ do -- Laser guidance computer
 		Description = "Modern equivalent to the analog guidance computer, provides faster and more accurate measurements. Can be also used as a laser target designator.",
 		Model       = "models/props_lab/monitor01b.mdl",
 		Mass        = 30,
-		LaseTime    = 20,
-		Cooldown    = 10,
+		Cost        = 4,
 		Offset      = Vector(6, -1, 0),
 		Speed       = 45, -- Degrees per second
 		Inputs      = { "Lase (Turns on the laser)", "Pitch (Degrees on the vertical axis)", "Yaw (Degrees on the horizontal axis)", "HitPos (Target location to aim laser at) [VECTOR]" },
 		Outputs     = {
 			"Lasing (Whether or not the laser is on)",
-			"Lase Time (How long the laser can stay on before requiring a cool down)",
-			"Cooling Down (Whether or not the laser is cooling off)",
 			"Distance (The currently measured distance from the computer, in meters)",
 			"HitPos (The vector of where the computer detects a hit from the laser) [VECTOR]",
 			"Current Pitch (Current degrees on the vertical axis)",
@@ -526,11 +538,8 @@ do -- Laser guidance computer
 			local Yaw      = Data.Bounds.Yaw
 			local Speed    = Data.Speed
 			local Mass     = Data.Mass
-			local LaseTime = Data.LaseTime
-			local Cooldown = Data.Cooldown
 
-			Menu:AddLabel(MenuText:format(Pitch, Yaw, Speed, Mass))
-			Menu:AddLabel(LaserText:format(LaseTime, Cooldown))
+			Menu:AddLabel(MenuText:format(Pitch, Yaw, Speed, Mass, ACF.FormatCost(Data.Cost or 0)))
 
 			ACF.SetClientData("PrimaryClass", "acf_computer")
 		end,
@@ -539,7 +548,6 @@ do -- Laser guidance computer
 			Entity.IsComputer = true
 			Entity.Lasing     = false
 			Entity.Offset     = Computer.Offset
-			Entity.OnCooldown = false
 			Entity.HitPos     = Vector()
 			Entity.Distance   = 0
 			Entity.TraceDir   = Vector()
@@ -547,10 +555,6 @@ do -- Laser guidance computer
 			Entity.TraceDist  = Entity.Distance
 			Entity.NextSpread = 0
 			Entity.Spread     = 0
-			Entity.LaseTime   = 0
-			Entity.LastLase   = 0
-			Entity.MaxTime    = Computer.LaseTime
-			Entity.Cooldown   = Computer.Cooldown
 			Entity.MoveSpeed  = Computer.Speed
 			Entity.MinPitch   = -Computer.Bounds.Pitch
 			Entity.MaxPitch   = Computer.Bounds.Pitch
@@ -572,8 +576,6 @@ do -- Laser guidance computer
 			})
 
 			WireLib.TriggerOutput(Entity, "Lasing", 0)
-			WireLib.TriggerOutput(Entity, "Lase Time", Entity.MaxTime)
-			WireLib.TriggerOutput(Entity, "Cooling Down", 0)
 			WireLib.TriggerOutput(Entity, "Distance", 0)
 			WireLib.TriggerOutput(Entity, "HitPos", Vector())
 			WireLib.TriggerOutput(Entity, "Current Pitch", 0)
@@ -582,7 +584,6 @@ do -- Laser guidance computer
 		OnLast = function(Entity)
 			Entity.IsComputer = nil
 			Entity.Lasing     = nil
-			Entity.OnCooldown = nil
 			Entity.HitPos     = nil
 			Entity.Distance   = nil
 			Entity.TraceDir   = nil
@@ -590,10 +591,6 @@ do -- Laser guidance computer
 			Entity.TraceDist  = nil
 			Entity.NextSpread = nil
 			Entity.Spread     = nil
-			Entity.LaseTime   = nil
-			Entity.LastLase   = nil
-			Entity.MaxTime    = nil
-			Entity.Cooldown   = nil
 			Entity.MoveSpeed  = nil
 			Entity.MinPitch   = nil
 			Entity.MaxPitch   = nil
@@ -610,7 +607,6 @@ do -- Laser guidance computer
 		end,
 		OnOverlayTitle = function(Entity)
 			if not Entity.IsComputer then return end
-			if Entity.OnCooldown then return "Cooling down" end
 			if Entity.Lasing then return "Lasing" end
 			if Entity.InputPitch ~= 0 or Entity.InputYaw ~= 0 then
 				return "In use"
@@ -664,6 +660,18 @@ do -- Laser guidance computer
 					Entity:SetNW2Bool("Lasing", false)
 
 					WireLib.TriggerOutput(Entity, "Lasing", 0)
+				end
+
+				if Entity.Distance ~= 0 or Entity.HitPos ~= vector_origin then
+					Entity.Distance  = 0
+					Entity.HitPos    = Vector()
+					Entity.TraceDir  = Vector()
+					Entity.TracePos  = Entity.HitPos
+					Entity.TraceDist = Entity.Distance
+
+					WireLib.TriggerOutput(Entity, "Distance", 0)
+					WireLib.TriggerOutput(Entity, "HitPos", Vector())
+
 					Entity:UpdateOverlay()
 				end
 
@@ -720,55 +728,28 @@ do -- Laser guidance computer
 				end
 			end
 
-			if Entity.Lasing or Entity.LaseTime > 0 then
-				local Delta = math.min(Clock.CurTime - Entity.LastLase, Tick) * (Entity.Lasing and 1 or -1)
+			if Entity.Lasing then
+				local Laser = ACF.GetLaserData(Entity)
 
-				Entity.LaseTime = math.Clamp(Entity.LaseTime + Delta, 0, Entity.MaxTime)
+				Entity.Distance  = Laser and Laser.Distance or 0
+				Entity.HitPos    = Laser and Laser.HitPos or Vector()
+				Entity.TraceDir  = Laser and Laser.Trace.Normal
+				Entity.TracePos  = Entity.HitPos
+				Entity.TraceDist = Entity.Distance
 
-				if Entity.LaseTime == Entity.MaxTime then
-					Entity:TriggerInput("Lase", 0)
+				WireLib.TriggerOutput(Entity, "Distance", Entity.Distance)
+				WireLib.TriggerOutput(Entity, "HitPos", Entity.HitPos)
 
-					Entity.OnCooldown = true
-					Entity.HitPos     = Vector()
-					Entity.Distance   = 0
-					Entity.LaseTime   = 0
-					Entity.TraceDir   = Vector()
-					Entity.TracePos   = Entity.HitPos
-					Entity.TraceDist  = Entity.Distance
+				Entity:UpdateOverlay()
+			elseif Entity.Distance ~= 0 or Entity.HitPos ~= vector_origin then -- Just turned off, clear the last reading
+				Entity.Distance  = 0
+				Entity.HitPos    = Vector()
+				Entity.TraceDir  = Vector()
+				Entity.TracePos  = Entity.HitPos
+				Entity.TraceDist = Entity.Distance
 
-					WireLib.TriggerOutput(Entity, "Cooling Down", 1)
-					WireLib.TriggerOutput(Entity, "HitPos", Vector())
-					WireLib.TriggerOutput(Entity, "Distance", 0)
-
-					timer.Simple(Entity.Cooldown, function()
-						if not IsValid(Entity) then return end
-
-						Entity.OnCooldown = false
-
-						if Entity.Inputs.Lase.Path then
-							Entity:TriggerInput("Lase", Entity.Inputs.Lase.Value)
-						end
-
-						WireLib.TriggerOutput(Entity, "Cooling Down", 0)
-
-						Entity:UpdateOverlay()
-					end)
-				else
-					local Laser = ACF.GetLaserData(Entity)
-
-					Entity.Distance  = Laser and Laser.Distance or 0
-					Entity.HitPos    = Laser and Laser.HitPos or Vector()
-					Entity.TraceDir  = Laser and Laser.Trace.Normal
-					Entity.TracePos  = Entity.HitPos
-					Entity.TraceDist = Entity.Distance
-
-					WireLib.TriggerOutput(Entity, "Distance", Entity.Distance)
-					WireLib.TriggerOutput(Entity, "HitPos", Entity.HitPos)
-				end
-
-				WireLib.TriggerOutput(Entity, "Lase Time", Entity.MaxTime - Entity.LaseTime)
-
-				Entity.LastLase = Clock.CurTime
+				WireLib.TriggerOutput(Entity, "Distance", 0)
+				WireLib.TriggerOutput(Entity, "HitPos", Vector())
 
 				Entity:UpdateOverlay()
 			end
@@ -784,6 +765,7 @@ do -- GPS transmitter
 		Description = "A transmitter for GPS-based guided munitions.",
 		Model       = "models/props_lab/reciever01a.mdl",
 		Mass        = 15,
+		Cost        = 2,
 		Inputs      = { "Coordinates (The vector to pass along to the linked rack) [VECTOR]" },
 		Outputs     = {
 			"Transmitting (Whether or not the transmitter is functioning)",
@@ -793,7 +775,7 @@ do -- GPS transmitter
 			FOV = 80,
 		},
 		CreateMenu = function(Data, Menu)
-			Menu:AddLabel("Mass : " .. Data.Mass .. " kg")
+			Menu:AddLabel("Mass : " .. Data.Mass .. " kg\nCost : " .. ACF.FormatCost(Data.Cost or 0))
 			--Menu:AddLabel("This entity can be jammed.") -- Not yet
 
 			ACF.SetClientData("PrimaryClass", "acf_computer")
@@ -859,10 +841,10 @@ do -- GPS transmitter
 	})
 end
 
-local GroundLoaderText = "Mass : %s kg\n"
+local GroundLoaderText = "Mass : %s kg\nCost : %s\n"
 
 function ACF.CreateGroundLoaderMenu(Data, Menu)
-	Menu:AddLabel(GroundLoaderText:format(Data.Mass))
+	Menu:AddLabel(GroundLoaderText:format(Data.Mass, ACF.FormatCost(ACF.GroundLoaderCost)))
 
 	ACF.SetClientData("PrimaryClass", "acf_groundloader")
 

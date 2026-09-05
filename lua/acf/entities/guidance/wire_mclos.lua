@@ -13,16 +13,17 @@ function Guidance:WriteDisplayConfig(State)
 	State:AddSubKeyValue("Wire Length", math.Round(self.WireLength ^ 0.5 * ACF.InchToMeter, 2) .. " meters")
 end
 
+-- Shared so the ammo menu can price missile rounds clientside.
+function Guidance:GetCost()
+	return 4
+end
+
 if CLIENT then
 	Guidance.Description = "This guidance package allows you to manually control the direction of the missile."
 else
 	local SnapSound = "physics/metal/sawblade_stick%s.wav"
 
 	Guidance.IsWire = true
-
-	function Guidance:GetCost()
-		return 4
-	end
 
 	function Guidance:OnLaunched(Missile)
 		Guidance.BaseClass.OnLaunched(self, Missile)

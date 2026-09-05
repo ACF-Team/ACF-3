@@ -139,6 +139,7 @@ do -- Spawn and update function
 
 		Entity.Name         = Computer.Name
 		Entity.ShortName    = Entity.Computer
+		Entity.BaseCost     = Computer.Cost
 		Entity.EntType      = Class.Name
 		Entity.ClassData    = Class
 		Entity.OnUpdate     = Computer.OnUpdate or Class.OnUpdate
@@ -292,6 +293,10 @@ function ENT:ACF_OnRepaired()
 	end
 end
 
+function ENT:GetCost()
+	return self.BaseCost or 0
+end
+
 function ENT:Enable()
 	if self.OnEnabled then
 		self:OnEnabled()
@@ -305,8 +310,12 @@ function ENT:Disable()
 end
 
 function ENT:ACF_UpdateOverlayState(State)
-	if self.OverlayTitle then
-		self:OverlayTitle(State)
+	local Title = self.ACF.Health <= 0 and "Destroyed" or self.OverlayTitle and self:OverlayTitle()
+
+	if Title == "Destroyed" then
+		State:AddError(Title)
+	elseif Title then
+		State:AddSuccess(Title)
 	else
 		State:AddSuccess("Idle")
 	end

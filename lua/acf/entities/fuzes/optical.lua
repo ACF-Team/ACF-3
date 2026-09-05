@@ -11,6 +11,11 @@ function Fuze:WriteDisplayConfig(State)
 	State:AddSubKeyValue("Distance", math.Round(self.Distance * ACF.InchToMeter, 2) .. " m")
 end
 
+-- Shared so the ammo menu can price missile rounds clientside.
+function Fuze:GetCost()
+	return 1
+end
+
 if CLIENT then
 	Fuze.Description = "This fuze fires a beam directly ahead and detonates when the beam hits something close-by. Distance in inches."
 
@@ -31,10 +36,6 @@ else
 	local Trace     = ACF.trace
 
 	Entities.AddArguments("acf_ammo", "FuzeDistance") -- Adding extra info to ammo crates
-
-	function Fuze:GetCost()
-		return 1
-	end
 
 	function Fuze:VerifyData(EntClass, Data, ...)
 		Fuze.BaseClass.VerifyData(self, EntClass, Data, ...)

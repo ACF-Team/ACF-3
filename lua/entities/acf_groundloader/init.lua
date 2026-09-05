@@ -252,6 +252,6 @@ function ENT:ACF_PostMenuSpawn()
 	self:SetAngles(self:GetAngles() + Angle(0, -90, 0))
 end
 
-function ENT:GetCost() return 15 end
+function ENT:GetCost() return ACF.GroundLoaderCost end
 
 Entities.Register()

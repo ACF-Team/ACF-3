@@ -448,6 +448,7 @@ do -- Spawn and Update functions
 		Entity.ConeDegs     = Radar.ViewCone
 		Entity.Range        = Radar.Range
 		Entity.MinSizeAtRange = Radar.MinSizeAtRange
+		Entity.BaseCost     = Radar.Cost
 		Entity.SwitchDelay  = Radar.SwitchDelay
 		Entity.ThinkTicks   = Radar.ThinkTicks -- Number of ticks between scans
 		Entity.TickCounter  = Entity.TickCounter or 0
@@ -608,25 +609,12 @@ function ENT:ResumeIndependentScanning()
 	end
 end
 
--- Static base cost per radar item, independent of the current detection-type selection
-local BaseCost = {
-	SmallDIR   = 12.5,
-	MediumDIR  = 25,
-	LargeDIR   = 50,
-	SmallOMNI  = 20,
-	MediumOMNI = 40,
-	LargeOMNI  = 80,
-}
-
--- Discount applied when a radar can only detect one target type instead of both
-local SingleTypeDiscount = 5
-
 function ENT:GetCost()
 	local selftbl = self:GetTable()
-	local Cost = BaseCost[selftbl.ShortName] or 0
+	local Cost = selftbl.BaseCost or 0
 
 	if selftbl.DetectContraptions ~= selftbl.DetectMissiles then
-		Cost = Cost - SingleTypeDiscount
+		Cost = Cost - ACF.RadarSingleTypeDiscount
 	end
 
 	return Cost

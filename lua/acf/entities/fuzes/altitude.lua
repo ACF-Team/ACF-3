@@ -3,13 +3,14 @@ local Classes = ACF.Classes
 local Fuzes   = Classes.Fuzes
 local Fuze    = Fuzes.Register("Altitude", "Contact")
 
+-- Shared so the ammo menu can price missile rounds clientside.
+function Fuze:GetCost()
+	return 0.1
+end
+
 if CLIENT then
 	Fuze.Description = "This fuze tracks the guidance module's target and detonates once it crosses the altitude of the target position."
 else
-	function Fuze:GetCost()
-		return 0.1
-	end
-
 	function Fuze:GetDetonate(Missile, Guidance)
 		if not self:IsArmed() or not Guidance then return false end
 

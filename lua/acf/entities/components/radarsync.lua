@@ -20,7 +20,7 @@ Components.RegisterItem("RadarSync-Item", "RadarSync", {
 		FOV = 90,
 	},
 	CreateMenu = function(Data, Menu)
-		Menu:AddLabel("Mass : " .. Data.Mass .. " kg\n\nLink this entity to radar entities to combine their detection zones into this entity's outputs.")
+		Menu:AddLabel("Mass : " .. Data.Mass .. " kg\nCost : " .. ACF.FormatCost(ACF.RadarSyncCost) .. "\n\nLink this entity to radar entities to combine their detection zones into this entity's outputs.")
 
 		ACF.SetClientData("PrimaryClass", "acf_radarsync")
 	end,

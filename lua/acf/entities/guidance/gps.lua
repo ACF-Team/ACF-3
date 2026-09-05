@@ -2,13 +2,14 @@ local ACF       = ACF
 local Guidances = ACF.Classes.Guidances
 local Guidance  = Guidances.Register("GPS Guided", "Radio (MCLOS)")
 
+-- Shared so the ammo menu can price missile rounds clientside.
+function Guidance:GetCost()
+	return 2
+end
+
 if CLIENT then
 	Guidance.Description = "This guidance package allows you to guide the munition to a desired point in the map."
 else
-	function Guidance:GetCost()
-		return 2
-	end
-
 	function Guidance:OnLaunched(Missile)
 		Guidance.BaseClass.OnLaunched(self, Missile)
 

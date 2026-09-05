@@ -1,7 +1,5 @@
 local ACF        = ACF
 local Weapons    = ACF.Classes.Weapons
-local ModelData  = ACF.ModelData
-local ArmorTypes = ACF.Classes.ArmorTypes
 local Current    = {}
 local CreateControl, IsScalable
 
@@ -166,28 +164,25 @@ local function GetMagazineText(Caliber, Class, Weapon)
 end
 
 ---Returns the expected mass of a weapon that would be created by a given entry object.
----For scalable weapons, this might be 0 at first if the model information hasn't been received from the server.
----The panel will be automatically updated once the information is received.
----@param Panel userdata The label panel in which the weapon information is being listed on.
+---Mirrors acf_gun's own GetMass so the menu matches the spawned entity.
 ---@param Caliber? number The caliber of the weapon in mm. Not necessary for non-scalable weapons.
 ---@param Class? table<string, any> The weapon group object to get information from. Not necessary for non-scalable weapons.
 ---@param Weapon table<string, any> The weapon item object to get informatio from, not necessary for scalable weapons.
 ---@return number Mass The expected mass.
-local function GetMass(_, Caliber, Class, Weapon)
-	local Density = ArmorTypes.Get("GunSteel").Density
+local function GetMass(Caliber, Class, Weapon)
+	if Weapon then return Weapon.Mass or 0 end
 
-	if Weapon then
-		local Volume = ModelData.GetModelVolume(Weapon.Model)
-		if not Volume then return 0 end
-		return math.Round(Volume * ACF.InchToMCu * Density)
-	end
+	local Factor = Caliber / Class.Caliber.Base
 
-	local Scale  = Caliber / Class.Caliber.Base * (Class.ScaleFactor or 1)
-	local Volume = ModelData.GetModelVolume(Class.Model, Scale)
+	return math.Round((Class.Mass or 0) * Factor ^ 3) -- 3d space so scaling has a cubing effect
+end
 
-	if not Volume then return 0 end
-
-	return math.Round(Volume * ACF.InchToMCu * Density)
+---Returns the point cost of a weapon, mirroring acf_gun's GetCost.
+---@param Caliber number The caliber of the weapon in mm.
+---@param Class table<string, any> The weapon group object the weapon belongs to.
+---@return number Cost The expected cost in points.
+local function GetCost(Caliber, Class)
+	return (Class.CostScalar or 1) * Caliber
 end
 
 local function CreateMenu(Menu)
@@ -270,13 +265,14 @@ local function CreateMenu(Menu)
 		local Caliber  = Current.Caliber
 		if not Caliber then return "" end
 
-		local Mass     = ACF.GetProperMass(GetMass(EntData, Caliber, Class, Weapon))
+		local Mass     = ACF.FormatMass(GetMass(Caliber, Class, Weapon))
+		local Cost     = ACF.FormatCost(GetCost(Caliber, Class))
 		local FireDelay = GetReloadTime(Caliber, Class, Weapon)
 		local FireRate = 60 / FireDelay
 		local Spread   = ACF.GetWeaponValue("Spread", Caliber, Class, Weapon)
 		local Magazine = GetMagazineText(Caliber, Class, Weapon)
 
-		return EntText:format(Mass, math.Round(FireRate), math.Round(FireDelay, 3), Spread, Magazine)
+		return EntText:format(Mass, Cost, math.Round(FireRate), math.Round(FireDelay, 3), Spread, Magazine)
 	end
 	EntData:DefineSetter(Update)
 	EntData:SetText("")

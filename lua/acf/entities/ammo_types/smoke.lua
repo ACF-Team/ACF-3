@@ -102,16 +102,18 @@ function Ammo:VerifyData(ToolData)
 	end
 end
 
+-- Shared with the client so the spawn menu can price a crate without spawning it.
+local Conversion = ACF.PointConversion
+
+function Ammo:GetCost(BulletData)
+	return ((BulletData.ProjMass - BulletData.FillerMass - BulletData.WPMass) * Conversion.Steel * 0.75) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.SF) + (BulletData.WPMass * Conversion.WP)
+end
+
 if SERVER then
 	local Ballistics = ACF.Ballistics
 	local Entities   = Classes.Entities
-	local Conversion	= ACF.PointConversion
 
 	Entities.AddArguments("acf_ammo", "FillerRatio", "SmokeWPRatio") -- Adding extra info to ammo crates
-
-	function Ammo:GetCost(BulletData)
-		return ((BulletData.ProjMass - BulletData.FillerMass - BulletData.WPMass) * Conversion.Steel * 0.75) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.SF) + (BulletData.WPMass * Conversion.WP)
-	end
 
 	function Ammo:OnLast(Entity)
 		Ammo.BaseClass.OnLast(self, Entity)
@@ -334,8 +336,8 @@ else
 
 			local Text		= language.GetPhrase("acf.menu.ammo.round_stats_ap")
 			local MuzzleVel	= math.Round(Data.MuzzleVel * ACF.Scale, 2)
-			local ProjMass	= ACF.GetProperMass(Data.ProjMass)
-			local PropMass	= ACF.GetProperMass(Data.PropMass)
+			local ProjMass	= ACF.FormatMass(Data.ProjMass)
+			local PropMass	= ACF.FormatMass(Data.PropMass)
 
 			return Text:format(MuzzleVel, ProjMass, PropMass)
 		end)
@@ -350,7 +352,7 @@ else
 
 			if Data.FillerMass > 0 then
 				local Text		  = language.GetPhrase("acf.menu.ammo.smoke_stats")
-				local SmokeMass	  = ACF.GetProperMass(Data.FillerMass)
+				local SmokeMass	  = ACF.FormatMass(Data.FillerMass)
 				local SmokeRadius = (Data.SMRadiusMin + Data.SMRadiusMax) * 0.5
 
 				SMText = Text:format(SmokeMass, SmokeRadius, Data.SMLife)
@@ -358,7 +360,7 @@ else
 
 			if Data.WPMass > 0 then
 				local Text	   = language.GetPhrase("acf.menu.ammo.wp_stats")
-				local WPMass   = ACF.GetProperMass(Data.WPMass)
+				local WPMass   = ACF.FormatMass(Data.WPMass)
 				local WPRadius = (Data.WPRadiusMin + Data.WPRadiusMax) * 0.5
 
 				WPText = Text:format(WPMass, WPRadius, Data.WPLife)

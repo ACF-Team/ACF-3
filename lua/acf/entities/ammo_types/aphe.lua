@@ -115,16 +115,18 @@ function Ammo:VerifyData(ToolData)
 	end
 end
 
+-- Shared with the client so the spawn menu can price a crate without spawning it.
+local Conversion = ACF.PointConversion
+
+function Ammo:GetCost(BulletData)
+	return ((BulletData.ProjMass - BulletData.FillerMass) * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.CompB)
+end
+
 if SERVER then
 	local Entities = Classes.Entities
 	local Objects  = Damage.Objects
-	local Conversion	= ACF.PointConversion
 
 	Entities.AddArguments("acf_ammo", "FillerRatio", "PenFuze", "FuzeDelay") -- Adding extra info to ammo crates
-
-	function Ammo:GetCost(BulletData)
-		return ((BulletData.ProjMass - BulletData.FillerMass) * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.CompB)
-	end
 
 	function Ammo:OnLast(Entity)
 		Ammo.BaseClass.OnLast(self, Entity)
@@ -374,9 +376,9 @@ else
 
 			local Text		= language.GetPhrase("acf.menu.ammo.round_stats_he")
 			local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
-			local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
-			local PropMass	= ACF.GetProperMass(BulletData.PropMass)
-			local Filler	= ACF.GetProperMass(BulletData.FillerMass)
+			local ProjMass	= ACF.FormatMass(BulletData.ProjMass)
+			local PropMass	= ACF.FormatMass(BulletData.PropMass)
+			local Filler	= ACF.FormatMass(BulletData.FillerMass)
 
 			return Text:format(MuzzleVel, ProjMass, PropMass, Filler)
 		end)
@@ -388,7 +390,7 @@ else
 
 			local Text	   = language.GetPhrase("acf.menu.ammo.filler_stats_he")
 			local Blast	   = math.Round(BulletData.BlastRadius, 2)
-			local FragMass = ACF.GetProperMass(BulletData.FragMass)
+			local FragMass = ACF.FormatMass(BulletData.FragMass)
 			local FragVel  = math.Round(BulletData.FragVel, 2)
 
 			return Text:format(Blast, BulletData.Fragments, FragMass, FragVel)

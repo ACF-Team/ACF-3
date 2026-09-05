@@ -75,15 +75,17 @@ function Ammo:VerifyData(ToolData)
 	end
 end
 
+-- Shared with the client so the spawn menu can price a crate without spawning it.
+local Conversion = ACF.PointConversion
+
+function Ammo:GetCost(BulletData)
+	return ((BulletData.ProjMass - BulletData.FillerMass) * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.FlareMix)
+end
+
 if SERVER then
 	local Ballistics      = ACF.Ballistics
 	local Clock           = ACF.Utilities.Clock
 	local Countermeasures = ACF.Classes.Countermeasures
-	local Conversion	= ACF.PointConversion
-
-	function Ammo:GetCost(BulletData)
-		return ((BulletData.ProjMass - BulletData.FillerMass) * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.FlareMix)
-	end
 
 	function Ammo:Create(_, BulletData)
 		local Bullet = Ballistics.CreateBullet(BulletData)
@@ -211,9 +213,9 @@ else
 
 			local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s\nFlare Filler Mass : %s"
 			local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
-			local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
-			local PropMass	= ACF.GetProperMass(BulletData.PropMass)
-			local Filler	= ACF.GetProperMass(BulletData.FillerMass)
+			local ProjMass	= ACF.FormatMass(BulletData.ProjMass)
+			local PropMass	= ACF.FormatMass(BulletData.PropMass)
+			local Filler	= ACF.FormatMass(BulletData.FillerMass)
 
 			return Text:format(MuzzleVel, ProjMass, PropMass, Filler)
 		end)
@@ -224,7 +226,7 @@ else
 			self:UpdateRoundData(ToolData, BulletData)
 
 			local Text		= "Burn Rate : %s/s\nBurn Duration : %s s\nDistraction Chance : %s"
-			local Rate		= ACF.GetProperMass(BulletData.BurnRate)
+			local Rate		= ACF.FormatMass(BulletData.BurnRate)
 			local Duration	= math.Round(BulletData.BurnTime, 2)
 			local Chance	= math.Round(BulletData.DistractChance * 100, 2) .. "%"
 

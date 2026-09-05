@@ -3,8 +3,6 @@ local Classes     = ACF.Classes
 local EngineTypes = Classes.EngineTypes
 local FuelTypes   = Classes.FuelTypes
 local Engines     = Classes.Engines
-local ModelData   = ACF.ModelData
-local ArmorTypes  = Classes.ArmorTypes
 local TankSize    = Vector()
 local HPColor     = Color(255, 65, 65)
 local TorqueColor = Color(65, 65, 255)
@@ -20,8 +18,8 @@ local function UpdateEngineStats(Label, Data)
 	local PeakkWRPM  = Data.PeakPowerRPM
 	local MinPower   = RPM.PeakMin
 	local MaxPower   = RPM.PeakMax
-	local Volume     = ModelData.GetModelVolume(Data.Model)
-	local Mass       = ACF.GetProperMass(Volume and math.Round(Volume * ACF.InchToMCu * ArmorTypes.Get("Component").Density) or 0)
+	local Mass       = ACF.FormatMass(Data.Mass or 0)
+	local Cost       = ACF.FormatCost(math.max(5, (Data.Torque / 180) + (Data.PeakPower / 100)))
 	local Torque     = math.Round(Data.Torque * GetTorqueMult())
 	local TorqueFeet = math.Round(Data.Torque * GetTorqueMult() * ACF.NmToFtLb)
 	local Type       = EngineTypes.Get(Data.Type)
@@ -54,7 +52,7 @@ local function UpdateEngineStats(Label, Data)
 
 	local Power = PowerText:format(Torque, TorqueFeet, PeakTqRPM, math.Round(PeakkW), math.Round(PeakkW * ACF.KwToHp), PeakkWRPM)
 
-	Label:SetText(RPMText:format(RPM.Idle, MinPower, MaxPower, RPM.Limit, Mass, FuelList, Power))
+	Label:SetText(RPMText:format(RPM.Idle, MinPower, MaxPower, RPM.Limit, Mass, Cost, FuelList, Power))
 end
 
 local function CreateMenu(Menu)
@@ -278,7 +276,7 @@ local function CreateMenu(Menu)
 			local Liters = math.Round(Capacity, 2)
 			local Gallons = math.Round(Capacity * ACF.LToGal, 2)
 
-			FuelText = FuelText .. Text:format(Liters, Gallons, ACF.GetProperMass(Mass))
+			FuelText = FuelText .. Text:format(Liters, Gallons, ACF.FormatMass(Mass))
 		end
 
 		FuelDesc:SetText("Scalable Fuel Tank\n\nShape: " .. Shape)

@@ -198,10 +198,16 @@ function Ammo:VerifyData(ToolData)
 	end
 end
 
+-- Shared with the client so the spawn menu can price a crate without spawning it.
+local Conversion = ACF.PointConversion
+
+function Ammo:GetCost(BulletData)
+	return (BulletData.ProjMass * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant)
+end
+
 if SERVER then
 	local Ballistics = ACF.Ballistics
 	local Entities   = Classes.Entities
-	local Conversion	= ACF.PointConversion
 
 	Entities.AddArguments("acf_ammo", "RoundLength", "PropRatio", "Tracer", "CaseScale") -- Adding extra info to ammo crates
 
@@ -257,10 +263,6 @@ if SERVER then
 		local Data = self:GetDisplayData(BulletData)
 		State:AddNumber("Muzzle Velocity", BulletData.MuzzleVel, " m/s")
 		State:AddNumber("Max Penetration", Data.MaxPen, " mm")
-	end
-
-	function Ammo:GetCost(BulletData)
-		return (BulletData.ProjMass * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant)
 	end
 
 	function Ammo:PropImpact(Bullet, Trace)
@@ -470,8 +472,8 @@ else
 
 			local Text		= language.GetPhrase("acf.menu.ammo.round_stats_ap")
 			local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
-			local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
-			local PropMass	= ACF.GetProperMass(BulletData.PropMass)
+			local ProjMass	= ACF.FormatMass(BulletData.ProjMass)
+			local PropMass	= ACF.FormatMass(BulletData.PropMass)
 
 			return Text:format(MuzzleVel, ProjMass, PropMass)
 		end)

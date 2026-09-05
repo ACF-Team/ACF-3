@@ -23,6 +23,11 @@ function Fuze:WriteDisplayConfig(State)
 	State:AddSubKeyValue("Primer", math.Round(self.Primer, 2))
 end
 
+-- Shared so the ammo menu can price missile rounds clientside.
+function Fuze:GetCost()
+	return 0
+end
+
 if CLIENT then
 	Fuze.Description = "This fuze triggers upon direct contact against solid surfaces."
 
@@ -41,10 +46,6 @@ else
 	local Entities = Classes.Entities
 
 	Entities.AddArguments("acf_ammo", "ArmingDelay") -- Adding extra info to ammo crates
-
-	function Fuze:GetCost()
-		return 0
-	end
 
 	function Fuze:VerifyData(_, Data)
 		local Delay = Data.ArmingDelay

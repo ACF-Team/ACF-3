@@ -148,6 +148,7 @@ do -- Spawn and Update functions
 
 		Entity.Name         = Receiver.Name
 		Entity.ShortName    = Receiver.Name
+		Entity.BaseCost     = Receiver.Cost
 		Entity.EntType      = Class.Name
 		Entity.ClassType    = Class.ID
 		Entity.ClassData    = Class
@@ -267,6 +268,10 @@ end
 
 function ENT:ACF_OnRepaired() -- OldArmor, OldHealth, Armor, Health
 	self.Damage = 1 - math.Round(self.ACF.Health / self.ACF.MaxHealth, 2)
+end
+
+function ENT:GetCost()
+	return self.BaseCost or 0
 end
 
 function ENT:Enable()
