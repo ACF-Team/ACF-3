@@ -13,6 +13,7 @@ Weapons.Register("FGL", {
 		Min  = 40,
 		Max  = 40,
 	},
+	CostScalar  = 0.125, -- 5 points at the fixed 40mm caliber
 	Sound       = "acf_missiles/missiles/flare_launch.mp3",
 	Cleanup     = "acf_flarelauncher",
 	Blacklist   = { "AP", "APHE", "FL", "HE", "HEAT", "HP", "SM" },
