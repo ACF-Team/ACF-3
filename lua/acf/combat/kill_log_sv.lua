@@ -131,14 +131,20 @@ end)
 
 hook.Add("ShutDown", "ACF_KillLog_FinalFlush", FlushKillLog)
 
+-- Drops every session, buffered rows included
+local function WipeKillLog()
+    Pending = {}
+    sql.Query("DELETE FROM acf_kill_log")
+end
+
 concommand.Add("acf_killlog_wipe", function(Player)
-    if IsValid(Player) and not Player:IsAdmin() then
-        ACF.PrintLog("Error", "You can't use this because you are not an admin.")
+    -- Same gate as the menu button, so the command isn't a way around it
+    if IsValid(Player) and not Player:IsSuperAdmin() then
+        ACF.PrintLog("Error", "You can't use this because you are not a superadmin.")
         return
     end
 
-    Pending = {}
-    sql.Query("DELETE FROM acf_kill_log")
+    WipeKillLog()
 
     ACF.PrintLog("Info", "Kill Log wiped.")
 end)
@@ -148,6 +154,7 @@ end)
 util.AddNetworkString("ACF_KillLog_Sessions")
 util.AddNetworkString("ACF_KillLog_Players")
 util.AddNetworkString("ACF_KillLog_Query")
+util.AddNetworkString("ACF_KillLog_Wipe")
 
 local MaxResultRows = 1000
 
@@ -165,6 +172,47 @@ local function RunSelect(Query)
     return Rows or {}
 end
 
+-- Fixed-width columns plus per-row overhead, on top of the text lengths measured below
+local BytesPerRow = 40
+
+-- Which path ID reaches sv.db varies by host, and a miss comes back as either nil or -1
+local function GetDatabaseSize()
+    for _, PathID in ipairs({"MOD", "BASE_PATH", "GAME"}) do
+        local Size = file.Size("sv.db", PathID)
+        if Size and Size > 0 then return Size end
+    end
+
+    return 0
+end
+
+-- SQLite exposes no per-table size, so the log's share of sv.db is estimated from its own contents
+local function GetLogStats()
+    local Row = RunSelect([[SELECT COUNT(*) AS Rows, COALESCE(SUM(
+        length(COALESCE(Attacker, '')) + length(COALESCE(AttackerSteamID, '')) +
+        length(Victim) + length(VictimSteamID) + length(COALESCE(Inflictor, ''))
+    ), 0) AS TextBytes FROM acf_kill_log]])[1]
+
+    local Count = Row and tonumber(Row.Rows) or 0
+    local Bytes = Row and tonumber(Row.TextBytes) or 0
+
+    return Count, Bytes + Count * BytesPerRow, GetDatabaseSize()
+end
+
+local function WriteSize(Value)
+    net.WriteUInt(math.floor(math.Clamp(Value, 0, 4294967295)), 32)
+end
+
+net.Receive("ACF_KillLog_Wipe", function(_, Player)
+    if not IsValid(Player) or not Player:IsSuperAdmin() then return end
+
+    WipeKillLog()
+
+    ACF.PrintLog("Info", "Kill Log wiped by " .. Player:Nick() .. ".")
+
+    net.Start("ACF_KillLog_Wipe")
+    net.Broadcast() -- Any menu still open is showing rows that no longer exist
+end)
+
 net.Receive("ACF_KillLog_Sessions", function(_, Player)
     if not IsValid(Player) then return end
 
@@ -174,8 +222,13 @@ net.Receive("ACF_KillLog_Sessions", function(_, Player)
     local Sessions = {}
     for _, Row in ipairs(Rows) do Sessions[#Sessions + 1] = tonumber(Row.Session) end
 
+    local Count, Bytes, DBSize = GetLogStats()
+
     net.Start("ACF_KillLog_Sessions")
         net.WriteString(util.TableToJSON(Sessions))
+        WriteSize(Count)
+        WriteSize(Bytes)
+        WriteSize(DBSize)
     net.Send(Player)
 end)
 

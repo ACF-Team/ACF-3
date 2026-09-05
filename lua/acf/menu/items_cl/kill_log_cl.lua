@@ -13,6 +13,13 @@ local function FormatCost(Cost)
     return Cost and string.format("%.0f", Cost) or "-"
 end
 
+local function FormatSize(Bytes)
+    if Bytes >= 1048576 then return string.format("%.1f MB", Bytes / 1048576) end
+    if Bytes >= 1024 then return string.format("%.1f KB", Bytes / 1024) end
+
+    return Bytes .. " B"
+end
+
 local function RequestSessions()
     net.Start("ACF_KillLog_Sessions")
     net.SendToServer()
@@ -45,6 +52,8 @@ local function CreateMenu(Menu)
     SessionList:SetTall(120)
 
     Menu:AddButton("Refresh Sessions", RequestSessions)
+
+    local SizeLabel = Menu:AddHelp("")
 
     local PlayersBase = Menu:AddCollapsible("Players", true)
     local PlayerChecks = {}
@@ -113,6 +122,18 @@ local function CreateMenu(Menu)
     -- Re-registering on each rebuild just replaces the old handler, which is fine here.
     net.Receive("ACF_KillLog_Sessions", function()
         local Sessions = util.JSONToTable(net.ReadString()) or {}
+        local Count = net.ReadUInt(32)
+        local Bytes = net.ReadUInt(32)
+        local DBSize = net.ReadUInt(32)
+
+        if IsValid(SizeLabel) then
+            -- The log lives in SQLite now, so point at the file and estimate the log's share of it
+            local Text = string.format("%s kills logged, using roughly %s of garrysmod/sv.db", string.Comma(Count), FormatSize(Bytes))
+            if DBSize > 0 then Text = Text .. string.format(" (%s in total)", FormatSize(DBSize)) end
+
+            SizeLabel:SetText(Text)
+        end
+
         if not IsValid(SessionList) then return end
 
         SessionList:Clear()
@@ -224,6 +245,33 @@ local function CreateMenu(Menu)
 
         KillList:SetTall(400) -- Cap the height; the list scrolls internally past this
     end)
+
+    net.Receive("ACF_KillLog_Wipe", function()
+        if IsValid(KillList) then KillList:Clear() end
+        if IsValid(SummaryList) then SummaryList:Clear() end
+
+        -- The filter list describes players from sessions that no longer exist
+        if IsValid(PlayersBase) then
+            PlayersBase:ClearAll()
+            PlayerChecks = {}
+        end
+
+        CurrentSession = nil
+
+        RequestSessions()
+    end)
+
+    -- The server checks this again on receive; hiding the button just keeps it out of the way
+    if LocalPlayer():IsSuperAdmin() then
+        local WipeButton = Menu:AddButton("Clear All Sessions", function()
+            Derma_Query("Permanently delete every logged session? This cannot be undone.", "Clear Kill Log", "Clear", function()
+                net.Start("ACF_KillLog_Wipe")
+                net.SendToServer()
+            end, "Cancel")
+        end)
+
+        WipeButton:SetTextColor(Color(180, 40, 40))
+    end
 
     RequestSessions()
 end
