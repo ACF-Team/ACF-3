@@ -172,6 +172,7 @@ function Damage.DoSquishyFlingKill(Entity, Damage, HitPos, Attacker, Inflictor, 
 		if Entity:IsPlayer() and Entity:Alive() then
 			local VictimCost, AttackerCost = ACF.AnnounceKillFeedCost(Entity, Attacker)
 			ACF.RecordKill(Attacker, AttackerCost, Entity, VictimCost, IsValid(Inflictor) and Inflictor:GetClass() or nil, false)
+			Entity.ACF_DeathLoggedTime = CurTime()
 		end
 
 		local SourceDamage = DamageInfo()

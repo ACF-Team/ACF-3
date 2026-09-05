@@ -174,6 +174,39 @@ do	-- Actual cost functions
 
 		return FlatPlayerCost
 	end
+
+	--- Bills a contraption's point value once, to whichever kill entry claims it first.
+	--- @param Contraption table The contraption to bill
+	--- @param Baseplate entity Carries the claim, since CFW hands entities to new contraption tables on splits
+	--- @return number Cost The contraption's cost the first time it's claimed, 0 after that
+	function CostSystem.ClaimContraptionCost(Contraption, Baseplate)
+		if not Contraption or not IsValid(Baseplate) then return 0 end
+		if Baseplate.ACF_CostClaimed then return 0 end
+
+		Baseplate.ACF_CostClaimed = true
+
+		-- ACF_LastCost is the pre-destruction snapshot; recomputing now would undercount removed ents
+		return Contraption.ACF_LastCost or (CostSystem.CalcCostsFromContraption(Contraption))
+	end
+
+	--- A victim's point cost: their flat cost, plus their contraption's if this death bills it first.
+	--- @param Player player The dying player to compute a cost for
+	--- @return number Cost The victim's point cost
+	function CostSystem.ClaimVictimCost(Player)
+		if not IsValid(Player) or not Player:IsPlayer() then return 0 end
+
+		local Cost = CostSystem.GetPlayerCost(Player)
+		local Vehicle = Player:GetVehicle()
+
+		if IsValid(Vehicle) and Vehicle.CFW_GetContraption then
+			local Contraption = Vehicle:CFW_GetContraption()
+			if Contraption then
+				Cost = Cost + CostSystem.ClaimContraptionCost(Contraption, Contraption.ACF_Baseplate)
+			end
+		end
+
+		return Cost
+	end
 end
 
 --------------------------------------------------------------------------------
@@ -200,23 +233,53 @@ end
 --------------------------------------------------------------------------------
 
 do -- Cost limit enforcement
+	local CostLimitSettings = { GroundVehicle = "CostLimitGround", Aircraft = "CostLimitAir" }
+
+	-- Destroys a contraption that exceeds the cost limit for its baseplate type, same as an all-crew-killed death
+	function ACF.EnforceCostLimit(Contraption)
+		if not Contraption then return end
+
+		local Baseplate = Contraption.ACF_Baseplate
+		if not IsValid(Baseplate) then return end
+
+		local BaseplateType = Baseplate:ACF_GetUserVar("BaseplateType")
+		local Setting = BaseplateType and CostLimitSettings[BaseplateType.ID]
+		if not Setting then return end
+
+		local CostLimit = ACF[Setting]
+		if CostLimit == 0 then return end
+
+		local Cost = CostSystem.CalcCostsFromContraption(Contraption)
+		if Cost <= CostLimit then return end
+
+		local Owner = Baseplate:CPPIGetOwner()
+		if IsValid(Owner) and Owner:IsPlayer() then
+			-- Feeds the same fields real damage would set, so the vehicle kill feed picks this up too
+			Contraption.ACF_LastDamageAttacker = Owner
+			Contraption.ACF_LastCost = Cost
+		end
+
+		ACF.DestroyContraption(Contraption, Baseplate:GetPos(), vector_up, 100000)
+	end
+
+	-- Contraptions are only worth checking once they've actually been driven
+	hook.Add("PlayerEnteredVehicle", "ACF_FlagCostLimitUsed", function(_, Vehicle)
+		if not IsValid(Vehicle) then return end
+
+		local Contraption = Vehicle:CFW_GetContraption()
+		if not Contraption then return end
+
+		Contraption.ACF_CostLimitUsed = true
+	end)
+
+	-- Periodically re-check used contraptions, since cost can change after entering (repairs, respawns, etc)
 	ACF.AugmentedTimer(
 		function()
-			local CostLimit = ACF.CostLimit
-			if CostLimit == 0 then return end
-
 			local Contraptions = CFW and CFW.Contraptions or {}
 			for Con in pairs(Contraptions) do
-				local Cost     = CostSystem.CalcCostsFromContraption(Con)
-				local OverLimit = Cost > CostLimit
+				if not Con.ACF_CostLimitUsed then continue end
 
-				if OverLimit then
-					local Baseplate = Con.ACF_Baseplate
-					if not IsValid(Baseplate) then continue end
-
-					local Excess = math.Round(Cost - CostLimit)
-					ACF.Shame(Baseplate, "exceeding the contraption cost (" .. CostLimit .. ") limit by " .. Excess .. " pts")
-				end
+				ACF.EnforceCostLimit(Con)
 			end
 		end,
 		nil,
