@@ -3,6 +3,7 @@ local ScrH = ScrH
 local SetDrawColor = surface.SetDrawColor
 local DrawRect = surface.DrawRect
 local DrawText = draw.DrawText
+local SimpleText = draw.SimpleText
 local DrawLine = surface.DrawLine
 local DrawOutlinedRect = surface.DrawOutlinedRect
 local DrawCircle = surface.DrawCircle
@@ -13,27 +14,34 @@ local TraceLine = util.TraceLine
 local CurTime = CurTime
 
 return function(State)
+    -- Hardest hitting ammo first, name breaks ties so the order stays stable
+    local function SortByPenetration(A, B)
+        if A.MaxPen == B.MaxPen then return A.Name < B.Name end
+        return A.MaxPen > B.MaxPen
+    end
+
     -- Receive ammo count info from server
     net.Receive("ACF_Controller_Ammo", function()
         local Ent = net.ReadEntity()
-        local AmmoType = net.ReadString()
+        local AmmoName = net.ReadString()
+        local RoundID = net.ReadString()
+        local MaxPen = net.ReadUInt(16)
         local AmmoCount = net.ReadUInt(16)
 
         if not IsValid(Ent) then return end
 
-        Ent.PrimaryAmmoCountsByType = Ent.PrimaryAmmoCountsByType or {}
-        if not Ent.PrimaryAmmoCountsByType[AmmoType] then
-            Ent.PrimaryAmmoCountsByType[AmmoType] = 0
+        Ent.PrimaryAmmoByName = Ent.PrimaryAmmoByName or {}
+        local Ammo = Ent.PrimaryAmmoByName[AmmoName]
+        if not Ammo then
+            local IconName = AmmoTypes.Get(RoundID).SpawnIcon -- Something bad has happened if this doesn't work
+            Ammo = {Name = AmmoName, RoundID = RoundID, MaxPen = MaxPen, Material = Material(IconName), Count = 0}
+            Ent.PrimaryAmmoByName[AmmoName] = Ammo
 
-            Ent.MaterialsByType = Ent.MaterialsByType or {}
-            local IconName = AmmoTypes.Get(AmmoType).SpawnIcon -- Something bad has happened if this doesn't work
-            Ent.MaterialsByType[AmmoType] = Material(IconName)
-
-            Ent.TypesSorted = Ent.TypesSorted or {}
-            table.insert(Ent.TypesSorted, AmmoType)
-            table.sort(Ent.TypesSorted)
+            Ent.AmmoSorted = Ent.AmmoSorted or {}
+            table.insert(Ent.AmmoSorted, Ammo)
+            table.sort(Ent.AmmoSorted, SortByPenetration)
         end
-        Ent.PrimaryAmmoCountsByType[AmmoType] = AmmoCount
+        Ammo.Count = AmmoCount
     end)
 
     net.Receive("ACF_Controller_Receivers", function()
@@ -66,17 +74,17 @@ return function(State)
         Ent.TargetVelocity = TargetVelocity
     end)
 
-    local function SelectAmmoType(Index)
+    local function SelectAmmo(Index)
         if State.MyController:GetDisableAmmoSelect() then return end
-        local NewAmmoType = State.MyController.TypesSorted and State.MyController.TypesSorted[Index] or nil
-        local ForceSwitch = State.MyController.SelectedAmmoType == NewAmmoType
-        if not NewAmmoType then return end
+        local NewAmmo = State.MyController.AmmoSorted and State.MyController.AmmoSorted[Index] or nil
+        if not NewAmmo then return end
+        local ForceSwitch = State.MyController.SelectedAmmoName == NewAmmo.Name
         net.Start("ACF_Controller_Ammo")
         net.WriteUInt(State.MyController:EntIndex(), MAX_EDICT_BITS)
-        net.WriteString(NewAmmoType)
+        net.WriteString(NewAmmo.Name)
         net.WriteBool(ForceSwitch)
         net.SendToServer()
-        State.MyController.SelectedAmmoType = NewAmmoType
+        State.MyController.SelectedAmmoName = NewAmmo.Name
     end
 
     local function SelectRadarTarget()
@@ -93,7 +101,7 @@ return function(State)
 
         -- Autogenerate keys for ammo selection. KEY_1 = 2
         for i = 1, 9 do
-            if Button == i + 1 then SelectAmmoType(i) end
+            if Button == i + 1 then SelectAmmo(i) end
         end
 
         if Button == KEY_F then SelectRadarTarget() end
@@ -166,7 +174,7 @@ return function(State)
         end
     end
 
-    local function DrawPictograph(mat, text, font, x, y, scale, col_fg, col_bg, col_sh)
+    local function DrawPictograph(mat, text, font, x, y, scale, col_fg, col_bg, col_sh, subtext)
         surface.SetDrawColor(col_sh)
         surface.DrawRect(x, y, 40 * scale, 40 * scale)
         surface.SetDrawColor(col_bg)
@@ -175,6 +183,7 @@ return function(State)
         surface.SetMaterial(mat)
         surface.DrawTexturedRect(x + 4 * scale, y + 4 * scale, 32 * scale, 32 * scale)
         DrawText(text, font, x + 4 * scale, y + 4 * scale, col_bg, TEXT_ALIGN_LEFT)
+        if subtext then SimpleText(subtext, font, x + 4 * scale, y + 38 * scale, col_bg, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM) end
     end
 
     -- HUD RELATED
@@ -318,20 +327,20 @@ return function(State)
             DrawPictograph(CrewMaterial, State.MyController:GetNWInt("AHS_Crew"), Font, ax, ay, Scale, white, Col, shade)
 
             local LoadedAmmoType = State.MyController:GetNWString("AHS_Primary_AT", "")
-            for Index, AmmoType in pairs(State.MyController.TypesSorted or {}) do
-                local Material = State.MyController.MaterialsByType[AmmoType] or ""
-                local AmmoCount = State.MyController.PrimaryAmmoCountsByType[AmmoType] or 0
+            for Index, Ammo in pairs(State.MyController.AmmoSorted or {}) do
                 local ax = x - 400 * Scale + (46 * (Index - 1) * Scale)
                 local ay = y - 246 * Scale
 
-                -- Outline currently selected ammo type
-                if AmmoType == State.MyController.SelectedAmmoType then
+                -- Outline currently selected ammo
+                if Ammo.Name == State.MyController.SelectedAmmoName then
                     surface.SetDrawColor(Col)
                     surface.DrawOutlinedRect(ax - 2 * Scale, ay - 2 * Scale, 44 * Scale, 44 * Scale)
                 end
 
-                local Lighting = AmmoType == LoadedAmmoType and white or dimmed
-                DrawPictograph(Material, AmmoCount, Font, ax, ay, Scale, Lighting, Col, shade)
+                -- Penetration tells apart entries sharing an ammo type
+                local MaxPen = Ammo.MaxPen > 0 and Ammo.MaxPen or nil
+                local Lighting = Ammo.RoundID == LoadedAmmoType and white or dimmed
+                DrawPictograph(Ammo.Material, Ammo.Count, Font, ax, ay, Scale, Lighting, Col, shade, MaxPen)
             end
         end
 
