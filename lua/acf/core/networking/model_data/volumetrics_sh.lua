@@ -58,6 +58,7 @@ local ArmorableClasses = {
     prop_physics = true,
     starfall_prop = true,
     acf_missile = true,
+    acf_glatgm = true,
 
     -- Vehicles
     prop_vehicle_prisoner_pod = true,

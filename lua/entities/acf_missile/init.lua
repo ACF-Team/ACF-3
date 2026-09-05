@@ -497,6 +497,26 @@ function ENT:CreateBulletData(Crate)
 	Ammo:Network(self, self.BulletData)
 end
 
+--- Worth one round from its source crate, charged here so ground reloads aren't free.
+function ENT:GetCost()
+	local selftbl = self:GetTable()
+	local Ammo    = selftbl.RoundData
+
+	if not Ammo then return 0 end -- BulletData isn't built yet
+
+	local Cost = Ammo:GetCost(selftbl.BulletData)
+
+	if selftbl.GuidanceData then
+		Cost = Cost + selftbl.GuidanceData:GetCost()
+	end
+
+	if selftbl.FuzeData then
+		Cost = Cost + selftbl.FuzeData:GetCost()
+	end
+
+	return Cost
+end
+
 function ENT:UpdateModel(Model)
 	self:SetModel(Model)
 
