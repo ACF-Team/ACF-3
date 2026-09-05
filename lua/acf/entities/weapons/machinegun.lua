@@ -28,7 +28,7 @@ Weapons.Register("MG", {
 	Caliber	= {
 		Base = 20,
 		Min  = 5.56,
-		Max  = 20,
+		Max  = 15,
 	},
 	MagSize = {
 		Min = 400,

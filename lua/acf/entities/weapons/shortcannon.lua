@@ -16,7 +16,7 @@ Weapons.Register("SC", {
 	Round = {
 		MaxLength  = 80,
 		PropLength = 65,
-		Efficiency = 0.8,
+		Efficiency = 0.5,
 		CaseScale  = 1.04, -- 90x353mm (Cockerill 90mm): 94mm case over a 90mm projectile
 	},
 	Preview = {
