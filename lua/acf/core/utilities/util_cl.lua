@@ -1032,7 +1032,7 @@ do -- Default turret menus
 
 			local MassText = language.GetPhrase("acf.menu.turrets.mass_text")
 			Menu:AddLabel(MassText:format(Data.Mass))
-			Menu:AddLabel(language.GetPhrase("acf.menu.turrets.cost_text"):format(ACF.FormatCost(Data.IsRemote and 100 or 5)))
+			Menu:AddLabel(language.GetPhrase("acf.menu.turrets.cost_text"):format(ACF.FormatCost(Data.IsRemote and 70 or 5)))
 
 			if Menu.ComponentPreview then
 				Menu.ComponentPreview:SetModelScale(1, true)

@@ -44,7 +44,7 @@ Weapons.Register("GL", {
 		Amount = 4,
 		Text = "Maximum amount of ACF grenade launchers a player can create."
 	},
-	CostScalar	= 0.5
+	CostScalar	= 0.38
 })
 
 ACF.SetCustomAttachment("models/launcher/40mmgl.mdl", "muzzle", Vector(19), Angle(0, 0, -180))

@@ -907,7 +907,7 @@ end
 function ENT:GetCost()
 	local selftbl = self:GetTable()
 
-	return math.max(5, (selftbl.PeakTorque / 160) + (selftbl.PeakPower / 80))
+	return math.max(5, (selftbl.PeakTorque / 180) + (selftbl.PeakPower / 100))
 end
 
 function ENT:OnRemove()

@@ -35,7 +35,7 @@ Weapons.Register("MO", {
 			{Name = "Barrel", LPos = Vector(37.0706, 0, 0.015625), LAng = Angle(180, 0, 0), Width = 11.023622047244, Height = 11.023622047244},
 		}
 	},
-	CostScalar	= 0.35
+	CostScalar	= 0.29
 })
 
 ACF.SetCustomAttachment("models/mortar/mortar_120mm.mdl", "muzzle", Vector(24.02), Angle(0, 0, 90))

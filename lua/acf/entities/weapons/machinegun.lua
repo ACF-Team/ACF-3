@@ -47,7 +47,7 @@ Weapons.Register("MG", {
 		Amount = 4,
 		Text = "Maximum amount of ACF machine guns a player can create."
 	},
-	CostScalar	= 0.25
+	CostScalar	= 0.4
 })
 
 ACF.SetCustomAttachment("models/machinegun/machinegun_20mm.mdl", "muzzle", Vector(53.05, 0, -0.11), Angle(0, 0, 90))

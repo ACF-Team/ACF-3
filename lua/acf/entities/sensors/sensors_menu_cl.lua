@@ -95,11 +95,11 @@ do	-- Radars
 end
 
 do	-- Receivers
-	local Text = "Mass : %s kg\n"
+	local Text = "Mass : %s kg\nCost : %s\n"
 
 	function ACF.CreateReceiverMenu(Data, Menu)
 
-		Menu:AddLabel(Text:format(Data.Mass))
+		Menu:AddLabel(Text:format(Data.Mass, ACF.FormatCost(Data.Cost or 0)))
 
 		ACF.SetClientData("PrimaryClass", "acf_receiver")
 	end

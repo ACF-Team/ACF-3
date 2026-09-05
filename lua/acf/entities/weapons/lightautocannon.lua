@@ -53,7 +53,7 @@ Weapons.Register("LAC", {
 		Amount = 4,
 		Text = "Maximum amount of ACF light auto cannons a player can create."
 	},
-	CostScalar	= 0.5
+	CostScalar	= 0.6
 })
 
 ACF.SetCustomAttachments("models/machinegun/machinegun_40mm_compact.mdl", {

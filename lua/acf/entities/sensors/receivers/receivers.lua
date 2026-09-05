@@ -60,6 +60,7 @@ do -- Laser Receiver
 		Model		= "models/bluemetaknight/laser_detector.mdl",
 
 		Mass		= 25,
+		Cost		= 1.5,
 		Health		= 10,
 		Armor		= 10,
 		Offset 		= Vector(0, 0, 3),
@@ -125,6 +126,7 @@ do -- Radar Receiver
 		Model		= "models/jaanus/wiretool/wiretool_siren.mdl",
 
 		Mass		= 25,
+		Cost		= 4,
 		Health		= 10,
 		Armor		= 10,
 		Offset 		= Vector(0, 0, 6),
