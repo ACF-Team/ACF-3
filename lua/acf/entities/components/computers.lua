@@ -859,10 +859,10 @@ do -- GPS transmitter
 	})
 end
 
-local GroundLoaderText = "Mass : %s kg\n"
+local GroundLoaderText = "Mass : %s kg\nCost : %s\n"
 
 function ACF.CreateGroundLoaderMenu(Data, Menu)
-	Menu:AddLabel(GroundLoaderText:format(Data.Mass))
+	Menu:AddLabel(GroundLoaderText:format(Data.Mass, ACF.GetProperCost(ACF.GroundLoaderCost)))
 
 	ACF.SetClientData("PrimaryClass", "acf_groundloader")
 

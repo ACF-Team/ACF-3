@@ -134,12 +134,14 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 	end
 end
 
-if SERVER then
-	local Conversion	= ACF.PointConversion
+-- Shared with the client so the spawn menu can price a crate without spawning it.
+local Conversion = ACF.PointConversion
 
-	function Ammo:GetCost(BulletData)
-		return (BulletData.CasingMass * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.Octol) + (BulletData.LinerMass * Conversion.Copper)
-	end
+function Ammo:GetCost(BulletData)
+	return (BulletData.CasingMass * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.Octol) + (BulletData.LinerMass * Conversion.Copper)
+end
+
+if SERVER then
 
 	function Ammo:Network(Entity, BulletData)
 		Ammo.BaseClass.Network(self, Entity, BulletData)

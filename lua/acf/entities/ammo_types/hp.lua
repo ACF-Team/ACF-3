@@ -70,17 +70,19 @@ function Ammo:VerifyData(ToolData)
 	end
 end
 
+-- Shared with the client so the spawn menu can price a crate without spawning it.
+local Conversion = ACF.PointConversion
+
+function Ammo:GetCost(BulletData)
+	local RemovedMass	= BulletData.CavVol * ACF.SteelDensity
+
+	return (BulletData.ProjMass * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (RemovedMass * Conversion.Steel * 0.25)
+end
+
 if SERVER then
 	local Entities = Classes.Entities
-	local Conversion	= ACF.PointConversion
 
 	Entities.AddArguments("acf_ammo", "HollowRatio") -- Adding extra info to ammo crates
-
-	function Ammo:GetCost(BulletData)
-		local RemovedMass	= BulletData.CavVol * ACF.SteelDensity
-
-		return (BulletData.ProjMass * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (RemovedMass * Conversion.Steel * 0.25)
-	end
 
 	function Ammo:OnLast(Entity)
 		Ammo.BaseClass.OnLast(self, Entity)

@@ -480,7 +480,7 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 end
 
 function ENT:GetCost()
-	return 1
+	return ACF.RadarSyncCost
 end
 
 function ENT:Enable() end

@@ -1,13 +1,14 @@
 local Guidances = ACF.Classes.Guidances
 local Guidance  = Guidances.Register("Semi-Active Radar", "Anti-missile")
 
+-- Shared so the ammo menu can price missile rounds clientside.
+function Guidance:GetCost()
+	return 5
+end
+
 if CLIENT then
 	Guidance.Description = "This guidance package uses a radar to detect contraptions and guides the munition towards the most centered one it can find."
 else
-	function Guidance:GetCost()
-		return 5
-	end
-
 	-- Semi-actives can't seek targets by themselves
 	function Guidance:SeekTarget()
 		self.Target  = nil

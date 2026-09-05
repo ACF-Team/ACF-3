@@ -60,7 +60,7 @@ Components.RegisterItem("RFL-UNIT", "SP-RFL", {
 			local Capacity = Volume * ACF.gCmToKgIn
 			local TransferRate = ACF.SupplyMassRate * (Volume / 1000)
 
-			CapacityLabel:SetText(string.format("Capacity : %s kg\nTransfer Rate : %s kg/s", math.Round(Capacity, 2), math.Round(TransferRate, 2)))
+			CapacityLabel:SetText(string.format("Capacity : %s kg\nTransfer Rate : %s kg/s\nMass (full) : %s\nCost : %s", math.Round(Capacity, 2), math.Round(TransferRate, 2), ACF.GetProperMass(Capacity), ACF.GetProperCost(Capacity * 0.01)))
 
 			if Menu.ComponentPreview then
 				Menu.ComponentPreview:SetModelScale(SupplySize)

@@ -42,6 +42,7 @@ do -- Directional radars
 		Description	= "A lightweight directional radar with a shorter detection range and coarser target resolution.",
 		Model		= "models/radar/radar_sml.mdl",
 		Mass		= 35,
+		Cost		= 12.5,
 		ViewCone	= 60,
 		Range		= 23622, -- ~600m
 		MinSizeAtRange = 24,
@@ -59,6 +60,7 @@ do -- Directional radars
 		Description	= "A directional radar with a moderate detection range and target resolution.",
 		Model		= "models/radar/radar_mid.mdl",
 		Mass		= 120,
+		Cost		= 25,
 		ViewCone	= 60,
 		Range		= 31496, -- ~800m
 		MinSizeAtRange = 14,
@@ -76,6 +78,7 @@ do -- Directional radars
 		Description	= "A heavy directional radar with a longer detection range and finer target resolution.",
 		Model		= "models/radar/radar_big.mdl",
 		Mass		= 220,
+		Cost		= 50,
 		ViewCone	= 60,
 		Range		= 39370, -- ~1000m
 		MinSizeAtRange = 7,
@@ -119,6 +122,7 @@ do -- Spherical radars
 		Description	= "A lightweight omni-directional radar with a shorter detection range and coarser target resolution.",
 		Model		= "models/radar/radar_sp_sml.mdl",
 		Mass		= 80,
+		Cost		= 20,
 		Range		= 18898, -- ~480m
 		MinSizeAtRange = 24,
 		Origin		= "radar",
@@ -135,6 +139,7 @@ do -- Spherical radars
 		Description	= "An omni-directional radar with a moderate detection range and target resolution.",
 		Model		= "models/radar/radar_sp_mid.mdl",
 		Mass		= 210,
+		Cost		= 40,
 		Range		= 25197, -- ~640m
 		MinSizeAtRange = 14,
 		Origin		= "radar",
@@ -151,6 +156,7 @@ do -- Spherical radars
 		Description	= "A heavy omni-directional radar with a longer detection range and finer target resolution.",
 		Model		= "models/radar/radar_sp_big.mdl",
 		Mass		= 540,
+		Cost		= 80,
 		Range		= 31496, -- ~800m
 		MinSizeAtRange = 7,
 		Origin		= "radar",

@@ -1,7 +1,7 @@
 local ACF  = ACF
 
 do	-- Radars
-	local Text = "View Cone : %s degrees\nView Range : %s\nMin. Target Size (at max range) : %s\nMass : %s kg\n"
+	local Text = "View Cone : %s degrees\nView Range : %s\nMin. Target Size (at max range) : %s\nMass : %s kg\nCost : %s\n"
 	local SizeColor = Color(255, 0, 0)
 	local FormulaText = "The minimum target size a radar can detect shrinks the closer a target gets. Smaller radars can only see small targets up close, while larger radars can see small targets much further out. A target smaller than the curve at its current distance won't be detected.\n\nMinimum detectable size = Min. Target Size x (Distance / View Range) ^ 2"
 	local DetectTypesText = "Radars can be set to detect Contraptions, Missiles, or both. Radars that can only detect one target type receive a slight cost discount."
@@ -19,7 +19,20 @@ do	-- Radars
 		local ViewRange = Data.Range and (math.Round(Data.Range * ACF.InchToMeter) .. " m") or "Unlimited"
 		local MinSize = Data.MinSizeAtRange and (Data.MinSizeAtRange .. " in") or "N/A"
 
-		Menu:AddLabel(Text:format(ViewCone, ViewRange, MinSize, Data.Mass))
+		local Stats = Menu:AddLabel("")
+
+		-- A radar detecting only one target type is discounted, so cost follows the checkboxes.
+		local function UpdateStats()
+			local Cost = Data.Cost or 0
+
+			if ACF.GetClientBool("DetectContraptions", true) ~= ACF.GetClientBool("DetectMissiles", true) then
+				Cost = Cost - ACF.RadarSingleTypeDiscount
+			end
+
+			Stats:SetText(Text:format(ViewCone, ViewRange, MinSize, Data.Mass, ACF.GetProperCost(Cost)))
+		end
+
+		UpdateStats()
 
 		ACF.SetClientData("PrimaryClass", "acf_radar")
 
@@ -63,6 +76,7 @@ do	-- Radars
 			end
 
 			ACF.SetClientData("DetectContraptions", Value)
+			UpdateStats()
 		end
 
 		function DetectMissiles:OnChange(Value)
@@ -71,6 +85,7 @@ do	-- Radars
 			end
 
 			ACF.SetClientData("DetectMissiles", Value)
+			UpdateStats()
 		end
 
 		-- Triggered once on menu creation and every time either checkbox is toggled.

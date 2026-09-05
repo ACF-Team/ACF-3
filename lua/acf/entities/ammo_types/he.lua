@@ -74,13 +74,15 @@ function Ammo:BaseConvert(ToolData)
 	return Data, GUIData
 end
 
+-- Shared with the client so the spawn menu can price a crate without spawning it.
+local Conversion = ACF.PointConversion
+
+function Ammo:GetCost(BulletData)
+	return ((BulletData.ProjMass - BulletData.FillerMass) * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.CompB)
+end
+
 if SERVER then
 	local Ballistics = ACF.Ballistics
-	local Conversion	= ACF.PointConversion
-
-	function Ammo:GetCost(BulletData)
-		return ((BulletData.ProjMass - BulletData.FillerMass) * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.CompB)
-	end
 
 	function Ammo:Network(Entity, BulletData)
 		Ammo.BaseClass.Network(self, Entity, BulletData)

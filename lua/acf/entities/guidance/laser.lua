@@ -13,16 +13,17 @@ function Guidance:WriteDisplayConfig(State)
 	State:AddSubKeyValue("Tracking", math.Round(self.ViewCone * 2, 2) .. " deg")
 end
 
+-- Shared so the ammo menu can price missile rounds clientside.
+function Guidance:GetCost()
+	return 5
+end
+
 if CLIENT then
 	Guidance.Description = "This guidance package reads a target-position from the launcher and guides the munition towards it."
 else
 	local TraceData = { start = true, endpos = true, mask = MASK_SOLID_BRUSHONLY, filter = {} }
 	local Trace     = ACF.trace
 	local Lasers    = ACF.ActiveLasers
-
-	function Guidance:GetCost()
-		return 5
-	end
 
 	function Guidance.GetDirectionDot(Missile, TargetPos)
 		local Position = Missile.ACF_Position

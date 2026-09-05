@@ -273,6 +273,13 @@ do -- Unit conversion
 
 		return math.Round(Kilograms * Mult, 2) .. " " .. Unit
 	end
+
+	--- Formats a contraption cost the same way the menu and overlays present it.
+	--- @param Points number The cost in points
+	--- @return string Text The formatted cost
+	function ACF.GetProperCost(Points)
+		return math.Round(Points or 0, 2) .. " pts"
+	end
 end
 --[[
 -- Pretty much unused, should be moved into the ACF namespace or just removed

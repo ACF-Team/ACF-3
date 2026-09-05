@@ -1,14 +1,10 @@
 local ACF        = ACF
 local Gearboxes  = ACF.Classes.Gearboxes
-local ModelData  = ACF.ModelData
-local ArmorTypes = ACF.Classes.ArmorTypes
 local Current    = {}
 local StatsText  = language.GetPhrase("acf.menu.gearboxes.stats")
 
 local function SetStatsText(GearboxStats)
-	local _, Torque, TorqueRating = ACF.GetGearboxStats(Current.Mass, Current.Scale, Current.MaxTorque, Current.GearCount)
-	local Volume = Current.Model and ModelData.GetModelVolume(Current.Model, Current.Scale or 1)
-	local Mass   = Volume and math.Round(Volume * ACF.InchToMCu * ArmorTypes.Get("Component").Density) or 0
+	local Mass, Torque, TorqueRating = ACF.GetGearboxStats(Current.Mass, Current.Scale, Current.MaxTorque, Current.GearCount)
 
 	GearboxStats:SetText(StatsText:format(ACF.GetProperMass(Mass), TorqueRating * ACF.TorqueMult, Torque * ACF.TorqueMult))
 end

@@ -18,6 +18,7 @@ Components.RegisterItem("AL-IMP", "AL", {
 		ACF.SetClientData("SecondaryClass", "N/A")
 
 		local MassLabel = Menu:AddLabel("")
+		local CostLabel = Menu:AddLabel("")
 		local AutoloaderSize = Vector(0, 0, 0)
 
 		local function UpdateAutoloaderStats()
@@ -26,6 +27,7 @@ Components.RegisterItem("AL-IMP", "AL", {
 			local Volume = math.pi * R * R * H
 
 			MassLabel:SetText(string.format("Mass : %s", ACF.GetProperMass(Volume * 250)))
+			CostLabel:SetText(string.format("Cost : %s", ACF.GetProperCost(Volume * 8)))
 
 			if Menu.ComponentPreview then
 				Menu.ComponentPreview:SetModelScale(AutoloaderSize, true)

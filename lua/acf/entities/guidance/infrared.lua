@@ -2,13 +2,14 @@ local ACF       = ACF
 local Guidances = ACF.Classes.Guidances
 local Guidance  = Guidances.Register("Infrared", "Anti-radiation")
 
+-- Shared so the ammo menu can price missile rounds clientside.
+function Guidance:GetCost()
+	return 3
+end
+
 if CLIENT then
 	Guidance.Description = "This guidance package will detect a contraption in front of itself and guide the munition towards it."
 else
-	function Guidance:GetCost()
-		return 3
-	end
-
 	function Guidance:UpdateTarget(Missile)
 		local Position   = Missile.ACF_Position
 		local Targets    = ACF.GetEntitiesInCone(Position, Missile:GetForward(), self.SeekCone)

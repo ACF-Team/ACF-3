@@ -11,14 +11,15 @@ function Guidance:WriteDisplayConfig()
 
 end
 
+-- Shared so the ammo menu can price missile rounds clientside.
+function Guidance:GetCost()
+	return 0
+end
+
 if CLIENT then
 	Guidance.Description = "This guidance package is empty and provides no control."
 else
 	local Countermeasures = ACF.Classes.Countermeasures
-
-	function Guidance:GetCost()
-		return 0
-	end
 
 	function Guidance:OnLaunched() end
 

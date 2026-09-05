@@ -101,14 +101,17 @@ function Ammo:VerifyData(ToolData)
 	end
 end
 
+-- Shared with the client so the spawn menu can price a crate without spawning it.
+local Conversion = ACF.PointConversion
+
+function Ammo:GetCost(BulletData)
+	return (BulletData.ProjMass * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant)
+end
+
 if SERVER then
 	local Ballistics = ACF.Ballistics
 	local Entities   = Classes.Entities
-	local Conversion	= ACF.PointConversion
 
-	function Ammo:GetCost(BulletData)
-		return (BulletData.ProjMass * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant)
-	end
 
 	Entities.AddArguments("acf_ammo", "Flechettes", "Spread") -- Adding extra info to ammo crates
 

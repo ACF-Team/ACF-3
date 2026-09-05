@@ -379,6 +379,25 @@ local function AddControls(Base, ToolData)
 	AmmoStage:SetValue(1)
 end
 
+---Returns the point cost of a single round, mirroring acf_ammo's GetRoundCost.
+---Guidance and fuze are read live rather than from a ToolData snapshot, since
+---they can change without the surrounding menu being rebuilt.
+---@return number Cost The cost of one round in points.
+local function GetRoundCost()
+	local Cost = Ammo:GetCost(BulletData)
+
+	-- Only missile ammo carries guidance and fuze, and both are charged per round.
+	if ACF.GetClientString("Destiny") ~= "Missiles" then return Cost end
+
+	local Guidance = Classes.Guidances.Get(ACF.GetClientString("Guidance"))
+	local Fuze     = Classes.Fuzes.Get(ACF.GetClientString("Fuze"))
+
+	if Guidance then Cost = Cost + Guidance:GetCost() end
+	if Fuze then Cost = Cost + Fuze:GetCost() end
+
+	return Cost
+end
+
 ---Creates the ammunition information panels on the ACF menu.
 ---@param Base userdata The panel being populated with the ammunition information.
 ---This function makes use of SuppressInformation and SuppressCrateInformation
@@ -409,6 +428,9 @@ local function AddCrateInformation(Base, ToolData)
 	Crate:TrackClientData("PropRatio")
 	Crate:TrackClientData("CaseScale")
 	Crate:TrackClientData("Tracer")
+	-- Missile ammo folds guidance and fuze cost into every round
+	Crate:TrackClientData("Guidance")
+	Crate:TrackClientData("Fuze")
 	Crate:DefineSetter(function()
 		UpdateBoxSizeFromProjectileCounts(ToolData, BulletData)
 
@@ -425,8 +447,9 @@ local function AddCrateInformation(Base, ToolData)
 		-- CartMass is the mass of a whole round, so it multiplies complete rounds, not cells
 		local Load      = math.floor(BulletData.CartMass * Rounds)
 		local Mass      = ACF.GetProperMass(Load)
+		local Cost      = ACF.GetProperCost(Rounds * GetRoundCost())
 
-		return CrateText:format(Mass, Rounds)
+		return CrateText:format(Mass, Cost, Rounds)
 	end)
 
 	if Ammo.OnCreateCrateInformation then
