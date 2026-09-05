@@ -109,7 +109,7 @@ do -- Piledrivers menu
 			local MaxPen    = math.Round(BulletData.MaxPen, 2)
 			local MuzzleVel = math.Round(BulletData.MuzzleVel, 2)
 			local Length    = BulletData.ProjLength
-			local Mass      = ACF.GetProperMass(BulletData.ProjMass)
+			local Mass      = ACF.FormatMass(BulletData.ProjMass)
 
 			return Stats:format(MaxPen, MuzzleVel, Length, Mass)
 		end)

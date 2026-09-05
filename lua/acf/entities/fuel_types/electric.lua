@@ -16,7 +16,7 @@ FuelTypes.Register("Electric", {
 		local kWh = math.Round(Capacity * ACF.LiIonED, 2)
 		local MJ = math.Round(Capacity * ACF.LiIonED * 3.6, 2)
 
-		return Text:format(kWh, MJ, ACF.GetProperMass(Mass))
+		return Text:format(kWh, MJ, ACF.FormatMass(Mass))
 	end,
 
 	FuelTankOverlay	= function(Fuel, State)

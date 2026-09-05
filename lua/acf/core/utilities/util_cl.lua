@@ -723,7 +723,7 @@ do -- Default turret menus
 				local MaxMass = TurretClass.GetMaxMass(Data, N)
 				local TurretMassText = language.GetPhrase("acf.menu.turrets.turret_mass_text")
 				MassLbl:SetText(TurretMassText:format(TurretClass.GetMass(Data, N), MaxMass))
-				CostLbl:SetText(CostText:format(ACF.GetProperCost((Data.ID == "Turret-H" and 0.1 or 0.2) * N)))
+				CostLbl:SetText(CostText:format(ACF.FormatCost((Data.ID == "Turret-H" and 0.1 or 0.2) * N)))
 
 				TurretData.Teeth		= Teeth
 				TurretData.RingSize		= N
@@ -921,7 +921,7 @@ do -- Default turret menus
 
 				local SizePerc = N ^ 2
 				MassLbl:SetText(MassText:format(math.Round(math.max(Data.Mass * SizePerc, 5), 1)))
-				CostLbl:SetText(CostText:format(ACF.GetProperCost(N * 2)))
+				CostLbl:SetText(CostText:format(ACF.FormatCost(N * 2)))
 
 				TurretData.Torque	= MotorClass.GetTorque(Data, N)
 				TorqLbl:SetText(TorqText:format(TurretData.Torque))
@@ -1011,7 +1011,7 @@ do -- Default turret menus
 
 			local MassText = language.GetPhrase("acf.menu.turrets.mass_text")
 			Menu:AddLabel(MassText:format(Data.Mass))
-			Menu:AddLabel(language.GetPhrase("acf.menu.turrets.cost_text"):format(ACF.GetProperCost(Data.IsDual and 8 or 4)))
+			Menu:AddLabel(language.GetPhrase("acf.menu.turrets.cost_text"):format(ACF.FormatCost(Data.IsDual and 8 or 4)))
 
 			if Data.IsDual then
 				Menu:AddLabel("#acf.menu.gyros.dual_desc")
@@ -1032,7 +1032,7 @@ do -- Default turret menus
 
 			local MassText = language.GetPhrase("acf.menu.turrets.mass_text")
 			Menu:AddLabel(MassText:format(Data.Mass))
-			Menu:AddLabel(language.GetPhrase("acf.menu.turrets.cost_text"):format(ACF.GetProperCost(Data.IsRemote and 100 or 5)))
+			Menu:AddLabel(language.GetPhrase("acf.menu.turrets.cost_text"):format(ACF.FormatCost(Data.IsRemote and 100 or 5)))
 
 			if Menu.ComponentPreview then
 				Menu.ComponentPreview:SetModelScale(1, true)
@@ -1049,7 +1049,7 @@ do -- Default turret menus
 
 			local MassText = language.GetPhrase("acf.menu.turrets.mass_text")
 			Menu:AddLabel(MassText:format(Data.Mass))
-			Menu:AddLabel(language.GetPhrase("acf.menu.turrets.cost_text"):format(ACF.GetProperCost(5)))
+			Menu:AddLabel(language.GetPhrase("acf.menu.turrets.cost_text"):format(ACF.FormatCost(5)))
 
 			if Menu.ComponentPreview then
 				Menu.ComponentPreview:SetModelScale(1, true)

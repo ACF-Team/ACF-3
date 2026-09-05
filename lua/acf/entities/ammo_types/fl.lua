@@ -322,9 +322,9 @@ else
 
 			local Text		= language.GetPhrase("acf.menu.ammo.round_stats_fl")
 			local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
-			local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
-			local PropMass	= ACF.GetProperMass(BulletData.PropMass)
-			local FLMass	= ACF.GetProperMass(BulletData.FlechetteMass)
+			local ProjMass	= ACF.FormatMass(BulletData.ProjMass)
+			local PropMass	= ACF.FormatMass(BulletData.PropMass)
+			local FLMass	= ACF.FormatMass(BulletData.FlechetteMass)
 
 			return Text:format(MuzzleVel, ProjMass, PropMass, FLMass)
 		end)

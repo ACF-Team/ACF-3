@@ -26,8 +26,8 @@ Components.RegisterItem("AL-IMP", "AL", {
 			local R, H = AutoloaderSize.y, AutoloaderSize.x
 			local Volume = math.pi * R * R * H
 
-			MassLabel:SetText(string.format("Mass : %s", ACF.GetProperMass(Volume * 250)))
-			CostLabel:SetText(string.format("Cost : %s", ACF.GetProperCost(Volume * 8)))
+			MassLabel:SetText(string.format("Mass : %s", ACF.FormatMass(Volume * 250)))
+			CostLabel:SetText(string.format("Cost : %s", ACF.FormatCost(Volume * 8)))
 
 			if Menu.ComponentPreview then
 				Menu.ComponentPreview:SetModelScale(AutoloaderSize, true)

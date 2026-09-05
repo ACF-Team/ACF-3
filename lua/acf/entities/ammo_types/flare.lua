@@ -213,9 +213,9 @@ else
 
 			local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s\nFlare Filler Mass : %s"
 			local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
-			local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
-			local PropMass	= ACF.GetProperMass(BulletData.PropMass)
-			local Filler	= ACF.GetProperMass(BulletData.FillerMass)
+			local ProjMass	= ACF.FormatMass(BulletData.ProjMass)
+			local PropMass	= ACF.FormatMass(BulletData.PropMass)
+			local Filler	= ACF.FormatMass(BulletData.FillerMass)
 
 			return Text:format(MuzzleVel, ProjMass, PropMass, Filler)
 		end)
@@ -226,7 +226,7 @@ else
 			self:UpdateRoundData(ToolData, BulletData)
 
 			local Text		= "Burn Rate : %s/s\nBurn Duration : %s s\nDistraction Chance : %s"
-			local Rate		= ACF.GetProperMass(BulletData.BurnRate)
+			local Rate		= ACF.FormatMass(BulletData.BurnRate)
 			local Duration	= math.Round(BulletData.BurnTime, 2)
 			local Chance	= math.Round(BulletData.DistractChance * 100, 2) .. "%"
 

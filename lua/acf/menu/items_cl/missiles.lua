@@ -36,7 +36,7 @@ local function GetMissileText(Data)
 		View = "\nView Cone : " .. Data.ViewCone * 2 .. " degrees"
 	end
 
-	return MissileText:format(Caliber, ACF.GetProperMass(Data.Mass or 10), Data.ArmDelay, Seek, View)
+	return MissileText:format(Caliber, ACF.FormatMass(Data.Mass or 10), Data.ArmDelay, Seek, View)
 end
 
 local function GetRackText(Data)
@@ -53,7 +53,7 @@ local function GetRackText(Data)
 
 	local Cost = Data.MagSize * 1.5 * math.max(1, math.max(70, Data.Caliber or 0) / 70) -- Mirrors acf_rack's GetCost
 
-	return RackText:format(Caliber, ACF.GetProperMass(Data.Mass or 0), ACF.GetProperCost(Cost), Data.MagSize, Protect)
+	return RackText:format(Caliber, ACF.FormatMass(Data.Mass or 0), ACF.FormatCost(Cost), Data.MagSize, Protect)
 end
 
 local function CreateMenu(Menu)

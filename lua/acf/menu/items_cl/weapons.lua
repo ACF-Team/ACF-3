@@ -265,8 +265,8 @@ local function CreateMenu(Menu)
 		local Caliber  = Current.Caliber
 		if not Caliber then return "" end
 
-		local Mass     = ACF.GetProperMass(GetMass(Caliber, Class, Weapon))
-		local Cost     = ACF.GetProperCost(GetCost(Caliber, Class))
+		local Mass     = ACF.FormatMass(GetMass(Caliber, Class, Weapon))
+		local Cost     = ACF.FormatCost(GetCost(Caliber, Class))
 		local FireDelay = GetReloadTime(Caliber, Class, Weapon)
 		local FireRate = 60 / FireDelay
 		local Spread   = ACF.GetWeaponValue("Spread", Caliber, Class, Weapon)

@@ -336,8 +336,8 @@ else
 
 			local Text		= language.GetPhrase("acf.menu.ammo.round_stats_ap")
 			local MuzzleVel	= math.Round(Data.MuzzleVel * ACF.Scale, 2)
-			local ProjMass	= ACF.GetProperMass(Data.ProjMass)
-			local PropMass	= ACF.GetProperMass(Data.PropMass)
+			local ProjMass	= ACF.FormatMass(Data.ProjMass)
+			local PropMass	= ACF.FormatMass(Data.PropMass)
 
 			return Text:format(MuzzleVel, ProjMass, PropMass)
 		end)
@@ -352,7 +352,7 @@ else
 
 			if Data.FillerMass > 0 then
 				local Text		  = language.GetPhrase("acf.menu.ammo.smoke_stats")
-				local SmokeMass	  = ACF.GetProperMass(Data.FillerMass)
+				local SmokeMass	  = ACF.FormatMass(Data.FillerMass)
 				local SmokeRadius = (Data.SMRadiusMin + Data.SMRadiusMax) * 0.5
 
 				SMText = Text:format(SmokeMass, SmokeRadius, Data.SMLife)
@@ -360,7 +360,7 @@ else
 
 			if Data.WPMass > 0 then
 				local Text	   = language.GetPhrase("acf.menu.ammo.wp_stats")
-				local WPMass   = ACF.GetProperMass(Data.WPMass)
+				local WPMass   = ACF.FormatMass(Data.WPMass)
 				local WPRadius = (Data.WPRadiusMin + Data.WPRadiusMax) * 0.5
 
 				WPText = Text:format(WPMass, WPRadius, Data.WPLife)

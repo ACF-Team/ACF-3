@@ -29,7 +29,7 @@ do	-- Radars
 				Cost = Cost - ACF.RadarSingleTypeDiscount
 			end
 
-			Stats:SetText(Text:format(ViewCone, ViewRange, MinSize, Data.Mass, ACF.GetProperCost(Cost)))
+			Stats:SetText(Text:format(ViewCone, ViewRange, MinSize, Data.Mass, ACF.FormatCost(Cost)))
 		end
 
 		UpdateStats()

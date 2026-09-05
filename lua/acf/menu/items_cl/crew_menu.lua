@@ -287,7 +287,7 @@ local function CreateMenu(Menu)
 		Whitelist:SetText(language.GetPhrase("acf.menu.crew.links_to"):format(table.concat(wl, ", ")))
 
 		Mass:SetText(language.GetPhrase("acf.menu.crew.mass_text"):format(Data.Mass))
-		Cost:SetText(language.GetPhrase("acf.menu.crew.cost_text"):format(ACF.GetProperCost(Data.Cost or 1)))
+		Cost:SetText(language.GetPhrase("acf.menu.crew.cost_text"):format(ACF.FormatCost(Data.Cost or 1)))
 
 		if not Data.LeanInfo then Leans:SetText("#acf.menu.crew.lean_no_info")
 		else

@@ -862,7 +862,7 @@ end
 local GroundLoaderText = "Mass : %s kg\nCost : %s\n"
 
 function ACF.CreateGroundLoaderMenu(Data, Menu)
-	Menu:AddLabel(GroundLoaderText:format(Data.Mass, ACF.GetProperCost(ACF.GroundLoaderCost)))
+	Menu:AddLabel(GroundLoaderText:format(Data.Mass, ACF.FormatCost(ACF.GroundLoaderCost)))
 
 	ACF.SetClientData("PrimaryClass", "acf_groundloader")
 

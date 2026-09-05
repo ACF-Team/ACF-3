@@ -18,8 +18,8 @@ local function UpdateEngineStats(Label, Data)
 	local PeakkWRPM  = Data.PeakPowerRPM
 	local MinPower   = RPM.PeakMin
 	local MaxPower   = RPM.PeakMax
-	local Mass       = ACF.GetProperMass(Data.Mass or 0)
-	local Cost       = ACF.GetProperCost(math.max(5, (Data.Torque / 160) + (Data.PeakPower / 80)))
+	local Mass       = ACF.FormatMass(Data.Mass or 0)
+	local Cost       = ACF.FormatCost(math.max(5, (Data.Torque / 160) + (Data.PeakPower / 80)))
 	local Torque     = math.Round(Data.Torque * GetTorqueMult())
 	local TorqueFeet = math.Round(Data.Torque * GetTorqueMult() * ACF.NmToFtLb)
 	local Type       = EngineTypes.Get(Data.Type)
@@ -276,7 +276,7 @@ local function CreateMenu(Menu)
 			local Liters = math.Round(Capacity, 2)
 			local Gallons = math.Round(Capacity * ACF.LToGal, 2)
 
-			FuelText = FuelText .. Text:format(Liters, Gallons, ACF.GetProperMass(Mass))
+			FuelText = FuelText .. Text:format(Liters, Gallons, ACF.FormatMass(Mass))
 		end
 
 		FuelDesc:SetText("Scalable Fuel Tank\n\nShape: " .. Shape)

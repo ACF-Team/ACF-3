@@ -446,8 +446,8 @@ local function AddCrateInformation(Base, ToolData)
 
 		-- CartMass is the mass of a whole round, so it multiplies complete rounds, not cells
 		local Load      = math.floor(BulletData.CartMass * Rounds)
-		local Mass      = ACF.GetProperMass(Load)
-		local Cost      = ACF.GetProperCost(Rounds * GetRoundCost())
+		local Mass      = ACF.FormatMass(Load)
+		local Cost      = ACF.FormatCost(Rounds * GetRoundCost())
 
 		return CrateText:format(Mass, Cost, Rounds)
 	end)
