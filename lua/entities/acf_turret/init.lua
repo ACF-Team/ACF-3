@@ -104,9 +104,63 @@ do -- Random timer crew stuff
 	end
 end
 
--- Every currently-spawned acf_turret, driven each tick by the shared ACF_OnTick hook below so
--- ancestors always update before their sub-turrets
+-- Every currently-spawned acf_turret, driven each tick by the shared ACF_OnTick hook below.
+-- RunOrder is the ancestor-first sequence that hook walks; an AugmentedTimer rebuilds and
+-- re-sorts it a few times a second so ancestors always slew before their sub-turrets, while
+-- spawn appends immediately so a new turret slews from its first tick.
 local ActiveTurrets = {}
+local RunOrder = {}
+local RunCount = 0
+
+-- Depth in the turret ancestor chain (0 = root), used to sort turrets ancestor-first
+local function GetAncestorDepth(SelfTbl)
+	local Depth = 0
+	local Ancestor = SelfTbl.ACF_TurretAncestor
+
+	while IsValid(Ancestor) do
+		Depth = Depth + 1
+		Ancestor = ENTITY.GetTable(Ancestor).ACF_TurretAncestor
+	end
+
+	return Depth
+end
+
+local function CompareTurretDepth(A, B)
+	return ENTITY.GetTable(A).SortDepth < ENTITY.GetTable(B).SortDepth
+end
+
+-- Rebuilds RunOrder from ActiveTurrets, ancestor-first. Comparing against a cached SortDepth
+-- keeps table.sort off the ancestor-chain walk. Driven by an AugmentedTimer rather than the
+-- tick hook so the sort cost is spread over frames.
+local function RebuildTurretRunOrder()
+	RunCount = 0
+
+	for Entity in pairs(ActiveTurrets) do
+		if IsValid(Entity) then
+			RunCount = RunCount + 1
+			RunOrder[RunCount] = Entity
+			ENTITY.GetTable(Entity).SortDepth = GetAncestorDepth(ENTITY.GetTable(Entity))
+		else
+			ActiveTurrets[Entity] = nil
+		end
+	end
+
+	for i = RunCount + 1, #RunOrder do
+		RunOrder[i] = nil
+	end
+
+	table.sort(RunOrder, CompareTurretDepth)
+end
+
+-- Appends a just-spawned turret so it slews from its first tick; the timer re-sorts it into
+-- ancestor-first position on its next pass.
+local function AppendTurretRunOrder(Entity)
+	if not IsValid(Entity) then return end
+
+	RunCount = RunCount + 1
+	RunOrder[RunCount] = Entity
+	ENTITY.GetTable(Entity).SortDepth = GetAncestorDepth(ENTITY.GetTable(Entity))
+end
 
 -- Some locals for entity functions that are stored as locals to avoid expensive
 -- __index operations in think hooks. They are still available for convenience.
@@ -417,6 +471,7 @@ do	-- Spawn and Update funcs
 		Entity:UpdateOverlay(true)
 
 		ActiveTurrets[Entity] = true
+		AppendTurretRunOrder(Entity)
 
 		ACF.AugmentedTimer(function(cfg) Entity:UpdateControlled(cfg) end, function() return IsValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1})
 
@@ -1236,44 +1291,21 @@ do -- Metamethods
 			SelfTbl.LastThinkTime	= Clock.CurTime
 		end
 
-		-- Depth in the turret ancestor chain (0 = root), used to sort turrets ancestor-first
-		local function GetAncestorDepth(SelfTbl)
-			local Depth = 0
-			local Ancestor = SelfTbl.ACF_TurretAncestor
-
-			while IsValid(Ancestor) do
-				Depth = Depth + 1
-				Ancestor = ENTITY.GetTable(Ancestor).ACF_TurretAncestor
-			end
-
-			return Depth
-		end
-
-		local SortBuffer = {}
+		ACF.AugmentedTimer(
+			function() RebuildTurretRunOrder() end,
+			function() return true end,
+			nil,
+			{MinTime = 1, MaxTime = 2}
+		)
 
 		hook.Add("ACF_OnTick", "ACF Turret Slew", function()
-			local Count = 0
+			for i = 1, RunCount do
+				local Entity = RunOrder[i]
 
-			for Entity in pairs(ActiveTurrets) do
+				-- Removed turrets linger until the next RebuildTurretRunOrder; skip them meanwhile
 				if IsValid(Entity) then
-					Count = Count + 1
-					SortBuffer[Count] = Entity
-				else
-					ActiveTurrets[Entity] = nil
+					RunTurretSlew(Entity, ENTITY.GetTable(Entity))
 				end
-			end
-
-			for i = Count + 1, #SortBuffer do
-				SortBuffer[i] = nil
-			end
-
-			table.sort(SortBuffer, function(A, B)
-				return GetAncestorDepth(ENTITY.GetTable(A)) < GetAncestorDepth(ENTITY.GetTable(B))
-			end)
-
-			for i = 1, Count do
-				local Entity = SortBuffer[i]
-				RunTurretSlew(Entity, ENTITY.GetTable(Entity))
 			end
 		end)
 	end
