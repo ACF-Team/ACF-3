@@ -116,11 +116,14 @@ local function PrepareSpawnFunctions(ENT, ClassName)
         hook.Run("ACF_OnUpdateEntity", ClassName, self, ClientData, HookArgs)
         ACF.RestoreEntity(self)
 
+        self:ACF_SetupWireFunctions()
+
         if self.ACF_PostUpdateEntityData then
             self:ACF_PostUpdateEntityData(ClientData)
         end
 
         self:ACF_SetupWireFunctions()
+
         ACF.Activate(self, true)
         return true, (self.PrintName or ClassName) .. " updated successfully!"
     end
