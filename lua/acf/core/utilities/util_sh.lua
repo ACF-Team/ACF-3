@@ -1116,6 +1116,9 @@ do -- Reload related
 		local Cyclic = Override and Override.Cyclic or ACF.GetWeaponValue("Cyclic", Caliber, Class, Weapon)
 		if Cyclic then return 60 / Cyclic, false end
 
+		-- Reload mod scales the final reload value and represents the ease of manipulating the weapon's ammunition
+		local ReloadMod = ACF.GetWeaponValue("ReloadMod", Caliber, Class, Weapon) or 1
+
 		-- Two piece ammunition loads as that many shells of a fraction of the mass and length,
 		-- one motion each. The handling terms are split between them, so only the fixed setup
 		-- cost of a motion is really paid twice.
@@ -1124,7 +1127,7 @@ do -- Reload related
 		local PieceLen   = (BulletData.RoundLength or (BulletData.PropLength + BulletData.ProjLength)) / Pieces
 
 		local BaseTime = ACF.BaseReload + (PieceMass * ACF.MassToTime) + (PieceLen * ACF.LengthToTime)
-		return math.Clamp(BaseTime * Pieces, 0, 60), true -- Clamped to a maximum of 60 seconds of ideal loading
+		return math.Clamp(BaseTime * Pieces * ReloadMod, 0, 60), true -- Clamped to a maximum of 60 seconds of ideal loading
 	end
 
 	--- Calculates the time it takes for a gun to reload its magazine
@@ -1137,6 +1140,9 @@ do -- Reload related
 	function ACF.CalcReloadTimeMag(Caliber, Class, Weapon, BulletData, Override)
 		-- Use the override if possible
 		local MagSizeOverride = Override and Override.MagSize
+
+		-- Reload mod scales the final reload value and represents the ease of manipulating the weapon's ammunition
+		local ReloadMod = ACF.GetWeaponValue("ReloadMod", Caliber, Class, Weapon) or 1
 
 		-- Two piece ammunition loads as that many shells of a fraction of the mass and length,
 		-- one motion each. A magazine still holds whole rounds, so it takes that many times
@@ -1153,7 +1159,7 @@ do -- Reload related
 
 		-- Note: Currently represents a projectile of the same dimensions with the mass of the entire magazine
 		local BaseTime = ACF.BaseReload + (PieceMass * ACF.MassToTime) * MagSize + (PieceLen * ACF.LengthToTime)
-		return math.Clamp(BaseTime * Pieces, 0, 60), true -- Clamped to a maximum of 60 seconds of ideal loading
+		return math.Clamp(BaseTime * Pieces * ReloadMod, 0, 60), true -- Clamped to a maximum of 60 seconds of ideal loading
 	end
 
 	local ModelToPlayerStart = {
