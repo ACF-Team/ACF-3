@@ -11,6 +11,7 @@ local Classes     = ACF.Classes
 local HookRun     = hook.Run
 
 util.AddNetworkString("ACF_Autoloader_Links")
+util.AddNetworkString("ACF_Autoloader_AmmoLinks")
 
 -- Converts shell scale to model scale
 local RefSize = Vector(43.233333587646, 7.2349619865417, 7.2349619865417)
@@ -134,6 +135,7 @@ end)
 ACF.RegisterClassLink("acf_autoloader", "acf_ammo", function(This, Ammo)
 	This.AmmoCrates[Ammo] = true
 	Ammo.Autoloaders[This] = true
+	BroadcastEntity("ACF_Autoloader_AmmoLinks", This, Ammo, true)
 	return true, "Autoloader linked successfully."
 end)
 
@@ -142,6 +144,7 @@ ACF.RegisterClassUnlink("acf_autoloader", "acf_ammo", function(This, Ammo)
 	if not This.AmmoCrates[Ammo] or not Ammo.Autoloaders[This] then return false, "Autoloader was not linked to that ammo." end -- TODO: refactor when link API is refactored
 	This.AmmoCrates[Ammo] = nil
 	Ammo.Autoloaders[This] = nil
+	BroadcastEntity("ACF_Autoloader_AmmoLinks", This, Ammo, false)
 	return true, "Autoloader unlinked successfully."
 end)
 
@@ -161,9 +164,9 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 
 	-- Autoloader must sit where the magazine would feed from...
 	local DiffNorm = (BreechPos - AutoloaderPos):GetNormalized()
-	local PositionAngle = math.deg(math.acos(DiffNorm:Dot(BreechAng:Forward())))
+	local PositionAngle = math.deg(math.acos(math.Clamp(DiffNorm:Dot(BreechAng:Forward()), -1, 1)))
 	-- ...but ram shells in the same direction the gun fires them
-	local RamAngle = math.deg(math.acos(self:GetForward():Dot(GunForward)))
+	local RamAngle = math.deg(math.acos(math.Clamp(self:GetForward():Dot(GunForward), -1, 1)))
 	local GunArmAngle = PositionAngle + RamAngle
 	local GunArmAngleAligned = GunArmAngle < ACF.AutoloaderMaxAngleDiff
 	self.OverlayWarnings.GunArmAlignment = not GunArmAngleAligned and "Autoloader is not aligned\nWith the breech of: " .. (tostring(Gun) or "<INVALID ENTITY???>") .. "\nDeviation: " .. math.Round(GunArmAngle, 2) .. ", Acceptable: " .. ACF.AutoloaderMaxAngleDiff or nil
@@ -196,7 +199,7 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	-- Gun to ammo
 	local AmmoMoveOffset = self:WorldToLocal(Ammo:GetPos())
 	local AmmoDirection = Ammo:LocalToWorldAngles(Ammo.ExtraData.LocalAng):Forward()
-	local AmmoAngleDiff = math.deg(math.acos(self:GetForward():Dot(AmmoDirection)))
+	local AmmoAngleDiff = math.deg(math.acos(math.Clamp(self:GetForward():Dot(AmmoDirection), -1, 1)))
 
 	local HorizontalScore = ACF.Normalize(math.abs(GunMoveOffset.x) + math.abs(AmmoMoveOffset.x) + math.abs(GunMoveOffset.y) + math.abs(AmmoMoveOffset.y), ACF.AutoloaderWorstDistHorizontal, ACF.AutoloaderBestDistHorizontal)
 	local VerticalScore = ACF.Normalize(math.abs(GunMoveOffset.z) + math.abs(AmmoMoveOffset.z), ACF.AutoloaderWorstDistVertical, ACF.AutoloaderBestDistVertical)
