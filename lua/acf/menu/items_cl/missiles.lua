@@ -51,7 +51,7 @@ local function GetRackText(Data)
 		Protect = "\n\nThis rack will protect its payload from getting destroyed."
 	end
 
-	local Cost = Data.MagSize * 1.5 * math.max(1, math.max(70, Data.Caliber or 0) / 70) -- Mirrors acf_rack's GetCost
+	local Cost = Data.Cost or Data.MagSize * (Data.CostPerSlot or 1.5) -- Mirrors acf_rack's GetCost
 
 	return RackText:format(Caliber, ACF.FormatMass(Data.Mass or 0), ACF.FormatCost(Cost), Data.MagSize, Protect)
 end
