@@ -16,7 +16,6 @@ Weapons.Register("GL", {
 	Spread      = 0.28,
 	Cyclic      = 250,
 	ScaleFactor = 0.96, -- Corrective factor to account for improperly scaled base models
-	TransferMult = 20, -- Thermal energy transfer rate
 	CyclicCeilMult = 2, -- How high above base cyclic the gun can be set to
 	Round = {
 		MaxLength  = 10,
@@ -30,14 +29,6 @@ Weapons.Register("GL", {
 		Base = 40,
 		Min  = 25,
 		Max  = 40,
-	},
-	MagSize = {
-		Min = 80,
-		Max = 50,
-	},
-	MagReload = {
-		Min = 7.5,
-		Max = 10,
 	},
 	LimitConVar = {
 		Name = "_acf_grenadelauncher",

@@ -656,10 +656,18 @@ do -- Overlay
 
 		State:AddKeyValue("Shell dimensions", ShellDiameter .. "mm x " .. Length .. "cm")
 
-		local IdealReloadTime = math.Round(ACF.CalcReloadTime(Caliber, self.ClassData, self.Weapon, self.BulletData, self.Override), 2)
-		local IdealMagReloadTime = math.Round(ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.Weapon, self.BulletData, {MagSize = self.Amount}), 2)
-		State:AddKeyValue("Ideal Reload Time", IdealReloadTime .. " s")
-		State:AddKeyValue("Ideal Mag Reload Time", IdealMagReloadTime .. " s")
+		local HasMag = ACF.GetWeaponValue("MagReload", Caliber, self.ClassData, self.WeaponData)
+
+		-- Per-round reload only matters without a magazine, and not for belt feds (cyclic RPM is their only timing)
+		if not HasMag and not self.IsBelted then
+			local IdealReloadTime = math.Round(ACF.CalcReloadTime(Caliber, self.ClassData, self.WeaponData, self.BulletData, self.Override), 2)
+			State:AddKeyValue("Ideal Reload Time", IdealReloadTime .. " s")
+		end
+
+		if HasMag then
+			local IdealMagReloadTime = math.Round(ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData, {MagSize = self.Amount}), 2)
+			State:AddKeyValue("Ideal Mag Reload Time", IdealMagReloadTime .. " s")
+		end
 
 		State:AddNumber("Cartridge Mass", Cartridge, " kg", 2)
 		State:AddNumber("Projectile Mass", Projectile, " kg", 2)

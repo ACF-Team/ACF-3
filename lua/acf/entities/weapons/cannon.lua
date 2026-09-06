@@ -53,7 +53,6 @@ Weapons.Register("C", {
 	Mass        = 1229,
 	Spread      = 0.08,
 	ScaleFactor = 0.84, -- Corrective factor to account for improperly scaled base models
-	TransferMult = 4, -- Thermal energy transfer rate
 	Round = {
 		MaxLength  = 80,
 		PropLength = 65,

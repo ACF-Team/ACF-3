@@ -11,6 +11,12 @@ local CrewTypes	= ACF.Classes.CrewTypes
 
 local table_empty = {}
 
+--- Loaders and Commanders can't affect a belt fed's reload, so don't let them link
+local function CanLinkGun(_, Gun)
+	if Gun.IsBelted then return false, "Belt fed weapons don't link to loaders!" end
+	return true, "Crew linked."
+end
+
 --- Checks if the number of targets of the class for the crew exceeds the count
 --- Default count is 1
 local function CheckCount(Crew, Class, Count)
@@ -86,6 +92,7 @@ CrewTypes.Register("Loader", {
 	},
 	LinkHandlers = {		-- Custom link handlers for this crew type
 		acf_gun = {			-- Specify a target class for it to be included in the whitelist
+			CanLink = CanLinkGun,
 			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
 			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
 		},
@@ -235,6 +242,7 @@ CrewTypes.Register("Commander", {
 	},
 	LinkHandlers = {
 		acf_gun = {
+			CanLink = CanLinkGun,
 			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") end, -- If linked to multiple guns
 			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_gun") end, -- If linked to multiple guns
 		},

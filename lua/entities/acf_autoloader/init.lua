@@ -56,6 +56,7 @@ end
 -- Arm to gun links
 ACF.RegisterClassPreLinkCheck("acf_autoloader", "acf_gun", function(This, Gun)
 	if IsValid(This.Gun) or Gun.Autoloader then return false, "Autoloader is already linked to that gun." end
+	if Gun.IsBelted then return false, "Belt fed weapons don't link to autoloaders!" end
 	return true
 end)
 
@@ -225,7 +226,8 @@ function ENT:Think()
 	if LinkedToGun and LinkedToCrate then
 		self.EstimatedEfficiency = self:GetReloadEffAuto(Gun, AmmoCrate, true)
 		self.EstimatedReload = ACF.CalcReloadTime(Gun.Caliber, Gun.ClassData, Gun.WeaponData, AmmoCrate.BulletData, Gun) / self.EstimatedEfficiency
-		self.EstimatedReloadMag = ACF.CalcReloadTimeMag(Gun.Caliber, Gun.ClassData, Gun.WeaponData, AmmoCrate.BulletData, Gun) / self.EstimatedEfficiency
+		-- Only guns with a magazine have a meaningful magazine reload
+		self.EstimatedReloadMag = Gun.MagReload and ACF.CalcReloadTimeMag(Gun.Caliber, Gun.ClassData, Gun.WeaponData, AmmoCrate.BulletData, Gun) / self.EstimatedEfficiency or nil
 	end
 
 	self.OverlayErrors.LinkedToGun = not LinkedToGun and "Not linked to a weapon!" or nil
@@ -247,7 +249,9 @@ function ENT:ACF_UpdateOverlayState(State)
 	State:AddNumber("Max Shell Caliber (mm)", self:ACF_GetUserVar("AutoloaderCaliber"))
 	State:AddNumber("Max Shell Length (cm)", self:ACF_GetUserVar("AutoloaderLength"))
 	State:AddNumber("Estimated Reload (s)", math.Round(self.EstimatedReload or 0, 4))
-	State:AddNumber("Estimated Magazine Reload (s)", math.Round(self.EstimatedReloadMag or 0, 4))
+	if self.EstimatedReloadMag then
+		State:AddNumber("Estimated Magazine Reload (s)", math.Round(self.EstimatedReloadMag, 4))
+	end
 end
 
 -- Adv Dupe 2 Related

@@ -11,13 +11,10 @@ Weapons.Register("SL", {
 	Cleanup     = "acf_smokelauncher",
 	DefaultAmmo = "SM",
 	IsScalable  = true,
-	IsBoxed     = true,
 	Spread      = 0.32,
 	Mass        = 3.77,
-	Cyclic      = 600,
-	MagSize     = 1,
+	-- Manually loaded like a cannon: no cyclic rate, no magazine. Reload time keys off the loaded round.
 	ScaleFactor = 0.96, -- Corrective factor to account for improperly scaled base models
-	TransferMult = 4, -- Thermal energy transfer rate
 	LimitConVar = {
 		Name = "_acf_smokelauncher",
 		Amount = 10,
@@ -35,10 +32,6 @@ Weapons.Register("SL", {
 		Base = 40,
 		Min  = 40,
 		Max  = 81,
-	},
-	MagReload = {
-		Min = 10,
-		Max = 15,
 	},
 	BreechConfigs = {
 		MeasuredCaliber = 8.1,

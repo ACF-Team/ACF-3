@@ -14,8 +14,6 @@ Weapons.Register("LAC", {
 	Mass        = 301,
 	Spread      = 0.48,
 	ScaleFactor = 0.81, -- Corrective factor to account for improperly scaled base models
-	ReloadMod 	= 0.5, -- Load time multiplier. Represents the ease of manipulating the weapon's ammunition
-	TransferMult = 20, -- Thermal energy transfer rate
 	CyclicCeilMult = 2, -- How high above base cyclic the gun can be set to
 	Round = {
 		MaxLength  = 32,
@@ -35,14 +33,6 @@ Weapons.Register("LAC", {
 		Base = 40,
 		Min  = 20,
 		Max  = 40,
-	},
-	MagSize = {
-		Min = 250,
-		Max = 100,
-	},
-	MagReload = {
-		Min = 6,
-		Max = 12,
 	},
 	Cyclic = {
 		Min = 600,
