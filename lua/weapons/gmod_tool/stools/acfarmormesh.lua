@@ -149,7 +149,7 @@ if CLIENT then
 		local ThicknessModeHelp = Menu:AddHelp("You can only either edit the thickness or material at a time. Set this to 0 to edit the material again.")
 
 		local function UpdateThicknessModeHelpColor(Value)
-			ThicknessModeHelp:SetColor(tonumber(Value) ~= 0 and Color(255, 255, 0))
+			ThicknessModeHelp:SetColor(tonumber(Value) ~= 0 and Color(255, 0, 0))
 		end
 
 		UpdateThicknessModeHelpColor(GetConVar("acfarmormesh_thickness"):GetFloat())
