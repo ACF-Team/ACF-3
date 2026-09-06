@@ -203,6 +203,11 @@ do -- Serverside settings
 
 		Base:AddSlider("#acf.menu.settings.general.smoke_wind"):               LinkToServerData("SmokeWind")
 			Base:AddHelp("#acf.menu.settings.general.smoke_wind_desc")
+
+		Base:AddSlider("#acf.menu.settings.general.cost_limit_ground"):        LinkToServerData("CostLimitGround")
+			Base:AddHelp("#acf.menu.settings.general.cost_limit_ground_desc")
+		Base:AddSlider("#acf.menu.settings.general.cost_limit_air"):           LinkToServerData("CostLimitAir")
+			Base:AddHelp("#acf.menu.settings.general.cost_limit_air_desc")
 	end)
 
 	ACF.AddServerSettings(51, "#acf.menu.settings.weapons", function(Base)
