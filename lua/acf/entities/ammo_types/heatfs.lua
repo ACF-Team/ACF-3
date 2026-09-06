@@ -15,7 +15,8 @@ function Ammo:OnLoaded()
 		M = true,
 		AL = true,
 		HW = true,
-		SC = true
+		SC = true,
+		SA = true
 	})
 
 	self.MaxStandoffRatio = 0.75

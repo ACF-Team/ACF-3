@@ -26,7 +26,7 @@ Weapons.Register("SA", {
 	Caliber	= {
 		Base = 45,
 		Min  = 20,
-		Max  = 76,
+		Max  = 90,
 	},
 	MagReload = {
 		Min = 3,
@@ -34,7 +34,7 @@ Weapons.Register("SA", {
 	},
 	Cyclic = {
 		Min = 240,
-		Max = 100,
+		Max = 65,
 	},
 	BreechConfigs = {
 		MeasuredCaliber = 7.6,
