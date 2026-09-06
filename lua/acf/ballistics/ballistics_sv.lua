@@ -482,10 +482,8 @@ do -- Terminal ballistics --------------------------
 			Ballistics.DoSpall(Bullet, Trace, HitRes, Bullet.Flight:Length(), DmgInfo)
 		end
 
-		-- Detonate any explosive reactive armor the round struck (guards on kinetic energy internally)
-		if not Bullet.IsSpall and not Bullet.IsCookOff then
-			Ballistics.DoReactiveArmor(Bullet, Trace, DmgInfo)
-		end
+		-- Detonate any explosive reactive armor the round struck (guards on round type and kinetic energy internally)
+		Ballistics.DoReactiveArmor(Bullet, Trace, DmgInfo)
 
 		-- The round punched through the struck convex; mark it transparent so the flight loop's next
 		-- re-trace advances to the convex behind it instead of resolving against this one again.
@@ -593,8 +591,6 @@ do -- Terminal ballistics --------------------------
 		local FragsFormed = SpallEnergy * SpallFragFraction
 		local FragCount = math.Clamp(math.floor(FragsFormed), SpallMinFragCount, SpallMaxFragCount) -- Atleast 1, up to 20 fragments (let's not kill the server)
 
-		print("ACF Spall: entity", Trace.Entity, "fragments", FragCount)
-
 		if FragCount < 1 then return end -- No fragments formed
 
 		local FragMassAvg = RemovedMass / FragCount 	-- Average mass of the fragments (kg)
@@ -673,6 +669,8 @@ do -- Terminal ballistics --------------------------
 	-- armor convex, that convex detonates. The spent convex is zeroed out (becoming transparent to ballistics)
 	-- and its filler is set off as an HE blast at the impact point.
 	function Ballistics.DoReactiveArmor(Bullet, Trace, DmgInfo)
+		if Bullet.IsSpall or Bullet.IsCookOff then return end -- Neither carries a warhead that could set the plate off
+
 		local Entity = Trace.Entity
 		if not IsValid(Entity) then return end
 
@@ -683,6 +681,7 @@ do -- Terminal ballistics --------------------------
 		if not ConvexHits then return end
 
 		local KE = Bullet.Energy and Bullet.Energy.Kinetic or 0
+		print(KE)
 
 		for _, Hit in ipairs(ConvexHits) do
 			local Convex = MeshData.Convexes[Hit.ConvexID]

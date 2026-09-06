@@ -377,6 +377,9 @@ if SERVER then
 					Ballistics.DoSpall(Bullet, TraceRes, JetResult, Speed, JetInfo)
 				end
 
+				-- Detonate any explosive reactive armor the jet struck, same as a kinetic round does in DoRoundImpact
+				Ballistics.DoReactiveArmor(Bullet, TraceRes, JetInfo)
+
 				if JetResult.Kill then
 					ACF.APKill(Ent, Direction, 0, JetInfo)
 				end
