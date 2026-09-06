@@ -116,6 +116,8 @@ local function PrepareSpawnFunctions(ENT, ClassName)
         hook.Run("ACF_OnUpdateEntity", ClassName, self, ClientData, HookArgs)
         ACF.RestoreEntity(self)
 
+        -- NOTE: I am not happy that this has to be called twice. But we need the wire input/outputs to
+        -- be created before post update (for things like fueltank fuel) and after (for things like gearbox left/right brakes)
         self:ACF_SetupWireFunctions()
 
         if self.ACF_PostUpdateEntityData then

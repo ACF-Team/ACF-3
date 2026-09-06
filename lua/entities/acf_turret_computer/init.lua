@@ -60,9 +60,6 @@ do	-- Spawn and Update funcs
 
 		self.NextRun      = Clock.CurTime
 
-		-- Rebuild the wire IO now that the selected computer is known.
-		self:ACF_SetupWireFunctions()
-
 		self:SetNWString("WireName", "ACF " .. self.Name)
 		self:SetNWString("Class", self.Class)
 
