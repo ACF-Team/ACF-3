@@ -967,12 +967,12 @@ e2function number entity:acfTotalAmmoCount()
 	return Count
 end
 
--- Returns the magazine size for an ACF gun
+-- Returns the magazine size for an ACF gun, or the rounds it can currently fire if it has no magazine (belt feds, single-shot)
 e2function number entity:acfMagSize()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	return this.MagSize or 0
+	return this.MagSize or this.CurrentShot or 0
 end
 
 -- Returns the number of rounds left in a magazine for an ACF gun

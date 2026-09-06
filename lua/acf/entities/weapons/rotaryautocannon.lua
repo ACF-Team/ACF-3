@@ -15,8 +15,6 @@ Weapons.Register("RAC", {
 	Mass        = 212,
 	Cyclic      = 2000,
 	ScaleFactor = 1.0, -- Corrective factor to account for improperly scaled base models
-	ReloadMod 	= 0.5, -- Load time multiplier. Represents the ease of manipulating the weapon's ammunition
-	TransferMult = 10, -- Thermal energy transfer rate
 	Round = {
 		MaxLength  = 16,
 		PropLength = 13,
@@ -30,14 +28,6 @@ Weapons.Register("RAC", {
 		Base = 20,
 		Min  = 7.62,
 		Max  = 37,
-	},
-	MagSize = {
-		Min = 450,
-		Max = 150,
-	},
-	MagReload = {
-		Min = 10,
-		Max = 20,
 	},
 	LimitConVar = {
 		Name = "_acf_rotaryautocannon",

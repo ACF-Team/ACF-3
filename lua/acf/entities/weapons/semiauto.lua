@@ -14,8 +14,6 @@ Weapons.Register("SA", {
 	Mass        = 453,
 	MagSize     = 5,
 	ScaleFactor = 1.0, -- Corrective factor to account for improperly scaled base models
-	ReloadMod 	= 0.5, -- Load time multiplier. Represents the ease of manipulating the weapon's ammunition
-	TransferMult = 4, -- Thermal energy transfer rate
 	Round = {
 		MaxLength  = 36,
 		PropLength = 29.25,

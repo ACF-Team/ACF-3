@@ -1951,7 +1951,7 @@ if SERVER then
 		return This.MagReload or 0
 	end
 
-	--- Returns the magazine size for an ACF gun
+	--- Returns the magazine size for an ACF gun, or the rounds it can currently fire if it has no magazine (belt feds, single-shot)
 	-- @server
 	-- @return number The magazine size
 	function ents_methods:acfMagSize()
@@ -1962,7 +1962,7 @@ if SERVER then
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return 0 end
 
-		return This.MagSize or 0
+		return This.MagSize or This.CurrentShot or 0
 	end
 
 	--- Returns the spread for an ACF gun or flechette ammo

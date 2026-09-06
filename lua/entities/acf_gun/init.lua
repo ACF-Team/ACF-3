@@ -48,6 +48,12 @@ local function UpdateTotalAmmo(Entity)
 	Entity.TotalAmmo = Total
 
 	WireLib.TriggerOutput(Entity, "Total Ammo", Total)
+
+	-- Belt feds have no magazine; "shots left" tracks the linked crates, updated here so resupply shows
+	if Entity.IsBelted then
+		Entity.CurrentShot = Total
+		WireLib.TriggerOutput(Entity, "Shots Left", Total)
+	end
 end
 
 -- TODO: Maybe move this logic to crates?
@@ -339,7 +345,7 @@ do -- Spawn and Update functions --------------------------------
 		local Caliber = Weapon and Weapon.Caliber or Data.Caliber
 		local Scale   = Weapon and 1 or (Caliber / Class.Caliber.Base * (Class.ScaleFactor or 1)) -- Set scale to 1 if Weapon exists (non scaled lmao), or relative caliber otherwise
 		local Cyclic  = ACF.GetWeaponValue("Cyclic", Caliber, Class, Weapon)
-		local MagSize = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 1
+		local MagSize = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) -- nil = no magazine
 
 		Entity.ACF.Model = Model
 
@@ -360,7 +366,7 @@ do -- Spawn and Update functions --------------------------------
 		Entity.Caliber      = Caliber
 		Entity.MagReload    = ACF.GetWeaponValue("MagReload", Caliber, Class, Weapon)
 		Entity.IsBelted		= ACF.GetWeaponValue("IsBelted", Caliber, Class, Weapon)
-		Entity.MagSize      = math.floor(MagSize)
+		Entity.MagSize      = MagSize and math.floor(MagSize)
 		Entity.BaseCyclic   = Cyclic and Cyclic
 		Entity.Cyclic       = Entity.BaseCyclic
 		Entity.ReloadTime   = Entity.Cyclic and 60 / Entity.Cyclic or 1
@@ -417,7 +423,7 @@ do -- Spawn and Update functions --------------------------------
 		if Entity.Cyclic then -- Automatics don't change their rate of fire
 			WireLib.TriggerOutput(Entity, "Reload Time", 60 / Entity.Cyclic)
 			WireLib.TriggerOutput(Entity, "Rate of Fire", Entity.Cyclic)
-			WireLib.TriggerOutput(Entity, "Mag Reload Time", Entity.MagReload)
+			WireLib.TriggerOutput(Entity, "Mag Reload Time", Entity.MagReload or 0) -- 0 for belt feds (no magazine)
 		end
 
 		ACF.Activate(Entity, true)
@@ -936,7 +942,7 @@ do -- Metamethods --------------------------------
 				ACF.Overpressure(ENTITY.LocalToWorld(self, SelfTbl.Muzzle) - ENTITY.GetForward(self) * 5, Energy, BulletData.Owner, self, ENTITY.GetForward(self), 30)
 			end
 
-			if SelfTbl.MagSize then -- Mag-fed/Automatically loaded
+			if SelfTbl.MagSize then -- Mag-fed
 				SelfTbl.CurrentShot = SelfTbl.CurrentShot - 1
 
 				if SelfTbl.CurrentShot > 0 then -- Not empty
@@ -944,6 +950,8 @@ do -- Metamethods --------------------------------
 				else -- Reload the magazine
 					self:Load()
 				end
+			elseif SelfTbl.IsBelted then -- Belt-fed: no magazine, chamber from any linked crate
+				self:Chamber() -- CurrentShot tracked by UpdateTotalAmmo
 			else -- Single-shot/Manually loaded
 				SelfTbl.CurrentShot = 0 -- We only have one shot, so shooting means we're at 0
 				self:Chamber()
@@ -1097,7 +1105,8 @@ do -- Metamethods --------------------------------
 						local SelfTbl = ENTITY.GetTable(self)
 						if SelfTbl.BulletData then
 							if SelfTbl.State == "Unloading" then return end -- Don't chamber while unloading
-							if SelfTbl.CurrentShot == 0 then
+							-- Belt feds have no magazine to refill; UpdateTotalAmmo owns their CurrentShot
+							if SelfTbl.CurrentShot == 0 and not SelfTbl.IsBelted then
 								SelfTbl.CurrentShot = math.min(SelfTbl.MagSize or 1, SelfTbl.TotalAmmo)
 							end
 
@@ -1162,12 +1171,7 @@ do -- Metamethods --------------------------------
 
 			self:SetState("Loading")
 
-			if SelfTbl.MagReload then -- Mag-fed/Automatically loaded
-				-- Dynamically adjust magazine size for beltfeds to fit the crate's capacity
-				if Crate.IsBelted then
-					SelfTbl.MagSize = Crate.Ammo
-				end
-
+			if SelfTbl.MagReload then -- Mag-fed
 				Sounds.SendSound(self, "weapons/357/357_reload4.wav", 70, 100, 1)
 
 				WireLib.TriggerOutput(self, "Shots Left", SelfTbl.CurrentShot)
