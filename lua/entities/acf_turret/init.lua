@@ -40,6 +40,13 @@ do -- Random timer crew stuff
 		local RemoteController = Crew.RemoteController
 		if IsValid(RemoteController) and RemoteController:IsActive() then return true, true end
 
+		-- Oscilating turrets (e.g. on the vertical drive, linked to the horizontal ring)
+		local Ancestor = CrewParent.ACF_TurretAncestor
+		while IsValid(Ancestor) do
+			if Ancestor == Turret then return true, true end
+			Ancestor = Ancestor.ACF_TurretAncestor
+		end
+
 		if CrewParent == Turret:GetParent() then -- Shares a parent with the turret
 			local CarriedMass = (Turret.TurretData.TotalMass or 0) + (Turret.ACF.Mass or 0)
 			if CarriedMass <= ACF.LightweightTurretMassLimit then return true, true end
