@@ -116,11 +116,16 @@ local function PrepareSpawnFunctions(ENT, ClassName)
         hook.Run("ACF_OnUpdateEntity", ClassName, self, ClientData, HookArgs)
         ACF.RestoreEntity(self)
 
+        -- NOTE: I am not happy that this has to be called twice. But we need the wire input/outputs to
+        -- be created before post update (for things like fueltank fuel) and after (for things like gearbox left/right brakes)
+        self:ACF_SetupWireFunctions()
+
         if self.ACF_PostUpdateEntityData then
             self:ACF_PostUpdateEntityData(ClientData)
         end
 
         self:ACF_SetupWireFunctions()
+
         ACF.Activate(self, true)
         return true, (self.PrintName or ClassName) .. " updated successfully!"
     end
@@ -268,6 +273,8 @@ function ACF.Entities.AutoRegisterV2(DefineFields, SingleName, PluralName)
         PrepareWiremodFunctions(ENT)
         PrepareSerializationFunctions(ENT, ExpectedClass)
         PrepareSpawnFunctions(ENT, ExpectedClass)
-        ENT.ACF_ClassDef = nil -- Otherwise hot reloading entities completely breaks lol
+        -- TODO: Why would the comment on the bottom be true? Was this the case previously?
+        -- (probably was doing something really dumb I guess)
+        -- ENT.ACF_ClassDef = nil -- Otherwise hot reloading entities completely breaks lol
     end)
 end

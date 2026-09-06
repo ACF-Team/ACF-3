@@ -181,6 +181,11 @@ local function ScopeAmmo(WeaponType)
 
 	Sub  = ACF.Menu.SubContext(AmmoCtx, "AmmoType")
 	Ammo = AmmoCtx:Get("AmmoType")
+
+	if Ammo then
+		Ammo.Weapon = AmmoCtx:Get("Weapon")
+		BulletData  = Ammo:ClientConvert()
+	end
 end
 
 -- Builds a flat snapshot of the current config for the pure round-math helpers (which expect the old

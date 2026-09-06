@@ -245,9 +245,6 @@ do	-- Spawn and Update funcs
 
 		self.ScaledArmor  = (Turret.Armor.Min * (1 - SizePerc)) + (Turret.Armor.Max * SizePerc)
 
-		-- Rebuild wire IO now that the drive type (and its Bearing/Elevation input) is known.
-		self:ACF_SetupWireFunctions()
-
 		self:SetNWString("WireName", "ACF " .. self.Name)
 		self:SetNWString("Class", self.Class)
 
