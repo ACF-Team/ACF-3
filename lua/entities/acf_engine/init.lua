@@ -368,10 +368,6 @@ do -- Spawn and Update functions
 		end
 	end
 
-	function ENT:ACF_PostSpawn()
-		ACF.AugmentedTimer(function(cfg) self:UpdateFuelMod(cfg) end, function() return IsEntityValid(self) end, nil, {MinTime = 0.1, MaxTime = 0.25})
-	end
-
 	ACF.RegisterLinkSource("acf_engine", "FuelTanks")
 	ACF.RegisterLinkSource("acf_engine", "Gearboxes")
 

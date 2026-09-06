@@ -1,6 +1,6 @@
 local ACF             = ACF
 local Clock           = ACF.Utilities.Clock
-local Countermeasures = ACF.Countermeasures
+-- Resolved at call time: this file loads under core/, before entities/countermeasure/ creates the table.
 local Contraptions    = {}
 
 local ENTITY  = FindMetaTable("Entity")
@@ -100,7 +100,7 @@ function ACF.GetEntitiesInCone(Position, Direction, Degrees, Contraption)
 
 		if ACF.LegalChecks and Entity:GetClass() == "acf_baseplate" and Entity.Disabled then continue end
 
-		if Countermeasures.ConeContainsPos(Position, Direction, Degrees, Entity:GetPos()) then
+		if ACF.Countermeasures.ConeContainsPos(Position, Direction, Degrees, Entity:GetPos()) then
 			Result[Entity] = true
 		end
 	end
@@ -144,7 +144,7 @@ function ACF.GetEntitiesInShapes(Shapes, Contraption)
 
 		if ACF.LegalChecks and Entity:GetClass() == "acf_baseplate" and Entity.Disabled then continue end
 
-		Countermeasures.MatchShapes(Result, Entity, Entity:GetPos(), Shapes)
+		ACF.Countermeasures.MatchShapes(Result, Entity, Entity:GetPos(), Shapes)
 	end
 
 	return Result

@@ -93,7 +93,9 @@ end
 --- representation was replaced) and the older RoundProjectile/RoundPropellant fallback below that.
 --- No-ops once RoundLength/PropRatio are already present.
 function ACF.VerifyRoundLengthData(ToolData)
-	if isnumber(ToolData.RoundLength) and isnumber(ToolData.PropRatio) then return end
+	-- Guarding on the value, not just the type: these are declared fields now, so the serializer has
+	-- already stamped their defaults (0) by this point and a type check would always pass.
+	if isnumber(ToolData.RoundLength) and ToolData.RoundLength > 0 then return end
 
 	local Projectile = isnumber(ToolData.Projectile) and ToolData.Projectile or ACF.CheckNumber(ToolData.RoundProjectile, 0)
 	local Propellant = isnumber(ToolData.Propellant) and ToolData.Propellant or ACF.CheckNumber(ToolData.RoundPropellant, 0)
@@ -719,7 +721,10 @@ do -- MARK: Ammo capacity
 			if not Shape then return end
 			if isstring(Shape) then return Shape end
 
-			local Name = Classes.GetTypeName(Shape)
+			-- Callers pass either the shape class or a live instance of it. GetType is defined on the
+			-- class table, so instances inherit it and both cases normalise to the class here.
+			local Class = Shape.GetType and Shape:GetType() or Shape
+			local Name  = Classes.GetTypeName(Class)
 
 			return Name and (string.match(Name, "[^.]+$") or Name)
 		end

@@ -148,7 +148,8 @@ Classes.DefineClass("ACF.Ammunition.HE", "ACF.Ammunition.APHE", function(CLASS, 
 		function CLASS:PlotAmmoGraph(Panel, _, BulletData)
 			local Damage     = ACF.Damage
 			local PenText    = language.GetPhrase("acf.menu.ammo.penetration")
-			local BlastRadius = BulletData.BlastRadius -- Fragments reach zero velocity here; distance shares the same units
+			-- Blast radius is display data, so it lives on GUIData rather than the bullet
+			local BlastRadius = self.GUIData.BlastRadius -- Fragments reach zero velocity here; distance shares the same units
 			local FillerMass  = BulletData.FillerMass
 			local FragMass    = BulletData.ProjMass - FillerMass
 

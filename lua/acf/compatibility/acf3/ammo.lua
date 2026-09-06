@@ -77,8 +77,9 @@ local WeaponFQNTable = {
 -- Round inputs ammo types used to store flat on the dupe/tool data. They now live on the AmmoType
 -- instance; the serializer keeps only the fields the chosen ammo type actually declares.
 local RoundFields = {
-	"Projectile", "Propellant", "FillerRatio", "Flechettes",
-	"HollowRatio", "LinerAngle", "SmokeWPRatio", "Spread", "StandoffRatio",
+	"FillerRatio", "Flechettes", "HollowRatio", "LinerAngle", "SmokeWPRatio",
+	"Spread", "StandoffRatio", "RoundLength", "PropRatio", "CaseScale",
+	"TwoPiece", "TelescopeRatio", "PenFuze", "FuzeDelay", "LinerAngleRatio",
 }
 
 local WeaponFields = {}
@@ -143,6 +144,19 @@ ACF.Entities.RegisterCompatPatch("acf_ammo", 2026062101, function(Data)
 	-- Migrate the legacy flat round inputs onto the ammo type instance's serialized field set.
 	local AmmoData = { Tracer = tobool(Data.Tracer) }
 	for _, K in ipairs(RoundFields) do AmmoData[K] = Data[K] end
+
+	-- Rounds are stored as a total length plus the propellant's share of it. Dupes older than that
+	-- carry the two lengths separately, so fold them here: the serializer only keeps fields the ammo
+	-- type declares, and Projectile/Propellant are no longer among them.
+	-- tonumber, not isnumber: dupes can store these as strings.
+	if (tonumber(AmmoData.RoundLength) or 0) <= 0 then
+		local Projectile = tonumber(Data.Projectile) or tonumber(Data.RoundProjectile) or 0
+		local Propellant = tonumber(Data.Propellant) or tonumber(Data.RoundPropellant) or 0
+		local Total      = Projectile + Propellant
+
+		AmmoData.RoundLength = Total
+		AmmoData.PropRatio   = Total > 0 and (Propellant / Total) or 0
+	end
 
 	local WeaponData = { Caliber = Caliber }
 	for K, V in pairs(WeaponFields) do WeaponData[K] = V(Data[K], Data) end

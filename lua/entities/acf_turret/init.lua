@@ -242,10 +242,10 @@ do	-- Spawn and Update funcs
 
 		-- Whether a Gunner/Commander/Pilot (or component) controls this turret; only matters
 		-- while weaponized (see InputDirection for what happens when uncontrolled)
-		Entity.IsControlled		= false
-		Entity.LastAimInputTime	= 0
-		Entity.LastRequestedDirection = nil
-		Entity.PendingDirection	= nil
+		self.IsControlled		= false
+		self.LastAimInputTime	= 0
+		self.LastRequestedDirection = nil
+		self.PendingDirection	= nil
 
 		-- Any turrets that happen to get parented to this one, either directly or indirectly
 		-- Mass calculation will stop at this, and instead read whatever that turret has calculated
@@ -255,8 +255,8 @@ do	-- Spawn and Update funcs
 		self.DynamicEntities = {}
 
 		-- Whether this turret carries a weapon directly, or any sub-turret below it does
-		Entity.HasDirectWeapon	= false
-		Entity.IsWeaponized		= false
+		self.HasDirectWeapon	= false
+		self.IsWeaponized		= false
 
 		-- Three different mass types to track, all checked differently
 		--[[

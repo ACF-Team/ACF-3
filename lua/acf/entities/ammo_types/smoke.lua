@@ -304,7 +304,7 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function(CLASS, BA
 		end
 
 		-- Ammo menu graph: smoke and WP cloud radius over time.
-		function CLASS:PlotAmmoGraph(Panel, _, BulletData)
+		function CLASS:PlotAmmoGraph(Panel)
 			local Colors = ACF.GraphColors
 
 			Panel:SetYLabel("#acf.menu.ammo.smoke_radius")
@@ -313,14 +313,17 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function(CLASS, BA
 			Panel:SetYSpacing(10)
 			Panel:SetXSpacing(5)
 
-			local WPTime = BulletData.WPLife or 0
-			local SFTime = BulletData.SMLife or 0
+			-- Smoke timings and radii are display data, so they live on GUIData rather than the bullet
+			local GUIData = self.GUIData
 
-			local MinWP = BulletData.WPRadiusMin or 0
-			local MaxWP = BulletData.WPRadiusMax or 0
+			local WPTime = GUIData.WPLife or 0
+			local SFTime = GUIData.SMLife or 0
 
-			local MinSF = BulletData.SMRadiusMin or 0
-			local MaxSF = BulletData.SMRadiusMax or 0
+			local MinWP = GUIData.WPRadiusMin or 0
+			local MaxWP = GUIData.WPRadiusMax or 0
+
+			local MinSF = GUIData.SMRadiusMin or 0
+			local MaxSF = GUIData.SMRadiusMax or 0
 
 			Panel:SetXRange(0, math.max(WPTime, SFTime) * 1.1)
 			Panel:SetYRange(0, math.max(MaxWP, MaxSF) * 1.1)

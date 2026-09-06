@@ -291,6 +291,13 @@ do -- Spawn/Update/Remove
 		Entity.CrateProjectilesY = Data.CrateProjectilesY
 		Entity.CrateProjectilesZ = Data.CrateProjectilesZ
 
+		-- Short shape name ("Cylinder"), which is what the drum layout registry is keyed on and what
+		-- gets networked to the client. The user var itself holds the ContainerShapes class instance.
+		local ShapeInst = Entity:ACF_GetUserVar("Shape")
+		local ShapeName = ShapeInst and ShapeInst.GetType and Classes.GetTypeName(ShapeInst:GetType())
+
+		Entity.Shape = ShapeName and (string.match(ShapeName, "[^.]+$") or ShapeName) or "Box"
+
 		Entity.Name       = Name or WeaponName .. " " .. Ammo.Name
 		Entity.ShortName  = ShortName or WeaponShort .. " " .. (Ammo.ID or "")
 		Entity.EntType    = "Ammo Crate"

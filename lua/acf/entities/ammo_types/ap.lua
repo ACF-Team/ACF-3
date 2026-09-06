@@ -312,7 +312,8 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 			local Colors  = ACF.GraphColors
 			local PenText = language.GetPhrase("acf.menu.ammo.penetration")
 
-			Panel:SetYRange(0, math.ceil(BulletData.MaxPen or 0) * 1.1)
+			-- MaxPen is display data, so it lives on GUIData rather than the bullet
+			Panel:SetYRange(0, math.ceil(self.GUIData.MaxPen or 0) * 1.1)
 
 			Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.300m"), 300, self:GetRangedPenetration(BulletData, 300), Colors.Blue)
 			Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.800m"), 800, self:GetRangedPenetration(BulletData, 800), Colors.Blue)
