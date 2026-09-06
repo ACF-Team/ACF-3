@@ -146,6 +146,14 @@ if CLIENT then
 		local ThicknessSlider = Menu:AddSlider("Thickness", ThicknessMin, ThicknessMax, 0)
 		ThicknessSlider:SetConVar("acfarmormesh_thickness")
 		Menu:AddHelp("If set to a non zero value, left/right click will set/get the thickness of the primitive entity you are looking at, instead of changing its material.")
+		local ThicknessModeHelp = Menu:AddHelp("You can only either edit the thickness or material at a time. Set this to 0 to edit the material again.")
+
+		local function UpdateThicknessModeHelpColor(Value)
+			ThicknessModeHelp:SetColor(tonumber(Value) ~= 0 and Color(255, 255, 0))
+		end
+
+		UpdateThicknessModeHelpColor(GetConVar("acfarmormesh_thickness"):GetFloat())
+		cvars.AddChangeCallback("acfarmormesh_thickness", function(_, _, New) UpdateThicknessModeHelpColor(New) end, "ACF_ArmorMeshMenu_ThicknessHelp")
 
 		local SphereRadiusSlider = Menu:AddSlider("#tool.acfarmormesh.sphere_search_radius", SphereRadiusMin, SphereRadiusMax, 0)
 		SphereRadiusSlider:SetConVar("acfarmormesh_sphere_radius")
