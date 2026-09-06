@@ -107,6 +107,7 @@ function Damage.getBulletDamage(Bullet, Trace)
 		local ConvexHits = ConvexHit and { ConvexHit } or ACF.GetConvexHits(Entity, Trace.HitPos, NormDir)
 
 		local Penetration = Bullet:GetPenetration()
+		local Area        = Bullet.DamageArea or Bullet.ProjArea -- HEAT bores its channel with the jet, which is far narrower than the shell that carried it
 		local Thickness, Angle
 		local HitPos = Trace.HitPos
 		if #ConvexHits > 0 then
@@ -124,7 +125,7 @@ function Damage.getBulletDamage(Bullet, Trace)
 
 				Thickness = Thickness + Effective
 				Budget    = Budget - Consumed
-				Hits[#Hits + 1] = { ConvexID = Hit.ConvexID, Volume = Hit.GeoThick * Frac * 0.1 * Bullet.ProjArea / ACF.InchToCmCu } -- (mm)(mm to cm)(cm^2) = cm^3, then cm^3 to in^3
+				Hits[#Hits + 1] = { ConvexID = Hit.ConvexID, Volume = Hit.GeoThick * Frac * 0.1 * Area / ACF.InchToCmCu } -- (mm)(mm to cm)(cm^2) = cm^3, then cm^3 to in^3
 			end
 
 			Angle = 0 -- GeoThick already accounts for obliquity
@@ -136,7 +137,7 @@ function Damage.getBulletDamage(Bullet, Trace)
 			Angle     = ACF.GetHitAngle(Trace, Bullet.Flight)
 		end
 
-		DmgResult:SetArea(Bullet.ProjArea)
+		DmgResult:SetArea(Area)
 		DmgResult:SetPenetration(Penetration)
 		DmgResult:SetThickness(Thickness)
 		DmgResult:SetAngle(Angle)

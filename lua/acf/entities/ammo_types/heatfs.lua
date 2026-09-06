@@ -129,6 +129,9 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 		Data.JetAvgVel	  	= _JetAvgVel
 	end
 
+	-- Jet's cross-sectional area (cm^2), same role as ProjArea for a kinetic round.
+	Data.JetArea = (Data.JetMass / ACF.CopperDensity) / (Data.BreakupDist * 100)
+
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V
 	end
