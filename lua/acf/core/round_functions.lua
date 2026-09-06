@@ -1,61 +1,59 @@
 local ACF      = ACF
 local Classes  = ACF.Classes
 local math     = math
+local isstring = isstring
 local MM_TO_CM = ACF.MmToInch * ACF.InchToCm -- Millimeters to centimeters
 
 
---- Ceiling for ToolData.CaseScale: the widest a class lets a round's case neck out past its projectile
+--- Ceiling for a round's CaseScale: the widest a class lets its case neck out past the projectile
 function ACF.GetMaxCaseScale(Class, Weapon)
 	local Round = (Weapon and Weapon.Round) or (Class and Class.Round)
 
 	return (Round and Round.CaseScale) or ACF.AmmoCaseScale
 end
 
-local function GetWeaponSpecs(ToolData)
-	local Source = Classes[ToolData.Destiny]
-	local Class  = Classes.GetGroup(Source, ToolData.Weapon)
+local function GetClassWeaponSpecs(Class, Caliber)
+	local Round = Class.Round
+	if not Round then return end
 
-	if not Class then return end
+	-- Scalable guns expose a Caliber MENU_FIELD (for bounds) and CaliberLimits. Fixed-caliber weapons
+	-- (missiles) instead carry a plain Class.Caliber with their Round authored at that size, so fall
+	-- back to it (Base == Caliber => Scale 1); grouped legacy weapons may only have BaseCaliber.
+	local Field   = Class.GetType and Classes.GetTypeFieldByName(Class, "Caliber")
+	local Bounds  = Field and Field.Options or {}
+	local Limits  = Class.CaliberLimits
+	local Base    = (Limits and Limits.Base) or Class.BaseCaliber or Class.Caliber or 1
+	-- Caliber bounds come from CaliberLimits; the Caliber MENU_FIELD only carries a Default (no Min/Max),
+	-- so falling back to Bounds here would clamp scalable weapons to [Base, Base] and ignore their caliber.
+	local Min     = (Limits and Limits.Min) or Bounds.Min or Base
+	local Max     = (Limits and Limits.Max) or Bounds.Max or Base
+	Caliber       = math.Clamp(tonumber(Caliber) or Base, Min, Max)
+	local Scale   = Caliber / Base
 
-	local Result = {
-		Caliber     = true,
-		MaxLength   = true,
-		PropLength  = true,
-		ProjLength  = true,
-		FillerRatio = true,
+	return {
+		Caliber    = Caliber,
+		MaxLength  = Round.MaxLength * Scale,
+		PropLength = Round.PropLength * Scale,
+		ProjLength = Round.ProjLength and Round.ProjLength * Scale,
+		Efficiency = Round.Efficiency,
+		MaxCaseScale = ACF.GetMaxCaseScale(Class),
 	}
-
-	if not Class.IsScalable then
-		local Weapon = Source.GetItem(Class.ID, ToolData.Weapon)
-		local Round  = Weapon.Round
-
-		Result.Caliber      = Weapon.Caliber
-		Result.MaxLength    = Round.MaxLength
-		Result.PropLength   = Round.PropLength
-		Result.ProjLength   = Round.ProjLength
-		Result.Efficiency   = Round.Efficiency
-		Result.MaxCaseScale = ACF.GetMaxCaseScale(Class, Weapon)
-	else
-		local Bounds  = Class.Caliber
-		local Round   = Class.Round
-		local Caliber = math.Clamp(ToolData.Caliber or Bounds.Base, Bounds.Min, Bounds.Max)
-		local Scale   = Caliber / Bounds.Base
-		local ProjLen = Round.ProjLength
-
-		Result.Caliber      = Caliber
-		Result.MaxLength    = Round.MaxLength * Scale
-		Result.PropLength   = Round.PropLength * Scale
-		Result.ProjLength   = ProjLen and ProjLen * Scale
-		Result.Efficiency   = Round.Efficiency
-		Result.MaxCaseScale = ACF.GetMaxCaseScale(Class)
-	end
-
-	return Result
 end
 
-function ACF.RoundBaseGunpowder(ToolData, Data)
-	local Specs   = GetWeaponSpecs(ToolData)
+-- Ammo is the ammo-type instance: it carries the round inputs (Projectile/Propellant/Tracer/...), a
+-- back-reference to its weapon instance (Ammo.Weapon), and the computed round state in Ammo.BulletData
+-- (flight/round data) + Ammo.GUIData (menu bounds/display). BaseConvert pre-seeds Ammo.BulletData with
+-- any per-type factors (ProjScale/PropScale/LengthAdj) before calling this.
+function ACF.RoundBaseGunpowder(Ammo)
+	local Data    = Ammo.BulletData
 	local GUIData = {}
+	Ammo.GUIData  = GUIData
+
+	local Weapon  = Ammo.Weapon
+	-- Weapon is a V2 weapon instance (has GetType) for guns, or a grouped/shim class table for the
+	-- not-yet-V2 missile/piledriver systems.
+	local Class   = Weapon and (Weapon.GetType and Weapon:GetType() or Weapon)
+	local Specs   = Class and GetClassWeaponSpecs(Class, Weapon.Caliber)
 
 	if not Specs then return Data, GUIData end
 
@@ -85,7 +83,7 @@ function ACF.RoundBaseGunpowder(ToolData, Data)
 	GUIData.MinCaseScale   = 1
 	GUIData.MaxCaseScale   = Data.MaxCaseScale
 
-	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
+	ACF.UpdateRoundSpecs(Ammo)
 
 	return Data, GUIData
 end
@@ -109,15 +107,16 @@ end
 --- 0-1) are the authoritative state -- ProjLength/PropLength below are derived from them, and are
 --- the hook point for future mechanics (e.g. telescoping projectiles) that need ProjLength/PropLength
 --- to diverge from a simple RoundLength*(1-PropRatio)/RoundLength*PropRatio split.
-function ACF.UpdateRoundSpecs(ToolData, Data, GUIData, CanTelescope)
-	GUIData = GUIData or Data
+function ACF.UpdateRoundSpecs(Ammo)
+	local Data    = Ammo.BulletData
+	local GUIData = Ammo.GUIData
 
-	Data.Tracer = ToolData.Tracer and math.Round(Data.Caliber * 0.15, 2) or 0
-	Data.TwoPiece = ToolData.TwoPiece or false
+	Data.Tracer   = Ammo.Tracer and math.Round(Data.Caliber * 0.15, 2) or 0
+	Data.TwoPiece = Ammo.TwoPiece or false
 
 	-- Defaults to 1 so pre-slider dupes aren't silently buffed, matching where AddSlider seeds the var
 	local MaxCaseScale = Data.MaxCaseScale or ACF.AmmoCaseScale
-	local CaseScale    = math.Clamp(ToolData.CaseScale or 1, 1, MaxCaseScale)
+	local CaseScale    = math.Clamp(Ammo.CaseScale or 1, 1, MaxCaseScale)
 
 	Data.CaseScale    = CaseScale
 	Data.CaseDiameter = Data.Caliber * CaseScale -- Widest point of the round, cased or not
@@ -128,7 +127,7 @@ function ACF.UpdateRoundSpecs(ToolData, Data, GUIData, CanTelescope)
 	end
 
 	local MinLength   = GUIData.MinProjLength + GUIData.MinPropLength
-	local RoundLength = math.Clamp(ToolData.RoundLength or 0, MinLength, GUIData.MaxRoundLength)
+	local RoundLength = math.Clamp(Ammo.RoundLength or 0, MinLength, GUIData.MaxRoundLength)
 
 	-- RatioMax is measured against MaxRoundLength, not RoundLength, so the propellant fraction is a
 	-- per-class constant rather than one that climbs as the round is shortened. Dividing the class's
@@ -136,12 +135,13 @@ function ACF.UpdateRoundSpecs(ToolData, Data, GUIData, CanTelescope)
 	-- leaving a zero-length projectile and a zero ProjMass for MuzzleVelocity and DragCoef to divide by.
 	local RatioMin = math.max(0, 1 - GUIData.MaxProjLength / RoundLength)
 	local RatioMax = math.min(1, GUIData.MaxPropLength / GUIData.MaxRoundLength)
-	local PropRatio = math.Clamp(ToolData.PropRatio or 0, RatioMin, RatioMax)
+	local PropRatio = math.Clamp(Ammo.PropRatio or 0, RatioMin, RatioMax)
 
 	local PropLength = math.Round(RoundLength * PropRatio, 2)
 
-	-- TelescopeRatio lets the projectile bore into the propellant, gated by CanTelescope so a leftover value from APFSDS doesn't leak into other ammo types sharing this ToolData.
-	local TelescopeRatio  = CanTelescope and math.Clamp(ToolData.TelescopeRatio or 0, 0, 1) or 0
+	-- TelescopeRatio lets the projectile bore into the propellant. Only types that opt in via
+	-- CanTelescope have the field, so anything else reads as 0.
+	local TelescopeRatio  = Ammo.CanTelescope and math.Clamp(Ammo.TelescopeRatio or 0, 0, 1) or 0
 	local BaseProjLength  = RoundLength * (1 - PropRatio)
 	local TelescopeLength = math.Round(math.min(PropLength * TelescopeRatio, GUIData.MaxProjLength - BaseProjLength), 2)
 	local ProjLength      = math.Round(BaseProjLength + TelescopeLength, 2)
@@ -202,50 +202,50 @@ function ACF.Kinetic(Speed, Mass)
 	}
 end
 
-local Weaponry = {
-	Piledrivers = Classes.Piledrivers,
-	Missiles    = Classes.Missiles,
-	Weapons     = Classes.Weapons,
+-- The weapon family a round belongs to, kept as a plain string on ToolData. Classes are keyed by
+-- fully qualified name now, so the family is read off the FQN root instead of a registry table.
+local Destinies = {
+	["ACF.Guns"]        = "Weapons",
+	["ACF.Missiles"]    = "Missiles",
+	["ACF.Piledrivers"] = "Piledrivers",
 }
-
--- In case you might want to add more
-function ACF.AddWeaponrySource(Class)
-	if not Class then return end
-	if not Classes[Class] then return end
-
-	Weaponry[Class] = Classes[Class]
-end
-
-function ACF.GetWeaponrySources()
-	local Result = {}
-
-	for K, V in pairs(Weaponry) do
-		Result[K] = V
-	end
-
-	return Result
-end
 
 function ACF.FindWeaponrySource(ID)
 	if not ID then return end
 
-	for Key, Source in pairs(Weaponry) do
-		if Classes.GetGroup(Source, ID) then
-			return Key, Source
+	local Class = Classes.GetTypeByName(ID)
+	local Name  = Class and Classes.GetTypeName(Class) or ID
+
+	for Root, Destiny in pairs(Destinies) do
+		if Name == Root or Name:sub(1, #Root + 1) == Root .. "." then
+			return Destiny, Root
 		end
 	end
 end
 
+-- changes here will be automatically reflected in the armor properties tool
+function ACF.CalcArmor(Area, Ductility, Mass)
+	return (Mass * 1000 / Area / 0.78) / (1 + Ductility) ^ 0.5 * ACF.ArmorMod
+end
+
+local BlacklistCount = 0
+-- This is suboptimal. It works similarly to how engines do iirc for performance data, but still...
+-- TODO: Redo this as to be dynamic? Is that possible?
 function ACF.GetWeaponBlacklist(Whitelist)
 	local Result = {}
 
-	for _, Source in pairs(Weaponry) do
-		for ID in pairs(Source.GetEntries()) do
-			if not Whitelist[ID] then
-				Result[ID] = true
+	BlacklistCount = BlacklistCount + 1
+	local HookName = "ACF Weapon Blacklist " .. BlacklistCount
+
+	hook.Add("ACF_OnLoadAddon", HookName, function()
+		for _, TypeFQN in ipairs(Classes.GetSubtypeFQNs("ACF.Weapons.BaseWeapon")) do
+			if not Whitelist[TypeFQN] then
+				Result[TypeFQN] = true
 			end
 		end
-	end
+
+		hook.Remove("ACF_OnLoadAddon", HookName)
+	end)
 
 	return Result
 end
@@ -300,7 +300,7 @@ function ACF.GetWeaponValue(Key, Caliber, Class, Weapon)
 	if not istable(Values) then return Values end
 	if not isnumber(Caliber) then return end
 
-	local Bounds  = Class.Caliber
+	local Bounds  = Class.CaliberLimits
 	local Percent = (Caliber - Bounds.Min) / (Bounds.Max - Bounds.Min)
 
 	return Lerp(Percent, Values.Min, Values.Max)
@@ -352,9 +352,8 @@ do -- MARK: Ammo capacity
 	ACF.GetModelDimensions = GetModelDimensions
 
 	local function GetRoundProperties(Class, ToolData, BulletData)
-		local Weapon  = Class.Lookup and Class.Lookup[ToolData.Weapon]
-		local Caliber = Weapon and Weapon.Caliber or ToolData.Caliber
-		local Round   = Weapon and Weapon.Round or Class.Round
+		local Caliber = ToolData.Caliber
+		local Round   = Class.Round
 		local Length, Diameter = GetModelDimensions(Round)
 
 		if Length then
@@ -715,14 +714,24 @@ do -- MARK: Ammo capacity
 			CylinderVertical = Vertical,
 		}
 
-		--- True if the given ammo shape is a drum of any orientation.
-		function ACF.IsDrumShape(Shape)
-			return ACF.DrumLayouts[Shape] ~= nil
+		--- Resolves a container shape class (or a plain shape name) to its short name.
+		local function ShapeName(Shape)
+			if not Shape then return end
+			if isstring(Shape) then return Shape end
+
+			local Name = Classes.GetTypeName(Shape)
+
+			return Name and (string.match(Name, "[^.]+$") or Name)
 		end
 
-		--- Returns the drum layout for an ammo shape, or nil for non-drum shapes.
+		--- True if the given container shape is a drum of any orientation.
+		function ACF.IsDrumShape(Shape)
+			return ACF.DrumLayouts[ShapeName(Shape)] ~= nil
+		end
+
+		--- Returns the drum layout for a container shape, or nil for non-drum shapes.
 		function ACF.GetDrumLayout(Shape)
-			return ACF.DrumLayouts[Shape]
+			return ACF.DrumLayouts[ShapeName(Shape)]
 		end
 
 		function ACF.GetDrumCrateSizeFromProjectileCounts(primary, numStacks, Class, ToolData, BulletData, hexPack, Shape)

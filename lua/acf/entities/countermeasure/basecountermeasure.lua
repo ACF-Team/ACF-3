@@ -1,0 +1,1 @@
+ACF.Classes.DefineClass("ACF.Countermeasures.BaseCountermeasure", function() end)

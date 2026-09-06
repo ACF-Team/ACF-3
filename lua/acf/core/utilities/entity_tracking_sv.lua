@@ -1,6 +1,6 @@
 local ACF             = ACF
 local Clock           = ACF.Utilities.Clock
-local Countermeasures = ACF.Classes.Countermeasures
+local Countermeasures = ACF.Countermeasures
 local Contraptions    = {}
 
 local ENTITY  = FindMetaTable("Entity")

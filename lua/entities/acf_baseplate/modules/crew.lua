@@ -7,7 +7,7 @@ function ENT:UpdateDriverMod()
     local Sum, Count = Sum1 + Sum2, Count1 + Count2
     local Val = (Count > 0) and (Sum / Count) or 0
     self.DriverCrewMod = (Val >= ACF.DriverEfficiencyThreshold) and 1 or ACF.CrewFallbackCoef
-    if self:ACF_GetUserVar("BaseplateType").Name == "Recreational" then
+    if self:ACF_GetUserVar("BaseplateType"):GetType() == ACF.Classes.GetTypeByName("ACF.Baseplates.Recreational") then
         self.DriverCrewMod = 1 -- Recreational baseplates are meant to not require crew
     end
     return self.DriverCrewMod

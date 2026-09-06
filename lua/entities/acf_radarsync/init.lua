@@ -4,6 +4,7 @@ AddCSLuaFile("shared.lua")
 include("shared.lua")
 
 local ACF         = ACF
+local Classes     = ACF.Classes
 local Contraption = ACF.Contraption
 local Damage      = ACF.Damage
 local Sounds      = ACF.Utilities.Sounds
@@ -183,7 +184,7 @@ end
 -- DetectMissiles settings, so a radar that can't see missiles never contributes to missile detection here
 -- (and likewise for a radar that can't see contraptions); mirrors the per-radar gating in radar.lua
 local function RunBatch(Entity, GroupRadars)
-	local Countermeasures = ACF.Classes.Countermeasures
+	local Countermeasures = ACF.Countermeasures
 	local ContraptionShapes = {}
 	local MissileShapes = {}
 
@@ -344,86 +345,30 @@ end
 
 --===============================================================================================--
 
-do -- Spawn and Update functions
-	local Classes    = ACF.Classes
-	local WireIO     = ACF.Utilities.WireIO
-	local Entities   = Classes.Entities
-	local Components = Classes.Components
-	local Inputs     = {}
+ACF.RegisterLinkSource("acf_radarsync", "Radars")
 
-	local Outputs = {
-		"Detected (Returns the amount of targets detected across all linked radars.)",
-		"ClosestDistance (Returns the distance in inches of the closest target detected.)",
-		"IDs (Returns a list of IDs from all the detected targets.) [ARRAY]",
-		"Owner (Returns a list of owner names from all the detected targets.) [ARRAY]",
-		"Position (Returns a list of position vectors from all the detected targets.) [ARRAY]",
-		"Velocity (Returns a list of velocity vectors from all the detected targets.) [ARRAY]",
-		"Distance (Returns a list of distances from all the detected targets.) [ARRAY]",
-		"Size (Returns a list of diameters, in inches, of all the detected targets.) [ARRAY]",
-		"Type (Returns a list of target types for all detected targets.) [ARRAY]",
-		"Sensor (Returns a list of the linked radar entities that detected each target, matching the other arrays by index.) [ARRAY]",
-		"Linked Radars (Returns the amount of currently linked radars.)",
-		"Clk (Returns engine.TickCount at the moment of this synchronizer's last batch update.)",
-		"Entity (The synchronizer itself.) [ENTITY]"
-	}
+--===============================================================================================--
+-- Spawning and Updating
+--===============================================================================================--
 
-	local function UpdateRadarSync(Entity, Data, Class, Item)
-		Entity.ACF = Entity.ACF or {}
+local SyncClass = "ACF.Components.RadarSync"
 
-		Contraption.SetModel(Entity, Item.Model)
+do -- Spawning
+	function ENT:ACF_PreSpawn()
+		self.ACF = {}
 
-		Entity:PhysicsInit(SOLID_VPHYSICS)
-		Entity:SetMoveType(MOVETYPE_VPHYSICS)
+		local Class = Classes.GetTypeByName(SyncClass)
 
-		for _, V in ipairs(Entity.DataStore) do
-			Entity[V] = Data[V]
-		end
-
-		Entity.Name      = Item.Name
-		Entity.ShortName = Item.ID
-		Entity.ClassType = Class.ID
-		Entity.ClassData = Class
-		Entity.SoundPath = Class.Sound or ACF.DefaultRadarSound
-		Entity.Origin    = Vector()
-
-		WireIO.SetupInputs(Entity, Inputs, Data, Class, Item)
-		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Item)
-
-		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
-
-		ACF.Activate(Entity, true)
-
-		Contraption.SetMass(Entity, Item.Mass)
+		Contraption.SetModel(self, Class.Model)
 	end
 
-	function ACF.MakeRadarSync(Player, Pos, Angle, Data)
-		local Class = Classes.GetGroup(Components, "RadarSync")
-		local Item = Class.Lookup["RadarSync-Item"]
-		local Limit = Class.LimitConVar.Name
-
-		if not Player:CheckLimit(Limit) then return false end
-
-		local CanSpawn = hook.Run("ACF_PreSpawnEntity", "acf_radarsync", Player, Data, Class, Item)
-		if CanSpawn == false then return false end
-
-		local Sync = ents.Create("acf_radarsync")
-
-		if not IsValid(Sync) then return end
-
-		Sync:SetAngles(Angle)
-		Sync:SetPos(Pos)
-		Sync:Spawn()
-
-		Player:AddCleanup("acf_radarsync", Sync)
-		Player:AddCount(Limit, Sync)
-
-		Sync.Radars       = {}
-		Sync.RateGroups   = {}
-		Sync.BatchResults = {}
-		Sync.TargetCount  = 0
-		Sync.Targets      = {}
-		Sync.DataStore    = Entities.GetArguments("acf_radarsync")
-		Sync.TargetInfo   = {
+	function ENT:ACF_OnSpawn()
+		self.Radars       = {}
+		self.RateGroups   = {}
+		self.BatchResults = {}
+		self.TargetCount  = 0
+		self.Targets      = {}
+		self.TargetInfo   = {
 			ID = {},
 			Owner = {},
 			Position = {},
@@ -434,40 +379,38 @@ do -- Spawn and Update functions
 			Sensor = {}
 		}
 
-		UpdateRadarSync(Sync, Data, Class, Item)
+		ActiveSyncs[self] = true
 
-		ActiveSyncs[Sync] = true
+		TimerCreate("ACF RadarSync Clock " .. self:EntIndex(), 3, 0, function()
+			if not IsValid(self) then return end
 
-		hook.Run("ACF_OnSpawnEntity", "acf_radarsync", Sync, Data, Class, Item)
-
-		duplicator.ClearEntityModifier(Sync, "mass")
-
-		TimerCreate("ACF RadarSync Clock " .. Sync:EntIndex(), 3, 0, function()
-			if not IsValid(Sync) then return end
-
-			CheckDistantLinks(Sync, "Radars")
+			CheckDistantLinks(self, "Radars")
 		end)
-
-		return Sync
 	end
+end
 
-	Entities.Register("acf_radarsync", ACF.MakeRadarSync)
+do -- Updating
+	function ENT:ACF_PostUpdateEntityData()
+		local Class = Classes.GetTypeByName(SyncClass)
 
-	ACF.RegisterLinkSource("acf_radarsync", "Radars")
+		Contraption.SetModel(self, Class.Model)
 
-	function ENT:Update(Data)
-		local Class = Classes.GetGroup(Components, "RadarSync")
-		local Item = Class.Lookup["RadarSync-Item"]
+		self:PhysicsInit(SOLID_VPHYSICS)
+		self:SetMoveType(MOVETYPE_VPHYSICS)
 
-		ACF.SaveEntity(self)
+		self.Name      = Class.Name
+		self.ShortName = Class.ID
+		self.EntType   = Class.Name
+		self.ClassType = Class.ID
+		self.ClassData = Class
+		self.SoundPath = Class.Sound or ACF.DefaultRadarSound
+		self.Origin    = Vector()
 
-		UpdateRadarSync(self, Data, Class, Item)
+		self:SetNWString("WireName", "ACF " .. self.Name)
 
-		ACF.RestoreEntity(self)
+		-- ACF.Activate(self, true) is invoked automatically by ACF_UpdateEntityData after this.
 
-		hook.Run("ACF_OnUpdateEntity", "acf_radarsync", self, Data, Class, Item)
-
-		return true, "Radar synchronizer updated successfully!"
+		Contraption.SetMass(self, Class.Mass)
 	end
 end
 

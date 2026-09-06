@@ -33,7 +33,7 @@ function EFFECT:Init(Data)
 		local Size = (Filler + WPFiller) * 0.03
 
 		if Size > 0 then
-			local Type = GetIndex("SM")
+			local Type = GetIndex("ACF.Ammunition.SM")
 
 			util.DecalEx(GetDecal(Type), Impact.Entity, Impact.HitPos, Impact.HitNormal, White, Size, Size)
 		end

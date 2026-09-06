@@ -8,7 +8,7 @@ local DrawLine = surface.DrawLine
 local DrawOutlinedRect = surface.DrawOutlinedRect
 local DrawCircle = surface.DrawCircle
 
-local AmmoTypes    = ACF.Classes.AmmoTypes
+local Classes      = ACF.Classes
 
 local TraceLine = util.TraceLine
 local CurTime = CurTime
@@ -33,7 +33,7 @@ return function(State)
         Ent.PrimaryAmmoByName = Ent.PrimaryAmmoByName or {}
         local Ammo = Ent.PrimaryAmmoByName[AmmoName]
         if not Ammo then
-            local IconName = AmmoTypes.Get(RoundID).SpawnIcon -- Something bad has happened if this doesn't work
+            local IconName = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", RoundID).SpawnIcon -- Something bad has happened if this doesn't work
             Ammo = {Name = AmmoName, RoundID = RoundID, MaxPen = MaxPen, Material = Material(IconName), Count = 0}
             Ent.PrimaryAmmoByName[AmmoName] = Ammo
 
@@ -190,6 +190,17 @@ return function(State)
     local white = Color(255, 255, 255, 255)
     local dimmed = Color(150, 150, 150, 255)
     local shade = Color(0, 0, 0, 200)
+
+    local CachedHUDMaterialPath
+    local CachedHUDMaterial
+    local function GetHUDMaterial(Path)
+        if Path ~= CachedHUDMaterialPath then
+            CachedHUDMaterialPath = Path
+            CachedHUDMaterial = Material(Path)
+        end
+        return CachedHUDMaterial
+    end
+
     hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
         if not IsValid(State.MyController) then return end
 
@@ -207,6 +218,17 @@ return function(State)
         SetDrawColor( Col )
 
         if State.MyController:GetDisableAIOHUD() then return end -- Disable hud if not enabled
+
+        -- If a HUD material is set, draw it as an overlay and skip building the rest of the HUD
+        local HUDMaterialPath = State.MyController:GetHUDMaterial()
+        if HUDMaterialPath ~= "" then
+            local Mat = GetHUDMaterial(HUDMaterialPath)
+            local w, h = Mat:Width() * Scale, Mat:Height() * Scale
+            surface.SetMaterial(Mat)
+            surface.SetDrawColor(Col)
+            surface.DrawTexturedRect(x - w / 2, y - h / 2, w, h)
+            return
+        end
 
         local Font = GetFont(Scale)
 

@@ -1,6 +1,22 @@
 local Clock		= ACF.Utilities.Clock
 local Classes     = ACF.Classes
-local Racks = ACF.Classes.Racks
+
+-- Racks/missiles are V2 classes addressed by short id (FQN suffix, or CLASS.ID for missile groups).
+local function GetRackClass(ID)
+	local Direct = Classes.GetSubtypeByName("ACF.Racks.BaseRack", ID)
+	if Direct then return Direct end
+	for _, Class in ipairs(Classes.GetSubtypesAsList("ACF.Racks.BaseRack")) do
+		if Classes.GetTypeName(Class):match("[^.]+$") == ID then return Class end
+	end
+end
+
+local function GetMissileClass(ID)
+	local Direct = Classes.GetSubtypeByName("ACF.Missiles.BaseMissile", ID)
+	if Direct then return Direct end
+	for _, Class in ipairs(Classes.GetSubtypesAsList("ACF.Missiles.BaseMissile")) do
+		if Class.ID == ID or Classes.GetTypeName(Class):match("[^.]+$") == ID then return Class end
+	end
+end
 local Queued	= {}
 
 include("shared.lua")
@@ -155,13 +171,13 @@ do	-- Overlay/networking
 			p1, p1 + (-dir + right) * 5)
 
 		-- Visualize breech location
-		local RackClassData = Racks.Get(self:GetNWString("ACF_Class"))
+		local RackClassData = GetRackClass(self:GetNWString("ACF_Class"))
 		if not RackClassData then return end
 
 		local IdName	  		= self:GetNWString("ACF_MissileClass")
 		if not IdName or IdName == "" then return end
-		local IdGroup     		= Classes.GetGroup(Classes.Missiles, IdName)
-		local MissileClassData  = IdGroup.Lookup[IdName]
+		local MissileClassData  = GetMissileClass(IdName)
+		if not MissileClassData then return end
 
 		if RackClassData.BreechConfigs then
 			local BreechIndex = self:GetNW2Int("BreechIndex", 1)

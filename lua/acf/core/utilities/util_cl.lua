@@ -142,7 +142,7 @@ do -- Panel helpers
 		if GlobalID then
 			Menu = ACF[GlobalID]
 
-			-- MARCH: Adjusted this to remove the old panel and recreate it, rather than calling ClearAllTemporal/ClearAll
+			-- MARCH: Adjusted this to remove the old panel and recreate it, rather than calling ClearAll
 			-- Because otherwise auto-refresh doesn't work.
 			-- If that breaks something else sorry, but we need something that allows auto-refresh to work so don't just revert this
 			if IsValid(Menu) then
@@ -178,62 +178,67 @@ do -- Panel helpers
 end
 
 do -- Default gearbox menus
+	local Classes = ACF.Classes
 	local Values = {}
 
 	do -- Manual Gearbox Menu
-		function ACF.ManualGearboxMenu(Class, _, Menu, _, UseLegacyRatios)
+		function ACF.ManualGearboxMenu(Class, _, Menu, Ctx, UseLegacyRatios)
 			local MinGearRatio, MaxGearRatio = ACF.GetGearRatioLimits(UseLegacyRatios)
 
-			local Gears = Class.CanSetGears and ACF.GetClientNumber("GearAmount", 3) or Class.Gears.Max
+			local Gears = Class.CanSetGears and (Ctx:Get("GearAmount") or 3) or Class.Gears.Max
 			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings", nil, "icon16/cog_edit.png")
 
-			Values[Class.ID] = Values[Class.ID] or {}
+			local ClassID = Classes.GetTypeName(Class:GetType())
+			Values[ClassID] = Values[ClassID] or {}
 
-			local ValuesData = Values[Class.ID]
+			local ValuesData = Values[ClassID]
+
+			-- Collect the per-gear sliders into the entity's "Gears" array field.
+			local GearValues = {}
+			local function PushGears()
+				local Arr = {}
+				for I = 1, Gears do Arr[I] = GearValues[I] or 0 end
+				Ctx:Set("Gears", Arr)
+			end
 
 			for I = 1, Gears do
 				local Variable = "Gear" .. I
-				local Default = ValuesData[Variable]
 
-				if not Default then
-					Default = math.Clamp(I * 0.1, ACF.MinGearRatio, ACF.MaxGearRatio)
-
-					ValuesData[Variable] = Default
+				if not ValuesData[Variable] then
+					ValuesData[Variable] = math.Clamp(I * 0.1, ACF.MinGearRatio, ACF.MaxGearRatio)
 				end
 
-				ACF.SetClientData(Variable, Default)
+				GearValues[I] = ValuesData[Variable]
 
 				local SliderName = language.GetPhrase("acf.menu.gearboxes.gear_number"):format(I)
 				local Control = GearBase:AddSlider(SliderName, MinGearRatio, MaxGearRatio, 2)
-				Control:SetClientData(Variable, "OnValueChanged")
-				Control:DefineSetter(function(Panel, _, _, Value)
+				Control:SetValue(ValuesData[Variable])
+
+				function Control:OnValueChanged(Value)
 					Value = math.Round(Value, 2)
-
+					self:SetValue(Value)
 					ValuesData[Variable] = Value
-
-					Panel:SetValue(Value)
-
-					return Value
-				end)
+					GearValues[I] = Value
+					PushGears()
+				end
 			end
 
 			if not ValuesData.FinalDrive then
 				ValuesData.FinalDrive = 1
 			end
 
-			ACF.SetClientData("FinalDrive", ValuesData.FinalDrive)
-
 			local FinalDrive = GearBase:AddSlider("#acf.menu.gearboxes.final_drive", MinGearRatio, MaxGearRatio, 2)
-			FinalDrive:SetClientData("FinalDrive", "OnValueChanged")
-			FinalDrive:DefineSetter(function(Panel, _, _, Value)
+			FinalDrive:SetValue(ValuesData.FinalDrive)
+
+			function FinalDrive:OnValueChanged(Value)
 				Value = math.Round(Value, 2)
-
+				self:SetValue(Value)
 				ValuesData.FinalDrive = Value
+				Ctx:Set("FinalDrive", Value)
+			end
 
-				Panel:SetValue(Value)
-
-				return Value
-			end)
+			PushGears()
+			Ctx:Set("FinalDrive", ValuesData.FinalDrive)
 		end
 	end
 
@@ -269,41 +274,48 @@ do -- Default gearbox menus
 			},
 		}
 
-		function ACF.CVTGearboxMenu(Class, _, Menu, _, UseLegacyRatios)
+		function ACF.CVTGearboxMenu(Class, _, Menu, Ctx, UseLegacyRatios)
 			local MinGearRatio, MaxGearRatio = ACF.GetGearRatioLimits(UseLegacyRatios)
 
 			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings", nil, "icon16/cog_edit.png")
 
-			Values[Class.ID] = Values[Class.ID] or {}
+			local ClassID = Classes.GetTypeName(Class:GetType())
+			Values[ClassID] = Values[ClassID] or {}
 
-			local ValuesData = Values[Class.ID]
+			local ValuesData = Values[ClassID]
 
-			ACF.SetClientData("Gear1", 1)
+			-- CVT gear 1 is always 1:1; gear 2 is the user-set ratio.
+			local function PushGears()
+				Ctx:Set("Gears", { 1, ValuesData.Gear2 or -1 })
+			end
 
 			for _, GearData in ipairs(CVTData) do
 				local Variable = GearData.Variable
-				local Default = ValuesData[Variable]
 
-				if not Default then
-					Default = GearData.Default
-
-					ValuesData[Variable] = Default
+				if not ValuesData[Variable] then
+					ValuesData[Variable] = GearData.Default
 				end
 
-				ACF.SetClientData(Variable, Default)
-
 				local Control = GearBase:AddSlider(GearData.Name, GearData.Min or MinGearRatio, GearData.Max or MaxGearRatio, GearData.Decimals)
-				Control:SetClientData(Variable, "OnValueChanged")
-				Control:DefineSetter(function(Panel, _, _, Value)
-					Value = math.Round(Value, GearData.Decimals)
+				Control:SetValue(ValuesData[Variable])
 
+				function Control:OnValueChanged(Value)
+					Value = math.Round(Value, GearData.Decimals)
+					self:SetValue(Value)
 					ValuesData[Variable] = Value
 
-					Panel:SetValue(Value)
-
-					return Value
-				end)
+					if Variable == "Gear2" then
+						PushGears()
+					else
+						Ctx:Set(Variable, Value) -- MinRPM / MaxRPM / FinalDrive are entity fields
+					end
+				end
 			end
+
+			PushGears()
+			Ctx:Set("MinRPM", ValuesData.MinRPM)
+			Ctx:Set("MaxRPM", ValuesData.MaxRPM)
+			Ctx:Set("FinalDrive", ValuesData.FinalDrive)
 		end
 	end
 
@@ -352,19 +364,36 @@ do -- Default gearbox menus
 			},
 		}
 
-		function ACF.AutomaticGearboxMenu(Class, _, Menu, _, UseLegacyRatios)
+		function ACF.AutomaticGearboxMenu(Class, _, Menu, Ctx, UseLegacyRatios)
 			local MinGearRatio, MaxGearRatio = ACF.GetGearRatioLimits(UseLegacyRatios)
 
-			local Gears = Class.CanSetGears and ACF.GetClientNumber("GearAmount", 3) or Class.Gears.Max
+			local Gears = Class.CanSetGears and (Ctx:Get("GearAmount") or 3) or Class.Gears.Max
 			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings", nil, "icon16/cog_edit.png")
 
-			Values[Class.ID] = Values[Class.ID] or {}
+			local ClassID = Classes.GetTypeName(Class:GetType())
+			Values[ClassID] = Values[ClassID] or {}
 
-			local ValuesData = Values[Class.ID]
+			local ValuesData = Values[ClassID]
+
+			local GearValues  = {}
+			local ShiftValues = {}
+			local ShiftWangs  = {}
+
+			-- Gears -> entity "Gears" array; upshift speeds -> "ShiftPoints" array (internal units:
+			-- the display speed * the selected unit multiplier).
+			local function PushGears()
+				local Arr = {}
+				for I = 1, Gears do Arr[I] = GearValues[I] or 0 end
+				Ctx:Set("Gears", Arr)
+			end
+
+			local function PushShifts()
+				local Arr = {}
+				for I = 1, Gears do Arr[I] = (ShiftValues[I] or (I * 10)) * UnitMult end
+				Ctx:Set("ShiftPoints", Arr)
+			end
 
 			GearBase:AddLabel("#acf.menu.gearboxes.upshift_speed_unit")
-
-			ACF.SetClientData("ShiftUnit", UnitMult)
 
 			local Unit = GearBase:AddComboBox()
 			Unit:AddChoice("#acf.menu.gearboxes.kph", 10.936)
@@ -377,91 +406,73 @@ do -- Default gearbox menus
 				local Delta = UnitMult / Mult
 
 				for I = 1, Gears do
-					local Var = "Shift" .. I
-					local Old = ACF.GetClientNumber(Var)
-
-					ACF.SetClientData(Var, Old * Delta)
+					local New = (ShiftValues[I] or (I * 10)) * Delta
+					ShiftValues[I] = New
+					if IsValid(ShiftWangs[I]) then ShiftWangs[I]:SetValue(New) end
 				end
 
-				ACF.SetClientData("ShiftUnit", Mult)
-
 				UnitMult = Mult
+				PushShifts()
 			end
 
 			for I = 1, Gears do
 				local GearVar = "Gear" .. I
-				local DefGear = ValuesData[GearVar]
 
-				if not DefGear then
-					DefGear = math.Clamp(I * 0.1, MinGearRatio, MaxGearRatio)
-
-					ValuesData[GearVar] = DefGear
+				if not ValuesData[GearVar] then
+					ValuesData[GearVar] = math.Clamp(I * 0.1, MinGearRatio, MaxGearRatio)
 				end
 
-				ACF.SetClientData(GearVar, DefGear)
+				GearValues[I] = ValuesData[GearVar]
 
 				local GearName = language.GetPhrase("acf.menu.gearboxes.gear_number"):format(I)
 				local Gear = GearBase:AddSlider(GearName, MinGearRatio, MaxGearRatio, 2)
-				Gear:SetClientData(GearVar, "OnValueChanged")
-				Gear:DefineSetter(function(Panel, _, _, Value)
+				Gear:SetValue(ValuesData[GearVar])
+
+				function Gear:OnValueChanged(Value)
 					Value = math.Round(Value, 2)
-
+					self:SetValue(Value)
 					ValuesData[GearVar] = Value
-
-					Panel:SetValue(Value)
-
-					return Value
-				end)
-
-				local ShiftVar = "Shift" .. I
-				local DefShift = ValuesData[ShiftVar]
-
-				if not DefShift then
-					DefShift = I * 10
-
-					ValuesData[ShiftVar] = DefShift
+					GearValues[I] = Value
+					PushGears()
 				end
 
-				ACF.SetClientData(ShiftVar, DefShift)
+				local ShiftVar = "Shift" .. I
+
+				if not ValuesData[ShiftVar] then
+					ValuesData[ShiftVar] = I * 10
+				end
+
+				ShiftValues[I] = ValuesData[ShiftVar]
 
 				local ShiftName = language.GetPhrase("acf.menu.gearboxes.gear_upshift_speed"):format(I)
 				local Shift = GearBase:AddNumberWang(ShiftName, 0, 9999, 2)
 				Shift:HideWang()
-				Shift:SetClientData(ShiftVar, "OnValueChanged")
-				Shift:DefineSetter(function(Panel, _, _, Value)
-					Value = math.Round(Value, 2)
+				Shift:SetValue(ValuesData[ShiftVar])
+				ShiftWangs[I] = Shift
 
-					ValuesData[ShiftVar] = Value
-
-					Panel:SetValue(Value)
-
-					return Value
-				end)
+				function Shift:OnValueChanged(Value)
+					ValuesData[ShiftVar] = math.Round(Value, 2)
+					ShiftValues[I] = ValuesData[ShiftVar]
+					PushShifts()
+				end
 			end
 
 			for _, GearData in ipairs(AutoData) do
-				local Variable = GearData.Variable
-				local Default = ValuesData[Variable]
+				local Variable = GearData.Variable -- Reverse / FinalDrive (entity fields)
 
-				if not Default then
-					Default = GearData.Default
-
-					ValuesData[Variable] = Default
+				if not ValuesData[Variable] then
+					ValuesData[Variable] = GearData.Default
 				end
 
-				ACF.SetClientData(Variable, Default)
-
 				local Control = GearBase:AddSlider(GearData.Name, GearData.Min or MinGearRatio, GearData.Max or MaxGearRatio, GearData.Decimals)
-				Control:SetClientData(Variable, "OnValueChanged")
-				Control:DefineSetter(function(Panel, _, _, Value)
+				Control:SetValue(ValuesData[Variable])
+
+				function Control:OnValueChanged(Value)
 					Value = math.Round(Value, GearData.Decimals)
-
+					self:SetValue(Value)
 					ValuesData[Variable] = Value
-
-					Panel:SetValue(Value)
-
-					return Value
-				end)
+					Ctx:Set(Variable, Value)
+				end
 			end
 
 			Unit:ChooseOptionID(1)
@@ -472,28 +483,18 @@ do -- Default gearbox menus
 
 			for _, PanelData in ipairs(GenData) do
 				local Variable = PanelData.Variable
-				local Default = ValuesData[Variable]
 
-				if not Default then
-					Default = PanelData.Default
-
-					ValuesData[Variable] = Default
+				if not ValuesData[Variable] then
+					ValuesData[Variable] = PanelData.Default
 				end
-
-				ACF.SetClientData(Variable, Default)
 
 				local Panel = GenBase:AddNumberWang(PanelData.Name, PanelData.Min, PanelData.Max, PanelData.Decimals)
 				Panel:HideWang()
-				Panel:SetClientData(Variable, "OnValueChanged")
-				Panel:DefineSetter(function(_, _, _, Value)
-					Value = math.Round(Value, PanelData.Decimals)
+				Panel:SetValue(ValuesData[Variable])
 
-					ValuesData[Variable] = Value
-
-					Panel:SetValue(Value)
-
-					return Value
-				end)
+				function Panel:OnValueChanged(Value)
+					ValuesData[Variable] = math.Round(Value, PanelData.Decimals)
+				end
 
 				if PanelData.Tooltip then
 					Panel:SetTooltip(PanelData.Tooltip)
@@ -513,17 +514,27 @@ do -- Default gearbox menus
 				else Multiplier = Multiplier * TotalRatio * FinalDrive end
 
 				for I = 1, Gears do
-					local Gear = ValuesData["Gear" .. I]
-					if not UseLegacyRatios then ACF.SetClientData("Shift" .. I, Multiplier / Gear)
-					else ACF.SetClientData("Shift" .. I, Multiplier * Gear) end
+					local Gear  = ValuesData["Gear" .. I]
+					local Speed = (not UseLegacyRatios) and (Multiplier / Gear) or (Multiplier * Gear)
+
+					ValuesData["Shift" .. I] = Speed
+					ShiftValues[I] = Speed
+					if IsValid(ShiftWangs[I]) then ShiftWangs[I]:SetValue(Speed) end
 				end
+
+				PushShifts()
 			end
+
+			PushGears()
+			PushShifts()
+			Ctx:Set("Reverse", ValuesData.Reverse or -1)
+			Ctx:Set("FinalDrive", ValuesData.FinalDrive or 1)
 		end
 	end
 end
 
 do -- Default turret menus
-	local Turrets	= ACF.Classes.Turrets
+	local Classes	= ACF.Classes
 	local GraphBlue	= Color(65, 65, 200)
 	local GraphRed	= Color(200, 65, 65)
 
@@ -532,12 +543,22 @@ do -- Default turret menus
 		local Red		= Color(255, 0, 0)
 		local Green		= Color(0, 255, 0)
 
-		function ACF.CreateTurretMenu(Data, Menu)
-			local TurretClass	= Turrets.Get("1-Turret")
-			ACF.SetClientData("Turret", Data.ID)
-			ACF.SetClientData("Destiny", "Turrets")
-			ACF.SetClientData("PrimaryClass", "acf_turret")
-			ACF.SetClientData("SecondaryClass", "N/A")
+		function ACF.CreateTurretMenu(Data, Menu, Ctx)
+			local TurretClass	= Classes.GetTypeByName("ACF.Turrets.Drive")
+			Ctx:Set("Turret", { Type = Classes.GetTypeName(Data), Data = {} })
+
+			-- Ring diameter / arc / max speed live on one shared acf_turret context, but should be
+			-- remembered per drive type (horizontal vs vertical). Persist them in page UI state keyed by
+			-- the turret type id; the sliders restore from here (and still write the active value to the
+			-- context for spawning).
+			local function SaveSetting(Field, Value)
+				ACF.Menu.SetUIState("acf_turret", Data.ID .. "." .. Field, Value)
+			end
+			local function LoadSetting(Field, Default)
+				local V = ACF.Menu.GetUIState("acf_turret", Data.ID .. "." .. Field)
+				if V == nil then return Default end
+				return V
+			end
 
 			local TurretData	= {
 				Ready		= false,
@@ -627,39 +648,29 @@ do -- Default turret menus
 				end
 			end
 
-			MinDeg:SetClientData("MinDeg", "OnValueChanged")
-			MinDeg:DefineSetter(function(Panel, _, _, Value)
+			function MinDeg:OnValueChanged(Value)
 				local N = math.Clamp(math.Round(Value, 1), -180, 0)
+				self:SetValue(N)
+				Ctx:Set("MinDeg", N)
+				SaveSetting("MinDeg", N)
+			end
 
-				Panel:SetValue(N)
-
-				return N
-			end)
-			MinDeg:SetValue(-180)
-
-			MaxDeg:SetClientData("MaxDeg", "OnValueChanged")
-			MaxDeg:DefineSetter(function(Panel, _, _, Value)
+			function MaxDeg:OnValueChanged(Value)
 				local N = math.Clamp(math.Round(Value, 1), 0, 180)
+				self:SetValue(N)
+				Ctx:Set("MaxDeg", N)
+				SaveSetting("MaxDeg", N)
+			end
 
-				Panel:SetValue(N)
-
-				return N
-			end)
-			MaxDeg:SetValue(180)
-
+			local DefMinDeg, DefMaxDeg = -180, 180
 			if Data.ID == "Turret-V" then
 				MinDeg:SetMin(-90)
 				MaxDeg:SetMax(90)
-
-				MinDeg:SetValue(-90)
-				MaxDeg:SetValue(90)
-
-				ACF.SetClientData("MinDeg", -90)
-				ACF.SetClientData("MaxDeg", 90)
-			else
-				ACF.SetClientData("MinDeg", -180)
-				ACF.SetClientData("MaxDeg", 180)
+				DefMinDeg, DefMaxDeg = -90, 90
 			end
+
+			MinDeg:SetValue(LoadSetting("MinDeg", DefMinDeg))
+			MaxDeg:SetValue(LoadSetting("MaxDeg", DefMaxDeg))
 
 			local EstMass	= Menu:AddSlider("#acf.menu.turrets.estimated_mass", 0, 100000, 0)
 			local EstDist	= Menu:AddSlider("#acf.menu.turrets.mass_center_distance", 0, 2, 2)
@@ -712,11 +723,10 @@ do -- Default turret menus
 				Graph:PlotPoint(language.GetPhrase("acf.menu.turrets.estimate"), TurretData.TotalMass, Info.MaxSlewRate, GraphBlue)
 			end
 
-			RingSize:SetClientData("RingSize", "OnValueChanged")
-			RingSize:DefineSetter(function(Panel, _, _, Value)
+			function RingSize:OnValueChanged(Value)
 				local N = Value
 
-				Panel:SetValue(N)
+				self:SetValue(N)
 
 				local Teeth = TurretClass.GetTeethCount(Data, N)
 				RingStats:SetText(TurretText:format(Teeth))
@@ -746,17 +756,15 @@ do -- Default turret menus
 
 				HandCrankLbl:UpdateSim()
 
-				return N
-			end)
+				Ctx:Set("RingSize", N)
+				SaveSetting("RingSize", N)
+			end
 
-			MaxSpeed:SetClientData("MaxSpeed", "OnValueChanged")
-			MaxSpeed:DefineSetter(function(Panel, _, _, Value)
-				local N = Value
-
-				Panel:SetValue(N)
-
-				return N
-			end)
+			function MaxSpeed:OnValueChanged(Value)
+				self:SetValue(Value)
+				Ctx:Set("MaxSpeed", Value)
+				SaveSetting("MaxSpeed", Value)
+			end
 
 			EstMass.OnValueChanged = function(_, Value)
 				TurretData.TotalMass = Value
@@ -770,10 +778,15 @@ do -- Default turret menus
 				HandCrankLbl:UpdateSim()
 			end
 
-			RingSize:SetValue(Data.Size.Base)
+			-- Capture the saved speed before setting the ring size (changing the ring zeroes MaxSpeed),
+			-- then restore both. First-time defaults match the old behavior (ring = base, speed = 0).
+			local SavedRing  = math.Clamp(LoadSetting("RingSize", Data.Size.Base), Data.Size.Min, Data.Size.Max)
+			local SavedSpeed = LoadSetting("MaxSpeed", 0)
+
+			RingSize:SetValue(SavedRing)
 			EstMass:SetValue(0)
 			EstDist:SetValue(0)
-			MaxSpeed:SetValue(0)
+			MaxSpeed:SetValue(SavedSpeed)
 
 			TurretData.Ready	= true
 			HandCrankLbl:UpdateSim()
@@ -793,14 +806,21 @@ do -- Default turret menus
 			MotorSim	= 0
 		}
 
-		function ACF.CreateTurretMotorMenu(Data, Menu)
-			local MotorClass	= Turrets.Get("2-Motor")
-			local TurretClass	= Turrets.Get("1-Turret")
+		function ACF.CreateTurretMotorMenu(Data, Menu, Ctx)
+			local MotorClass	= Classes.GetTypeByName("ACF.Turrets.Motor")
+			local TurretClass	= Classes.GetTypeByName("ACF.Turrets.Drive")
 
-			ACF.SetClientData("Motor", Data.ID)
-			ACF.SetClientData("Destiny", "TurretMotors")
-			ACF.SetClientData("PrimaryClass", "acf_turret_motor")
-			ACF.SetClientData("SecondaryClass", "N/A")
+			Ctx:Set("Motor", { Type = Classes.GetTypeName(Data), Data = {} })
+
+			-- Scale/teeth persist per motor type (see the Drive turret builder for the rationale).
+			local function SaveSetting(Field, Value)
+				ACF.Menu.SetUIState("acf_turret_motor", Data.ID .. "." .. Field, Value)
+			end
+			local function LoadSetting(Field, Default)
+				local V = ACF.Menu.GetUIState("acf_turret_motor", Data.ID .. "." .. Field)
+				if V == nil then return Default end
+				return V
+			end
 
 			Menu:AddLabel(language.GetPhrase("acf.menu.turrets.motors.speed"):format(Data.Speed))
 
@@ -913,11 +933,10 @@ do -- Default turret menus
 
 			-- Updating functions
 
-			CompSize:SetClientData("CompSize", "OnValueChanged")
-			CompSize:DefineSetter(function(Panel, _, _, Value)
+			function CompSize:OnValueChanged(Value)
 				local N = math.Clamp(math.Round(Value, 1), Data.ScaleLimit.Min, Data.ScaleLimit.Max)
 
-				Panel:SetValue(N)
+				self:SetValue(N)
 
 				local SizePerc = N ^ 2
 				MassLbl:SetText(MassText:format(math.Round(math.max(Data.Mass * SizePerc, 5), 1)))
@@ -932,23 +951,24 @@ do -- Default turret menus
 					Menu.ComponentPreview:SetModelScale(N, true)
 				end
 
-				return N
-			end)
-			CompSize:SetValue(1)
+				Ctx:Set("CompSize", N)
+				SaveSetting("CompSize", N)
+			end
+			CompSize:SetValue(LoadSetting("CompSize", 1))
 
-			TeethAmt:SetClientData("Teeth", "OnValueChanged")
-			TeethAmt:DefineSetter(function(Panel, _, _, Value)
+			function TeethAmt:OnValueChanged(Value)
 				local N = math.Clamp(math.Round(Value), Data.Teeth.Min, Data.Teeth.Max)
 
-				Panel:SetValue(N)
+				self:SetValue(N)
 
 				TurretData.MotorTeeth = N
 
 				MotorInfo:UpdateSim()
 
-				return N
-			end)
-			TeethAmt:SetValue(Data.Teeth.Base)
+				Ctx:Set("Teeth", N)
+				SaveSetting("Teeth", N)
+			end
+			TeethAmt:SetValue(LoadSetting("Teeth", Data.Teeth.Base))
 
 			TurretSize.OnValueChanged = function(_, Value)
 				TurretData.Size			= Value
@@ -998,16 +1018,13 @@ do -- Default turret menus
 				MotorInfo:UpdateSim()
 			end
 
-			ACF.LoadSortedList(TurretType, Turrets.GetItemEntries("1-Turret"), "ID")
+			ACF.LoadSortedList(TurretType, Classes.GetChildren(Classes.GetTypeByName("ACF.Turrets.Drive")), "ID")
 		end
 	end
 
 	do	-- Turret Gyroscopes
-		function ACF.CreateTurretGyroMenu(Data, Menu)
-			ACF.SetClientData("Gyro", Data.ID)
-			ACF.SetClientData("Destiny", "TurretGyros")
-			ACF.SetClientData("PrimaryClass", "acf_turret_gyro")
-			ACF.SetClientData("SecondaryClass", "N/A")
+		function ACF.CreateTurretGyroMenu(Data, Menu, Ctx)
+			Ctx:Set("Gyro", { Type = Classes.GetTypeName(Data), Data = {} })
 
 			local MassText = language.GetPhrase("acf.menu.turrets.mass_text")
 			Menu:AddLabel(MassText:format(Data.Mass))
@@ -1041,11 +1058,8 @@ do -- Default turret menus
 	end
 
 	do	-- Turret Computers
-		function ACF.CreateTurretComputerMenu(Data, Menu)
-			ACF.SetClientData("Computer", Data.ID)
-			ACF.SetClientData("Destiny", "TurretComputers")
-			ACF.SetClientData("PrimaryClass", "acf_turret_computer")
-			ACF.SetClientData("SecondaryClass", "N/A")
+		function ACF.CreateTurretComputerMenu(Data, Menu, Ctx)
+			Ctx:Set("Computer", { Type = Classes.GetTypeName(Data), Data = {} })
 
 			local MassText = language.GetPhrase("acf.menu.turrets.mass_text")
 			Menu:AddLabel(MassText:format(Data.Mass))

@@ -117,7 +117,7 @@ function ACF.MakeGLATGM(Player, Gun, BulletData)
 
 	Missiles[Entity] = true
 
-	hook.Run("ACF_OnSpawnEntity", Entity, BulletData, Gun)
+	hook.Run("ACF_OnSpawnEntity", "acf_glatgm", Entity, BulletData, Gun)
 	hook.Run("ACF_OnLaunchMissile", Entity)
 
 	return Entity
@@ -146,10 +146,10 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 
 		-- Destroyed once penetrated, matching acf_missile
 		if DmgResult.Penetration > self.ForcedArmor then
-			if BulletData.Type == "GLATGM" then
-				BulletData.Type = "HE"
+			if BulletData.AmmoType == "ACF.Ammunition.GLATGM" then
+				BulletData.AmmoType = "ACF.Ammunition.HE"
 
-				self:SetNW2String("AmmoType", "HE")
+				self:SetNW2String("AmmoType", "ACF.Ammunition.HE")
 			end
 			DetonateMissile(self, Owner)
 
@@ -163,10 +163,10 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 
 		-- Any Damage to the liner.
 		-- For sake of consistency and reducing of RNG on damage
-		if BulletData.Type == "GLATGM" and 0.95 > Ratio then
-			BulletData.Type = "HE"
+		if BulletData.AmmoType == "ACF.Ammunition.GLATGM" and 0.95 > Ratio then
+			BulletData.AmmoType = "ACF.Ammunition.HE"
 
-			self:SetNW2String("AmmoType", "HE")
+			self:SetNW2String("AmmoType", "ACF.Ammunition.HE")
 		end
 	end
 
@@ -284,7 +284,7 @@ function ENT:Detonate()
 
 	local Bullet = Ballistics.CreateBullet(BulletData)
 
-	if BulletData.Type ~= "GLATGM" then
+	if BulletData.AmmoType ~= "ACF.Ammunition.GLATGM" then
 		ACF.DoReplicatedPropHit(self, Bullet)
 	end
 

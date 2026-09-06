@@ -1,6 +1,12 @@
-ACF.LoadToolFunctions(TOOL)
+-- Client-driven menu framework: installs the tool's click/ghost/holster behavior. There is no
+-- server-side stage/operation machine anymore -- spawns and links go over the ACF_MenuCommit net layer.
+if ACF.Menu and ACF.Menu.SetupTool then
+	ACF.Menu.SetupTool(TOOL)
+end
 
 TOOL.Name = "#tool.acf_menu.menu_name"
+
+TOOL.Information = {}
 
 if CLIENT then
 	-- "Hitbox" colors
@@ -8,6 +14,14 @@ if CLIENT then
 	local NotSoSensitive = Color(255, 255, 0, 50)
 
 	function TOOL:DrawHUD()
+		-- New framework's instruction HUD for the active new-style page (drawn before the entity
+		-- overlay early-returns so it shows regardless of what you're aiming at). Swaps to the linking
+		-- instruction set while the player has entities selected.
+		if ACF.Menu and ACF.Menu.GetHUDInstructions then
+			local Instructions = ACF.Menu.GetHUDInstructions()
+			if Instructions then ACF.Menu.DrawInstructions(Instructions) end
+		end
+
 		local Trace = LocalPlayer():GetEyeTrace()
 		local Distance = Trace.StartPos:DistToSqr(Trace.HitPos)
 		local Entity = Trace.Entity

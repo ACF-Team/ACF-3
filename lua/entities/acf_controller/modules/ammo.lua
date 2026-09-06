@@ -1,16 +1,22 @@
+local Classes = ACF.Classes
+
 local function Init(Entity)
 	Entity.PrimaryAmmoCountsByName = {}
 end
 
 -- Crates sharing an ammo type can still differ in penetration, so entries are named after both.
 -- MaxPen is not stored on BulletData, it only exists in the display data.
+-- Ammo types are V2 classes with no short ID field, so the display label uses the FQN's last segment
+-- ("ACF.Ammunition.AP" to "AP") while the fully qualified name is what goes over the wire.
 local function GetAmmoName(Crate)
 	local Ammo    = Crate.RoundData
+	local Type    = Classes.GetTypeName(Ammo:GetType())
 	local Display = Ammo:GetDisplayData(Crate.BulletData)
 	local MaxPen  = math.max(math.Round(Display.MaxPen or 0), 0)
-	local Name    = MaxPen > 0 and Ammo.ID .. " " .. MaxPen .. "mm" or Ammo.ID
+	local Short   = string.match(Type, "[^.]+$") or Type
+	local Name    = MaxPen > 0 and Short .. " " .. MaxPen .. "mm" or Short
 
-	return Name, Ammo.ID, MaxPen
+	return Name, Type, MaxPen
 end
 
 -- Ammo related

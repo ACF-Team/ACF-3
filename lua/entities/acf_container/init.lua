@@ -13,7 +13,6 @@ ENT.Spawnable      = false
 ENT.AdminSpawnable = false
 ENT.WireAmountName = "Amount" -- Default wire output name for amount (Can be aliased to "Fuel" or "Ammo" or whatever)
 
-
 function ENT:GetUnitMass()
 	-- Returns kg per unit (e.g., kg per round, kg per liter, kg per kWh)
 	return self.UnitMass or 1
@@ -102,8 +101,10 @@ end
 -- Calculate volume and capacity from size
 -- Returns: Volume (cu in), Capacity (liters)
 function ENT:CalcVolumeAndCapacity(Size)
-	local Shape = self.Shape or "Box"
-	local ShapeCalc = ACF.ContainerShapes[Shape]
+	local Shape = self:ACF_GetUserVar("Shape")
+	local ShapeCalc = Shape and Shape.ShapeCalculation
+	if not ShapeCalc then return 0, 0 end
+
 	local Volume = ShapeCalc(Size)
 
 	local Capacity = Volume * ACF.gCmToKgIn

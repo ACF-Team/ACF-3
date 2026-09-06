@@ -205,7 +205,7 @@ RegisterTest("Links", "Guns, Racks and Ammo", function(Env)
 
     -- Don't have to have a loader for belt fed or smoke launchers
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_gun, {"Crews", "Autoloader"})) do
-        if not e.IsBelted and e.Weapon ~= "SL" and e.Weapon ~= "40mmFGL" then
+        if not e.IsBelted and e.Weapon ~= "ACF.Guns.SmokeLauncher" and e.Weapon ~= "40mmFGL" then
             table.insert(Faults, {Ent = e, Msg = "Gun needs link to loader/autoloader"})
         end
     end
@@ -217,7 +217,7 @@ end, function(Env)
     LinkAll(Env, "acf_rack", "Crates")
     LinkAll(Env, "acf_ammo", "Weapons")
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_gun, {"Crew", "Autoloader"})) do
-        if not e.IsBelted and e.Weapon ~= "SL" and e.Weapon ~= "40mmFGL" then
+        if not e.IsBelted and e.Weapon ~= "ACF.Guns.SmokeLauncher" and e.Weapon ~= "40mmFGL" then
             for _, crew in pairs(Env.Contraption.Crews or {}) do
                 if crew.Type == "Loader" then e:LinkTo(crew.Ent) end
             end

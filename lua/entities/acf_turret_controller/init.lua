@@ -8,133 +8,82 @@ include("shared.lua")
 local ACF			= ACF
 local Contraption	= ACF.Contraption
 local Classes		= ACF.Classes
-local Utilities		= ACF.Utilities
-local HookRun		= hook.Run
 
-do	-- Spawn and Update funcs
-	local WireIO	= Utilities.WireIO
-	local Entities	= Classes.Entities
-	local Turrets	= Classes.Turrets
+--===============================================================================================--
+-- Spawning and Updating
+--===============================================================================================--
 
-	local Outputs	= {
-		"Entity (The controller itself.) [ENTITY]"
-	}
+local DefaultType = "ACF.Turrets.Controller.Lightweight"
 
-	local function VerifyData(Data)
-		if not Data.Controller then Data.Controller = Data.Id end
+do -- Spawning
+	--- Resolves the controller class a spawn request is asking for.
+	local function GetSpawnClass(Data)
+		local ID = Data and Data.Controller
 
-		local Class = Classes.GetGroup(Turrets, Data.Controller)
+		if istable(ID) then ID = ID.Type end
 
-		if not Class then
-			Class = Turrets.Get("5-Controller")
-
-			Data.Destiny	= "TurretControllers"
-			Data.Controller	= "Lightweight"
-		end
-
-		local Controller = Turrets.GetItem(Class.ID, Data.Controller)
-
-		if not Controller then
-			Controller = Turrets.GetItem(Class.ID, "Lightweight")
-		end
-
-		Data.ID = Controller.ID
+		return (isstring(ID) and Classes.GetTypeByName(ID)) or Classes.GetTypeByName(DefaultType)
 	end
 
-	------------------
+	-- Remote and Lightweight controllers share this entity but keep separate spawn limits,
+	-- so the cap depends on which one is being spawned rather than on the entity class.
+	function ENT.ACF_CheckSpawnLimit(Player, _, Data)
+		local Class = GetSpawnClass(Data)
+		local Limit = Class and Class.LimitConVar
 
-	local function UpdateController(Entity, Data, Class, Controller)
-		Contraption.SetModel(Entity, Controller.Model)
+		if not Limit then return true end
 
-		Entity:PhysicsInit(SOLID_VPHYSICS)
-		Entity:SetMoveType(MOVETYPE_VPHYSICS)
+		return Player:CheckLimit(Limit.Name)
+	end
 
-		Entity.Name			= Controller.Name
-		Entity.ShortName	= Controller.ID
-		Entity.EntType		= Class.Name
-		Entity.ClassData	= Class
-		Entity.Class		= Class.ID
-		Entity.Controller	= Data.Controller
-		Entity.IsRemote		= Controller.IsRemote and true or false
-		Entity.Active		= true
+	function ENT:ACF_PreSpawn(_, _, _, Data)
+		self.ACF = {}
 
-		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Controller)
+		Contraption.SetModel(self, GetSpawnClass(Data).Model)
+	end
 
-		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
-		Entity:SetNWString("Class", Entity.Class)
+	function ENT:ACF_OnSpawn(Player, _, _, Data)
+		self.Active = true
 
-		for _, v in ipairs(Entity.DataStore) do
-			Entity[v] = Data[v]
+		-- The generic spawn path only counts against "_acf_turret_controller", so the per-type
+		-- convar checked above has to be incremented here or it would never fill up.
+		local Class = GetSpawnClass(Data)
+		local Limit = Class and Class.LimitConVar
+
+		if IsValid(Player) and Limit then
+			Player:AddCount(Limit.Name, self)
 		end
-
-		ACF.Activate(Entity, true)
-
-		Entity.DamageScale	= math.max((Entity.ACF.Health / (Entity.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
-
-		Contraption.SetMass(Entity, Controller.Mass)
 	end
+end
 
-	function ACF.MakeTurretController(Player, Pos, Angle, Data)
-		VerifyData(Data)
+do -- Updating
+	function ENT:ACF_PostUpdateEntityData()
+		local Controller = self:ACF_GetUserVar("Controller")
+		local Class      = Controller:GetType()
+		local Group      = Classes.GetBaseClass(Class)
 
-		local Class = Classes.GetGroup(Turrets, Data.Controller)
-		local Controller = Turrets.GetItem(Class.ID, Data.Controller)
-		local Limit	= Controller.LimitConVar.Name
+		Contraption.SetModel(self, Class.Model)
 
-		if not Player:CheckLimit(Limit) then return end
+		self:PhysicsInit(SOLID_VPHYSICS)
+		self:SetMoveType(MOVETYPE_VPHYSICS)
 
-		local CanSpawn	= HookRun("ACF_PreSpawnEntity", "acf_turret_controller", Player, Data, Class, Controller)
+		self.Name       = Class.Name
+		self.ShortName  = Class.ID
+		self.EntType    = Group.Name
+		self.ClassData  = Group
+		self.Class      = Group.ID
+		self.Controller = Class.ID
+		self.IsRemote   = Class.IsRemote and true or false
+		self.Active     = true
 
-		if CanSpawn == false then return end
+		self:SetNWString("WireName", "ACF " .. self.Name)
+		self:SetNWString("Class", self.Class)
 
-		local Entity = ents.Create("acf_turret_controller")
+		-- ACF.Activate(self, true) is invoked automatically by ACF_UpdateEntityData after this.
 
-		if not IsValid(Entity) then return end
+		self.DamageScale = math.max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
 
-		Player:AddCleanup(Class.Cleanup, Entity)
-		Player:AddCount(Limit, Entity)
-
-		Entity.ACF				= {}
-
-		Contraption.SetModel(Entity, Controller.Model)
-
-		Entity:SetAngles(Angle)
-		Entity:SetPos(Pos)
-		Entity:Spawn()
-
-		Entity.DataStore		= Entities.GetArguments("acf_turret_controller")
-
-		UpdateController(Entity, Data, Class, Controller)
-
-		HookRun("ACF_OnSpawnEntity", "acf_turret_controller", Entity, Data, Class, Controller)
-
-		return Entity
-	end
-
-	Entities.Register("acf_turret_controller", ACF.MakeTurretController, "Controller")
-
-	function ENT:Update(Data)
-		VerifyData(Data)
-
-		local Class = Classes.GetGroup(Turrets, Data.Controller)
-		local Controller = Turrets.GetItem(Class.ID, Data.Controller)
-		local OldClass	= self.ClassData
-
-		local CanUpdate, Reason = HookRun("ACF_PreUpdateEntity", "acf_turret_controller", self, Data, Class, Controller)
-
-		if CanUpdate == false then return CanUpdate, Reason end
-
-		HookRun("ACF_OnEntityLast", "acf_turret_controller", self, OldClass)
-
-		ACF.SaveEntity(self)
-
-		UpdateController(self, Data, Class, Controller)
-
-		ACF.RestoreEntity(self)
-
-		HookRun("ACF_OnUpdateEntity", "acf_turret_controller", self, Data, Class, Controller)
-
-		return true, "Turret Controller updated successfully!"
+		Contraption.SetMass(self, Class.Mass)
 	end
 end
 

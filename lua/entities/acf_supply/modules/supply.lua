@@ -164,7 +164,7 @@ function ENT:Think()
 
 				UsedBudget = UsedBudget + ReviveCost
 			end
-		elseif Target.IsACFAmmoCrate then
+		elseif Target.IsACFAmmo then
 			-- For ammo crates: only whole cartridges can be transferred
 			-- If we can't transfer enough mass for a full cartridge, build it up until we can
 
@@ -206,7 +206,7 @@ function ENT:Think()
 			Target:Consume(-Units)
 			RefilledFuel = true
 
-			if Target.FuelType == "Electric" then
+			if Target.IsElectric then
 				Sounds.SendSound(self, "ambient/energy/newspark04.wav", 70, 100, 0.5)
 				Sounds.SendSound(Target, "ambient/energy/newspark04.wav", 70, 100, 0.5)
 			else

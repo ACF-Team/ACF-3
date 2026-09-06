@@ -4,6 +4,7 @@ AddCSLuaFile("shared.lua")
 include("shared.lua")
 
 local ACF = ACF
+local Classes		= ACF.Classes
 local Contraption	= ACF.Contraption
 
 ACF.RegisterClassLink("acf_radar", "acf_rack", function(Radar, Target)
@@ -337,168 +338,40 @@ end)
 
 --===============================================================================================--
 
-do -- Spawn and Update functions
-	local Classes  = ACF.Classes
-	local WireIO   = ACF.Utilities.WireIO
-	local Entities = Classes.Entities
-	local Sensors  = Classes.Sensors
-	local Inputs   = { "Active (If set to a non-zero value, attempts to start the radar activation.)" }
+-- Radars must be turned off before they can be reconfigured.
+hook.Add("ACF_PreUpdateEntity", "ACF Radar Update Guard", function(Class, Entity)
+	if Class ~= "acf_radar" then return end
+	if Entity.Active then return false, "Turn off the radar before updating it!" end
+end)
 
-	local Outputs = {
-		"Scanning (Returns 1 if the radar is currently scanning.)",
-		"Detected (Returns the amount of targets detected by the radar.)",
-		"ClosestDistance (Returns the distance in inches of the closest target detected by the radar.)",
-		"IDs (Returns a list of IDs from all the detected targets.) [ARRAY]",
-		"Owner (Returns a list of owner names from all the detected targets.) [ARRAY]",
-		"Position (Returns a list of position vectors from all the detected targets.) [ARRAY]",
-		"Velocity (Returns a list of velocity vectors from all the detected targets.) [ARRAY]",
-		"Distance (Returns a list of distances from all the detected targets.) [ARRAY]",
-		"Size (Returns a list of diameters, in inches, of all the detected targets.) [ARRAY]",
-		"Type (Returns a list of target types for all detected targets.) [ARRAY]",
-		"Think Delay (Returns the amount of time in seconds between each scan.)",
-		"Clk (Returns engine.TickCount at the moment of the radar's last scan.)",
-		"Entity (The radar itself.) [ENTITY]"
-	}
+ACF.RegisterLinkSource("acf_radar", "Weapons")
 
-	local function VerifyData(Data)
-		if not Data.Radar then
-			Data.Radar = Data.Sensor or Data.Id
-		end
+--===============================================================================================--
+-- Spawning and Updating
+--===============================================================================================--
 
-		local Class = Classes.GetGroup(Sensors, Data.Radar)
+local DefaultType = "ACF.Sensors.Radar.Standard.SmallDirectional"
 
-		-- Backwards compatibility for pre-merged Missile/Targeting radar classes and items
-		if not Class then
-			local AliasData = ACF.Compatibility.Radars.CheckGroupItem(Data.Radar)
+do -- Spawning
+	function ENT:ACF_PreSpawn(_, _, _, Data)
+		self.ACF = {}
 
-			if AliasData then
-				Data.Radar = AliasData.ID
+		local Sensor = Data and Data.Sensor
+		local Class  = Classes.GetTypeByName(Sensor and Sensor.Type or DefaultType) or Classes.GetTypeByName(DefaultType)
 
-				-- Old antimissile radars only detected missiles, and old targeting radars only
-				-- detected contraptions. Carry that forward as an explicit default rather than
-				-- giving old dupes both detection types
-				if AliasData.Overrides then
-					for K, V in pairs(AliasData.Overrides) do
-						if Data[K] == nil then Data[K] = V end
-					end
-				end
-
-				Class = Classes.GetGroup(Sensors, Data.Radar)
-			end
-		end
-
-		if not Class or Class.Entity ~= "acf_radar" then
-			Data.Radar = "SmallDIR"
-
-			Class = Classes.GetGroup(Sensors, "SmallDIR")
-		end
-
-		-- A radar must be able to detect at least one target type. Default to both if nothing was
-		-- specified, and force at least one on if both were explicitly turned off
-		local DetectContraptions = Data.DetectContraptions
-		local DetectMissiles     = Data.DetectMissiles
-
-		if DetectContraptions == nil and DetectMissiles == nil then
-			DetectContraptions = true
-			DetectMissiles     = true
-		end
-
-		DetectContraptions = tobool(DetectContraptions)
-		DetectMissiles     = tobool(DetectMissiles)
-
-		if not DetectContraptions and not DetectMissiles then
-			DetectContraptions = true
-		end
-
-		Data.DetectContraptions = DetectContraptions
-		Data.DetectMissiles     = DetectMissiles
-
-		do -- External verifications
-			if Class.VerifyData then
-				Class.VerifyData(Data, Class)
-			end
-
-			hook.Run("ACF_OnVerifyData", "acf_radar", Data, Class)
-		end
+		Contraption.SetModel(self, Class.Model)
 	end
 
-	local function UpdateRadar(Entity, Data, Class, Radar)
-		Entity.ACF = Entity.ACF or {}
-
-		Contraption.SetModel(Entity, Radar.Model)
-
-		Entity:PhysicsInit(SOLID_VPHYSICS)
-		Entity:SetMoveType(MOVETYPE_VPHYSICS)
-
-		local OriginAttach = Entity:LookupAttachment(Radar.Origin)
-		local AttachData = Entity:GetAttachment(OriginAttach)
-
-		-- Storing all the relevant information on the entity for duping
-		for _, V in ipairs(Entity.DataStore) do
-			Entity[V] = Data[V]
-		end
-
-		Entity.Name         = Radar.Name
-		Entity.ShortName    = Radar.ID
-		Entity.EntType      = Class.Name
-		Entity.ClassType    = Class.ID
-		Entity.ClassData    = Class
-		Entity.SoundPath    = Class.Sound or ACF.DefaultRadarSound
-		Entity.DefaultSound = Entity.SoundPath
-		Entity.ConeDegs     = Radar.ViewCone
-		Entity.Range        = Radar.Range
-		Entity.MinSizeAtRange = Radar.MinSizeAtRange
-		Entity.BaseCost     = Radar.Cost
-		Entity.SwitchDelay  = Radar.SwitchDelay
-		Entity.ThinkTicks   = Radar.ThinkTicks -- Number of ticks between scans
-		Entity.TickCounter  = Entity.TickCounter or 0
-		Entity.GetDetected  = Radar.Detect or Class.Detect
-		Entity.Origin       = AttachData and Entity:WorldToLocal(AttachData.Pos) or Vector()
-
-		WireIO.SetupInputs(Entity, Inputs, Data, Class, Radar)
-		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Radar)
-
-		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
-
-		WireLib.TriggerOutput(Entity, "Think Delay", Entity.ThinkTicks * engine.TickInterval())
-
-		ACF.Activate(Entity, true)
-
-		Contraption.SetMass(Entity, Radar.Mass)
-	end
-
-	function ACF.MakeRadar(Player, Pos, Angle, Data)
-		VerifyData(Data)
-
-		local Class = Classes.GetGroup(Sensors, Data.Radar)
-		local RadarData = Class.Lookup[Data.Radar]
-		local Limit = Class.LimitConVar.Name
-
-		if not Player:CheckLimit(Limit) then return false end
-
-		local CanSpawn = hook.Run("ACF_PreSpawnEntity", "acf_radar", Player, Data, Class, RadarData)
-		if CanSpawn == false then return false end
-
-		local Radar = ents.Create("acf_radar")
-
-		if not IsValid(Radar) then return end
-
-		Radar:SetAngles(Angle)
-		Radar:SetPos(Pos)
-		Radar:Spawn()
-
-		Player:AddCleanup("acf_radar", Radar)
-		Player:AddCount(Limit, Radar)
-
-		Radar.Active      = false
-		Radar.Scanning    = false
-		Radar.TargetCount = 0
-		Radar.Damage	  = 0
-		Radar.Weapons     = {}
-		Radar.Targets     = {}
-		Radar.SyncSource  = nil
-		Radar.DataStore   = Entities.GetArguments("acf_radar")
-		Radar.TargetInfo  = {
+	function ENT:ACF_OnSpawn()
+		self.Active      = false
+		self.Scanning    = false
+		self.TargetCount = 0
+		self.Damage      = 0
+		self.Weapons     = {}
+		self.Targets     = {}
+		self.SyncSource  = nil
+		self.TickCounter = 0
+		self.TargetInfo  = {
 			ID = {},
 			Owner = {},
 			Position = {},
@@ -508,73 +381,69 @@ do -- Spawn and Update functions
 			Type = {}
 		}
 
-		UpdateRadar(Radar, Data, Class, RadarData)
+		TimerCreate("ACF Radar Clock " .. self:EntIndex(), 3, 0, function()
+			if not IsValid(self) then return end
 
-		if Class.OnSpawn then
-			Class.OnSpawn(Radar, Data, Class, RadarData)
-		end
-
-		hook.Run("ACF_OnSpawnEntity", "acf_radar", Radar, Data, Class, RadarData)
-
-		duplicator.ClearEntityModifier(Radar, "mass")
-
-		TimerCreate("ACF Radar Clock " .. Radar:EntIndex(), 3, 0, function()
-			if not IsValid(Radar) then return end
-
-			CheckDistantLinks(Radar, "Weapons")
+			CheckDistantLinks(self, "Weapons")
 		end)
-
-		-- Radars should be active by default
-		Radar:TriggerInput("Active", 1)
-
-		return Radar
 	end
 
-	Entities.Register("acf_missileradar", ACF.MakeRadar, "Radar", "DetectContraptions", "DetectMissiles") -- Backwards compatibility
-	Entities.Register("acf_radar", ACF.MakeRadar, "Radar", "DetectContraptions", "DetectMissiles")
+	function ENT:ACF_PostSpawn()
+		-- Radars should be active by default
+		self:TriggerInput("Active", 1)
+	end
+end
 
-	-- Compatibility with ACE radar entities
-	Entities.Register("ace_trackingradar", ACF.MakeRadar, "Radar", "DetectContraptions", "DetectMissiles")
-	Entities.Register("ace_searchradar", ACF.MakeRadar, "Radar", "DetectContraptions", "DetectMissiles")
+do -- Updating
+	function ENT:ACF_PostUpdateEntityData()
+		local Sensor = self:ACF_GetUserVar("Sensor")
+		local Class  = Sensor:GetType()
+		local Group  = Classes.GetBaseClass(Class)
 
-	ACF.RegisterLinkSource("acf_radar", "Weapons")
+		Contraption.SetModel(self, Sensor.Model)
 
-	------------------- Updating ---------------------
+		self:PhysicsInit(SOLID_VPHYSICS)
+		self:SetMoveType(MOVETYPE_VPHYSICS)
 
-	function ENT:Update(Data)
-		if self.Active then return false, "Turn off the radar before updating it!" end
+		local OriginAttach = self:LookupAttachment(Sensor.Origin)
+		local AttachData   = self:GetAttachment(OriginAttach)
 
-		VerifyData(Data)
+		-- A radar must be able to detect at least one target type. If both were explicitly turned
+		-- off, force contraption detection back on rather than leaving a radar that sees nothing.
+		local DetectContraptions = tobool(self:ACF_GetUserVar("DetectContraptions"))
+		local DetectMissiles     = tobool(self:ACF_GetUserVar("DetectMissiles"))
 
-		local Class    = Classes.GetGroup(Sensors, Data.Radar)
-		local Radar    = Class.Lookup[Data.Radar]
-		local OldClass = self.ClassData
-
-		if OldClass.OnLast then
-			OldClass.OnLast(self, OldClass)
+		if not DetectContraptions and not DetectMissiles then
+			DetectContraptions = true
 		end
 
-		hook.Run("ACF_OnEntityLast", "acf_radar", self, OldClass)
+		self.DetectContraptions = DetectContraptions
+		self.DetectMissiles     = DetectMissiles
 
-		ACF.SaveEntity(self)
+		self.Name           = Sensor.Name
+		self.ShortName      = Sensor.ID
+		self.EntType        = Group.Name
+		self.ClassType      = Group.ID
+		self.ClassData      = Group
+		self.SoundPath      = Sensor.Sound or ACF.DefaultRadarSound
+		self.DefaultSound   = self.SoundPath
+		self.ConeDegs       = Sensor.ViewCone
+		self.Range          = Sensor.Range
+		self.MinSizeAtRange = Sensor.MinSizeAtRange
+		self.BaseCost       = Sensor.Cost
+		self.SwitchDelay    = Sensor.SwitchDelay
+		self.ThinkTicks     = Sensor.ThinkTicks -- Number of ticks between scans
+		self.TickCounter    = self.TickCounter or 0
+		self.GetDetected    = Sensor.Detect or Group.Detect
+		self.Origin         = AttachData and self:WorldToLocal(AttachData.Pos) or Vector()
 
-		UpdateRadar(self, Data, Class, Radar)
+		self:SetNWString("WireName", "ACF " .. self.Name)
 
-		ACF.RestoreEntity(self)
+		WireLib.TriggerOutput(self, "Think Delay", self.ThinkTicks * engine.TickInterval())
 
-		if Class.OnUpdate then
-			Class.OnUpdate(self, Data, Class, Radar)
-		end
+		-- ACF.Activate(self, true) is invoked automatically by ACF_UpdateEntityData after this.
 
-		hook.Run("ACF_OnUpdateEntity", "acf_radar", self, Data, Class, Radar)
-
-		-- ThinkTicks/ConeDegs/Range may have changed; if linked to a synchronizer, its rate-group
-		-- membership and cached geometry need to be refreshed to match
-		if IsValid(self.SyncSource) then
-			self.SyncSource:RefreshRateGroups()
-		end
-
-		return true, "Radar updated successfully!"
+		Contraption.SetMass(self, Sensor.Mass)
 	end
 end
 

@@ -97,7 +97,7 @@ function Damage.getBulletDamage(Bullet, Trace)
 
 	if ACF.Check(Entity) then
 		local NormDir    = Bullet.Flight:GetNormalized()
-		local AmmoType   = ACF.Classes.AmmoTypes.Get(Bullet.Type)
+		local AmmoType   = ACF.Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", Bullet.AmmoType)
 		local MulField   = (AmmoType and AmmoType.IsChemical) and "ChemicalMul" or "KineticMul"
 
 		-- The ballistics layer resolves the impact to a single convex (Bullet.ConvexHit) so each convex

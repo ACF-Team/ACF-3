@@ -1,12 +1,13 @@
 DEFINE_BASECLASS("acf_base_simple")
 
-ENT.PrintName     = "ACF Controller"
-ENT.WireDebugName = "ACF Controller"
-ENT.PluralName    = "ACF Controllers"
-ENT.IsACFController = true
 ENT.ACF_InvisibleToBallistics = true
 
-cleanup.Register("acf_controller")
+-- The controller's live settings are NetworkVars (see below). The only serialized field is a request
+-- for the default config, applied by init.lua's ACF_OnVerifyClientData on spawn (always true from the
+-- menu, matching the previous behavior).
+ACF.Entities.AutoRegisterV2(function()
+	MENU_FIELD("Boolean", "AIOUseDefaults", {Default = true})
+end, "Controller", "Controllers")
 
 ENT.Editable = true
 function ENT:SetupDataTables()
@@ -44,6 +45,7 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "Float", "HUDScale", { KeyName = "hudscale", Edit = { type = "Float", order = 401, category = "HUD Settings", min = 0, max = 3, tooltip = "HUD scale" } } )
 	self:NetworkVar( "Vector", "HUDColor", { KeyName = "hudcolor", Edit = { type = "VectorColor", order = 402, category = "HUD Settings", tooltip = "HUD color" } } )
 	self:NetworkVar( "Vector", "HUDColor2", { KeyName = "hudcolor2", Edit = { type = "VectorColor", order = 403, category = "HUD Settings", tooltip = "HUD color 2 (for peripherals)" } } )
+	self:NetworkVar( "String", "HUDMaterial", { KeyName = "hudmaterial", Edit = { type = "String", order = 404, category = "HUD Settings", tooltip = "If set, draws this material as a fullscreen HUD overlay instead of the built in HUD (saves performance)" } } )
 
 	self:NetworkVar( "Int", "ThrottleIdle", { KeyName = "throttleidle", Edit = { type = "Int", order = 600, category = "Drivetrain Settings", min = 0, max = 100, tooltip = "If nonzero, engines are throttled to this value forever" } } )
 	self:NetworkVar( "Int", "SpeedUnit", { KeyName = "speedunit", Edit = { type = "Combo", order = 601, category = "Drivetrain Settings", values = {KPH = 0, MPH = 1}, tooltip = "Unit speed should be displayed in" } } )

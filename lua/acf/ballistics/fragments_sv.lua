@@ -1,7 +1,7 @@
 local ACF        = ACF
 local Ballistics = ACF.Ballistics
 local Damage     = ACF.Damage
-local AmmoTypes  = ACF.Classes.AmmoTypes
+local Classes    = ACF.Classes
 
 local MaxPenetrations = 10 -- Layers a fragment can punch through before it's given up on
 local MinSpeed        = 50 -- m/s, below this a fragment is assumed spent
@@ -44,10 +44,10 @@ end
 --- A straight-line, non-ricocheting projectile resolved in one closed-form pass instead of per-tick iteration.
 --- Data: Pos, Flight (world units/s), ProjMass, ProjArea, Diameter, DragCoef, Owner, Gun, Entity, Filter.
 function Ballistics.CreateFragment(Data)
-	local Ammo = AmmoTypes.Get("AP")
+	local Ammo = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", "ACF.Ammunition.AP")
 
 	local Fragment = {
-		Type     = "AP",
+		AmmoType = "ACF.Ammunition.AP",
 		Owner    = Data.Owner,
 		Gun      = Data.Gun,
 		Entity   = Data.Entity,

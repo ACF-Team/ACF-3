@@ -1,348 +1,317 @@
-local ACF       = ACF
+local ACF   	= ACF
 local Classes   = ACF.Classes
-local AmmoTypes = Classes.AmmoTypes
-local Ammo      = AmmoTypes.Register("FL", "AP")
 
-
-function Ammo:OnLoaded()
-	Ammo.BaseClass.OnLoaded(self)
-
-	self.Name		     = "Flechette"
-	self.SpawnIcon       = "acf/icons/shell_fl.png"
-	self.Bodygroup       = 10 -- CANISTER bodygroup index for crate/menu
-	self.FlightBodygroup = 4 -- APFSDS bodygroup for flight (dart-shaped flechettes)
-	self.Description     = "#acf.descs.ammo.fl"
-	self.Blacklist = {
-		AC = true,
-		GL = true,
-		MG = true,
-		MO = true,
-		SA = true,
-		SL = true,
-		LAC = true,
-		RAC = true,
-	}
-end
-
--- Packing function to get the rough caliber of a flechette
--- based on the caliber of the full round and the amount of them
-function Ammo:GetFlechetteCaliber(Caliber, Count)
-	return (0.95231 * Caliber * 0.5 / Count ^ 0.5) * 2
-end
-
-function Ammo:GetPenetration(Bullet, Speed)
-	if not isnumber(Speed) then
-		Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * ACF.InchToMeter or Bullet.MuzzleVel
-	end
-
-	return ACF.Penetration(Speed, Bullet.FlechetteMass, Bullet.FlechetteCaliber * 10)
-end
-
-function Ammo:GetDisplayData(Data)
-	local Display = {
-		MaxPen = self:GetPenetration(Data, Data.MuzzleVel)
+Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function(CLASS, BASE)
+	CLASS.Name		     = "Flechette"
+	CLASS.SpawnIcon       = "acf/icons/shell_fl.png"
+	CLASS.Bodygroup       = 10 -- CANISTER bodygroup index for crate/menu
+	CLASS.FlightBodygroup = 4 -- APFSDS bodygroup for flight (dart-shaped flechettes)
+	CLASS.Description     = "#acf.descs.ammo.fl"
+	CLASS.Blacklist = {
+		["ACF.Guns.Autocannon"] = true,
+		["ACF.Guns.GrenadeLauncher"] = true,
+		["ACF.Guns.Machinegun"] = true,
+		["ACF.Guns.Mortar"] = true,
+		["ACF.Guns.SemiautomaticCannon"] = true,
+		["ACF.Guns.SmokeLauncher"] = true,
+		["ACF.Guns.LightAutocannon"] = true,
+		["ACF.Guns.RotaryAutocannon"] = true,
 	}
 
-	hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
+	MENU_FIELD("Number", "Flechettes", {Default = 0})
+	MENU_FIELD("Number", "Spread", {Default = 0})
 
-	return Display
-end
-
-function Ammo:UpdateRoundData(ToolData, Data, GUIData)
-	GUIData = GUIData or Data
-
-	ACF.UpdateRoundSpecs(ToolData, Data, GUIData)
-
-	local Flechettes = math.Clamp(ToolData.Flechettes, Data.MinFlechettes, Data.MaxFlechettes)
-
-	Data.Flechettes		   = Flechettes
-	Data.FlechetteSpread   = math.Clamp(ToolData.Spread, Data.MinSpread, Data.MaxSpread)
-	Data.FlechetteCaliber  = self:GetFlechetteCaliber(Data.Caliber, Flechettes)
-	Data.FlechetteArea	   = math.pi * (Data.FlechetteCaliber * 0.5) ^ 2 -- area of a single flechette
-	Data.FlechetteMass	   = Data.FlechetteArea * Data.ProjLength * ACF.SteelDensity -- volume of single flechette * density of steel
-	Data.FlechetteDragCoef = Data.FlechetteArea * 0.0001 / Data.FlechetteMass
-	Data.ProjMass		   = Flechettes * Data.FlechetteMass -- total mass of all flechettes
-	Data.DragCoef		   = Data.ProjArea * 0.0001 / Data.ProjMass
-	Data.MuzzleVel		   = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
-	Data.CartMass		   = Data.PropMass + Data.ProjMass
-
-	hook.Run("ACF_OnUpdateRound", self, ToolData, Data, GUIData)
-
-	for K, V in pairs(self:GetDisplayData(Data)) do
-		GUIData[K] = V
-	end
-end
-
-function Ammo:BaseConvert(ToolData)
-	local Data, GUIData = ACF.RoundBaseGunpowder(ToolData, { LengthAdj = 0.5 })
-
-	Data.MaxFlechettes = math.Clamp(math.floor(Data.Caliber * 4), 12, 64)
-	Data.MinFlechettes = math.min(12, Data.MaxFlechettes) --force bigger guns to have higher min count
-	Data.MinSpread	   = 0.2
-	Data.MaxSpread	   = 10
-	Data.ShovePower	   = 0.2
-	Data.LimitVel	   = 500 --Most efficient penetration speed in m/s
-	Data.Ricochet	   = 75 --Base ricochet angle
-
-	self:UpdateRoundData(ToolData, Data, GUIData)
-
-	return Data, GUIData
-end
-
-function Ammo:VerifyData(ToolData)
-	Ammo.BaseClass.VerifyData(self, ToolData)
-
-	if not isnumber(ToolData.Flechettes) then
-		ToolData.Flechettes = ACF.CheckNumber(ToolData.RoundData5, 0)
+	-- Packing function to get the rough caliber of a flechette
+	-- based on the caliber of the full round and the amount of them
+	function CLASS:GetFlechetteCaliber(Caliber, Count)
+		return (0.95231 * Caliber * 0.5 / Count ^ 0.5) * 2
 	end
 
-	if not isnumber(ToolData.Spread) then
-		ToolData.Spread = ACF.CheckNumber(ToolData.RoundData6, 0)
-	end
-end
+	function CLASS:GetPenetration(Bullet, Speed)
+		if not isnumber(Speed) then
+			Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * ACF.InchToMeter or Bullet.MuzzleVel
+		end
 
--- Shared with the client so the spawn menu can price a crate without spawning it.
-local Conversion = ACF.PointConversion
-
-function Ammo:GetCost(BulletData)
-	return (BulletData.ProjMass * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant)
-end
-
-if SERVER then
-	local Ballistics = ACF.Ballistics
-	local Entities   = Classes.Entities
-
-
-	Entities.AddArguments("acf_ammo", "Flechettes", "Spread") -- Adding extra info to ammo crates
-
-	function Ammo:OnLast(Entity)
-		Ammo.BaseClass.OnLast(self, Entity)
-
-		Entity.Flechettes = nil
-		Entity.Spread = nil
-
-		-- Cleanup the leftovers aswell
-		Entity.RoundData5 = nil
-		Entity.RoundData6 = nil
+		return ACF.Penetration(Speed, Bullet.FlechetteMass, Bullet.FlechetteCaliber * 10)
 	end
 
-	function Ammo:Create(Gun, BulletData)
-		local Caliber = math.Round(BulletData.FlechetteCaliber, 2)
-
-		local FlechetteData = {
-			Caliber    = Caliber,
-			Diameter   = Caliber,
-			Id         = BulletData.Id,
-			Type       = "AP",
-			Owner      = BulletData.Owner,
-			Entity     = BulletData.Entity,
-			Crate      = BulletData.Crate,
-			Gun        = BulletData.Gun,
-			Pos        = BulletData.Pos,
-			ProjArea   = BulletData.FlechetteArea,
-			ProjMass   = BulletData.FlechetteMass,
-			DragCoef   = BulletData.FlechetteDragCoef,
-			Tracer     = BulletData.Tracer,
-			LimitVel   = BulletData.LimitVel,
-			Ricochet   = BulletData.Ricochet,
-			ShovePower = BulletData.ShovePower,
+	function CLASS:GetDisplayData(Data)
+		local Display = {
+			MaxPen = self:GetPenetration(Data, Data.MuzzleVel)
 		}
 
-		--if ammo is cooking off, shoot in random direction
-		if Gun:GetClass() == "acf_ammo" then
-			local MuzzleVec = VectorRand()
+		hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
 
-			for _ = 1, BulletData.Flechettes do
-				local Inaccuracy = VectorRand() / 360 * ((Gun.Spread or 0) + BulletData.FlechetteSpread)
+		return Display
+	end
 
-				FlechetteData.Flight = (MuzzleVec + Inaccuracy):GetNormalized() * BulletData.MuzzleVel * ACF.MeterToInch + Gun:GetVelocity()
+	function CLASS:UpdateRoundData()
+		local Data    = self.BulletData
+		local GUIData = self.GUIData
 
-				Ballistics.CreateBullet(FlechetteData)
+		ACF.UpdateRoundSpecs(self)
+
+		local Flechettes = math.Clamp(self.Flechettes, Data.MinFlechettes, Data.MaxFlechettes)
+
+		Data.Flechettes		   = Flechettes
+		Data.FlechetteSpread   = math.Clamp(self.Spread, Data.MinSpread, Data.MaxSpread)
+		Data.FlechetteCaliber  = self:GetFlechetteCaliber(Data.Caliber, Flechettes)
+		Data.FlechetteArea	   = math.pi * (Data.FlechetteCaliber * 0.5) ^ 2 -- area of a single flechette
+		Data.FlechetteMass	   = Data.FlechetteArea * Data.ProjLength * ACF.SteelDensity -- volume of single flechette * density of steel
+		Data.FlechetteDragCoef = Data.FlechetteArea * 0.0001 / Data.FlechetteMass
+		Data.ProjMass		   = Flechettes * Data.FlechetteMass -- total mass of all flechettes
+		Data.DragCoef		   = Data.ProjArea * 0.0001 / Data.ProjMass
+		Data.MuzzleVel		   = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
+		Data.CartMass		   = Data.PropMass + Data.ProjMass
+
+		hook.Run("ACF_OnUpdateRound", self, self, Data, GUIData)
+
+		for K, V in pairs(self:GetDisplayData(Data)) do
+			GUIData[K] = V
+		end
+	end
+
+	function CLASS:BaseConvert()
+		self.BulletData = { LengthAdj = 0.5 }
+
+		local Data = ACF.RoundBaseGunpowder(self)
+
+		Data.MaxFlechettes = math.Clamp(math.floor(Data.Caliber * 4), 12, 64)
+		Data.MinFlechettes = math.min(12, Data.MaxFlechettes) --force bigger guns to have higher min count
+		Data.MinSpread	   = 0.2
+		Data.MaxSpread	   = 10
+		Data.ShovePower	   = 0.2
+		Data.LimitVel	   = 500 --Most efficient penetration speed in m/s
+		Data.Ricochet	   = 75 --Base ricochet angle
+
+		self:UpdateRoundData()
+
+		return self.BulletData, self.GUIData
+	end
+
+	function CLASS:VerifyData()
+		BASE.VerifyData(self)
+
+		if not isnumber(self.Flechettes) then self.Flechettes = 0 end
+		if not isnumber(self.Spread) then self.Spread = 0 end
+	end
+
+	-- Shared with the client so the spawn menu can price a crate without spawning it.
+	local Conversion = ACF.PointConversion
+
+	function CLASS:GetCost(BulletData)
+		return (BulletData.ProjMass * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant)
+	end
+
+	if SERVER then
+		local Ballistics = ACF.Ballistics
+
+
+
+		function CLASS:OnLast(Entity)
+			BASE.OnLast(self, Entity)
+
+			Entity.Flechettes = nil
+			Entity.Spread = nil
+
+			-- Cleanup the leftovers aswell
+			Entity.RoundData5 = nil
+			Entity.RoundData6 = nil
+		end
+
+		function CLASS:Create(Gun, BulletData)
+			local Caliber = math.Round(BulletData.FlechetteCaliber, 2)
+
+			local FlechetteData = {
+				Caliber    = Caliber,
+				Diameter   = Caliber,
+				WeaponType = BulletData.WeaponType,
+				AmmoType   = "ACF.Ammunition.AP",
+				Owner      = BulletData.Owner,
+				Entity     = BulletData.Entity,
+				Crate      = BulletData.Crate,
+				Gun        = BulletData.Gun,
+				Pos        = BulletData.Pos,
+				ProjArea   = BulletData.FlechetteArea,
+				ProjMass   = BulletData.FlechetteMass,
+				DragCoef   = BulletData.FlechetteDragCoef,
+				Tracer     = BulletData.Tracer,
+				LimitVel   = BulletData.LimitVel,
+				Ricochet   = BulletData.Ricochet,
+				ShovePower = BulletData.ShovePower,
+			}
+
+			--if ammo is cooking off, shoot in random direction
+			if Gun:GetClass() == "acf_ammo" then
+				local MuzzleVec = VectorRand()
+
+				for _ = 1, BulletData.Flechettes do
+					local Inaccuracy = VectorRand() / 360 * ((Gun.Spread or 0) + BulletData.FlechetteSpread)
+
+					FlechetteData.Flight = (MuzzleVec + Inaccuracy):GetNormalized() * BulletData.MuzzleVel * ACF.MeterToInch + Gun:GetVelocity()
+
+					Ballistics.CreateBullet(FlechetteData)
+				end
+			else
+				local BaseInaccuracy = math.tan(math.rad(Gun:GetSpread()))
+				local AddInaccuracy	 = math.tan(math.rad(BulletData.FlechetteSpread))
+				local MuzzleVec		 = Gun:GetForward()
+
+				for _ = 1, BulletData.Flechettes do
+					local GunUp, GunRight	 = Gun:GetUp(), Gun:GetRight()
+					local BaseInaccuracyMult = math.random() ^ (1 / math.Clamp(ACF.GunInaccuracyBias, 0.5, 4)) * (GunUp * (2 * math.random() - 1) + GunRight * (2 * math.random() - 1)):GetNormalized()
+					local AddSpreadMult		 = math.random() ^ (1 / math.Clamp(ACF.GunInaccuracyBias, 0.5, 4)) * (GunUp * (2 * math.random() - 1) + GunRight * (2 * math.random() - 1)):GetNormalized()
+
+					local BaseSpread = BaseInaccuracy * BaseInaccuracyMult
+					local AddSpread  = AddInaccuracy * AddSpreadMult
+
+					FlechetteData.Flight = (MuzzleVec + BaseSpread + AddSpread):GetNormalized() * BulletData.MuzzleVel * ACF.MeterToInch + Gun:GetVelocity()
+
+					Ballistics.CreateBullet(FlechetteData)
+				end
 			end
-		else
-			local BaseInaccuracy = math.tan(math.rad(Gun:GetSpread()))
-			local AddInaccuracy	 = math.tan(math.rad(BulletData.FlechetteSpread))
-			local MuzzleVec		 = Gun:GetForward()
+		end
 
-			for _ = 1, BulletData.Flechettes do
-				local GunUp, GunRight	 = Gun:GetUp(), Gun:GetRight()
-				local BaseInaccuracyMult = math.random() ^ (1 / math.Clamp(ACF.GunInaccuracyBias, 0.5, 4)) * (GunUp * (2 * math.random() - 1) + GunRight * (2 * math.random() - 1)):GetNormalized()
-				local AddSpreadMult		 = math.random() ^ (1 / math.Clamp(ACF.GunInaccuracyBias, 0.5, 4)) * (GunUp * (2 * math.random() - 1) + GunRight * (2 * math.random() - 1)):GetNormalized()
+		function CLASS:Network(Entity, BulletData)
+			BASE.Network(self, Entity, BulletData)
 
-				local BaseSpread = BaseInaccuracy * BaseInaccuracyMult
-				local AddSpread  = AddInaccuracy * AddSpreadMult
+			local FlechetteCaliber = math.Round(BulletData.FlechetteCaliber, 2)
 
-				FlechetteData.Flight = (MuzzleVec + BaseSpread + AddSpread):GetNormalized() * BulletData.MuzzleVel * ACF.MeterToInch + Gun:GetVelocity()
+			Entity:SetNW2String("AmmoType", "ACF.Ammunition.FL")
+			Entity:SetNW2Float("Caliber", FlechetteCaliber)
+			Entity:SetNW2Float("ProjMass", BulletData.FlechetteMass)
+			Entity:SetNW2Float("DragCoef", BulletData.FlechetteDragCoef)
+		end
 
-				Ballistics.CreateBullet(FlechetteData)
+		function CLASS:UpdateCrateOverlay(BulletData, State)
+			local Data	  = self:GetDisplayData(BulletData)
+			local Class   = Classes.GetSubtypeByName("ACF.Weapons.BaseWeapon", BulletData.WeaponType)
+			local Spread  = Class and Class.Spread * ACF.GunInaccuracyScale or 0
+
+			State:AddNumber("Muzzle Velocity", BulletData.MuzzleVel, " m/s")
+			State:AddNumber("Flechette Count", BulletData.Flechettes)
+			State:AddNumber("Flechette Mass", math.Round(BulletData.FlechetteMass * 1000, 2), " g")
+			State:AddNumber("Flechette Caliber", math.Round(BulletData.FlechetteCaliber, 2), " mm")
+			State:AddNumber("Max Penetration", Data.MaxPen, " mm")
+			State:AddNumber("Max Spread", BulletData.FlechetteSpread + Spread, " degrees")
+		end
+	else
+		ACF.RegisterAmmoDecal("ACF.Ammunition.FL", "damage/ap_pen", "damage/ap_rico")
+
+		function CLASS:GetRangedPenetration(Bullet, Range)
+			local Speed = ACF.GetRangedSpeed(Bullet.MuzzleVel, Bullet.FlechetteDragCoef, Range) * ACF.InchToMeter
+
+			return math.Round(self:GetPenetration(Bullet, Speed), 2), math.Round(Speed, 2)
+		end
+
+		function CLASS:OnCreateAmmoControls(Base, _, BulletData)
+			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.flechette_amount", BulletData.MinFlechettes, BulletData.MaxFlechettes, nil, "Flechettes", function(Value)
+				self.Flechettes = math.floor(Value)
+				self:UpdateRoundData()
+			end, function(Panel)
+				Panel:SetValue(BulletData.Flechettes) -- snap to the clamped flechette count
+			end)
+
+			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.flechette_spread", BulletData.MinSpread, BulletData.MaxSpread, 2, "Spread", function(Value)
+				self.Spread = Value
+				self:UpdateRoundData()
+			end, function(Panel)
+				Panel:SetValue(BulletData.FlechetteSpread) -- snap to the clamped spread
+			end)
+		end
+
+		function CLASS:OnCreateAmmoInformation(Menu, _, BulletData)
+			local RoundStats = Menu:AddLabel()
+			ACF.AmmoMenu.Reactive(RoundStats, function()
+				self:UpdateRoundData()
+
+				local Text		= language.GetPhrase("acf.menu.ammo.round_stats_fl")
+				local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
+				local ProjMass	= ACF.FormatMass(BulletData.ProjMass)
+				local PropMass	= ACF.FormatMass(BulletData.PropMass)
+				local FLMass	= ACF.FormatMass(BulletData.FlechetteMass)
+
+				RoundStats:SetText(Text:format(MuzzleVel, ProjMass, PropMass, FLMass))
+			end)
+
+			local PenStats = Menu:AddLabel()
+			ACF.AmmoMenu.Reactive(PenStats, function()
+				self:UpdateRoundData()
+
+				local Text	   = language.GetPhrase("acf.menu.ammo.pen_stats_ap")
+				local MaxPen   = math.Round(self.GUIData.MaxPen, 2)
+				local R1P, R1V = self:GetRangedPenetration(BulletData, 300)
+				local R2V, R2P = self:GetRangedPenetration(BulletData, 800)
+
+				PenStats:SetText(Text:format(MaxPen, R1P, R1V, R2P, R2V))
+			end)
+		end
+
+		-- Ammo menu visual: casing plus a canister body carrying a bundle of small steel flechette darts
+		-- (BulletData.FlechetteCaliber/Mass), rather than a single solid penetrator like plain AP.
+		function CLASS:DrawAmmoVisual(Panel, w, h, _, BulletData)
+			local GeoPrim  = ACF.GeoPrim
+			local Margin   = 10
+			local DrawW    = w - Margin * 2
+			local Diameter = BulletData.Caliber
+			local Radius   = Diameter * 0.5
+
+			local Length = BulletData.ProjLength + BulletData.PropLength
+
+			if Length <= 0 then return end
+
+			-- Cap Scale by the case, the widest part, so the case/bore step survives the height budget
+			local CaseDia = BulletData.CaseDiameter
+
+			if CaseDia <= 0 then return end
+
+			local Scale      = math.min(DrawW / Length, ((h - Margin * 2) * 0.6) / CaseDia)
+			local DiameterPx = CaseDia * Scale
+			local BoreDiaPx  = Diameter * Scale -- The canister's own width, which the dart rows fill
+			local CenterY    = h * 0.5
+
+			local Propellant = GeoPrim.New("Cylinder", { Radius = CaseDia * 0.5, Height = BulletData.PropLength })
+			Propellant:SetMaterial("Propellant")
+
+			-- Canister body: a thin-walled cup carrying the flechette bundle
+			local Canister = GeoPrim.New("Cylinder", { Radius = Radius, Height = BulletData.ProjLength })
+			Canister:SetMaterial("Canister Body (Sabot Cup)")
+
+			local X = Margin
+			X = Propellant:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(180, 150, 60), Color(30, 30, 30))
+			local ProjX = X
+			Canister:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(140, 140, 145), Color(30, 30, 30))
+
+			-- Tracer, a colored segment at the base of the canister, drawn last (and not as a Canister
+			-- child -- Draw() paints an entire subtree in one Color, so a child never gets a color of its
+			-- own) so it takes hover priority and actually renders red instead of inheriting the canister's gray.
+			if BulletData.Tracer and BulletData.Tracer > 0 then
+				local Tracer = GeoPrim.New("Cylinder", { Radius = Radius, Height = BulletData.Tracer })
+				Tracer:SetMaterial("Tracer")
+				Tracer:Draw(Panel, ProjX, CenterY, Scale, DiameterPx, Color(220, 40, 30), Color(30, 30, 30))
 			end
+
+			local ProjW = BulletData.ProjLength * Scale
+
+			-- Illustrative rows of the packed flechette darts inside the cup (not a literal 1:1 count,
+			-- and not modeled as GeoPrim children -- it's a decorative pattern, not a physical shape
+			-- anything queries the volume of)
+			local DartDia = math.max(BoreDiaPx * 0.12, 2)
+			local Rows    = math.max(math.floor(BoreDiaPx / (DartDia * 1.4)), 1)
+			local InnerX  = ProjX + ProjW * 0.1
+			local InnerW  = ProjW * 0.8
+
+			surface.SetDrawColor(90, 95, 100)
+			for Row = 1, Rows do
+				local RowY = CenterY - BoreDiaPx * 0.5 + (Row - 0.5) * (BoreDiaPx / Rows)
+
+				surface.DrawRect(InnerX, RowY - DartDia * 0.5, InnerW, DartDia)
+			end
+
+			local InnerLengthMm = math.Round(BulletData.ProjLength * 0.8 * 10)
+			local InnerDiameterMm = math.Round(Radius * 2 * 10)
+
+			Panel:AddRegion(InnerX, CenterY - BoreDiaPx * 0.5, InnerW, BoreDiaPx, ("%d Flechettes (Steel Darts)\n%dx%d mm"):format(BulletData.Flechettes or 0, InnerDiameterMm, InnerLengthMm))
 		end
 	end
-
-	function Ammo:Network(Entity, BulletData)
-		Ammo.BaseClass.Network(self, Entity, BulletData)
-
-		local FlechetteCaliber = math.Round(BulletData.FlechetteCaliber, 2)
-
-		Entity:SetNW2String("AmmoType", "FL")
-		Entity:SetNW2Float("Caliber", FlechetteCaliber)
-		Entity:SetNW2Float("ProjMass", BulletData.FlechetteMass)
-		Entity:SetNW2Float("DragCoef", BulletData.FlechetteDragCoef)
-	end
-
-	function Ammo:UpdateCrateOverlay(BulletData, State)
-		local Data	  = self:GetDisplayData(BulletData)
-		local Destiny = ACF.FindWeaponrySource(BulletData.Id)
-		local Class   = Classes.GetGroup(Destiny, BulletData.Id)
-		local Spread  = Class and Class.Spread * ACF.GunInaccuracyScale or 0
-
-		State:AddNumber("Muzzle Velocity", BulletData.MuzzleVel, " m/s")
-		State:AddNumber("Flechette Count", BulletData.Flechettes)
-		State:AddNumber("Flechette Mass", math.Round(BulletData.FlechetteMass * 1000, 2), " g")
-		State:AddNumber("Flechette Caliber", math.Round(BulletData.FlechetteCaliber, 2), " mm")
-		State:AddNumber("Max Penetration", Data.MaxPen, " mm")
-		State:AddNumber("Max Spread", BulletData.FlechetteSpread + Spread, " degrees")
-	end
-else
-	ACF.RegisterAmmoDecal("FL", "damage/ap_pen", "damage/ap_rico")
-
-	function Ammo:GetRangedPenetration(Bullet, Range)
-		local Speed = ACF.GetRangedSpeed(Bullet.MuzzleVel, Bullet.FlechetteDragCoef, Range) * ACF.InchToMeter
-
-		return math.Round(self:GetPenetration(Bullet, Speed), 2), math.Round(Speed, 2)
-	end
-
-	-- Ammo menu visual: casing plus a canister body carrying a bundle of small steel flechette darts
-	-- (BulletData.FlechetteCaliber/Mass), rather than a single solid penetrator like plain AP.
-	function Ammo:DrawAmmoVisual(Panel, w, h, _, BulletData)
-		local GeoPrim  = ACF.GeoPrim
-		local Margin   = 10
-		local DrawW    = w - Margin * 2
-		local Diameter = BulletData.Caliber
-		local Radius   = Diameter * 0.5
-
-		local Length = BulletData.ProjLength + BulletData.PropLength
-
-		if Length <= 0 then return end
-
-		-- Cap Scale by the case, the widest part, so the case/bore step survives the height budget
-		local CaseDia = BulletData.CaseDiameter
-
-		if CaseDia <= 0 then return end
-
-		local Scale      = math.min(DrawW / Length, ((h - Margin * 2) * 0.6) / CaseDia)
-		local DiameterPx = CaseDia * Scale
-		local BoreDiaPx  = Diameter * Scale -- The canister's own width, which the dart rows fill
-		local CenterY    = h * 0.5
-
-		local Propellant = GeoPrim.New("Cylinder", { Radius = CaseDia * 0.5, Height = BulletData.PropLength })
-		Propellant:SetMaterial("Propellant")
-
-		-- Canister body: a thin-walled cup carrying the flechette bundle
-		local Canister = GeoPrim.New("Cylinder", { Radius = Radius, Height = BulletData.ProjLength })
-		Canister:SetMaterial("Canister Body (Sabot Cup)")
-
-		local X = Margin
-		X = Propellant:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(180, 150, 60), Color(30, 30, 30))
-		local ProjX = X
-		Canister:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(140, 140, 145), Color(30, 30, 30))
-
-		-- Tracer, a colored segment at the base of the canister, drawn last (and not as a Canister
-		-- child -- Draw() paints an entire subtree in one Color, so a child never gets a color of its
-		-- own) so it takes hover priority and actually renders red instead of inheriting the canister's gray.
-		if BulletData.Tracer and BulletData.Tracer > 0 then
-			local Tracer = GeoPrim.New("Cylinder", { Radius = Radius, Height = BulletData.Tracer })
-			Tracer:SetMaterial("Tracer")
-			Tracer:Draw(Panel, ProjX, CenterY, Scale, DiameterPx, Color(220, 40, 30), Color(30, 30, 30))
-		end
-
-		local ProjW = BulletData.ProjLength * Scale
-
-		-- Illustrative rows of the packed flechette darts inside the cup (not a literal 1:1 count,
-		-- and not modeled as GeoPrim children -- it's a decorative pattern, not a physical shape
-		-- anything queries the volume of)
-		local DartDia = math.max(BoreDiaPx * 0.12, 2)
-		local Rows    = math.max(math.floor(BoreDiaPx / (DartDia * 1.4)), 1)
-		local InnerX  = ProjX + ProjW * 0.1
-		local InnerW  = ProjW * 0.8
-
-		surface.SetDrawColor(90, 95, 100)
-		for Row = 1, Rows do
-			local RowY = CenterY - BoreDiaPx * 0.5 + (Row - 0.5) * (BoreDiaPx / Rows)
-
-			surface.DrawRect(InnerX, RowY - DartDia * 0.5, InnerW, DartDia)
-		end
-
-		local InnerLengthMm = math.Round(BulletData.ProjLength * 0.8 * 10)
-		local InnerDiameterMm = math.Round(Radius * 2 * 10)
-
-		Panel:AddRegion(InnerX, CenterY - BoreDiaPx * 0.5, InnerW, BoreDiaPx, ("%d Flechettes (Steel Darts)\n%dx%d mm"):format(BulletData.Flechettes or 0, InnerDiameterMm, InnerLengthMm))
-	end
-
-	function Ammo:OnCreateAmmoControls(Base, ToolData, BulletData)
-		local Flechettes = Base:AddSlider("#acf.menu.ammo.flechette_amount", BulletData.MinFlechettes, BulletData.MaxFlechettes)
-		Flechettes:SetClientData("Flechettes", "OnValueChanged")
-		Flechettes:DefineSetter(function(Panel, _, _, Value)
-			ToolData.Flechettes = math.floor(Value)
-
-			Ammo:UpdateRoundData(ToolData, BulletData)
-
-			Panel:SetValue(BulletData.Flechettes)
-
-			return BulletData.Flechettes
-		end)
-
-		local Spread = Base:AddSlider("#acf.menu.ammo.flechette_spread", BulletData.MinSpread, BulletData.MaxSpread, 2)
-		Spread:SetClientData("Spread", "OnValueChanged")
-		Spread:DefineSetter(function(Panel, _, _, Value)
-			ToolData.Spread = Value
-
-			Ammo:UpdateRoundData(ToolData, BulletData)
-
-			Panel:SetValue(BulletData.FlechetteSpread)
-
-			return BulletData.FlechetteSpread
-		end)
-	end
-
-	function Ammo:OnCreateCrateInformation(Base, Label, ...)
-		Ammo.BaseClass.OnCreateCrateInformation(self, Base, Label, ...)
-
-		Label:TrackClientData("Flechettes")
-	end
-
-	function Ammo:OnCreateAmmoInformation(Menu, ToolData, BulletData)
-		local RoundStats = Menu:AddLabel()
-		RoundStats:TrackClientData("RoundLength", "SetText")
-		RoundStats:TrackClientData("PropRatio")
-		RoundStats:TrackClientData("CaseScale")
-		RoundStats:TrackClientData("Flechettes")
-		RoundStats:DefineSetter(function()
-			self:UpdateRoundData(ToolData, BulletData)
-
-			local Text		= language.GetPhrase("acf.menu.ammo.round_stats_fl")
-			local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
-			local ProjMass	= ACF.FormatMass(BulletData.ProjMass)
-			local PropMass	= ACF.FormatMass(BulletData.PropMass)
-			local FLMass	= ACF.FormatMass(BulletData.FlechetteMass)
-
-			return Text:format(MuzzleVel, ProjMass, PropMass, FLMass)
-		end)
-
-		local PenStats = Menu:AddLabel()
-		PenStats:TrackClientData("RoundLength", "SetText")
-		PenStats:TrackClientData("PropRatio")
-		PenStats:TrackClientData("CaseScale")
-		PenStats:TrackClientData("Flechettes")
-		PenStats:DefineSetter(function()
-			self:UpdateRoundData(ToolData, BulletData)
-
-			local Text	   = language.GetPhrase("acf.menu.ammo.pen_stats_ap")
-			local MaxPen   = math.Round(BulletData.MaxPen, 2)
-			local R1P, R1V = self:GetRangedPenetration(BulletData, 300)
-			local R2V, R2P = self:GetRangedPenetration(BulletData, 800)
-
-			return Text:format(MaxPen, R1P, R1V, R2P, R2V)
-		end)
-	end
-end
+end)
