@@ -14,8 +14,13 @@ local function GetClassWeaponSpecs(Class, Caliber)
 	-- back to it (Base == Caliber => Scale 1); grouped legacy weapons may only have BaseCaliber.
 	local Field   = Class.GetType and Classes.GetTypeFieldByName(Class, "Caliber")
 	local Bounds  = Field and Field.Options or {}
-	local Base    = (Class.CaliberLimits and Class.CaliberLimits.Base) or Class.BaseCaliber or Class.Caliber or 1
-	Caliber       = math.Clamp(tonumber(Caliber) or Base, Bounds.Min or Base, Bounds.Max or Base)
+	local Limits  = Class.CaliberLimits
+	local Base    = (Limits and Limits.Base) or Class.BaseCaliber or Class.Caliber or 1
+	-- Caliber bounds come from CaliberLimits; the Caliber MENU_FIELD only carries a Default (no Min/Max),
+	-- so falling back to Bounds here would clamp scalable weapons to [Base, Base] and ignore their caliber.
+	local Min     = (Limits and Limits.Min) or Bounds.Min or Base
+	local Max     = (Limits and Limits.Max) or Bounds.Max or Base
+	Caliber       = math.Clamp(tonumber(Caliber) or Base, Min, Max)
 	local Scale   = Caliber / Base
 
 	return {
