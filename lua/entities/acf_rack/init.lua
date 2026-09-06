@@ -1060,7 +1060,11 @@ do -- Misc -------------------------------------
 
 	function ENT:GetCost()
 		local selftbl = self:GetTable()
-		return selftbl.MagSize * 1.5 * math.max(1, math.max(70, selftbl.RackCaliber) / 70)
+		local Class   = selftbl.ClassData
+
+		if Class.Cost then return Class.Cost end -- Flat override for outliers
+
+		return selftbl.MagSize * (Class.CostPerSlot or 1.5)
 	end
 
 	function ENT:Enable()
