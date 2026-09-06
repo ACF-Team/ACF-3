@@ -163,13 +163,18 @@ do
             end
 
             if HasNonDefault and not Entity.ACF_PreventArmoring then
-                if not NoStore then duplicator.StoreEntityModifier(Entity, "ACF_ArmorMesh", { Materials = Entity.ACF_Volumetric_Materials }) end
+                local Phys = Entity:GetPhysicsObject()
+
+                -- Remember the mass the entity had before armor first overwrote it, so ACF.RemoveVolumetricMesh
+                -- can put it back. Only the first value is kept; later calls are already looking at armored mass.
+                if Entity.ACF_OriginalMass == nil and IsValid(Phys) then Entity.ACF_OriginalMass = Phys:GetMass() end
+
+                if not NoStore then duplicator.StoreEntityModifier(Entity, "ACF_ArmorMesh", { Materials = Entity.ACF_Volumetric_Materials, OriginalMass = Entity.ACF_OriginalMass }) end
 
                 local EntACF = Entity.ACF
                 if EntACF then
                     ACF.Contraption.SetMass(Entity, TotalMass)
                 else
-                    local Phys = Entity:GetPhysicsObject()
                     if IsValid(Phys) then Phys:SetMass(TotalMass) end
                 end
             end
@@ -181,6 +186,30 @@ do
     -- Convenience wrapper for setting a single convex's material; see ACF.SetConvexMaterials.
     function ACF.SetConvexMaterial(Entity, ConvexID, Material, Player, NoStore)
         return ACF.SetConvexMaterials(Entity, { [ConvexID] = Material }, Player, NoStore)
+    end
+
+    -- Strips every trace of volumetric armor from an entity and gives it back the mass it had before it was
+    -- armored. Used when an entity stops being meshable, currently only makespherical replacing its physobj.
+    function ACF.RemoveVolumetricMesh(Entity)
+        if not IsValid(Entity) then return end
+
+        Entity.ACF_Volumetric_Mesh              = nil
+        Entity.ACF_Volumetric_Materials         = nil
+        Entity.ACF_Volumetric_Material_Override = nil
+
+        if CLIENT then return end
+
+        -- The entity can't hold armor anymore, so neither should any dupe of it
+        duplicator.ClearEntityModifier(Entity, "ACF_ArmorMesh")
+        duplicator.ClearEntityModifier(Entity, "ACF_Armor")
+
+        local Mass = Entity.ACF_OriginalMass
+        if not Mass then return end
+
+        Entity.ACF_OriginalMass = nil
+
+        local Phys = Entity:GetPhysicsObject()
+        if IsValid(Phys) then Phys:SetMass(Mass) end
     end
 
     local function ComputeVolumetricMesh(entity)
@@ -281,6 +310,19 @@ do
                 ComputeVolumetricMesh(self)
             end)
             return PhysInitMultiConvex_Orig(self, Meshes, ...)
+        end)
+
+        -- An entity that becomes spherical may have been tagged as armored. Reset to its original mass and remove the volumetric mesh.
+        local PhysInitSphere_Orig PhysInitSphere_Orig = Detours.Metatable("Entity", "PhysicsInitSphere", function(self, ...)
+            timer.Simple(0, function()
+                if not IsValid(self) then return end
+
+                local Phys = self:GetPhysicsObject()
+                if not IsValid(Phys) or Phys:GetMesh() then return end
+
+                ACF.RemoveVolumetricMesh(self)
+            end)
+            return PhysInitSphere_Orig(self, ...)
         end)
 
         -- Everything in general

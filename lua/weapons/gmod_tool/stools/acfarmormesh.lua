@@ -379,6 +379,9 @@ elseif SERVER then
 
 		Entity.ACF_Volumetric_Materials = Data.Materials
 
+		-- Restored before the mesh is built, so armor never captures the already armored mass as the original
+		Entity.ACF_OriginalMass = Data.OriginalMass
+
 		local MeshData = Entity.ACF_Volumetric_Mesh
 		if not MeshData then return end
 
