@@ -136,9 +136,9 @@ local function AddNumber(Menu, Context, Field, Options, Title, Overrides)
 	return Panel
 end
 
-local function AddBoolean(Menu, Context, Field, _, Title)
+local function AddBoolean(Menu, Context, Field, Options, Title)
 	local Panel = Menu:AddCheckBox(Title)
-	Panel:SetValue(Context:Get(Field) and true or false)
+	Panel:SetValue(Context:Get(Field) and true or  Options.Default or false)
 
 	function Panel:OnChange(Value)
 		if self._Suppress then return end
