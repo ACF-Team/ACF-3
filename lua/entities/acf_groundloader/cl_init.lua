@@ -58,5 +58,3 @@ function ENT:OnRemove()
         self.CachedMesh:Destroy()
     end
 end
-
-ACF.Classes.Entities.Register()
