@@ -19,6 +19,7 @@ do	-- NET SURFER 2.0
 
 	net.Receive("ACF_RequestEngineInfo", function()
 		local Engine		= net.ReadEntity()
+		local Exhaust       = net.ReadEntity()
 		local Driveshaft	= net.ReadVector()
 		local Outputs		= {}
 		local Fuel			= {}
@@ -58,6 +59,7 @@ do	-- NET SURFER 2.0
 			end
 		end
 
+		Engine.Exhaust      = Exhaust
 		Engine.Outputs		= OutEnts
 		Engine.FuelTanks	= FuelTanks
 		Engine.Driveshaft	= Driveshaft
@@ -125,9 +127,11 @@ do	-- Overlay
 	end
 
 	local FuelColor	= Color(255, 255, 0, 25)
+	local ExhaustColor = Color(220, 40, 40, 25)
 
 	function ENT:DrawOverlay()
 		local SelfTbl = self:GetTable()
+		local Exhaust = SelfTbl.Exhaust
 
 		if not SelfTbl.HasData then
 			self:RequestEngineInfo()
@@ -146,6 +150,11 @@ do	-- Overlay
 					render.DrawBox(E:GetPos(), E:GetAngles(), E:OBBMins(), E:OBBMaxs(), FuelColor)
 				end
 			end
+		end
+
+		if IsValid(Exhaust) and Exhaust ~= self then
+			render.DrawWireframeBox(Exhaust:GetPos(), Exhaust:GetAngles(), Exhaust:OBBMins(), Exhaust:OBBMaxs(), ExhaustColor, true)
+			render.DrawBox(Exhaust:GetPos(), Exhaust:GetAngles(), Exhaust:OBBMins(), Exhaust:OBBMaxs(), ExhaustColor)
 		end
 
 		self:DrawLinks({self = true}, true)
