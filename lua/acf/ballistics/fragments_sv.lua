@@ -5,7 +5,7 @@ local AmmoTypes  = ACF.Classes.AmmoTypes
 
 local MaxPenetrations = 10 -- Layers a fragment can punch through before it's given up on
 local MinSpeed        = 50 -- m/s, below this a fragment is assumed spent
-local MaxRange        = 65536 -- Trace length used to find a fragment's next obstacle, in world units
+local MaxRange        = 8000 -- Trace length used to find a fragment's next obstacle, in world units
 
 --- Same convex resolution DoBulletsFlight uses: skips transparent entities and, for volumetric
 --- meshes, resolves the specific convex hit instead of treating the whole entity as one wall.
@@ -76,12 +76,12 @@ function Ballistics.CreateFragment(Data)
 		local Trace, ConvexHit = ResolveNextHit(Fragment, Dir)
 
 		if not Trace then
-			debugoverlay.Line(Fragment.Pos, Fragment.TraceTo, 5, Fragment.Color)
+			debugoverlay.Line(Fragment.Pos, Fragment.TraceTo, 15, Fragment.Color, true)
 
 			return -- Spent itself in open air
 		end
 
-		debugoverlay.Line(Fragment.Pos, Trace.HitPos, 5, Fragment.Color)
+		debugoverlay.Line(Fragment.Pos, Trace.HitPos, 15, Fragment.Color, true)
 
 		Fragment.ConvexHit = ConvexHit
 

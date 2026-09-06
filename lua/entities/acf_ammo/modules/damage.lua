@@ -84,8 +84,7 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	-- If not killed: Roll dice to cook off
 	if self.Burning then return HitRes end -- Already cooking off
 
-	local Ratio = (HitRes.Damage / self.BulletData.RoundVolume) ^ 0.2
-
+	local Ratio = (HitRes.Damage / self.BulletData.RoundVolume) ^ 0.1
 	if (Ratio * self.Capacity / self.Amount) > math.random() then
 		self.Attacker = Attacker
 		self.Inflictor = Inflictor

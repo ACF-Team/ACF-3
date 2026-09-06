@@ -307,7 +307,6 @@ do -- ACF global vars
 	ACF.MaxChargeHeadLen     = 1.2     -- Maximum shaped charge head length (in charge diameters), lengths above will incur diminishing returns
 	ACF.HEATPenMul           = 0.85 * 8    -- Linear jet penetration multiplier
 	ACF.HEATMinPenVel        = 1000    -- m/s, minimum velocity of the copper jet that contributes to penetration
-	ACF.HEATCavityMul        = 1.2     -- Size of the penetration cavity in penetrator volume expended
 	ACF.HEATSpallingArc      = 0.5     -- Cossine of the HEAT spalling angle
 	ACF.HEATBoomConvert      = 1 / 3   -- Percentage of filler that creates HE damage at detonation
 	ACF.HEATStandOffMul      = 0.11 -- Percentage of standoff to use in penetration calculation (Original was too hig)
@@ -402,9 +401,6 @@ do -- ACF global vars
 
 	ACF.CrewSpaceLengthMod 	= 0.425	-- Changes contribution of shell length to ideal crew space
 	ACF.CrewSpaceCaliberMod = 1.0	-- Changes contribution of shell caliber to ideal crew space
-
-	ACF.CrewArmor 			= 5		-- How many millimeters of armor crew members have
-	ACF.CrewHealth 			= 4		-- How much health crew members have
 
 	ACF.CrewOxygen 			= 10	-- How many seconds can crew hold their breath for
 	ACF.CrewOxygenLossRate 	= 1		-- Multiplier for how fast crew regain their breath

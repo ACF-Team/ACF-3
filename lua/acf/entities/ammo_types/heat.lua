@@ -186,6 +186,9 @@ function Ammo:UpdateRoundData(ToolData, Data, GUIData)
 		Data.JetAvgVel	  	= _JetAvgVel
 	end
 
+	-- Jet's cross-sectional area (cm^2), same role as ProjArea for a kinetic round.
+	Data.JetArea = (Data.JetMass / ACF.CopperDensity) / (Data.BreakupDist * 100)
+
 	for K, V in pairs(self:GetDisplayData(Data)) do
 		GUIData[K] = V
 	end
@@ -284,6 +287,8 @@ if SERVER then
 		local TraceData = {start = JetStart, endpos = JetEnd, filter = {}, mask = Bullet.Mask}
 		local Penetrations = 0
 		local JetMassPct   = 1
+
+		Bullet.DamageArea = Bullet.JetArea -- Everything past this point is bored by the jet, not by the shell
 		-- Main jet penetrations
 		while Penetrations < 20 do
 			local TraceRes  = ACF.trace(TraceData)
@@ -296,8 +301,8 @@ if SERVER then
 
 			if not Ballistics.TestFilter(Ent, Bullet) then TraceData.filter[#TraceData.filter + 1] = TraceRes.Entity continue end
 
-			-- Get the (full jet's) penetration
-			local Standoff    = (PenHitPos - JetStart):Length() * ACF.InchToMeter -- Back to m
+			-- Get the (full jet's) penetration. Floor Standoff so a dead convex's still-solid collision, hit again at ~0 distance, can't zero out GetPenetration and abort the whole jet.
+			local Standoff    = math.max((PenHitPos - JetStart):Length() * ACF.InchToMeter, 0.01)
 			local Penetration = self:GetPenetration(Bullet, Standoff) * math.max(0, JetMassPct)
 			-- If it's out of range, stop here
 			if Penetration == 0 then break end
@@ -350,18 +355,14 @@ if SERVER then
 
 			-- Percentage of total jet mass lost to this penetration
 			local LostMassPct =  EffectiveArmor / Penetration
-			-- Deal damage based on the volume of the lost mass
-			local Cavity = ACF.HEATCavityMul * math.min(LostMassPct, JetMassPct) * Bullet.JetMass / ACF.CopperDensity -- in cm^3
-			local _Cavity = Cavity -- Remove when health scales with armor
 			if DamageDealt == 0 then
-				-- This should probably be consolidated with damageresults later: lua\acf\damage\objects_sv\damage_result.lua
-				_Cavity = Cavity * (Penetration / EffectiveArmor) * 0.14
+				-- Each jet layer resolves its own convex chain above, so clear any stale entry convex from the original impact and let getBulletDamage re-derive it here.
+				Bullet.ConvexHit = nil
 
-				-- Damage result, Damage info
+				-- Damage result, Damage info. Computed the same way as a kinetic round.
 				local JetDmg, JetInfo = Damage.getBulletDamage(Bullet, TraceRes)
 
 				JetInfo:SetType(DMG_BULLET)
-				JetDmg:SetDamage(_Cavity)
 
 				local Speed = Bullet.JetAvgVel
 
