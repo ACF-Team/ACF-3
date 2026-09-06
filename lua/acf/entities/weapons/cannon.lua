@@ -50,7 +50,7 @@ Weapons.Register("C", {
 	Sound       = "acf_base/weapons/cannon_new.mp3",
 	MuzzleFlash = "cannon_muzzleflash_noscale",
 	IsScalable  = true,
-	Mass        = 2031,
+	Mass        = 1229,
 	Spread      = 0.08,
 	ScaleFactor = 0.84, -- Corrective factor to account for improperly scaled base models
 	TransferMult = 4, -- Thermal energy transfer rate
