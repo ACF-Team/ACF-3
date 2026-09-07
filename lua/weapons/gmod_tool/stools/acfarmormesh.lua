@@ -43,6 +43,7 @@ if CLIENT then
 	local ClassFilter       = CreateClientConVar("acfarmormesh_class_filter", "", false, true)
 	local NudgeExponent     = CreateClientConVar("acfarmormesh_nudge_exponent", 0, false, true, "", NudgeExponentMin, NudgeExponentMax)
 	CreateClientConVar("acfarmormesh_ignore_elevation", 0, false, true, "", 0, 1)
+	CreateClientConVar("acfarmormesh_color_entity", 0, false, true, "", 0, 1)
 
 	local function GetClassFilter()
 		local Filter = {}
@@ -158,6 +159,9 @@ if CLIENT then
 		local SphereRadiusSlider = Menu:AddSlider("#tool.acfarmormesh.sphere_search_radius", SphereRadiusMin, SphereRadiusMax, 0)
 		SphereRadiusSlider:SetConVar("acfarmormesh_sphere_radius")
 		Menu:AddHelp("#tool.acfarmormesh.sphere_search_radius_desc")
+
+		Menu:AddCheckBox("Color entity by material", "acfarmormesh_color_entity")
+		Menu:AddHelp("When enabled, color codes the entity based on its material.")
 
 		Menu:AddCheckBox("Ignore camera elevation", "acfarmormesh_ignore_elevation")
 		Menu:AddHelp("When enabled, the recursive armor trace fires horizontally toward the hit point, as if the camera had no pitch angle.")
@@ -339,13 +343,14 @@ if CLIENT then
 
 			local ArmorType  = ACF.Classes.ArmorTypes.Get(Material) or ACF.Classes.ArmorTypes.Get("Default")
 			local Mass       = Volume * CubicInchToM3 * ArmorType.Density -- Volume is in^3, Density is kg/m^3
+			local Cost       = Volume * CubicInchToM3 * ArmorType.CostMul -- CostMul is points per m^3
 			local NominalHit = ACF.GetConvexHit(Entity, Trace.HitPos, -Trace.HitNormal, true)
 			local Nominal    = NominalHit and NominalHit.GeoThick or 0
 
 			local EffKE = ConvexHit.GeoThick * ArmorType.KineticMul
 			local EffCE = ConvexHit.GeoThick * ArmorType.ChemicalMul
 
-			local Text = string.format("Mat: %s\nNominal (mm): %.2f\nEff (mm): %.2f (KE) %.2f (CE)\nHP: %.2f / %.2f\nVolume (in^3): %.2f\nMass (kg): %.2f", Material, Nominal, EffKE, EffCE, Health, MaxHealth, Volume, Mass)
+			local Text = string.format("Mat: %s\nNominal (mm): %.2f\nEff (mm): %.2f (KE) %.2f (CE)\nHP: %.2f / %.2f\nVolume (in^3): %.2f\nMass (kg): %.2f\nCost (points): %.2f", Material, Nominal, EffKE, EffCE, Health, MaxHealth, Volume, Mass, Cost)
 			AddWorldTip(Entity, Text, nil, Trace.HitPos)
 		end
 	end)
@@ -506,6 +511,11 @@ elseif SERVER then
 			if not ConvexHit then return false end
 
 			if ACF.SetConvexMaterial(Entity, ConvexHit.ConvexID, Material, Player) == false then return false end
+		end
+
+		if tobool(self:GetClientInfo("color_entity")) then
+			local ArmorType = ACF.Classes.ArmorTypes.Get(Material)
+			if ArmorType and ArmorType.Color then Entity:SetColor(ArmorType.Color) end
 		end
 
 		return true

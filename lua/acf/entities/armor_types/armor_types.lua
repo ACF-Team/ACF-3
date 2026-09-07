@@ -99,6 +99,7 @@ function Armor:OnLoaded()
     self.KineticMul  = 0.2
     self.ChemicalMul = 0.24
     self.SpallMul    = 0.2
+    self.Color       = Color(127, 0, 95)
 end
 
 
@@ -114,6 +115,7 @@ function Armor:OnLoaded()
     self.KineticMul  = 0.5
     self.ChemicalMul = 0.6
     self.SpallMul    = 0.5
+    self.Color       = Color(255, 255, 255)
 end
 
 -- RHA
@@ -128,6 +130,7 @@ function Armor:OnLoaded()
     self.KineticMul  = 1.0
     self.ChemicalMul = 1.0
     self.SpallMul    = 1.0
+    self.Color       = Color(145, 145, 145)
 end
 
 -- HHRHA
@@ -142,6 +145,7 @@ function Armor:OnLoaded()
     self.KineticMul  = 1.25
     self.ChemicalMul = 1.15
     self.SpallMul    = 1.3
+    self.Color       = Color(255, 137, 137)
 end
 
 -- Gun Steel
@@ -186,6 +190,7 @@ function Armor:OnLoaded()
     self.KineticMul  = 0.15
     self.ChemicalMul = 0.35
     self.SpallMul    = 0.1
+    self.Color       = Color(36, 36, 36)
 end
 
 -- Textolite
@@ -200,6 +205,7 @@ function Armor:OnLoaded()
     self.KineticMul  = 0.5
     self.ChemicalMul = 1.5
     self.SpallMul    = 0.3
+    self.Color       = Color(255, 191, 0)
 end
 
 -- DU
@@ -214,6 +220,7 @@ function Armor:OnLoaded()
     self.KineticMul  = 1.8
     self.ChemicalMul = 1.3
     self.SpallMul    = 1.3
+    self.Color       = Color(140, 255, 168)
 end
 
 -- Silicon Carbide
@@ -228,6 +235,7 @@ function Armor:OnLoaded()
     self.KineticMul  = 2.2
     self.ChemicalMul = 1.6
     self.SpallMul    = 1.5
+    self.Color       = Color(0, 44, 70)
 end
 
 -- Light ERA
@@ -243,6 +251,7 @@ function Armor:OnLoaded()
     self.ChemicalMul = 3.0
     self.PassiveMul  = 0.2
     self.SpallMul    = 0.1
+    self.Color       = Color(255, 219, 112)
 
     self.IsExplosive        = true
     self.ExplosiveThreshold = 100
@@ -262,6 +271,7 @@ function Armor:OnLoaded()
     self.ChemicalMul = 2.0
     self.PassiveMul  = 0.5
     self.SpallMul    = 0.2
+    self.Color       = Color(127, 111, 63)
 
     self.IsExplosive        = true
     self.ExplosiveThreshold = 500
