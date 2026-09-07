@@ -196,6 +196,7 @@ if CLIENT then
 		end
 
 		AddFilterCheckBox("acf_gearbox")
+		AddFilterCheckBox("acf_engine")
 		AddFilterCheckBox("acf_fueltank")
 		AddFilterCheckBox("acf_gun")
 		AddFilterCheckBox("acf_missile")

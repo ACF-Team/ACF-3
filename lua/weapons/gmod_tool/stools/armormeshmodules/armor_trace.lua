@@ -12,7 +12,8 @@ local MaxTraceDist = 32768
 
 -- Gathers every meshed entity along the ray in one FindAlongRay pass and resolves their convex
 -- stacks together, like the test_trace concommand in volumetrics_sh.lua.
--- Stops at the first ACF entity hit, which is only shown as the "End" marker.
+-- Stops at the first non-filtered ACF entity hit, which is only shown as the "End" marker. A
+-- filtered ACF entity's armor is still counted as a layer, it just doesn't stop the scan.
 local function GetArmorLayers(StartTrace, Dir, Filter)
 	local Layers = {}
 	local Start  = StartTrace.HitPos - Dir * 2 -- same backoff ACF.GetConvexHits uses
@@ -21,8 +22,6 @@ local function GetArmorLayers(StartTrace, Dir, Filter)
 
 	local Intersections = {}
 	for _, Entity in ipairs(FoundEnts) do
-		if Filter[Entity:GetClass()] then continue end
-
 		local Hits = ACF.RayIntersectMesh(Entity, Start, Dir, true)
 		for _, Hit in ipairs(Hits) do
 			Intersections[#Intersections + 1] = Hit
@@ -33,8 +32,8 @@ local function GetArmorLayers(StartTrace, Dir, Filter)
 
 	local TerminalEntity
 	for _, Hit in ipairs(Hits) do
-		-- The first ACF entity hit ends the scan and is not added as an armor layer.
-		if Hit.Entity.IsACFEntity then
+		-- The first non-filtered ACF entity hit ends the scan and is not added as an armor layer.
+		if Hit.Entity.IsACFEntity and not Filter[Hit.Entity:GetClass()] then
 			TerminalEntity = Hit.Entity
 			break
 		end
