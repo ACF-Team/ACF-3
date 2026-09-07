@@ -202,6 +202,7 @@ if CLIENT then
 		AddFilterCheckBox("acf_missile")
 		AddFilterCheckBox("acf_rack")
 		AddFilterCheckBox("acf_turret")
+		AddFilterCheckBox("acf_turret_motor")
 	end
 
 	ACF.CreateArmorMeshMenu = CreateArmorMeshMenu
