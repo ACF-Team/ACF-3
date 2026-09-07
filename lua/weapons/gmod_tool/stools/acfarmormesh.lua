@@ -23,6 +23,21 @@ AddCSLuaFile("armormeshmodules/cost_comparison.lua")
 
 include("armormeshmodules/contraption_readout.lua")
 
+-- Reload is driven from Think rather than TOOL:Reload, which the toolgun gates behind the CanTool hook.
+-- Prop protection denies that on entities the player doesn't own, and reading a contraption changes nothing.
+function TOOL:CheckForReload()
+	local FirstTime = IsFirstTimePredicted()
+	if not FirstTime then return end
+
+	local Player = self:GetOwner()
+	if not Player:KeyPressed(IN_RELOAD) then return end
+
+	local Trace = Player:GetEyeTrace()
+	if not self:HandleReload(Trace) then return end
+
+	self.Weapon:DoShootEffect(Trace.HitPos, Trace.HitNormal, Trace.Entity, Trace.PhysicsBone, FirstTime)
+end
+
 if CLIENT then
 	language.Add("tool.acfarmormesh.name", "ACF Armor Mesh")
 	language.Add("tool.acfarmormesh.desc", "Applies armor materials to individual convexes of an ACF volumetric mesh")
@@ -70,19 +85,23 @@ if CLIENT then
 
 	function TOOL:LeftClick(_) return true end
 	function TOOL:RightClick(_) return true end
-	function TOOL:Reload(Trace)
+	function TOOL:HandleReload(Trace)
 		local Owner       = self:GetOwner()
 		local Ctrl, Shift = Owner:KeyDown(IN_DUCK), Owner:KeyDown(IN_SPEED)
-		-- Runs the trace/scan directly client-side to avoid a server round-trip. In true singleplayer
-		-- this branch never actually fires (see the SERVER TOOL:Reload below), so no duplication occurs.
+		-- Runs the trace/scan directly client side to avoid a server round-trip.
 		if Ctrl and Shift then return DoArmorScan(self, Trace) end
 		if Ctrl then return DoRecursiveArmorTrace(self, Trace) end
 		if Shift then return self:GetContraptionReadout(Trace, true) end
 		return self:GetContraptionReadout(Trace, false)
 	end
 
-	-- Only used as a true-singleplayer fallback (see SERVER TOOL:Reload below): prediction never runs
-	-- this file's CLIENT TOOL:Reload there, so the server nets Ctrl key state here instead.
+	function TOOL:Think()
+		-- Prediction never runs this realm in singleplayer, so the server nets the trace/scan over instead.
+		if game.SinglePlayer() then return end
+		self:CheckForReload()
+	end
+
+	-- Singleplayer fallback for the client side trace/scan, driven by the server's HandleReload.
 	net.Receive("ACF_ArmorMesh_Reload", function()
 		local Shift = net.ReadBool()
 		local Tool  = LocalPlayer():GetTool("acfarmormesh")
@@ -434,6 +453,8 @@ elseif SERVER then
 
 	-- Keeps the toolgun's NW vars in sync with the convex under the player's crosshair, for client-side display.
 	function TOOL:Think()
+		self:CheckForReload()
+
 		local Player = self:GetOwner()
 		local Trace  = Player:GetEyeTrace()
 		local Entity = Trace.Entity
@@ -553,11 +574,11 @@ elseif SERVER then
 		return true
 	end
 
-	function TOOL:Reload(Trace)
+	function TOOL:HandleReload(Trace)
 		local Owner = self:GetOwner()
 		local Ctrl, Shift = Owner:KeyDown(IN_DUCK), Owner:KeyDown(IN_SPEED)
+		-- The armor trace and scan are drawn client side, which the client drives itself in multiplayer.
 		if Ctrl then
-			-- Client side predictions fails in singleplayer, so notify the client.
 			if game.SinglePlayer() then
 				net.Start("ACF_ArmorMesh_Reload")
 					net.WriteBool(Shift)
@@ -565,8 +586,7 @@ elseif SERVER then
 			end
 			return false
 		end
-		if Shift then return self:GetContraptionReadout(Trace, true) end
-		return self:GetContraptionReadout(Trace, false)
+		return self:GetContraptionReadout(Trace, Shift)
 	end
 end
 
