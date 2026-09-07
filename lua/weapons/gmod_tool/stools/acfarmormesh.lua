@@ -25,12 +25,21 @@ include("armormeshmodules/contraption_readout.lua")
 
 -- Reload is driven from Think rather than TOOL:Reload, which the toolgun gates behind the CanTool hook.
 -- Prop protection denies that on entities the player doesn't own, and reading a contraption changes nothing.
+-- Think runs every frame client side while KeyPressed stays set for the whole usercmd, so a plain KeyPressed
+-- check fires once per frame there. The press is edge latched instead, to run the trace and scan once each.
+TOOL.ReloadHeld = false
+
 function TOOL:CheckForReload()
 	local FirstTime = IsFirstTimePredicted()
 	if not FirstTime then return end
 
-	local Player = self:GetOwner()
-	if not Player:KeyPressed(IN_RELOAD) then return end
+	local Player  = self:GetOwner()
+	local Held    = Player:KeyDown(IN_RELOAD)
+	local WasHeld = self.ReloadHeld
+
+	self.ReloadHeld = Held
+
+	if not Held or WasHeld then return end
 
 	local Trace = Player:GetEyeTrace()
 	if not self:HandleReload(Trace) then return end
