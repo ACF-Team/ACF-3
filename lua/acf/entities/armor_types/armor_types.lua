@@ -90,8 +90,8 @@ end
 
 local Armor = Types.Register("Wing")
 function Armor:OnLoaded()
-    self.Name        = "Wing"
-    self.ShortName   = "Wing"
+    self.Name        = "Aircraft Aluminum"
+    self.ShortName   = "Aircraft Aluminum"
     self.Description = "For aircraft wings and similar hollow structures. Very light."
     self.Density     = 1080 -- https://en.wikipedia.org/wiki/Aluminium
     self.CostMul     = 9
@@ -248,7 +248,7 @@ function Armor:OnLoaded()
     self.CostMul     = 29.775
     self.HealthMul   = 0.23
     self.KineticMul  = 0.3
-    self.ChemicalMul = 3.0
+    self.ChemicalMul = 2.0
     self.PassiveMul  = 0.2
     self.SpallMul    = 0.1
     self.Color       = Color(255, 219, 112)
