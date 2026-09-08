@@ -118,7 +118,7 @@ CrewTypes.Register("Gunner", {
 	Name        = "Gunner",
 	Icon		= "icon16/gun.png",
 	Description = "Gunners provide control over weaponized turrets, letting them update their aim freely. Link them to ACF Horizontal Turrets. They prefer sitting poses.",
-	ExtraNotes	= "Gunners can only be linked to one turret. Their control benefit can propagate to Vertical turrets which are parented to the Horizontal turret if the cumulative mass of the Horizontal turret is less than 250kg, the Gunner is directly parented to the Horizontal turret, or if the Gunner is also linked to a Remote Turret Controller.",
+	ExtraNotes	= "Gunners can only be linked to one turret, but can additionally be linked to ACF Guns or Missile Racks to serve as Loaders. Their control benefit can propagate to Vertical turrets which are parented to the Horizontal turret if the cumulative mass of the Horizontal turret is less than 250kg, the Gunner is directly parented to the Horizontal turret, or if the Gunner is also linked to a Remote Turret Controller.",
 	Cost	= 1,
 	LimitConVar	= {
 		Name	= "_acf_crew_gunner",
@@ -135,27 +135,47 @@ CrewTypes.Register("Gunner", {
 			Min = 1,	-- Best efficiency before this (Gs)
 			Max = 4,	-- Worst efficiency after this (Gs)
 		},
+		-- Used instead of Efficiencies while linked to a gun/rack, since loading duty is
+		-- as sensitive to movement as an actual Loader's, regardless of Gunner's usual tolerance
+		LoaderEfficiencies = {
+			Min = 0.5,		-- Best efficiency before this (Gs)
+			Max = 3,		-- Worst efficiency after this (Gs)
+		},
 		Damages = {
 			Min = 5,	-- Damage starts being applied after this (Gs)
 			Max = 9,	-- Instant death after this (Gs)
 		}
 	},
+	SpaceInfo = {			-- Specifying this table enables spatial scans (if linked to a gun)
+		ScanStep = 3,		-- How many parts of a scan to update each time
+	},
 	LinkHandlers = {
 		acf_turret = {
 			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
-				if CheckCount(Crew) then return false, "Gunners can only link to one entity." end
+				if CheckCount(Crew, "acf_turret") then return false, "Gunners can only link to one turret." end
 				if Target.Turret == "Turret-V" then return false, "Gunners cannot link to vertical drives." end
 				return true, "Crew linked."
 			end
-		}
+		},
+		acf_gun = {
+			CanLink = CanLinkGun,
+			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") end, -- If linked to multiple guns
+			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_gun") end, -- If linked to multiple guns
+		},
+		acf_rack = {
+			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_rack") end, -- If linked to multiple racks
+			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_rack") end, -- If linked to multiple racks
+		},
 	},
+	UpdateLowFreq = FindLongestBullet,
 	UpdateEfficiency = function(Crew, Commander)
 		local MyEff = Crew.ModelEff * Crew.LeanEff * Crew.SpaceEff * Crew.MoveEff * Crew.HealthEff * Crew.Focus
 		local CommanderEff = Commander and Commander.TotalEff or 0
 		Crew.TotalEff = math.Clamp(CommanderEff * ACF.CrewCommanderCoef + MyEff * ACF.CrewSelfCoef, ACF.CrewFallbackCoef, 1)
 	end,
 	UpdateFocus = function(Crew)
-		Crew.Focus = 1
+		local Count = table.Count(Crew.Targets)
+		Crew.Focus = (Count > 0) and (1 / Count) or 1
 	end,
 	EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, "GroundVehicle") end
 })
