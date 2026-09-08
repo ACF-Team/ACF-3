@@ -505,6 +505,7 @@ do -- Spawn and Update functions --------------------------------
 		Entity.BulletData   = EMPTY
 		Entity.TurretLink	= false
 		Entity.HasInitialLoaded = false
+		Entity.MagazineReloading = false
 		Entity.DataStore    = Entities.GetArguments("acf_gun")
 		Entity.ParentState  = 0
 
@@ -1152,6 +1153,7 @@ do -- Metamethods --------------------------------
 							WireLib.TriggerOutput(self, "Muzzle Velocity", math.Round((SelfTbl.BulletData.MuzzleVel or 0) * ACF.Scale, 2))
 
 							self:SetState("Loaded")
+							SelfTbl.MagazineReloading = false
 
 							if self:CanFire() then self:Shoot() end
 						end
@@ -1169,6 +1171,7 @@ do -- Metamethods --------------------------------
 				)
 			else -- No available crate to pull ammo from, out of ammo!
 				self:SetState("Empty")
+				SelfTbl.MagazineReloading = false
 
 				SelfTbl.CurrentShot = 0
 				SelfTbl.BulletData  = EMPTY
@@ -1187,6 +1190,7 @@ do -- Metamethods --------------------------------
 
 			if not IsValid(Crate) or CheckCrate(self, Crate, ENTITY.GetPos(self)) then -- Can't load without having ammo being provided
 				self:SetState("Empty")
+				SelfTbl.MagazineReloading = false
 
 				SelfTbl.CurrentShot = 0
 				SelfTbl.BulletData  = EMPTY
@@ -1207,6 +1211,8 @@ do -- Metamethods --------------------------------
 			self:SetState("Loading")
 
 			if SelfTbl.MagReload then -- Mag-fed
+				SelfTbl.MagazineReloading = true
+
 				Sounds.SendSound(self, "weapons/357/357_reload4.wav", 70, 100, 1)
 
 				WireLib.TriggerOutput(self, "Shots Left", SelfTbl.CurrentShot)
