@@ -80,6 +80,8 @@ do -- Random timer crew stuff
 	local TraceResult  = {}
 	local TraceResult2 = {}
 	local TraceConfig = {start = Vector(), endpos = Vector(), filter = nil, output = TraceResult}
+	-- Crew that lost sight of the breech during the last UpdateLoadMod
+	local BlockedCrew = 0
 	-- Calculates the reload efficiency between a Crew, one of it's guns and an ammo crate
 	local function GetReloadEff(Crew, Gun, Ammo)
 		local GunTable  = ENTITY.GetTable(Gun)
@@ -93,28 +95,41 @@ do -- Random timer crew stuff
 		TraceConfig.start = CrewPos
 		TraceConfig.endpos = BreechPos
 		TraceConfig.filter = function(x) return not (x == Gun or x.noradius or x == Crew or x == ENTITY.GetParent(Gun) or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[ENTITY.GetClass(x)]) end
+		TraceLine(TraceConfig)
 
 		-- Debug.Line(CrewPos, TraceResult.HitPos, 1, COLOR_GREEN, true)
 		-- Debug.Line(TraceResult.HitPos, BreechPos, 1, COLOR_RED, true)
 
 		Crew.OverlayErrors.LOSCheck = (ACF.LegalChecks and TraceResult.Hit) and "Crew cannot see the breech\nOf: " .. (tostring(Gun) or "<INVALID ENTITY???>") .. "\nBlocked by " .. (tostring(TraceResult.Entity) or "<INVALID ENTITY???>") or nil
 		Crew:UpdateOverlay()
-		if TraceResult.Hit then return 0.000001 end -- Wanna avoid division by zero...
+		-- A crew member who can't reach the breech contributes nothing
+		if TraceResult.Hit then
+			BlockedCrew = BlockedCrew + 1
+			return 0
+		end
 
 		return Crew.TotalEff * ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist)
 	end
 
+	--- Recalculates the load modifier of the gun
+	--- @return number # The load modifier, always a usable value
+	--- @return boolean # Whether the gun currently can't load at all, which stalls the reload
 	function ENT_UpdateLoadMod(self)
 		local SelfTbl = ENTITY.GetTable(self)
+		local Blocked = false
 
 		SelfTbl.CrewsByType = SelfTbl.CrewsByType or {}
 		if IsValid(SelfTbl.Autoloader) and ENTITY.GetTable(SelfTbl.Autoloader).ACF.Health > 0 then
-			local Sum1 = SelfTbl.Autoloader:GetReloadEffAuto(self, SelfTbl.CurrentCrate)
+			local Sum1, AutoBlocked = SelfTbl.Autoloader:GetReloadEffAuto(self, SelfTbl.CurrentCrate)
 			SelfTbl.LoadCrewMod = math.Clamp(Sum1, ACF.AutoloaderFallbackCoef, ACF.AutoloaderMaxBonus)
+			Blocked = AutoBlocked
 		else
-			local Sum1 = ACF.WeightedLinkSum(SelfTbl.CrewsByType.Loader or {}, GetReloadEff, self, SelfTbl.CurrentCrate or self)
-			local Sum2 = ACF.WeightedLinkSum(SelfTbl.CrewsByType.Commander or {}, GetReloadEff, self, SelfTbl.CurrentCrate or self)
+			BlockedCrew = 0
+			local Sum1, Count1 = ACF.WeightedLinkSum(SelfTbl.CrewsByType.Loader or {}, GetReloadEff, self, SelfTbl.CurrentCrate or self)
+			local Sum2, Count2 = ACF.WeightedLinkSum(SelfTbl.CrewsByType.Commander or {}, GetReloadEff, self, SelfTbl.CurrentCrate or self)
 			SelfTbl.LoadCrewMod = math.Clamp(Sum1 + Sum2, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
+			-- A crewed gun only stalls once every last crew member has lost sight of the breech
+			Blocked = BlockedCrew > 0 and BlockedCrew == Count1 + Count2
 		end
 
 		-- Check space behind breech
@@ -156,10 +171,12 @@ do -- Random timer crew stuff
 			local IsBlocked = (TraceResult.Hit or (tr2 and tr2.Hit))
 			SelfTbl.OverlayErrors.BreechCheck = IsBlocked and "Not enough space behind breech!\nHover with ACF menu tool" or nil
 			self:UpdateOverlay()
-			if IsBlocked then return 0.000001 end
+			if IsBlocked then Blocked = true end
 		end
 
-		return SelfTbl.LoadCrewMod
+		SelfTbl.LoadBlocked = Blocked
+
+		return SelfTbl.LoadCrewMod, Blocked
 	end
 	ENT.UpdateLoadMod = ENT_UpdateLoadMod
 
@@ -993,6 +1010,13 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Loading -------------------------------
+		-- Keeps NextFire tracking the real remaining time, a stalled reload has no deadline so the last one runs out
+		local function UpdateNextFire(Entity, Config, Eff, Blocked)
+			if Blocked or not Config or not Config.Goal then return end
+
+			Entity.NextFire = Clock.CurTime + math.max(Config.Goal - Config.Progress, 0) / Eff
+		end
+
 		--- Finds the next crate
 		--- @param Current any Optionally specified current crate to check against (optimization measure)
 		--- @param Check any Function used to check if a crate meets our criteria
@@ -1091,13 +1115,24 @@ do -- Metamethods --------------------------------
 				ENTITY.SetNW2Float(self, "Caliber", SelfTbl.BulletData.Caliber)
 				ENTITY.SetNW2Int(self, "BreechIndex", SelfTbl.BreechIndex or 1)
 
-				local ReloadLoop = function()
-					local eff = Manual and self:UpdateLoadMod() or 1
-					if Manual then -- Automatics don't change their rate of fire
-						WireLib.TriggerOutput(self, "Reload Time", IdealTime / eff)
-						WireLib.TriggerOutput(self, "Rate of Fire", 60 / (IdealTime / eff))
+				local ReloadLoop = function(Config)
+					-- Automatics don't change their rate of fire
+					if not Manual then
+						UpdateNextFire(self, Config, 1)
+						return 1
 					end
-					return eff
+
+					local Eff, Blocked = self:UpdateLoadMod()
+					local Time = IdealTime / Eff
+
+					UpdateNextFire(self, Config, Eff, Blocked)
+
+					SelfTbl.ReloadTime = Time
+
+					WireLib.TriggerOutput(self, "Reload Time", Time)
+					WireLib.TriggerOutput(self, "Rate of Fire", 60 / Time)
+
+					return Eff, Blocked
 				end
 
 				local ReloadFinish = function()
@@ -1181,14 +1216,19 @@ do -- Metamethods --------------------------------
 
 				SelfTbl.NextFire = Clock.CurTime + Time
 
-				local ReloadLoop = function()
+				local ReloadLoop = function(Config)
 					if not IsValid(self) then return end
 
 					local SelfTbl = ENTITY.GetTable(self)
-					local eff = self:UpdateLoadMod()
-					if Manual then WireLib.TriggerOutput(self, "Mag Reload Time", IdealTime / eff) end
-					SelfTbl.MagReload = IdealTime / eff
-					return eff
+					local Eff, Blocked = self:UpdateLoadMod()
+					local Time = IdealTime / Eff
+
+					UpdateNextFire(self, Config, Eff, Blocked)
+
+					if Manual then WireLib.TriggerOutput(self, "Mag Reload Time", Time) end
+					SelfTbl.MagReload = Time
+
+					return Eff, Blocked
 				end
 
 				local ReloadFinish = function()
@@ -1283,6 +1323,11 @@ do -- Metamethods --------------------------------
 						State:AddWarning(SelfTbl.State)
 					end
 				end
+			end
+
+			-- The crew LOS error lives on the crew, so flag the stall here too
+			if SelfTbl.LoadBlocked and SelfTbl.State ~= "Loaded" then
+				State:AddWarning("Reloading is stalled until the breech can be reached")
 			end
 
 			for Crate in pairs(SelfTbl.Crates) do -- Tally up the amount of ammo being provided by active crates
