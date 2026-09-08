@@ -163,8 +163,8 @@ CrewTypes.Register("Gunner", {
 CrewTypes.Register("Driver", {
 	Name        = "Driver",
 	Icon		= "icon16/car.png",
-	Description = "Drivers permit gearboxes to apply torque to wheels at full effect. Link them to ACF Baseplates. They prefer sitting poses.",
-	ExtraNotes	= "Drivers affect all gearboxes on a contraption.",
+	Description = "Drivers permit gearboxes to apply torque to wheels at full effect. They prefer sitting poses.",
+	ExtraNotes	= "Drivers affect all gearboxes on a contraption without needing to be linked, similar to how a Commander affects the crew.",
 	Cost	= 1,
 	LimitConVar	= {
 		Name	= "_acf_crew_driver",
@@ -186,14 +186,7 @@ CrewTypes.Register("Driver", {
 			Max = 9,	-- Instant death after this (Gs)
 		}
 	},
-	LinkHandlers = {
-		acf_baseplate = {
-			CanLink = function(Crew) -- Called when a crew member tries to link to an entity
-				if CheckCount(Crew) then return false, "Drivers can only link to one entity." end
-				return true, "Crew linked."
-			end
-		}
-	},
+	LinkHandlers = {},
 	UpdateEfficiency = function(Crew, Commander)
 		local MyEff = Crew.ModelEff * Crew.LeanEff * Crew.SpaceEff * Crew.MoveEff * Crew.HealthEff * Crew.Focus
 		local CommanderEff = Commander and Commander.TotalEff or 0
