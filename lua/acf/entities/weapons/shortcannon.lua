@@ -10,7 +10,7 @@ Weapons.Register("SC", {
 	MuzzleFlash = "cannon_muzzleflash_noscale",
 	IsScalable  = true,
 	Spread      = 0.16,
-	Mass        = 1195,
+	Mass        = 723,
 	ScaleFactor = 1.0, -- Corrective factor to account for improperly scaled base models
 	Round = {
 		MaxLength  = 80,
