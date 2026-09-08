@@ -276,9 +276,6 @@ do	-- Spawn and Update funcs
 		-- Whether a Gunner/Commander/Pilot (or component) controls this turret; only matters
 		-- while weaponized (see InputDirection for what happens when uncontrolled)
 		Entity.IsControlled		= false
-		Entity.LastAimInputTime	= 0
-		Entity.LastRequestedDirection = nil
-		Entity.PendingDirection	= nil
 
 		-- Any turrets that happen to get parented to this one, either directly or indirectly
 		-- Mass calculation will stop at this, and instead read whatever that turret has calculated
@@ -938,7 +935,7 @@ do -- Overlay
 			if SelfTbl.IsControlled then
 				State:AddKeyValue("Controlled", "Yes")
 			else
-				State:AddError("Uncontrolled: aim only updates every " .. ACF.UncontrolledAimUpdateInterval .. "s")
+				State:AddError("Uncontrolled: not aiming")
 			end
 		else
 			State:AddKeyValue("Weaponized", "No")
@@ -1160,33 +1157,15 @@ do -- Metamethods
 			local SelfTbl = ENTITY.GetTable(self)
 			if SelfTbl.Disabled then return end
 
-			-- No-op on an unchanged value, so a steady wire input never touches the cooldown
-			if SelfTbl.LastRequestedDirection == Direction then return end
-			SelfTbl.LastRequestedDirection = Direction
+			-- Uncontrolled weaponized turrets don't aim at all; stabilization/slewing continue as normal
+			if SelfTbl.IsWeaponized and not SelfTbl.IsControlled then return end
 
-			-- Uncontrolled weaponized turrets only accept a changed aim target once every
-			-- ACF.UncontrolledAimUpdateInterval seconds; stabilization/slewing continue as normal
-			if SelfTbl.IsWeaponized and not SelfTbl.IsControlled and Clock.CurTime < SelfTbl.LastAimInputTime + ACF.UncontrolledAimUpdateInterval then
-				SelfTbl.PendingDirection = Direction
-				return
-			end
-
-			SelfTbl.LastAimInputTime = Clock.CurTime
-			SelfTbl.PendingDirection = nil
 			ApplyDirection(SelfTbl, Direction)
 		end
 
 		-- The meat and POE-TAE-TOES of the turret working. Called by the ACF_OnTick coordinator below,
 		-- ancestors first, instead of via ENT:Think()/NextThink
 		local function RunTurretSlew(self, SelfTbl)
-			-- Apply a deferred mid-cooldown change once the cooldown lapses
-			if SelfTbl.PendingDirection ~= nil and Clock.CurTime >= SelfTbl.LastAimInputTime + ACF.UncontrolledAimUpdateInterval then
-				SelfTbl.LastAimInputTime = Clock.CurTime
-				local Pending = SelfTbl.PendingDirection
-				SelfTbl.PendingDirection = nil
-				ApplyDirection(SelfTbl, Pending)
-			end
-
 			if SelfTbl.Disabled then
 				SetSoundState(self, false, SelfTbl)
 				SelfTbl.LastTurretAngle = ENTITY.GetAngles(self)
