@@ -376,7 +376,7 @@ do -- Random timer stuff
 		local Baseplate = Contraption and Contraption.ACF_Baseplate
 		if not IsEntityValid(Baseplate) then return end -- Why would this happen for a recent vehicle? no clue lol...
 		-- This is ACF_LiveData to try to help with performance issues (__index'ing)... ugh
-		local SampleRate = ENTITY.GetTable(Baseplate).ACF_LiveData["GForceTicks"] or 1
+		local SampleRate = ENTITY.GetTable(Baseplate).ACF_LiveData["BaseplateType"].GForceTicks or 1
 		if Contraption.IsPickedUp then return end
 
 		local SelfTbl = ENTITY.GetTable(self)
