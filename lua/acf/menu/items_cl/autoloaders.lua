@@ -20,14 +20,15 @@ Components.RegisterItem("AL-IMP", "AL", {
 		local MassLabel = Menu:AddLabel("")
 		local CostLabel = Menu:AddLabel("")
 		local AutoloaderSize = Vector(0, 0, 0)
+		local Caliber = 0
 
 		local function UpdateAutoloaderStats()
-			-- Mass is proportional to volume of the shell
+			-- Mass is proportional to volume of the shell, cost is based on caliber alone
 			local R, H = AutoloaderSize.y, AutoloaderSize.x
 			local Volume = math.pi * R * R * H
 
 			MassLabel:SetText(string.format("Mass : %s", ACF.FormatMass(Volume * 250)))
-			CostLabel:SetText(string.format("Cost : %s", ACF.FormatCost(Volume * 8)))
+			CostLabel:SetText(string.format("Cost : %s", ACF.FormatCost(Caliber * 0.2)))
 
 			if Menu.ComponentPreview then
 				Menu.ComponentPreview:SetModelScale(AutoloaderSize, true)
@@ -43,6 +44,7 @@ Components.RegisterItem("AL-IMP", "AL", {
 
 			AutoloaderSize.y = Size / RefSize.y / ACF.InchToMm
 			AutoloaderSize.z = Size / RefSize.z / ACF.InchToMm
+			Caliber = Size
 
 			UpdateAutoloaderStats()
 

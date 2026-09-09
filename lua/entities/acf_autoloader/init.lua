@@ -216,12 +216,10 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 end
 
 function ENT:GetCost()
-	local AutoloaderSize = self:GetScale()
+	-- Based on caliber rather than volume, so long/short autoloaders of the same caliber cost the same
+	local Caliber = self:ACF_GetUserVar("AutoloaderCaliber")
 
-	local R, H = AutoloaderSize.y, AutoloaderSize.x
-	local Volume = math.pi * R * R * H
-
-	return Volume * 8
+	return Caliber * 0.2
 end
 
 function ENT:Think()
