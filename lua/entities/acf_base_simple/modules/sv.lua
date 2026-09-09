@@ -65,6 +65,29 @@ return function()
         end
     end ---------------------------------------------
 
+    do -- Dupe support: keep the shared class table out of the dupe entirely
+        local StashedClassData = setmetatable({}, {__mode = "k"})
+
+        function ENT:PreEntityCopy()
+            local SelfTbl = self:GetTable()
+            if SelfTbl.ClassData == nil and SelfTbl.EntType == nil then return end
+
+            StashedClassData[self] = { ClassData = SelfTbl.ClassData, EntType = SelfTbl.EntType }
+            SelfTbl.ClassData = nil
+            SelfTbl.EntType = nil
+        end
+
+        function ENT:PostEntityCopy()
+            local Stashed = StashedClassData[self]
+            if not Stashed then return end
+
+            local SelfTbl = self:GetTable()
+            SelfTbl.ClassData = Stashed.ClassData
+            SelfTbl.EntType = Stashed.EntType
+            StashedClassData[self] = nil
+        end
+    end ---------------------------------------------
+
     do -- Entity linking and unlinking --------------
         function ENT:Link(Target, FromChip)
             return ACF.PerformClassLink(self, Target, FromChip)
