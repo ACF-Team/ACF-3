@@ -90,6 +90,8 @@ do
 
 	local TraceConfig = {start = Vector(), endpos = Vector(), filter = nil}
 
+	-- Crew that lost sight of the breech during the last UpdateLoadMod
+	local BlockedCrew = 0
 	-- Calculates the reload efficiency between a Crew, one of it's racks and an ammo crate
 	local function GetReloadEff(Crew, Rack, Ammo)
 		local BreechPos = Rack:LocalToWorld(Rack.BreechPos)
@@ -108,20 +110,33 @@ do
 
 		Crew.OverlayErrors.LOSCheck = tr.Hit and "Crew cannot see the breech\nOf: " .. (tostring(Rack) or "<INVALID ENTITY???>") .. "\nBlocked by " .. (tostring(tr.Entity) or "<INVALID ENTITY???>") or nil
 		Crew:UpdateOverlay()
-		if tr.Hit then return 0.000001 end -- Wanna avoid division by zero...
+		-- A crew member who can't reach the breech contributes nothing
+		if tr.Hit then
+			BlockedCrew = BlockedCrew + 1
+			return 0
+		end
 
 		return Crew.TotalEff * ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist)
 	end
 
+	--- Recalculates the load modifier of the rack
+	--- @return number # The load modifier, always a usable value
+	--- @return boolean # Whether the rack currently can't load at all, which stalls the reload
 	function ENT:UpdateLoadMod()
 		self.CrewsByType = self.CrewsByType or {}
+		local Blocked = false
+
 		if IsValid(self.Autoloader) and self.Autoloader.ACF.Health > 0 and table.Count(self.MountPoints) == 1 then
-			local Sum1 = self.Autoloader:GetReloadEffAuto(self, self.CurrentCrate)
+			local Sum1, AutoBlocked = self.Autoloader:GetReloadEffAuto(self, self.CurrentCrate)
 			self.LoadCrewMod = self.LoadCrewModOverride or math.Clamp(Sum1, ACF.AutoloaderFallbackCoef, ACF.AutoloaderMaxBonus)
+			Blocked = AutoBlocked
 		else
-			local Sum1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.CurrentCrate or self)
-			local Sum2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.CurrentCrate or self)
+			BlockedCrew = 0
+			local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.CurrentCrate or self)
+			local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.CurrentCrate or self)
 			self.LoadCrewMod = self.LoadCrewModOverride or math.Clamp(Sum1 + Sum2, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
+			-- A crewed rack only stalls once every last crew member has lost sight of the breech
+			Blocked = BlockedCrew > 0 and BlockedCrew == Count1 + Count2
 		end
 
 		-- Check space behind breech
@@ -164,10 +179,15 @@ do
 			local IsBlocked = (tr.Hit or (tr2 and tr2.Hit))
 			self.OverlayErrors.BreechCheck = IsBlocked and "Not enough space behind breech!\nHover with ACF menu tool" or nil
 			self:UpdateOverlay()
-			if IsBlocked then return 0.000001 end
+			if IsBlocked then Blocked = true end
 		end
 
-		return self.LoadCrewMod
+		-- A ground crew loading the rack works around whatever is in the way
+		if self.LoadCrewModOverride then Blocked = false end
+
+		self.LoadBlocked = Blocked
+
+		return self.LoadCrewMod, Blocked
 	end
 
 
@@ -623,6 +643,11 @@ do -- Entity Overlay ----------------------------
 			State:AddError(Error)
 		end
 
+		-- The crew LOS error lives on the crew, so flag the stall here too
+		if self.LoadBlocked then
+			State:AddWarning("Reloading is stalled until the breech can be reached")
+		end
+
 		local ReadyToFire = 0
 		for _, Mount in ipairs(self.MountPoints) do
 			if Mount.State == "Loaded" then
@@ -830,11 +855,21 @@ do -- Loading ----------------------------------
 
 			self:SetNW2Int("BreechIndex", self.BreechIndex or 1)
 
-			local ReloadLoop = function()
-				local eff = self:UpdateLoadMod() or 1
-				WireLib.TriggerOutput(self, "Reload Time", IdealTime / eff)
-				WireLib.TriggerOutput(self, "Rate of Fire", 60 / (IdealTime / eff))
-				return eff
+			local ReloadLoop = function(Config)
+				local Eff, Blocked = self:UpdateLoadMod()
+				local Time = IdealTime / (Eff or 1)
+
+				-- Keeps NextFire tracking the real remaining time, a stalled reload lets the last one run out
+				if not Blocked and Config and Config.Goal then
+					Point.NextFire = Clock.CurTime + math.max(Config.Goal - Config.Progress, 0) / (Eff or 1)
+				end
+
+				self.ReloadTime = Time
+
+				WireLib.TriggerOutput(self, "Reload Time", Time)
+				WireLib.TriggerOutput(self, "Rate of Fire", 60 / Time)
+
+				return Eff, Blocked
 			end
 
 			local ReloadFinish = function()

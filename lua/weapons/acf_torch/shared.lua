@@ -299,7 +299,7 @@ function SWEP:PrimaryAttack()
 
 			local OldHealth = Ent.ACF.Health
 			DmgInfo:SetConvexHits({ { ConvexID = ConvexHit.ConvexID, Volume = -(ConvexHit.GeoThick * 0.1 * DmgResult:GetArea() / ACF.InchToCmCu) } })
-			Damage.doPropDamage(Ent, DmgResult, DmgInfo)
+			Damage.dealDamage(Ent, DmgResult, DmgInfo)
 			Healed = true
 
 			if Entity.ACF_OnRepaired then
@@ -357,11 +357,7 @@ function SWEP:SecondaryAttack()
 		DmgInfo:SetHitGroup(Trace.HitGroup)
 		DmgInfo:SetConvexHits({ { ConvexID = ConvexHit.ConvexID, Volume = ConvexHit.GeoThick * 0.1 * DmgResult:GetArea() / ACF.InchToCmCu } })
 
-		Damage.doPropDamage(Entity, DmgResult, DmgInfo)
-
-		if Entity.ACF_OnDamage then
-			Entity:ACF_OnDamage(DmgResult, DmgInfo)
-		end
+		Damage.dealDamage(Entity, DmgResult, DmgInfo)
 
 		local EffectTable = {
 			Magnitude = 1,

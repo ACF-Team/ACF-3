@@ -9,7 +9,7 @@ ACF.Classes.DefineClass("ACF.Guns.ShortBarrelledCannon", "ACF.Guns.BaseScalableG
 	CLASS.Sound       	= "acf_base/weapons/cannon_new.mp3"
 	CLASS.MuzzleFlash 	= "cannon_muzzleflash_noscale"
 	CLASS.Spread      	= 0.16
-	CLASS.Mass        	= 1195
+	CLASS.Mass        	= 723
 	CLASS.ScaleFactor 	= 1.0 -- Corrective factor to account for improperly scaled base models
 	CLASS.Round 		= {
 		MaxLength  = 80,

@@ -39,6 +39,13 @@ do -- Random timer crew stuff
 		local RemoteController = Crew.RemoteController
 		if IsValid(RemoteController) and RemoteController:IsActive() then return true, true end
 
+		-- Oscilating turrets (e.g. on the vertical drive, linked to the horizontal ring)
+		local Ancestor = CrewParent.ACF_TurretAncestor
+		while IsValid(Ancestor) do
+			if Ancestor == Turret then return true, true end
+			Ancestor = Ancestor.ACF_TurretAncestor
+		end
+
 		if CrewParent == Turret:GetParent() then -- Shares a parent with the turret
 			local CarriedMass = (Turret.TurretData.TotalMass or 0) + (Turret.ACF.Mass or 0)
 			if CarriedMass <= ACF.LightweightTurretMassLimit then return true, true end
@@ -94,6 +101,64 @@ do -- Random timer crew stuff
 		SelfTbl.IsControlled = Controlled
 		return Controlled
 	end
+end
+
+-- Every currently-spawned acf_turret, driven each tick by the shared ACF_OnTick hook below.
+-- RunOrder is the ancestor-first sequence that hook walks; an AugmentedTimer rebuilds and
+-- re-sorts it a few times a second so ancestors always slew before their sub-turrets, while
+-- spawn appends immediately so a new turret slews from its first tick.
+local ActiveTurrets = {}
+local RunOrder = {}
+local RunCount = 0
+
+-- Depth in the turret ancestor chain (0 = root), used to sort turrets ancestor-first
+local function GetAncestorDepth(SelfTbl)
+	local Depth = 0
+	local Ancestor = SelfTbl.ACF_TurretAncestor
+
+	while IsValid(Ancestor) do
+		Depth = Depth + 1
+		Ancestor = ENTITY.GetTable(Ancestor).ACF_TurretAncestor
+	end
+
+	return Depth
+end
+
+local function CompareTurretDepth(A, B)
+	return ENTITY.GetTable(A).SortDepth < ENTITY.GetTable(B).SortDepth
+end
+
+-- Rebuilds RunOrder from ActiveTurrets, ancestor-first. Comparing against a cached SortDepth
+-- keeps table.sort off the ancestor-chain walk. Driven by an AugmentedTimer rather than the
+-- tick hook so the sort cost is spread over frames.
+local function RebuildTurretRunOrder()
+	RunCount = 0
+
+	for Entity in pairs(ActiveTurrets) do
+		if IsValid(Entity) then
+			RunCount = RunCount + 1
+			RunOrder[RunCount] = Entity
+			ENTITY.GetTable(Entity).SortDepth = GetAncestorDepth(ENTITY.GetTable(Entity))
+		else
+			ActiveTurrets[Entity] = nil
+		end
+	end
+
+	for i = RunCount + 1, #RunOrder do
+		RunOrder[i] = nil
+	end
+
+	table.sort(RunOrder, CompareTurretDepth)
+end
+
+-- Appends a just-spawned turret so it slews from its first tick; the timer re-sorts it into
+-- ancestor-first position on its next pass.
+local function AppendTurretRunOrder(Entity)
+	if not IsValid(Entity) then return end
+
+	RunCount = RunCount + 1
+	RunOrder[RunCount] = Entity
+	ENTITY.GetTable(Entity).SortDepth = GetAncestorDepth(ENTITY.GetTable(Entity))
 end
 
 -- Some locals for entity functions that are stored as locals to avoid expensive
@@ -243,9 +308,6 @@ do	-- Spawn and Update funcs
 		-- Whether a Gunner/Commander/Pilot (or component) controls this turret; only matters
 		-- while weaponized (see InputDirection for what happens when uncontrolled)
 		self.IsControlled		= false
-		self.LastAimInputTime	= 0
-		self.LastRequestedDirection = nil
-		self.PendingDirection	= nil
 
 		-- Any turrets that happen to get parented to this one, either directly or indirectly
 		-- Mass calculation will stop at this, and instead read whatever that turret has calculated
@@ -275,7 +337,8 @@ do	-- Spawn and Update funcs
 		self.SlewRate         = 0 -- Rotation rate
 		self.Stabilized       = false
 		self.StabilizeAmount  = 0
-		self.LastRotatorAngle = self.Rotator:GetAngles()
+		self.LastTurretAngle  = self:GetAngles()
+		self.LastThinkTime    = Clock.CurTime
 
 		self.MaxSlewRate = 0
 		self.SlewAccel   = 0
@@ -803,7 +866,7 @@ do -- Overlay
 			if SelfTbl.IsControlled then
 				State:AddKeyValue("Controlled", "Yes")
 			else
-				State:AddError("Uncontrolled: aim only updates every " .. ACF.UncontrolledAimUpdateInterval .. "s")
+				State:AddError("Uncontrolled: not aiming")
 			end
 		else
 			State:AddKeyValue("Weaponized", "No")
@@ -1025,42 +1088,26 @@ do -- Metamethods
 			local SelfTbl = ENTITY.GetTable(self)
 			if SelfTbl.Disabled then return end
 
-			-- No-op on an unchanged value, so a steady wire input never touches the cooldown
-			if SelfTbl.LastRequestedDirection == Direction then return end
-			SelfTbl.LastRequestedDirection = Direction
+			-- Uncontrolled weaponized turrets don't aim at all; stabilization/slewing continue as normal
+			if SelfTbl.IsWeaponized and not SelfTbl.IsControlled then return end
 
-			-- Uncontrolled weaponized turrets only accept a changed aim target once every
-			-- ACF.UncontrolledAimUpdateInterval seconds; stabilization/slewing continue as normal
-			if SelfTbl.IsWeaponized and not SelfTbl.IsControlled and Clock.CurTime < SelfTbl.LastAimInputTime + ACF.UncontrolledAimUpdateInterval then
-				SelfTbl.PendingDirection = Direction
-				return
-			end
-
-			SelfTbl.LastAimInputTime = Clock.CurTime
-			SelfTbl.PendingDirection = nil
 			ApplyDirection(SelfTbl, Direction)
 		end
 
-		function ENT:Think() -- The meat and POE-TAE-TOES of the turret working
-			local SelfTbl = ENTITY.GetTable(self)
-
-			-- Apply a deferred mid-cooldown change once the cooldown lapses
-			if SelfTbl.PendingDirection ~= nil and Clock.CurTime >= SelfTbl.LastAimInputTime + ACF.UncontrolledAimUpdateInterval then
-				SelfTbl.LastAimInputTime = Clock.CurTime
-				local Pending = SelfTbl.PendingDirection
-				SelfTbl.PendingDirection = nil
-				ApplyDirection(SelfTbl, Pending)
-			end
-
+		-- The meat and POE-TAE-TOES of the turret working. Called by the ACF_OnTick coordinator below,
+		-- ancestors first, instead of via ENT:Think()/NextThink
+		local function RunTurretSlew(self, SelfTbl)
 			if SelfTbl.Disabled then
 				SetSoundState(self, false, SelfTbl)
-				ENTITY.NextThink(self, Clock.CurTime + 0.1)
+				SelfTbl.LastTurretAngle = ENTITY.GetAngles(self)
+				SelfTbl.LastThinkTime	= Clock.CurTime
 
-				return true
+				return
 			end
 
 			ENT_CheckCoM(self, false, SelfTbl)
-			local Tick		= Clock.DeltaTime
+			-- Real elapsed time since last update, not assumed to be one tick
+			local Tick		= math_max(Clock.CurTime - (SelfTbl.LastThinkTime or Clock.CurTime), 0)
 			local Rotator	= SelfTbl.Rotator
 			if not IsValid(Rotator) then ENTITY.Remove(self) return end
 
@@ -1074,14 +1121,14 @@ do -- Metamethods
 
 			-- Something or another has caused the turret to be unable to rotate, so don't waste the extra processing time
 			if MaxImpulse == 0 then
-				SelfTbl.LastRotatorAngle = ENTITY.GetAngles(Rotator)
+				SelfTbl.LastTurretAngle = ENTITY.GetAngles(self)
+				SelfTbl.LastThinkTime	= Clock.CurTime
 
 				if SelfTbl.SoundPlaying == true then
 					SetSoundState(self, false, SelfTbl)
 				end
 
-				ENTITY.NextThink(self, Clock.CurTime + 0.1)
-				return true
+				return
 			end
 
 			if SelfTbl.UseVector and SelfTbl.Manual == false then
@@ -1090,19 +1137,20 @@ do -- Metamethods
 				SelfTbl.DesiredAngle = VECTOR.Angle(DesiredAngle)
 			end
 
-			local StabAmt	= math_Clamp(SelfTbl.SlewFuncs.GetStab(self), -SlewMax, SlewMax)
-			local StabSign	= -StabAmt < 0 and -1 or 1
+			-- Acceleration-free correction that cancels motion of whatever the turret is mounted to,
+			-- so a stabilized turret holds aim on a turning platform. Only the sum with SlewRate is
+			-- bounded (below); the motor's SlewAccel governs slewing toward the aim point, not this.
+			local FeedFwd	= SelfTbl.SlewFuncs.GetStab(self)
 
-			local TargetBearing	= math_Round(SelfTbl.SlewFuncs.GetTargetBearing(self, StabAmt), 8)
+			-- GetTargetBearing solves fresh against live orientation, so it already includes the
+			-- mount drift FeedFwd handles. Subtract it back out so the accel-limited feedback path
+			-- only chases operator-commanded error and the two don't double-correct.
+			local TargetBearing	= math_Round(SelfTbl.SlewFuncs.GetTargetBearing(self) - FeedFwd, 8)
 
 			local Sign			= TargetBearing < 0 and -1 or 1
 			local Dist			= math_abs(TargetBearing)
 			local FinalAccel	= math_Clamp(TargetBearing, -MaxImpulse, MaxImpulse)
 			local BrakingDist	= SelfTbl.SlewRate ^ 2 / math_abs(FinalAccel) / 2
-
-			if StabSign == Sign then
-				StabAmt = StabAmt * math_min(math_max(0, 1 - (math_abs(StabAmt) / MaxImpulse) ^ 2), 1)
-			end
 
 			if SelfTbl.Active then
 				SelfTbl.SlewRate = math_Clamp(SelfTbl.SlewRate + (math_abs(FinalAccel) * ((Dist + (SelfTbl.SlewRate * 2 * -Sign)) >= BrakingDist and Sign or -Sign)), -SlewMax, SlewMax)
@@ -1115,7 +1163,9 @@ do -- Metamethods
 				SelfTbl.SlewRate = SelfTbl.SlewRate - (math_min(SlewAccel, math_abs(SelfTbl.SlewRate)) * (SelfTbl.SlewRate >= 0 and 1 or -1))
 			end
 
-			SelfTbl.CurrentAngle = SelfTbl.CurrentAngle + math_Clamp(SelfTbl.SlewRate + StabAmt, -SlewMax, SlewMax)
+			-- Feedforward has acceleration headroom above a normal slew, but a violent enough
+			-- platform spin still leaves residual aim drift
+			SelfTbl.CurrentAngle = SelfTbl.CurrentAngle + math_Clamp(SelfTbl.SlewRate + FeedFwd, -SlewMax * 2, SlewMax * 2)
 
 			if SelfTbl.HasArc then
 				SelfTbl.CurrentAngle = math_Clamp(SelfTbl.CurrentAngle, -SelfTbl.MaxDeg, -SelfTbl.MinDeg)
@@ -1147,12 +1197,27 @@ do -- Metamethods
 				end
 			end
 
-			SelfTbl.LastRotatorAngle	= Rotator:GetAngles()
-
-			ENTITY.NextThink(self, Clock.CurTime)
-
-			return true
+			SelfTbl.LastTurretAngle	= self:GetAngles()
+			SelfTbl.LastThinkTime	= Clock.CurTime
 		end
+
+		ACF.AugmentedTimer(
+			function() RebuildTurretRunOrder() end,
+			function() return true end,
+			nil,
+			{MinTime = 1, MaxTime = 2}
+		)
+
+		hook.Add("ACF_OnTick", "ACF Turret Slew", function()
+			for i = 1, RunCount do
+				local Entity = RunOrder[i]
+
+				-- Removed turrets linger until the next RebuildTurretRunOrder; skip them meanwhile
+				if IsValid(Entity) then
+					RunTurretSlew(Entity, ENTITY.GetTable(Entity))
+				end
+			end
+		end)
 	end
 
 	do	-- Input/Outputs/Eventually linking
@@ -1298,6 +1363,8 @@ do -- Metamethods
 		function ENT:OnRemove()
 			local SelfTbl   = ENTITY.GetTable(self)
 			-- TODO: Destroy sound when that gets added
+
+			ActiveTurrets[self] = nil
 
 			if IsValid(SelfTbl.Motor) then
 				SelfTbl.Motor:ValidatePlacement()

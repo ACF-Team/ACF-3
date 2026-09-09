@@ -942,9 +942,10 @@ do -- Crew related
 		return OutMin + (Transform(ACF.Normalize(Value, InMin, InMax)) * (OutMax - OutMin))
 	end
 
-	local function UpdateDelta(Config)
+	-- PausedFor is time spent paused since the last iteration, it never counts towards the delta
+	local function UpdateDelta(Config, PausedFor)
 		local CT = CurTime()
-		Config.DeltaTime = (CT - Config.LastTime)
+		Config.DeltaTime = math.max(CT - Config.LastTime - PausedFor, 0)
 		Config.LastTime = CT
 		Config.Elapsed = Config.Elapsed + Config.DeltaTime
 	end
@@ -953,12 +954,14 @@ do -- Crew related
 		Config.DeltaTime = 0
 		Config.Elapsed = 0
 		Config.LastTime = CurTime()
+		Config.Paused = false
 	end
 
 	--- Similar to a mix of timer.create and timer.simple but with random steps.
 	--- Every iteration it asks Loop to return the amount of time left. It will walk a random step or the time left, whichever is faster.
+	--- Loop's optional second return pauses the timer while true and resumes it while false, a paused timer can never Finish.
 	--- Its principal use case is in dynamic reloading where the time until a loader Finishes loading changes during loading and must be checked at random.
-	--- @param Loop function A function that returns the time left until the next iteration
+	--- @param Loop function A function that returns the time left until the next iteration, optionally followed by a blocked flag
 	--- @param Depends function A function that returns whether the timer should continue
 	--- @param Finish function A function that is called when the timer Finishes
 	--- @param Config table A table with the fields: MinTime, MaxTime, Delay
@@ -966,26 +969,76 @@ do -- Crew related
 		InitFields(Config)
 
 		local RealLoop
-		local Cancelled = false
-		local Finished  = false
-		local Paused = false
+		local Cancelled  = false
+		local Finished   = false
+		local Paused     = false
+		local PauseStart = 0
+		local PausedTime = 0
+
+		local ProxyObject = {}
+
+		function ProxyObject:Pause()
+			if Paused then return end
+			Paused = true
+			PauseStart = CurTime()
+			Config.Paused = true
+		end
+
+		function ProxyObject:Resume()
+			if not Paused then return end
+			Paused = false
+			PausedTime = PausedTime + (CurTime() - PauseStart)
+			Config.Paused = false
+		end
+
+		function ProxyObject:IsPaused()
+			return Paused
+		end
+
+		function ProxyObject:Cancel(RunFinisher)
+			Cancelled = true
+			if RunFinisher and Finish and not Finished then
+				Finished = true
+				Finish(Config)
+			end
+		end
+
+		function ProxyObject:Finish()
+			Finished = true
+			Finish(Config)
+		end
+
+		-- Returns the paused time owed to this iteration, billing an ongoing pause up to now
+		local function ConsumePausedTime()
+			local Total = PausedTime
+
+			if Paused then
+				local CT = CurTime()
+				Total = Total + (CT - PauseStart)
+				PauseStart = CT
+			end
+
+			PausedTime = 0
+
+			return Total
+		end
+
 		function RealLoop()
 			if Cancelled then return end
 			if Depends and not Depends(Config) then return end
 
-			UpdateDelta(Config)
+			UpdateDelta(Config, ConsumePausedTime())
 
-			-- If the timer is paused, don't run the loop
-			-- This also causes the timer to continue running indefinitely yet not affect anything
-			local left = nil
-			if not Paused then
-				left = Loop(Config)
+			-- Runs even while paused, it is what decides whether the process is still blocked
+			local left, Blocked = Loop(Config)
+			if Blocked ~= nil then
+				if Blocked then ProxyObject:Pause() else ProxyObject:Resume() end
 			end
 
 			local rand = Config.MinTime + (Config.MaxTime - Config.MinTime) * math.random()
 
-			-- Random step or Finishing step, whichever is faster.
-			local timeleft = left and math.min(left, rand) or rand
+			-- Random step or Finishing step, whichever is faster, a paused timer only walks random steps
+			local timeleft = (not Paused and left) and math.min(left, rand) or rand
 			-- If time left then recurse, otherwise call Finish
 			if timeleft > engine.TickInterval() then
 				timer.Simple(timeleft, RealLoop)
@@ -998,43 +1051,30 @@ do -- Crew related
 		if not Config.Delay then RealLoop()
 		else timer.Simple(Config.Delay, RealLoop) end
 
-		local ProxyObject = {}
-		function ProxyObject:Cancel(RunFinisher)
-			Cancelled = true
-			if RunFinisher and Finish and not Finished then
-				Finished = true
-				Finish(Config)
-			end
-		end
-
-		function ProxyObject:Pause()
-			Paused = true
-		end
-
-		function ProxyObject:Resume()
-			Paused = false
-		end
-
-		function ProxyObject:Finish()
-			Finished = true
-			Finish(Config)
-		end
-
 		return ProxyObject
 	end
 
 	--- Wrapper for augmented timers, keeps a record of a "progress" and a "goal".
 	--- Progress increases at the rate determined by Loop, until it reaches "goal"
+	--- Progress is credited before Loop runs, and Loop's optional second return freezes it while true.
 	--- @param Ent any The entity to attach the timer to (checks its validity)
-	--- @param Loop any	A function that returns the efficiency of the process
+	--- @param Loop any	A function that returns the efficiency of the process, optionally followed by a blocked flag
 	--- @param Finish any A function that is called when the timer Finishes
 	--- @param Config any A table with the fields: MinTime, MaxTime, Delay, Goal, Progress
 	function ACF.ProgressTimer(Ent, Loop, Finish, Config)
 		return ACF.AugmentedTimer(
 			function(Config)
-				local eff = Loop(Config)
-				Config.Progress = Config.Progress + Config.DeltaTime * eff
-				return (Config.Goal - Config.Progress) / eff
+				-- The interval that just elapsed ran at the efficiency measured when it started
+				Config.Progress = Config.Progress + Config.DeltaTime * (Config.Efficiency or 0)
+
+				local eff, Blocked = Loop(Config)
+
+				-- No efficiency means no progress, block rather than divide by zero
+				if not eff or eff <= 0 then return nil, true end
+
+				Config.Efficiency = eff
+
+				return (Config.Goal - Config.Progress) / eff, Blocked
 			end,
 			function(Config)
 				return IsValid(Ent) and Config.Progress < Config.Goal

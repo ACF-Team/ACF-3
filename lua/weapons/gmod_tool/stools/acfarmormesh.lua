@@ -23,6 +23,30 @@ AddCSLuaFile("armormeshmodules/cost_comparison.lua")
 
 include("armormeshmodules/contraption_readout.lua")
 
+-- Reload is driven from Think rather than TOOL:Reload, which the toolgun gates behind the CanTool hook.
+-- Prop protection denies that on entities the player doesn't own, and reading a contraption changes nothing.
+-- Think runs every frame client side while KeyPressed stays set for the whole usercmd, so a plain KeyPressed
+-- check fires once per frame there. The press is edge latched instead, to run the trace and scan once each.
+TOOL.ReloadHeld = false
+
+function TOOL:CheckForReload()
+	local FirstTime = IsFirstTimePredicted()
+	if not FirstTime then return end
+
+	local Player  = self:GetOwner()
+	local Held    = Player:KeyDown(IN_RELOAD)
+	local WasHeld = self.ReloadHeld
+
+	self.ReloadHeld = Held
+
+	if not Held or WasHeld then return end
+
+	local Trace = Player:GetEyeTrace()
+	if not self:HandleReload(Trace) then return end
+
+	self.Weapon:DoShootEffect(Trace.HitPos, Trace.HitNormal, Trace.Entity, Trace.PhysicsBone, FirstTime)
+end
+
 if CLIENT then
 	language.Add("tool.acfarmormesh.name", "ACF Armor Mesh")
 	language.Add("tool.acfarmormesh.desc", "Applies armor materials to individual convexes of an ACF volumetric mesh")
@@ -43,6 +67,7 @@ if CLIENT then
 	local ClassFilter       = CreateClientConVar("acfarmormesh_class_filter", "", false, true)
 	local NudgeExponent     = CreateClientConVar("acfarmormesh_nudge_exponent", 0, false, true, "", NudgeExponentMin, NudgeExponentMax)
 	CreateClientConVar("acfarmormesh_ignore_elevation", 0, false, true, "", 0, 1)
+	CreateClientConVar("acfarmormesh_color_entity", 0, false, true, "", 0, 1)
 
 	local function GetClassFilter()
 		local Filter = {}
@@ -69,19 +94,23 @@ if CLIENT then
 
 	function TOOL:LeftClick(_) return true end
 	function TOOL:RightClick(_) return true end
-	function TOOL:Reload(Trace)
+	function TOOL:HandleReload(Trace)
 		local Owner       = self:GetOwner()
 		local Ctrl, Shift = Owner:KeyDown(IN_DUCK), Owner:KeyDown(IN_SPEED)
-		-- Runs the trace/scan directly client-side to avoid a server round-trip. In true singleplayer
-		-- this branch never actually fires (see the SERVER TOOL:Reload below), so no duplication occurs.
+		-- Runs the trace/scan directly client side to avoid a server round-trip.
 		if Ctrl and Shift then return DoArmorScan(self, Trace) end
 		if Ctrl then return DoRecursiveArmorTrace(self, Trace) end
 		if Shift then return self:GetContraptionReadout(Trace, true) end
 		return self:GetContraptionReadout(Trace, false)
 	end
 
-	-- Only used as a true-singleplayer fallback (see SERVER TOOL:Reload below): prediction never runs
-	-- this file's CLIENT TOOL:Reload there, so the server nets Ctrl key state here instead.
+	function TOOL:Think()
+		-- Prediction never runs this realm in singleplayer, so the server nets the trace/scan over instead.
+		if game.SinglePlayer() then return end
+		self:CheckForReload()
+	end
+
+	-- Singleplayer fallback for the client side trace/scan, driven by the server's HandleReload.
 	net.Receive("ACF_ArmorMesh_Reload", function()
 		local Shift = net.ReadBool()
 		local Tool  = LocalPlayer():GetTool("acfarmormesh")
@@ -146,10 +175,21 @@ if CLIENT then
 		local ThicknessSlider = Menu:AddSlider("Thickness", ThicknessMin, ThicknessMax, 0)
 		ThicknessSlider:SetConVar("acfarmormesh_thickness")
 		Menu:AddHelp("If set to a non zero value, left/right click will set/get the thickness of the primitive entity you are looking at, instead of changing its material.")
+		local ThicknessModeHelp = Menu:AddHelp("You can only either edit the thickness or material at a time. Set this to 0 to edit the material again.")
+
+		local function UpdateThicknessModeHelpColor(Value)
+			ThicknessModeHelp:SetColor(tonumber(Value) ~= 0 and Color(255, 0, 0))
+		end
+
+		UpdateThicknessModeHelpColor(GetConVar("acfarmormesh_thickness"):GetFloat())
+		cvars.AddChangeCallback("acfarmormesh_thickness", function(_, _, New) UpdateThicknessModeHelpColor(New) end, "ACF_ArmorMeshMenu_ThicknessHelp")
 
 		local SphereRadiusSlider = Menu:AddSlider("#tool.acfarmormesh.sphere_search_radius", SphereRadiusMin, SphereRadiusMax, 0)
 		SphereRadiusSlider:SetConVar("acfarmormesh_sphere_radius")
 		Menu:AddHelp("#tool.acfarmormesh.sphere_search_radius_desc")
+
+		Menu:AddCheckBox("Color entity by material", "acfarmormesh_color_entity")
+		Menu:AddHelp("When enabled, color codes the entity based on its material.")
 
 		Menu:AddCheckBox("Ignore camera elevation", "acfarmormesh_ignore_elevation")
 		Menu:AddHelp("When enabled, the recursive armor trace fires horizontally toward the hit point, as if the camera had no pitch angle.")
@@ -184,11 +224,13 @@ if CLIENT then
 		end
 
 		AddFilterCheckBox("acf_gearbox")
+		AddFilterCheckBox("acf_engine")
 		AddFilterCheckBox("acf_fueltank")
 		AddFilterCheckBox("acf_gun")
 		AddFilterCheckBox("acf_missile")
 		AddFilterCheckBox("acf_rack")
 		AddFilterCheckBox("acf_turret")
+		AddFilterCheckBox("acf_turret_motor")
 	end
 
 	ACF.CreateArmorMeshMenu = CreateArmorMeshMenu
@@ -331,13 +373,14 @@ if CLIENT then
 
 			local ArmorType  = ACF.Classes.ArmorTypes.Get(Material) or ACF.Classes.ArmorTypes.Get("Default")
 			local Mass       = Volume * CubicInchToM3 * ArmorType.Density -- Volume is in^3, Density is kg/m^3
+			local Cost       = Volume * CubicInchToM3 * ArmorType.CostMul -- CostMul is points per m^3
 			local NominalHit = ACF.GetConvexHit(Entity, Trace.HitPos, -Trace.HitNormal, true)
 			local Nominal    = NominalHit and NominalHit.GeoThick or 0
 
 			local EffKE = ConvexHit.GeoThick * ArmorType.KineticMul
 			local EffCE = ConvexHit.GeoThick * ArmorType.ChemicalMul
 
-			local Text = string.format("Mat: %s\nNominal (mm): %.2f\nEff (mm): %.2f (KE) %.2f (CE)\nHP: %.2f / %.2f\nVolume (in^3): %.2f\nMass (kg): %.2f", Material, Nominal, EffKE, EffCE, Health, MaxHealth, Volume, Mass)
+			local Text = string.format("Mat: %s\nNominal (mm): %.2f\nEff (mm): %.2f (KE) %.2f (CE)\nHP: %.2f / %.2f\nVolume (in^3): %.2f\nMass (kg): %.2f\nCost (points): %.2f", Material, Nominal, EffKE, EffCE, Health, MaxHealth, Volume, Mass, Cost)
 			AddWorldTip(Entity, Text, nil, Trace.HitPos)
 		end
 	end)
@@ -419,6 +462,8 @@ elseif SERVER then
 
 	-- Keeps the toolgun's NW vars in sync with the convex under the player's crosshair, for client-side display.
 	function TOOL:Think()
+		self:CheckForReload()
+
 		local Player = self:GetOwner()
 		local Trace  = Player:GetEyeTrace()
 		local Entity = Trace.Entity
@@ -500,6 +545,11 @@ elseif SERVER then
 			if ACF.SetConvexMaterial(Entity, ConvexHit.ConvexID, Material, Player) == false then return false end
 		end
 
+		if tobool(self:GetClientInfo("color_entity")) then
+			local ArmorType = ACF.Classes.ArmorTypes.Get(Material)
+			if ArmorType and ArmorType.Color then Entity:SetColor(ArmorType.Color) end
+		end
+
 		return true
 	end
 
@@ -533,11 +583,11 @@ elseif SERVER then
 		return true
 	end
 
-	function TOOL:Reload(Trace)
+	function TOOL:HandleReload(Trace)
 		local Owner = self:GetOwner()
 		local Ctrl, Shift = Owner:KeyDown(IN_DUCK), Owner:KeyDown(IN_SPEED)
+		-- The armor trace and scan are drawn client side, which the client drives itself in multiplayer.
 		if Ctrl then
-			-- Client side predictions fails in singleplayer, so notify the client.
 			if game.SinglePlayer() then
 				net.Start("ACF_ArmorMesh_Reload")
 					net.WriteBool(Shift)
@@ -545,8 +595,7 @@ elseif SERVER then
 			end
 			return false
 		end
-		if Shift then return self:GetContraptionReadout(Trace, true) end
-		return self:GetContraptionReadout(Trace, false)
+		return self:GetContraptionReadout(Trace, Shift)
 	end
 end
 
