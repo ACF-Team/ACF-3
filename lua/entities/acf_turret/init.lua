@@ -243,6 +243,10 @@ do	-- Spawn and Update funcs
 		Rotator.Turret = self
 		Rotator.Owner  = self
 
+		-- Enter the slew run order, otherwise the tick coordinator never reaches this turret
+		ActiveTurrets[self] = true
+		AppendTurretRunOrder(self)
+
 		ACF.AugmentedTimer(function(cfg) self:UpdateControlled(cfg) end, function() return IsValid(self) end, nil, {MinTime = 0.5, MaxTime = 1})
 	end
 
