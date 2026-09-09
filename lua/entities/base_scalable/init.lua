@@ -72,6 +72,7 @@ do -- Size and scale setter methods
 	end
 
 	local function ResizeEntity(Entity, Scale)
+		if Entity.Scale == Scale then return end
 		local Data     = Entity.ScaleData
 		local PhysObj  = ApplyScale(Entity, Data, Scale)
 		local Size     = Data:GetSize(Scale)
