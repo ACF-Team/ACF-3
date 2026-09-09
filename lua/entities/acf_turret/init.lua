@@ -1052,8 +1052,15 @@ do -- Metamethods
 	end
 
 	do	-- Dupe Support
+		-- Duplicators merge the entity's raw table into the dupe, so hide the shared class table here to keep dupes small.
+		local StashedClassData = {}
+
 		function ENT:PreEntityCopy()
 			local SelfTbl = ENTITY.GetTable(self)
+
+			StashedClassData[self] = { ClassData = SelfTbl.ClassData, EntType = SelfTbl.EntType }
+			SelfTbl.ClassData = nil
+			SelfTbl.EntType   = nil
 
 			if IsValid(SelfTbl.Motor) then
 				duplicator.StoreEntityModifier(self, "ACFMotor", {SelfTbl.Motor:EntIndex()})
@@ -1078,6 +1085,15 @@ do -- Metamethods
 
 			-- Wire dupe info
 			self.BaseClass.PreEntityCopy(self)
+		end
+
+		function ENT:PostEntityCopy()
+			local SelfTbl = ENTITY.GetTable(self)
+			local Stashed = StashedClassData[self]
+
+			SelfTbl.ClassData = Stashed.ClassData
+			SelfTbl.EntType   = Stashed.EntType
+			StashedClassData[self] = nil
 		end
 
 		function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
