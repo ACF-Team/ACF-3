@@ -233,9 +233,8 @@ do -- ACF global vars
 
 	-- Reload Mechanics
 	ACF.BaseReload         = 1 -- Minimum reload time. Time it takes to move around a weightless projectile
-	ACF.MassToTime         = 0.25 -- Conversion of projectile mass to time be moved around
-	ACF.LengthToTime       = 0.025 -- Conversion of projectile length to time -- Emulating the added difficulty of manipulating a longer projectile
-	ACF.TwoPieceCount      = 2 -- Pieces a two piece round is loaded as. Each is that fraction of the round's mass and length, and each costs its own loading motion
+	ACF.MassToTime         = 0.15 -- Conversion of projectile mass to time to be moved around. Length and caliber are already accounted for in mass
+	ACF.TwoPieceCount      = 2 -- Pieces a two piece round is loaded as. Each is that fraction of the round's mass, and each costs its own loading motion
 
 	-- External and Terminal Ballistics
 	ACF.DragDiv              = 80 -- Drag fudge factor
@@ -424,7 +423,7 @@ do -- ACF global vars
 	ACF.AutoloaderBestDistHorizontal = 6 -- Horizontal distance before which autoloaders are most effective
 	ACF.AutoloaderWorstDistHorizontal = 1000 -- Horizontal distance after which autoloaders are least effective
 	ACF.AutoloaderBestDistVertical = 6 -- Vertical distance before which autoloaders are most effective
-	ACF.AutoloaderWorstDistVertical = 100 -- Vertical distance after which autoloaders are least effective
+	ACF.AutoloaderWorstDistVertical = 300 -- Vertical distance after which autoloaders are least effective
 	ACF.AutoloaderBestDistAngular = 0.1 -- Angular distance (degrees) before which autoloaders are most effective
 	ACF.AutoloaderWorstDistAngular = 90 -- Angular distance (degrees) after which autoloaders are least effective
 
