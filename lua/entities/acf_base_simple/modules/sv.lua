@@ -68,20 +68,13 @@ return function()
     do -- Dupe support: keep the shared class table out of the dupe entirely
         local StashedClassData = setmetatable({}, {__mode = "k"})
 
-        -- Referenced directly rather than through self.BaseClass, since self.BaseClass is fixed to
-        -- the entity's own declared base and would just call straight back into this function
-        local WireBase = baseclass.Get("base_wire_entity")
-
         function ENT:PreEntityCopy()
             local SelfTbl = self:GetTable()
+            if SelfTbl.ClassData == nil and SelfTbl.EntType == nil then return end
 
-            if SelfTbl.ClassData ~= nil or SelfTbl.EntType ~= nil then
-                StashedClassData[self] = { ClassData = SelfTbl.ClassData, EntType = SelfTbl.EntType }
-                SelfTbl.ClassData = nil
-                SelfTbl.EntType = nil
-            end
-
-            WireBase.PreEntityCopy(self)
+            StashedClassData[self] = { ClassData = SelfTbl.ClassData, EntType = SelfTbl.EntType }
+            SelfTbl.ClassData = nil
+            SelfTbl.EntType = nil
         end
 
         function ENT:PostEntityCopy()
