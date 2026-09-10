@@ -132,7 +132,7 @@ local function PrepareSpawnFunctions(ENT, ClassName)
         return true, (self.PrintName or ClassName) .. " updated successfully!"
     end
 
-    local function DoSpawn(Player, Pos, Angle, ClientData, IsMenuSpawn)
+    local function DoSpawn(Player, Pos, Angle, ClientData, _, IsMenuSpawn)
         local Func = CheckSpawnLimit or Player.CheckLimit
         if IsValid(Player) and not Func(Player, "_" .. ClassName) then return end
 
@@ -181,7 +181,7 @@ function Entities.DoSpawnInternal(ClassName, Player, Pos, Ang, ClientData)
     local DoSpawn = Entities.SpawnFuncs[ClassName]
     if not DoSpawn then return end
 
-    local Entity = DoSpawn(Player, Pos, Ang, ClientData or {}, true)
+    local Entity = DoSpawn(Player, Pos, Ang, ClientData or {}, nil, true)
     if IsValid(Entity) then return Entity end
 end
 
