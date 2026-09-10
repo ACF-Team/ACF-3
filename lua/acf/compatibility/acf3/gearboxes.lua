@@ -564,7 +564,7 @@ end
 ACF.Entities.RegisterCompatPatch("acf_gearbox", 2026062801, function(Data)
 	if Data.ACF_UserData then return end
 
-	local GearboxID = Data.Gearbox or "2Gear-T"
+	local GearboxID = Data.Gearbox or Data.Id or "2Gear-T"
 	local Overrides
 
 	local FQN = GearboxFQN(GearboxID)
@@ -610,6 +610,7 @@ ACF.Entities.RegisterCompatPatch("acf_gearbox", 2026062801, function(Data)
 		UserData.GearAmount       = Overrides.MaxGear or UserData.GearAmount
 		UserData.GearboxScale     = Overrides.Scale or UserData.GearboxScale
 		UserData.InvertGearRatios = Overrides.InvertGearRatios
+		UserData.DualClutch       = Overrides.DualClutch or UserData.DualClutch
 	end
 
 	Data.ACF_UserData = UserData

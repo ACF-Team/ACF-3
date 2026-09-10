@@ -15,8 +15,8 @@ ACF.Entities.RegisterCompatPatch("acf_supply", 2026061601, function(Data)
 
 	Data.ACF_UserData = {
 		Shape       = ShapeFQN(Data.SupplyShape or "Box"),
-		SupplySizeX = Data.SupplySizeX or 6,
-		SupplySizeY = Data.SupplySizeY or 6,
-		SupplySizeZ = Data.SupplySizeZ or 6,
+		SupplySizeX = Data.SupplySizeX or 24,
+		SupplySizeY = Data.SupplySizeY or 24,
+		SupplySizeZ = Data.SupplySizeZ or 24,
 	}
 end)
