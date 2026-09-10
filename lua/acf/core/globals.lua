@@ -233,7 +233,7 @@ do -- ACF global vars
 
 	-- Reload Mechanics
 	ACF.BaseReload         = 1 -- Minimum reload time. Time it takes to move around a weightless projectile
-	ACF.MassToTime         = 0.1 -- Conversion of projectile mass to time to be moved around. Length and caliber are already accounted for in mass
+	ACF.MassToTime         = 0.15 -- Conversion of projectile mass to time to be moved around. Length and caliber are already accounted for in mass
 	ACF.TwoPieceCount      = 2 -- Pieces a two piece round is loaded as. Each is that fraction of the round's mass, and each costs its own loading motion
 
 	-- External and Terminal Ballistics
