@@ -212,7 +212,7 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	if AngularScore <= 0 then self.OverlayWarnings.AngularScore = "Autoloader or ammo are probably backwards or greatly misaligned." end
 
 	local HealthScore = self.ACF.Health / self.ACF.MaxHealth
-	return 2 * HorizontalScore * VerticalScore * AngularScore * HealthScore, Blocked
+	return 1 * HorizontalScore * VerticalScore * AngularScore * HealthScore, Blocked
 end
 
 function ENT:GetCost()
