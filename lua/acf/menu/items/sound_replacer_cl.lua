@@ -669,6 +669,7 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 					Panel:SetMinMax(0, 2000) -- I shouldn't even need to do this!
 					Panel:SetValue(Value)
 					RedlineWang:SetMin(Value or 1)
+					RPMSlider:SetMin(Value or 1)
 					Current.Graph.Idle = Value
 
 					return Value
@@ -691,6 +692,7 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 				RedlineWang:DefineSetter(function(Panel, _, _, Value)
 					Panel:SetValue(Value)
 					IdleWang:SetMax(math.min(2000, Value))
+					RPMSlider:SetMax(Value)
 					SoundGraph:SetXRange(0, math.Clamp(Value + 1000, 0, _MAX_NET_SOUND_RPM + 1000))
 					SoundGraph:SetXSpacing(Value < 1000 and 100 or 1000)
 					Current.Graph.Redline = Value
@@ -706,10 +708,6 @@ function ACF.CreateSoundMenu(Panel) -- MARK: CreateSoundMenu
 				RPMSlider:SetClientData("RPMSlider", "OnValueChanged")
 				RPMSlider:SetValue(GetClientNumber("RPMSlider", 4400))
 				RPMSlider:DefineSetter(function(Panel, _, _, Value)
-					local Min = GetClientNumber("Idle", 0)
-					local Max = GetClientNumber("Redline", _MAX_NET_SOUND_RPM)
-
-					Panel:SetMinMax(Min, Max)
 					Panel:SetValue(Value)
 
 					Current.Graph.RPMSlider = Value
