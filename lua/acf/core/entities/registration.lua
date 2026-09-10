@@ -57,6 +57,8 @@ local function PrepareSpawnFunctions(ENT, ClassName)
     local ClassDef      = ENT.ACF_ClassDef
     local Serialization = ACF.Classes.Serialization
 
+    local ACF_Version = ENT.ACF_Version
+
     cleanup.Register(ClassName)
 
     if isnumber(ENT.ACF_Limit) then
@@ -139,6 +141,7 @@ local function PrepareSpawnFunctions(ENT, ClassName)
 
         local Entity = ents.Create(ClassName)
         if not IsValid(Entity) then return end
+        Entity.ACF_Version = ACF_Version
 
         Entity:SetPos(Pos)
         Entity:SetAngles(Angle)
@@ -171,7 +174,7 @@ local function PrepareSpawnFunctions(ENT, ClassName)
 
     Entities.SpawnFuncs[ClassName] = DoSpawn
 
-    duplicator.RegisterEntityClass(ClassName, DoSpawn, "Pos", "Angle", "ACF_UserData")
+    duplicator.RegisterEntityClass(ClassName, DoSpawn, "Pos", "Angle", "ACF_UserData", "ACF_Version")
 end
 
 function Entities.DoSpawnInternal(ClassName, Player, Pos, Ang, ClientData)
@@ -256,8 +259,10 @@ local function PrepareNames(ENT, SingleName, PluralName)
     end
 end
 
-function ACF.Entities.AutoRegisterV2(DefineFields, SingleName, PluralName)
+function ACF.Entities.AutoRegister(CurrentVersion, DefineFields, SingleName, PluralName)
     ENT.IsACFEntity = true
+    ENT.ACF_Version = CurrentVersion
+
     PrepareNames(ENT, SingleName, PluralName)
     ClassNameTrick(ENT)
     PrepareIsFlag(ENT)
