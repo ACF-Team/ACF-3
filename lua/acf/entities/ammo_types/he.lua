@@ -6,6 +6,7 @@ Classes.DefineClass("ACF.Ammunition.HE", "ACF.Ammunition.APHE", function(CLASS, 
 	CLASS.Bodygroup   = 5 -- HE bodygroup index
 	CLASS.MortarBodygroup = 0 -- HE mortar submodel
 	CLASS.Description = "#acf.descs.ammo.he"
+	CLASS.HasDelayFuze = false -- Inherited from APHE, but HE has no penetration to fuze on
 	CLASS.Blacklist = {
 		["ACF.Guns.Machinegun"] = true,
 		["ACF.Guns.RotaryAutocannon"] = true,

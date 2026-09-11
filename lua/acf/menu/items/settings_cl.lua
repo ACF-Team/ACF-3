@@ -208,6 +208,8 @@ do -- Serverside settings
 			Base:AddHelp("#acf.menu.settings.general.cost_limit_ground_desc")
 		Base:AddSlider("#acf.menu.settings.general.cost_limit_air"):           LinkToServerData("CostLimitAir")
 			Base:AddHelp("#acf.menu.settings.general.cost_limit_air_desc")
+		Base:AddSlider("#acf.menu.settings.general.max_armor_volume_air"):     LinkToServerData("MaxArmorVolumeAir")
+			Base:AddHelp("#acf.menu.settings.general.max_armor_volume_air_desc")
 	end)
 
 	ACF.AddServerSettings(51, "#acf.menu.settings.weapons", function(Base)
