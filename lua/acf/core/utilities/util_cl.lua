@@ -1041,11 +1041,8 @@ do -- Default turret menus
 	end
 
 	do	-- Turret Controllers
-		function ACF.CreateTurretControllerMenu(Data, Menu)
-			ACF.SetClientData("Controller", Data.ID)
-			ACF.SetClientData("Destiny", "TurretControllers")
-			ACF.SetClientData("PrimaryClass", "acf_turret_controller")
-			ACF.SetClientData("SecondaryClass", "N/A")
+		function ACF.CreateTurretControllerMenu(Data, Menu, Ctx)
+			Ctx:Set("Controller", { Type = Classes.GetTypeName(Data), Data = {} })
 
 			local MassText = language.GetPhrase("acf.menu.turrets.mass_text")
 			Menu:AddLabel(MassText:format(Data.Mass))
