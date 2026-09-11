@@ -140,7 +140,7 @@ function Armor:OnLoaded()
     self.ShortName   = "HHRHA"
     self.Description = "Harder than RHA, but more brittle."
     self.Density     = 7850 -- https://metalzenith.com/blogs/steel-properties/rha-steel-properties-and-key-applications-in-defense
-    self.CostMul     = 38
+    self.CostMul     = 47.04
     self.HealthMul   = 0.75
     self.KineticMul  = 1.25
     self.ChemicalMul = 1.15
