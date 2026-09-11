@@ -1,19 +1,26 @@
 local ACF      = ACF
 local Classes  = ACF.Classes
-local Missiles = Classes.Missiles
+
+-- Missiles/racks are V2 classes addressed by short id (FQN suffix, or CLASS.ID for missile groups).
+local function GetMissileClass(ID)
+	local Direct = Classes.GetSubtypeByName("ACF.Missiles.BaseMissile", ID)
+	if Direct then return Direct end
+
+	for _, Class in ipairs(Classes.GetSubtypesAsList("ACF.Missiles.BaseMissile")) do
+		if Class.ID == ID or Classes.GetTypeName(Class):match("[^.]+$") == ID then return Class end
+	end
+end
 
 function ACF.GetGunValue(BulletData, Value)
-	BulletData = istable(BulletData) and BulletData.Id or BulletData
+	BulletData = istable(BulletData) and BulletData.WeaponType or BulletData
 
-	local Class = Classes.GetGroup(Missiles, BulletData)
+	-- The missile item class inherits its group's values, so a single lookup covers both.
+	local Data = GetMissileClass(BulletData)
 
-	if Class then
-		local Data = Class.Lookup[BulletData]
+	if Data then
 		local Result = Data.Round and Data.Round[Value] or Data[Value]
 
 		if Result ~= nil then return Result end
-
-		return Class and Class[Value]
 	end
 end
 
@@ -44,10 +51,14 @@ local function CanLoadCaliber(RackData, WeaponData)
 end
 
 function ACF.CanLinkRack(RackData, WeaponData)
-	local Allowed = WeaponData.Racks
+	-- A non-missile crate (e.g. a gun ammo crate) has no missile weapon data here.
+	if not WeaponData then
+		return false, "This crate doesn't hold missiles compatible with " .. RackData.Name .. "!"
+	end
 
-	if not (Allowed and Allowed[RackData.ID]) then
-		return false, WeaponData.ID .. " rounds are not compatible with " .. RackData.Name .. "!"
+	local Allowed = WeaponData.Racks
+	if not (Allowed and Allowed[Classes.GetTypeName(RackData:GetType())]) then
+		return false, (WeaponData.ID or "These") .. " rounds are not compatible with " .. RackData.Name .. "!"
 	end
 
 	local Bool, Message = CanLoadCaliber(RackData, WeaponData)

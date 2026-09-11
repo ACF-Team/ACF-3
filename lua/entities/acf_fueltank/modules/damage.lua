@@ -11,9 +11,9 @@ local HookRun = hook.Run
 function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	local HitRes    = Damage.doPropDamage(self, DmgResult, DmgInfo)
 	local Inflictor = DmgInfo:GetInflictor()
-	local NoExplode = self.FuelType == "Diesel"
 
-	if self.Exploding or NoExplode or not self.IsExplosive then return HitRes end
+	-- Non-explosive fuel types (e.g. diesel, which sets IsExplosive = false) never cook off.
+	if self.Exploding or not self.IsExplosive then return HitRes end
 
 	local Attacker  = DmgInfo:GetAttacker()
 

@@ -1,38 +1,34 @@
 local ACF        = ACF
-local Components = ACF.Classes.Components
+local Classes    = ACF.Classes
+local GetType    = Classes.GetTypeByName
 
--- Class: Supply Unit under Components
-Components.Register("SP-RFL", {
-	Name   = "Supply Crate",
-	Entity = "acf_supply",
-	TutorialURL = "docs/acf_tutorials/refills.html",
-	LimitConVar = {
+local Classes   = ACF.Classes
+
+Classes.DefineClass("ACF.Components.SupplyCrate", "ACF.Components.BaseComponent", function(CLASS)
+	CLASS.Name        = "Supply Crate"
+	CLASS.Description = "A scalable container that supplies fuel and ammo."
+	CLASS.Model       = "models/acf/core/s_fuel.mdl"
+	CLASS.Material    = "phoenix_storms/future_vents"
+	CLASS.Preview = {FOV = 120}
+	CLASS.Entity = "acf_supply"
+	CLASS.TutorialURL = "docs/acf_tutorials/refills.html"
+	CLASS.LimitConVar = {
 		Name   = "_acf_supply",
 		Amount = 4,
 		Text   = "Maximum amount of ACF Supply crates a player can create."
 	}
-})
-
--- Single generic supply item; capacity scales with size sliders
-Components.RegisterItem("RFL-UNIT", "SP-RFL", {
-	Name        = "Supply Crate",
-	Description = "A scalable container that supplies fuel and ammo.",
-	Model       = "models/acf/core/s_fuel.mdl",
-	Material    = "phoenix_storms/future_vents",
-	Preview = {FOV = 120},
-	CreateMenu = function(_, Menu)
-		-- Shape selector
+	function CLASS.CreateMenu(_, Menu, Ctx)
+		-- Shape selector. The combo value is the ContainerShapes class FQN written straight into the
+		-- "Shape" field; no string->class translation needed at spawn time.
 		local SupplyShape = Menu:AddComboBox()
 
-		SupplyShape:AddChoice("Box", "Box")
-		SupplyShape:AddChoice("Sphere", "Sphere")
-		SupplyShape:AddChoice("Cylinder", "Cylinder")
+		SupplyShape:AddChoice("Box", "ACF.ContainerShapes.Box")
+		SupplyShape:AddChoice("Sphere", "ACF.ContainerShapes.Sphere")
+		SupplyShape:AddChoice("Cylinder", "ACF.ContainerShapes.Cylinder")
 
-		-- Set default shape
-		local SelectedShape = ACF.GetClientData("SupplyShape") or "Box"
-
-		ACF.SetClientData("SupplyShape", SelectedShape, true)
-		SupplyShape:ChooseOptionID(SelectedShape == "Sphere" and 2 or SelectedShape == "Cylinder" and 3 or 1)
+		-- Current shape (a live ContainerShapes instance on the context), as an FQN.
+		local ShapeInst    = Ctx:Get("Shape")
+		local SelectedShape = (ShapeInst and ShapeInst.GetType) and Classes.GetTypeName(ShapeInst:GetType()) or "ACF.ContainerShapes.Box"
 
 		-- Live capacity and rate preview label
 		local CapacityLabel = Menu:AddLabel("")
@@ -41,22 +37,14 @@ Components.RegisterItem("RFL-UNIT", "SP-RFL", {
 		local Min = ACF.ContainerMinSize
 		local Max = ACF.ContainerMaxSize
 
-		-- Set defaults before creating sliders to avoid nil accesses in setters
-		local DefaultX = ACF.GetClientNumber("SupplySizeX", 24)
-		local DefaultY = ACF.GetClientNumber("SupplySizeY", 24)
-		local DefaultZ = ACF.GetClientNumber("SupplySizeZ", 24)
-
-		ACF.SetClientData("SupplySizeX", DefaultX, true)
-		ACF.SetClientData("SupplySizeY", DefaultY, true)
-		ACF.SetClientData("SupplySizeZ", DefaultZ, true)
-
-		local SupplySize = Vector(DefaultX, DefaultY, DefaultZ)
+		local SupplySize = Vector(Ctx:Get("SupplySizeX") or 24, Ctx:Get("SupplySizeY") or 24, Ctx:Get("SupplySizeZ") or 24)
 
 		local function UpdateSupplyText()
-			local Wall = ACF.ContainerArmor * ACF.MmToInch
-			local Shape = ACF.GetClientData("SupplyShape") or "Box"
+			local Wall    = ACF.ContainerArmor * ACF.MmToInch
+			local Current = Ctx:Get("Shape")
+			local Shape   = (Current and Current.GetType) and Current:GetType() or GetType("ACF.ContainerShapes.Box")
 
-			local Volume, Area = ACF.ContainerShapes[Shape](SupplySize, Wall)
+			local Volume, Area = Shape.ShapeCalculation(SupplySize, Wall)
 
 			local Capacity = Volume * ACF.gCmToKgIn
 			local EmptyMass = Area * Wall * ACF.InchToCmCu * ACF.SteelDensity
@@ -70,61 +58,48 @@ Components.RegisterItem("RFL-UNIT", "SP-RFL", {
 		end
 
 		function SupplyShape:OnSelect(_, _, Data)
+			local ShapeClass = GetType(Data) or GetType("ACF.ContainerShapes.Box")
+
 			if Menu.ComponentPreview then
-				Menu.ComponentPreview:UpdateModel(ACF.ContainerShapeModels[Data] or "models/acf/core/s_fuel.mdl", "phoenix_storms/future_vents")
+				Menu.ComponentPreview:UpdateModel(ShapeClass.Model, "phoenix_storms/future_vents")
 			end
 
-			ACF.SetClientData("SupplyShape", Data)
+			Ctx:Set("Shape", Data)
 			UpdateSupplyText()
 		end
+		SupplyShape:ChooseOptionID(SelectedShape == "ACF.ContainerShapes.Sphere" and 2 or SelectedShape == "ACF.ContainerShapes.Cylinder" and 3 or 1)
 
 		local SizeX = Menu:AddSlider("Length", Min, Max)
-		SizeX:SetClientData("SupplySizeX", "OnValueChanged")
-		SizeX:DefineSetter(function(Panel, _, _, Value)
+		function SizeX:OnValueChanged(Value)
 			local X = math.Round(Value)
-
-			Panel:SetValue(X)
-
+			self:SetValue(X)
 			SupplySize.x = X
-
 			UpdateSupplyText()
-
-			return X
-		end)
+			Ctx:Set("SupplySizeX", X)
+		end
+		SizeX:SetValue(SupplySize.x)
 
 		local SizeY = Menu:AddSlider("Width", Min, Max)
-		SizeY:SetClientData("SupplySizeY", "OnValueChanged")
-		SizeY:DefineSetter(function(Panel, _, _, Value)
+		function SizeY:OnValueChanged(Value)
 			local Y = math.Round(Value)
-
-			Panel:SetValue(Y)
-
+			self:SetValue(Y)
 			SupplySize.y = Y
-
 			UpdateSupplyText()
-
-			return Y
-		end)
+			Ctx:Set("SupplySizeY", Y)
+		end
+		SizeY:SetValue(SupplySize.y)
 
 		local SizeZ = Menu:AddSlider("Height", Min, Max)
-		SizeZ:SetClientData("SupplySizeZ", "OnValueChanged")
-		SizeZ:DefineSetter(function(Panel, _, _, Value)
+		function SizeZ:OnValueChanged(Value)
 			local Z = math.Round(Value)
-
-			Panel:SetValue(Z)
-
+			self:SetValue(Z)
 			SupplySize.z = Z
-
 			UpdateSupplyText()
-
-			return Z
-		end)
+			Ctx:Set("SupplySizeZ", Z)
+		end
+		SizeZ:SetValue(SupplySize.z)
 
 		-- Initialize preview with defaults
 		UpdateSupplyText()
-
-		ACF.SetClientData("PrimaryClass", "acf_supply")
-		ACF.SetClientData("SecondaryClass", "N/A")
-	end,
-})
-
+	end
+end)

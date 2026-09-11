@@ -12,7 +12,7 @@ local function GetBaseplateProperties(Ent, Self, SelfPos, SelfRadius)
 
 	if not IsEntityValid(Ent) then return false end
 	if ENTITY.GetClass(Ent) ~= "acf_baseplate" then return false end
-	if not Ent.Size then return false end
+	if not Ent.BaseplateSize then return false end
 	if ENTITY.IsPlayerHolding(Ent) then return false end
 
 	local Physics     = ENTITY.GetPhysicsObject(Ent)
@@ -20,7 +20,7 @@ local function GetBaseplateProperties(Ent, Self, SelfPos, SelfRadius)
 
 	local EntTable  = ENTITY.GetTable(Ent)
 
-	local EntX, EntY = VECTOR.Unpack(EntTable.Size)
+	local EntX, EntY = VECTOR.Unpack(EntTable.BaseplateSize)
 
 	local Pos         = PHYSOBJ.GetPos(Physics)
 	local Radius      = math.sqrt((EntX / 2) ^ 2 + (EntY / 2) ^ 2)
@@ -58,7 +58,7 @@ hook.Add("Think", "ACF_Baseplate_Collision_Simulation", function()
 
 			local BP1Table, BP2Table = ENTITY.GetTable(BP1), ENTITY.GetTable(BP2)
 
-			if not BP1Table.Size or not BP2Table.Size then continue end
+			if not BP1Table.BaseplateSize or not BP2Table.BaseplateSize then continue end
 			if ENTITY.IsPlayerHolding(BP1) or ENTITY.IsPlayerHolding(BP2) then continue end
 
 			local Valid1, Physics1, Pos1, Vel1, Contraption1, PhysMass1, TotalMass1, Radius1 = GetBaseplateProperties(BP1)

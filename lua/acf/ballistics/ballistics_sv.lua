@@ -20,7 +20,6 @@ local IndexLimit   = 2000
 local SkyGraceZone = 100
 local FlightTr     = { start = true, endpos = true, filter = true, mask = true }
 local GlobalFilter = ACF.GlobalFilter
-local AmmoTypes    = ACF.Classes.AmmoTypes
 
 -- This will create, or update, the tracer effect on the clientside
 function Ballistics.BulletClient(Bullet, Type, Hit, HitPos)
@@ -135,6 +134,10 @@ function Ballistics.CreateBullet(BulletData)
 	end
 
 	local Bullet = table.Copy(BulletData)
+	Bullet.TypeDef = ACF.Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", Bullet.AmmoType)
+	if not Bullet.TypeDef then
+		error("Bullet.AmmoType was probably wrong, review: " .. tostring(Bullet.AmmoType))
+	end
 
 	if not Bullet.Filter then
 		Bullet.Filter = IsValid(Bullet.Gun) and { Bullet.Gun } or {}
@@ -166,9 +169,7 @@ function Ballistics.CreateBullet(BulletData)
 
 	-- TODO: Make bullets use a metatable instead
 	function Bullet:GetPenetration()
-		local Ammo = AmmoTypes.Get(Bullet.Type)
-
-		return Ammo:GetPenetration(self)
+		return Bullet.TypeDef:GetPenetration(self)
 	end
 
 	if not next(Bullets) then
@@ -298,7 +299,7 @@ function Ballistics.DoBulletsFlight(Bullet)
 
 				Ballistics.BulletClient(Bullet, "Update", 1, Bullet.Pos)
 
-				AmmoTypes.Get(Bullet.Type):OnFlightEnd(Bullet, traceRes)
+				Bullet.TypeDef:OnFlightEnd(Bullet, traceRes)
 				if EventViewer.Enabled() then
 					EventViewer.AppendEvent(GetEventViewerName(Bullet.Index), "Ballistics.DoBulletsFlight.Fuze")
 				end
@@ -334,8 +335,7 @@ function Ballistics.DoBulletsFlight(Bullet)
 			end
 
 			local Type = Ballistics.GetImpactType(traceRes, Entity)
-
-			Ballistics.OnImpact(Bullet, traceRes, AmmoTypes.Get(Bullet.Type), Type)
+			Ballistics.OnImpact(Bullet, traceRes, Bullet.TypeDef, Type)
 		end
 	end
 end
@@ -492,8 +492,8 @@ do -- Terminal ballistics --------------------------
 			Ballistics.CreateBullet({
 				Caliber    = FragSize,
 				Diameter   = FragSize,
-				-- Id         = Bullet.Id,
-				Type       = "AP",
+				-- WeaponType = Bullet.WeaponType,
+				AmmoType   = "ACF.Ammunition.AP",
 				Owner      = Bullet.Owner,
 				Entity     = Bullet.Entity,
 				-- Crate      = Bullet.Crate,

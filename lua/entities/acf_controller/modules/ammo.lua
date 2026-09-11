@@ -1,3 +1,12 @@
+local Classes = ACF.Classes
+
+-- Ammo types are V2 classes (ACF.Ammunition.*) with no short ID field; derive the legacy short id (the
+-- FQN suffix, e.g. "AP") used as the controller's ammo-type key.
+local function AmmoID(Crate)
+	local Round = Crate.RoundData
+	return Round and Classes.GetTypeName(Round:GetType())
+end
+
 local function Init(Entity)
 	Entity.PrimaryAmmoCountsByType = {}
 end
@@ -16,7 +25,7 @@ do
 		if not IsValid(PrimaryGun) then return end
 		for Crate, _ in pairs(PrimaryGun.Crates) do
 			if IsValid(Crate) then
-				local AmmoType = Crate.RoundData.ID
+				local AmmoType = AmmoID(Crate)
 				Crate:TriggerInput("Load", AmmoType == SelectAmmoType and 1 or 0)
 			end
 		end
@@ -34,8 +43,10 @@ do
 		local PrimaryAmmoCountsByType = {}
 		for Crate, _ in pairs(PrimaryGun.Crates) do
 			if IsValid(Crate) then
-				local AmmoType = Crate.RoundData.ID
-				PrimaryAmmoCountsByType[AmmoType] = (PrimaryAmmoCountsByType[AmmoType] or 0) + (Crate.Amount or 0)
+				local AmmoType = AmmoID(Crate)
+				if AmmoType then
+					PrimaryAmmoCountsByType[AmmoType] = (PrimaryAmmoCountsByType[AmmoType] or 0) + (Crate.Amount or 0)
+				end
 			end
 		end
 

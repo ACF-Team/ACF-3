@@ -1,6 +1,5 @@
 local ACF        = ACF
 local Classes    = ACF.Classes
-local AmmoTypes  = Classes.AmmoTypes
 local Ballistics = ACF.Ballistics
 
 local function ResetDefault(BulletData)
@@ -17,7 +16,7 @@ local function ResetHEAT(BulletData)
 	local PenMul = BulletData.PenMul or ACF.GetGunValue(BulletData, "PenMul") or 1
 
 	if not BulletData.SlugMV then -- heat needs to calculate slug mv on the fly
-		local Ammo = AmmoTypes.Get("HEAT")
+		local Ammo = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", "ACF.Ammunition.HEAT")
 
 		BulletData.SlugMV = Ammo:CalcSlugMV(BulletData, BulletData.FillerMass)
 	end
@@ -30,7 +29,7 @@ end
 -- Resets the velocity of the bullet based on its current state on the serverside only.
 -- This will de-sync the clientside effect!
 function ACF.ResetBulletVelocity(BulletData)
-	if BulletData.Type == "HEAT" then
+	if BulletData.AmmoType == "ACF.Ammunition.HEAT" then
 		return ResetHEAT(BulletData)
 	end
 
@@ -40,7 +39,7 @@ end
 function ACF.DoReplicatedPropHit(Entity, Bullet)
 	local EntRes = not table.HasValue(Bullet.Filter, Entity) and Entity or nil -- Don't pass the entity if it's supposed to be filtered out
 	local FlightRes = { Entity = EntRes, HitNormal = Bullet.Flight, HitPos = Bullet.Pos, HitGroup = 0 }
-	local Ammo  = AmmoTypes.Get(Bullet.Type)
+	local Ammo  = Bullet.TypeDef
 	local Retry = Ammo:PropImpact(Bullet, FlightRes)
 
 	if Retry == "Penetrated" then
