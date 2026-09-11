@@ -81,7 +81,9 @@ do -- Updating
 
 		-- ACF.Activate(self, true) is invoked automatically by ACF_UpdateEntityData after this.
 
-		self.DamageScale = math.max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
+		local Health    = self.ACF.Health
+		local MaxHealth = self.ACF.MaxHealth
+		self.DamageScale = (Health and MaxHealth) and math.max((Health / (MaxHealth * 0.75)) - 0.25 / 0.75, 0) or 1
 
 		Contraption.SetMass(self, Class.Mass)
 	end
