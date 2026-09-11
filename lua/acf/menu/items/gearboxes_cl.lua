@@ -8,7 +8,7 @@ local Current      = {}
 
 local function SetStatsText(GearboxStats)
 	local Mass, Torque, TorqueRating = ACF.GetGearboxStats(Current.Mass, Current.Scale, Current.MaxTorque, Current.GearCount)
-	GearboxStats:SetText(StatsText:format(ACF.GetProperMass(Mass), TorqueRating * ACF.TorqueMult, Torque * ACF.TorqueMult))
+	GearboxStats:SetText(StatsText:format(ACF.FormatMass(Mass), TorqueRating * ACF.TorqueMult, Torque * ACF.TorqueMult))
 end
 
 local CreateSubMenu

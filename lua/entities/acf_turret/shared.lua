@@ -1,6 +1,7 @@
 DEFINE_BASECLASS("acf_base_scalable")
 
 ENT.ACF_Limit = 20
+ENT.ConvexMaterial = "RHA"
 
 ACF.Entities.AutoRegister(2026091001, function()
 	MENU_FIELD("ACF.Turrets.Drive", "Turret", {

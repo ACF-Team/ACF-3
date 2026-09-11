@@ -132,7 +132,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.SPG-9", "ACF.Missiles.UnguidedR
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true }
 	CLASS.Agility		= 1
-	CLASS.ArmDelay		= 0 -- :)
+	CLASS.ArmDelay		= 0.1
 	CLASS.HitDeviate	= false
 	CLASS.Round			= {
 		Model           	= "models/missiles/rs82.mdl",
@@ -141,11 +141,11 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.SPG-9", "ACF.Missiles.UnguidedR
 		Armor           	= 1,
 		ProjLength      	= 20.07,
 		PropLength      	= 67.8,
-		Thrust          	= 180000, -- in kg*in/s^2
-		FuelConsumption 	= 0.03, -- in g/s/f
-		StarterPercent  	= 0.4,
+		Thrust          	= 115000, -- in kg*in/s^2
+		FuelConsumption 	= 0.042, -- in g/s/f
+		StarterPercent  	= 0.3,
 		MaxAgilitySpeed 	= 1, -- in m/s
-		DragCoef        	= 0.002,
+		DragCoef        	= 0.008,
 		FinMul          	= 0,
 		GLimit          	= 1,
 		TailFinMul      	= 0.06,

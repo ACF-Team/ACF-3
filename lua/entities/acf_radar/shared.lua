@@ -5,9 +5,13 @@ ENT.ACF_Limit = 4
 
 ACF.Entities.AutoRegister(2026091001, function()
 	MENU_FIELD("ACF.Sensors.Radar", "Sensor", {
-		InstantiateTypeForDefault = "ACF.Sensors.Radar.Targeting.SmallDirectional",
+		InstantiateTypeForDefault = "ACF.Sensors.Radar.Standard.SmallDirectional",
 		OnlyAllowSubtypes         = true,
 	})
+
+	-- One radar class detects both target types, so what it looks for is set per entity.
+	MENU_FIELD("Boolean", "DetectContraptions", {Default = true})
+	MENU_FIELD("Boolean", "DetectMissiles",     {Default = true})
 end, "Radar")
 
 ENT.ACF_StaticWireInputs = {
@@ -23,7 +27,9 @@ ENT.ACF_StaticWireOutputs = {
 	"Position (Returns a list of position vectors from all the detected targets.) [ARRAY]",
 	"Velocity (Returns a list of velocity vectors from all the detected targets.) [ARRAY]",
 	"Distance (Returns a list of distances from all the detected targets.) [ARRAY]",
-	"Size (Returns a list of diameters, in mm, of all the detected targets.) [ARRAY]",
+	"Size (Returns a list of diameters, in inches, of all the detected targets.) [ARRAY]",
+	"Type (Returns a list of target types for all detected targets.) [ARRAY]",
 	"Think Delay (Returns the amount of time in seconds between each scan.)",
+	"Clk (Returns engine.TickCount at the moment of the radar's last scan.)",
 	"Entity (The radar itself.) [ENTITY]",
 }

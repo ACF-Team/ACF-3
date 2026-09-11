@@ -15,11 +15,10 @@ ACF.Classes.DefineClass("ACF.Guns.RotaryAutocannon", "ACF.Guns.BaseScalableGun",
 	CLASS.Mass        	= 212
 	CLASS.Cyclic      	= 2000
 	CLASS.ScaleFactor 	= 1.0 -- Corrective factor to account for improperly scaled base models
-	CLASS.ReloadMod 	= 0.5 -- Load time multiplier. Represents the ease of manipulating the weapon's ammunition
-	CLASS.TransferMult 	= 10 -- Thermal energy transfer rate
 	CLASS.Round 		= {
 		MaxLength  = 16,
 		PropLength = 13,
+		CaseScale  = 1.46, -- 37x219mm (T250 rotary): 54mm case over a 37mm projectile
 	}
 	CLASS.Preview 		= {
 		Height = 90,
@@ -29,14 +28,6 @@ ACF.Classes.DefineClass("ACF.Guns.RotaryAutocannon", "ACF.Guns.BaseScalableGun",
 		Base = 20,
 		Min  = 7.62,
 		Max  = 37,
-	}
-	CLASS.MagSize 		= {
-		Min = 450,
-		Max = 150,
-	}
-	CLASS.MagReload 	= {
-		Min = 10,
-		Max = 20,
 	}
 	CLASS.LimitConVar 	= {
 		Name = "_acf_rotaryautocannon",

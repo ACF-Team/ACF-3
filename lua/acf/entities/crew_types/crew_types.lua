@@ -10,6 +10,12 @@ local Classes	= ACF.Classes
 
 local table_empty = {}
 
+--- Loaders and Commanders can't affect a belt fed's reload, so don't let them link
+local function CanLinkGun(_, Gun)
+	if Gun.IsBelted then return false, "Belt fed weapons don't link to loaders!" end
+	return true, "Crew linked."
+end
+
 --- Checks if the number of targets of the class for the crew exceeds the count
 --- Default count is 1
 local function CheckCount(Crew, Class, Count)
@@ -29,7 +35,7 @@ local function FindLongestBullet(Crew)
 		if not IsValid(Gun) then continue end
 		for Crate in pairs(Gun.Crates) do
 			local BulletData = Crate.BulletData
-			local Length = BulletData.PropLength + BulletData.ProjLength
+			local Length = BulletData.RoundLength or (BulletData.PropLength + BulletData.ProjLength)
 			if Length > LongestLength then
 				LongestLength = Length
 				LongestBullet = BulletData
@@ -65,8 +71,8 @@ Classes.AddSboxLimit({
 Classes.DefineClass("ACF.CrewTypes.Loader", "ACF.CrewTypes.BaseCrewType", function(CLASS)
 	CLASS.Name        = "Loader"
 	CLASS.Icon		= "icon16/wand.png"
-	CLASS.Description = "Loaders affect the reload rate of your guns. Link them to gun(s). They prefer standing."
-	CLASS.ExtraNotes 	= "Loaders can be linked to any gun, but their focus is split between each. Viewing loaders with the acf menu tool will visualize the space they need for peak performance in purple."
+	CLASS.Description = "Loaders affect the reload rate of your weapons. Link them to ACF Guns or Missile Racks. They prefer standing poses."
+	CLASS.ExtraNotes 	= "Loaders can link to multiple ACF Guns or Missile Racks at once, but this will spread their focus between what they're linked to. Viewing loaders with the ACF Menu tool will visualize the space they need for peak performance in purple."
 	CLASS.Cost	= 1
 	CLASS.LimitConVar	= {			-- ConVar to limit the number of crew members of this type a player can have
 		Name	= "_acf_crew_loader",
@@ -79,11 +85,11 @@ Classes.DefineClass("ACF.CrewTypes.Loader", "ACF.CrewTypes.BaseCrewType", functi
 		Max = 90,			-- Worst efficiency after this angle (Degs)
 	}
 	CLASS.GForceInfo = {
-		Efficiencies = {	-- Specifying this table enables G force efficiency calculations
-			Min = 0,		-- Best efficiency before this (Gs)
+		Efficiencies = {	-- Specifying this table enables G-force efficiency calculations
+			Min = 0.5,		-- Best efficiency before this (Gs)
 			Max = 3,		-- Worst efficiency after this (Gs)
 		},
-		Damages = {			-- Specifying this table enables G force damage calculations
+		Damages = {			-- Specifying this table enables G-force damage calculations
 			Min = 5,		-- Damage starts being applied after this (Gs)
 			Max = 9,		-- Instant death after this (Gs)
 		}
@@ -93,6 +99,7 @@ Classes.DefineClass("ACF.CrewTypes.Loader", "ACF.CrewTypes.BaseCrewType", functi
 	}
 	CLASS.LinkHandlers = {		-- Custom link handlers for this crew type
 		acf_gun = {			-- Specify a target class for it to be included in the whitelist
+			CanLink = CanLinkGun,
 			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
 			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
 		},
@@ -117,8 +124,8 @@ end)
 Classes.DefineClass("ACF.CrewTypes.Gunner", "ACF.CrewTypes.BaseCrewType", function(CLASS)
 	CLASS.Name        = "Gunner"
 	CLASS.Icon		= "icon16/gun.png"
-	CLASS.Description = "Gunners affect the accuracy of your gun. Link them to acf turret rings or baseplates. They prefer sitting."
-	CLASS.ExtraNotes	= "Gunners can only be linked to one type of gun and their focus does not change."
+	CLASS.Description = "Gunners provide control over weaponized turrets, letting them update their aim freely. Link them to ACF Horizontal Turrets. They prefer sitting poses."
+	CLASS.ExtraNotes	= "Gunners can only be linked to one turret, but can additionally be linked to ACF Guns or Missile Racks to serve as Loaders. Their control benefit can propagate to Vertical turrets which are parented to the Horizontal turret if the cumulative mass of the Horizontal turret is less than 250kg, the Gunner is directly parented to the Horizontal turret, or if the Gunner is also linked to a Remote Turret Controller."
 	CLASS.Cost	= 1
 	CLASS.LimitConVar	= {
 		Name	= "_acf_crew_gunner",
@@ -132,36 +139,50 @@ Classes.DefineClass("ACF.CrewTypes.Gunner", "ACF.CrewTypes.BaseCrewType", functi
 	}
 	CLASS.GForceInfo = {
 		Efficiencies = {
-			Min = 0,	-- Best efficiency before this (Gs)
-			Max = 3,	-- Worst efficiency after this (Gs)
+			Min = 1,	-- Best efficiency before this (Gs)
+			Max = 4,	-- Worst efficiency after this (Gs)
+		},
+		-- Used instead of Efficiencies while linked to a gun/rack, since loading duty is
+		-- as sensitive to movement as an actual Loader's, regardless of Gunner's usual tolerance
+		LoaderEfficiencies = {
+			Min = 0.5,		-- Best efficiency before this (Gs)
+			Max = 3,		-- Worst efficiency after this (Gs)
 		},
 		Damages = {
 			Min = 5,	-- Damage starts being applied after this (Gs)
 			Max = 9,	-- Instant death after this (Gs)
 		}
 	}
+	CLASS.SpaceInfo = {			-- Specifying this table enables spatial scans (if linked to a gun)
+		ScanStep = 3,		-- How many parts of a scan to update each time
+	}
 	CLASS.LinkHandlers = {
 		acf_turret = {
 			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
-				if CheckCount(Crew) then return false, "Gunners can only link to one entity." end
+				if CheckCount(Crew, "acf_turret") then return false, "Gunners can only link to one turret." end
 				if Target.Turret == "Turret-V" then return false, "Gunners cannot link to vertical drives." end
 				return true, "Crew linked."
 			end
 		},
-		acf_baseplate = {
-			CanLink = function(Crew) -- Called when a crew member tries to link to an entity
-				if CheckCount(Crew, "acf_baseplate") then return false, "Gunners can only link to one acf_baseplate." end
-				return true, "Crew linked."
-			end
-		}
+		acf_gun = {
+			CanLink = CanLinkGun,
+			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") end, -- If linked to multiple guns
+			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_gun") end, -- If linked to multiple guns
+		},
+		acf_rack = {
+			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_rack") end, -- If linked to multiple racks
+			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_rack") end, -- If linked to multiple racks
+		},
 	}
+	CLASS.UpdateLowFreq = FindLongestBullet
 	CLASS.UpdateEfficiency = function(Crew, Commander)
 		local MyEff = Crew.ModelEff * Crew.LeanEff * Crew.SpaceEff * Crew.MoveEff * Crew.HealthEff * Crew.Focus
 		local CommanderEff = Commander and Commander.TotalEff or 0
 		Crew.TotalEff = math.Clamp(CommanderEff * ACF.CrewCommanderCoef + MyEff * ACF.CrewSelfCoef, ACF.CrewFallbackCoef, 1)
 	end
 	CLASS.UpdateFocus = function(Crew)
-		Crew.Focus = 1
+		local Count = table.Count(Crew.Targets)
+		Crew.Focus = (Count > 0) and (1 / Count) or 1
 	end
 	CLASS.EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, ACF.Classes.GetTypeByName("ACF.Baseplates.GroundVehicle")) end
 end)
@@ -169,8 +190,8 @@ end)
 Classes.DefineClass("ACF.CrewTypes.Driver", "ACF.CrewTypes.BaseCrewType", function(CLASS)
 	CLASS.Name        = "Driver"
 	CLASS.Icon		= "icon16/car.png"
-	CLASS.Description = "Drivers affect the fuel efficiency of your engines. Link them to acf baseplates. They prefer sitting."
-	CLASS.ExtraNotes	= "Drivers can be linked to any engine and their focus does not change."
+	CLASS.Description = "Drivers permit gearboxes to apply torque to wheels at full effect. They prefer sitting poses."
+	CLASS.ExtraNotes	= "Drivers affect all gearboxes on a contraption without needing to be linked, similar to how a Commander affects the crew."
 	CLASS.Cost	= 1
 	CLASS.LimitConVar	= {
 		Name	= "_acf_crew_driver",
@@ -184,22 +205,15 @@ Classes.DefineClass("ACF.CrewTypes.Driver", "ACF.CrewTypes.BaseCrewType", functi
 	}
 	CLASS.GForceInfo = {
 		Efficiencies = {
-			Min = 0,	-- Best efficiency before this (Gs)
-			Max = 3,	-- Worst efficiency after this (Gs)
+			Min = 1,	-- Best efficiency before this (Gs)
+			Max = 4,	-- Worst efficiency after this (Gs)
 		},
 		Damages = {
 			Min = 5,	-- Damage starts being applied after this (Gs)
 			Max = 9,	-- Instant death after this (Gs)
 		}
 	}
-	CLASS.LinkHandlers = {
-		acf_baseplate = {
-			CanLink = function(Crew) -- Called when a crew member tries to link to an entity
-				if CheckCount(Crew) then return false, "Drivers can only link to one entity." end
-				return true, "Crew linked."
-			end
-		}
-	}
+	CLASS.LinkHandlers = {}
 	CLASS.UpdateEfficiency = function(Crew, Commander)
 		local MyEff = Crew.ModelEff * Crew.LeanEff * Crew.SpaceEff * Crew.MoveEff * Crew.HealthEff * Crew.Focus
 		local CommanderEff = Commander and Commander.TotalEff or 0
@@ -214,8 +228,8 @@ end)
 Classes.DefineClass("ACF.CrewTypes.Commander", "ACF.CrewTypes.BaseCrewType", function(CLASS)
 	CLASS.Name        = "Commander"
 	CLASS.Icon		= "icon16/medal_gold_1.png"
-	CLASS.Description = "Commanders coordinate the crew. Works without linking. They prefer sitting."
-	CLASS.ExtraNotes 	= "You can link them to work like gunners/loaders to operate a RWS for example. However, this reduces their focus and their ability to command the other crew."
+	CLASS.Description = "Commanders coordinate the crew, providing an efficiency bonus, which works without linking. They prefer sitting poses."
+	CLASS.ExtraNotes 	= "Commanders can additionally be linked to ACF Horizontal Turrets to serve as Gunners, or to ACF Guns or Missile Racks to serve as Loaders. However, more tasks reduces their focus to put towards each individual task, and their ability to coordinate other crew members."
 	CLASS.Cost	= 2
 	CLASS.LimitConVar	= {
 		Name	= "_acf_crew_commander",
@@ -229,7 +243,13 @@ Classes.DefineClass("ACF.CrewTypes.Commander", "ACF.CrewTypes.BaseCrewType", fun
 	}
 	CLASS.GForceInfo = {
 		Efficiencies = {
-			Min = 0,		-- Best efficiency before this (Gs)
+			Min = 1,		-- Best efficiency before this (Gs)
+			Max = 4,		-- Worst efficiency after this (Gs)
+		},
+		-- Used instead of Efficiencies while linked to a gun/rack, since loading duty is
+		-- as sensitive to movement as an actual Loader's, regardless of Commander's usual tolerance
+		LoaderEfficiencies = {
+			Min = 0.5,		-- Best efficiency before this (Gs)
 			Max = 3,		-- Worst efficiency after this (Gs)
 		},
 		Damages = {
@@ -242,6 +262,7 @@ Classes.DefineClass("ACF.CrewTypes.Commander", "ACF.CrewTypes.BaseCrewType", fun
 	}
 	CLASS.LinkHandlers = {
 		acf_gun = {
+			CanLink = CanLinkGun,
 			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") end, -- If linked to multiple guns
 			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_gun") end, -- If linked to multiple guns
 		},
@@ -286,8 +307,8 @@ end)
 Classes.DefineClass("ACF.CrewTypes.Pilot", "ACF.CrewTypes.BaseCrewType", function(CLASS)
 	CLASS.Name        = "Pilot"
 	CLASS.Icon		= "icon16/weather_clouds.png"
-	CLASS.Description = "Pilots can sustain higher G tolerances but weigh more (life support systems and G suits). You should only use these on aircraft."
-	CLASS.ExtraNotes 	= "Pilots do not affect anything at the moment."
+	CLASS.Description = "Pilots can sustain higher G-forces than other crew types, but weigh more to represent life support systems and a G-suit. Only usable on aircraft."
+	CLASS.ExtraNotes 	= "Pilots can perform either Driver duty when linked to an ACF Baseplate or Gunner duty when linked to an ACF Horizontal Turret, but can only perform one job."
 	CLASS.Cost	= 5
 	CLASS.LimitConVar	= {
 		Name	= "_acf_crew_pilot",
@@ -302,14 +323,6 @@ Classes.DefineClass("ACF.CrewTypes.Pilot", "ACF.CrewTypes.BaseCrewType", functio
 		}
 	}
 	CLASS.LinkHandlers = {
-		acf_gun = {
-			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") or CheckCount(Crew, "acf_rack") end,
-			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_gun") or CheckCount(Crew, "acf_rack") end,
-		},
-		acf_rack = {
-			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") or CheckCount(Crew, "acf_rack") end,
-			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_gun") or CheckCount(Crew, "acf_rack") end,
-		},
 		acf_turret = {
 			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
 				if CheckCount(Crew) then return false, "Pilot can only link to one entity." end
@@ -319,7 +332,7 @@ Classes.DefineClass("ACF.CrewTypes.Pilot", "ACF.CrewTypes.BaseCrewType", functio
 		},
 		acf_baseplate = {
 			CanLink = function(Crew) -- Called when a crew member tries to link to an entity
-				if CheckCount(Crew, "acf_baseplate") then return false, "Pilot can only link to one acf_baseplate." end
+				if CheckCount(Crew) then return false, "Pilot can only link to one entity." end
 				return true, "Crew linked."
 			end
 		}

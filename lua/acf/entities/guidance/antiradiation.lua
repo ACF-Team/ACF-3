@@ -14,6 +14,11 @@ Classes.DefineClass("ACF.Missiles.Guidance.AntiRadiation", "ACF.Missiles.Guidanc
 		State:AddSubKeyValue("Seeking",  math.Round(self.ViewCone * 2, 2) .. " degrees")
 	end
 
+	-- Shared so the ammo menu can price missile rounds clientside.
+	function CLASS:GetCost()
+		return 4
+	end
+
 	if CLIENT then
 		CLASS.Description = "This guidance package will detect an active radar infront of itself and guide the munition towards it."
 	else
@@ -21,9 +26,6 @@ Classes.DefineClass("ACF.Missiles.Guidance.AntiRadiation", "ACF.Missiles.Guidanc
 
 		CLASS.MinDistance = 38750 -- Squared, ~5 meters
 
-		function CLASS:GetCost()
-			return 2
-		end
 
 		function CLASS:UpdateTarget(Missile)
 			if not next(Radars) then return end

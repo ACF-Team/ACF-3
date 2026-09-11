@@ -72,15 +72,19 @@ Classes.DefineClass("ACF.Ammunition.FLR", "ACF.Ammunition.AP", function(CLASS, B
 		if not isnumber(self.FillerRatio) then self.FillerRatio = 0 end
 	end
 
+	-- Shared with the client so the spawn menu can price a crate without spawning it.
+	local Conversion = ACF.PointConversion
+
+	function CLASS:GetCost(BulletData)
+		return ((BulletData.ProjMass - BulletData.FillerMass) * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.FlareMix)
+	end
+
 	if SERVER then
 		local Ballistics      = ACF.Ballistics
 		local Clock           = ACF.Utilities.Clock
 		local Countermeasures = ACF.Countermeasures
-		local Conversion	  = ACF.PointConversion
 
-		function CLASS:GetCost(BulletData)
-			return ((BulletData.ProjMass - BulletData.FillerMass) * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.FlareMix)
-		end
+
 
 		function CLASS:Create(_, BulletData)
 			local Bullet = Ballistics.CreateBullet(BulletData)
@@ -146,9 +150,9 @@ Classes.DefineClass("ACF.Ammunition.FLR", "ACF.Ammunition.AP", function(CLASS, B
 
 				local Text		= "Muzzle Velocity : %s m/s\nProjectile Mass : %s\nPropellant Mass : %s\nFlare Filler Mass : %s"
 				local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
-				local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
-				local PropMass	= ACF.GetProperMass(BulletData.PropMass)
-				local Filler	= ACF.GetProperMass(BulletData.FillerMass)
+				local ProjMass	= ACF.FormatMass(BulletData.ProjMass)
+				local PropMass	= ACF.FormatMass(BulletData.PropMass)
+				local Filler	= ACF.FormatMass(BulletData.FillerMass)
 
 				RoundStats:SetText(Text:format(MuzzleVel, ProjMass, PropMass, Filler))
 			end)
@@ -158,12 +162,57 @@ Classes.DefineClass("ACF.Ammunition.FLR", "ACF.Ammunition.AP", function(CLASS, B
 				self:UpdateRoundData()
 
 				local Text		= "Burn Rate : %s/s\nBurn Duration : %s s\nDistraction Chance : %s"
-				local Rate		= ACF.GetProperMass(BulletData.BurnRate)
+				local Rate		= ACF.FormatMass(BulletData.BurnRate)
 				local Duration	= math.Round(BulletData.BurnTime, 2)
 				local Chance	= math.Round(BulletData.DistractChance * 100, 2) .. "%"
 
 				FillerStats:SetText(Text:format(Rate, Duration, Chance))
 			end)
+		end
+
+		-- Ammo menu visual: casing plus a body split between the pyrotechnic filler and the steel shell
+		-- wall/nose around it, matching the mass split in UpdateRoundData (ProjVolume - FillerVol is
+		-- steel, the rest filler). No tracer segment, since flares don't have a tracer control.
+		function CLASS:DrawAmmoVisual(Panel, w, h, ToolData, BulletData)
+			local GeoPrim  = ACF.GeoPrim
+			local Margin   = 10
+			local DrawW    = w - Margin * 2
+			local Diameter = BulletData.Diameter or BulletData.Caliber
+
+			local Length = BulletData.ProjLength + BulletData.PropLength
+
+			if Length <= 0 then return end
+
+			-- Cap Scale by the case, the widest part, so the case/bore step survives the height budget
+			local CaseDia = BulletData.CaseDiameter
+
+			if CaseDia <= 0 then return end
+
+			local Scale      = math.min(DrawW / Length, ((h - Margin * 2) * 0.6) / CaseDia)
+			local DiameterPx = CaseDia * Scale
+			local CenterY    = h * 0.5
+			local Radius     = Diameter * 0.5
+
+			local FillerRatio = math.Clamp(ToolData.FillerRatio or 0, 0, 1)
+			local FillerLenCm = BulletData.ProjLength * FillerRatio
+			local SteelLenCm  = BulletData.ProjLength - FillerLenCm
+
+			local Propellant = GeoPrim.New("Cylinder", { Radius = CaseDia * 0.5, Height = BulletData.PropLength })
+			Propellant:SetMaterial("Propellant")
+
+			local Filler = GeoPrim.New("Cylinder", { Radius = Radius, Height = FillerLenCm })
+			Filler:SetMaterial("Pyrotechnic Filler (Flare Composition)")
+
+			local ShellCasing = GeoPrim.New("Cylinder", { Radius = Radius, Height = SteelLenCm })
+			ShellCasing:SetMaterial("Steel Shell Casing")
+
+			local X = Margin
+			X = Propellant:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(180, 150, 60), Color(30, 30, 30))
+
+			if FillerLenCm > 0 then
+				X = Filler:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(210, 80, 30), Color(30, 30, 30))
+			end
+			ShellCasing:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(120, 120, 130), Color(30, 30, 30))
 		end
 	end
 end)

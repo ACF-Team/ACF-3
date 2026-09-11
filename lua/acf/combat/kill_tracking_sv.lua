@@ -8,6 +8,9 @@ do
         Contraption.ACF_LastDamageTime = CurTime()
         Contraption.ACF_LastDamageAttacker = DmgInfo:GetAttacker()
         Contraption.ACF_LastDamageInflictor = DmgInfo:GetInflictor()
+
+        -- Cached: recomputing after the entity is removed would undercount its own cost.
+        Contraption.ACF_LastCost = (ACF.Contraption.CostSystem.CalcCostsFromContraption(Contraption))
     end)
 
 
@@ -19,5 +22,6 @@ do
         Split.ACF_LastDamageTime = Previous.ACF_LastDamageTime
         Split.ACF_LastDamageAttacker = Previous.ACF_LastDamageAttacker
         Split.ACF_LastDamageInflictor = Previous.ACF_LastDamageInflictor
+        Split.ACF_LastCost = Previous.ACF_LastCost
     end)
 end

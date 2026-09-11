@@ -60,6 +60,7 @@ do -- Updating
 		-- Publish the fuel type FQN so engine links (keyed by FQN, see acf_engine) resolve.
 		self.FuelType    = Classes.GetTypeName(FuelType:GetType())
 		self.FuelDensity = FuelType.Density
+		self.ConvexMaterial = FuelType.ArmorType or "RHA" -- Convex armor type defaults to this fuel's material
 		self.IsExplosive = FuelType.IsExplosive
 		self.IsElectric  = FuelType.IsElectric
 		self.NoLinks     = false
@@ -68,10 +69,9 @@ do -- Updating
 		self.ShortName   = FuelID
 		self.WireAmountName = "Fuel"
 
-		local _, Capacity, EmptyMass = self:CalcVolumeAndCapacity(Size)
+		local _, Capacity = self:CalcVolumeAndCapacity(Size)
 
-		self.Capacity  = Capacity -- Internal volume available for fuel in liters
-		self.EmptyMass = EmptyMass
+		self.Capacity = Capacity -- Internal volume available for fuel in liters
 
 		if FuelType.IsElectric then
 			self.Name     = "Electric Battery"
@@ -127,7 +127,9 @@ end
 
 do -- Overlay text
 	function ENT:ACF_UpdateOverlayState(State)
-		if self:CanConsume() then
+		if self.ACF.Health == 0 then
+			State:AddError("Destroyed")
+		elseif self:CanConsume() then
 			State:AddSuccess("Active")
 		else
 			State:AddWarning("Idle")

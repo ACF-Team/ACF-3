@@ -16,6 +16,15 @@ local HEALTH_GOOD = Color(30, 255, 50)
 local PROGRESS_EMPTY   = Color(66, 96, 116)
 local PROGRESS_FULL    = Color(112, 191, 243)
 
+-- A zero maximum is a real state -- an ammo crate too small for a whole round, a drained
+-- supply crate -- and dividing by it yields NaN, which prints as "nan%" and makes the bar
+-- geometry NaN too, since comparisons against NaN are false and math.Clamp lets it through.
+local function SafeRatio(Value, Maximum)
+    if not Maximum or Maximum <= 0 then return 0 end
+
+    return Value / Maximum
+end
+
 -- These methods return
     -- Formatted text for the slots data
     -- The 0 to 1 ratio for the progress bar
@@ -31,7 +40,7 @@ local function GetPropertiesHealth(Slot)
     local MinColor  = Slot.NumData >= 6 and Slot.Data[6] or HEALTH_BAD
     local MaxColor  = Slot.NumData >= 6 and Slot.Data[6] or HEALTH_GOOD
 
-    local Ratio = Health / MaxHealth
+    local Ratio = SafeRatio(Health, MaxHealth)
     return ("%d/%d%s (%." .. Decimals .. "f%%)"):format(Health, MaxHealth, Unit, Ratio * 100), Ratio, MinColor, MaxColor
 end
 
@@ -44,7 +53,7 @@ local function GetPropertiesProgress(Slot)
     local MinColor  = Slot.NumData >= 6 and Slot.Data[6] or PROGRESS_EMPTY
     local MaxColor  = Slot.NumData >= 6 and Slot.Data[6] or PROGRESS_FULL
 
-    local Ratio = Health / MaxHealth
+    local Ratio = SafeRatio(Health, MaxHealth)
     return ("%d/%d%s (%." .. Decimals .. "f%%)"):format(Health, MaxHealth, Unit, Ratio * 100), Ratio, MinColor, MaxColor
 end
 
@@ -53,7 +62,7 @@ local function GetPropertiesTime(Slot)
     local TotalTime   = Slot.Data[3]
 
     local Remaining = math.max(0, NextTime - CurTime())
-    local Ratio = math.Clamp(Remaining / TotalTime, 0, 1)
+    local Ratio = math.Clamp(SafeRatio(Remaining, TotalTime), 0, 1)
     if Slot.NumData >= 4 and Slot.Data[4] == true then
         Ratio = 1 - Ratio
     end

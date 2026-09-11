@@ -231,20 +231,6 @@ local function SetActive(Entity, Value, EntTbl)
 	Entity:UpdateOutputs(EntTbl)
 end
 
-do -- Random timer crew stuff
-	function ENT:FindPropagator()
-		local Temp = self:GetParent()
-		if IsValid(Temp) and Temp:GetClass() == "acf_baseplate" then return Temp end
-		return nil
-	end
-
-	function ENT:UpdateFuelMod(cfg)
-		local Propagator = self:FindPropagator(cfg)
-		local Val = Propagator and Propagator.FuelCrewMod or 0
-		self.FuelCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
-		return self.FuelCrewMod
-	end
-end
 --===============================================================================================--
 
 do -- Spawn and Update functions
@@ -382,10 +368,6 @@ do -- Spawn and Update functions
 		end
 	end
 
-	function ENT:ACF_PostSpawn()
-		ACF.AugmentedTimer(function(cfg) self:UpdateFuelMod(cfg) end, function() return IsEntityValid(self) end, nil, {MinTime = 0.1, MaxTime = 0.25})
-	end
-
 	ACF.RegisterLinkSource("acf_engine", "FuelTanks")
 	ACF.RegisterLinkSource("acf_engine", "Gearboxes")
 
@@ -465,25 +447,6 @@ ACF.AddInputAction("acf_engine", "Active", function(Entity, Value)
 	SetActive(Entity, tobool(Value), Entity:GetTable())
 end)
 
-function ENT:ACF_Activate(Recalc)
-	local PhysObj = self.ACF.PhysObj
-	local Mass    = PhysObj:GetMass()
-	local Area    = PhysObj:GetSurfaceArea() * ACF.InchToCmSq
-	local Armour  = Mass * 1000 / Area / 0.78 * ACF.ArmorMod -- Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
-	local Health  = Area / ACF.Threshold
-	local Percent = 1
-
-	if Recalc and self.ACF.Health and self.ACF.MaxHealth then
-		Percent = self.ACF.Health / self.ACF.MaxHealth
-	end
-
-	self.ACF.Area      = Area
-	self.ACF.Health    = Health * Percent * self.HealthMult
-	self.ACF.MaxHealth = Health * self.HealthMult
-	self.ACF.Armour    = Armour * (0.5 + Percent * 0.5)
-	self.ACF.MaxArmour = Armour
-	self.ACF.Type      = "Prop"
-end
 
 --This function needs to return HitRes
 function ENT:ACF_OnDamage(DmgResult, DmgInfo)
@@ -492,9 +455,14 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	-- Adjusting performance based on damage
 	local TorqueMult = Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, self.TorqueScale, 1)
 
-	self.PeakTorque = self.PeakTorqueHeld * TorqueMult
+	if self.ACF.Health <= 0 then TorqueMult = 0 end -- Destroyed engines produce no power
 
+	self.PeakTorque = self.PeakTorqueHeld * TorqueMult
 	return HitRes
+end
+
+function ENT:ACF_OnRepaired()
+	self.PeakTorque = self.PeakTorqueHeld
 end
 
 function ENT:UpdateSound(SelfTbl)
@@ -621,10 +589,10 @@ function ENT:GetConsumption(Throttle, RPM, FuelTank, SelfTbl)
 	if not IsEntityValid(FuelTank) then return 0 end
 
 	if SelfTbl.IsElectric then
-		return Throttle * SelfTbl.FuelUse * SelfTbl.Torque * RPM * 1.05e-4 / SelfTbl.FuelCrewMod
+		return Throttle * SelfTbl.FuelUse * SelfTbl.Torque * RPM * 1.05e-4
 	else
 		local IdleConsumption = SelfTbl.PeakPower * 5e2
-		return SelfTbl.FuelUse * (IdleConsumption + Throttle * SelfTbl.Torque * RPM) / FuelTank.FuelDensity / SelfTbl.FuelCrewMod
+		return SelfTbl.FuelUse * (IdleConsumption + Throttle * SelfTbl.Torque * RPM) / FuelTank.FuelDensity
 	end
 end
 
@@ -634,6 +602,7 @@ function ENT:Think()
 
 	if not SelfTbl.Active then return end
 	if SelfTbl.Disabled then return end
+	if SelfTbl.ACF.Health <= 0 then return end
 
 	self:CalcRPM(SelfTbl)
 
@@ -820,7 +789,7 @@ end
 function ENT:GetCost()
 	local selftbl = self:GetTable()
 
-	return math.max(5, (selftbl.PeakTorque / 160) + (selftbl.PeakPower / 80))
+	return math.max(5, (selftbl.PeakTorque / 180) + (selftbl.PeakPower / 100))
 end
 
 -- Remove-only teardown. Captured by AutoRegisterV2 as OrigOnRemove; the generated OnRemove still runs

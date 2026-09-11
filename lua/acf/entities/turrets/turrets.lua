@@ -16,21 +16,6 @@ local ENTITY = FindMetaTable("Entity")
 local ANGLE  = FindMetaTable("Angle")
 local CachedTurretAngle  = Angle(0, 0, 0)
 
-local math_min = math.min
-local math_max = math.max
-
-local function ClampAngleInPlace(A, minp, miny, minr, maxp, maxy, maxr)
-	local p, y, r = ANGLE.Unpack(A)
-
-	p = math_min(math_max(p, minp), maxp)
-	y = math_min(math_max(y, miny), maxy)
-	r = math_min(math_max(r, minr), maxr)
-
-	ANGLE.SetUnpacked(A, p, y, r)
-
-	return A
-end
-
 local function WillUseSmallModel(Size) return Size <= 12.5 end
 
 Classes.DefineClass("ACF.Turrets.Component", function() end)
@@ -198,16 +183,23 @@ do	-- Turret drives
 			end
 
 			CLASS.SlewFuncs = {
-				GetStab = function(Turret)
+				-- Yaw the mount rotated since last tick, in the Turret's current frame, scaled by
+				-- StabilizeAmount. RunTurretSlew adds this as an acceleration-free feedforward term
+				-- to cancel mount motion; GetTargetBearing solves the aim target fresh.
+				GetStab				= function(Turret)
 					local TurretTbl = ENTITY.GetTable(Turret)
 
 					if (not (TurretTbl.Stabilized and TurretTbl.Active)) or (TurretTbl.Manual == true) then return 0 end
-					local AngDiff = ENTITY.WorldToLocalAngles(TurretTbl.Rotator, TurretTbl.LastRotatorAngle)
-					local _, Yaw  = ANGLE.Unpack(AngDiff)
+
+					local _, Yaw = ANGLE.Unpack(ENTITY.WorldToLocalAngles(Turret, TurretTbl.LastTurretAngle))
+
 					return (Yaw * TurretTbl.StabilizeAmount) or 0
 				end,
 
-				GetTargetBearing = function(Turret, StabAmt)
+				-- Solves fresh each tick for the local yaw that points the Rotator at DesiredAngle,
+				-- given the Turret's current orientation, then expresses that as a gap relative to
+				-- the Rotator's actual transform. The fresh solve already accounts for mount drift.
+				GetTargetBearing	= function(Turret)
 					local TurretTbl = ENTITY.GetTable(Turret)
 					local Rotator = TurretTbl.Rotator
 
@@ -217,35 +209,32 @@ do	-- Turret drives
 							local _, Yaw = ANGLE.Unpack(ENTITY.WorldToLocalAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, CachedTurretAngle)))
 							return Yaw
 						else
-							local AngDiff = ENTITY.WorldToLocalAngles(Rotator, TurretTbl.LastRotatorAngle)
 							local LocalDesiredAngle = ENTITY.WorldToLocalAngles(Turret, TurretTbl.DesiredAngle)
-							local ADPitch, ADYaw, ADRoll = ANGLE.Unpack(AngDiff)
-							ANGLE.SetUnpacked(CachedTurretAngle, -ADPitch, StabAmt - ADYaw, -ADRoll)
-							ANGLE.Sub(LocalDesiredAngle, CachedTurretAngle)
-							LocalDesiredAngle = ClampAngleInPlace(LocalDesiredAngle, 0, -TurretTbl.MaxDeg, 0, 0, -TurretTbl.MinDeg, 0)
+							local _, DesiredYaw = ANGLE.Unpack(LocalDesiredAngle)
+							ANGLE.SetUnpacked(CachedTurretAngle, 0, math.Clamp(DesiredYaw, -TurretTbl.MaxDeg, -TurretTbl.MinDeg), 0)
 
-							local _, Yaw = ANGLE.Unpack(ENTITY.WorldToLocalAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, LocalDesiredAngle)))
+							local _, Yaw = ANGLE.Unpack(ENTITY.WorldToLocalAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, CachedTurretAngle)))
 							return Yaw
 						end
 					else
-						local AngDiff = ENTITY.WorldToLocalAngles(Rotator, TurretTbl.LastRotatorAngle)
-						local AngleRet
 						if TurretTbl.Manual then
-							AngleRet = ENTITY.WorldToLocalAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, Angle(0, -TurretTbl.DesiredDeg, 0)))
+							local AngleRet = ENTITY.WorldToLocalAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, Angle(0, -TurretTbl.DesiredDeg, 0)))
 							local _, Yaw = ANGLE.Unpack(AngleRet)
 							return Yaw
 						else
-							ANGLE.SetUnpacked(CachedTurretAngle, ANGLE.Unpack(TurretTbl.DesiredAngle))
-							ANGLE.Add(CachedTurretAngle, AngDiff)
-							AngleRet = ENTITY.WorldToLocalAngles(Rotator, CachedTurretAngle)
+							local LocalDesiredAngle = ENTITY.WorldToLocalAngles(Turret, TurretTbl.DesiredAngle)
+							local _, DesiredYaw = ANGLE.Unpack(LocalDesiredAngle)
+							ANGLE.SetUnpacked(CachedTurretAngle, 0, DesiredYaw, 0)
+
+							local AngleRet = ENTITY.WorldToLocalAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, CachedTurretAngle))
 							local _, Yaw = ANGLE.Unpack(AngleRet)
-							Yaw = Yaw - StabAmt
+
 							return Yaw
 						end
 					end
 				end,
 
-				GetWorldTarget = function(Turret)
+				GetWorldTarget		= function(Turret)
 					local SelfTbl = ENTITY.GetTable(Turret)
 					if SelfTbl.Manual then
 						ANGLE.SetUnpacked(CachedTurretAngle, 0, SelfTbl.DesiredDeg, 0)
@@ -255,7 +244,7 @@ do	-- Turret drives
 					end
 				end,
 
-				SetRotatorAngle = function(Turret, Rotator)
+				SetRotatorAngle		= function(Turret, Rotator)
 					ANGLE.SetUnpacked(CachedTurretAngle, 0, Turret.CurrentAngle, 0)
 					ENTITY.SetAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, CachedTurretAngle))
 				end
@@ -304,16 +293,22 @@ do	-- Turret drives
 			end
 
 			CLASS.SlewFuncs = {
-				GetStab = function(Turret)
+				-- Pitch the mount rotated since last tick, in the Turret's current frame, scaled by
+				-- StabilizeAmount. Fed to RunTurretSlew as an acceleration-free feedforward term;
+				-- GetTargetBearing solves the aim target fresh.
+				GetStab				= function(Turret)
 					local TurretTbl = ENTITY.GetTable(Turret)
 
 					if (not (TurretTbl.Stabilized and TurretTbl.Active)) or (TurretTbl.Manual == true) then return 0 end
-					local AngDiff = ENTITY.WorldToLocalAngles(TurretTbl.Rotator, TurretTbl.LastRotatorAngle)
-					local Pitch   = ANGLE.Unpack(AngDiff)
+
+					local Pitch = ANGLE.Unpack(ENTITY.WorldToLocalAngles(Turret, TurretTbl.LastTurretAngle))
+
 					return (Pitch * TurretTbl.StabilizeAmount) or 0
 				end,
 
-				GetTargetBearing = function(Turret, StabAmt)
+				-- Solves fresh each tick for the local pitch that points the Rotator at DesiredAngle,
+				-- given the Turret's current orientation. The fresh solve already accounts for mount drift.
+				GetTargetBearing	= function(Turret)
 					local TurretTbl = ENTITY.GetTable(Turret)
 					local Rotator = TurretTbl.Rotator
 
@@ -324,11 +319,10 @@ do	-- Turret drives
 							return Pitch
 						else
 							local LocalDesiredAngle = ENTITY.WorldToLocalAngles(Turret, TurretTbl.DesiredAngle)
-							ANGLE.SetUnpacked(CachedTurretAngle, StabAmt, 0, 0)
-							ANGLE.Sub(LocalDesiredAngle, CachedTurretAngle)
-							local LocalDesiredAngle = ClampAngleInPlace(LocalDesiredAngle, -TurretTbl.MaxDeg, 0, 0, -TurretTbl.MinDeg, 0, 0)
+							local DesiredPitch = ANGLE.Unpack(LocalDesiredAngle)
+							ANGLE.SetUnpacked(CachedTurretAngle, math.Clamp(DesiredPitch, -TurretTbl.MaxDeg, -TurretTbl.MinDeg), 0, 0)
 
-							local Pitch = ANGLE.Unpack(ENTITY.WorldToLocalAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, LocalDesiredAngle)))
+							local Pitch = ANGLE.Unpack(ENTITY.WorldToLocalAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, CachedTurretAngle)))
 							return Pitch
 						end
 					elseif TurretTbl.Manual then
@@ -336,12 +330,16 @@ do	-- Turret drives
 						local Pitch = ANGLE.Unpack(ENTITY.WorldToLocalAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, CachedTurretAngle)))
 						return Pitch
 					else
-						local Pitch = ANGLE.Unpack(ENTITY.WorldToLocalAngles(Rotator, TurretTbl.DesiredAngle))
-						return Pitch - StabAmt
+						local LocalDesiredAngle = ENTITY.WorldToLocalAngles(Turret, TurretTbl.DesiredAngle)
+						local DesiredPitch = ANGLE.Unpack(LocalDesiredAngle)
+						ANGLE.SetUnpacked(CachedTurretAngle, DesiredPitch, 0, 0)
+
+						local Pitch = ANGLE.Unpack(ENTITY.WorldToLocalAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, CachedTurretAngle)))
+						return Pitch
 					end
 				end,
 
-				GetWorldTarget = function(Turret)
+				GetWorldTarget		= function(Turret)
 					local SelfTbl = ENTITY.GetTable(Turret)
 					if SelfTbl.Manual then
 						ANGLE.SetUnpacked(CachedTurretAngle, SelfTbl.DesiredDeg, 0, 0)
@@ -351,7 +349,7 @@ do	-- Turret drives
 					end
 				end,
 
-				SetRotatorAngle = function(Turret, Rotator)
+				SetRotatorAngle		= function(Turret, Rotator)
 					ANGLE.SetUnpacked(CachedTurretAngle, Turret.CurrentAngle, 0, 0)
 					ENTITY.SetAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, CachedTurretAngle))
 				end
@@ -585,4 +583,54 @@ do	-- Turret computers
 			}
 		end)
 	end
+end
+
+
+do	-- Turret Controllers
+	Classes.DefineClass("ACF.Turrets.Controller", "ACF.Turrets.Component", function(CLASS)
+		CLASS.Name        = "Turret Controllers"
+		CLASS.ID          = "5-Controller"
+		CLASS.Description = "#acf.descs.controllers"
+		CLASS.Entity      = "acf_turret_controller"
+		CLASS.SpawnModel  = "models/props_c17/tv_monitor01.mdl"
+		CLASS.CreateMenu  = ACF.CreateTurretControllerMenu
+
+		-- Both controllers share one entity, so each type carries its own spawn limit.
+		-- acf_turret_controller enforces these through ACF_CheckSpawnLimit.
+		function CLASS.__inherited(NewClass)
+			if NewClass.LimitConVar then Classes.AddSboxLimit(NewClass.LimitConVar) end
+		end
+	end)
+
+	Classes.DefineClass("ACF.Turrets.Controller.Remote", "ACF.Turrets.Controller", function(CLASS)
+		CLASS.Name        = "Remote Turret Controller"
+		CLASS.ID          = "Remote"
+		CLASS.LimitConVar = {
+			Name   = "_acf_turret_controller_remote",
+			Amount = 2,
+			Text   = "Maximum number of ACF Remote Turret Controllers a player can create."
+		}
+		CLASS.Description = "#acf.descs.controllers.remote"
+		CLASS.Model       = "models/props_c17/tv_monitor01.mdl"
+		CLASS.IsRemote    = true
+		CLASS.Preview     = { FOV = 90 }
+		CLASS.Mass        = 15
+		CLASS.Cost        = 10
+	end)
+
+	Classes.DefineClass("ACF.Turrets.Controller.Lightweight", "ACF.Turrets.Controller", function(CLASS)
+		CLASS.Name        = "Lightweight Turret Controller"
+		CLASS.ID          = "Lightweight"
+		CLASS.LimitConVar = {
+			Name   = "_acf_turret_controller_lightweight",
+			Amount = 2,
+			Text   = "Maximum number of ACF Lightweight Turret Controllers a player can create."
+		}
+		CLASS.Description = "#acf.descs.controllers.lightweight"
+		CLASS.Model       = "models/props_lab/powerbox02c.mdl"
+		CLASS.IsRemote    = false
+		CLASS.Preview     = { FOV = 90 }
+		CLASS.Mass        = 10
+		CLASS.Cost        = 5
+	end)
 end

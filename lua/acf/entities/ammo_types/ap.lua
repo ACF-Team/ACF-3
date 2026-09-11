@@ -13,13 +13,17 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 
 	-- Model definitions (FlightModel defaults to MenuModel, MenuModel defaults to CrateModel)
 	CLASS.CrateModel  = "models/acf/munitions/cartridge.mdl"
+	-- Two piece rounds stow their propellant as a separate charge, so the shell is the cased half
+	CLASS.TwoPieceCrateModel = "models/acf/munitions/cartridge_half.mdl"
 	CLASS.MenuModel   = "models/acf/munitions/projectile.mdl"
 	CLASS.Bodygroup   = 0 -- Bodygroup index for crate and menu models
 	CLASS.MenuFOV     = 60 -- Default FOV for menu preview
 
-	MENU_FIELD("Number",  "Projectile", {Default = 0})
-	MENU_FIELD("Number",  "Propellant", {Default = 0})
-	MENU_FIELD("Boolean", "Tracer", 	{Default = false})
+	MENU_FIELD("Number",  "RoundLength", {Default = 0})
+	MENU_FIELD("Number",  "PropRatio",   {Default = 0})
+	MENU_FIELD("Number",  "CaseScale",   {Default = 1})
+	MENU_FIELD("Boolean", "TwoPiece",    {Default = false})
+	MENU_FIELD("Boolean", "Tracer", 	 {Default = false})
 
 	-- NOTE: round inputs are the MENU_FIELDs above. A runtime back-reference to the weapon
 	-- instance (self.Weapon) is assigned by the crate/menu before convert; it is intentionally
@@ -28,13 +32,20 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 	--- Default crate model path - used to detect ammo types with custom models
 	local DefaultCrateModel = "models/acf/munitions/cartridge.mdl"
 
+	--- The stock crate models, whose length runs along their own Z and so need the -90 pitch correction
+	local StockCrateModels = {
+		["models/acf/munitions/cartridge.mdl"]      = true,
+		["models/acf/munitions/cartridge_half.mdl"] = true,
+	}
+
 	--- Resolves the model to use for a given context.
 	--- Precedence: Weapon Round definition > Ammo type custom model > Mortar override > Default ammo model
 	--- @param Context string The context: "Crate", "Menu", or "Flight"
 	--- @param Class table|nil The weapon class
 	--- @param Weapon table|nil The specific weapon entry
+	--- @param TwoPiece boolean|nil Crate context only: swaps the stock cartridge for its cased half
 	--- @return table|nil ModelInfo Table with Model, Offset, Bodygroup, NeedsRotation, FOV
-	function CLASS:ResolveModel(Context, Class, Weapon)
+	function CLASS:ResolveModel(Context, Class, Weapon, TwoPiece)
 		local Round = Weapon and Weapon.Round or (Class and Class.Round)
 
 		-- Priority 1: Weapon's Round definition (missiles, bombs, etc.)
@@ -110,7 +121,9 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 			ModelPath = self.FlightModel or self.MenuModel or self.CrateModel
 			Bodygroup = self.FlightBodygroup or self.Bodygroup
 		else -- "Crate" or default
-			ModelPath = self.CrateModel
+			-- Only the stock cartridge has a half variant; ammo types with their own crate model
+			-- never reach here, having been handled as a custom model above
+			ModelPath = TwoPiece and self.TwoPieceCrateModel or self.CrateModel
 			Bodygroup = self.Bodygroup
 		end
 
@@ -118,7 +131,7 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 
 		local ModelData = ACF.ModelData.GetModelData(ModelPath)
 		local Offset = ModelData.Center and Vector(-ModelData.Center.x, 0, 0) or Vector()
-		local NeedsRotation = ModelPath == DefaultCrateModel
+		local NeedsRotation = StockCrateModels[ModelPath] or false
 
 		return {
 			Model         = ModelPath,
@@ -135,6 +148,11 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 		end
 
 		return ACF.Penetration(Speed, Bullet.ProjMass, Bullet.Diameter * 10)
+	end
+
+	--- Inverse of GetPenetration, solved for Speed; override alongside GetPenetration for other formulas.
+	function CLASS:CalcSpeed(Bullet, Penetration)
+		return ACF.CalcSpeed(Penetration, Bullet.ProjMass, Bullet.Diameter * 10)
 	end
 
 	function CLASS:GetDisplayData(Data)
@@ -180,18 +198,28 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 	end
 
 	function CLASS:VerifyData()
-		if not isnumber(self.Projectile) then self.Projectile = 0 end
-		if not isnumber(self.Propellant) then self.Propellant = 0 end
+		ACF.VerifyRoundLengthData(self)
+
+		if not isnumber(self.CaseScale) then self.CaseScale = 1 end
+		if self.TwoPiece == nil then self.TwoPiece = false end
 		if self.Tracer == nil then self.Tracer = false end
+	end
+
+	-- Shared with the client so the spawn menu can price a crate without spawning it.
+	local Conversion = ACF.PointConversion
+
+	function CLASS:GetCost(BulletData)
+		return (BulletData.ProjMass * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant)
 	end
 
 	if SERVER then
 		local Ballistics = ACF.Ballistics
-		local Conversion	= ACF.PointConversion
 
 		function CLASS:OnLast(Entity)
-			Entity.Projectile = nil
-			Entity.Propellant = nil
+			Entity.RoundLength = nil
+			Entity.PropRatio = nil
+			Entity.CaseScale = nil
+			Entity.TwoPiece = nil
 			Entity.Tracer = nil
 
 			-- Cleanup the leftovers aswell
@@ -229,10 +257,6 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 			local Data = self:GetDisplayData(BulletData)
 			State:AddNumber("Muzzle Velocity", BulletData.MuzzleVel, " m/s")
 			State:AddNumber("Max Penetration", Data.MaxPen, " mm")
-		end
-
-		function CLASS:GetCost(BulletData)
-			return (BulletData.ProjMass * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant)
 		end
 
 		function CLASS:PropImpact(Bullet, Trace)
@@ -282,6 +306,65 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 		local Effects = ACF.Utilities.Effects
 
 		ACF.RegisterAmmoDecal("ACF.Ammunition.AP", "damage/ap_pen", "damage/ap_rico")
+
+		-- Default ammo menu graph: penetration over distance. Overridden by ammo types with bespoke behavior.
+		function CLASS:PlotAmmoGraph(Panel, _, BulletData)
+			local Colors  = ACF.GraphColors
+			local PenText = language.GetPhrase("acf.menu.ammo.penetration")
+
+			-- MaxPen is display data, so it lives on GUIData rather than the bullet
+			Panel:SetYRange(0, math.ceil(self.GUIData.MaxPen or 0) * 1.1)
+
+			Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.300m"), 300, self:GetRangedPenetration(BulletData, 300), Colors.Blue)
+			Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.800m"), 800, self:GetRangedPenetration(BulletData, 800), Colors.Blue)
+
+			Panel:PlotFunction(PenText, Colors.RedAlt, function(X)
+				return self:GetRangedPenetration(BulletData, X)
+			end)
+		end
+
+		-- Default ammo menu visual: a side profile of the case/projectile, built from a GeoPrim tree (see
+		-- acf/core/geo_prim_sh.lua) so the shape has one definition shared with any future volume queries.
+		-- Overridden by ammo types with a distinct shape (e.g. HEAT's shaped charge, APFSDS's sabot/rod).
+		function CLASS:DrawAmmoVisual(Panel, w, h, _, BulletData)
+			local GeoPrim  = ACF.GeoPrim
+			local Margin   = 10
+			local DrawW    = w - Margin * 2
+			local Diameter = BulletData.Diameter or BulletData.Caliber
+
+			local Length = BulletData.ProjLength + BulletData.PropLength
+
+			if Length <= 0 then return end
+
+			-- Cap Scale by the case, the widest part, so the case/bore step survives the height budget
+			local CaseDia = BulletData.CaseDiameter
+
+			if CaseDia <= 0 then return end
+
+			local Scale      = math.min(DrawW / Length, ((h - Margin * 2) * 0.6) / CaseDia)
+			local DiameterPx = CaseDia * Scale
+			local CenterY    = h * 0.5
+
+			local Propellant = GeoPrim.New("Cylinder", { Radius = CaseDia * 0.5, Height = BulletData.PropLength })
+			Propellant:SetMaterial("Propellant")
+
+			local Penetrator = GeoPrim.New("Cylinder", { Radius = Diameter * 0.5, Height = BulletData.ProjLength })
+			Penetrator:SetMaterial("Steel Penetrator")
+
+			local X = Margin
+			X = Propellant:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(180, 150, 60), Color(30, 30, 30))
+			local BodyStartX = X
+			Penetrator:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(120, 120, 130), Color(30, 30, 30))
+
+			-- Tracer, a colored segment at the base of the projectile, drawn last (and not as a Body child --
+			-- Draw() paints an entire subtree in one Color, so a child never gets a color of its own) so it
+			-- takes hover priority and actually renders red instead of inheriting the penetrator's gray.
+			if BulletData.Tracer and BulletData.Tracer > 0 then
+				local Tracer = GeoPrim.New("Cylinder", { Radius = Diameter * 0.5, Height = BulletData.Tracer })
+				Tracer:SetMaterial("Tracer")
+				Tracer:Draw(Panel, BodyStartX, CenterY, Scale, DiameterPx, Color(220, 40, 30), Color(30, 30, 30))
+			end
+		end
 
 		local DecalIndex = ACF.GetAmmoDecalIndex
 
@@ -357,8 +440,8 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 
 				local Text		= language.GetPhrase("acf.menu.ammo.round_stats_ap")
 				local MuzzleVel	= math.Round(self.BulletData.MuzzleVel * ACF.Scale, 2)
-				local ProjMass	= ACF.GetProperMass(self.BulletData.ProjMass)
-				local PropMass	= ACF.GetProperMass(self.BulletData.PropMass)
+				local ProjMass	= ACF.FormatMass(self.BulletData.ProjMass)
+				local PropMass	= ACF.FormatMass(self.BulletData.PropMass)
 
 				RoundStats:SetText(Text:format(MuzzleVel, ProjMass, PropMass))
 			end)

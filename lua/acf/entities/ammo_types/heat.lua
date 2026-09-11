@@ -10,6 +10,7 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function(CLASS, 
 	CLASS.Bodygroup   = 8 -- HEAT bodygroup index
 	CLASS.MortarBodygroup = 3 -- HEAT mortar submodel
 	CLASS.Description = "#acf.descs.ammo.heat"
+	CLASS.IsChemical  = true
 	CLASS.Blacklist = {
 		["ACF.Guns.Autocannon"] = true,
 		["ACF.Guns.Machinegun"] = true,
@@ -18,7 +19,7 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function(CLASS, 
 		["ACF.Guns.RotaryAutocannon"] = true,
 	}
 
-	MENU_FIELD("Number", "LinerAngle", {Default = 0})
+	MENU_FIELD("Number", "LinerAngleRatio", {Default = 1})
 	MENU_FIELD("Number", "StandoffRatio", {Default = 0})
 
 	function CLASS:ConeCalc(ConeAngle, Radius)
@@ -59,15 +60,15 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function(CLASS, 
 	end
 
 	function CLASS:GetDisplayData(Data)
-		local Fragments  = math.max(math.floor((Data.BoomFillerMass / Data.CasingMass) * ACF.HEFrag), 2)
+		local FragInfo   = ACF.Damage.getFragmentInfo(Data.BoomFillerMass, Data.CasingMass) -- Single source of truth shared with the damage code
 		local Display    = {
 			BoomFillerMass = Data.BoomFillerMass,
 			MaxPen         = self:GetPenetration(Data, Data.Standoff, ACF.SteelDensity),
 			TotalFragMass  = Data.CasingMass,
 			BlastRadius    = Data.BoomFillerMass ^ 0.33 * 8,
-			Fragments      = Fragments,
-			FragMass       = Data.CasingMass / Fragments,
-			FragVel        = (Data.BoomFillerMass * ACF.HEPower * 1000 / Data.CasingMass) ^ 0.5,
+			Fragments      = FragInfo.Count,
+			FragMass       = FragInfo.Mass,
+			FragVel        = FragInfo.Velocity * ACF.InchToMeter, -- in/s (sim units) to m/s for display
 		}
 
 		hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
@@ -90,7 +91,20 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function(CLASS, 
 		local WarheadLength   = FreeLength * (1 - self.StandoffRatio)
 		local WarheadDiameter = 2 * FreeRadius
 		local MinConeAng      = math.deg(math.atan(FreeRadius / WarheadLength))
-		local LinerAngle      = math.Clamp(self.LinerAngle, MinConeAng, 90) -- Cone angle is angle between cone walls, not between a wall and the center line
+
+		-- Migrates rounds saved with an absolute LinerAngle in degrees. Needs MinConeAng, so it can
+		-- only run here rather than in VerifyData. Runs once, LinerAngle is cleared right after.
+		if not isnumber(self.LinerAngleRatio) then
+			if isnumber(self.LinerAngle) then
+				self.LinerAngleRatio = math.Remap(math.Clamp(self.LinerAngle, MinConeAng, 90), MinConeAng, 90, 0, 1)
+				self.LinerAngle = nil
+			else
+				self.LinerAngleRatio = 1
+			end
+		end
+
+		local LinerAngleRatio = math.Clamp(self.LinerAngleRatio, 0, 1)
+		local LinerAngle      = math.Remap(LinerAngleRatio, 0, 1, MinConeAng, 90) -- Cone angle is angle between cone walls, not between a wall and the center line
 		local LinerMass, ConeVol, ConeLength = self:ConeCalc(LinerAngle, FreeRadius)
 
 		-- Charge length increases jet velocity, but with diminishing returns. All explosive sorrounding the cone has 100% effectiveness,
@@ -122,9 +136,10 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function(CLASS, 
 
 		GUIData.MinConeAng = MinConeAng
 
-		Data.ConeAng        = LinerAngle
-		Data.MinConeAng     = MinConeAng
-		Data.FillerMass     = FillerMass
+		Data.ConeAng         = LinerAngle
+		Data.MinConeAng      = MinConeAng
+		Data.LinerAngleRatio = LinerAngleRatio
+		Data.FillerMass      = FillerMass
 		local NonCasingVol  = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)
 		Data.CasingMass		= (GUIData.ProjVolume - NonCasingVol) * ACF.SteelDensity
 		Data.ProjMass       = Data.FillerMass + Data.CasingMass + LinerMass
@@ -168,6 +183,9 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function(CLASS, 
 			Data.JetAvgVel	  	= _JetAvgVel
 		end
 
+		-- Jet's cross-sectional area (cm^2), same role as ProjArea for a kinetic round.
+		Data.JetArea = (Data.JetMass / ACF.CopperDensity) / (Data.BreakupDist * 100)
+
 		for K, V in pairs(self:GetDisplayData(Data)) do
 			GUIData[K] = V
 		end
@@ -200,25 +218,25 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function(CLASS, 
 		else
 			self.StandoffRatio = math.Clamp(self.StandoffRatio, 0, self.MaxStandoffRatio or 0.2)
 		end
+	end
 
-		if not isnumber(self.LinerAngle) then
-			self.LinerAngle = 90
-		end
+	-- Shared with the client so the spawn menu can price a crate without spawning it.
+	local Conversion = ACF.PointConversion
+
+	function CLASS:GetCost(BulletData)
+		return (BulletData.CasingMass * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.CompB) + (BulletData.LinerMass * Conversion.Copper)
 	end
 
 	if SERVER then
 		local Ballistics = ACF.Ballistics
 		local Objects    = Damage.Objects
-		local Conversion	= ACF.PointConversion
 
-		function CLASS:GetCost(BulletData)
-			return (BulletData.CasingMass * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.CompB) + (BulletData.LinerMass * Conversion.Copper)
-		end
+
 
 		function CLASS:OnLast(Entity)
 			BASE.OnLast(self, Entity)
 
-			Entity.LinerAngle  = nil
+			Entity.LinerAngleRatio = nil
 
 			-- Cleanup the leftovers aswell
 			Entity.FillerMass = nil
@@ -267,6 +285,8 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function(CLASS, 
 			local TraceData = {start = JetStart, endpos = JetEnd, filter = {}, mask = Bullet.Mask}
 			local Penetrations = 0
 			local JetMassPct   = 1
+
+			Bullet.DamageArea = Bullet.JetArea -- Everything past this point is bored by the jet, not by the shell
 			-- Main jet penetrations
 			while Penetrations < 20 do
 				local TraceRes  = ACF.trace(TraceData)
@@ -279,15 +299,19 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function(CLASS, 
 
 				if not Ballistics.TestFilter(Ent, Bullet) then TraceData.filter[#TraceData.filter + 1] = TraceRes.Entity continue end
 
-				-- Get the (full jet's) penetration
-				local Standoff    = (PenHitPos - JetStart):Length() * ACF.InchToMeter -- Back to m
+				-- Get the (full jet's) penetration. Floor Standoff so a dead convex's still-solid collision, hit again at ~0 distance, can't zero out GetPenetration and abort the whole jet.
+				local Standoff    = math.max((PenHitPos - JetStart):Length() * ACF.InchToMeter, 0.01)
 				local Penetration = self:GetPenetration(Bullet, Standoff) * math.max(0, JetMassPct)
 				-- If it's out of range, stop here
 				if Penetration == 0 then break end
 
+				-- Set to override Bullet:GetPenetration()
+				Bullet.PenetrationOverride = Penetration
+
 				-- Get the effective armor thickness
 				local BaseArmor = 0
 				local DamageDealt
+				local ConvexHits
 				if TraceRes.HitWorld or TraceRes.Entity and TraceRes.Entity:IsWorld() then
 					-- Get the surface and calculate the RHA equivalent
 					local Surface = util.GetSurfaceData(TraceRes.SurfaceProps)
@@ -301,39 +325,58 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function(CLASS, 
 					-- TODO: Fix world entity penetration
 					--BaseArmor = Penetration + 1
 				elseif TraceRes.Hit then
-					BaseArmor = Ent.GetArmor and Ent:GetArmor(TraceRes) or Ent.ACF and Ent.ACF.Armour or 0
+					ConvexHits = ACF.GetConvexHits(Ent, PenHitPos, Direction)
+
+					if #ConvexHits > 0 then
+						BaseArmor = 0
+						for _, Hit in ipairs(ConvexHits) do
+							BaseArmor = BaseArmor + Hit.GeoThick * Hit.ArmorType.ChemicalMul
+						end
+					else
+						BaseArmor = Ent.GetArmor and Ent:GetArmor(TraceRes) or 0
+					end
+
 					-- Enable damage if a valid entity is hit
 					DamageDealt = 0
 				end
 
 				local Angle          = ACF.GetHitAngle(TraceRes, Direction)
-				local EffectiveArmor = Ent.GetArmor and BaseArmor or BaseArmor / math.abs(math.cos(math.rad(Angle)))
+				local EffectiveArmor
+				if ConvexHits and #ConvexHits > 0 then
+					EffectiveArmor = BaseArmor -- GeoThick already accounts for obliquity
+				elseif Ent.GetArmor then
+					EffectiveArmor = BaseArmor
+				else
+					EffectiveArmor = BaseArmor / math.abs(math.cos(math.rad(Angle)))
+				end
 				EffectiveArmor = math.max(EffectiveArmor, 0.01) -- Prevent divide by zero and nan armor
 
 				-- Percentage of total jet mass lost to this penetration
 				local LostMassPct =  EffectiveArmor / Penetration
-				-- Deal damage based on the volume of the lost mass
-				local Cavity = ACF.HEATCavityMul * math.min(LostMassPct, JetMassPct) * Bullet.JetMass / ACF.CopperDensity -- in cm^3
-				local _Cavity = Cavity -- Remove when health scales with armor
 				if DamageDealt == 0 then
-					-- This should probably be consolidated with damageresults later: lua\acf\damage\objects_sv\damage_result.lua
-					_Cavity = Cavity * (Penetration / EffectiveArmor) * 0.14
+					-- Each jet layer resolves its own convex chain above, so clear any stale entry convex from the original impact and let getBulletDamage re-derive it here.
+					Bullet.ConvexHit = nil
 
-					-- Damage result, Damage info
+					-- Damage result, Damage info. Computed the same way as a kinetic round.
 					local JetDmg, JetInfo = Damage.getBulletDamage(Bullet, TraceRes)
 
 					JetInfo:SetType(DMG_BULLET)
-					JetDmg:SetDamage(_Cavity)
 
-					-- local Speed = Bullet.JetAvgVel
+					local Speed = Bullet.JetAvgVel
 
-					-- Bullet.Energy = {}
-					-- Bullet.Energy.Kinetic = ACF.Kinetic(Speed, Bullet.JetMass * JetMassPct).Kinetic * 1000
+					Bullet.Energy = {}
+					Bullet.Energy.Kinetic = ACF.Kinetic(Speed, Bullet.JetMass * JetMassPct).Kinetic * 1000
 					local JetResult = Damage.dealDamage(Ent, JetDmg, JetInfo)
 
-					-- if not Bullet.IsSpall and not Bullet.IsCookOff then
-					-- 	Ballistics.DoSpall(Bullet, TraceRes, JetResult, Speed)
-					-- end
+					-- Only spall on layers the jet actually broke through with mass to spare.
+					local Overpenetrated = LostMassPct < JetMassPct
+
+					if (JetResult.Kill or Overpenetrated) and not Bullet.IsSpall and not Bullet.IsCookOff then
+						Ballistics.DoSpall(Bullet, TraceRes, JetResult, Speed, JetInfo)
+					end
+
+					-- Detonate any explosive reactive armor the jet struck, same as a kinetic round does in DoRoundImpact
+					Ballistics.DoReactiveArmor(Bullet, TraceRes, JetInfo)
 
 					if JetResult.Kill then
 						ACF.APKill(Ent, Direction, 0, JetInfo)
@@ -442,14 +485,10 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function(CLASS, 
 			Effects.CreateEffect("ACF_Ricochet", EffectTable)
 		end
 
-		function CLASS:OnCreateAmmoControls(Base, _, BulletData)
-			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.liner_angle", self.GUIData.MinConeAng, 90, 1, "LinerAngle", function(Value)
-				self.LinerAngle = math.Round(Value, 2)
+		function CLASS:OnCreateAmmoControls(Base)
+			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.liner_angle_ratio", 0, 1, 2, "LinerAngleRatio", function(Value)
+				self.LinerAngleRatio = math.Round(Value, 2)
 				self:UpdateRoundData()
-			end, function(Panel)
-				-- Min cone angle + clamped value depend on the round; re-clamp on any change.
-				Panel:SetMin(self.GUIData.MinConeAng)
-				Panel:SetValue(BulletData.ConeAng)
 			end)
 
 			-- Capped the max standoff at 0.4 for historical reasons
@@ -466,9 +505,9 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function(CLASS, 
 
 				local Text		= language.GetPhrase("acf.menu.ammo.round_stats_he")
 				local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
-				local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
-				local PropMass	= ACF.GetProperMass(BulletData.PropMass)
-				local Filler	= ACF.GetProperMass(BulletData.FillerMass)
+				local ProjMass	= ACF.FormatMass(BulletData.ProjMass)
+				local PropMass	= ACF.FormatMass(BulletData.PropMass)
+				local Filler	= ACF.FormatMass(BulletData.FillerMass)
 
 				RoundStats:SetText(Text:format(MuzzleVel, ProjMass, PropMass, Filler))
 			end)
@@ -479,7 +518,7 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function(CLASS, 
 
 				local Text	   = language.GetPhrase("acf.menu.ammo.filler_stats_he")
 				local Blast	   = math.Round(self.GUIData.BlastRadius, 2)
-				local FragMass = ACF.GetProperMass(self.GUIData.FragMass)
+				local FragMass = ACF.FormatMass(self.GUIData.FragMass)
 				local FragVel  = math.Round(self.GUIData.FragVel, 2)
 
 				FillerStats:SetText(Text:format(Blast, self.GUIData.Fragments, FragMass, FragVel))
@@ -510,6 +549,87 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function(CLASS, 
 
 				PenStats:SetText(Text:format(Standoff1, Pen1, Standoff2, Pen2))
 			end)
+		end
+
+		-- Ammo menu graph: penetration over standoff distance.
+		function CLASS:PlotAmmoGraph(Panel, _, BulletData)
+			local Colors  = ACF.GraphColors
+			local PenText = language.GetPhrase("acf.menu.ammo.penetration")
+
+			local PassiveStandoffPen = self:GetPenetration(BulletData, BulletData.Standoff)
+			local BreakupDistPen     = self:GetPenetration(BulletData, BulletData.BreakupDist)
+
+			Panel:SetYRange(0, math.max(BreakupDistPen, PassiveStandoffPen) * 1.5)
+			Panel:SetXRange(0, BulletData.BreakupDist * 1000 * 2.5) -- HEAT doesn't care how long the shell has been flying for penetration, just the instant it detonates
+			Panel:SetXLabel("#acf.menu.ammo.standoff")
+
+			Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.passive"), BulletData.Standoff * 1000, PassiveStandoffPen, Colors.Blue)
+			Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.breakup"), BulletData.BreakupDist * 1000, BreakupDistPen, Colors.Red)
+
+			Panel:PlotFunction(PenText, Colors.RedAlt, function(X)
+				return self:GetPenetration(BulletData, X / 1000)
+			end)
+		end
+
+		-- Ammo menu visual: built from a GeoPrim tree (see acf/core/geo_prim_sh.lua) rather than hand-rolled
+		-- pixel math, so the shell's geometry -- casing, warhead, and the conical liner cavity carved into
+		-- the nose -- has one definition shared between rendering and (eventually) volume-derived quantities.
+		function CLASS:DrawAmmoVisual(Panel, w, h, _, BulletData)
+			local GeoPrim = ACF.GeoPrim
+			local Margin  = 10
+			local DrawW   = w - Margin * 2
+
+			local ConeAngle = math.max(BulletData.ConeAng or 45, 5)
+			local Diameter  = BulletData.Diameter or BulletData.Caliber
+			local ConeDepth = math.min((Diameter * 0.5) / math.tan(math.rad(ConeAngle)), BulletData.ProjLength * 0.8)
+
+			-- The standoff gap is a real distance (BulletData.Standoff, in meters) rather than a fixed
+			-- fraction of the shell, so it's budgeted into the layout length up front -- capped to the
+			-- shell's own length so a long standoff doesn't dwarf the round in the schematic -- rather
+			-- than squeezed into whatever pixels happen to be left over after the casing and warhead.
+			local ShellLength = BulletData.ProjLength + BulletData.PropLength
+			local StandoffCm  = math.min((BulletData.Standoff or 0) * 100, ShellLength)
+			local Length = ShellLength + StandoffCm
+
+			if Length <= 0 then return end
+
+			-- Cap Scale by the case, the widest part, so the case/bore step survives the height budget
+			local CaseDia = BulletData.CaseDiameter
+
+			if CaseDia <= 0 then return end
+
+			local Scale      = math.min(DrawW / Length, ((h - Margin * 2) * 0.6) / CaseDia)
+			local DiameterPx = CaseDia * Scale
+			local BoreDiaPx  = Diameter * Scale -- The warhead's own width, which the standoff probe keys off
+			local CenterY    = h * 0.5
+
+			local Propellant = GeoPrim.New("Cylinder", { Radius = CaseDia * 0.5, Height = BulletData.PropLength })
+			Propellant:SetMaterial("Propellant")
+
+			local Warhead = GeoPrim.New("Cylinder", { Radius = Diameter * 0.5, Height = BulletData.ProjLength })
+			Warhead:SetMaterial("Explosive")
+
+			-- Liner cavity: apex (Radius 0) buried ConeDepth behind the nose, mouth (full bore) opening
+			-- flush with the front face -- matches the shaped charge pointing its jet forward on impact.
+			local Liner = GeoPrim.New("Cone", { Radius = 0, TipRadius = Diameter * 0.5, Height = ConeDepth })
+			Liner:SetVoid(true):SetMaterial("Copper Liner (Shaped Charge)")
+			Warhead:AddChild(Liner, BulletData.ProjLength - ConeDepth)
+
+			local X = Margin
+			X = Propellant:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(180, 150, 60), Color(30, 30, 30))
+			X = Warhead:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(150, 90, 40), Color(30, 30, 30))
+
+			-- Standoff gap: distance the jet needs before hitting the target for full penetration
+			local StandoffPx = StandoffCm * Scale
+
+			if StandoffPx > 1 then
+				local StandoffMm = math.Round(StandoffCm * 10)
+				local StandoffDiameterMm = math.Round(Diameter * 0.5 * 10)
+
+				surface.SetDrawColor(255, 200, 60, 120)
+				surface.DrawRect(X, CenterY - BoreDiaPx * 0.25, StandoffPx, BoreDiaPx * 0.5)
+				Panel:AddRegion(X, CenterY - BoreDiaPx * 0.25, StandoffPx, BoreDiaPx * 0.5, ("Standoff Probe\n%dx%d mm"):format(StandoffDiameterMm, StandoffMm))
+			end
 		end
 	end
 end)

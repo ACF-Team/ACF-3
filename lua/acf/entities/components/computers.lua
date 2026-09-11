@@ -43,7 +43,7 @@ if SERVER then
 
 	ACF.AddInputAction("acf_computer", "Lase", function(Entity, Value)
 		if Entity.Lasing == nil then return end
-		if Entity.OnCooldown then return end
+		if Entity.ACF.Health <= 0 then return end -- Destroyed
 
 		Value = tobool(Value)
 
@@ -71,13 +71,14 @@ if SERVER then
 end
 
 do -- Joystick
-	local MenuText = "Joystick bounds : +-%s degrees\nJoystick speed : %s degrees/s\nMass : %s kg"
+	local MenuText = "Joystick bounds : +-%s degrees\nJoystick speed : %s degrees/s\nMass : %s kg\nCost : %s"
 
 	Classes.DefineClass("ACF.Components.Joystick", "ACF.Components.GuidanceComputer", function(CLASS)
 		CLASS.Name        = "Joystick"
 		CLASS.Description = "A small joystick, used to manually guide anti-tank missiles and munitions."
 		CLASS.Model       = "models/weapons/w_slam.mdl"
 		CLASS.Mass        = 7
+		CLASS.Cost        = 1
 		CLASS.MaxAngle    = 25
 		CLASS.Speed       = 50 -- Degrees per second
 		CLASS.Offset      = Vector(0, -1.5, -0.25)
@@ -93,7 +94,7 @@ do -- Joystick
 			local Speed = Data.Speed
 			local Mass  = Data.Mass
 
-			Menu:AddLabel(MenuText:format(Angle, Speed, Mass))
+			Menu:AddLabel(MenuText:format(Angle, Speed, Mass, ACF.FormatCost(Data.Cost or 0)))
 		end
 		-- Serverside actions
 		CLASS.OnUpdate = function(Entity, _, _, Computer)
@@ -145,6 +146,9 @@ do -- Joystick
 		CLASS.OnDamaged = function(Entity)
 			Entity.Spread = 1 - math.Round(Entity.ACF.Health / Entity.ACF.MaxHealth, 2)
 		end
+		CLASS.OnRepaired = function(Entity)
+			Entity.Spread = 0
+		end
 		CLASS.OnEnabled = function(Entity)
 			local Inputs = Entity.Inputs
 			local Pitch  = Inputs.InputPitch
@@ -163,6 +167,8 @@ do -- Joystick
 			Entity:TriggerInput("Yaw", 0)
 		end
 		CLASS.OnThink = function(Entity)
+			if Entity.ACF.Health <= 0 then return end -- Destroyed
+
 			local Speed = Entity.MoveSpeed * engine.TickInterval()
 
 			if Entity.Pitch ~= Entity.InputPitch then
@@ -258,7 +264,7 @@ do -- Joystick
 end
 
 do -- Optical guidance computer
-	local MenuText  = "Pitch bounds : +-%s degrees\nYaw bounds : +-%s degrees\nAim speed : %s degrees/s\nFocus speed : %s m/s\nMass : %s kg"
+	local MenuText  = "Pitch bounds : +-%s degrees\nYaw bounds : +-%s degrees\nAim speed : %s degrees/s\nFocus speed : %s m/s\nMass : %s kg\nCost : %s"
 	local TraceData = { start = true, endpos = true, filter = true }
 	local Computers = {}
 
@@ -284,6 +290,7 @@ do -- Optical guidance computer
 		CLASS.Description = "Fully analog guidance computer. Unlike the laser guidance computer, it takes a few seconds for it to aim and focus properly."
 		CLASS.Model       = "models/props_lab/monitor01b.mdl"
 		CLASS.Mass        = 43
+		CLASS.Cost        = 2
 		CLASS.Offset      = Vector(6, -1, 0)
 		CLASS.Speed       = 10 -- Degrees per second
 		CLASS.FocusSpeed  = 300 -- Meters per second
@@ -308,7 +315,7 @@ do -- Optical guidance computer
 			local Focus = Data.FocusSpeed
 			local Mass  = Data.Mass
 
-			Menu:AddLabel(MenuText:format(Pitch, Yaw, Speed, Focus, Mass))
+			Menu:AddLabel(MenuText:format(Pitch, Yaw, Speed, Focus, Mass, ACF.FormatCost(Data.Cost or 0)))
 		end
 		-- Serverside actions
 		CLASS.OnUpdate = function(Entity, _, _, Computer)
@@ -389,6 +396,9 @@ do -- Optical guidance computer
 		CLASS.OnDamaged = function(Entity)
 			Entity.Spread = 1 - math.Round(Entity.ACF.Health / Entity.ACF.MaxHealth, 2)
 		end
+		CLASS.OnRepaired = function(Entity)
+			Entity.Spread = 0
+		end
 		CLASS.OnEnabled = function(Entity)
 			local Inputs = Entity.Inputs
 			local Pitch  = Inputs.InputPitch
@@ -407,6 +417,23 @@ do -- Optical guidance computer
 			Entity:TriggerInput("Yaw", 0)
 		end
 		CLASS.OnThink = function(Entity)
+			if Entity.ACF.Health <= 0 then -- Destroyed
+				if Entity.Distance ~= 0 or Entity.HitPos ~= vector_origin then
+					Entity.Distance  = 0
+					Entity.HitPos    = Vector()
+					Entity.TraceDir  = Vector()
+					Entity.TracePos  = Entity.HitPos
+					Entity.TraceDist = Entity.Distance
+
+					WireLib.TriggerOutput(Entity, "Distance", 0)
+					WireLib.TriggerOutput(Entity, "HitPos", Vector())
+
+					Entity:UpdateOverlay()
+				end
+
+				return
+			end
+
 			local Tick  = engine.TickInterval()
 			local Speed = Entity.MoveSpeed * Tick * math.Rand(Entity.Spread, 1)
 			local Focus = Entity.FocusSpeed * Tick * math.Rand(Entity.Spread, 1)
@@ -477,8 +504,7 @@ do -- Optical guidance computer
 end
 
 do -- Laser guidance computer
-	local MenuText  = "Pitch bounds : +-%s degrees\nYaw bounds : +-%s degrees\nAim speed : %s degrees/s\nMass : %s kg"
-	local LaserText = "Lasing time : %s seconds\nCooldown : %s seconds"
+	local MenuText  = "Pitch bounds : +-%s degrees\nYaw bounds : +-%s degrees\nAim speed : %s degrees/s\nMass : %s kg\nCost : %s"
 	local Clock     = ACF.Utilities.Clock
 
 	Classes.DefineClass("ACF.Components.LaserGuidanceComputer", "ACF.Components.GuidanceComputer", function(CLASS)
@@ -486,15 +512,12 @@ do -- Laser guidance computer
 		CLASS.Description = "Modern equivalent to the analog guidance computer, provides faster and more accurate measurements. Can be also used as a laser target designator."
 		CLASS.Model       = "models/props_lab/monitor01b.mdl"
 		CLASS.Mass        = 30
-		CLASS.LaseTime    = 20
-		CLASS.Cooldown    = 10
+		CLASS.Cost        = 4
 		CLASS.Offset      = Vector(6, -1, 0)
 		CLASS.Speed       = 45 -- Degrees per second
 		CLASS.Inputs      = { "Lase (Turns on the laser)", "Pitch (Degrees on the vertical axis)", "Yaw (Degrees on the horizontal axis)", "HitPos (Target location to aim laser at) [VECTOR]" }
 		CLASS.Outputs     = {
 			"Lasing (Whether or not the laser is on)",
-			"Lase Time (How long the laser can stay on before requiring a cool down)",
-			"Cooling Down (Whether or not the laser is cooling off)",
 			"Distance (The currently measured distance from the computer, in meters)",
 			"HitPos (The vector of where the computer detects a hit from the laser) [VECTOR]",
 			"Current Pitch (Current degrees on the vertical axis)",
@@ -511,18 +534,14 @@ do -- Laser guidance computer
 			local Yaw      = Data.Bounds.Yaw
 			local Speed    = Data.Speed
 			local Mass     = Data.Mass
-			local LaseTime = Data.LaseTime
-			local Cooldown = Data.Cooldown
 
-			Menu:AddLabel(MenuText:format(Pitch, Yaw, Speed, Mass))
-			Menu:AddLabel(LaserText:format(LaseTime, Cooldown))
+			Menu:AddLabel(MenuText:format(Pitch, Yaw, Speed, Mass, ACF.FormatCost(Data.Cost or 0)))
 		end
 		-- Serverside actions
 		CLASS.OnUpdate = function(Entity, _, _, Computer)
 			Entity.IsComputer = true
 			Entity.Lasing     = false
 			Entity.Offset     = Computer.Offset
-			Entity.OnCooldown = false
 			Entity.HitPos     = Vector()
 			Entity.Distance   = 0
 			Entity.TraceDir   = Vector()
@@ -530,10 +549,6 @@ do -- Laser guidance computer
 			Entity.TraceDist  = Entity.Distance
 			Entity.NextSpread = 0
 			Entity.Spread     = 0
-			Entity.LaseTime   = 0
-			Entity.LastLase   = 0
-			Entity.MaxTime    = Computer.LaseTime
-			Entity.Cooldown   = Computer.Cooldown
 			Entity.MoveSpeed  = Computer.Speed
 			Entity.MinPitch   = -Computer.Bounds.Pitch
 			Entity.MaxPitch   = Computer.Bounds.Pitch
@@ -555,8 +570,6 @@ do -- Laser guidance computer
 			})
 
 			WireLib.TriggerOutput(Entity, "Lasing", 0)
-			WireLib.TriggerOutput(Entity, "Lase Time", Entity.MaxTime)
-			WireLib.TriggerOutput(Entity, "Cooling Down", 0)
 			WireLib.TriggerOutput(Entity, "Distance", 0)
 			WireLib.TriggerOutput(Entity, "HitPos", Vector())
 			WireLib.TriggerOutput(Entity, "Current Pitch", 0)
@@ -565,7 +578,6 @@ do -- Laser guidance computer
 		CLASS.OnLast = function(Entity)
 			Entity.IsComputer = nil
 			Entity.Lasing     = nil
-			Entity.OnCooldown = nil
 			Entity.HitPos     = nil
 			Entity.Distance   = nil
 			Entity.TraceDir   = nil
@@ -573,10 +585,6 @@ do -- Laser guidance computer
 			Entity.TraceDist  = nil
 			Entity.NextSpread = nil
 			Entity.Spread     = nil
-			Entity.LaseTime   = nil
-			Entity.LastLase   = nil
-			Entity.MaxTime    = nil
-			Entity.Cooldown   = nil
 			Entity.MoveSpeed  = nil
 			Entity.MinPitch   = nil
 			Entity.MaxPitch   = nil
@@ -593,7 +601,6 @@ do -- Laser guidance computer
 		end
 		CLASS.OnOverlayTitle = function(Entity)
 			if not Entity.IsComputer then return end
-			if Entity.OnCooldown then return "Cooling down" end
 			if Entity.Lasing then return "Lasing" end
 			if Entity.InputPitch ~= 0 or Entity.InputYaw ~= 0 then
 				return "In use"
@@ -612,6 +619,9 @@ do -- Laser guidance computer
 		end
 		CLASS.OnDamaged = function(Entity)
 			Entity.Spread = 1 - math.Round(Entity.ACF.Health / Entity.ACF.MaxHealth, 2)
+		end
+		CLASS.OnRepaired = function(Entity)
+			Entity.Spread = 0
 		end
 		CLASS.OnEnabled = function(Entity)
 			local Inputs = Entity.Inputs
@@ -637,6 +647,31 @@ do -- Laser guidance computer
 			Entity:TriggerInput("Yaw", 0)
 		end
 		CLASS.OnThink = function(Entity)
+			if Entity.ACF.Health <= 0 then -- Destroyed
+				if Entity.Lasing then
+					Entity.Lasing = false
+
+					Entity:SetNW2Bool("Lasing", false)
+
+					WireLib.TriggerOutput(Entity, "Lasing", 0)
+				end
+
+				if Entity.Distance ~= 0 or Entity.HitPos ~= vector_origin then
+					Entity.Distance  = 0
+					Entity.HitPos    = Vector()
+					Entity.TraceDir  = Vector()
+					Entity.TracePos  = Entity.HitPos
+					Entity.TraceDist = Entity.Distance
+
+					WireLib.TriggerOutput(Entity, "Distance", 0)
+					WireLib.TriggerOutput(Entity, "HitPos", Vector())
+
+					Entity:UpdateOverlay()
+				end
+
+				return
+			end
+
 			local Tick  = engine.TickInterval()
 			local Speed = Entity.MoveSpeed * Tick
 			local Changed
@@ -687,55 +722,28 @@ do -- Laser guidance computer
 				end
 			end
 
-			if Entity.Lasing or Entity.LaseTime > 0 then
-				local Delta = math.min(Clock.CurTime - Entity.LastLase, Tick) * (Entity.Lasing and 1 or -1)
+			if Entity.Lasing then
+				local Laser = ACF.GetLaserData(Entity)
 
-				Entity.LaseTime = math.Clamp(Entity.LaseTime + Delta, 0, Entity.MaxTime)
+				Entity.Distance  = Laser and Laser.Distance or 0
+				Entity.HitPos    = Laser and Laser.HitPos or Vector()
+				Entity.TraceDir  = Laser and Laser.Trace.Normal
+				Entity.TracePos  = Entity.HitPos
+				Entity.TraceDist = Entity.Distance
 
-				if Entity.LaseTime == Entity.MaxTime then
-					Entity:TriggerInput("Lase", 0)
+				WireLib.TriggerOutput(Entity, "Distance", Entity.Distance)
+				WireLib.TriggerOutput(Entity, "HitPos", Entity.HitPos)
 
-					Entity.OnCooldown = true
-					Entity.HitPos     = Vector()
-					Entity.Distance   = 0
-					Entity.LaseTime   = 0
-					Entity.TraceDir   = Vector()
-					Entity.TracePos   = Entity.HitPos
-					Entity.TraceDist  = Entity.Distance
+				Entity:UpdateOverlay()
+			elseif Entity.Distance ~= 0 or Entity.HitPos ~= vector_origin then -- Just turned off, clear the last reading
+				Entity.Distance  = 0
+				Entity.HitPos    = Vector()
+				Entity.TraceDir  = Vector()
+				Entity.TracePos  = Entity.HitPos
+				Entity.TraceDist = Entity.Distance
 
-					WireLib.TriggerOutput(Entity, "Cooling Down", 1)
-					WireLib.TriggerOutput(Entity, "HitPos", Vector())
-					WireLib.TriggerOutput(Entity, "Distance", 0)
-
-					timer.Simple(Entity.Cooldown, function()
-						if not IsValid(Entity) then return end
-
-						Entity.OnCooldown = false
-
-						if Entity.Inputs.Lase.Path then
-							Entity:TriggerInput("Lase", Entity.Inputs.Lase.Value)
-						end
-
-						WireLib.TriggerOutput(Entity, "Cooling Down", 0)
-
-						Entity:UpdateOverlay()
-					end)
-				else
-					local Laser = ACF.GetLaserData(Entity)
-
-					Entity.Distance  = Laser and Laser.Distance or 0
-					Entity.HitPos    = Laser and Laser.HitPos or Vector()
-					Entity.TraceDir  = Laser and Laser.Trace.Normal
-					Entity.TracePos  = Entity.HitPos
-					Entity.TraceDist = Entity.Distance
-
-					WireLib.TriggerOutput(Entity, "Distance", Entity.Distance)
-					WireLib.TriggerOutput(Entity, "HitPos", Entity.HitPos)
-				end
-
-				WireLib.TriggerOutput(Entity, "Lase Time", Entity.MaxTime - Entity.LaseTime)
-
-				Entity.LastLase = Clock.CurTime
+				WireLib.TriggerOutput(Entity, "Distance", 0)
+				WireLib.TriggerOutput(Entity, "HitPos", Vector())
 
 				Entity:UpdateOverlay()
 			end
@@ -751,6 +759,7 @@ do -- GPS transmitter
 		CLASS.Description = "A transmitter for GPS-based guided munitions."
 		CLASS.Model       = "models/props_lab/reciever01a.mdl"
 		CLASS.Mass        = 15
+		CLASS.Cost        = 2
 		CLASS.Inputs      = { "Coordinates (The vector to pass along to the linked rack) [VECTOR]" }
 		CLASS.Outputs     = {
 			"Transmitting (Whether or not the transmitter is functioning)",

@@ -2,6 +2,7 @@ ACF.Classes.DefineClass("ACF.FuelTypes.Electric", "ACF.FuelTypes.FuelType", func
     CLASS.ID         = "Electric"
     CLASS.Name       = "Lit-Ion Battery"
     CLASS.Density    = 3.89
+    CLASS.ArmorType  = "LiIon"
     CLASS.IsElectric = true
 
     function CLASS.ConsumptionText(PeakkW, _, Efficiency)
@@ -12,11 +13,11 @@ ACF.Classes.DefineClass("ACF.FuelTypes.Electric", "ACF.FuelTypes.FuelType", func
     end
 
     function CLASS.FuelTankText(Capacity, Mass)
-        local Text = "Tank Armor : %s mm\nCharge : %s kW per hour - %s MJ\nMass : %s"
+        local Text = "Charge : %s kW per hour - %s MJ\nMass : %s"
         local kWh = math.Round(Capacity * ACF.LiIonED, 2)
         local MJ = math.Round(Capacity * ACF.LiIonED * 3.6, 2)
 
-        return Text:format(ACF.ContainerArmor, kWh, MJ, ACF.GetProperMass(Mass))
+        return Text:format(kWh, MJ, ACF.FormatMass(Mass))
     end
 
     function CLASS.FuelTankOverlay(Fuel, State)

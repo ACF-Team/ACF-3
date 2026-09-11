@@ -14,6 +14,11 @@ Classes.DefineClass("ACF.Missiles.Guidance.WireMCLOS", "ACF.Missiles.Guidance.Ra
 		State:AddSubKeyValue("Wire Length", math.Round(self.WireLength ^ 0.5 * ACF.InchToMeter, 2) .. " meters")
 	end
 
+	-- Shared so the ammo menu can price missile rounds clientside.
+	function CLASS:GetCost()
+		return 4
+	end
+
 	if CLIENT then
 		CLASS.Description = "This guidance package allows you to manually control the direction of the missile."
 	else
@@ -21,9 +26,6 @@ Classes.DefineClass("ACF.Missiles.Guidance.WireMCLOS", "ACF.Missiles.Guidance.Ra
 
 		CLASS.IsWire = true
 
-		function CLASS:GetCost()
-			return 3
-		end
 
 		function CLASS:OnLaunched(Missile)
 			BASE.OnLaunched(self, Missile)

@@ -359,7 +359,7 @@ do -- Random timer stuff
 		end
 
 		SelfTbl.OverlayErrors.ParentCheck = not IsParented and "This crew must be parented correctly!\n(parent to zero or more turret entities, ending in a baseplate)" or nil
-		SelfTbl.OverlayErrors.LinkCheck = SelfTbl.CrewTypeID ~= "Commander" and (Targets == nil or table.Count(Targets) == 0) and "This crew must be linked!" or nil
+		SelfTbl.OverlayErrors.LinkCheck = SelfTbl.CrewTypeID ~= "Commander" and SelfTbl.CrewTypeID ~= "Driver" and (Targets == nil or table.Count(Targets) == 0) and "This crew must be linked!" or nil
 
 		EnforceLimits(self)
 
@@ -389,16 +389,27 @@ do -- Random timer stuff
 		-- debugoverlay.Cross(NewPos, 4, 1, Red, true)
 		local GForce = ACF.UpdateGForceTracker(SelfTbl.GForceTracker, NewPos, SampleRate)
 
-		-- If specified, affect crew ergonomics based on G forces
+		-- If specified, affect crew ergonomics based on G-forces
 		local GForceInfo = SelfTbl.CrewType.GForceInfo
 		local Effs = GForceInfo.Efficiencies
+
+		-- Commanders take Loader-accurate G-force penalties while performing Loader duty
+		if GForceInfo.LoaderEfficiencies then
+			local TargetsByType = SelfTbl.TargetsByType
+			local LinkedToGun = TargetsByType and TargetsByType.acf_gun and next(TargetsByType.acf_gun)
+			local LinkedToRack = TargetsByType and TargetsByType.acf_rack and next(TargetsByType.acf_rack)
+			if LinkedToGun or LinkedToRack then
+				Effs = GForceInfo.LoaderEfficiencies
+			end
+		end
+
 		if Effs then
 			SelfTbl.MoveEff = 1 - ACF.Normalize(GForce, Effs.Min, Effs.Max)
 			WireLib.TriggerOutput(self, "MoveEff", SelfTbl.MoveEff * 100)
 		end
 		WireLib.TriggerOutput(self, "GForce", GForce)
 
-		-- If specified, apply damage to crew based on G forces
+		-- If specified, apply damage to crew based on G-forces
 		local Damages = GForceInfo.Damages
 		if Damages and GForce > Damages.Min and SelfTbl.IsAlive then
 			local Damage = ACF.Normalize(GForce, Damages.Min, Damages.Max) * DeltaTime * SampleRate
@@ -559,6 +570,10 @@ do
 			Player:AddCount(CrewType.LimitConVar.Name, self)
 		end
 
+		-- Registered here so self.CrewType always exists by the time this is visible
+		ACF.ActiveCrews[self] = true
+		self:StartRegenTimer()
+
 		-- Run randomized timers
 		ACF.AugmentedTimer(function(cfg) ENT_UpdateUltraLowFreq(self, cfg) end, function() return IsEntityValid(self) end, nil, {MinTime = 3, MaxTime = 5, Delay = 0.1})
 		ACF.AugmentedTimer(function(cfg) ENT_UpdateLowFreq(self, cfg) end, function() return IsEntityValid(self) end, nil, {MinTime = 1, MaxTime = 2, Delay = 0.1})
@@ -618,76 +633,101 @@ end
 
 -- Entity methods
 do
-	function ENT:ACF_Activate(Recalc)
-		local PhysObj = self.ACF.PhysObj
-		-- local Mass    = PhysObj:GetMass()
-		local Area    = PhysObj:GetSurfaceArea() * ACF.InchToCmSq
-		local Armour  = ACF.CrewArmor -- Human body isn't that thick but we have to put something here
-		local Health  = ACF.CrewHealth
-		local Percent = 1
-
-		if Recalc and self.ACF.Health and self.ACF.MaxHealth then
-			Percent = self.ACF.Health / self.ACF.MaxHealth
-		end
-
-		self.ACF.Area      = Area
-		self.ACF.Health    = Health * Percent
-		self.ACF.MaxHealth = Health
-		self.ACF.Armour    = Armour * Percent
-		self.ACF.MaxArmour = Armour
-		self.ACF.Type      = "Prop"
-	end
-
 	-- If the player trips a legality check (e.g. notsolid)
 	-- You can't bring back a dead crew so there is no enable...
 	function ENT:Disable()
 		self:KillCrew("npc/zombie/zombie_voice_idle6.wav")
 	end
 
-	-- Only meant to be called by gamemodes like AAS. This function isn't called otherwise.
+	-- Fully revives a dead crew member. Called by gamemodes like AAS and by acf_supply.
 	function ENT:Restore()
-		self.ACF.Armour = self.ACF.MaxArmour
 		self.ACF.Health = self.ACF.MaxHealth
 		self.IsAlive = true
 		self:SetMaterial(self.MaterialPath or "") -- Reset to default material
+		self:SetColor(Color(255, 255, 255, 255)) -- Reset the flesh-white tint KillCrew applies
+		self:UpdateOverlay()
 	end
 
-	--- Attempts to replace self with another crew member
-	function ENT:ReplaceCrew()
+	-- Timer only runs while the crew actually needs healing; DamageCrew re-arms it. In-combat
+	-- has no discrete end event, so it stays a cheap in-body check instead of a Depends condition
+	function ENT:StartRegenTimer()
+		if self.RegenTimerActive then return end
+		self.RegenTimerActive = true
+
+		local Entity = self
+
+		ACF.AugmentedTimer(function(cfg) Entity:RegenerateHealth(cfg) end, function()
+			local Needed = IsEntityValid(Entity) and Entity.IsAlive and Entity.ACF.Health < Entity.ACF.MaxHealth
+			if not Needed then Entity.RegenTimerActive = false end
+			return Needed
+		end, nil, {MinTime = 10, MaxTime = 10, Delay = 0.1})
+	end
+
+	function ENT:RegenerateHealth()
+		if ACF.IsContraptionInCombat(self) then return end
+
+		self.ACF.Health = math.min(self.ACF.MaxHealth, self.ACF.Health + self.ACF.MaxHealth * ACF.CrewRegenFraction)
+		self:UpdateOverlay()
+	end
+
+	--- Finds the best live candidate to replace self, or nil if none exists.
+	--- The least important (highest CrewPriority number) survivor is picked.
+	function ENT:FindReplacementCandidate()
 		local Contraption = self:CFW_GetContraption()
-		if Contraption == nil then return end 				-- No Contraption to replace crew in
-		if Contraption.CrewsByPriority == nil then return end 	-- No crew to replace with
-		if not self.ToBeReplaced and self.ReplaceSelf then
-			self.ToBeReplaced = true									-- Mark self for replacement
+		if Contraption == nil then return nil end
+		if Contraption.CrewsByPriority == nil then return nil end
 
-			-- Only consider "lower" priority crews
-			local offset = self:ACF_GetUserVar("ReplacedOnlyLower") and 1 or 0
-			for i = self.CrewPriority + offset, ACF.CrewRepPrioMax do
-				local OtherCrews = Contraption.CrewsByPriority[i] or {}
-				for Other in pairs(OtherCrews) do									-- For each crew of that priority
-					local NotMe = Other ~= self and IsValid(Other) 						-- Valid crew that isn't us
-					local NotBusy = not Other.ToReplace									-- Other isn't replacing someone else
-					local Alive = Other.ACF.Health and Other.ACF.Health > 0				-- Other is alive
-					local Replaceable = Other.ReplaceOthers								-- Other can be replaced
-					if NotMe and NotBusy and Alive and Replaceable then
-						Other.ToReplace = true 											-- Other is now replacing someone (us)
-
-						-- Calculate replacement time
-						local ReplacementDist = self:GetPos():Distance(Other:GetPos())
-						local ReplacementTime = ACF.CrewRepTimeBase + ACF.CrewRepDistToTime * ReplacementDist
-						TimerSimple(ReplacementTime, function()
-							Other.ToReplace = false
-							self.ToBeReplaced = false
-
-							if IsValid(self) then
-								self:SwapCrew(Other)
-							end
-						end)
-
-						return
-					end
+		local offset = self:ACF_GetUserVar("ReplacedOnlyLower") and 1 or 0
+		for i = ACF.CrewRepPrioMax, self.CrewPriority + offset, -1 do
+			local OtherCrews = Contraption.CrewsByPriority[i] or {}
+			for Other in pairs(OtherCrews) do
+				local NotMe = Other ~= self and IsValid(Other)
+				local NotBusy = not Other.ToReplace
+				local Alive = Other.ACF.Health and Other.ACF.Health > 0
+				local Replaceable = Other.ReplaceOthers
+				if NotMe and NotBusy and Alive and Replaceable then
+					return Other
 				end
 			end
+		end
+
+		return nil
+	end
+
+	--- Attempts to replace self with another crew member. AttemptSwap re-validates the
+	--- candidate after the move delay rather than trusting it's still valid.
+	function ENT:ReplaceCrew()
+		if self.ToBeReplaced or not self.ReplaceSelf then return end
+		self.ToBeReplaced = true
+
+		local Other = self:FindReplacementCandidate()
+		if Other == nil then
+			-- No candidate found anywhere right now
+			self.ToBeReplaced = false
+			return
+		end
+
+		Other.ToReplace = true
+
+		local ReplacementDist = self:GetPos():Distance(Other:GetPos())
+		local ReplacementTime = ACF.CrewRepTimeBase + ACF.CrewRepDistToTime * ReplacementDist
+		TimerSimple(ReplacementTime, function() self:AttemptSwap(Other) end)
+	end
+
+	--- Runs after the move delay. Re-validates both sides in case either changed state during
+	--- the wait, restarting the search if Other no longer works.
+	function ENT:AttemptSwap(Other)
+		if IsValid(Other) then Other.ToReplace = false end
+		self.ToBeReplaced = false
+
+		if not IsValid(self) then return end
+		if self.IsAlive then return end -- self no longer needs replacing (e.g. got healed)
+
+		local OtherStillValid = IsValid(Other) and Other.ACF.Health and Other.ACF.Health > 0
+		if OtherStillValid then
+			self:SwapCrew(Other)
+		else
+			self:ReplaceCrew()
 		end
 	end
 
@@ -701,8 +741,6 @@ do
 		Other:SetColor(Col1)
 
 		self.ACF.Health, Other.ACF.Health = Other.ACF.Health, self.ACF.Health
-		self.ACF.Armour = self.ACF.MaxArmour * (self.ACF.Health / self.ACF.MaxHealth)
-		Other.ACF.Armour = Other.ACF.MaxArmour * (Other.ACF.Health / Other.ACF.MaxHealth)
 		self.IsAlive, Other.IsAlive = Other.IsAlive, self.IsAlive
 
 		self:UpdateOverlay()
@@ -717,10 +755,11 @@ do
 		local NewHealth = math.max(0, SelfACF.Health - Damage)
 
 		SelfACF.Health = NewHealth
-		SelfACF.Armour = SelfACF.MaxArmour * (NewHealth / SelfACF.MaxHealth)
 
 		if NewHealth == 0 and SelfTbl.IsAlive then
 			self:KillCrew(sound)
+		elseif NewHealth > 0 and NewHealth < SelfACF.MaxHealth then
+			self:StartRegenTimer()
 		end
 	end
 	ENT.DamageCrew = ENT_DamageCrew
@@ -749,18 +788,13 @@ do
 			end
 		end
 
-		-- If all crew die, kill all seated players in the contraption
+		-- If all crew die, destroy the vehicle, same as an aircraft on a fatal impact.
 		if Alive <= 0 then
-			-- I don't like this but this only runs once per contraption
-			local ents = Contraption.ents or {}
-			for ent, _ in pairs(ents) do
-				if ent:GetClass() == "prop_vehicle_prisoner_pod" then
-					local Driver = ent:GetDriver()
-					if IsValid(Driver) then
-						ACF.KillPlayer(Driver, Contraption.ACF_LastDamageAttacker, Contraption.ACF_LastDamageInflictor)
-					end
-				end
-			end
+			local Baseplate = Contraption.ACF_Baseplate
+			local Position = IsValid(Baseplate) and Baseplate:GetPos() or self:GetPos()
+
+			ACF.DestroyContraption(Contraption, Position, vector_up, 100000)
+
 			Contraption.ACF_AllCrewKilled = true -- Flag set for other entities/block vehicle entrance/etc
 		end
 	end
@@ -789,13 +823,11 @@ do
 		return HitRes
 	end
 
-	function ENT:ACF_OnRepaired(OldArmor, OldHealth)
+	function ENT:ACF_OnRepaired(_, OldHealth)
 		-- Dead crew should not be revivable
-		if OldArmor == 0 then self.ACF.Armor = 0 end
 		if OldHealth == 0 then self.ACF.Health = 0 end
 
 		if self.ACF.Health == self.ACF.MaxHealth then EmitSound("items/medshot4.wav", self:GetPos()) end
-		self.ACF.Armour = self.ACF.MaxArmour * (self.ACF.Health / self.ACF.MaxHealth)
 		self:UpdateOverlay()
 	end
 end
@@ -909,10 +941,12 @@ do
 		if not Target.Crews then Target.Crews = {} end -- Safely make sure the link Target has a crew list
 		if Target.Crews[Crew] then return false, "This entity is already linked to this crewmate!" end
 		if Crew.Targets[Target] then return false, "This entity is already linked to this crewmate!" end
-		if Crew:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This entity is too far away from this crewmate!" end
-		if not Crew.CrewType.LinkHandlers[Target:GetClass()] then return false, "This entity cannot be linked with this occupation" end
 
 		local Handlers = Crew.CrewType.LinkHandlers[Target:GetClass()]
+		if not Handlers then return false, "This entity cannot be linked with this occupation" end
+
+		if Crew:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This entity is too far away from this crewmate!" end
+
 		if Handlers.CanLink then return Handlers.CanLink(Crew, Target) end
 		return true, "Crew linked."
 	end
@@ -1035,6 +1069,8 @@ do
 	-- ACF_OnEntityLast + WireLib cleanup around this.
 	function ENT:OnRemove(IsFullUpdate)
 		if IsFullUpdate then return end
+
+		ACF.ActiveCrews[self] = nil
 
 		-- Unlink Target entities
 		for v in pairs(self.Targets) do

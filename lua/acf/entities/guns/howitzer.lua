@@ -12,11 +12,11 @@ ACF.Classes.DefineClass("ACF.Guns.Howitzer", "ACF.Guns.BaseScalableGun", functio
 	CLASS.Mass        	= 860
 	CLASS.Spread      	= 0.1
 	CLASS.ScaleFactor 	= 0.84 -- Corrective factor to account for improperly scaled base models
-	CLASS.TransferMult 	= 4 -- Thermal energy transfer rate
 	CLASS.Round 		= {
 		MaxLength  = 90,
 		PropLength = 90,
 		Efficiency = 0.65,
+		CaseScale  = 1, -- Bagged charges rather than a case, so nothing wider than the projectile
 	}
 	CLASS.Preview 		= {
 		FOV = 65,
@@ -32,7 +32,7 @@ ACF.Classes.DefineClass("ACF.Guns.Howitzer", "ACF.Guns.BaseScalableGun", functio
 			{Name = "Breech", LPos = Vector(-47.538, 0, -1.35938), LAng = Angle(0, 0, 0), Width = 7.992125984252, Height = 7.992125984252},
 		}
 	}
-	CLASS.CostScalar	= 0.5
+	CLASS.CostScalar	= 0.32
 end)
 
 ACF.SetCustomAttachment("models/howitzer/howitzer_105mm.mdl", "muzzle", Vector(101.08, 0, -1.08))

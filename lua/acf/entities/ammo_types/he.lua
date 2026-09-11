@@ -70,13 +70,17 @@ Classes.DefineClass("ACF.Ammunition.HE", "ACF.Ammunition.APHE", function(CLASS, 
 		return self.BulletData, self.GUIData
 	end
 
+	-- Shared with the client so the spawn menu can price a crate without spawning it.
+	local Conversion = ACF.PointConversion
+
+	function CLASS:GetCost(BulletData)
+		return ((BulletData.ProjMass - BulletData.FillerMass) * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.CompB)
+	end
+
 	if SERVER then
 		local Ballistics = ACF.Ballistics
-		local Conversion	= ACF.PointConversion
 
-		function CLASS:GetCost(BulletData)
-			return ((BulletData.ProjMass - BulletData.FillerMass) * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.CompB)
-		end
+
 
 		function CLASS:Network(Entity, BulletData)
 			BASE.Network(self, Entity, BulletData)
@@ -120,9 +124,9 @@ Classes.DefineClass("ACF.Ammunition.HE", "ACF.Ammunition.APHE", function(CLASS, 
 
 				local Text		= language.GetPhrase("acf.menu.ammo.round_stats_he")
 				local MuzzleVel	= math.Round(BulletData.MuzzleVel * ACF.Scale, 2)
-				local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
-				local PropMass	= ACF.GetProperMass(BulletData.PropMass)
-				local Filler	= ACF.GetProperMass(BulletData.FillerMass)
+				local ProjMass	= ACF.FormatMass(BulletData.ProjMass)
+				local PropMass	= ACF.FormatMass(BulletData.PropMass)
+				local Filler	= ACF.FormatMass(BulletData.FillerMass)
 
 				RoundStats:SetText(Text:format(MuzzleVel, ProjMass, PropMass, Filler))
 			end)
@@ -133,10 +137,36 @@ Classes.DefineClass("ACF.Ammunition.HE", "ACF.Ammunition.APHE", function(CLASS, 
 
 				local Text	   = language.GetPhrase("acf.menu.ammo.filler_stats_he")
 				local Blast	   = math.Round(self.GUIData.BlastRadius, 2)
-				local FragMass = ACF.GetProperMass(self.GUIData.FragMass)
+				local FragMass = ACF.FormatMass(self.GUIData.FragMass)
 				local FragVel  = math.Round(self.GUIData.FragVel, 2)
 
 				FillerStats:SetText(Text:format(Blast, self.GUIData.Fragments, FragMass, FragVel))
+			end)
+		end
+
+		-- Ammo menu graph: fragment penetration over distance from the detonation.
+		function CLASS:PlotAmmoGraph(Panel, _, BulletData)
+			local Damage     = ACF.Damage
+			local PenText    = language.GetPhrase("acf.menu.ammo.penetration")
+			-- Blast radius is display data, so it lives on GUIData rather than the bullet
+			local BlastRadius = self.GUIData.BlastRadius -- Fragments reach zero velocity here; distance shares the same units
+			local FillerMass  = BulletData.FillerMass
+			local FragMass    = BulletData.ProjMass - FillerMass
+
+			local Radius = math.max(BlastRadius, 1)
+			local MaxPen = math.max(Damage.getFragmentPenetration(FillerMass, FragMass, BlastRadius, 0), 1)
+
+			Panel:SetYLabel(PenText)
+			Panel:SetXLabel("#acf.menu.ammo.distance")
+
+			Panel:SetXRange(0, Radius)
+			Panel:SetYRange(0, MaxPen * 1.1)
+
+			Panel:SetXSpacing(Radius / 10)
+			Panel:SetYSpacing(MaxPen * 1.1 / 10)
+
+			Panel:PlotFunction(PenText, ACF.GraphColors.RedAlt, function(X)
+				return Damage.getFragmentPenetration(FillerMass, FragMass, BlastRadius, X)
 			end)
 		end
 	end

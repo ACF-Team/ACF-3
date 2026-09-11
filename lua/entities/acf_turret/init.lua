@@ -28,19 +28,137 @@ local MaxLinkDistance = ACF.LinkDistance ^ 2
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 
 do -- Random timer crew stuff
-	local function ReturnCrewTotalEff(Crew) return ENTITY.GetTable(Crew).TotalEff end
-	function ENT:UpdateAccuracyMod()
-		local SelfTbl = ENTITY.GetTable(self)
+	--- Whether Crew renders Turret controlled, and whether that cascades to vertical drives.
+	local function CrewGrantsControl(Turret, Crew)
+		if ENTITY.GetTable(Crew).TotalEff < ACF.GunnerEfficiencyThreshold then return false, false end
 
-		SelfTbl.CrewsByType = SelfTbl.CrewsByType or {}
-		local Sum1, Count1 = ACF.WeightedLinkSum(SelfTbl.CrewsByType.Gunner or {}, ReturnCrewTotalEff)
-		local Sum2, Count2 = ACF.WeightedLinkSum(SelfTbl.CrewsByType.Commander or {}, ReturnCrewTotalEff)
-		local Sum3, Count3 = ACF.WeightedLinkSum(SelfTbl.CrewsByType.Pilot or {}, ReturnCrewTotalEff)
-		local Sum, Count = Sum1 + Sum2 + Sum3, Count1 + Count2 + Count3
-		local Val = (Count > 0) and (Sum / Count) or 0
-		SelfTbl.AccuracyCrewMod = math_Clamp(Val, ACF.CrewFallbackCoef, 1)
-		return SelfTbl.AccuracyCrewMod
+		local CrewParent = Crew:GetParent()
+
+		if CrewParent == Turret then return true, true end -- Mounted directly on the turret
+
+		local RemoteController = Crew.RemoteController
+		if IsValid(RemoteController) and RemoteController:IsActive() then return true, true end
+
+		-- Oscilating turrets (e.g. on the vertical drive, linked to the horizontal ring)
+		local Ancestor = CrewParent.ACF_TurretAncestor
+		while IsValid(Ancestor) do
+			if Ancestor == Turret then return true, true end
+			Ancestor = Ancestor.ACF_TurretAncestor
+		end
+
+		if CrewParent == Turret:GetParent() then -- Shares a parent with the turret
+			local CarriedMass = (Turret.TurretData.TotalMass or 0) + (Turret.ACF.Mass or 0)
+			if CarriedMass <= ACF.LightweightTurretMassLimit then return true, true end
+			return true, false -- Controls, but no cascade to vertical drives
+		end
+
+		return false, false
 	end
+
+	-- Each turret only ever sets its own IsControlled (never a sub-turret's), to avoid two
+	-- UpdateControlled calls racing to overwrite the same field.
+	local function HasActiveLightweightController(Turret)
+		for Controller in pairs(Turret.LightweightControllers or {}) do
+			if IsValid(Controller) and Controller:IsActive() then return true end
+		end
+		return false
+	end
+
+	-- Whether any Gunner/Commander/Pilot crew linked to Turret grants control, or a Lightweight
+	-- Controller does. Cascade checks the cascade-to-vertical-drives result instead of self-control
+	local function IsGrantedControl(Turret, Cascade)
+		if HasActiveLightweightController(Turret) then return true end
+
+		local CrewsByType = Turret.CrewsByType
+		if not CrewsByType then return false end
+
+		for _, CrewType in ipairs({"Gunner", "Commander", "Pilot"}) do
+			for Crew in pairs(CrewsByType[CrewType] or {}) do
+				if not IsValid(Crew) then continue end
+
+				local Controls, Cascades = CrewGrantsControl(Turret, Crew)
+				if Cascade and Cascades then return true end
+				if not Cascade and Controls then return true end
+			end
+		end
+
+		return false
+	end
+
+	function ENT:UpdateControlled()
+		local SelfTbl = ENTITY.GetTable(self)
+		SelfTbl.CrewsByType = SelfTbl.CrewsByType or {}
+
+		local Controlled = IsGrantedControl(self, false)
+
+		if not Controlled and SelfTbl.Turret == "Turret-V" then
+			local Ancestor = SelfTbl.ACF_TurretAncestor
+			if IsValid(Ancestor) and Ancestor.Turret == "Turret-H" then
+				Controlled = IsGrantedControl(Ancestor, true)
+			end
+		end
+
+		SelfTbl.IsControlled = Controlled
+		return Controlled
+	end
+end
+
+-- Every currently-spawned acf_turret, driven each tick by the shared ACF_OnTick hook below.
+-- RunOrder is the ancestor-first sequence that hook walks; an AugmentedTimer rebuilds and
+-- re-sorts it a few times a second so ancestors always slew before their sub-turrets, while
+-- spawn appends immediately so a new turret slews from its first tick.
+local ActiveTurrets = {}
+local RunOrder = {}
+local RunCount = 0
+
+-- Depth in the turret ancestor chain (0 = root), used to sort turrets ancestor-first
+local function GetAncestorDepth(SelfTbl)
+	local Depth = 0
+	local Ancestor = SelfTbl.ACF_TurretAncestor
+
+	while IsValid(Ancestor) do
+		Depth = Depth + 1
+		Ancestor = ENTITY.GetTable(Ancestor).ACF_TurretAncestor
+	end
+
+	return Depth
+end
+
+local function CompareTurretDepth(A, B)
+	return ENTITY.GetTable(A).SortDepth < ENTITY.GetTable(B).SortDepth
+end
+
+-- Rebuilds RunOrder from ActiveTurrets, ancestor-first. Comparing against a cached SortDepth
+-- keeps table.sort off the ancestor-chain walk. Driven by an AugmentedTimer rather than the
+-- tick hook so the sort cost is spread over frames.
+local function RebuildTurretRunOrder()
+	RunCount = 0
+
+	for Entity in pairs(ActiveTurrets) do
+		if IsValid(Entity) then
+			RunCount = RunCount + 1
+			RunOrder[RunCount] = Entity
+			ENTITY.GetTable(Entity).SortDepth = GetAncestorDepth(ENTITY.GetTable(Entity))
+		else
+			ActiveTurrets[Entity] = nil
+		end
+	end
+
+	for i = RunCount + 1, #RunOrder do
+		RunOrder[i] = nil
+	end
+
+	table.sort(RunOrder, CompareTurretDepth)
+end
+
+-- Appends a just-spawned turret so it slews from its first tick; the timer re-sorts it into
+-- ancestor-first position on its next pass.
+local function AppendTurretRunOrder(Entity)
+	if not IsValid(Entity) then return end
+
+	RunCount = RunCount + 1
+	RunOrder[RunCount] = Entity
+	ENTITY.GetTable(Entity).SortDepth = GetAncestorDepth(ENTITY.GetTable(Entity))
 end
 
 -- Some locals for entity functions that are stored as locals to avoid expensive
@@ -125,7 +243,11 @@ do	-- Spawn and Update funcs
 		Rotator.Turret = self
 		Rotator.Owner  = self
 
-		ACF.AugmentedTimer(function(cfg) self:UpdateAccuracyMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 0.5, MaxTime = 1})
+		-- Enter the slew run order, otherwise the tick coordinator never reaches this turret
+		ActiveTurrets[self] = true
+		AppendTurretRunOrder(self)
+
+		ACF.AugmentedTimer(function(cfg) self:UpdateControlled(cfg) end, function() return IsValid(self) end, nil, {MinTime = 0.5, MaxTime = 1})
 	end
 
 	function ENT:ACF_PostUpdateEntityData()
@@ -187,12 +309,20 @@ do	-- Spawn and Update funcs
 		self.DesiredVector = Vector()
 		self.DesiredDeg    = 0
 
+		-- Whether a Gunner/Commander/Pilot (or component) controls this turret; only matters
+		-- while weaponized (see InputDirection for what happens when uncontrolled)
+		self.IsControlled		= false
+
 		-- Any turrets that happen to get parented to this one, either directly or indirectly
 		-- Mass calculation will stop at this, and instead read whatever that turret has calculated
 		self.SubTurrets = {}
 
 		-- Anything else deemed dynamic when it comes to mass (e.g. ammo, racks, fuel (for whatever reason))
 		self.DynamicEntities = {}
+
+		-- Whether this turret carries a weapon directly, or any sub-turret below it does
+		self.HasDirectWeapon	= false
+		self.IsWeaponized		= false
 
 		-- Three different mass types to track, all checked differently
 		--[[
@@ -211,7 +341,8 @@ do	-- Spawn and Update funcs
 		self.SlewRate         = 0 -- Rotation rate
 		self.Stabilized       = false
 		self.StabilizeAmount  = 0
-		self.LastRotatorAngle = self.Rotator:GetAngles()
+		self.LastTurretAngle  = self:GetAngles()
+		self.LastThinkTime    = Clock.CurTime
 
 		self.MaxSlewRate = 0
 		self.SlewAccel   = 0
@@ -223,8 +354,8 @@ do	-- Spawn and Update funcs
 			self.MaxDeg = MaxDeg
 			self.HasArc = not ((MinDeg == -180) and (MaxDeg == 180))
 		else
-			self.MinDeg = math_max(self:ACF_GetUserVar("MinDeg"), -85)
-			self.MaxDeg = math_min(self:ACF_GetUserVar("MaxDeg"), 85)
+			self.MinDeg = math_max(self:ACF_GetUserVar("MinDeg"), -90)
+			self.MaxDeg = math_min(self:ACF_GetUserVar("MaxDeg"), 90)
 			self.HasArc = true
 		end
 
@@ -363,16 +494,29 @@ do	-- Spawn and Update funcs
 
 	local function Proxy_ACF_OnParent(self, _, _)
 		local SelfTbl = ENTITY.GetTable(self)
-		if (not IsValid(SelfTbl.ACF_TurretAncestor)) or (not Contraption.HasAncestor(self, SelfTbl.ACF_TurretAncestor)) then self.CFW_OnParented = nil SelfTbl.ACF_TurretAncestor = nil return end
+		local OldAncestor = SelfTbl.ACF_TurretAncestor
+		if not IsValid(OldAncestor) then return end
 
-		SelfTbl.ACF_TurretAncestor:UpdateTurretMass(false)
+		-- Notify even if no longer actually an ancestor, so it can recompute without us
+		OldAncestor:UpdateTurretMass(false)
+
+		if not Contraption.HasAncestor(self, OldAncestor) then
+			self.CFW_OnParented = nil
+			SelfTbl.ACF_TurretAncestor = nil
+		end
 	end
 
 	local function Proxy_ACF_OnMassChange(self)
 		local SelfTbl = ENTITY.GetTable(self)
-		if (not IsValid(SelfTbl.ACF_TurretAncestor)) or (not Contraption.HasAncestor(self, SelfTbl.ACF_TurretAncestor)) then self.ACF_OnMassChange = nil SelfTbl.ACF_TurretAncestor = nil return end
+		local OldAncestor = SelfTbl.ACF_TurretAncestor
+		if not IsValid(OldAncestor) then return end
 
-		SelfTbl.ACF_TurretAncestor:UpdateTurretMass(false)
+		OldAncestor:UpdateTurretMass(false)
+
+		if not Contraption.HasAncestor(self, OldAncestor) then
+			self.ACF_OnMassChange = nil
+			SelfTbl.ACF_TurretAncestor = nil
+		end
 	end
 
 	local function ParentLink(Turret, Entity, Connect)
@@ -380,14 +524,43 @@ do	-- Spawn and Update funcs
 			Entity.CFW_OnParented		= Proxy_ACF_OnParent
 			Entity.ACF_OnMassChange		= Proxy_ACF_OnMassChange
 			Entity.ACF_TurretAncestor	= Turret
+
+			-- Deletion doesn't reparent, so CFW_OnParented never fires for it
+			Entity:CallOnRemove("ACF_TurretAncestorNotify", function()
+				if IsValid(Turret) then Turret:UpdateTurretMass(false) end
+			end)
 		else
 			Entity.CFW_OnParented		= nil
 			Entity.ACF_OnMassChange		= nil
 			Entity.ACF_TurretAncestor	= nil
+
+			if IsValid(Entity) then Entity:RemoveCallOnRemove("ACF_TurretAncestorNotify") end
 		end
 
 		if IsValid(Turret) then
 			Turret:InvalidateClientInfo()
+		end
+	end
+
+	--- Refreshes IsWeaponized and bubbles a change one hop up to ACF_TurretAncestor. Never
+	--- recurses into a sub-turret's subtree, only reads its already-cached IsWeaponized.
+	local function UpdateWeaponized(Entity, HasDirectWeapon)
+		local Weaponized = HasDirectWeapon
+
+		if not Weaponized then
+			for SubTurret in pairs(Entity.SubTurrets) do
+				if IsValid(SubTurret) and SubTurret.IsWeaponized then
+					Weaponized = true
+					break
+				end
+			end
+		end
+
+		if Entity.IsWeaponized == Weaponized then return end
+		Entity.IsWeaponized = Weaponized
+
+		if IsValid(Entity.ACF_TurretAncestor) then
+			UpdateWeaponized(Entity.ACF_TurretAncestor, Entity.ACF_TurretAncestor.HasDirectWeapon)
 		end
 	end
 
@@ -406,8 +579,12 @@ do	-- Spawn and Update funcs
 
 		local ChildList = GetFilteredChildren(Entity, {}, "acf_turret")
 
+		local HasDirectWeapon = false
+
 		for k in pairs(ChildList) do
 			local Class = k:GetClass()
+
+			if ACF.WeaponClasses[Class] then HasDirectWeapon = true end
 
 			k.ACF_TurretAncestor = nil
 			if Class == "acf_turret" then
@@ -433,6 +610,7 @@ do	-- Spawn and Update funcs
 		end
 
 		Entity.StaticMass = Mass
+		Entity.HasDirectWeapon = HasDirectWeapon
 
 		local Rotator = Entity.Rotator
 		for Ent, PhysObj in pairs(AddCoM) do
@@ -441,6 +619,8 @@ do	-- Spawn and Update funcs
 		end
 
 		Entity.StaticCoM = CoM
+
+		UpdateWeaponized(Entity, HasDirectWeapon)
 	end
 
 	local function GetDynamicMass(Entity) -- Returns mass center (local to rotator) and amount from all "dynamic" entities, should be triggered after a resettable delay (only delayable by so long) in order to reduce spammed calls
@@ -685,6 +865,17 @@ do -- Overlay
 			State:AddKeyValue("Arc", SelfTbl.MinDeg .. "/" .. SelfTbl.MaxDeg)
 		end
 
+		if SelfTbl.IsWeaponized then
+			State:AddKeyValue("Weaponized", "Yes")
+			if SelfTbl.IsControlled then
+				State:AddKeyValue("Controlled", "Yes")
+			else
+				State:AddError("Uncontrolled: not aiming")
+			end
+		else
+			State:AddKeyValue("Weaponized", "No")
+		end
+
 		if IsValid(SelfTbl.Motor) then
 			State:AddKeyValue("Motor", tostring(SelfTbl.Motor))
 		end
@@ -808,6 +999,18 @@ do -- Metamethods
 				duplicator.StoreEntityModifier(self, "ACFGyro", {SelfTbl.Gyro:EntIndex()})
 			end
 
+			-- Stored turret-side since the controller's periodic link Check would otherwise
+			-- gate the very first paste-time relink before contraption/mass data has settled
+			if SelfTbl.LightweightControllers and next(SelfTbl.LightweightControllers) then
+				local Indices = {}
+				for Controller in pairs(SelfTbl.LightweightControllers) do
+					if IsValid(Controller) then Indices[#Indices + 1] = Controller:EntIndex() end
+				end
+				if #Indices > 0 then
+					duplicator.StoreEntityModifier(self, "ACFLightweightControllers", Indices)
+				end
+			end
+
 			-- Wire dupe info
 			self.BaseClass.PreEntityCopy(self)
 		end
@@ -825,6 +1028,15 @@ do -- Metamethods
 				self:Link(CreatedEntities[EntMods.ACFGyro[1]])
 
 				EntMods.ACFGyro = nil
+			end
+
+			if EntMods.ACFLightweightControllers then
+				for _, Index in ipairs(EntMods.ACFLightweightControllers) do
+					local Controller = CreatedEntities[Index]
+					if IsValid(Controller) then Controller:Link(self) end
+				end
+
+				EntMods.ACFLightweightControllers = nil
 			end
 
 			self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
@@ -849,10 +1061,7 @@ do -- Metamethods
 		end
 		ENT.SetSoundState = SetSoundState
 
-		function ENT:InputDirection(Direction)
-			local SelfTbl = ENTITY.GetTable(self)
-			if SelfTbl.Disabled then return end
-
+		local function ApplyDirection(SelfTbl, Direction)
 			SelfTbl.Manual		= true
 			SelfTbl.UseVector	= false
 
@@ -864,8 +1073,10 @@ do -- Metamethods
 			SelfTbl.Manual		= false
 
 			if isangle(Direction) then
-				Direction:Normalize()
-				SelfTbl.DesiredAngle = Direction
+				-- Copy first, Direction may still be stored elsewhere and must not be mutated
+				local Normalized = Angle(Direction)
+				Normalized:Normalize()
+				SelfTbl.DesiredAngle = Normalized
 
 				return
 			end
@@ -877,18 +1088,30 @@ do -- Metamethods
 			end
 		end
 
-		function ENT:Think() -- The meat and POE-TAE-TOES of the turret working
+		function ENT:InputDirection(Direction)
 			local SelfTbl = ENTITY.GetTable(self)
+			if SelfTbl.Disabled then return end
 
+			-- Uncontrolled weaponized turrets don't aim at all; stabilization/slewing continue as normal
+			if SelfTbl.IsWeaponized and not SelfTbl.IsControlled then return end
+
+			ApplyDirection(SelfTbl, Direction)
+		end
+
+		-- The meat and POE-TAE-TOES of the turret working. Called by the ACF_OnTick coordinator below,
+		-- ancestors first, instead of via ENT:Think()/NextThink
+		local function RunTurretSlew(self, SelfTbl)
 			if SelfTbl.Disabled then
 				SetSoundState(self, false, SelfTbl)
-				ENTITY.NextThink(self, Clock.CurTime + 0.1)
+				SelfTbl.LastTurretAngle = ENTITY.GetAngles(self)
+				SelfTbl.LastThinkTime	= Clock.CurTime
 
-				return true
+				return
 			end
 
 			ENT_CheckCoM(self, false, SelfTbl)
-			local Tick		= Clock.DeltaTime
+			-- Real elapsed time since last update, not assumed to be one tick
+			local Tick		= math_max(Clock.CurTime - (SelfTbl.LastThinkTime or Clock.CurTime), 0)
 			local Rotator	= SelfTbl.Rotator
 			if not IsValid(Rotator) then ENTITY.Remove(self) return end
 
@@ -902,14 +1125,14 @@ do -- Metamethods
 
 			-- Something or another has caused the turret to be unable to rotate, so don't waste the extra processing time
 			if MaxImpulse == 0 then
-				SelfTbl.LastRotatorAngle = ENTITY.GetAngles(Rotator)
+				SelfTbl.LastTurretAngle = ENTITY.GetAngles(self)
+				SelfTbl.LastThinkTime	= Clock.CurTime
 
 				if SelfTbl.SoundPlaying == true then
 					SetSoundState(self, false, SelfTbl)
 				end
 
-				ENTITY.NextThink(self, Clock.CurTime + 0.1)
-				return true
+				return
 			end
 
 			if SelfTbl.UseVector and SelfTbl.Manual == false then
@@ -918,19 +1141,20 @@ do -- Metamethods
 				SelfTbl.DesiredAngle = VECTOR.Angle(DesiredAngle)
 			end
 
-			local StabAmt	= math_Clamp(SelfTbl.SlewFuncs.GetStab(self), -SlewMax, SlewMax)
-			local StabSign	= -StabAmt < 0 and -1 or 1
+			-- Acceleration-free correction that cancels motion of whatever the turret is mounted to,
+			-- so a stabilized turret holds aim on a turning platform. Only the sum with SlewRate is
+			-- bounded (below); the motor's SlewAccel governs slewing toward the aim point, not this.
+			local FeedFwd	= SelfTbl.SlewFuncs.GetStab(self)
 
-			local TargetBearing	= math_Round(SelfTbl.SlewFuncs.GetTargetBearing(self, StabAmt), 8)
+			-- GetTargetBearing solves fresh against live orientation, so it already includes the
+			-- mount drift FeedFwd handles. Subtract it back out so the accel-limited feedback path
+			-- only chases operator-commanded error and the two don't double-correct.
+			local TargetBearing	= math_Round(SelfTbl.SlewFuncs.GetTargetBearing(self) - FeedFwd, 8)
 
 			local Sign			= TargetBearing < 0 and -1 or 1
 			local Dist			= math_abs(TargetBearing)
 			local FinalAccel	= math_Clamp(TargetBearing, -MaxImpulse, MaxImpulse)
 			local BrakingDist	= SelfTbl.SlewRate ^ 2 / math_abs(FinalAccel) / 2
-
-			if StabSign == Sign then
-				StabAmt = StabAmt * math_min(math_max(0, 1 - (math_abs(StabAmt) / MaxImpulse) ^ 2), 1)
-			end
 
 			if SelfTbl.Active then
 				SelfTbl.SlewRate = math_Clamp(SelfTbl.SlewRate + (math_abs(FinalAccel) * ((Dist + (SelfTbl.SlewRate * 2 * -Sign)) >= BrakingDist and Sign or -Sign)), -SlewMax, SlewMax)
@@ -943,7 +1167,9 @@ do -- Metamethods
 				SelfTbl.SlewRate = SelfTbl.SlewRate - (math_min(SlewAccel, math_abs(SelfTbl.SlewRate)) * (SelfTbl.SlewRate >= 0 and 1 or -1))
 			end
 
-			SelfTbl.CurrentAngle = SelfTbl.CurrentAngle + math_Clamp(SelfTbl.SlewRate + StabAmt, -SlewMax, SlewMax)
+			-- Feedforward has acceleration headroom above a normal slew, but a violent enough
+			-- platform spin still leaves residual aim drift
+			SelfTbl.CurrentAngle = SelfTbl.CurrentAngle + math_Clamp(SelfTbl.SlewRate + FeedFwd, -SlewMax * 2, SlewMax * 2)
 
 			if SelfTbl.HasArc then
 				SelfTbl.CurrentAngle = math_Clamp(SelfTbl.CurrentAngle, -SelfTbl.MaxDeg, -SelfTbl.MinDeg)
@@ -975,12 +1201,27 @@ do -- Metamethods
 				end
 			end
 
-			SelfTbl.LastRotatorAngle	= Rotator:GetAngles()
-
-			ENTITY.NextThink(self, Clock.CurTime)
-
-			return true
+			SelfTbl.LastTurretAngle	= self:GetAngles()
+			SelfTbl.LastThinkTime	= Clock.CurTime
 		end
+
+		ACF.AugmentedTimer(
+			function() RebuildTurretRunOrder() end,
+			function() return true end,
+			nil,
+			{MinTime = 1, MaxTime = 2}
+		)
+
+		hook.Add("ACF_OnTick", "ACF Turret Slew", function()
+			for i = 1, RunCount do
+				local Entity = RunOrder[i]
+
+				-- Removed turrets linger until the next RebuildTurretRunOrder; skip them meanwhile
+				if IsValid(Entity) then
+					RunTurretSlew(Entity, ENTITY.GetTable(Entity))
+				end
+			end
+		end)
 	end
 
 	do	-- Input/Outputs/Eventually linking
@@ -1027,30 +1268,6 @@ do -- Metamethods
 			SelfTbl.Active 	= false
 			SelfTbl.SlewRate	= 0
 			self:UpdateOverlay()
-		end
-
-		------------------
-
-		function ENT:ACF_Activate(Recalc)
-			local SelfTbl = ENTITY.GetTable(self)
-			local SelfACF = SelfTbl.ACF
-
-			local PhysObj	= SelfACF.PhysObj
-			local Area		= PHYSOBJ.GetSurfaceArea(PhysObj) * ACF.InchToCmSq
-			local Armour	= SelfTbl.ScaledArmor
-			local Health	= (Area / ACF.Threshold) * 5
-			local Percent	= 1
-
-			if Recalc and SelfACF.Health and SelfACF.MaxHealth then
-				Percent = SelfACF.Health / SelfACF.MaxHealth
-			end
-
-			SelfACF.Area		= Area
-			SelfACF.Health		= Health * Percent
-			SelfACF.MaxHealth	= Health
-			SelfACF.Armour		= Armour * Percent
-			SelfACF.MaxArmour	= Armour
-			SelfACF.Type		= "Prop"
 		end
 
 		local TempDamageVector = Vector(0, 0, 0)
@@ -1108,7 +1325,6 @@ do -- Metamethods
 			local NewHealth = math_max(0, Health - HitRes.Damage)
 
 			SelfTbl.ACF.Health = NewHealth
-			SelfTbl.ACF.Armour = SelfTbl.ACF.MaxArmour * (NewHealth / SelfTbl.ACF.MaxHealth)
 
 			SelfTbl.DamageScale = math_max((SelfTbl.ACF.Health / (SelfTbl.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
 			self:UpdateOverlay()
@@ -1119,8 +1335,6 @@ do -- Metamethods
 		function ENT:ACF_OnRepaired() -- Normally has OldArmor, OldHealth, Armor, and Health passed
 			local SelfTbl = ENTITY.GetTable(self)
 			SelfTbl.DamageScale = math_max((SelfTbl.ACF.Health / (SelfTbl.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
-
-			SelfTbl.ACF.Armour = SelfTbl.ACF.MaxArmour * (SelfTbl.ACF.Health / SelfTbl.ACF.MaxHealth)
 
 			self:UpdateOverlay()
 		end
@@ -1153,6 +1367,8 @@ do -- Metamethods
 		function ENT:OnRemove()
 			local SelfTbl   = ENTITY.GetTable(self)
 			-- TODO: Destroy sound when that gets added
+
+			ActiveTurrets[self] = nil
 
 			if IsValid(SelfTbl.Motor) then
 				SelfTbl.Motor:ValidatePlacement()

@@ -1,21 +1,29 @@
 local Classes = ACF.Classes
 
--- Ammo types are V2 classes (ACF.Ammunition.*) with no short ID field; derive the legacy short id (the
--- FQN suffix, e.g. "AP") used as the controller's ammo-type key.
-local function AmmoID(Crate)
-	local Round = Crate.RoundData
-	return Round and Classes.GetTypeName(Round:GetType())
+local function Init(Entity)
+	Entity.PrimaryAmmoCountsByName = {}
 end
 
-local function Init(Entity)
-	Entity.PrimaryAmmoCountsByType = {}
+-- Crates sharing an ammo type can still differ in penetration, so entries are named after both.
+-- MaxPen is not stored on BulletData, it only exists in the display data.
+-- Ammo types are V2 classes with no short ID field, so the display label uses the FQN's last segment
+-- ("ACF.Ammunition.AP" to "AP") while the fully qualified name is what goes over the wire.
+local function GetAmmoName(Crate)
+	local Ammo    = Crate.RoundData
+	local Type    = Classes.GetTypeName(Ammo:GetType())
+	local Display = Ammo:GetDisplayData(Crate.BulletData)
+	local MaxPen  = math.max(math.Round(Display.MaxPen or 0), 0)
+	local Short   = string.match(Type, "[^.]+$") or Type
+	local Name    = MaxPen > 0 and Short .. " " .. MaxPen .. "mm" or Short
+
+	return Name, Type, MaxPen
 end
 
 -- Ammo related
 do
 	net.Receive("ACF_Controller_Ammo", function(_, ply)
 		local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
-		local SelectAmmoType = net.ReadString()
+		local SelectAmmoName = net.ReadString()
 		local ForceReload = net.ReadBool()
 		local Entity = Entity(EntIndex)
 		if not IsValid(Entity) then return end
@@ -25,8 +33,8 @@ do
 		if not IsValid(PrimaryGun) then return end
 		for Crate, _ in pairs(PrimaryGun.Crates) do
 			if IsValid(Crate) then
-				local AmmoType = AmmoID(Crate)
-				Crate:TriggerInput("Load", AmmoType == SelectAmmoType and 1 or 0)
+				local AmmoName = GetAmmoName(Crate)
+				Crate:TriggerInput("Load", AmmoName == SelectAmmoName and 1 or 0)
 			end
 		end
 		if ForceReload then PrimaryGun:TriggerInput("Reload", 1) end
@@ -40,23 +48,28 @@ do
 		local PrimaryGun = SelfTbl.Primary
 		if not IsValid(PrimaryGun) then return end
 
-		local PrimaryAmmoCountsByType = {}
+		local PrimaryAmmoByName = {}
 		for Crate, _ in pairs(PrimaryGun.Crates) do
 			if IsValid(Crate) then
-				local AmmoType = AmmoID(Crate)
-				if AmmoType then
-					PrimaryAmmoCountsByType[AmmoType] = (PrimaryAmmoCountsByType[AmmoType] or 0) + (Crate.Amount or 0)
+				local AmmoName, RoundID, MaxPen = GetAmmoName(Crate)
+				local Ammo = PrimaryAmmoByName[AmmoName]
+				if not Ammo then
+					Ammo = {RoundID = RoundID, MaxPen = MaxPen, Count = 0}
+					PrimaryAmmoByName[AmmoName] = Ammo
 				end
+				Ammo.Count = Ammo.Count + (Crate.Amount or 0)
 			end
 		end
 
-		for AmmoType, Count in pairs(PrimaryAmmoCountsByType) do
-			if SelfTbl.PrimaryAmmoCountsByType[AmmoType] ~= Count then
-				SelfTbl.PrimaryAmmoCountsByType[AmmoType] = Count
+		for AmmoName, Ammo in pairs(PrimaryAmmoByName) do
+			if SelfTbl.PrimaryAmmoCountsByName[AmmoName] ~= Ammo.Count then
+				SelfTbl.PrimaryAmmoCountsByName[AmmoName] = Ammo.Count
 				net.Start("ACF_Controller_Ammo")
 				net.WriteEntity(self)
-				net.WriteString(AmmoType)
-				net.WriteInt(Count, 16)
+				net.WriteString(AmmoName)
+				net.WriteString(Ammo.RoundID)
+				net.WriteUInt(Ammo.MaxPen, 16)
+				net.WriteUInt(Ammo.Count, 16)
 				net.Send(self.Driver)
 			end
 		end

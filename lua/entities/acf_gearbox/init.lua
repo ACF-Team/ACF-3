@@ -204,6 +204,14 @@ do -- Spawn and Update functions -----------------------
 		Entity.GearRatio = Entity.Gears[1] * Entity.FinalDrive
 	end
 
+	function ENT:UpdateDriverMod()
+		local Contraption = self:CFW_GetContraption()
+		local Baseplate = Contraption and Contraption.ACF_Baseplate
+		local Val = IsEntityValid(Baseplate) and Baseplate.DriverCrewMod or ACF.CrewFallbackCoef
+		self.DriverCrewMod = Clamp(Val, ACF.CrewFallbackCoef, 1)
+		return self.DriverCrewMod
+	end
+
 	local function CheckRopes(Entity, Target)
 		local NiceName = Target == "Wheels" and "Prop" or "Gearbox"
 		local Ropes = Entity[Target]
@@ -308,6 +316,10 @@ do -- Spawn and Update functions -----------------------
 		self:SetScaledModel(Gearbox.Model)
 
 		duplicator.ClearEntityModifier(self, "mass")
+		self.DriverCrewMod = ACF.CrewFallbackCoef
+
+		-- Drivers let gearboxes apply full torque to wheels; poll the baseplate's driver crew.
+		ACF.AugmentedTimer(function(cfg) self:UpdateDriverMod(cfg) end, function() return IsEntityValid(self) end, nil, {MinTime = 0.1, MaxTime = 0.25})
 	end
 
 	function ENT.ACF_CheckSpawnLimit(Player)
@@ -719,6 +731,7 @@ do -- Movement -----------------------------------------
 	function ENT:Calc(InputRPM, InputInertia)
 		local SelfTbl = self:GetTable()
 		if SelfTbl.Disabled then return 0 end
+		if SelfTbl.ACF.Health <= 0 then return 0 end -- Destroyed
 		if SelfTbl.LastActive == Clock.CurTime then return SelfTbl.TorqueOutput end
 
 		if SelfTbl.ChangeFinished < Clock.CurTime then
@@ -846,6 +859,7 @@ do -- Movement -----------------------------------------
 	function ENT:Act(Torque, DeltaTime, MassRatio, FlyRPM)
 		local SelfTbl = ENTITY.GetTable(self)
 		if SelfTbl.Disabled then return end
+		if SelfTbl.ACF.Health <= 0 then return end -- Destroyed
 
 		if Torque == 0 then
 			SelfTbl.LastActive = Clock.CurTime
@@ -869,11 +883,13 @@ do -- Movement -----------------------------------------
 		end
 
 		local Braking = SelfTbl.Braking
+		local DriverCrewMod = SelfTbl.DriverCrewMod or 1
 
 		for Ent, Link in pairs(SelfTbl.Wheels) do
 			-- If the gearbox is braking, always
 			if not Braking or not Link.IsBraking then
-				local WheelTorque = Link.ReqTq * AvailTq
+				-- Applied here, not to AvailTq, so gearbox-to-gearbox transfer stays unaffected
+				local WheelTorque = Link.ReqTq * AvailTq * DriverCrewMod
 				ReactTq = ReactTq + WheelTorque
 
 				Link:TransferWheel(Ent, WheelTorque, DeltaTime)
@@ -892,7 +908,7 @@ do -- Movement -----------------------------------------
 		end
 
 		for Effector, Link in pairs(SelfTbl.Effectors) do
-			Link:TransferEffector(Effector, Link.ReqTq * AvailTq, DeltaTime, MassRatio, FlyRPM)
+			Link:TransferEffector(Effector, Link.ReqTq * AvailTq * DriverCrewMod, DeltaTime, MassRatio, FlyRPM)
 		end
 
 		SelfTbl.LastActive = Clock.CurTime

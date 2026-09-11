@@ -9,13 +9,13 @@ ACF.Classes.DefineClass("ACF.Guns.ShortBarrelledCannon", "ACF.Guns.BaseScalableG
 	CLASS.Sound       	= "acf_base/weapons/cannon_new.mp3"
 	CLASS.MuzzleFlash 	= "cannon_muzzleflash_noscale"
 	CLASS.Spread      	= 0.16
-	CLASS.Mass        	= 1195
+	CLASS.Mass        	= 723
 	CLASS.ScaleFactor 	= 1.0 -- Corrective factor to account for improperly scaled base models
-	CLASS.TransferMult 	= 4 -- Thermal energy transfer rate
 	CLASS.Round 		= {
 		MaxLength  = 80,
 		PropLength = 65,
-		Efficiency = 0.8,
+		Efficiency = 0.5,
+		CaseScale  = 1.04, -- 90x353mm (Cockerill 90mm): 94mm case over a 90mm projectile
 	}
 	CLASS.Preview 		= {
 		Height = 70,
@@ -35,7 +35,7 @@ ACF.Classes.DefineClass("ACF.Guns.ShortBarrelledCannon", "ACF.Guns.BaseScalableG
 			{Name = "Breech", LPos = Vector(-40.8958, 0, 0.015625), LAng = Angle(0, 0, 0), Width = 6.6929133858268, Height = 6.6929133858268},
 		}
 	}
-	CLASS.CostScalar	= 0.275
+	CLASS.CostScalar	= 0.26
 end)
 
 ACF.SetCustomAttachment("models/tankgun/tankgun_short_100mm.mdl", "muzzle", Vector(82.86, -0.01), Angle(0, 0, 90))

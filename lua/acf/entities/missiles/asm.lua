@@ -144,7 +144,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.AGM-114", "ACF.Missiles.AntiTan
 		ProjLength      	= 30,
 		PropLength      	= 56,
 		Thrust          	= 210000, -- in kg*in/s^2
-		FuelConsumption 	= 0.03, -- in g/s/f
+		FuelConsumption 	= 0.032, -- in g/s/f
 		StarterPercent  	= 0.12,
 		MaxAgilitySpeed 	= 40, -- in m/s
 		DragCoef        	= 0.005,
@@ -192,7 +192,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.Ataka", "ACF.Missiles.AntiTankG
 		Armor           	= 1,
 		ProjLength      	= 17.5,
 		PropLength      	= 68,
-		Thrust          	= 230000, -- in kg*in/s^2
+		Thrust          	= 210000, -- in kg*in/s^2
 		FuelConsumption 	= 0.03, -- in g/s/f
 		StarterPercent  	= 0.2,
 		MaxAgilitySpeed 	= 200, -- in m/s

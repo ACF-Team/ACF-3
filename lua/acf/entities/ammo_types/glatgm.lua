@@ -127,14 +127,10 @@ Classes.DefineClass("ACF.Ammunition.GLATGM", "ACF.Ammunition.HEATFS", function(C
 			Setup.Height = Height or Setup.Height
 		end
 
-		function CLASS:OnCreateAmmoControls(Base, _, BulletData)
-			ACF.AmmoMenu.Slider(Base, "Liner Angle", self.GUIData.MinConeAng, 90, 1, "LinerAngle", function(Value)
-				self.LinerAngle = math.Round(Value, 2)
+		function CLASS:OnCreateAmmoControls(Base)
+			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.liner_angle_ratio", 0, 1, 2, "LinerAngleRatio", function(Value)
+				self.LinerAngleRatio = math.Round(Value, 2)
 				self:UpdateRoundData()
-			end, function(Panel)
-				-- Min cone angle + clamped value depend on the round; re-clamp on any change.
-				Panel:SetMin(self.GUIData.MinConeAng)
-				Panel:SetValue(BulletData.ConeAng)
 			end)
 
 			ACF.AmmoMenu.Slider(Base, "Extra Standoff Ratio", 0, 0.4, 2, "StandoffRatio", function(Value)
@@ -153,9 +149,9 @@ Classes.DefineClass("ACF.Ammunition.GLATGM", "ACF.Ammunition.HEATFS", function(C
 				local PeakVel	= math.Round(Velocity * 0.5, 2)
 				local LaunchVel = math.Round(Velocity * 0.2, 2)
 				local Accel     = math.Round(math.Clamp(BulletData.ProjMass / BulletData.PropMass + BulletData.Caliber / 7, 0.2, 10), 2)
-				local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
-				local PropMass	= ACF.GetProperMass(BulletData.PropMass)
-				local Filler	= ACF.GetProperMass(BulletData.FillerMass)
+				local ProjMass	= ACF.FormatMass(BulletData.ProjMass)
+				local PropMass	= ACF.FormatMass(BulletData.PropMass)
+				local Filler	= ACF.FormatMass(BulletData.FillerMass)
 
 				RoundStats:SetText(Text:format(PeakVel, LaunchVel, Accel, ProjMass, PropMass, Filler))
 			end)
@@ -166,7 +162,7 @@ Classes.DefineClass("ACF.Ammunition.GLATGM", "ACF.Ammunition.HEATFS", function(C
 
 				local Text	   = "Blast Radius : %s m\nFragments : %s\nFragment Mass : %s\nFragment Velocity : %s m/s"
 				local Blast	   = math.Round(self.GUIData.BlastRadius, 2)
-				local FragMass = ACF.GetProperMass(self.GUIData.FragMass)
+				local FragMass = ACF.FormatMass(self.GUIData.FragMass)
 				local FragVel  = math.Round(self.GUIData.FragVel, 2)
 
 				FillerStats:SetText(Text:format(Blast, self.GUIData.Fragments, FragMass, FragVel))

@@ -5,6 +5,13 @@ local isstring = isstring
 local MM_TO_CM = ACF.MmToInch * ACF.InchToCm -- Millimeters to centimeters
 
 
+--- Ceiling for a round's CaseScale: the widest a class lets its case neck out past the projectile
+function ACF.GetMaxCaseScale(Class, Weapon)
+	local Round = (Weapon and Weapon.Round) or (Class and Class.Round)
+
+	return (Round and Round.CaseScale) or ACF.AmmoCaseScale
+end
+
 local function GetClassWeaponSpecs(Class, Caliber)
 	local Round = Class.Round
 	if not Round then return end
@@ -29,6 +36,7 @@ local function GetClassWeaponSpecs(Class, Caliber)
 		PropLength = Round.PropLength * Scale,
 		ProjLength = Round.ProjLength and Round.ProjLength * Scale,
 		Efficiency = Round.Efficiency,
+		MaxCaseScale = ACF.GetMaxCaseScale(Class),
 	}
 end
 
@@ -49,51 +57,106 @@ function ACF.RoundBaseGunpowder(Ammo)
 
 	if not Specs then return Data, GUIData end
 
-	local Length    = math.Round(Specs.MaxLength * (Data.LengthAdj or 1), 2)
-	local Radius    = Specs.Caliber * MM_TO_CM * 0.5 -- Radius in cm
-	local CaseScale = Ammo.CasingScale or ACF.AmmoCaseScale
+	local Length = math.Round(Specs.MaxLength * (Data.LengthAdj or 1), 2)
+	local Radius = Specs.Caliber * MM_TO_CM * 0.5 -- Radius in cm
 
 	Data.Caliber    = Specs.Caliber * MM_TO_CM -- Bullet caliber will have to stay in cm
 	Data.Diameter   = Data.Caliber * (Data.ProjScale or 1) -- Real caliber of the projectile
 	Data.ProjArea   = math.pi * (Radius * (Data.ProjScale or 1)) ^ 2
-	Data.PropArea   = math.pi * (Radius * (Data.PropScale or 1) * CaseScale) ^ 2
 	Data.Efficiency = Specs.Efficiency or 1
+
+	-- Un-necked case area; UpdateRoundSpecs scales it into PropArea, since only that re-runs per slider
+	Data.PropAreaBase = math.pi * (Radius * (Data.PropScale or 1)) ^ 2
+	Data.MaxCaseScale = Specs.MaxCaseScale or ACF.AmmoCaseScale
 
 	GUIData.MaxRoundLength = Length
 	GUIData.MinPropLength  = 0.01
 	GUIData.MinProjLength  = math.Round(Data.Caliber * 1.5, 2)
 	GUIData.MaxPropLength  = math.min(Specs.PropLength, Length - GUIData.MinProjLength)
 	GUIData.MaxProjLength  = math.min(Specs.ProjLength or Length, Length - GUIData.MinPropLength)
+	-- Missiles cap ProjLength/PropLength well below the airframe's MaxLength, and any round longer
+	-- than both components combined is unsatisfiable at every PropRatio. Guns are unaffected, since
+	-- their MaxProjLength alone already reaches Length.
+	GUIData.MaxRoundLength = math.min(Length, GUIData.MaxProjLength + GUIData.MaxPropLength)
+	-- Keeps the bounds consistent for missiles whose ProjLength spec sits below the caliber floor
+	GUIData.MinProjLength  = math.min(GUIData.MinProjLength, GUIData.MaxProjLength)
+	GUIData.MinCaseScale   = 1
+	GUIData.MaxCaseScale   = Data.MaxCaseScale
 
 	ACF.UpdateRoundSpecs(Ammo)
 
 	return Data, GUIData
 end
 
+--- Migrates ToolData length fields to the RoundLength/PropRatio representation. Supports plain
+--- old-format ToolData (Projectile/Propellant lengths, from dupes/blueprints saved before that
+--- representation was replaced) and the older RoundProjectile/RoundPropellant fallback below that.
+--- No-ops once RoundLength/PropRatio are already present.
+function ACF.VerifyRoundLengthData(ToolData)
+	-- Guarding on the value, not just the type: these are declared fields now, so the serializer has
+	-- already stamped their defaults (0) by this point and a type check would always pass.
+	if isnumber(ToolData.RoundLength) and ToolData.RoundLength > 0 then return end
+
+	local Projectile = isnumber(ToolData.Projectile) and ToolData.Projectile or ACF.CheckNumber(ToolData.RoundProjectile, 0)
+	local Propellant = isnumber(ToolData.Propellant) and ToolData.Propellant or ACF.CheckNumber(ToolData.RoundPropellant, 0)
+	local Total = Projectile + Propellant
+
+	ToolData.RoundLength = Total
+	ToolData.PropRatio   = Total > 0 and (Propellant / Total) or 0
+end
+
+--- Total round length (RoundLength) and the fraction of it taken up by the propellant (PropRatio,
+--- 0-1) are the authoritative state -- ProjLength/PropLength below are derived from them, and are
+--- the hook point for future mechanics (e.g. telescoping projectiles) that need ProjLength/PropLength
+--- to diverge from a simple RoundLength*(1-PropRatio)/RoundLength*PropRatio split.
 function ACF.UpdateRoundSpecs(Ammo)
 	local Data    = Ammo.BulletData
 	local GUIData = Ammo.GUIData
 
-	Data.Priority = Data.Priority or "Projectile"
 	Data.Tracer   = Ammo.Tracer and math.Round(Data.Caliber * 0.15, 2) or 0
+	Data.TwoPiece = Ammo.TwoPiece or false
 
-	local Projectile = math.Clamp(Ammo.Projectile, GUIData.MinProjLength, GUIData.MaxProjLength)
-	local Propellant = math.Clamp(Ammo.Propellant, GUIData.MinPropLength, GUIData.MaxPropLength)
+	-- Defaults to 1 so pre-slider dupes aren't silently buffed, matching where AddSlider seeds the var
+	local MaxCaseScale = Data.MaxCaseScale or ACF.AmmoCaseScale
+	local CaseScale    = math.Clamp(Ammo.CaseScale or 1, 1, MaxCaseScale)
 
-	if Data.Priority == "Projectile" then
-		Propellant = math.min(Propellant, GUIData.MaxRoundLength - Projectile, GUIData.MaxPropLength)
-	elseif Data.Priority == "Propellant" then
-		Projectile = math.min(Projectile, GUIData.MaxRoundLength - Propellant, GUIData.MaxProjLength)
+	Data.CaseScale    = CaseScale
+	Data.CaseDiameter = Data.Caliber * CaseScale -- Widest point of the round, cased or not
+
+	-- Recomputed from the base, not scaled in place, so repeated slider updates don't compound
+	if Data.PropAreaBase then
+		Data.PropArea = Data.PropAreaBase * CaseScale * CaseScale
 	end
 
-	local ProjLength = math.Round(Projectile, 2)
-	local PropLength = math.Round(Propellant, 2)
-	local ProjVolume = Data.ProjArea * ProjLength
-	local PropVolume = Data.PropArea * PropLength
+	local MinLength   = GUIData.MinProjLength + GUIData.MinPropLength
+	local RoundLength = math.Clamp(Ammo.RoundLength or 0, MinLength, GUIData.MaxRoundLength)
 
-	Data.ProjLength  = ProjLength
-	Data.PropLength  = PropLength
-	Data.PropMass    = Data.PropArea * (Data.PropLength * ACF.PDensity * 0.001) -- Volume of the case as a cylinder * Powder density converted from g to kg
+	-- RatioMax is measured against MaxRoundLength, not RoundLength, so the propellant fraction is a
+	-- per-class constant rather than one that climbs as the round is shortened. Dividing the class's
+	-- fixed MaxPropLength by a shrinking RoundLength let any sub-maximum round reach a ratio of 1,
+	-- leaving a zero-length projectile and a zero ProjMass for MuzzleVelocity and DragCoef to divide by.
+	local RatioMin = math.max(0, 1 - GUIData.MaxProjLength / RoundLength)
+	local RatioMax = math.min(1, GUIData.MaxPropLength / GUIData.MaxRoundLength)
+	local PropRatio = math.Clamp(Ammo.PropRatio or 0, RatioMin, RatioMax)
+
+	local PropLength = math.Round(RoundLength * PropRatio, 2)
+
+	-- TelescopeRatio lets the projectile bore into the propellant. Only types that opt in via
+	-- CanTelescope have the field, so anything else reads as 0.
+	local TelescopeRatio  = Ammo.CanTelescope and math.Clamp(Ammo.TelescopeRatio or 0, 0, 1) or 0
+	local BaseProjLength  = RoundLength * (1 - PropRatio)
+	local TelescopeLength = math.Round(math.min(PropLength * TelescopeRatio, GUIData.MaxProjLength - BaseProjLength), 2)
+	local ProjLength      = math.Round(BaseProjLength + TelescopeLength, 2)
+	local ProjVolume      = Data.ProjArea * ProjLength
+	local PropVolume      = math.max(0, Data.PropArea * PropLength - Data.ProjArea * TelescopeLength)
+
+	Data.RoundLength     = RoundLength
+	Data.PropRatio       = PropRatio
+	Data.TelescopeRatio  = TelescopeRatio
+	Data.TelescopeLength = TelescopeLength
+	Data.ProjLength      = ProjLength
+	Data.PropLength      = PropLength
+	Data.PropMass    = PropVolume * ACF.PDensity * 0.001 -- Volume of the case (hollowed out by any telescoped rod) * Powder density converted from g to kg
 	Data.RoundVolume = ProjVolume + PropVolume
 
 	GUIData.ProjVolume = ProjVolume
@@ -113,6 +176,19 @@ function ACF.Penetration(Speed, Mass, Caliber)
 	return Constant * Mass ^ 0.55 * Caliber ^ -0.65 * Speed ^ 1.1 * ACF.InchToMm
 end
 
+-- Inverse of ACF.Penetration, solved for Speed (Penetration in mm, Mass in kg, Caliber in mm, returns speed in m/s)
+function ACF.CalcSpeed(Penetration, Mass, Caliber)
+	local Constant = 0.0004689
+
+	Mass        = Mass * 2.20462 -- From kg to lb
+	Caliber     = Caliber * ACF.MmToInch
+	Penetration = Penetration * ACF.MmToInch
+
+	local Speed = (Penetration / (Constant * Mass ^ 0.55 * Caliber ^ -0.65)) ^ (1 / 1.1)
+
+	return Speed / 3.28084 -- From ft/s to m/s
+end
+
 function ACF.MuzzleVelocity(PropMass, ProjMass, Efficiency)
 	local Energy = PropMass * ACF.PropImpetus * (Efficiency or 1) * 1000 -- In joules
 
@@ -126,6 +202,27 @@ function ACF.Kinetic(Speed, Mass)
 		Kinetic = Mass * 0.5 * Speed ^ 2 * 0.001, --Energy in KiloJoules
 		Momentum = Speed * Mass,
 	}
+end
+
+-- The weapon family a round belongs to, kept as a plain string on ToolData. Classes are keyed by
+-- fully qualified name now, so the family is read off the FQN root instead of a registry table.
+local Destinies = {
+	["ACF.Guns"]        = "Weapons",
+	["ACF.Missiles"]    = "Missiles",
+	["ACF.Piledrivers"] = "Piledrivers",
+}
+
+function ACF.FindWeaponrySource(ID)
+	if not ID then return end
+
+	local Class = Classes.GetTypeByName(ID)
+	local Name  = Class and Classes.GetTypeName(Class) or ID
+
+	for Root, Destiny in pairs(Destinies) do
+		if Name == Root or Name:sub(1, #Root + 1) == Root .. "." then
+			return Destiny, Root
+		end
+	end
 end
 
 -- changes here will be automatically reflected in the armor properties tool
@@ -223,6 +320,8 @@ do -- MARK: Ammo capacity
 	local cos   = math.cos
 	local sin   = math.sin
 	local rad   = math.rad
+	local deg   = math.deg
+	local atan2 = math.atan2
 	local pi    = math.pi
 
 	local function GetModelDimensions(Round)
@@ -263,8 +362,14 @@ do -- MARK: Ammo capacity
 			return Vector(Length, Diameter, Diameter)
 		end
 
-		Diameter = Caliber * ACF.AmmoCaseScale * MM_TO_CM
-		Length   = BulletData.PropLength + BulletData.ProjLength
+		-- The case, not the projectile, sizes the cylinder the crate has to find room for
+		Diameter = Caliber * (BulletData.CaseScale or ACF.GetMaxCaseScale(Class, Weapon)) * MM_TO_CM
+		-- RoundLength, not PropLength + ProjLength -- ProjLength already includes any telescoped
+		-- overlap into the propellant, so summing them would double-count that overlap.
+		Length   = BulletData.RoundLength or (BulletData.PropLength + BulletData.ProjLength)
+
+		-- Two-piece ammo stores each piece separately, so the stored unit is half the round's length.
+		if BulletData.TwoPiece then Length = Length * 0.5 end
 
 		return Vector(Length, Diameter, Diameter) / ACF.InchToCm
 	end
@@ -272,16 +377,6 @@ do -- MARK: Ammo capacity
 	ACF.GetRoundProperties = GetRoundProperties
 
 	do -- MARK: Box Ammo Crate Functions
-
-		-- Returns true if hex packing uses less space than square packing
-		local function ShouldUseHexPacking(countY, countZ)
-			if countY <= 1 or countZ <= 1 then return false end
-
-			local squareArea = countY * countZ
-			local hexArea    = ((countY - 1) * HEX_SPACING + 1) * (countZ + HEX_OFFSET)
-
-			return hexArea < squareArea
-		end
 
 		-- Hex packing given a count and round size
 		local function HexDimY(count, size) return (count - 1) * size * HEX_SPACING + size end
@@ -291,8 +386,8 @@ do -- MARK: Ammo capacity
 		local function HexCountY(dim, size) return floor((dim - size) / (size * HEX_SPACING) + 1) end
 		local function HexCountZ(dim, size) return floor((dim - size * HEX_OFFSET) / size) end
 
-		function ACF.GetCrateDimensions(arrangement, roundSize)
-			if ShouldUseHexPacking(arrangement.y, arrangement.z) then
+		function ACF.GetCrateDimensions(arrangement, roundSize, hexPack)
+			if hexPack then
 				local dimensions = Vector(
 					arrangement.x * roundSize.x,
 					HexDimY(arrangement.y, roundSize.y),
@@ -305,10 +400,10 @@ do -- MARK: Ammo capacity
 			return Vector(arrangement.x, arrangement.y, arrangement.z) * roundSize, false
 		end
 
-		function ACF.GetRoundOffset(x, y, z, roundSize, arrangement)
+		function ACF.GetRoundOffset(x, y, z, roundSize, hexPack)
 			local localX = (x - 1) * roundSize.x
 
-			if ShouldUseHexPacking(arrangement.y, arrangement.z) then
+			if hexPack then
 				return Vector(
 					localX,
 					(y - 1) * roundSize.y * HEX_SPACING,
@@ -319,38 +414,27 @@ do -- MARK: Ammo capacity
 			return Vector(localX, (y - 1) * roundSize.y, (z - 1) * roundSize.z)
 		end
 
-		function ACF.GetCrateSizeFromProjectileCounts(CountX, CountY, CountZ, Class, ToolData, BulletData)
+		function ACF.GetCrateSizeFromProjectileCounts(CountX, CountY, CountZ, Class, ToolData, BulletData, hexPack)
 			local roundSize = GetRoundProperties(Class, ToolData, BulletData)
 
-			return ACF.GetCrateDimensions(Vector(CountX, CountY, CountZ), roundSize)
+			return ACF.GetCrateDimensions(Vector(CountX, CountY, CountZ), roundSize, hexPack)
 		end
 
-		function ACF.GetMaxCounts(roundSize, maxLength, maxWidth, currentY, currentZ)
-			local maxX       = max(1, floor(maxLength / roundSize.x))
-			local maxYSquare = floor(maxWidth / roundSize.y)
-			local maxZSquare = floor(maxWidth / roundSize.z)
-			local maxYHex    = HexCountY(maxWidth, roundSize.y)
-			local maxZHex    = HexCountZ(maxWidth, roundSize.z)
-
-			local maxY = ShouldUseHexPacking(maxYHex, currentZ) and maxYHex or maxYSquare
-			local maxZ = ShouldUseHexPacking(currentY, maxZHex) and maxZHex or maxZSquare
+		function ACF.GetMaxCounts(roundSize, maxLength, maxWidth, hexPack)
+			local maxX = max(1, floor(maxLength / roundSize.x))
+			local maxY = hexPack and HexCountY(maxWidth, roundSize.y) or floor(maxWidth / roundSize.y)
+			local maxZ = hexPack and HexCountZ(maxWidth, roundSize.z) or floor(maxWidth / roundSize.z)
 
 			return maxX, max(1, maxY), max(1, maxZ)
 		end
 
-		function ACF.GetProjectileCountsFromCrateSize(Size, Class, ToolData, BulletData)
+		function ACF.GetProjectileCountsFromCrateSize(Size, Class, ToolData, BulletData, hexPack)
 			local roundSize = GetRoundProperties(Class, ToolData, BulletData)
 			local countX    = max(1, floor(Size.x / roundSize.x))
-			local sqY       = floor(Size.y / roundSize.y)
-			local sqZ       = floor(Size.z / roundSize.z)
-			local hexY      = HexCountY(Size.y, roundSize.y)
-			local hexZ      = HexCountZ(Size.z, roundSize.z)
+			local countY    = hexPack and HexCountY(Size.y, roundSize.y) or floor(Size.y / roundSize.y)
+			local countZ    = hexPack and HexCountZ(Size.z, roundSize.z) or floor(Size.z / roundSize.z)
 
-			if ShouldUseHexPacking(hexY, hexZ) then
-				return countX, max(1, hexY), max(1, hexZ)
-			end
-
-			return countX, max(1, sqY), max(1, sqZ)
+			return countX, max(1, countY), max(1, countZ)
 		end
 	end
 
@@ -358,33 +442,56 @@ do -- MARK: Ammo capacity
 		---------------------------------------------------------------------------
 		-- Drum geometry:
 		-- - Rounds are arranged in rings around a central axis (the drum's Z axis)
-		-- - Each round points INWARD with its tip toward the center
 		-- - roundSize: x = length, y = diameter, z = diameter (rounds are cylindrical)
-		-- - The inner radius is where round tips meet
-		-- - The outer radius is innerRadius + roundLength
-		-- - Layers are stacked along Z with hexagonal offset for efficient packing
+		-- - The inner radius is where the innermost faces of a ring meet
+		--
+		-- Two layouts exist, one per container shape. They differ in how a round sits,
+		-- which decides what round length pays for -- and so in what the primary count
+		-- (the X slider) even means. The locals stay named for the round orientation,
+		-- which is the actual geometric distinction; the player-facing name is in Name:
+		-- - Horizontal ("Cylinder", shown as "Carousel"): rounds lie flat pointing inward,
+		--   the way a T-72's autoloader holds them, so LENGTH sets the diameter. X is
+		--   ROUNDS PER RING; layers stack along Z a DIAMETER apart.
+		-- - Vertical ("CylinderVertical", shown as "Drum"): rounds stand on end like
+		--   cartridges in a drum magazine, so LENGTH sets the height of each stack. X is
+		--   the NUMBER OF HEX RINGS filling the disk; stacks are a LENGTH apart.
+		--
+		-- Every layout exposes the same interface so callers never branch on shape:
+		--   MinPrimary, PrimaryLabel, SecondaryLabel  (fields)
+		--   GetMaxPrimary(roundSize, maxDiameter, hexPack)
+		--   GetMaxStacks(roundSize, maxHeight, hexPack)
+		--   GetPerDisk(primary)   -- rounds in one disk, which is NOT always the primary
+		--   GetDimensions(primary, numStacks, roundSize, hexPack)
+		--   GetRoundOffset(index, primary, numStacks, roundSize, hexPack)
+		--   GetTier(index, primary)
+		--   GetRenderTransform(localPos, ringAngle, modelAngle, boxAngle, roundSize, needsRotation)
+		--
+		-- Capacity is always GetPerDisk(primary) * numStacks.
 		---------------------------------------------------------------------------
 
 		local MIN_ROUNDS_PER_RING = 6
+		local AXIS_Z              = Vector(0, 0, 1)
 
 		-- Calculate inner radius from rounds per ring and round diameter
 		local function GetInnerRadius(roundsPerRing, roundDiameter)
 			return (roundsPerRing * roundDiameter) / (2 * pi)
 		end
 
+		local Horizontal = {
+			Name            = "Carousel",
+			MinPrimary      = MIN_ROUNDS_PER_RING,
+			PrimaryLabel    = "Projectiles (Per Ring)",
+			SecondaryLabel  = "Projectiles (Layers)"
+		}
+
 		-- Calculate drum height from layers and round diameter
-		local function GetDrumHeight(numLayers, roundDiameter)
+		local function GetDrumHeight(numLayers, roundDiameter, hexPack)
 			if numLayers <= 1 then return roundDiameter end
 
-			return roundDiameter + (numLayers - 1) * roundDiameter * HEX_SPACING
+			return roundDiameter + (numLayers - 1) * roundDiameter * (hexPack and HEX_SPACING or 1)
 		end
 
-		--- Returns the minimum rounds per ring for drum geometry
-		function ACF.GetMinRoundsPerRing()
-			return MIN_ROUNDS_PER_RING
-		end
-
-		function ACF.GetMaxRoundsPerRing(roundSize, maxDiameter)
+		function Horizontal.GetMaxPrimary(roundSize, maxDiameter)
 			local availableForInner = maxDiameter - 2 * roundSize.x
 
 			if availableForInner <= 0 then return MIN_ROUNDS_PER_RING end
@@ -394,23 +501,28 @@ do -- MARK: Ammo capacity
 			return max(MIN_ROUNDS_PER_RING, maxRounds)
 		end
 
-		function ACF.GetMaxDrumLayers(roundSize, maxHeight)
+		--- A layer is exactly its ring; rounds meet tip to tip so there is no room inside it.
+		function Horizontal.GetPerDisk(roundsPerRing)
+			return roundsPerRing
+		end
+
+		function Horizontal.GetMaxStacks(roundSize, maxHeight, hexPack)
 			local roundDiameter = roundSize.y
 
 			if maxHeight < roundDiameter then return 1 end
 
-			return max(1, floor((maxHeight - roundDiameter) / (roundDiameter * HEX_SPACING) + 1))
+			return max(1, floor((maxHeight - roundDiameter) / (roundDiameter * (hexPack and HEX_SPACING or 1)) + 1))
 		end
 
-		function ACF.GetDrumDimensions(roundsPerRing, numLayers, roundSize)
+		function Horizontal.GetDimensions(roundsPerRing, numLayers, roundSize, hexPack)
 			local roundDiameter = roundSize.y
 			local innerRadius   = GetInnerRadius(roundsPerRing, roundDiameter)
 			local drumDiameter  = (innerRadius + roundSize.x) * 2
 
-			return Vector(drumDiameter, drumDiameter, GetDrumHeight(numLayers, roundDiameter))
+			return Vector(drumDiameter, drumDiameter, GetDrumHeight(numLayers, roundDiameter, hexPack))
 		end
 
-		function ACF.GetDrumRoundOffset(index, roundsPerRing, numLayers, roundSize)
+		function Horizontal.GetRoundOffset(index, roundsPerRing, numLayers, roundSize, hexPack)
 			local roundLength   = roundSize.x
 			local roundDiameter = roundSize.y
 
@@ -422,7 +534,7 @@ do -- MARK: Ammo capacity
 
 			-- Base angle with hex offset for alternating layers
 			local baseAngle = (ringIndex / roundsPerRing) * 360
-			local angle     = baseAngle + (layerIndex % 2 == 1 and 180 / roundsPerRing or 0)
+			local angle     = baseAngle + (hexPack and layerIndex % 2 == 1 and 180 / roundsPerRing or 0)
 
 			-- XY position (drum axis is Z)
 			local angleRad = rad(angle)
@@ -433,19 +545,205 @@ do -- MARK: Ammo capacity
 			local z = 0
 
 			if numLayers > 1 then
-				local drumHeight = GetDrumHeight(numLayers, roundDiameter)
-				z = -drumHeight / 2 + roundDiameter / 2 + layerIndex * roundDiameter * HEX_SPACING
+				local drumHeight = GetDrumHeight(numLayers, roundDiameter, hexPack)
+				z = -drumHeight / 2 + roundDiameter / 2 + layerIndex * roundDiameter * (hexPack and HEX_SPACING or 1)
 			end
 
 			-- Round points inward: yaw = angle + 180
 			return Vector(x, y, z), Angle(0, angle + 180, 0)
 		end
 
+		--- Two-piece rounds pair along the layer axis: charge below, projectile above.
+		function Horizontal.GetTier(index, roundsPerRing)
+			return floor((index - 1) / roundsPerRing)
+		end
 
-		function ACF.GetDrumCrateSizeFromProjectileCounts(roundsPerRing, numLayers, Class, ToolData, BulletData)
+		function Horizontal.GetRenderTransform(localPos, ringAngle, modelAngle, boxAngle, roundSize, needsRotation)
+			local outModel = Angle(modelAngle)
+			local outBox   = Angle(boxAngle)
+
+			outModel:RotateAroundAxis(AXIS_Z, ringAngle)
+			outBox:RotateAroundAxis(AXIS_Z, ringAngle)
+
+			-- Base-origin models extend along their forward (inward), so push out half a length to centre them
+			local modelPos = localPos
+
+			if needsRotation then
+				modelPos = localPos + Vector(localPos.x, localPos.y, 0):GetNormalized() * roundSize.x * 0.5
+			end
+
+			return modelPos, outModel, outBox
+		end
+
+		---------------------------------------------------------------------------
+		-- Vertical drums pack each disk as a hexagonal lattice, the densest arrangement
+		-- of equal circles. The primary count is the number of RINGS, and every ring is
+		-- filled completely, so a disk is always a whole hexagon rather than a ring with
+		-- a gap in it:
+		--   1 ring  = 1                 3 rings = 1 + 6 + 12 = 19
+		--   2 rings = 1 + 6 = 7         4 rings = 1 + 6 + 12 + 18 = 37
+		-- Ring r (counting the lone centre round as ring 0) holds 6r rounds, giving the
+		-- centred hexagonal numbers, and its furthest rounds sit r diameters out.
+		---------------------------------------------------------------------------
+
+		local Vertical = {
+			Name            = "Drum",
+			MinPrimary      = 1,
+			PrimaryLabel    = "Projectiles (Rings)",
+			SecondaryLabel  = "Projectiles (Stack)"
+		}
+
+		-- Rounds stand on end, so a stack of them is exactly that many round lengths tall
+		local function GetStackHeight(numStacks, roundLength)
+			return max(1, numStacks) * roundLength
+		end
+
+		--- Centred hexagonal number: how many rounds a disk of `numRings` rings holds.
+		function Vertical.GetPerDisk(numRings)
+			local rings = max(1, numRings)
+
+			return 3 * rings * (rings - 1) + 1
+		end
+
+		--- Places a zero-based slot on the hex lattice, in units of round diameters.
+		-- Ring r has six corners r out at 60 degree steps, with r-1 rounds evenly spaced
+		-- along each edge between them -- those land on lattice points because a hexagon's
+		-- side equals its circumradius.
+		local function HexLatticePosition(slot)
+			if slot <= 0 then return 0, 0 end
+
+			-- Walk out to the ring holding this slot
+			local ring  = 1
+			local first = 1
+
+			while slot >= first + 6 * ring do
+				first = first + 6 * ring
+				ring  = ring + 1
+			end
+
+			local offset = slot - first
+			local corner = floor(offset / ring) -- which of the six edges, 0-5
+			local step   = offset % ring        -- how far along that edge
+
+			local fromAngle = rad(corner * 60)
+			local toAngle   = rad((corner + 1) * 60)
+			local along     = step / ring
+
+			local x = ring * (cos(fromAngle) + (cos(toAngle) - cos(fromAngle)) * along)
+			local y = ring * (sin(fromAngle) + (sin(toAngle) - sin(fromAngle)) * along)
+
+			return x, y
+		end
+
+		--- The outermost rounds sit (numRings - 1) diameters out, plus their own radius
+		local function GetDiskRadius(numRings, roundDiameter)
+			return (max(1, numRings) - 0.5) * roundDiameter
+		end
+
+		function Vertical.GetMaxPrimary(roundSize, maxDiameter)
+			-- Solving GetDiskRadius(n, d) <= maxDiameter / 2 for n
+			return max(1, floor(maxDiameter / (2 * roundSize.y) + 0.5))
+		end
+
+		function Vertical.GetMaxStacks(roundSize, maxHeight)
+			return max(1, floor(maxHeight / roundSize.x))
+		end
+
+		function Vertical.GetDimensions(numRings, numStacks, roundSize)
+			local drumDiameter = GetDiskRadius(numRings, roundSize.y) * 2
+
+			return Vector(drumDiameter, drumDiameter, GetStackHeight(numStacks, roundSize.x))
+		end
+
+		function Vertical.GetRoundOffset(index, numRings, numStacks, roundSize)
+			local roundLength   = roundSize.x
+			local roundDiameter = roundSize.y
+
+			local perDisk    = Vertical.GetPerDisk(numRings)
+			local stackIndex = floor((index - 1) / perDisk)
+			local x, y       = HexLatticePosition((index - 1) % perDisk)
+
+			-- The lattice is in diameters; scale it out to real units
+			x = x * roundDiameter
+			y = y * roundDiameter
+
+			-- Stacked bottom-up along Z, one round length per level. The disk is already the
+			-- densest arrangement there is, so hex packing has nothing left to buy here.
+			local stackHeight = GetStackHeight(numStacks, roundLength)
+			local z           = -stackHeight / 2 + roundLength / 2 + stackIndex * roundLength
+
+			-- Cylinders have no meaningful facing; yaw outward so the drum still reads as a ring
+			local angle = (x == 0 and y == 0) and 0 or deg(atan2(y, x))
+
+			return Vector(x, y, z), Angle(0, angle, 0)
+		end
+
+		--- Two-piece rounds pair along the stack: charge below, projectile above.
+		function Vertical.GetTier(index, numRings)
+			return floor((index - 1) / Vertical.GetPerDisk(numRings))
+		end
+
+		function Vertical.GetRenderTransform(localPos, ringAngle, _, boxAngle, roundSize, needsRotation)
+			-- Cartridge models run along their own Z, which is already this drum's stacking axis, so
+			-- they need no pitch correction here -- the reverse of the horizontal drum. Models whose
+			-- length runs along X still have to be stood up.
+			local outModel = Angle(boxAngle)
+
+			if not needsRotation then
+				outModel:RotateAroundAxis(outModel:Right(), -90)
+			end
+
+			-- The box is in crate space (x = length), so it always stands up to match the round
+			local outBox = Angle(boxAngle)
+			outBox:RotateAroundAxis(outBox:Right(), -90)
+
+			outModel:RotateAroundAxis(AXIS_Z, ringAngle)
+			outBox:RotateAroundAxis(AXIS_Z, ringAngle)
+
+			-- Base-origin models grow up the stacking axis from their origin, so drop half a length to centre them
+			local modelPos = localPos
+
+			if needsRotation then
+				modelPos = localPos - Vector(0, 0, roundSize.x * 0.5)
+			end
+
+			return modelPos, outModel, outBox
+		end
+
+		--- Drum layouts, keyed by the container shape that uses them.
+		ACF.DrumLayouts = {
+			Cylinder         = Horizontal,
+			CylinderVertical = Vertical,
+		}
+
+		--- Resolves a container shape class (or a plain shape name) to its short name.
+		local function ShapeName(Shape)
+			if not Shape then return end
+			if isstring(Shape) then return Shape end
+
+			-- Callers pass either the shape class or a live instance of it. GetType is defined on the
+			-- class table, so instances inherit it and both cases normalise to the class here.
+			local Class = Shape.GetType and Shape:GetType() or Shape
+			local Name  = Classes.GetTypeName(Class)
+
+			return Name and (string.match(Name, "[^.]+$") or Name)
+		end
+
+		--- True if the given container shape is a drum of any orientation.
+		function ACF.IsDrumShape(Shape)
+			return ACF.DrumLayouts[ShapeName(Shape)] ~= nil
+		end
+
+		--- Returns the drum layout for a container shape, or nil for non-drum shapes.
+		function ACF.GetDrumLayout(Shape)
+			return ACF.DrumLayouts[ShapeName(Shape)]
+		end
+
+		function ACF.GetDrumCrateSizeFromProjectileCounts(primary, numStacks, Class, ToolData, BulletData, hexPack, Shape)
 			local roundSize = GetRoundProperties(Class, ToolData, BulletData)
+			local Layout    = ACF.DrumLayouts[Shape] or Horizontal
 
-			return ACF.GetDrumDimensions(roundsPerRing, numLayers, roundSize)
+			return Layout.GetDimensions(primary, numStacks, roundSize, hexPack)
 		end
 	end
 end

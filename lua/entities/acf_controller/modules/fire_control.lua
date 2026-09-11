@@ -109,7 +109,8 @@ do
 		local BreechReference = IsValid(Primary) and Primary.BreechReference
 		local ReloadAngle = self:GetReloadAngle()
 		local ReloadAngleHorizontal = self:GetReloadAngleHorizontal()
-		local ShouldLevel = ReloadAngle ~= 0 and IsValid(Primary) and Primary.State ~= "Loaded"
+		-- Mag-fed guns chamber a fresh round between shots too, only level for the actual magazine reload
+		local ShouldLevel = ReloadAngle ~= 0 and IsValid(Primary) and Primary.State ~= "Loaded" and (not Primary.MagSize or Primary.MagazineReloading)
 
 		-- Liddul... if you can hear me...
 		local TurretComputer = self.TurretComputer
