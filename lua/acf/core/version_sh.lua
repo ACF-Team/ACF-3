@@ -190,7 +190,8 @@ function ACF.UpdateVersionConVars()
 		Packed[#Packed + 1] = table.concat({Repository, Branch, Commit, Workshop}, ",")
 	end
 
-	acf3_versioning:SetString(table.concat(Packed, "|"))
+	-- Listen servers share one convar registry, so the realm that did not create this cannot write it
+	pcall(acf3_versioning.SetString, acf3_versioning, table.concat(Packed, "|"))
 end
 
 ACF.Extensions = ACF.Extensions or {}

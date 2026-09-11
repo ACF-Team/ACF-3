@@ -11,7 +11,7 @@ local function DrawGitCommit(Menu, Commit)
 	Base:AddLabel(language.GetPhrase("acf.menu.updates.commit_date"):format(
 		os.date("%Y-%m-%d %H:%M:%S", Commit.date) .. " (" .. string.FormattedTime(os.time() - Commit.date, "%dh") .. " ago)"
 	))
-	Base:AddLabel(language.GetPhrase("acf.menu.updates.commit_code"):format(Commit.Code or Commit.code or "#acf.menu.updates.unknown"))
+	Base:AddLabel(language.GetPhrase("acf.menu.updates.commit_code"):format(Commit.Code or Commit.code or language.GetPhrase("acf.menu.updates.unknown")))
 	local Button = Base:AddButton("#acf.menu.updates.commit_view")
 	function Button:DoClickInternal()
 		gui.OpenURL(Commit.url)
@@ -39,7 +39,7 @@ local function DrawGitStatus(Menu, ExtensionName, Version, MostRecentCommit)
 		end
 		Status:SetText(StatusPrefix:format(StatusValue))
 	else
-		Status:SetText(StatusPrefix:format("#acf.menu.updates.unknown"))
+		Status:SetText(StatusPrefix:format(language.GetPhrase("acf.menu.updates.unknown")))
 	end
 
 	Base:AddLabel(language.GetPhrase("acf.menu.updates.current_branch"):format(Version.head))
