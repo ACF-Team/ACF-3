@@ -55,13 +55,24 @@ end
 local function CreateMenu(Menu)
 	Menu:AddTitle("#acf.menu.updates.version_status")
 
+	-- Server versions arrive in a net message after load, so they can still be missing here
+	local ServerExtensions = ACF.ServerExtensions or {}
+
 	for _, ExtensionName in ipairs(ACF.ExtensionOrders) do
-		ClientExtension = ACF.Extensions[ExtensionName]
-		ServerExtension = ACF.ServerExtensions[ExtensionName]
-		local Base = Menu:AddCollapsible(ExtensionName, true, "icon16/package.png")
-		DrawGitCommit(Base, ServerExtension.Commit)
-		DrawGitStatus(Base, ExtensionName, ClientExtension.Version, ServerExtension.Commit)
-		DrawGitStatus(Base, ExtensionName, ServerExtension.Version, ServerExtension.Commit)
+		local ClientExtension = ACF.Extensions[ExtensionName]
+		local ServerExtension = ServerExtensions[ExtensionName]
+		local Commit          = ServerExtension and ServerExtension.Commit
+		local Base            = Menu:AddCollapsible(ExtensionName, true, "icon16/package.png")
+
+		DrawGitCommit(Base, Commit)
+
+		if ClientExtension and ClientExtension.Version then
+			DrawGitStatus(Base, ExtensionName, ClientExtension.Version, Commit)
+		end
+
+		if ServerExtension and ServerExtension.Version then
+			DrawGitStatus(Base, ExtensionName, ServerExtension.Version, Commit)
+		end
 	end
 end
 
