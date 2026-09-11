@@ -452,6 +452,18 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 				local MaxPen = math.Round(self.GUIData.MaxPen, 2)
 				MaxPenLabel:SetText(Text:format(MaxPen))
 			end)
+
+			local KineticLabel = Base:AddLabel()
+			ACF.AmmoMenu.Reactive(KineticLabel, function()
+				local Text = language.GetPhrase("acf.menu.ammo.kinetic_energy_stats")
+
+				-- Same formula ballistics_sv.lua uses against ArmorType.ExplosiveThreshold. MuzzleVel is
+				-- stored in m/s, but ACF.Kinetic expects in/s and converts back internally
+				local Speed   = self.BulletData.MuzzleVel * ACF.MeterToInch
+				local Kinetic = math.Round(ACF.Kinetic(Speed, self.BulletData.ProjMass).Kinetic)
+
+				KineticLabel:SetText(Text:format(Kinetic))
+			end)
 		end
 	end
 end)
