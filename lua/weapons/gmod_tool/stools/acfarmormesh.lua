@@ -382,7 +382,7 @@ if CLIENT then
 			local EffKE = ConvexHit.GeoThick * ArmorType.KineticMul
 			local EffCE = ConvexHit.GeoThick * ArmorType.ChemicalMul
 
-			local Text = string.format("Mat: %s\nNominal (mm): %.2f\nEff (mm): %.2f (KE) %.2f (CE)\nHP: %.2f / %.2f\nVolume (in^3): %.2f\nMass (kg): %.2f\nCost (points): %.2f", Material, Nominal, EffKE, EffCE, Health, MaxHealth, Volume, Mass, Cost)
+			local Text = string.format("Mat: %s\nNominal (mm): %.2f\nEff (mm): %.2f (KE) %.2f (CE)\nHP: %.2f / %.2f\nVolume (in^3): %.2f\nMass (kg): %.2f\nCost (points): %.2f", ArmorType.Name, Nominal, EffKE, EffCE, Health, MaxHealth, Volume, Mass, Cost)
 			AddWorldTip(Entity, Text, nil, Trace.HitPos)
 		end
 	end)
