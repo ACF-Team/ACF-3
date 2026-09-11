@@ -58,6 +58,7 @@ function Ballistics.CreateFragment(Data)
 		DragCoef = Data.DragCoef,
 		Filter   = table.Copy(Data.Filter or {}),
 		Color    = ColorRand(100, 255),
+		IsSpall  = true,
 	}
 
 	function Fragment:GetPenetration(Speed)

@@ -70,17 +70,17 @@ do	-- Actual registration for known things
 		CostSystem.RegisterBulkOperation("armor", false, function(entity)
 			local MeshData = entity.ACF_Volumetric_Mesh
 
-			if MeshData then
-				local Cost = 0
+			if not MeshData then return 0 end -- Props with no armor mesh yet (or never) contribute no cost
 
-				for _, Convex in ipairs(MeshData.Convexes) do
-					local ArmorType = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("Default")
+			local Cost = 0
 
-					Cost = Cost + Convex.Volume * CubicInchToM3 * ArmorType.CostMul -- Convex.Volume is in^3, CostMul is points/m^3
-				end
+			for _, Convex in ipairs(MeshData.Convexes) do
+				local ArmorType = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("Default")
 
-				return Cost
+				Cost = Cost + Convex.Volume * CubicInchToM3 * ArmorType.CostMul -- Convex.Volume is in^3, CostMul is points/m^3
 			end
+
+			return Cost
 		end)
 
 		CostSystem.RegisterClassBulk("prop_physics", "armor")
