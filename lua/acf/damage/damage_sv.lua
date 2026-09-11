@@ -137,8 +137,6 @@ function Damage.getBulletDamage(Bullet, Trace)
 			Angle     = ACF.GetHitAngle(Trace, Bullet.Flight)
 		end
 
-		-- if Bullet.IsSpall then print("Spall", Penetration, Thickness, Area, Entity) end
-
 		DmgResult:SetArea(Area)
 		DmgResult:SetPenetration(Penetration)
 		DmgResult:SetThickness(Thickness)

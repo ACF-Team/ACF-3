@@ -711,7 +711,9 @@ do
 
 		local ReplacementDist = self:GetPos():Distance(Other:GetPos())
 		local ReplacementTime = ACF.CrewRepTimeBase + ACF.CrewRepDistToTime * ReplacementDist
-		TimerSimple(ReplacementTime, function() self:AttemptSwap(Other) end)
+		TimerSimple(ReplacementTime, function()
+			if IsValid(self) and self.AttemptSwap then self:AttemptSwap(Other) end
+		end)
 	end
 
 	--- Runs after the move delay. Re-validates both sides in case either changed state during
@@ -720,7 +722,6 @@ do
 		if IsValid(Other) then Other.ToReplace = false end
 		self.ToBeReplaced = false
 
-		if not IsValid(self) then return end
 		if self.IsAlive then return end -- self no longer needs replacing (e.g. got healed)
 
 		local OtherStillValid = IsValid(Other) and Other.ACF.Health and Other.ACF.Health > 0

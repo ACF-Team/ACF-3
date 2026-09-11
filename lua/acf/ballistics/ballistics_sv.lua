@@ -682,7 +682,6 @@ do -- Terminal ballistics --------------------------
 		if not ConvexHits then return end
 
 		local KE = Bullet.Energy and Bullet.Energy.Kinetic or 0
-		print(KE)
 
 		for _, Hit in ipairs(ConvexHits) do
 			local Convex = MeshData.Convexes[Hit.ConvexID]
