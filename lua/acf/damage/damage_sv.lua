@@ -125,7 +125,7 @@ function Damage.getBulletDamage(Bullet, Trace)
 
 				Thickness = Thickness + Effective
 				Budget    = Budget - Consumed
-				Hits[#Hits + 1] = { ConvexID = Hit.ConvexID, Volume = Hit.GeoThick * Frac * 0.1 * Area / ACF.InchToCmCu } -- (mm)(mm to cm)(cm^2) = cm^3, then cm^3 to in^3
+				Hits[#Hits + 1] = { ConvexID = Hit.ConvexID, Volume = Hit.GeoThick * Frac * 0.1 * Area / ACF.InchToCmCu, Frac = Frac } -- (mm)(mm to cm)(cm^2) = cm^3, then cm^3 to in^3
 			end
 
 			Angle = 0 -- GeoThick already accounts for obliquity
@@ -280,8 +280,9 @@ end
 -- @param DmgInfo A DamageInfo object.
 -- @return The output of the DamageResult object.
 function Damage.doPropDamage(Entity, DmgResult, DmgInfo)
-	local IsBlast = DmgInfo and DmgInfo:GetType() == DMG_BLAST
-	local Coef    = IsBlast and DamageBlastCoef or DamageCoef
+	local IsBlast         = DmgInfo and DmgInfo:GetType() == DMG_BLAST
+	local Coef            = IsBlast and DamageBlastCoef or DamageCoef
+	local FeatherExponent = ACF.PenetrationFeatherExponent
 
 	local HitRes = DmgResult:Compute()
 	HitRes.Damage = HitRes.Damage * Coef -- Erroneous :(
@@ -304,7 +305,9 @@ function Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 			local TotalChange = 0
 
 			for _, Hit in ipairs(ConvexHits) do
-				TotalChange  = TotalChange + Hit.Volume * Coef
+				local Feather       = Hit.Frac and Hit.Frac ^ FeatherExponent or 1
+				local HealthChange  = Hit.Volume * Coef * Feather
+				TotalChange  = TotalChange + HealthChange
 			end
 
 			EntACF.Health = math.Clamp(EntACF.Health - TotalChange, 0, EntACF.MaxHealth)
@@ -313,7 +316,8 @@ function Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 				local Convex = MeshData.Convexes[Hit.ConvexID]
 				if not Convex then continue end -- Mesh may have been recomputed since these hits were gathered
 
-				local HealthChange = Hit.Volume * Coef
+				local Feather       = Hit.Frac and Hit.Frac ^ FeatherExponent or 1
+				local HealthChange  = Hit.Volume * Coef * Feather
 
 				Convex.Health = math.Clamp(Convex.Health - HealthChange, 0, Convex.MaxHealth)
 				-- print(HealthChange, Coef)
