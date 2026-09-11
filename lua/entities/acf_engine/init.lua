@@ -118,26 +118,48 @@ local Damage       = ACF.Damage
 local Utilities    = ACF.Utilities
 local Clock        = Utilities.Clock
 local Sounds       = Utilities.Sounds
+local Messages     = Utilities.Messages
 local Contraption  = ACF.Contraption
 local UnlinkSound  = "physics/metal/metal_box_impact_bullet%s.wav"
+local UnlinkExhSnd = "physics/metal/metal_sheet_impact_bullet%s.wav"
 local IsValid      = IsValid
 local Clamp        = math.Clamp
 local Round        = math.Round
 local Remap        = math.Remap
-local max          = math.max
-local min          = math.min
+local Max          = math.max
+local Min          = math.min
 local TimerCreate  = timer.Create
 local TimerRemove  = timer.Remove
 local TickInterval = engine.TickInterval
 
-local function GetPitchVolume(Engine)
-	local RPM = Engine.FlyRPM
-	local Pitch = Clamp(20 + (RPM * Engine.SoundPitch) * 0.02, 1, 255)
-	-- Rev limiter code disabled because it has issues with the volume delta time, but it's still here if we need it
-	local Throttle = Engine.Throttle -- Engine.RevLimited and 0 or Engine.Throttle
-	local Volume = 0.25 + (0.1 + 0.9 * ((RPM / Engine.LimitRPM) ^ 1.5)) * Throttle * 0.666
+-- Count all the existing sounds in a SoundBank
+local function GetSoundCount(Engine)
+	if not Engine.SoundBanks then return 1 end
 
-	return Pitch, Volume * Engine.SoundVolume
+	local TotalSounds = 0
+
+	for _, V in ipairs(Engine.SoundBanks) do
+		-- Check if our value is actually a table with a valid format.
+		if istable(V) and istable(V.Sounds) then
+			TotalSounds = TotalSounds + #V.Sounds
+		end
+	end
+
+	return #Engine.SoundBanks, TotalSounds
+end
+
+-- Unwires any wiremod inputs by its name from the entity
+local function UnwireInput(Entity, StringInput)
+	if not Entity and not IsValid(Entity) then return end
+	if not StringInput and not isstring(StringInput) then return end
+
+	local Input = Entity.Inputs and Entity.Inputs[StringInput]
+	if not Input then return end
+
+	-- Unwire the exhaust entity
+	if Input and IsValid(Input.Src) then
+		WireLib.Link_Clear(Entity, StringInput)
+	end
 end
 
 local function GetNextFuelTank(Engine)
@@ -188,9 +210,26 @@ local function CheckGearboxes(Engine)
 	end
 end
 
+local function CheckDistantExhaust(Engine)
+	local Exhaust = Engine.Exhaust
+	if not IsValid(Exhaust) or Exhaust == Engine then return end -- Nothing to check if it's unset or already defaulted to the engine itself
+
+	if Engine:GetPos():DistToSqr(Exhaust:GetPos()) > MaxDistance then
+		local Sound = UnlinkExhSnd:format(math.random(1, 2))
+
+		Sounds.SendSound(Engine, Sound, 100, 100, 1)
+		Sounds.SendSound(Exhaust, Sound, 100, 100, 1)
+
+		Engine.Exhaust = Engine
+
+		UnwireInput(Engine, "Exhaust")
+
+		Sounds.InvalidateSoundInfo(Engine)
+	end
+end
+
 local function SetActive(Entity, Value, EntTbl)
 	EntTbl = EntTbl or Entity:GetTable()
-
 	local ActBool = tobool(Value)
 
 	if EntTbl.Active == ActBool then return end -- Already in the desired state
@@ -205,8 +244,7 @@ local function SetActive(Entity, Value, EntTbl)
 		EntTbl.Torque    = EntTbl.PeakTorque
 		EntTbl.FlyRPM    = EntTbl.IdleRPM * 1.5
 
-		Entity:UpdateSound(EntTbl)
-
+		Entity:UpdateSoundBank(EntTbl)
 		Entity:NextThink(Clock.CurTime + TickInterval())
 
 		TimerCreate("ACF Engine Clock " .. Entity:EntIndex(), 3, 0, function()
@@ -214,15 +252,16 @@ local function SetActive(Entity, Value, EntTbl)
 
 			CheckGearboxes(Entity)
 			CheckDistantFuelTanks(Entity)
+			CheckDistantExhaust(Entity)
 
 			Entity:CalcMassRatio(EntTbl)
 		end)
 	else -- Was on, turn off
-		EntTbl.Active = false
-		EntTbl.FlyRPM = 0
-		EntTbl.Torque = 0
+		EntTbl.Active    = false
+		EntTbl.FlyRPM    = 0
+		EntTbl.Torque    = 0
 
-		Entity:DestroySound()
+		Entity:DestroyAllSounds()
 
 		TimerRemove("ACF Engine Clock " .. Entity:EntIndex())
 	end
@@ -272,13 +311,37 @@ do -- Spawn and Update functions
 		Entity:PhysicsInit(SOLID_VPHYSICS)
 		Entity:SetMoveType(MOVETYPE_VPHYSICS)
 
-		Entity.Name             = Engine.Name
-		Entity.ShortName        = ShortName(EngineClass, "ACF%.Engines%.")
-		Entity.EntType          = Group and Group.Name or Engine.Name
-		Entity.ClassData        = Group
-		Entity.DefaultSound     = Engine.Sound
-		Entity.SoundPitch       = Engine.Pitch or 1
-		Entity.SoundVolume      = Engine.SoundVolume or 1
+		Entity.Name              = Engine.Name
+		Entity.ShortName         = ShortName(EngineClass, "ACF%.Engines%.")
+		Entity.EntType           = Group and Group.Name or Engine.Name
+		Entity.ClassData         = Group
+		Entity.DefaultSound      = Engine.Sound
+		Entity.SoundPitch        = Engine.Pitch or 100
+		Entity.SoundVolume       = Engine.Volume or 1
+		Entity.DefaultSoundBanks = Engine.SoundBanks or {}
+
+		-- Old single sound engines need to be converted to the new table format. Not that without this everything inherently breaks,
+		-- because there are more safeguards along the path. But this is to fix a bug with the overlay... 
+		if table.IsEmpty(Entity.DefaultSoundBanks) then
+			local Idle = Engine.RPM.Idle
+			local Redline = Engine.RPM.Limit
+
+			Entity.SoundBanks = {{
+				Sounds = {{
+					RPM    = (Idle + Redline) / 2, -- Halfway through or it'll sound weird.
+					Path   = Entity.DefaultSound,
+					Pitch  = Entity.SoundPitch,
+					Volume = Entity.SoundVolume,
+				}}
+			}}
+
+			Entity.DefaultSoundBanks = Entity.SoundBanks -- Set our default soundbank too
+		else
+			Entity.SoundBanks = Entity.DefaultSoundBanks
+		end
+
+		Entity.SoundBankCount,
+		Entity.SoundCount	    = GetSoundCount(Engine)
 		Entity.TorqueCurve      = Engine.TorqueCurve
 		Entity.PeakTorque       = Engine.Torque
 		Entity.PeakPower		= Engine.PeakPower
@@ -293,6 +356,7 @@ do -- Spawn and Update functions
 		Entity.FlywheelMass     = Engine.FlywheelMass
 		Entity.Inertia          = Engine.FlywheelMass * math.pi ^ 2
 		Entity.IsElectric       = Engine.IsElectric
+		Entity.IsSpecial        = Engine.IsSpecial
 		Entity.IsTrans          = Engine.IsTrans -- driveshaft outputs to the side
 		Entity.FuelTypes        = Engine.Fuel or { ["ACF.FuelTypes.Petrol"] = true }
 		Entity.FuelType         = next(Engine.Fuel)
@@ -306,12 +370,10 @@ do -- Spawn and Update functions
 		if Engine.IsTrans then
 			Entity.Out = ACF.LocalPlane(vector_origin, Vector(0, 1, 0))
 		end
-		Entity.IsSpecial        = Engine.IsSpecial
-		Entity.SoundPath        = Entity.SoundPath or Engine.Sound
 
 		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
 
-		--calculate base fuel usage
+		-- Calculate base fuel usage
 		if Type.CalculateFuelUsage then
 			Entity.FuelUse = Type.CalculateFuelUsage(Entity)
 		else
@@ -417,7 +479,7 @@ function ENT:Disable()
 end
 
 function ENT:UpdateOutputs(SelfTbl)
-	SelfTbl = SelfTbl or self:GetTable()
+	SelfTbl = SelfTbl or ENTITY.GetTable(self)
 	local FuelUsage = Round(SelfTbl.FuelUsage)
 	local Torque    = SelfTbl.Torque
 	local FlyRPM    = SelfTbl.FlyRPM
@@ -455,6 +517,18 @@ function ENT:ACF_UpdateOverlayState(State)
 	State:AddEngineTorque("Torque", self.PeakTorque)
 	State:AddKeyValue("Powerband", ("%s - %s RPM"):format(self.PeakMinRPM, self.PeakMaxRPM))
 	State:AddKeyValue("Redline", ("%s RPM"):format(self.LimitRPM))
+	-- Sounds, in case you want to see em...
+	local SoundBankCount, TotalSoundsCount = GetSoundCount(self)
+	if SoundBankCount == 0 then
+		State:AddWarning("No soundbanks were detected!")
+	else
+		State:AddKeyValue("SoundBanks", SoundBankCount)
+	end
+	if TotalSoundsCount == 0 then
+		State:AddWarning("This engine is muted!")
+	else
+		State:AddKeyValue("Total Sounds", TotalSoundsCount)
+	end
 end
 
 ACF.AddInputAction("acf_engine", "Throttle", function(Entity, Value)
@@ -465,10 +539,30 @@ ACF.AddInputAction("acf_engine", "Active", function(Entity, Value)
 	SetActive(Entity, tobool(Value), Entity:GetTable())
 end)
 
+-- Non-directional for now...
+-- TODO: Eventually we might want to use an output angle, for particle effects coming out of this very entity or from the engine itself
+ACF.AddInputAction("acf_engine", "Exhaust", function(Entity, Value)
+	if IsValid(Value) and Entity:GetPos():DistToSqr(Value:GetPos()) > MaxDistance then
+		-- Wiring happened anyway and we have no control of that, so we have to unwire.
+		Entity.Exhaust = Entity
+		UnwireInput(Entity, "Exhaust")
+
+		local Owner = Entity:GetOwner()
+		Messages.SendChat(Owner, "Error", "This entity is too far away from the engine!")
+
+		return
+	elseif IsValid(Value) then
+		Entity.Exhaust = Value
+	end
+end)
+
 function ENT:ACF_Activate(Recalc)
 	local PhysObj = self.ACF.PhysObj
 	local Mass    = PhysObj:GetMass()
 	local Area    = PhysObj:GetSurfaceArea() * ACF.InchToCmSq
+	-- Fucking ArmoUr :face_vomiting: :face_vomiting: :face_vomiting: :face_vomiting: :face_vomiting:
+	-- Britons gave us americans the english language so we can sanitize it and have it sound more or less understandable and be more legible!
+	-- TODO: Replace this variable name and all instances of it with the correct word and fix the comment since its wrong lol
 	local Armour  = Mass * 1000 / Area / 0.78 * ACF.ArmorMod -- Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
 	local Health  = Area / ACF.Threshold
 	local Percent = 1
@@ -497,41 +591,53 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	return HitRes
 end
 
-function ENT:UpdateSound(SelfTbl)
-	SelfTbl = SelfTbl or self:GetTable()
+-- The function to either create or update on the client the sounds of an engine by networking the necesary data.
+-- Checks only if there was one soundbank with one sound and the latter is an empty path, so it becomes muted and saves on networking.
+-- Otherwise just networks RPM and Throttle values to the client. If the client does not have the soundTable, it can just request it.
+function ENT:UpdateSoundBank(SelfTbl)
+	SelfTbl = SelfTbl or ENTITY.GetTable(self)
 
-	local Path      = SelfTbl.SoundPath
-	local LastSound = SelfTbl.LastSound
+	local SoundBanks = SelfTbl.SoundBanks
 
-	if Path ~= LastSound and LastSound ~= nil then
-		self:DestroySound()
+	-- TODO: Remove this if it works after the merge and nothing that required this was broken, since we're doing it elsewhere instead.
+	-- -- Populate a placeholder SoundTable if none is found for the engine
+	-- if table.IsEmpty(SoundBanks) then
+	-- 	if table.IsEmpty(SelfTbl.DefaultSoundBanks) then
+	-- 		local Idle = SelfTbl.IdleRPM
+	-- 		local Redline = SelfTbl.LimitRPM
+	-- 		SoundBanks = {{	Sounds = {{
+	-- 						RPM = (Idle + Redline) / 2,
+	-- 						Path = SelfTbl.DefaultSound,
+	-- 						Pitch = SelfTbl.SoundPitch or 100,
+	-- 						Volume = SelfTbl.SoundVolume or 1}
+	-- 					}
+	-- 					}}
+	-- 		SelfTbl.SoundBanks = SoundBanks
+	-- 	else
+	-- 		SelfTbl.SoundBanks = SelfTbl.DefaultSoundBanks
+	-- 	end
+	-- 	self:UpdateOverlay() -- Update the overlay too!
+	-- 	return
+	-- end
 
-		SelfTbl.LastSound = Path
-	end
+	local SoundBankCount, SoundCount = GetSoundCount(SelfTbl)
 
-	if Path == "" then return end
-	if not SelfTbl.Active then return end
+	-- Exit early if only one soundbank was found and has an empty soundpath
+	if SoundBankCount == 1 and SoundCount == 1 and SoundBanks[1].Sounds[1].Path == "" then return end
 
-	local Pitch, Volume = GetPitchVolume(SelfTbl)
+	SelfTbl.SoundBankCount, SelfTbl.SoundCount = SoundBankCount, SoundCount
 
-	if math.abs(Pitch - SelfTbl.LastPitch) < 1 then return end -- Don't bother updating if the pitch difference is too small to notice
+	local Throttle = Round(SelfTbl.Throttle, 2) * 100
+	local RPM = Round(SelfTbl.FlyRPM)
 
-	SelfTbl.LastPitch = Pitch
+	-- Update the overlay if our engine is off. 
+	if not SelfTbl.Active then self:UpdateOverlay() end
 
-	if SelfTbl.Sound then
-		Sounds.SendAdjustableSound(self, false, Pitch, Volume)
-	else
-		Sounds.CreateAdjustableSound(self, Path, Pitch, Volume)
-		SelfTbl.Sound = true
-	end
+	Sounds.SendMultipleAdjustableSounds(self, false, Throttle, RPM)
 end
 
-function ENT:DestroySound()
-	Sounds.SendAdjustableSound(self, true)
-
-	self.LastSound  = nil
-	self.LastPitch  = 0
-	self.Sound      = nil
+function ENT:DestroyAllSounds()
+	Sounds.SendMultipleAdjustableSounds(self, true, _, _)
 end
 
 function ENT:ACF_IsLegal()
@@ -695,7 +801,7 @@ function ENT:CalcRPM(SelfTbl)
 	local PeakRPM    = IsElectric and SelfTbl.FlywheelOverride or SelfTbl.PeakMaxRPM
 	local Inertia    = SelfTbl.Inertia
 	local PeakTorque = SelfTbl.PeakTorque
-	local Drag       = PeakTorque * (max(FlyRPM - IdleRPM, 0) / PeakRPM) * (1 - Throttle) / Inertia
+	local Drag       = PeakTorque * (Max(FlyRPM - IdleRPM, 0) / PeakRPM) * (1 - Throttle) / Inertia
 
 	local Torque = 0
 
@@ -707,14 +813,14 @@ function ENT:CalcRPM(SelfTbl)
 	SelfTbl.Torque = Torque
 
 	-- Let's accelerate the flywheel based on that torque
-	FlyRPM = min(max(FlyRPM + Torque / Inertia - Drag, 0), LimitRPM)
+	FlyRPM = Min(Max(FlyRPM + Torque / Inertia - Drag, 0), LimitRPM)
 
 	-- The gearboxes don't think on their own, it's the engine that calls them, to ensure consistent execution order
 	local Boxes      = 0
 	local TotalReqTq = 0
 
 	-- This is the presently available torque from the engine
-	local TorqueDiff = max(FlyRPM - IdleRPM, 0) * Inertia
+	local TorqueDiff = Max(FlyRPM - IdleRPM, 0) * Inertia
 
 	-- The resulting torque output would be 0 when there's no throttle anyways, so we'll just skip the calculations entirely
 	if Throttle ~= 0 then
@@ -731,7 +837,7 @@ function ENT:CalcRPM(SelfTbl)
 		end
 
 		-- Calculate the ratio of total requested torque versus what's available
-		local AvailRatio = min(TorqueDiff / TotalReqTq / Boxes, 1)
+		local AvailRatio = Min(TorqueDiff / TotalReqTq / Boxes, 1)
 
 		local MassRatio = SelfTbl.MassRatio
 
@@ -742,10 +848,10 @@ function ENT:CalcRPM(SelfTbl)
 		end
 	end
 
-	SelfTbl.FlyRPM = FlyRPM - min(TorqueDiff, TotalReqTq) / Inertia
+	SelfTbl.FlyRPM = FlyRPM - Min(TorqueDiff, TotalReqTq) / Inertia
 	SelfTbl.LastThink = ClockTime
 
-	SelfTbl.UpdateSound(self, SelfTbl)
+	SelfTbl.UpdateSoundBank(self, SelfTbl)
 	SelfTbl.UpdateOutputs(self, SelfTbl)
 end
 
@@ -820,7 +926,7 @@ end
 function ENT:GetCost()
 	local selftbl = self:GetTable()
 
-	return math.max(5, (selftbl.PeakTorque / 160) + (selftbl.PeakPower / 80))
+	return Max(5, (selftbl.PeakTorque / 160) + (selftbl.PeakPower / 80))
 end
 
 -- Remove-only teardown. Captured by AutoRegisterV2 as OrigOnRemove; the generated OnRemove still runs
@@ -834,7 +940,7 @@ function ENT:OnRemove(IsFullUpdate)
 		Class.OnLast(self, Class)
 	end
 
-	self:DestroySound()
+	self:DestroyAllSounds()
 
 	for Gearbox in pairs(self.Gearboxes) do
 		self:Unlink(Gearbox)
@@ -863,6 +969,7 @@ do	-- NET SURFER 2.0
 		if IsEntityValid(Entity) then
 			local Outputs    = {}
 			local FuelTanks  = {}
+			local ExhaustEnt = Entity.Exhaust
 			local Driveshaft = Entity.Out.Pos
 
 			if next(Entity.Gearboxes) then
@@ -879,6 +986,7 @@ do	-- NET SURFER 2.0
 
 			net.Start("ACF_RequestEngineInfo")
 				net.WriteEntity(Entity)
+				net.WriteEntity(ExhaustEnt)
 				net.WriteVector(Driveshaft)
 				net.WriteUInt(#Outputs, 6)
 				net.WriteUInt(#FuelTanks, 6)
