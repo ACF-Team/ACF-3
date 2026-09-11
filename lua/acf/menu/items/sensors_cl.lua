@@ -75,7 +75,7 @@ local function Build(Menu, Contexts)
 
 		Menu:ClearTemporal(Base)
 		Menu:StartTemporal(Base)
-		if Group.CreateMenu then Group.CreateMenu(Base, Data, Menu) end -- Menu is passed for radar's range graph
+		if Group.CreateMenu then Group.CreateMenu(Base, Data) end
 		Menu:EndTemporal(Base)
 	end
 

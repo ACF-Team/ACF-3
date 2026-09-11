@@ -776,31 +776,12 @@ function ACF.UpdateAmmoMenu(Menu)
 	UpdateProjectileCountLimits(BuildToolData())
 end
 
----Updates the shape selector visibility based on whether the current weapon is automatic.
+---Updates the shape selector visibility. Every shape is available to every weapon type.
 local function UpdateShapeSelector(Menu)
 	local ShapeList = Menu.AmmoShapeList
 	if not ShapeList then return end
 
-	local ToolData = BuildToolData()
-	local Class = GetWeaponClass(ToolData)
-	local IsAutomatic = Class and Class.IsAutomatic
-
-	if IsAutomatic then
-		ShapeList:SetVisible(true)
-	else
-		ShapeList:SetVisible(false)
-
-		if IsDrum() then
-			AmmoCtx:Set("Shape", SHAPE_FQN.Box)
-			ShapeList:ChooseOptionID(1)
-
-			if CountSliders.X and CountSliders.Y and CountSliders.Z then
-				CountSliders.X:SetVisible(true)
-				CountSliders.X:SetMin(1)
-				CountSliders.Y:SetVisible(true)
-			end
-		end
-	end
+	ShapeList:SetVisible(true)
 end
 
 ---Creates the basic information and panels on the ammunition menu.
@@ -821,9 +802,16 @@ function ACF.CreateAmmoMenu(Menu, Context)
 
 	local ShapeIDs = {Box = 1}
 
-	for Key, Layout in pairs(ACF.DrumLayouts) do
-		ShapeList:AddChoice(Layout.Name, Key)
-		ShapeIDs[Key] = table.Count(ShapeIDs) + 1
+	do
+		-- Sorted so the drum shapes always land in the same slots, pairs order isn't stable
+		local Keys = {}
+		for Key in pairs(ACF.DrumLayouts) do Keys[#Keys + 1] = Key end
+		table.sort(Keys)
+
+		for Index, Key in ipairs(Keys) do
+			ShapeList:AddChoice(ACF.DrumLayouts[Key].Name, Key)
+			ShapeIDs[Key] = Index + 1 -- "Crate" occupies slot 1
+		end
 	end
 	Menu.AmmoShapeList = ShapeList
 	ShapeList:ChooseOptionID(ShapeIDs[GetShapeName()] or 1)

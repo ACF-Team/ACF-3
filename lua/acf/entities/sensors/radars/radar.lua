@@ -31,8 +31,7 @@ Classes.DefineClass("ACF.Sensors.Radar.Standard", "ACF.Sensors.Radar", function(
 
 	--- @param Menu userdata The collapsible the sensor page builds into
 	--- @param Item table The selected radar class
-	--- @param TopMenu userdata|nil The page menu, used for the graph so the collapsible isn't squashed
-	function CLASS.CreateMenu(Menu, Item, TopMenu)
+	function CLASS.CreateMenu(Menu, Item)
 		local ViewCone  = (Item.ViewCone or 180) * 2
 		local ViewRange = Item.Range and (math.Round(Item.Range * ACF.InchToMeter) .. " m") or "Unlimited"
 		local MinSize   = Item.MinSizeAtRange and (Item.MinSizeAtRange .. " in") or "N/A"
@@ -52,17 +51,15 @@ Classes.DefineClass("ACF.Sensors.Radar.Standard", "ACF.Sensors.Radar", function(
 
 		UpdateStats()
 
-		-- Build on TopMenu, not the AddCollapsible content, to avoid squashing the graph.
-		local ContentMenu = IsValid(TopMenu) and TopMenu or Menu
-
-		if Item.Range and IsValid(TopMenu) then
+		if Item.Range then
 			local RangeMeters   = Item.Range * ACF.InchToMeter
 			local MaxSizeInches = Item.MinSizeAtRange or 0
 
-			ContentMenu:AddHelp(FormulaText)
+			Menu:AddHelp(FormulaText)
 
-			local SizeGraph = ContentMenu:AddGraph()
-			local Wide      = ContentMenu:GetWide()
+			local SizeGraph = Menu:AddGraph()
+			-- The collapsible has no width of its own yet, so size off the page like the ammo graph does
+			local Wide      = Menu:GetParent():GetParent():GetWide()
 
 			SizeGraph:SetSize(Wide, Wide / 2)
 			SizeGraph:SetXLabel("Distance (m)")
@@ -80,11 +77,11 @@ Classes.DefineClass("ACF.Sensors.Radar.Standard", "ACF.Sensors.Radar", function(
 			end)
 		end
 
-		ContentMenu:AddHelp(DetectTypesText)
+		Menu:AddHelp(DetectTypesText)
 
 		-- A radar must detect at least one target type. Turning the last one off switches the other back on.
-		local DetectContraptions = ContentMenu:AddCheckBox("Detect Contraptions")
-		local DetectMissiles     = ContentMenu:AddCheckBox("Detect Missiles")
+		local DetectContraptions = Menu:AddCheckBox("Detect Contraptions")
+		local DetectMissiles     = Menu:AddCheckBox("Detect Missiles")
 
 		function DetectContraptions:OnChange(Value)
 			if not Value and not DetectMissiles:GetChecked() then
