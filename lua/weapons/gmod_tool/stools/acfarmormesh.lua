@@ -135,6 +135,7 @@ if CLIENT then
 		local MatHealth   = Base:AddLabel()
 		local MatKinetic  = Base:AddLabel()
 		local MatChemical = Base:AddLabel()
+		local MatSpall    = Base:AddLabel()
 		local MatCost     = Base:AddLabel()
 
 		local CostBase = Base:AddCollapsible("Cost Comparison", false)
@@ -152,6 +153,7 @@ if CLIENT then
 			MatHealth:SetText(string.format("Health Multiplier: %gx", Data.HealthMul))
 			MatKinetic:SetText(string.format("Kinetic Multiplier: %gx", Data.KineticMul))
 			MatChemical:SetText(string.format("Chemical Multiplier: %gx", Data.ChemicalMul))
+			MatSpall:SetText(string.format("Spall Multiplier: %gx", Data.SpallMul))
 			MatCost:SetText(string.format("Cost: %g points/m^3", Data.CostMul))
 
 			RunConsoleCommand("acfarmormesh_material", Data.ID)
