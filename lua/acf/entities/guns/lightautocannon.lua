@@ -42,7 +42,7 @@ ACF.Classes.DefineClass("ACF.Guns.LightAutocannon", "ACF.Guns.BaseScalableGun", 
 		Amount = 4,
 		Text = "Maximum amount of ACF light auto cannons a player can create."
 	}
-	CLASS.CostScalar		= 0.6
+	CLASS.CostScalar		= 0.5
 end)
 
 ACF.SetCustomAttachments("models/machinegun/machinegun_40mm_compact.mdl", {
