@@ -98,7 +98,7 @@ Classes.DefineClass("ACF.Racks.4xRK", "ACF.Racks.BaseRack", function(CLASS)
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.2x AGM-114", "ACF.Racks.BaseRack", function(CLASS)
+Classes.DefineClass("ACF.Racks.2xAGM-114", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "Dual Hellfire Rack"
 	CLASS.Description	= "Based on the upper section of the M299 Launcher, can load up to two missiles."
 	CLASS.Model		= "models/missiles/agm_114_2xrk.mdl"
@@ -118,7 +118,7 @@ Classes.DefineClass("ACF.Racks.2x AGM-114", "ACF.Racks.BaseRack", function(CLASS
 	}
 end)
 
-Classes.DefineClass("ACF.Racks.4x AGM-114", "ACF.Racks.BaseRack", function(CLASS)
+Classes.DefineClass("ACF.Racks.4xAGM-114", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Name		= "Quad Hellfire Rack"
 	CLASS.Description	= "Based on the M299 Launcher, it's capable of loading up to four missiles."
 	CLASS.Model		= "models/missiles/agm_114_4xrk.mdl"

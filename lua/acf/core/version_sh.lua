@@ -59,7 +59,8 @@ function ACF.CheckLocalVersion(Owner, Name, Path)
 		head  = "master",
 		code  = "Not Installed",
 		date  = 0,
-		owner = Owner
+		owner = Owner,
+		workshop = false
 	}
 
 	-- Default result if no installation found
@@ -90,6 +91,7 @@ function ACF.CheckLocalVersion(Owner, Name, Path)
 
 		Result.code = "Git-master-" .. Code
 		Result.date = LocalToUTC(Date)
+		Result.workshop = true
 
 		return Result
 	end
@@ -171,6 +173,26 @@ function ACF.GetCommit(owner, repo, sha, callback)
 	FetchCommit(("https://api.github.com/repos/%s/%s/commits/%s"):format(owner, repo, sha), callback)
 end
 
+local acf3_versioning = CreateConVar("acf3_versioning", "", FCVAR_NOTIFY, "This realm's ACF-3 versioning")
+function ACF.UpdateVersionConVars()
+	local Packed = {}
+
+	for _, Name in ipairs(ACF.ExtensionOrders) do
+		local Extension = ACF.Extensions[Name]
+		local Version   = Extension and Extension.Version
+		if not Version then continue end
+
+		local Repository = (Version.owner or "Unknown") .. "/" .. Name
+		local Branch     = Version.head or "master"
+		local Commit     = (Extension.Commit and Extension.Commit.code) or Version.code or "Unknown"
+		local Workshop   = Version.workshop and 1 or 0
+
+		Packed[#Packed + 1] = table.concat({Repository, Branch, Commit, Workshop}, ",")
+	end
+
+	acf3_versioning:SetString(table.concat(Packed, "|"))
+end
+
 ACF.Extensions = ACF.Extensions or {}
 ACF.ExtensionOrders = ACF.ExtensionOrders or {}
 function ACF.AddRepository(Owner, Name)
@@ -182,6 +204,8 @@ function ACF.AddRepository(Owner, Name)
 	ACF.Extensions[Name] = ACF.Extensions[Name] or {}
 	ACF.Extensions[Name].Version = Version -- Version info for this repository
 	table.insert(ACF.ExtensionOrders, Name)
+
+	ACF.UpdateVersionConVars()
 end
 
 ACF.AddRepository("ACF-Team", "ACF-3")
@@ -197,6 +221,8 @@ if SERVER then
 				Extension.Commit = Commit
 				Extension.Retrieved = true
 				Extension.Commit.code = "Git-" .. Extension.Version.head .. "-" .. Commit.short_sha
+
+				ACF.UpdateVersionConVars()
 			end)
 		end
 		hook.Remove("Initialize", "ACF_GetLatestCommit")

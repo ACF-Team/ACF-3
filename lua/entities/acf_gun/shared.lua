@@ -7,7 +7,7 @@ function ENT:ACF_Limit()
 
 end
 
-ACF.Entities.AutoRegisterV2(function(CLASS)
+ACF.Entities.AutoRegister(2026091001, function(CLASS)
 	-- The weapon type this entity represents.
 	MENU_FIELD("ACF.Guns.BaseGun", "Weapon", {OnlyAllowSubtypes = true, InstantiateTypeForDefault = "ACF.Guns.Cannon"})
 	MENU_FIELD("Number", "BreechIndex", {Min = 1, Default = 1, Decimals = 0})

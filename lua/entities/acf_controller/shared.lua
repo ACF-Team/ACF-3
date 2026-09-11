@@ -5,7 +5,7 @@ ENT.ACF_InvisibleToBallistics = true
 -- The controller's live settings are NetworkVars (see below). The only serialized field is a request
 -- for the default config, applied by init.lua's ACF_OnVerifyClientData on spawn (always true from the
 -- menu, matching the previous behavior).
-ACF.Entities.AutoRegisterV2(function()
+ACF.Entities.AutoRegister(2026091001, function()
 	MENU_FIELD("Boolean", "AIOUseDefaults", {Default = true})
 end, "Controller", "Controllers")
 

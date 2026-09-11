@@ -107,6 +107,19 @@ do
 	Weapons_RegisterOldGunItem("120mmSB", "C")
 	Weapons_RegisterOldGunItem("140mmSB", "C")
 
+	function ACF.Entities.ResolveLegacyWeapon(ID, Caliber)
+		local Alias = OldWeapons[ID]
+		if Alias then
+			Caliber = Alias.Caliber or Caliber
+			ID      = Alias.ID -- short group id, e.g. "C" / "SL"
+		end
+
+		local GroupChange = OldWeaponGroups[ID]
+		if GroupChange then ID = GroupChange end
+
+		return WeaponFQNFromID(ID), Caliber
+	end
+
 	ACF.Entities.RegisterCompatPatch("acf_gun", 2021101801, function(Data)
 		-- changes pre-scalable -> scalable
 		local AliasData = OldWeapons[Data.Weapon or Data.Id or "C"]

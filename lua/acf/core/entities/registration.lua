@@ -57,6 +57,8 @@ local function PrepareSpawnFunctions(ENT, ClassName)
     local ClassDef      = ENT.ACF_ClassDef
     local Serialization = ACF.Classes.Serialization
 
+    local ACF_Version = ENT.ACF_Version
+
     cleanup.Register(ClassName)
 
     if isnumber(ENT.ACF_Limit) then
@@ -130,9 +132,7 @@ local function PrepareSpawnFunctions(ENT, ClassName)
         return true, (self.PrintName or ClassName) .. " updated successfully!"
     end
 
-    local function DoSpawn(Player, Pos, Angle, ClientData, IsMenuSpawn)
-        -- ClientData is passed so entities whose spawn limit depends on the selected class
-        -- (e.g. turret controllers) can pick the right convar. Plain CheckLimit ignores it.
+    local function DoSpawn(Player, Pos, Angle, ClientData, _, IsMenuSpawn)
         local Func = CheckSpawnLimit or Player.CheckLimit
         if IsValid(Player) and not Func(Player, "_" .. ClassName, ClientData) then return end
 
@@ -141,6 +141,7 @@ local function PrepareSpawnFunctions(ENT, ClassName)
 
         local Entity = ents.Create(ClassName)
         if not IsValid(Entity) then return end
+        Entity.ACF_Version = ACF_Version
 
         Entity:SetPos(Pos)
         Entity:SetAngles(Angle)
@@ -173,14 +174,14 @@ local function PrepareSpawnFunctions(ENT, ClassName)
 
     Entities.SpawnFuncs[ClassName] = DoSpawn
 
-    duplicator.RegisterEntityClass(ClassName, DoSpawn, "Pos", "Angle", "ACF_UserData")
+    duplicator.RegisterEntityClass(ClassName, DoSpawn, "Pos", "Angle", "ACF_UserData", "ACF_Version")
 end
 
 function Entities.DoSpawnInternal(ClassName, Player, Pos, Ang, ClientData)
     local DoSpawn = Entities.SpawnFuncs[ClassName]
     if not DoSpawn then return end
 
-    local Entity = DoSpawn(Player, Pos, Ang, ClientData or {}, true)
+    local Entity = DoSpawn(Player, Pos, Ang, ClientData or {}, nil, true)
     if IsValid(Entity) then return Entity end
 end
 
@@ -258,8 +259,10 @@ local function PrepareNames(ENT, SingleName, PluralName)
     end
 end
 
-function ACF.Entities.AutoRegisterV2(DefineFields, SingleName, PluralName)
+function ACF.Entities.AutoRegister(CurrentVersion, DefineFields, SingleName, PluralName)
     ENT.IsACFEntity = true
+    ENT.ACF_Version = CurrentVersion
+
     PrepareNames(ENT, SingleName, PluralName)
     ClassNameTrick(ENT)
     PrepareIsFlag(ENT)

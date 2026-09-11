@@ -48,7 +48,7 @@ ACF.Entities.RegisterCompatPatch("acf_rack", 2026062801, function(Data)
 	if Data.ACF_UserData then return end
 
 	Data.ACF_UserData = {
-		Rack        = {Type = RackFQN[Data.Rack or "1xRK"] or "ACF.Racks.1xRK", Data = {}},
+		Rack        = {Type = RackFQN[Data.Rack or Data.Id or "1xRK"] or "ACF.Racks.1xRK", Data = {}},
 		BreechIndex = Data.BreechIndex,
 	}
 end)

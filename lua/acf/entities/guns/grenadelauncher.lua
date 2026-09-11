@@ -24,7 +24,7 @@ ACF.Classes.DefineClass("ACF.Guns.GrenadeLauncher", "ACF.Guns.BaseScalableGun", 
 	CLASS.Preview 			= {
 		FOV = 75,
 	}
-	CLASS.Caliber			= {
+	CLASS.CaliberLimits		= {
 		Base = 40,
 		Min  = 25,
 		Max  = 40,
