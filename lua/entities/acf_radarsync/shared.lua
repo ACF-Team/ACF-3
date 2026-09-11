@@ -7,7 +7,7 @@ ENT.PluralName     = "ACF Radar Synchronizers"
 ENT.IsACFRadarSync = true
 ENT.ACF_Limit      = 2
 
-ACF.Entities.AutoRegisterV2(function() end, "Radar Synchronizer", "Radar Synchronizers")
+ACF.Entities.AutoRegister(2026091001, function() end, "Radar Synchronizer", "Radar Synchronizers")
 
 ENT.ACF_StaticWireOutputs = {
 	"Detected (Returns the amount of targets detected across all linked radars.)",
