@@ -245,6 +245,7 @@ do -- Cost limit enforcement
 
 		for Entity in pairs(Contraption.ents) do
 			if not IsValid(Entity) then continue end
+			if Entity.IsACFEntity then continue end
 
 			local MeshData = Entity.ACF_Volumetric_Mesh
 			if not MeshData then continue end
