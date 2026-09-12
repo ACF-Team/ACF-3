@@ -32,7 +32,6 @@ local function Build(Menu, Contexts)
 	-- Rebuild the sub-menu whenever the legacy-ratio toggle changes (it changes the ratio limits).
 	function GearboxInverted:OnChange(Value)
 		Ctx:Set("GearboxLegacyRatio", Value)
-		Ctx:Set("GearboxConvertRatio", Value)
 
 		GearboxPanel:ClearTemporal()
 		GearboxPanel:StartTemporal()
@@ -40,9 +39,7 @@ local function Build(Menu, Contexts)
 		GearboxPanel:EndTemporal()
 	end
 
-	local Legacy = Ctx:Get("GearboxLegacyRatio") and true or false
-	Ctx:Set("GearboxConvertRatio", Legacy)
-	GearboxInverted:SetValue(Legacy)
+	GearboxInverted:SetValue(Ctx:Get("GearboxLegacyRatio") and true or false)
 end
 
 CreateSubMenu = function(Menu, Entries, UseLegacyRatios, Ctx)
