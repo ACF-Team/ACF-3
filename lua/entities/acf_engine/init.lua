@@ -588,7 +588,7 @@ function ENT:GetConsumption(Throttle, RPM, FuelTank, SelfTbl)
 	FuelTank = FuelTank or SelfTbl.FuelTank
 	if not IsEntityValid(FuelTank) then return 0 end
 
-	if SelfTbl.IsElectric then
+	if FuelTank.IsElectric then
 		return Throttle * SelfTbl.FuelUse * SelfTbl.Torque * RPM * 1.05e-4
 	else
 		local IdleConsumption = SelfTbl.PeakPower * 5e2
