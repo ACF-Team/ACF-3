@@ -280,7 +280,9 @@ end
 -- Every live, unfiltered mesh intersection the ACF-meshed entities along this flight segment present,
 -- gathered with a single ents.FindAlongRay. Unsorted; feed it to ACF.ResolveConvexStack.
 local function GatherMeshIntersections(Bullet, Start, Direction)
-	local FoundEnts     = ents.FindAlongRay(Start, Bullet.TraceTo) -- bounds discovery to this segment, same as the physics trace already covers
+	local TraceTo       = Bullet.TraceTo
+	local FoundEnts     = ents.FindAlongRay(Start, TraceTo) -- bounds discovery to this segment, same as the physics trace already covers
+	local MaxDist       = Start:Distance(TraceTo) -- and bounds the mesh rays to match, so convexes past the segment cost nothing
 	local Intersections = {}
 
 	for _, Ent in ipairs(FoundEnts) do
@@ -293,7 +295,7 @@ local function GatherMeshIntersections(Bullet, Start, Direction)
 		end
 
 		local EntConvexFilter = Bullet.ConvexFilter and Bullet.ConvexFilter[Ent]
-		local Hits            = ACF.RayIntersectMesh(Ent, Start, Direction, false, EntConvexFilter)
+		local Hits            = ACF.RayIntersectMesh(Ent, Start, Direction, false, EntConvexFilter, MaxDist)
 
 		for _, Hit in ipairs(Hits) do
 			Intersections[#Intersections + 1] = Hit

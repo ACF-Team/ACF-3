@@ -239,6 +239,9 @@ do
         for _, Convex in ipairs(Meshes) do
             local Tris   = {}
             local Volume = 0
+            local Area   = 0
+            local Mins   = Vector(math.huge, math.huge, math.huge)
+            local Maxs   = -Mins
 
             for I = 1, #Convex, 3 do
                 local A = Convex[I]
@@ -246,15 +249,30 @@ do
                 local C = Convex[I + 2]
 
                 Volume = Volume + A:Dot(B:Cross(C)) -- Scalar triple product gives 6 times the volume
+                Area   = Area + (B - A):Cross(C - A):Length() -- Cross product length gives twice the triangle's area
+
+                -- Local-space bounds, so a ray can reject the whole convex without touching its triangles
+                Mins.x = math.min(Mins.x, A.x, B.x, C.x)
+                Mins.y = math.min(Mins.y, A.y, B.y, C.y)
+                Mins.z = math.min(Mins.z, A.z, B.z, C.z)
+                Maxs.x = math.max(Maxs.x, A.x, B.x, C.x)
+                Maxs.y = math.max(Maxs.y, A.y, B.y, C.y)
+                Maxs.z = math.max(Maxs.z, A.z, B.z, C.z)
 
                 Tris[#Tris + 1] = { A, B, C }
             end
+
+            Volume = math.abs(Volume) / 6
+            Area   = Area / 2
 
             -- Material-independent characteristics; material-dependent ones (Material, Mass, Health, MaxHealth)
             -- are filled in below by ACF.SetConvexMaterial.
             MeshData.Convexes[#MeshData.Convexes + 1] = {
                 Tris      = Tris,
-                Volume    = math.abs(Volume) / 6, -- Verts are in inches (Source units), so this is in^3
+                Mins      = Mins,
+                Maxs      = Maxs,
+                Volume    = Volume,
+                MinWidth  = Area > 0 and 2 * Volume / Area or 0, -- Minimum width is empirically atleast half the mean chord length
                 Mass      = 0,
                 Health    = 0,
                 MaxHealth = 0,
@@ -358,39 +376,81 @@ if not util.IntersectRayWithTriangle then
     end
 end
 
+-- Slab test of a local-space ray against one convex's bounds. This is the broadphase that stops a ray
+-- passing near a prop from testing every triangle of every convex on it. Inv* are reciprocals of the
+-- ray direction and Epsilon inflates the box, so float error near a face can never reject a hit the
+-- triangle test would have found; being slightly too permissive only costs a wasted triangle pass.
+local BoundsEpsilon = 0.5
+
+local function RayHitsBounds(Start, InvX, InvY, InvZ, Mins, Maxs, MaxDist)
+    local min, max = math.min, math.max
+
+    local T1 = (Mins.x - BoundsEpsilon - Start.x) * InvX
+    local T2 = (Maxs.x + BoundsEpsilon - Start.x) * InvX
+    local TMin, TMax = min(T1, T2), max(T1, T2)
+
+    T1 = (Mins.y - BoundsEpsilon - Start.y) * InvY
+    T2 = (Maxs.y + BoundsEpsilon - Start.y) * InvY
+    TMin, TMax = max(TMin, min(T1, T2)), min(TMax, max(T1, T2))
+
+    T1 = (Mins.z - BoundsEpsilon - Start.z) * InvZ
+    T2 = (Maxs.z + BoundsEpsilon - Start.z) * InvZ
+    TMin, TMax = max(TMin, min(T1, T2)), min(TMax, max(T1, T2))
+
+    return TMax >= max(TMin, 0) and TMin <= MaxDist
+end
+
 -- Returns every triangle the ray pierces as { Pos, Normal, ConvexID, T, Entity, IsEntry }, unsorted.
--- IsEntry is true when the ray crosses into the face. The ray is a forward half-line, so a convex
--- the ray began inside only yields its exit here; the missing entry is synthesized below at T = 0.
+-- IsEntry is true when the ray crosses into the face. The ray is a forward half-line bounded by MaxDist
+-- (default 1e5, which is past any mesh's extent), so a convex the ray began inside only yields its exit
+-- here; the missing entry is synthesized below at T = 0.
 -- Filter (optional): a per-entity set { [ConvexID] = true } of convexes to treat as transparent.
-function ACF.RayIntersectMesh(Entity, Start, Direction, IncludeDead, Filter)
+function ACF.RayIntersectMesh(Entity, Start, Direction, IncludeDead, Filter, MaxDist)
     local MeshData = Entity.ACF_Volumetric_Mesh
     if not MeshData then return {} end
 
-    local Hits    = {}
-    local NormDir = Direction:GetNormalized()
-    local MaxDist = 1e5 -- far beyond any convex mesh's extent, so the ray behaves as a half-line
-    local End     = Start + NormDir * MaxDist
+    MaxDist = MaxDist or 1e5
+
+    -- The ray moves into the entity's frame once rather than every triangle being dragged out into world
+    -- space: two engine calls per entity instead of three per triangle. The transform is rigid, so lengths,
+    -- dot products and T all carry over unchanged, and only the hits actually kept are converted back.
+    local NormDir    = Direction:GetNormalized()
+    local LocalStart = Entity:WorldToLocal(Start)
+    local LocalDir   = Entity:WorldToLocal(Start + NormDir) - LocalStart
+    local LocalEnd   = LocalStart + LocalDir * MaxDist
+    local EntAngles  = Entity:GetAngles()
+
+    -- A zero direction component would divide to inf and poison the slab comparisons with nan, so it
+    -- becomes a large finite number instead.
+    local InvX = LocalDir.x ~= 0 and 1 / LocalDir.x or 1e30
+    local InvY = LocalDir.y ~= 0 and 1 / LocalDir.y or 1e30
+    local InvZ = LocalDir.z ~= 0 and 1 / LocalDir.z or 1e30
+
+    local Hits = {}
 
     for ConvexID, Convex in ipairs(MeshData.Convexes) do
         if Convex.Health <= 0 and not IncludeDead then continue end -- destroyed convex is transparent to projectiles
         if Filter and Filter[ConvexID] then continue end -- explicitly filtered (already penetrated this flight)
 
+        -- Meshes built before bounds existed (a live reload) simply skip the broadphase
+        if Convex.Mins and not RayHitsBounds(LocalStart, InvX, InvY, InvZ, Convex.Mins, Convex.Maxs, MaxDist) then continue end
+
         local HitsBefore = #Hits
 
         for _, Tri in ipairs(Convex.Tris) do
-            local A = Entity:LocalToWorld(Tri[1])
-            local B = Entity:LocalToWorld(Tri[2])
-            local C = Entity:LocalToWorld(Tri[3])
+            local A, B, C = Tri[1], Tri[2], Tri[3]
 
-            local P, Frac = util.IntersectRayWithTriangle(Start, End, A, B, C)
+            local P, Frac = util.IntersectRayWithTriangle(LocalStart, LocalEnd, A, B, C)
             if not P then continue end
 
             -- GetMeshConvexes triangles wind such that (C-A)x(B-A) points outward (same as ProcessConvexes)
             local Normal  = (C - A):Cross(B - A):GetNormalized()
-            local IsEntry = NormDir:Dot(Normal) < 0
+            local IsEntry = LocalDir:Dot(Normal) < 0 -- Both still local, and rotation preserves the sign
             local T       = Frac * MaxDist
 
-            Hits[#Hits + 1] = { Pos = P, Normal = Normal, ConvexID = ConvexID, T = T, Entity = Entity, IsEntry = IsEntry }
+            Normal:Rotate(EntAngles)
+
+            Hits[#Hits + 1] = { Pos = Entity:LocalToWorld(P), Normal = Normal, ConvexID = ConvexID, T = T, Entity = Entity, IsEntry = IsEntry }
         end
 
         -- Started inside this convex: only the exit hit came back. Add the missing entry at T = 0.
