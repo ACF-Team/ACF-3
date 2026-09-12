@@ -181,7 +181,7 @@ do -- Spawn and Update functions -----------------------
 			Entity.Name = Entity.Name .. ", Dual Clutch"
 		end
 
-		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
+		Entity:ACF_SetEntityName("ACF " .. Entity.Name)
 
 		ACF.Activate(Entity, true)
 
