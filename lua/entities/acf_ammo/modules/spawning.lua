@@ -310,7 +310,7 @@ do -- Spawn/Update/Remove
 
 		Entity.WireAmountName = "Ammo"
 
-		Entity:SetNWString("WireName", "ACF " .. (WireName or WeaponName .. " Ammo Crate"))
+		Entity:ACF_SetEntityName("ACF " .. (WireName or WeaponName .. " Ammo Crate"))
 
 		-- Capacity can now be zero, and 0 is truthy in Lua, so test the value rather than its presence
 		local Percentage = (Entity.Capacity or 0) > 0 and Entity.Amount / Entity.Capacity or 1
