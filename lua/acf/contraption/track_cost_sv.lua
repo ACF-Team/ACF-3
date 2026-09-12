@@ -234,7 +234,7 @@ end
 --------------------------------------------------------------------------------
 
 do -- Cost limit enforcement
-	local CostLimitSettings = { GroundVehicle = "CostLimitGround", Aircraft = "CostLimitAir" }
+	local CostLimitSettings = { ["ACF.Baseplates.GroundVehicle"] = "CostLimitGround", ["ACF.Baseplates.Aircraft"] = "CostLimitAir" }
 	local AircraftArmorTypes = { Wing = true, Default = true }
 	CostSystem.AircraftVolumeLimit = 32000 -- Sum of convex volumes, in^3
 
@@ -268,10 +268,11 @@ do -- Cost limit enforcement
 		if not IsValid(Baseplate) then return end
 
 		local BaseplateType = Baseplate:ACF_GetUserVar("BaseplateType")
-		local Setting = BaseplateType and CostLimitSettings[BaseplateType.ID]
+		local TypeID = BaseplateType and ACF.Classes.GetTypeName(BaseplateType:GetType())
+		local Setting = TypeID and CostLimitSettings[TypeID]
 		if not Setting then return end
 
-		if BaseplateType.ID == "Aircraft" then
+		if TypeID == "ACF.Baseplates.Aircraft" then
 			local Volume, BadMaterial = CostSystem.GetAircraftArmorInfo(Contraption)
 
 			if BadMaterial or Volume >= CostSystem.AircraftVolumeLimit then
