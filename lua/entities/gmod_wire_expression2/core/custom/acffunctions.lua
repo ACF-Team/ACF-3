@@ -297,6 +297,37 @@ e2function number entity:acfConvexCount()
 	return #MeshData.Convexes
 end
 
+-- Returns the material of a specific convex of an entity
+e2function string entity:acfConvexMaterial(number ConvexID)
+	if not validPhysics(this) then return "" end
+	if RestrictInfo(self, this) then return "" end
+
+	local MeshData = this.ACF_Volumetric_Mesh
+	if not MeshData then return "" end
+
+	local Convex = MeshData.Convexes[floor(ConvexID)]
+	if not Convex then return "" end
+
+	return Convex.Material or ""
+end
+
+-- Returns the materials of all convexes of an entity, indexed by convex ID
+e2function array entity:acfConvexMaterials()
+	if not validPhysics(this) then return {} end
+	if RestrictInfo(self, this) then return {} end
+
+	local MeshData = this.ACF_Volumetric_Mesh
+	if not MeshData then return {} end
+
+	local Result = {}
+
+	for ConvexID, Convex in ipairs(MeshData.Convexes) do
+		Result[ConvexID] = Convex.Material or ""
+	end
+
+	return Result
+end
+
 __e2setcost(10)
 
 -- Returns the effective armor given an armor value and hit angle

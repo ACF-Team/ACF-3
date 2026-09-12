@@ -861,6 +861,51 @@ if SERVER then
 		return #MeshData.Convexes
 	end
 
+	--- Returns the material of a specific convex of an entity
+	-- @server
+	-- @param number convexid The convex ID
+	-- @return string The convex's material
+	function ents_methods:acfConvexMaterial(convexid)
+		CheckType(self, ents_metatable)
+		CheckLuaType(convexid, TYPE_NUMBER)
+
+		local This = unwrap(self)
+
+		if not IsValid(This) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return "" end
+
+		local MeshData = This.ACF_Volumetric_Mesh
+		if not MeshData then return "" end
+
+		local Convex = MeshData.Convexes[math.floor(convexid)]
+		if not Convex then return "" end
+
+		return Convex.Material or ""
+	end
+
+	--- Returns the materials of all convexes of an entity
+	-- @server
+	-- @return table The materials of each convex, indexed by convex ID
+	function ents_methods:acfConvexMaterials()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not IsValid(This) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return {} end
+
+		local MeshData = This.ACF_Volumetric_Mesh
+		if not MeshData then return {} end
+
+		local Result = {}
+
+		for ConvexID, Convex in ipairs(MeshData.Convexes) do
+			Result[ConvexID] = Convex.Material or ""
+		end
+
+		return Result
+	end
+
 	--- Returns true if hitpos is on a clipped part of prop
 	-- @param Vector hitpos The world hit position we want to check
 	-- @server
