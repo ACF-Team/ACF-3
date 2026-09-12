@@ -94,6 +94,7 @@ local Text3 = "Mobility: %s hp/ton @ %s hp | %s liters of fuel"
 local Text4 = "Entities: %s (%s physical, %s parented, %s other entities) | %s constraints"
 local Text5 = "Name: %s | Type: %s"
 local Text6 = "Cost: %s | Ammo: %s"
+local Text7 = "Aircraft armor volume: %s / %s units%s"
 
 -- Total up mass of constrained ents
 function TOOL:GetContraptionReadout(Trace, UseCostBreakdown)
@@ -137,6 +138,17 @@ function TOOL:GetContraptionReadout(Trace, UseCostBreakdown)
 		Messages.SendChat(Player, nil, Text4:format(PhysNum + ParNum + OtherNum, PhysNum, ParNum, OtherNum, ConNum))
 		Messages.SendChat(Player, nil, Text5:format(BaseplateName, BaseplateType))
 		Messages.SendChat(Player, nil, Text6:format(math.Round(Cost, 2), AmmoList))
+
+		if BaseplateType == "Aircraft" then
+			local Contraption_ = Trace.Entity:CFW_GetContraption()
+
+			if Contraption_ then
+				local Volume, BadMaterial = Contraption.CostSystem.GetAircraftArmorInfo(Contraption_)
+				local Warning = BadMaterial and " | uses disallowed armor material" or ""
+
+				Messages.SendChat(Player, nil, Text7:format(math.Round(Volume), Contraption.CostSystem.AircraftVolumeLimit, Warning))
+			end
+		end
 	end
 
 	return true

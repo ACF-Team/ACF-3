@@ -2,6 +2,7 @@ local ACF			= ACF
 local Contraption	= ACF.Contraption
 local Objects		= ACF.Contraption.Objects
 local CubicInchToM3	= ACF.InchToMCu
+local Notify		= ACF.Utilities.Notify
 Contraption.CostSystem	= {}
 local CostSystem	= Contraption.CostSystem
 -- Thank you for most of the base cost logic liddul <3
@@ -234,6 +235,29 @@ end
 
 do -- Cost limit enforcement
 	local CostLimitSettings = { GroundVehicle = "CostLimitGround", Aircraft = "CostLimitAir" }
+	local AircraftArmorTypes = { Wing = true, Default = true }
+	CostSystem.AircraftVolumeLimit = 17000 -- Sum of convex volumes, in^3
+
+	-- Sums an aircraft's convex armor volume, and reports whether any convex uses a disallowed material
+	function CostSystem.GetAircraftArmorInfo(Contraption)
+		local Volume = 0
+		local BadMaterial = false
+
+		for Entity in pairs(Contraption.ents) do
+			if not IsValid(Entity) then continue end
+
+			local MeshData = Entity.ACF_Volumetric_Mesh
+			if not MeshData then continue end
+
+			for _, Convex in ipairs(MeshData.Convexes) do
+				if not AircraftArmorTypes[Convex.Material or "Default"] then BadMaterial = true end
+
+				Volume = Volume + Convex.Volume
+			end
+		end
+
+		return Volume, BadMaterial
+	end
 
 	-- Destroys a contraption that exceeds the cost limit for its baseplate type, same as an all-crew-killed death
 	function ACF.EnforceCostLimit(Contraption)
@@ -246,6 +270,20 @@ do -- Cost limit enforcement
 		local Setting = BaseplateType and CostLimitSettings[BaseplateType.ID]
 		if not Setting then return end
 
+		if BaseplateType.ID == "Aircraft" then
+			local Volume, BadMaterial = CostSystem.GetAircraftArmorInfo(Contraption)
+
+			if BadMaterial or Volume >= CostSystem.AircraftVolumeLimit then
+				local Owner = Baseplate:CPPIGetOwner()
+				if IsValid(Owner) and Owner:IsPlayer() then
+					Notify.WarningToPlayer(Owner, "Aircraft destroyed", "Your aircraft used disallowed armor or exceeded the armor volume limit of " .. CostSystem.AircraftVolumeLimit .. " units.")
+				end
+
+				ACF.DestroyContraption(Contraption, Baseplate:GetPos(), vector_up, 100000)
+				return
+			end
+		end
+
 		local CostLimit = ACF[Setting]
 		if CostLimit == 0 then return end
 
@@ -257,6 +295,8 @@ do -- Cost limit enforcement
 			-- Feeds the same fields real damage would set, so the vehicle kill feed picks this up too
 			Contraption.ACF_LastDamageAttacker = Owner
 			Contraption.ACF_LastCost = Cost
+
+			Notify.WarningToPlayer(Owner, "Vehicle destroyed", "Your vehicle exceeded the cost limit of " .. CostLimit .. " points (cost: " .. math.Round(Cost) .. ").")
 		end
 
 		ACF.DestroyContraption(Contraption, Baseplate:GetPos(), vector_up, 100000)
