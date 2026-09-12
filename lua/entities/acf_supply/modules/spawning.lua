@@ -67,7 +67,7 @@ do -- Updating
 		local Percentage = (OldCapacity and self.Amount) and (self.Amount / OldCapacity) or 1
 		self:SetAmount(Percentage * Capacity)
 
-		self:SetNWString("WireName", "ACF Supply Crate")
+		self:ACF_SetEntityName("ACF Supply Crate")
 
 		-- ACF.Activate(self, true) is invoked automatically by ACF_UpdateEntityData after this.
 

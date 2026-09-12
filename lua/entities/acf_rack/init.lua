@@ -267,7 +267,7 @@ do -- Spawning and Updating --------------------
 
 		Entity.OverlayErrors = {}
 
-		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
+		Entity:ACF_SetEntityName("ACF " .. Entity.Name)
 		Entity:SetNWString("ACF_Class", Entity.Class)
 
 		ACF.Activate(Entity, true)

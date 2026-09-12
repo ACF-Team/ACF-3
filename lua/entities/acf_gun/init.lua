@@ -354,7 +354,7 @@ do -- Spawn and Update functions --------------------------------
 		Entity.OverlayErrors = {}
 
 		-- Set NWvars
-		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
+		Entity:ACF_SetEntityName("ACF " .. Entity.Name)
 		Entity:SetNWString("Sound", Entity.SoundPath)
 		Entity:SetNWFloat("SoundPitch", Entity.SoundPitch)
 		Entity:SetNWFloat("SoundVolume", Entity.SoundVolume)

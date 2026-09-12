@@ -133,7 +133,7 @@ do
 		self:PhysicsInit(SOLID_VPHYSICS)
 		self:SetMoveType(MOVETYPE_VPHYSICS)
 
-		self:SetNWString("WireName", "ACF All In One Controller")
+		self:ACF_SetEntityName("ACF All In One Controller")
 
 		ACF.Activate(self, true)
 
