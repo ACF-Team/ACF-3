@@ -82,7 +82,7 @@ do -- Updating
 			self.UnitMass = FuelType.Density -- kg per liter
 		end
 
-		self:SetNWString("WireName", "ACF " .. self.Name)
+		self:ACF_SetEntityName("ACF " .. self.Name)
 
 		self.Amount = Percentage * self.Capacity
 

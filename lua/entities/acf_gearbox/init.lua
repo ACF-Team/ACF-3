@@ -70,11 +70,6 @@ do -- Spawn and Update functions -----------------------
 		end
 
 		local MaxGears = Class.CanSetGears and (Class.MaxGear or ClientData.GearAmount or Class.Gears.Max) or Class.Gears.Max
-		local ToLegacy = tobool(ClientData.GearboxConvertRatio)
-		ClientData.GearboxConvertRatio = false -- one-shot; don't reconvert on dupes
-
-		-- Pre-scalable gearboxes stored inverted ratios; the compat patch flags those dupes here since the
-		-- V2 classes no longer carry InvertGearRatios. One-shot (not a declared field).
 		local Invert = Class.InvertGearRatios or ClientData.InvertGearRatios
 		ClientData.InvertGearRatios = nil
 
@@ -93,7 +88,7 @@ do -- Spawn and Update functions -----------------------
 				Gear = math.Round(1 / Gear, 2)
 			end
 
-			Gears[I] = ACF.ConvertGearRatio(Gear, ToLegacy)
+			Gears[I] = math.Round(Gear, 3)
 		end
 
 		for I = MaxGears + 1, #Gears do Gears[I] = nil end
@@ -110,7 +105,7 @@ do -- Spawn and Update functions -----------------------
 			Final = math.Round(1 / Final, 2)
 		end
 
-		ClientData.FinalDrive = ACF.ConvertGearRatio(Final, ToLegacy)
+		ClientData.FinalDrive = math.Round(Final, 3)
 
 		-- Class-specific verification (automatic ShiftPoints/Reverse, CVT MinRPM/MaxRPM).
 		if Class.VerifyData then Class.VerifyData(ClientData, Class) end
@@ -186,7 +181,7 @@ do -- Spawn and Update functions -----------------------
 			Entity.Name = Entity.Name .. ", Dual Clutch"
 		end
 
-		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
+		Entity:ACF_SetEntityName("ACF " .. Entity.Name)
 
 		ACF.Activate(Entity, true)
 

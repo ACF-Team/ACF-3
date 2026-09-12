@@ -380,7 +380,7 @@ do -- Updating
 		self.GetDetected  = Sensor.Detect
 		self.Origin       = AttachData and self:WorldToLocal(AttachData.Pos) or Vector()
 
-		self:SetNWString("WireName", "ACF " .. self.Name)
+		self:ACF_SetEntityName("ACF " .. self.Name)
 
 		WireLib.TriggerOutput(self, "Think Delay", self.ThinkDelay)
 

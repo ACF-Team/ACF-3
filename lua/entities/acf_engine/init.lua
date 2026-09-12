@@ -309,7 +309,7 @@ do -- Spawn and Update functions
 		Entity.IsSpecial        = Engine.IsSpecial
 		Entity.SoundPath        = Entity.SoundPath or Engine.Sound
 
-		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
+		Entity:ACF_SetEntityName("ACF " .. Entity.Name)
 
 		--calculate base fuel usage
 		if Type.CalculateFuelUsage then
