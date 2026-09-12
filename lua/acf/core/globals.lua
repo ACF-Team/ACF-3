@@ -148,8 +148,6 @@ do -- ACF global vars
 
 	ACF.DefineSetting("DamageBlastCoef",      0.1,      "Blast damage coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 1000, 2))
 
-	ACF.PenetrationFeatherExponent = 2 -- Feathers convex health loss against how much of the plate's thickness was actually traversed
-
 	ACF.FuelRate = 15 -- Multiplier for fuel usage, 1.0 is approx real world
 	ACF.DefineSetting("FuelFactor",           1,      "Fuel rate multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("FuelRate", 0.01, 2, 2))
 

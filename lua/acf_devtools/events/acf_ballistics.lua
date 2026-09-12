@@ -37,6 +37,20 @@ do
 end
 
 do
+    local Ballistics_DoPenetration = EventViewer.DefineEvent("Ballistics.DoPenetration")
+    Ballistics_DoPenetration.Icon = "icon16/arrow_right.png"
+
+    function Ballistics_DoPenetration.BuildNode(Node, Entry, Exit)
+        EventViewer.AddKeyValueNode(Node, "Entry", Entry, "icon16/control_start.png")
+        EventViewer.AddKeyValueNode(Node, "Exit", Exit, "icon16/control_end.png")
+    end
+
+    function Ballistics_DoPenetration.Render3D(Entry, Exit)
+        render.DrawLine(Entry, Exit, EventViewer.CurrentRenderingColor(), false)
+    end
+end
+
+do
     local Size = 32
     local ImpactMax = Vector(0.7, Size, Size)
     local ImpactMin = -ImpactMax

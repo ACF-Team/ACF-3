@@ -156,6 +156,7 @@ function Ballistics.CreateBullet(BulletData)
 	Bullet.Ricochets   = Bullet.Ricochets or 0
 	Bullet.GroundRicos = Bullet.GroundRicos or 0
 	Bullet.Color       = ColorRand(100, 255)
+	Bullet.Mode        = "Flight" -- Flight follows the ballistic arc, Penetration walks a frozen ray through armor
 
 	-- Purely to allow someone to shoot out of a seat without hitting themselves and dying
 	if IsValid(Bullet.Owner) and Bullet.Owner:IsPlayer() and Bullet.Owner:InVehicle() and (Bullet.Gun and Bullet.Gun:GetClass() ~= "acf_gun") then
@@ -210,6 +211,8 @@ function Ballistics.OnImpact(Bullet, Trace, Ammo, Type)
 			EventViewer.AppendEvent(GetEventViewerName(Bullet.Index), "Ballistics.OnImpact.Penetrated", Trace.StartPos, Trace.HitPos, Trace)
 		end
 	elseif Retry == "Ricochet" then
+		Ballistics.EndPenetration(Bullet) -- New heading, so the frozen penetration ray no longer applies
+
 		if Bullet.OnRicocheted then
 			Bullet.OnRicocheted(Bullet, Trace)
 		end
@@ -220,6 +223,8 @@ function Ballistics.OnImpact(Bullet, Trace, Ammo, Type)
 			EventViewer.AppendEvent(GetEventViewerName(Bullet.Index), "Ballistics.OnImpact.Ricochet", Trace.StartPos, Trace.HitPos, Trace)
 		end
 	else
+		Ballistics.EndPenetration(Bullet)
+
 		if Bullet.OnEndFlight then
 			Bullet.OnEndFlight(Bullet, Trace)
 		end
@@ -272,13 +277,10 @@ function Ballistics.TestFilter(Entity, Bullet)
 	return true
 end
 
--- Resolves the earliest live, unfiltered convex any ACF-meshed entity along the ray presents --
--- e.g. a component clipped inside an armor shell. Same shape as ACF.GetConvexHit (plus
--- Entity), or nil if nothing's left to hit in this bullet's flight segment.
-function Ballistics.GetMeshConvexHit(Bullet, HitPos, Direction)
-	local Start     = HitPos - Direction * 2 -- same backoff ACF.GetConvexHits uses
-	local FoundEnts = ents.FindAlongRay(Start, Bullet.TraceTo) -- bounds discovery to this segment, same as the physics trace already covers
-
+-- Every live, unfiltered mesh intersection the ACF-meshed entities along this flight segment present,
+-- gathered with a single ents.FindAlongRay. Unsorted; feed it to ACF.ResolveConvexStack.
+local function GatherMeshIntersections(Bullet, Start, Direction)
+	local FoundEnts     = ents.FindAlongRay(Start, Bullet.TraceTo) -- bounds discovery to this segment, same as the physics trace already covers
 	local Intersections = {}
 
 	for _, Ent in ipairs(FoundEnts) do
@@ -298,7 +300,136 @@ function Ballistics.GetMeshConvexHit(Bullet, HitPos, Direction)
 		end
 	end
 
-	return ACF.ResolveConvexStack(Intersections, Direction, true)
+	return Intersections
+end
+
+do -- Obstacle resolution --------------------------
+	-- A projectile in flight mode looks ahead with one cheap physics trace. The moment that trace lands on
+	-- a meshed entity it switches to penetration mode: the ray is frozen at the impact point, a single
+	-- ents.FindAlongRay resolves every convex standing on that line, and the projectile walks the whole
+	-- stack in one instant. Nothing advances its position and no gravity is integrated in between, so it
+	-- stays exactly on the frozen line until it stops, ricochets, or runs out of stack and returns to flight.
+	--
+	-- Shared by bullets and spall fragments. Both keep their own motion model and impact handling and use
+	-- this only to find what they run into next, so a projectile here is anything carrying Pos, TraceTo,
+	-- Flight and Filter.
+
+	local MaxPenetrations = 50 -- Convexes a projectile can cross in one pass before the rest of the line is left for later
+
+	-- Freezes the ray at Trace.HitPos and builds the ordered convex stack the projectile will walk.
+	-- Returns false when nothing on the line is left to hit, leaving it in flight mode.
+	function Ballistics.BeginPenetration(Projectile, Trace)
+		local Direction = Projectile.Flight:GetNormalized()
+		local Start     = Trace.HitPos - Direction * 2 -- same backoff ACF.GetConvexHits uses
+		local Stack     = ACF.ResolveConvexStack(GatherMeshIntersections(Projectile, Start, Direction), Direction)
+
+		if #Stack == 0 then return false end
+
+		for Index = #Stack, MaxPenetrations + 1, -1 do
+			Stack[Index] = nil
+		end
+
+		Projectile.Mode     = "Penetration"
+		Projectile.PenStack = Stack
+		Projectile.PenIndex = 0
+		Projectile.PenTrace = Trace -- Reused for every convex so the damage code keeps the physics trace's other fields
+
+		return true
+	end
+
+	-- Drops the frozen ray and puts the projectile back on its own flight path.
+	function Ballistics.EndPenetration(Projectile)
+		Projectile.Mode      = "Flight"
+		Projectile.PenStack  = nil
+		Projectile.PenIndex  = nil
+		Projectile.PenTrace  = nil
+		Projectile.ConvexHit = nil
+	end
+
+	-- The next live convex on the frozen ray with the penetration trace spliced onto it, or nil once the
+	-- stack is walked out, which retires it and returns the projectile to flight mode.
+	local function NextConvex(Projectile)
+		local Stack = Projectile.PenStack
+
+		while true do
+			local Index = Projectile.PenIndex + 1
+			local Hit   = Stack[Index]
+
+			if not Hit then break end
+
+			Projectile.PenIndex = Index
+
+			-- The stack was resolved before the first impact landed, so anything an earlier convex destroyed
+			-- on the way through (a killed entity, a spent reactive plate) is transparent by now and skipped.
+			local Entity   = Hit.Entity
+			local MeshData = IsValid(Entity) and Entity.ACF_Volumetric_Mesh
+			local Convex   = MeshData and MeshData.Convexes[Hit.ConvexID]
+
+			if Convex and Convex.Health > 0 then
+				-- Splice the resolved hit into the trace so downstream code sees the convex actually struck,
+				-- even when it belongs to an entity the physics trace never reported.
+				local Trace = Projectile.PenTrace
+
+				Trace.Entity    = Entity
+				Trace.HitPos    = Hit.EntryPos
+				Trace.HitNormal = Hit.EntryNormal
+
+				return Trace, Hit
+			end
+		end
+
+		-- Walked the line to its end, so every entity on it is spent. Filtering them lets the resumed
+		-- trace reach the world, players and anything else meshless sitting behind them.
+		local Filter = Projectile.Filter
+
+		for _, Spent in ipairs(Stack) do
+			if not table.HasValue(Filter, Spent.Entity) then
+				Filter[#Filter + 1] = Spent.Entity
+			end
+		end
+
+		Ballistics.EndPenetration(Projectile)
+	end
+
+	-- What the projectile runs into next along Pos -> TraceTo, as the trace (hit or not) plus the convex
+	-- hit when it landed on armor. Steps the frozen ray while in penetration mode, otherwise traces,
+	-- skipping past anything it should ignore and entering penetration mode on the first meshed entity.
+	function Ballistics.ResolveNextObstacle(Projectile)
+		if Projectile.Mode == "Penetration" then
+			local PenTrace, Hit = NextConvex(Projectile)
+
+			if Hit then return PenTrace, Hit end
+		end
+
+		-- Every retry adds an entity to the filter, so this drains rather than spinning. Retrying here
+		-- instead of next tick matters: letting the projectile advance first would skip anything sitting
+		-- behind the entity it just gave up on within the current segment.
+		while true do
+			FlightTr.mask   = Projectile.Mask
+			FlightTr.filter = Projectile.Filter
+			FlightTr.start  = Projectile.Pos
+			FlightTr.endpos = Projectile.TraceTo
+
+			local Trace = ACF.trace(FlightTr) -- Does not modify the projectile's original filter
+
+			if not Trace.Hit or Trace.HitSky then return Trace end
+
+			local Entity = Trace.Entity
+
+			if not Ballistics.TestFilter(Entity, Projectile) then
+				-- Important in case something is embedded in something that shouldn't be hit
+				table.insert(Projectile.Filter, Entity)
+			elseif not Entity.ACF_Volumetric_Mesh then
+				return Trace
+			elseif Ballistics.BeginPenetration(Projectile, Trace) then
+				local PenTrace, Hit = NextConvex(Projectile)
+
+				if Hit then return PenTrace, Hit end
+			else
+				table.insert(Projectile.Filter, Entity) -- Nothing live left on its mesh anywhere along the line
+			end
+		end
+	end
 end
 
 function Ballistics.DoBulletsFlight(Bullet)
@@ -327,12 +458,7 @@ function Ballistics.DoBulletsFlight(Bullet)
 		end
 	end
 
-	FlightTr.mask 	= Bullet.Mask
-	FlightTr.filter = Bullet.Filter
-	FlightTr.start 	= Bullet.Pos
-	FlightTr.endpos = Bullet.TraceTo
-
-	local traceRes = ACF.trace(FlightTr) -- Does not modify the bullet's original filter
+	local traceRes, ConvexHit = Ballistics.ResolveNextObstacle(Bullet)
 
 	if Bullet.Fuze and Bullet.Fuze <= Clock.CurTime then
 		if not util.IsInWorld(Bullet.Pos) then -- Outside world, just delete
@@ -343,6 +469,8 @@ function Ballistics.DoBulletsFlight(Bullet)
 			local Lerp = DeltaFuze / DeltaTime
 
 			if not traceRes.Hit or Lerp < traceRes.Fraction then -- Fuze went off before running into something
+				Ballistics.EndPenetration(Bullet) -- Flight is over, so a stack resolved this tick goes unwalked
+
 				Bullet.Pos       = LerpVector(Lerp, Bullet.Pos, Bullet.NextPos)
 				Bullet.DetByFuze = true
 
@@ -364,7 +492,11 @@ function Ballistics.DoBulletsFlight(Bullet)
 
 
 	if EventViewer.Enabled() then
-		EventViewer.AppendEvent(GetEventViewerName(Bullet.Index), "Ballistics.DoBulletsFlight", Bullet.Pos, Bullet.NextPos, FlightTr)
+		if ConvexHit then
+			EventViewer.AppendEvent(GetEventViewerName(Bullet.Index), "Ballistics.DoPenetration", ConvexHit.EntryPos, ConvexHit.ExitPos)
+		else
+			EventViewer.AppendEvent(GetEventViewerName(Bullet.Index), "Ballistics.DoBulletsFlight", Bullet.Pos, Bullet.NextPos, FlightTr)
+		end
 	end
 
 	if traceRes.Hit then
@@ -376,48 +508,11 @@ function Ballistics.DoBulletsFlight(Bullet)
 				Ballistics.RemoveBullet(Bullet)
 			end
 		else
-			local Entity = traceRes.Entity
-
-			if not Ballistics.TestFilter(Entity, Bullet) then
-				-- Retries the same trace immediately after adding the entity to the filter; important in case
-				-- something is embedded in something that shouldn't be hit. Retrying via timer would let
-				-- CalcBulletFlight advance Bullet.Pos first, skipping anything behind this entity this segment.
-				table.insert(Bullet.Filter, Entity)
-
-				return Ballistics.DoBulletsFlight(Bullet)
-			end
-
-			-- Resolve against the earliest live convex across every meshed entity in range, not just
-			-- the one the physics trace reported -- so an entity embedded in another (e.g. a
-			-- component inside an armor shell) still gets hit properly. If nothing's left anywhere,
-			-- filter Entity and retry.
-			local ConvexHit
-			if Entity.ACF_Volumetric_Mesh then
-				ConvexHit = Ballistics.GetMeshConvexHit(Bullet, traceRes.HitPos, Bullet.Flight:GetNormalized())
-
-				if not ConvexHit then
-					-- Re-trace immediately (not via timer) from the same position: deferring until the next
-					-- frame lets CalcBulletFlight advance Bullet.Pos to NextPos first, so the retry would start
-					-- mid-segment and skip any props sitting behind this transparent one in the current segment.
-					table.insert(Bullet.Filter, Entity)
-
-					return Ballistics.DoBulletsFlight(Bullet)
-				end
-
-				-- Splice the mesh-resolved hit into the trace so downstream code sees the entity
-				-- actually struck, even when it differs from what the physics trace reported.
-				traceRes.Entity    = ConvexHit.Entity
-				traceRes.HitPos    = ConvexHit.EntryPos
-				traceRes.HitNormal = ConvexHit.EntryNormal
-			end
-
 			-- Stored on the bullet rather than the trace: the EventViewer networks the trace table, and a
 			-- convex hit carries its ArmorType (a class object with functions) which can't be serialized.
 			Bullet.ConvexHit = ConvexHit
 
-			local Type = Ballistics.GetImpactType(traceRes, traceRes.Entity)
-
-			Ballistics.OnImpact(Bullet, traceRes, Bullet.TypeDef, Type)
+			Ballistics.OnImpact(Bullet, traceRes, Bullet.TypeDef, Ballistics.GetImpactType(traceRes, traceRes.Entity))
 		end
 	end
 end

@@ -7,40 +7,6 @@ local MaxPenetrations = 10 -- Layers a fragment can punch through before it's gi
 local MinSpeed        = 50 -- m/s, below this a fragment is assumed spent
 local MaxRange        = 8000 -- Trace length used to find a fragment's next obstacle, in world units
 
---- Same convex resolution DoBulletsFlight uses: skips transparent entities and, for volumetric
---- meshes, resolves the specific convex hit instead of treating the whole entity as one wall.
-local function ResolveNextHit(Fragment, Dir)
-	local Trace = ACF.trace({ start = Fragment.Pos, endpos = Fragment.TraceTo, filter = Fragment.Filter })
-
-	if not Trace.Hit then return end
-
-	local Entity = Trace.Entity
-
-	if not Ballistics.TestFilter(Entity, Fragment) then
-		Fragment.Filter[#Fragment.Filter + 1] = Entity
-
-		return ResolveNextHit(Fragment, Dir)
-	end
-
-	if Entity.ACF_Volumetric_Mesh then
-		local ConvexHit = Ballistics.GetMeshConvexHit(Fragment, Trace.HitPos, Dir)
-
-		if not ConvexHit then
-			Fragment.Filter[#Fragment.Filter + 1] = Entity
-
-			return ResolveNextHit(Fragment, Dir)
-		end
-
-		Trace.Entity    = ConvexHit.Entity
-		Trace.HitPos    = ConvexHit.EntryPos
-		Trace.HitNormal = ConvexHit.EntryNormal
-
-		return Trace, ConvexHit
-	end
-
-	return Trace
-end
-
 --- A straight-line, non-ricocheting projectile resolved in one closed-form pass instead of per-tick iteration.
 --- Data: Pos, Flight (world units/s), ProjMass, ProjArea, Diameter, DragCoef, Owner, Gun, Entity, Filter.
 function Ballistics.CreateFragment(Data)
@@ -59,6 +25,7 @@ function Ballistics.CreateFragment(Data)
 		Filter   = table.Copy(Data.Filter or {}),
 		Color    = ColorRand(100, 255),
 		IsSpall  = true,
+		Mode     = "Flight", -- Flight looks ahead with a trace, Penetration walks a frozen ray through armor
 	}
 
 	function Fragment:GetPenetration(Speed)
@@ -74,9 +41,9 @@ function Ballistics.CreateFragment(Data)
 		Fragment.Flight  = Dir * (Speed * ACF.Scale * ACF.MeterToInch)
 		Fragment.TraceTo = Fragment.Pos + Dir * MaxRange
 
-		local Trace, ConvexHit = ResolveNextHit(Fragment, Dir)
+		local Trace, ConvexHit = Ballistics.ResolveNextObstacle(Fragment)
 
-		if not Trace then
+		if not Trace.Hit then
 			debugoverlay.Line(Fragment.Pos, Fragment.TraceTo, 15, Fragment.Color, true)
 
 			return -- Spent itself in open air
@@ -101,7 +68,7 @@ function Ballistics.CreateFragment(Data)
 		if HitRes.Loss >= 1 then return end -- Stopped by the plate; fragments never ricochet
 
 		if ConvexHit then
-			-- Only this convex is spent, so a later re-trace can still hit the entity's other convexes.
+			-- Only this convex is spent, so a stack rebuilt later in this fragment's life still sees the rest.
 			if HitRes.Overkill and HitRes.Overkill > 0 then
 				Ballistics.FilterConvex(Fragment, Trace.Entity, ConvexHit.ConvexID)
 			end
