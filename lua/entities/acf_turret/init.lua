@@ -131,6 +131,7 @@ end
 -- Rebuilds RunOrder from ActiveTurrets, ancestor-first. Comparing against a cached SortDepth
 -- keeps table.sort off the ancestor-chain walk. Driven by an AugmentedTimer rather than the
 -- tick hook so the sort cost is spread over frames.
+-- Also nudges UpdateTurretMass here so a missed mass/parent event can't leave mass/CoM stuck forever; it no-ops unless MassCheckDelay has elapsed.
 local function RebuildTurretRunOrder()
 	RunCount = 0
 
@@ -139,6 +140,7 @@ local function RebuildTurretRunOrder()
 			RunCount = RunCount + 1
 			RunOrder[RunCount] = Entity
 			ENTITY.GetTable(Entity).SortDepth = GetAncestorDepth(ENTITY.GetTable(Entity))
+			Entity:UpdateTurretMass(false)
 		else
 			ActiveTurrets[Entity] = nil
 		end
