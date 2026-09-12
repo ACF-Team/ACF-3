@@ -127,6 +127,7 @@ do -- ACF global vars
 	ACF.DefineSetting("NameAndShame",         true,   "Console messages for failed legality checks have been %s.", ACF.BooleanDataCallback(), false)
 	ACF.DefineSetting("CostLimitGround",      500,    "Ground vehicle cost limit has been set to %s.", ACF.FloatDataCallback(0, 5000, 0), 0)
 	ACF.DefineSetting("CostLimitAir",         200,    "Aircraft cost limit has been set to %s.", ACF.FloatDataCallback(0, 2000, 0), 0)
+	ACF.DefineSetting("MaxArmorVolumeAir",    0,      "Aircraft max armor volume has been set to %s.", ACF.FloatDataCallback(0, 5000, 0), 0)
 	ACF.DefineSetting("VehicleLegalChecks",   true,   "Legality checks for vehicles has been %s.", ACF.BooleanDataCallback(), false)
 	ACF.DefineSetting("LegalityDetours",      true,   "Legality detours have been %s.", ACF.BooleanDataCallback(), false)
 
@@ -147,7 +148,7 @@ do -- ACF global vars
 
 	ACF.DefineSetting("DamageBlastCoef",      0.1,      "Blast damage coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 1000, 2))
 
-	ACF.PenetrationFeatherExponent = 1.25 -- Feathers convex health loss against how much of the plate's thickness was actually traversed
+	ACF.PenetrationFeatherExponent = 2 -- Feathers convex health loss against how much of the plate's thickness was actually traversed
 
 	ACF.FuelRate = 15 -- Multiplier for fuel usage, 1.0 is approx real world
 	ACF.DefineSetting("FuelFactor",           1,      "Fuel rate multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("FuelRate", 0.01, 2, 2))

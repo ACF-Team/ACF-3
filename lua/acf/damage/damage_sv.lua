@@ -282,7 +282,11 @@ end
 function Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 	local IsBlast         = DmgInfo and DmgInfo:GetType() == DMG_BLAST
 	local Coef            = IsBlast and DamageBlastCoef or DamageCoef
-	local FeatherExponent = ACF.PenetrationFeatherExponent
+	-- local FeatherExponent = ACF.PenetrationFeatherExponent
+
+	local Inflictor = DmgInfo and DmgInfo:GetInflictor()
+	local ClassData = IsValid(Inflictor) and Inflictor.ClassData
+	Coef = Coef * (ClassData and ClassData.DamageMultiplier or 1)
 
 	local HitRes = DmgResult:Compute()
 	HitRes.Damage = HitRes.Damage * Coef -- Erroneous :(
@@ -305,8 +309,8 @@ function Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 			local TotalChange = 0
 
 			for _, Hit in ipairs(ConvexHits) do
-				local Feather       = Hit.Frac and Hit.Frac ^ FeatherExponent or 1
-				local HealthChange  = Hit.Volume * Coef * Feather
+				-- local Feather       = Hit.Frac and Hit.Frac ^ FeatherExponent or 1
+				local HealthChange  = Hit.Volume * Coef
 				TotalChange  = TotalChange + HealthChange
 			end
 
@@ -316,11 +320,10 @@ function Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 				local Convex = MeshData.Convexes[Hit.ConvexID]
 				if not Convex then continue end -- Mesh may have been recomputed since these hits were gathered
 
-				local Feather       = Hit.Frac and Hit.Frac ^ FeatherExponent or 1
-				local HealthChange  = Hit.Volume * Coef * Feather
+				-- local Feather       = Hit.Frac and Hit.Frac ^ FeatherExponent or 1
+				local HealthChange  = Hit.Volume * Coef
 
 				Convex.Health = math.Clamp(Convex.Health - HealthChange, 0, Convex.MaxHealth)
-				-- print(HealthChange, Coef)
 
 				Damage.NetworkConvex(Entity, Hit.ConvexID)
 			end
