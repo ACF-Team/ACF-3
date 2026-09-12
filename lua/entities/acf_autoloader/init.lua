@@ -127,6 +127,7 @@ ACF.RegisterClassLinkCheck("acf_autoloader", "acf_ammo", function(This, Ammo)
 	local BulletData = Ammo.BulletData
 	local Caliber = BulletData.CaseDiameter -- Necked cases are wider than their bore, so the case is what has to fit
 	local Length = BulletData.RoundLength or (BulletData.ProjLength + BulletData.PropLength)
+	if BulletData.TwoPiece then Length = Length * 0.5 end
 	if Ammo.IsMissileAmmo then
 		local Weapon    = Classes.GetSubtypeByName("ACF.Missiles.BaseMissile", BulletData.WeaponType)
 		local Round 	= Weapon and Weapon.Round
