@@ -226,7 +226,7 @@ do	-- CFW Hooks
 	hook.Add("cfw.contraption.entityAdded", "ACF_CFW_CostTrack", function(Contraption, Entity)
 		-- print("cfw.contraption.entityAdded", Contraption, Entity)
 		if Entity.IsACFEntity and Entity.IsACFAmmo then
-			Contraption.AmmoTypes[Entity.AmmoType] = true
+			Contraption.AmmoTypes[ACF.GetLegacyStyleClassName(Entity.AmmoType)] = true
 		end
 	end)
 end
