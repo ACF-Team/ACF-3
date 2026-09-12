@@ -236,7 +236,7 @@ end
 do -- Cost limit enforcement
 	local CostLimitSettings = { GroundVehicle = "CostLimitGround", Aircraft = "CostLimitAir" }
 	local AircraftArmorTypes = { Wing = true, Default = true }
-	CostSystem.AircraftVolumeLimit = 17000 -- Sum of convex volumes, in^3
+	CostSystem.AircraftVolumeLimit = 32000 -- Sum of convex volumes, in^3
 
 	-- Sums an aircraft's convex armor volume, and reports whether any convex uses a disallowed material
 	function CostSystem.GetAircraftArmorInfo(Contraption)
