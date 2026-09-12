@@ -362,10 +362,10 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function(CLASS, 
 
 					JetInfo:SetType(DMG_BULLET)
 
-					local Speed = Bullet.JetAvgVel
+					local Speed = Bullet.JetAvgVel * ACF.MeterToInch -- JetAvgVel is m/s; ACF.Kinetic and DoSpall both expect inches/s
 
 					Bullet.Energy = {}
-					Bullet.Energy.Kinetic = ACF.Kinetic(Speed, Bullet.JetMass * JetMassPct).Kinetic * 1000
+					Bullet.Energy.Kinetic = ACF.Kinetic(Speed, Bullet.JetMass * JetMassPct).Kinetic
 					local JetResult = Damage.dealDamage(Ent, JetDmg, JetInfo)
 
 					-- Only spall on layers the jet actually broke through with mass to spare.
