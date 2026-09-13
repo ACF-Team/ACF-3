@@ -274,17 +274,10 @@ function SWEP:PrimaryAttack()
 		if not MeshData then return end
 
 		local DmgResult = self.DamageResult
-		local DmgInfo   = self.DamageInfo
 		local HitPos    = Trace.HitPos
 		local Dir       = (HitPos - Trace.StartPos):GetNormalized()
 
 		if not ACF.GetConvexHit(Entity, HitPos, Dir, true) then return end
-
-		DmgInfo:SetAttacker(Owner)
-		DmgInfo:SetInflictor(self)
-		DmgInfo:SetOrigin(Trace.StartPos)
-		DmgInfo:SetHitPos(HitPos)
-		DmgInfo:SetHitGroup(Trace.HitGroup)
 
 		local Healed = false
 
@@ -298,8 +291,17 @@ function SWEP:PrimaryAttack()
 			if not ConvexHit then continue end
 
 			local OldHealth = Ent.ACF.Health
-			DmgInfo:SetConvexHits({ { ConvexID = ConvexHit.ConvexID, Volume = -(ConvexHit.GeoThick * 0.1 * DmgResult:GetArea() / ACF.InchToCmCu) } })
-			Damage.dealDamage(Ent, DmgResult, DmgInfo)
+			local HealAmount = ConvexHit.GeoThick * 0.1 * DmgResult:GetArea() / ACF.InchToCmCu
+
+			-- Heal directly, Damage.dealDamage would trigger crew/turret/ammo ACF_OnDamage handlers as real damage.
+			if Ent.IsACFEntity then
+				Ent.ACF.Health = math.Clamp(Ent.ACF.Health + HealAmount, 0, Ent.ACF.MaxHealth)
+			else
+				local Convex = EntMeshData.Convexes[ConvexHit.ConvexID]
+				Convex.Health = math.Clamp(Convex.Health + HealAmount, 0, Convex.MaxHealth)
+				Damage.NetworkConvex(Ent, ConvexHit.ConvexID)
+			end
+
 			Healed = true
 
 			if Entity.ACF_OnRepaired then
