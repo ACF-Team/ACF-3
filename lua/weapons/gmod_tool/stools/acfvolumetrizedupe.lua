@@ -226,30 +226,29 @@ elseif SERVER then
 		Data.PhysicsObjects[0].Pos   = Primitive.Pos
 		Data.PhysicsObjects[0].Angle = Primitive.Angle
 
-		-- Re-express each proper_clipping plane against the primitive's new pose, replacing the stale
-		-- modifiers AreaCopy captured. proper_clipping cross-checks its two duplicator formats on paste,
-		-- so both must be written and agree; compat `d` equals the distance since the OBB center is the origin.
-		if Entity.ClipData and next(Entity.ClipData) then
+		-- Re-express each improved_clipping plane against the primitive's new pose, replacing the stale
+		-- modifier AreaCopy captured. Clips are stored entity-local, so each is rebuilt in world space
+		-- off the old pose first, then re-expressed locally off the new one.
+		local State = Entity.ImprovedClipping
+		if State and next(State.Clips) then
 			Data.EntityMods = Data.EntityMods or {}
 
 			local OldPos, OldAngle = Entity:GetPos(), Entity:GetAngles()
 
-			local Native, Compat = {}, {}
-			for i, clip in ipairs(Entity.ClipData) do
-				local WorldNorm = Vector(clip.norm)
+			local Normals, Distances, Seals, Insides = {}, {}, {}, {}
+			for i, clip in ipairs(State.Clips) do
+				local WorldNorm = Vector(clip.Normal)
 				WorldNorm:Rotate(OldAngle)
-				local WorldPoint = OldPos + WorldNorm * clip.dist
+				local WorldPoint = OldPos + WorldNorm * clip.Distance
 
 				local _, LocalAng = WorldToLocal(vector_origin, WorldNorm:Angle(), vector_origin, Primitive.Angle)
-				local Norm = LocalAng:Forward()
-				local Dist = WorldNorm:Dot(WorldPoint - Primitive.Pos)
-
-				Native[i] = { Norm, Dist, clip.inside, clip.physics }
-				Compat[i] = { n = Norm:Angle(), d = Dist, inside = clip.inside, new = true }
+				Normals[i]   = LocalAng:Forward()
+				Distances[i] = WorldNorm:Dot(WorldPoint - Primitive.Pos)
+				Seals[i]     = clip.Seal
+				Insides[i]   = clip.Inside
 			end
 
-			Data.EntityMods["proper_clipping"] = Native
-			Data.EntityMods["clips"] = Compat
+			Data.EntityMods["improved_clipping"] = { Normals = Normals, Distances = Distances, Seals = Seals, Insides = Insides }
 		end
 	end
 
