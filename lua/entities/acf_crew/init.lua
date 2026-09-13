@@ -248,7 +248,7 @@ do -- Random timer stuff
 
 		-- Update oxygen levels and apply drowning if necessary
 		local MouthPos = ENTITY.LocalToWorld(self, SelfTbl.CrewModel.MouthOffsetL) -- Probably well underwater at this point
-		-- debugoverlay.Cross(MouthPos, 4, 1, Red, true)
+		-- Debug.Cross(MouthPos, 4, 1, Red, true)
 		if bit.band(util.PointContents(MouthPos), CONTENTS_WATER) == CONTENTS_WATER then
 			SelfTbl.Oxygen = SelfTbl.Oxygen - DeltaTime * ACF.CrewOxygenLossRate
 		else
@@ -386,7 +386,7 @@ do -- Random timer stuff
 		if GForceIter % SampleRate ~= 0 then return end
 
 		local NewPos = ENTITY.LocalToWorld(self, SelfTbl.CrewModel.ScanOffsetL)
-		-- debugoverlay.Cross(NewPos, 4, 1, Red, true)
+		-- Debug.Cross(NewPos, 4, 1, Red, true)
 		local GForce = ACF.UpdateGForceTracker(SelfTbl.GForceTracker, NewPos, SampleRate)
 
 		-- If specified, affect crew ergonomics based on G-forces

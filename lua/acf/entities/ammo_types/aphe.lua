@@ -1,6 +1,6 @@
 local ACF       = ACF
 local Classes   = ACF.Classes
-
+local Debug		= ACF.Debug
 local MAX_FUZE_DELAY = 0.1 -- Longest delay a fuze can be set to, in seconds; also the menu slider's ceiling
 local Damage    = ACF.Damage
 local Clock 	= ACF.Utilities.Clock
@@ -173,6 +173,10 @@ Classes.DefineClass("ACF.Ammunition.APHE", "ACF.Ammunition.AP", function(CLASS, 
 
 			Bullet.PenFuzeArmed = true
 
+			Debug.Cross(ExitPos, 4, 10, Color(150, 0, 255), true) -- DEBUG: fuze arm location
+
+			Bullet.NextPos = ExitPos
+
 			local Delay = Bullet.FuzeDelay or 0
 
 			-- No delay: detonate at the exit point now rather than waiting for the next tick boundary.
@@ -219,6 +223,8 @@ Classes.DefineClass("ACF.Ammunition.APHE", "ACF.Ammunition.AP", function(CLASS, 
 
 				Bullet.Pos = Trace.HitPos - Bullet.Flight:GetNormalized() * Offset
 			end
+
+			Debug.Cross(Bullet.Pos, 4, 10, Color(0, 255, 255), true) -- DEBUG: detonation location
 
 			local Position = Bullet.Pos
 			local Filler   = Bullet.FillerMass
