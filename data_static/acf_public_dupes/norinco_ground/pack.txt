@@ -14,7 +14,7 @@ INSERT INTO DupeData (path, name, cost, weight, type, mobility, packid, descript
 ('wpv12', 'WPV-12', 22.48, 3066.14, 'Transport', 'Wheeled', 'norinco_ground', ''),
 ('wtv12', 'WTV-12', 46.52, 9397.84, 'Transport', 'Wheeled', 'norinco_ground', ''),
 
-('aa20', 'AA20', 71.53, 9062, 'AA', 'Tracked', 'norinco_ground', ''),
+('aa15', 'AA15', 71.53, 9062, 'AA', 'Tracked', 'norinco_ground', ''),
 ('apc12', 'APC12', 41.29, 6970.96, 'APC', 'Tracked', 'norinco_ground', ''),
 ('lt85', 'LT-85', 91.78, 9163.5, 'Light Tank', 'Tracked', 'norinco_ground', ''),
 ('spg152', 'SPG-152', 204.89, 13454.17, 'SPG', 'Tracked', 'norinco_ground', '');
