@@ -56,7 +56,7 @@ function ACF.CheckLocalVersion(Owner, Name, Path)
 	local Result = {
 		realm = Realm,
 		path  = Path,
-		head  = "master",
+		head  = "Unknown",
 		code  = "Not Installed",
 		date  = 0,
 		owner = Owner,
@@ -71,7 +71,7 @@ function ACF.CheckLocalVersion(Owner, Name, Path)
 		local Head = GetGitHead(Path)
 		local Code, Date = GetGitCommit(Path, Head)
 
-		Result.head  = Head or "master"
+		Result.head  = Head or "Unknown"
 		Result.owner = GetGitOwner(Path) -- Makes sure the owner of the repo is correct, deals with forks
 
 		if Code and Date then
@@ -89,8 +89,9 @@ function ACF.CheckLocalVersion(Owner, Name, Path)
 		local Code = FileData:sub(1, 7)
 		local Date = file.Time(WorkshopPath, "GAME")
 
-		Result.code = "Git-master-" .. Code
-		Result.date = LocalToUTC(Date)
+		Result.head  = "master" -- Workshop uploads are always built from master
+		Result.code  = "Git-master-" .. Code
+		Result.date  = LocalToUTC(Date)
 		Result.workshop = true
 
 		return Result
@@ -98,6 +99,7 @@ function ACF.CheckLocalVersion(Owner, Name, Path)
 
 	-- ZIP install
 	if file.Exists(Path .. "/LICENSE", "GAME") then
+		Result.head = "master" -- GitHub's "Download ZIP" defaults to the repo's default branch
 		Result.code = "ZIP-Unknown"
 		Result.date = LocalToUTC(file.Time(Path .. "/LICENSE", "GAME"))
 
@@ -194,12 +196,23 @@ function ACF.UpdateVersionConVars()
 	pcall(acf3_versioning.SetString, acf3_versioning, table.concat(Packed, "|"))
 end
 
+--- Finds the addons/ subfolder that contains RelativeFile, needed since the client realm doesn't report an addons/<name> prefix in debug info
+local function FindAddonFolder(RelativeFile)
+	local _, Folders = file.Find("addons/*", "GAME")
+
+	for _, Folder in ipairs(Folders) do
+		local Candidate = "addons/" .. Folder
+		if file.Exists(Candidate .. "/" .. RelativeFile, "GAME") then return Candidate end
+	end
+end
+
 ACF.Extensions = ACF.Extensions or {}
 ACF.ExtensionOrders = ACF.ExtensionOrders or {}
 function ACF.AddRepository(Owner, Name)
 	if ACF.Extensions[Name] then return end
 	local info = debug.getinfo(2, "S")
-	local Path = string.Split(info.short_src, "/lua/")[1]
+	local RelativeFile = info.short_src:match("(lua/.+)$") or info.short_src
+	local Path = FindAddonFolder(RelativeFile) or string.Split(info.short_src, "/lua/")[1]
 
 	local Version = ACF.CheckLocalVersion(Owner, Name, Path)
 	ACF.Extensions[Name] = ACF.Extensions[Name] or {}
