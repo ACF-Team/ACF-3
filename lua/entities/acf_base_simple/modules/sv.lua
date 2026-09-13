@@ -155,12 +155,18 @@ return function()
             end
         end
 
+        function ENT:GetOwnerPlayer()
+            local Player = self:GetPlayer() -- Not set on entities restored from a duplication, use CPPI instead
+
+            return IsValid(Player) and Player or self:CPPIGetOwner()
+        end
+
         function ENT:GetUser(Input)
-            if not IsValid(Input) then return self:GetPlayer() end
+            if not IsValid(Input) then return self:GetOwnerPlayer() end
 
             local User = FindUser(self, Input)
 
-            return IsValid(User) and User or self:GetPlayer()
+            return IsValid(User) and User or self:GetOwnerPlayer()
         end
     end ---------------------------------------------
 end
