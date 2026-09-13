@@ -49,6 +49,10 @@ do -- Random timer crew stuff
 		if CrewParent == Turret:GetParent() then -- Shares a parent with the turret
 			local CarriedMass = (Turret.TurretData.TotalMass or 0) + (Turret.ACF.Mass or 0)
 			if CarriedMass <= ACF.LightweightTurretMassLimit then return true, true end
+
+			-- Casemates traverse too little to need a dedicated gunner station, so they cascade at any mass
+			if (Turret.MaxDeg - Turret.MinDeg) <= ACF.CasemateArcLimit then return true, true end
+
 			return true, false -- Controls, but no cascade to vertical drives
 		end
 

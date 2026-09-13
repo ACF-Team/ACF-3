@@ -151,6 +151,16 @@ do	-- Metamethods
 				return false
 			end
 
+			-- Overweight turrets keep the link but get no bonus, so the mass is rechecked here
+			-- every time rather than once at link time
+			if not self.IsRemote then
+				local CarriedMass = (Linked.TurretData and Linked.TurretData.TotalMass or 0) + (Linked.ACF and Linked.ACF.Mass or 0)
+				if CarriedMass > ACF.LightweightTurretMassLimit then
+					self:SetActive(false, "Turret is too heavy!")
+					return false
+				end
+			end
+
 			if self.Active == false then self:SetActive(true, "") end
 			return true
 		end
@@ -216,9 +226,6 @@ do	-- Lightweight Turret Controllers link to acf_turret directly, no crew involv
 		if ThisContraption ~= nil and TurretContraption ~= nil and ThisContraption ~= TurretContraption then
 			return false, "This controller and turret are not part of the same contraption."
 		end
-
-		local CarriedMass = (Turret.TurretData and Turret.TurretData.TotalMass or 0) + (Turret.ACF and Turret.ACF.Mass or 0)
-		if CarriedMass > ACF.LightweightTurretMassLimit then return false, "This turret is too heavy for a Lightweight Turret Controller." end
 
 		return true
 	end)
