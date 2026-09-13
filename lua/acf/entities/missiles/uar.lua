@@ -132,7 +132,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.SPG-9", "ACF.Missiles.UnguidedR
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true }
 	CLASS.Agility		= 1
-	CLASS.ArmDelay		= 0.1
+	CLASS.ArmDelay		= 0
 	CLASS.HitDeviate	= false
 	CLASS.Round			= {
 		Model           	= "models/missiles/rs82.mdl",
