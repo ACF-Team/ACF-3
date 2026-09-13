@@ -203,7 +203,7 @@ function Armor:OnLoaded()
     self.CostMul     = 35
     self.HealthMul   = 0.4
     self.KineticMul  = 0.5
-    self.ChemicalMul = 1.5
+    self.ChemicalMul = 1.3
     self.SpallMul    = 0.3
     self.Color       = Color(255, 191, 0)
 end
