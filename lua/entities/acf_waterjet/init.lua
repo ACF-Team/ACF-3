@@ -179,7 +179,8 @@ function ENT:Think()
 
 	self:SetNW2Float("ACF_WaterjetRPM", 0)
 	local Center = self:GetPos()
-	SelfTbl.InWater = bit.band(util.PointContents(Center), CONTENTS_WATER) == CONTENTS_WATER
+	local LiquidMask = bit.bor(CONTENTS_WATER, CONTENTS_SLIME)
+	SelfTbl.InWater = bit.band(util.PointContents(Center), LiquidMask) ~= 0
 
 	SelfTbl.Pitch = math.Clamp(SelfTbl.Pitch + (SelfTbl.TargetPitch - SelfTbl.Pitch) * SelfTbl.SlewRatePitch * 0.1, -1, 1)
 	SelfTbl.Yaw = math.Clamp(SelfTbl.Yaw + (SelfTbl.TargetYaw - SelfTbl.Yaw) * SelfTbl.SlewRateYaw * 0.1, -1, 1)
