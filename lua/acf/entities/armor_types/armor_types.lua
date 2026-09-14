@@ -185,11 +185,11 @@ function Armor:OnLoaded()
     self.ShortName   = "Rubber"
     self.Description = "Very cheap and light, but offers very little protection."
     self.Density     = 1500 -- * https://rubberandseal.com/what-is-the-density-of-rubber-sheets/
-    self.CostMul     = 12
-    self.HealthMul   = 0.446429
+    self.CostMul     = 15
+    self.HealthMul   = 0.7
     self.KineticMul  = 0.15
     self.ChemicalMul = 0.35
-    self.SpallMul    = 0.1
+    self.SpallMul    = 0.2
     self.Color       = Color(36, 36, 36)
 end
 
