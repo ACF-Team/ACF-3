@@ -29,7 +29,7 @@ do
 		if not IsValid(Entity) then return end
 		if Entity.Driver ~= ply then return end
 
-		local PrimaryGun = Entity.Primary
+		local PrimaryGun = Entity:GetGun1()
 		if not IsValid(PrimaryGun) then return end
 		for Crate, _ in pairs(PrimaryGun.Crates) do
 			if IsValid(Crate) then
@@ -45,7 +45,7 @@ do
 		if Contraption == nil then return end
 
 		-- Determine current counts
-		local PrimaryGun = SelfTbl.Primary
+		local PrimaryGun = self:GetGun1()
 		if not IsValid(PrimaryGun) then return end
 
 		local PrimaryAmmoByName = {}

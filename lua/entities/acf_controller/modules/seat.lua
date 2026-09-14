@@ -95,7 +95,7 @@ local function OnButtonChanged(Controller, Button, Down)
 		Controller.TurretComputer.Inputs.Position.Value = Controller.HitPos
 		Controller.TurretComputer:TriggerInput("Calculate Superelevation", 1)
 
-		local Diff = (Controller.Primary:GetPos() - Controller.HitPos)
+		local Diff = (Controller:GetGun1():GetPos() - Controller.HitPos)
 		Controller.LasePitch = math.deg(math.asin(Diff.z / Diff:Length()))
 		Controller.LaseDist = Diff:Length()
 	end
