@@ -71,8 +71,7 @@ function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 		timer.Remove("ACFPhysicalChecks" .. self:EntIndex())
 	end)
 
-	ACF.AugmentedTimer(function(cfg) self:UpdateAccuracyMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 0.1, MaxTime = 0.25})
-	ACF.AugmentedTimer(function(cfg) self:UpdateFuelMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 0.1, MaxTime = 0.25})
+	ACF.AugmentedTimer(function(cfg) self:UpdateDriverMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 0.1, MaxTime = 0.25})
 	ACF.AugmentedTimer(function(cfg) self:EnforceLooped(cfg) end, function() return IsValid(self) end, nil, {MinTime = 0.1, MaxTime = 0.25})
 	ACF.ActiveBaseplatesTable[self] = true
 	table.insert(ACF.ActiveBaseplatesArray, self)
@@ -80,6 +79,16 @@ function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 	self:CallOnRemove("ACF_RemoveBaseplateTableIndex", function(ent)
 		ACF.ActiveBaseplatesTable[ent] = nil
 		table.RemoveByValue(ACF.ActiveBaseplatesArray, ent)
+	end)
+
+	-- Deferred a tick so the seat/etc have joined the contraption first. Not kept up to date after.
+	timer.Simple(0, function()
+		if not IsValid(self) then return end
+
+		local Contraption = self:CFW_GetContraption()
+		if Contraption then
+			Contraption.ACF_Cost = ACF.Contraption.CostSystem.CalcCostsFromContraption(Contraption)
+		end
 	end)
 end
 

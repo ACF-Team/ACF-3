@@ -4,6 +4,11 @@ include( "shared.lua" )
 
 killicon.Add( "acf_ammo", "HUD/killicons/acf_ammo", ACF.KillIconColor )
 
+local ChargeModelPath    = "models/acf/munitions/charge.mdl"    -- propellant bag model, alternated in for two-piece rounds
+-- charge.mdl's casing bodygroup: 0 full, 1 half, 2 combustible, 3 mortar
+local ChargeBodygroup    = 0
+local CartridgeModelPath = "models/acf/munitions/cartridge.mdl" -- last-resort fallback; the server normally names the model
+
 do --MARK: Networking
 	local MaxRounds = GetConVar( "acf_maxroundsdisplay" )
 	local Queued    = {}
@@ -53,8 +58,9 @@ do --MARK: Networking
 		entity.IsDrum = net.ReadBool()
 
 		if entity.IsDrum then
-			entity.RoundsPerRing = net.ReadUInt( 8 )
-			entity.DrumLayers    = net.ReadUInt( 8 )
+			entity.DrumShape   = net.ReadString()
+			entity.DrumPrimary = net.ReadUInt( 8 )
+			entity.DrumStacks  = net.ReadUInt( 8 )
 		end
 
 		local hasCustomModel = net.ReadBool()
@@ -67,33 +73,42 @@ do --MARK: Networking
 		-- Read rotation flag (cartridge models need -90 degree rotation)
 		local needsRotation = net.ReadBool()
 
+		entity.IsTwoPiece  = net.ReadBool()
+		entity.IsHexPacked = net.ReadBool()
+
 		-- Resolve model path - use cartridge model with bodygroups for ammo visualization
 		local modelPath = entity.RoundModel
 
 		if not modelPath then
 			-- Use the unified cartridge model with bodygroups
-			modelPath = "models/acf/munitions/cartridge.mdl"
+			modelPath = CartridgeModelPath
 		end
 
-		-- Calculate model scale
-		local modelSize  = ACF.ModelData.GetModelSize( modelPath )
-		local modelScale = Vector( 1, 1, 1 )
+		-- Calculate a scale matrix that fits a given model's bounding box into the round's cell size
+		local function getScaleMatrix( path )
+			local size  = ACF.ModelData.GetModelSize( path )
+			local scale = Vector( 1, 1, 1 )
 
-		if modelSize then
-			if needsRotation then
-				-- Cartridge model needs axis swap due to rotation
-				modelScale = Vector(
-					entity.RoundSize.y / modelSize.x,
-					entity.RoundSize.z / modelSize.y,
-					entity.RoundSize.x / modelSize.z
-				)
-			else
-				modelScale = Vector(
-					entity.RoundSize.x / modelSize.x,
-					entity.RoundSize.y / modelSize.y,
-					entity.RoundSize.z / modelSize.z
-				)
+			if size then
+				if needsRotation then
+					-- Cartridge model needs axis swap due to rotation
+					scale = Vector(
+						entity.RoundSize.y / size.x,
+						entity.RoundSize.z / size.y,
+						entity.RoundSize.x / size.z
+					)
+				else
+					scale = Vector(
+						entity.RoundSize.x / size.x,
+						entity.RoundSize.y / size.y,
+						entity.RoundSize.z / size.z
+					)
+				end
 			end
+
+			local matrix = Matrix()
+			matrix:SetScale( scale )
+			return matrix
 		end
 
 		-- Calculate projectile angle
@@ -106,10 +121,12 @@ do --MARK: Networking
 		entity.CachedModelPath      = modelPath
 		entity.CachedLocalAngle     = localAngle
 		entity.CachedNeedsRotation  = needsRotation
+		entity.CachedScaleMatrix    = getScaleMatrix( modelPath )
 
-		local scaleMatrix = Matrix()
-		scaleMatrix:SetScale( modelScale )
-		entity.CachedScaleMatrix = scaleMatrix
+		-- Two-piece rounds alternate in a propellant bag model between projectiles; cache its scale too
+		if entity.IsTwoPiece then
+			entity.CachedChargeScaleMatrix = getScaleMatrix( ChargeModelPath )
+		end
 
 		-- Cache model offset for box positioning (base-origin models need centering)
 		local modelOffset = Vector( 0, 0, 0 )
@@ -124,7 +141,7 @@ do --MARK: Networking
 
 		-- Cache crate start position for box crates
 		if not entity.IsDrum then
-			local crateDimensions = ACF.GetCrateDimensions( entity.ProjectileCounts, entity.RoundSize )
+			local crateDimensions = ACF.GetCrateDimensions( entity.ProjectileCounts, entity.RoundSize, entity.IsHexPacked )
 			entity.CachedLocalStartPos = Vector(
 				-crateDimensions.x * 0.5 + entity.RoundSize.x * 0.5,
 				-crateDimensions.y * 0.5 + entity.RoundSize.y * 0.5,
@@ -142,6 +159,7 @@ do --MARK: Networking
 		end
 
 		entity._RoundModels      = nil
+		entity._RoundBoxes       = nil
 		entity.DisplayAmmo       = nil
 		entity.TargetDisplayAmmo = nil
 
@@ -196,6 +214,7 @@ do --MARK: Ammo rendering
 		end
 
 		entity._RoundModels = nil
+		entity._RoundBoxes  = nil
 	end
 
 	function ENT:SetAmount( count )
@@ -205,6 +224,7 @@ do --MARK: Ammo rendering
 		local previous
 		if not self._RoundModels then
 			self._RoundModels = {}
+			self._RoundBoxes  = {}
 			previous = 0
 		else
 			previous = self.DisplayAmmo or 0
@@ -214,60 +234,80 @@ do --MARK: Ammo rendering
 		-- No change
 		if count == previous then return end
 
+		-- Two-piece rounds store as two physical pieces (projectile + charge) per round of ammo, so
+		-- twice as many model slots need to be filled to match the crate's physical grid/ring layout.
+		local slotMul       = self.IsTwoPiece and 2 or 1
+		local previousSlots = previous * slotMul
+		local countSlots    = count * slotMul
+
 		-- Decrease: remove excess models (includes going to 0)
 		if count < previous then
 			local models = self._RoundModels
-			for i = previous, count + 1, -1 do
+			local boxes  = self._RoundBoxes
+			for i = previousSlots, countSlots + 1, -1 do
 				local m = models[i]
 				models[i] = nil
+				boxes[i]  = nil
 				if IsValid( m ) then m:Remove() end
 			end
 
 			return
 		end
 
-		-- Increase: add new models from previous+1 to count
-		local modelPath     = self.CachedModelPath
-		local localAngle    = self.CachedLocalAngle
-		local roundSize     = self.RoundSize
-		local scaleMatrix   = self.CachedScaleMatrix
-		local modelOffset   = self.CachedModelOffset
-		local bodygroup     = self.RoundBodygroup or 0
+		-- Increase: add new models from previousSlots+1 to countSlots
+		local modelPath        = self.CachedModelPath
+		local localAngle       = self.CachedLocalAngle
+		-- roundSize is in crate space (x = length), so boxes skip localAngle's model-correction pitch
+		local boxAngle         = self.LocalAng
+		local roundSize        = self.RoundSize
+		local scaleMatrix      = self.CachedScaleMatrix
+		local chargeScaleMatrix = self.CachedChargeScaleMatrix
+		local modelOffset      = self.CachedModelOffset
+		local bodygroup        = self.RoundBodygroup or 0
+		local isTwoPiece       = self.IsTwoPiece
 
 		local models = self._RoundModels
+		local boxes  = self._RoundBoxes
+
+		-- Two-piece rounds pair along the stacking axis: charge on the bottom tier, projectile above it.
+		-- Keyed off the tier rather than the flat slot index, which advances around a drum's ring first.
+		local function GetSlotModel( tier )
+			if isTwoPiece and tier % 2 == 0 then
+				return ChargeModelPath, chargeScaleMatrix, ChargeBodygroup
+			end
+
+			return modelPath, scaleMatrix, bodygroup
+		end
 
 		if self.IsDrum then
 			-- MARK: Drum
-			-- Radial positioning with rounds pointing toward center
+			-- The shape's layout owns the arrangement; this loop only places what it hands back
 
-			local roundsPerRing = self.RoundsPerRing
-			local numLayers     = self.DrumLayers
+			local layout    = ACF.GetDrumLayout( self.DrumShape )
+			local primary   = self.DrumPrimary
+			local numStacks = self.DrumStacks
 
-			for index = previous + 1, count do
-				local localPos, localAng = ACF.GetDrumRoundOffset( index, roundsPerRing, numLayers, roundSize )
+			for index = previousSlots + 1, countSlots do
+				local localPos, localAng = layout.GetRoundOffset( index, primary, numStacks, roundSize, self.IsHexPacked )
 
-				-- Compose angles: localAngle orients the model, localAng.yaw rotates around drum axis
-				local drumAngle = Angle( localAngle )
-				drumAngle:RotateAroundAxis( Vector( 0, 0, 1 ), localAng.yaw )
+				-- The layout also owns orientation: how the round sits, and any origin correction it needs
+				local finalPos, drumAngle, drumBoxAngle = layout.GetRenderTransform(
+					localPos, localAng.yaw, localAngle, boxAngle, roundSize, self.CachedNeedsRotation
+				)
 
-				-- For cartridge models that need rotation, offset outward along radial direction
-				-- by half the round length to center the model at the calculated position
-				local finalPos = localPos
-				if self.CachedNeedsRotation then
-					local radialDir = Vector( localPos.x, localPos.y, 0 ):GetNormalized()
-					finalPos = localPos + radialDir * roundSize.x * 0.5
-				end
+				local slotPath, slotScale, slotBodygroup = GetSlotModel( layout.GetTier( index, primary ) )
 
-				local model = ClientsideModel( modelPath, RENDERGROUP_OPAQUE )
+				local model = ClientsideModel( slotPath, RENDERGROUP_OPAQUE )
 				if IsValid( model ) then
 					model:SetParent( self )
 					model:SetPos( self:LocalToWorld( finalPos ) )
 					model:SetAngles( self:LocalToWorldAngles( drumAngle ) )
 					model:SetNoDraw( true )
 					model:DrawShadow( false )
-					model:EnableMatrix( "RenderMultiply", scaleMatrix )
-					model:SetBodygroup( 0, bodygroup ) -- Apply ammo type bodygroup
+					model:EnableMatrix( "RenderMultiply", slotScale )
+					model:SetBodygroup( 0, slotBodygroup ) -- Apply ammo type bodygroup
 					models[index] = model
+					boxes[index]  = { Pos = localPos, Ang = drumBoxAngle, Size = roundSize }
 				end
 			end
 		else
@@ -284,25 +324,28 @@ do --MARK: Ammo rendering
 				for y = 1, fits.y do
 					for z = 1, fits.z do
 						-- Only create models we don't have yet
-						if index > previous and index <= count then
-							local localGridPos  = getRoundOffset( x, y, z, roundSize, fits )
+						if index > previousSlots and index <= countSlots then
+							local localGridPos  = getRoundOffset( x, y, z, roundSize, self.IsHexPacked )
 							local localModelPos = localStartPos + localGridPos + modelOffset
 
-							local model = ClientsideModel( modelPath, RENDERGROUP_OPAQUE )
+							local slotPath, slotScale, slotBodygroup = GetSlotModel( z - 1 )
+
+							local model = ClientsideModel( slotPath, RENDERGROUP_OPAQUE )
 							if IsValid( model ) then
 								model:SetParent( self )
 								model:SetPos( self:LocalToWorld( localModelPos ) )
 								model:SetAngles( worldAngle )
 								model:SetNoDraw( true )
 								model:DrawShadow( false )
-								model:EnableMatrix( "RenderMultiply", scaleMatrix )
-								model:SetBodygroup( 0, bodygroup ) -- Apply ammo type bodygroup
+								model:EnableMatrix( "RenderMultiply", slotScale )
+								model:SetBodygroup( 0, slotBodygroup ) -- Apply ammo type bodygroup
 								models[index] = model
+								boxes[index]  = { Pos = localStartPos + localGridPos, Ang = boxAngle, Size = roundSize }
 							end
 						end
 
 						index = index + 1
-						if index > count then return end
+						if index > countSlots then return end
 					end
 				end
 			end
@@ -345,6 +388,14 @@ do --MARK: Ammo rendering
 				if IsValid( model ) then
 					model:DrawModel()
 				end
+			end
+		end
+
+		-- Draw a wireframe box around each slot showing the true space it occupies
+		if self._RoundBoxes then
+			for _, box in pairs( self._RoundBoxes ) do
+				local Half = box.Size * 0.5
+				render.DrawWireframeBox( self:LocalToWorld( box.Pos ), self:LocalToWorldAngles( box.Ang ), -Half, Half, Color( 0, 255, 0, 255 ), true )
 			end
 		end
 

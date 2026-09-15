@@ -9,15 +9,11 @@ local function Init(Entity)
 	Entity.Racks            = {}    -- All racks
 	Entity.GuidanceComputer = nil   -- The guidance computer, if any
 	Entity.TurretComputer   = nil   -- The turret computer, if any
-	Entity.GunsPrimary      = {}    -- Primary guns (Main gun, cannon, etc)
-	Entity.GunsSecondary    = {}    -- Secondary guns (Machine guns, etc)
+	Entity.GunsPrimary      = {}    -- All guns sharing Gun1's weapon
+	Entity.GunsSecondary    = {}    -- All guns sharing Gun2's weapon
 	Entity.GunsSmoke        = {}    -- Smoke and flare launchers
-	Entity.LargestCaliber   = 0     -- Largest caliber gun of the vehicle
 	Entity.TurretLocked     = false -- Whether the turret is locked or not
-	Entity.Primary          = nil
-	Entity.Secondary        = nil
-	Entity.Tertiary         = nil
-	Entity.Smoke            = nil
+	Entity.Smoke            = nil   -- Reference smoke launcher, for HUD purposes
 	Entity.Drop             = 0
 	Entity.TravelTime       = 0
 	Entity.LaseDist         = 0
@@ -27,28 +23,37 @@ end
 -- Turret related
 do
 	function ENT:AnalyzeGuns(Gun)
-		-- Sorts guns into primary, secondary and smoke launchers
-		-- O(n)... heartwarming
 		if Gun.Weapon == "ACF.Guns.SmokeLauncher" then
 			self.GunsSmoke[Gun] = true
+			if not IsValid(self.Smoke) then self.Smoke = Gun end
 			local Fuse = self:GetSmokeFuse() or 0
 			if Fuse > 0 then Gun:TriggerInput("Fuze", Fuse) end
-		elseif Gun.Caliber < self.LargestCaliber then
-			self.GunsSecondary[Gun] = true
-		elseif Gun.Caliber == self.LargestCaliber then
-			self.GunsPrimary[Gun] = true
-		elseif Gun.Caliber > self.LargestCaliber then
-			for Gun in pairs(self.GunsPrimary) do
-				self.GunsSecondary[Gun], self.GunsPrimary[Gun] = true, nil
+			return
+		end
+
+		-- Auto-fill Gun1/Gun2 with the first distinct weapons seen, unless already set
+		if not IsValid(self:GetGun1()) then
+			self:SetGun1(Gun)
+		elseif not IsValid(self:GetGun2()) and Gun.Weapon ~= self:GetGun1().Weapon then
+			self:SetGun2(Gun)
+		end
+
+		-- Rebuild the firing groups from every linked gun sharing Gun1's/Gun2's weapon
+		table.Empty(self.GunsPrimary)
+		table.Empty(self.GunsSecondary)
+		local Primary, Secondary = self:GetGun1(), self:GetGun2()
+		for LinkedGun in pairs(self.Guns) do
+			if IsValid(Primary) and LinkedGun.Weapon == Primary.Weapon then
+				self.GunsPrimary[LinkedGun] = true
+			elseif IsValid(Secondary) and LinkedGun.Weapon == Secondary.Weapon then
+				self.GunsSecondary[LinkedGun] = true
 			end
-			self.GunsPrimary[Gun] = true
-			self.LargestCaliber = Gun.Caliber
 		end
 	end
 
 	function ENT:AnalyzeRacks(Rack)
 		self.Racks[Rack] = true
-		self.Tertiary = Rack
+		if not IsValid(self:GetGun3()) then self:SetGun3(Rack) end
 	end
 
 	-- Fire guns
@@ -105,11 +110,12 @@ do
 		if SelfTbl.TurretLocked then return end
 		if self:GetDisableAIOCam() then return end -- I guess bro
 
-		local Primary = self.Primary
+		local Primary = self:GetGun1()
 		local BreechReference = IsValid(Primary) and Primary.BreechReference
 		local ReloadAngle = self:GetReloadAngle()
 		local ReloadAngleHorizontal = self:GetReloadAngleHorizontal()
-		local ShouldLevel = ReloadAngle ~= 0 and IsValid(Primary) and Primary.State ~= "Loaded"
+		-- Mag-fed guns chamber a fresh round between shots too, only level for the actual magazine reload
+		local ShouldLevel = ReloadAngle ~= 0 and IsValid(Primary) and Primary.State ~= "Loaded" and (not Primary.MagSize or Primary.MagazineReloading)
 
 		-- Liddul... if you can hear me...
 		local TurretComputer = self.TurretComputer
@@ -133,7 +139,7 @@ do
 				elseif BreechReference and Turret == BreechReference:GetParent() and ShouldLevel and ReloadAngleHorizontal ~= 0 then Turret:InputDirection(ReloadAngleHorizontal)
 				else Turret:InputDirection(HitPos + AntiDrop + AntiDrift) end
 
-				if Turret == SelfTbl.RadarVertical then Turret:InputDirection(SelfTbl.SelectedTargetPos) end
+				if Turret == SelfTbl.RadarVertical and SelfTbl.SelectedTargetID then Turret:InputDirection(SelfTbl.SelectedTargetPos) end
 			end
 		end
 	end

@@ -25,8 +25,8 @@ return function()
 
         local function DoUpdate(self, OverlayState)
             OverlayState:Begin()
-            local WireName = self:GetNWString("WireName")
-            OverlayState:AddHeader(#WireName == 0 and self.PrintName or WireName)
+            local EntityName = self:ACF_GetEntityName()
+            OverlayState:AddHeader(EntityName)
             self:ACF_UpdateOverlayState(OverlayState)
             OverlayState:End()
             ACF.Overlay.UpdateOverlay(self, OverlayState)
@@ -155,12 +155,18 @@ return function()
             end
         end
 
+        function ENT:GetOwnerPlayer()
+            local Player = self:GetPlayer() -- Not set on entities restored from a duplication, use CPPI instead
+
+            return IsValid(Player) and Player or self:CPPIGetOwner()
+        end
+
         function ENT:GetUser(Input)
-            if not IsValid(Input) then return self:GetPlayer() end
+            if not IsValid(Input) then return self:GetOwnerPlayer() end
 
             local User = FindUser(self, Input)
 
-            return IsValid(User) and User or self:GetPlayer()
+            return IsValid(User) and User or self:GetOwnerPlayer()
         end
     end ---------------------------------------------
 end

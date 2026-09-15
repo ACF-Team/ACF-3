@@ -55,11 +55,11 @@ do	-- Overlay/networking
 		else
 
 			for I = 0, 7 do
-				local Dir = Vector(16384, 0, 0)
+				local Dir = Vector(SelfTbl.Range, 0, 0)
 				Dir:Rotate(Angle(SelfTbl.Cone, 0, 0))
 				Dir:Rotate(Angle(0, 0, 45 * I))
 				local Point = self:LocalToWorld(SelfTbl.Origin + Dir)
-				local Dir2 = Vector(16384, 0, 0)
+				local Dir2 = Vector(SelfTbl.Range, 0, 0)
 				Dir2:Rotate(Angle(SelfTbl.Cone, 0, 0))
 				Dir2:Rotate(Angle(0, 0, 45 * (I + 1)))
 				local Point2 = self:LocalToWorld(SelfTbl.Origin + Dir2)

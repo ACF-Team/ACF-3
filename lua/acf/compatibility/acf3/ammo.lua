@@ -77,8 +77,9 @@ local WeaponFQNTable = {
 -- Round inputs ammo types used to store flat on the dupe/tool data. They now live on the AmmoType
 -- instance; the serializer keeps only the fields the chosen ammo type actually declares.
 local RoundFields = {
-	"Projectile", "Propellant", "FillerRatio", "Flechettes",
-	"HollowRatio", "LinerAngle", "SmokeWPRatio", "Spread", "StandoffRatio",
+	"FillerRatio", "Flechettes", "HollowRatio", "LinerAngle", "SmokeWPRatio",
+	"Spread", "StandoffRatio", "RoundLength", "PropRatio", "CaseScale",
+	"TwoPiece", "TelescopeRatio", "PenFuze", "FuzeDelay", "LinerAngleRatio",
 }
 
 local WeaponFields = {}
@@ -130,22 +131,98 @@ function WeaponFields.Guidance(Guidance, Data)
 	}
 end
 
+local Floor = math.floor
+local Max   = math.max
+local Min   = math.min
+local DeserializePartial = ACF.Classes.Serialization.DeserializePartial
+
+local function LegacySize(Data)
+	if isvector(Data.Size) then return Data.Size end
+
+	local X = tonumber(Data.AmmoSizeX or Data.CrateSizeX)
+	local Y = tonumber(Data.AmmoSizeY or Data.CrateSizeY)
+	local Z = tonumber(Data.AmmoSizeZ or Data.CrateSizeZ)
+
+	if X or Y or Z then return Vector(X or 24, Y or 24, Z or 24) end
+end
+
+local function DeriveCountsFromSize(WeaponFQN, AmmoTypeFQN, AmmoData, Caliber, Size)
+	local WeaponClass = GetType(WeaponFQN)
+	local AmmoClass   = GetType(AmmoTypeFQN)
+	if not (WeaponClass and AmmoClass) then return end
+
+	local ok, cx, cy, cz = pcall(function()
+		local Weapon = DeserializePartial(WeaponClass, {Caliber = Caliber})
+		if Weapon.VerifyData then Weapon:VerifyData() end
+
+		local Ammo  = DeserializePartial(AmmoClass, AmmoData)
+		Ammo.Weapon = Weapon
+
+		local Bullet   = Ammo:ServerConvert()
+		local ToolData = {Caliber = Caliber}
+
+		local x, y, z = ACF.GetProjectileCountsFromCrateSize(Size, WeaponClass, ToolData, Bullet)
+		x = Max(1, Floor(x or 3))
+		y = Max(1, Floor(y or 3))
+		z = Max(1, Floor(z or 3))
+
+		-- Clamp to the maximum counts the round geometry allows, same as UpdateCrateSize.
+		local RoundSize        = ACF.GetRoundProperties(WeaponClass, ToolData, Bullet)
+		local MaxX, MaxY, MaxZ = ACF.GetMaxCounts(RoundSize, ACF.AmmoMaxLength, ACF.AmmoMaxWidth, y, z)
+
+		return Min(x, MaxX), Min(y, MaxY), Min(z, MaxZ)
+	end)
+
+	if ok and cx then return cx, cy, cz end
+end
+
 ACF.Entities.RegisterCompatPatch("acf_ammo", 2026062101, function(Data)
 	if Data.ACF_UserData then return end
 
 	local Weapon  = Data.Weapon
-	local Caliber = Data.Caliber
-	-- Resolve pre-scalable weapon aliases (old short IDs/names) to their FQN.
+	local Caliber = Data.Caliber or Data.caliber
 	if not ACF.Classes.GetSubtypeByName("ACF.Weapons.BaseWeapon", Weapon) then
-		Weapon = WeaponFQNTable[Weapon] or Weapon
+		local Mapped = WeaponFQNTable[Weapon]
+		if Mapped then
+			Weapon = Mapped
+		elseif ACF.Entities.ResolveLegacyWeapon then
+			local FQN, LegacyCaliber = ACF.Entities.ResolveLegacyWeapon(Weapon, Caliber)
+			if FQN then
+				Weapon  = FQN
+				Caliber = LegacyCaliber or Caliber
+			end
+		end
 	end
 
 	-- Migrate the legacy flat round inputs onto the ammo type instance's serialized field set.
 	local AmmoData = { Tracer = tobool(Data.Tracer) }
 	for _, K in ipairs(RoundFields) do AmmoData[K] = Data[K] end
 
+	-- Rounds are stored as a total length plus the propellant's share of it. Dupes older than that
+	-- carry the two lengths separately, so fold them here: the serializer only keeps fields the ammo
+	-- type declares, and Projectile/Propellant are no longer among them.
+	-- tonumber, not isnumber: dupes can store these as strings.
+	if (tonumber(AmmoData.RoundLength) or 0) <= 0 then
+		local Projectile = tonumber(Data.Projectile) or tonumber(Data.RoundProjectile) or 0
+		local Propellant = tonumber(Data.Propellant) or tonumber(Data.RoundPropellant) or 0
+		local Total      = Projectile + Propellant
+
+		AmmoData.RoundLength = Total
+		AmmoData.PropRatio   = Total > 0 and (Propellant / Total) or 0
+	end
+
 	local WeaponData = { Caliber = Caliber }
 	for K, V in pairs(WeaponFields) do WeaponData[K] = V(Data[K], Data) end
+
+	local AmmoTypeFQN = AmmoFQN(Data.AmmoType)
+
+	local CrateX, CrateY, CrateZ = Data.CrateProjectilesX, Data.CrateProjectilesY, Data.CrateProjectilesZ
+	if CrateX == nil and Data.AmmoShape ~= "Cylinder" then
+		local Size = LegacySize(Data)
+		if Size then
+			CrateX, CrateY, CrateZ = DeriveCountsFromSize(Weapon, AmmoTypeFQN, AmmoData, Caliber, Size)
+		end
+	end
 
 	Data.ACF_UserData = {
 		-- If worried about potential exploits here, Caliber will only be passed to the
@@ -154,11 +231,11 @@ ACF.Entities.RegisterCompatPatch("acf_ammo", 2026062101, function(Data)
 		-- a chance to exist in the first place)
 		Weapon            = {Type = Weapon, Data = WeaponData },
 		Caliber           = Caliber,
-		AmmoType          = {Type = AmmoFQN(Data.AmmoType), Data = AmmoData},
+		AmmoType          = {Type = AmmoTypeFQN, Data = AmmoData},
 		AmmoStage         = Data.AmmoStage,
 		Shape             = ShapeFQN(Data.AmmoShape or "Box"),
-		CrateProjectilesX = Data.CrateProjectilesX,
-		CrateProjectilesY = Data.CrateProjectilesY,
-		CrateProjectilesZ = Data.CrateProjectilesZ,
+		CrateProjectilesX = CrateX,
+		CrateProjectilesY = CrateY,
+		CrateProjectilesZ = CrateZ,
 	}
 end)

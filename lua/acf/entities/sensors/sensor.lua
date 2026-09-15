@@ -15,6 +15,6 @@ end)
 
 Classes.DefineClass("ACF.Sensors.Receiver", "ACF.Sensors.Sensor", function(CLASS)
 	function CLASS.CreateMenu(Menu, Item)
-		Menu:AddLabel(string.format("Mass : %s kg\n", Item.Mass))
+		Menu:AddLabel(string.format("Mass : %s kg\nCost : %s\n", Item.Mass, ACF.FormatCost(Item.Cost or 0)))
 	end
 end)

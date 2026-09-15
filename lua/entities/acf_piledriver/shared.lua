@@ -2,7 +2,7 @@ DEFINE_BASECLASS("acf_base_scalable")
 
 ENT.ACF_Limit      		= 4
 
-ACF.Entities.AutoRegisterV2(function()
+ACF.Entities.AutoRegister(2026091001, function()
 	MENU_FIELD("ACF.Piledrivers.Piledriver", 	"Weapon", 			{OnlyAllowSubtypes = false, InstantiateTypeForDefault = "ACF.Piledrivers.Piledriver"})
 end, "Piledriver")
 

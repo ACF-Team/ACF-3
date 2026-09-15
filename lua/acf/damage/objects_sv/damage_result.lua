@@ -36,6 +36,7 @@ function Meta:Compute()
 	local Ratio       = math.min(1, Penetration / Effective)
 	local Count       = math.max(1, self.Count)
 	local Damage      = isnumber(self.Damage) and self.Damage or self.Area * Ratio * Ratio -- <=== old - new  ===> Area * math.min(Penetration, Effective) * 10
+	-- print("Damage", Damage, "Area", self.Area, "Ratio", Ratio, "Pen", Penetration, "Eff", Effective)
 
 	return {
 		Damage   = Damage * Count,

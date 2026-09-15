@@ -2,7 +2,7 @@ local ACF     = ACF
 local Classes = ACF.Classes
 local PAGE    = "acf_turret"
 
-local CTX_NAMES = { "Drive", "Motor", "Gyro", "Computer" }
+local CTX_NAMES = { "Drive", "Motor", "Gyro", "Computer", "Controller" }
 
 local function GetGroups()
 	local Groups = {}
@@ -83,10 +83,11 @@ ACF.Menu.RegisterPage({
 	Order    = 51,
 
 	Contexts = {
-		Drive    = "acf_turret",
-		Motor    = "acf_turret_motor",
-		Gyro     = "acf_turret_gyro",
-		Computer = "acf_turret_computer",
+		Drive      = "acf_turret",
+		Motor      = "acf_turret_motor",
+		Gyro       = "acf_turret_gyro",
+		Computer   = "acf_turret_computer",
+		Controller = "acf_turret_controller",
 	},
 	LinkContexts = function(Contexts) Contexts.Active = Contexts.Drive end,
 

@@ -57,7 +57,7 @@ do	-- Spawn and Update funcs
 
 		self.ScaledArmor    = math.max(math.Round(5 * (Size ^ 1.2), 1), 2)
 
-		self:SetNWString("WireName", "ACF " .. self.Name)
+		self:ACF_SetEntityName("ACF " .. self.Name)
 		self:SetNWString("Class", self.Class)
 
 		-- ACF.Activate(self, true) is invoked automatically by ACF_UpdateEntityData after this.
@@ -116,25 +116,6 @@ do	-- Metamethods and other important stuff
 			self.DamageScale = math.max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
 
 			if self.Turret then self.Turret:UpdateTurretSlew() end
-		end
-
-		function ENT:ACF_Activate(Recalc)
-			local PhysObj	= self.ACF.PhysObj
-			local Area		= PhysObj:GetSurfaceArea() * ACF.InchToCmSq
-			local Armour	= self.ScaledArmor
-			local Health	= Area / ACF.Threshold
-			local Percent	= 1
-
-			if Recalc and self.ACF.Health and self.ACF.MaxHealth then
-				Percent = self.ACF.Health / self.ACF.MaxHealth
-			end
-
-			self.ACF.Area		= Area
-			self.ACF.Health		= Health * Percent
-			self.ACF.MaxHealth	= Health
-			self.ACF.Armour		= Armour * (0.5 + Percent * 0.5)
-			self.ACF.MaxArmour	= Armour
-			self.ACF.Type		= "Prop"
 		end
 
 		function ENT:SetActive(Active, Reason)

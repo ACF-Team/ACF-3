@@ -477,15 +477,19 @@ function Permissions.CanDamage(Entity, _, DmgInfo)
 		end
 	end
 
-	if not (IsValid(Attacker) and Attacker:IsPlayer()) then
-		return Permissions.DefaultCanDamage
-	end
-
-	-- Safezones behavior
+	-- Safezones behavior, checked before the attacker validity gate so an unresolved attacker cannot bypass it
 	if ACF.EnableSafezones and Permissions.Safezones then
 		local EntPos = Entity:GetPos()
-		local AttPos = Attacker:GetPos()
-		if Permissions.IsInSafezone(EntPos) or Permissions.IsInSafezone(AttPos) then return false end
+		if Permissions.IsInSafezone(EntPos) then return false end
+
+		if IsValid(Attacker) then
+			local AttPos = Attacker:GetPos()
+			if Permissions.IsInSafezone(AttPos) then return false end
+		end
+	end
+
+	if not (IsValid(Attacker) and Attacker:IsPlayer()) then
+		return Permissions.DefaultCanDamage
 	end
 
 	return Permissions.DamagePermission(Owner, Attacker, Entity)

@@ -193,11 +193,10 @@ do -- Default gearbox menus
 
 			local ValuesData = Values[ClassID]
 
-			-- Collect the per-gear sliders into the entity's "Gears" array field.
 			local GearValues = {}
 			local function PushGears()
 				local Arr = {}
-				for I = 1, Gears do Arr[I] = GearValues[I] or 0 end
+				for I = 1, Gears do Arr[I] = ACF.ConvertGearRatio(GearValues[I] or 0, UseLegacyRatios) end
 				Ctx:Set("Gears", Arr)
 			end
 
@@ -234,11 +233,11 @@ do -- Default gearbox menus
 				Value = math.Round(Value, 2)
 				self:SetValue(Value)
 				ValuesData.FinalDrive = Value
-				Ctx:Set("FinalDrive", Value)
+				Ctx:Set("FinalDrive", ACF.ConvertGearRatio(Value, UseLegacyRatios))
 			end
 
 			PushGears()
-			Ctx:Set("FinalDrive", ValuesData.FinalDrive)
+			Ctx:Set("FinalDrive", ACF.ConvertGearRatio(ValuesData.FinalDrive, UseLegacyRatios))
 		end
 	end
 
@@ -284,9 +283,10 @@ do -- Default gearbox menus
 
 			local ValuesData = Values[ClassID]
 
-			-- CVT gear 1 is always 1:1; gear 2 is the user-set ratio.
+			-- CVT gear 1 is always 1:1; gear 2 is the user-set ratio. Gear 2 is converted from legacy-mode
+			-- input into the canonical ratio the entity stores (gear 1 is 1:1 in either convention).
 			local function PushGears()
-				Ctx:Set("Gears", { 1, ValuesData.Gear2 or -1 })
+				Ctx:Set("Gears", { 1, ACF.ConvertGearRatio(ValuesData.Gear2 or -1, UseLegacyRatios) })
 			end
 
 			for _, GearData in ipairs(CVTData) do
@@ -306,8 +306,10 @@ do -- Default gearbox menus
 
 					if Variable == "Gear2" then
 						PushGears()
+					elseif Variable == "FinalDrive" then
+						Ctx:Set(Variable, ACF.ConvertGearRatio(Value, UseLegacyRatios))
 					else
-						Ctx:Set(Variable, Value) -- MinRPM / MaxRPM / FinalDrive are entity fields
+						Ctx:Set(Variable, Value) -- MinRPM / MaxRPM are RPM fields, not ratios
 					end
 				end
 			end
@@ -315,7 +317,7 @@ do -- Default gearbox menus
 			PushGears()
 			Ctx:Set("MinRPM", ValuesData.MinRPM)
 			Ctx:Set("MaxRPM", ValuesData.MaxRPM)
-			Ctx:Set("FinalDrive", ValuesData.FinalDrive)
+			Ctx:Set("FinalDrive", ACF.ConvertGearRatio(ValuesData.FinalDrive, UseLegacyRatios))
 		end
 	end
 
@@ -379,11 +381,9 @@ do -- Default gearbox menus
 			local ShiftValues = {}
 			local ShiftWangs  = {}
 
-			-- Gears -> entity "Gears" array; upshift speeds -> "ShiftPoints" array (internal units:
-			-- the display speed * the selected unit multiplier).
 			local function PushGears()
 				local Arr = {}
-				for I = 1, Gears do Arr[I] = GearValues[I] or 0 end
+				for I = 1, Gears do Arr[I] = ACF.ConvertGearRatio(GearValues[I] or 0, UseLegacyRatios) end
 				Ctx:Set("Gears", Arr)
 			end
 
@@ -471,7 +471,7 @@ do -- Default gearbox menus
 					Value = math.Round(Value, GearData.Decimals)
 					self:SetValue(Value)
 					ValuesData[Variable] = Value
-					Ctx:Set(Variable, Value)
+					Ctx:Set(Variable, ACF.ConvertGearRatio(Value, UseLegacyRatios))
 				end
 			end
 
@@ -527,8 +527,8 @@ do -- Default gearbox menus
 
 			PushGears()
 			PushShifts()
-			Ctx:Set("Reverse", ValuesData.Reverse or -1)
-			Ctx:Set("FinalDrive", ValuesData.FinalDrive or 1)
+			Ctx:Set("Reverse", ACF.ConvertGearRatio(ValuesData.Reverse or -1, UseLegacyRatios))
+			Ctx:Set("FinalDrive", ACF.ConvertGearRatio(ValuesData.FinalDrive or 1, UseLegacyRatios))
 		end
 	end
 end
@@ -582,6 +582,8 @@ do -- Default turret menus
 			local MassText		= language.GetPhrase("acf.menu.turrets.mass_text")
 			local RingStats		= Menu:AddLabel(TurretText:format(0, 0))
 			local MassLbl		= Menu:AddLabel(MassText:format(0, 0))
+			local CostText		= language.GetPhrase("acf.menu.turrets.cost_text")
+			local CostLbl		= Menu:AddLabel(CostText:format(0))
 
 			local ArcSettings	= Menu:AddCollapsible("#acf.menu.turrets.arc_settings", nil, "icon16/chart_pie_edit.png")
 
@@ -662,9 +664,9 @@ do -- Default turret menus
 
 			local DefMinDeg, DefMaxDeg = -180, 180
 			if Data.ID == "Turret-V" then
-				MinDeg:SetMin(-85)
-				MaxDeg:SetMax(85)
-				DefMinDeg, DefMaxDeg = -85, 85
+				MinDeg:SetMin(-90)
+				MaxDeg:SetMax(90)
+				DefMinDeg, DefMaxDeg = -90, 90
 			end
 
 			MinDeg:SetValue(LoadSetting("MinDeg", DefMinDeg))
@@ -731,6 +733,7 @@ do -- Default turret menus
 				local MaxMass = TurretClass.GetMaxMass(Data, N)
 				local TurretMassText = language.GetPhrase("acf.menu.turrets.turret_mass_text")
 				MassLbl:SetText(TurretMassText:format(TurretClass.GetMass(Data, N), MaxMass))
+				CostLbl:SetText(CostText:format(ACF.FormatCost((Data.ID == "Turret-H" and 0.1 or 0.2) * N)))
 
 				TurretData.Teeth		= Teeth
 				TurretData.RingSize		= N
@@ -832,6 +835,8 @@ do -- Default turret menus
 			local TorqText			= language.GetPhrase("acf.menu.turrets.motors.torque_text")
 			local MassLbl			= Menu:AddLabel(TurretMassText:format(0, 0))
 			local TorqLbl			= Menu:AddLabel(TorqText:format(0))
+			local CostText			= language.GetPhrase("acf.menu.turrets.cost_text")
+			local CostLbl			= Menu:AddLabel(CostText:format(0))
 
 			-- Simulation
 
@@ -935,6 +940,7 @@ do -- Default turret menus
 
 				local SizePerc = N ^ 2
 				MassLbl:SetText(MassText:format(math.Round(math.max(Data.Mass * SizePerc, 5), 1)))
+				CostLbl:SetText(CostText:format(ACF.FormatCost(N * 2)))
 
 				TurretData.Torque	= MotorClass.GetTorque(Data, N)
 				TorqLbl:SetText(TorqText:format(TurretData.Torque))
@@ -1022,10 +1028,25 @@ do -- Default turret menus
 
 			local MassText = language.GetPhrase("acf.menu.turrets.mass_text")
 			Menu:AddLabel(MassText:format(Data.Mass))
+			Menu:AddLabel(language.GetPhrase("acf.menu.turrets.cost_text"):format(ACF.FormatCost(Data.IsDual and 8 or 4)))
 
 			if Data.IsDual then
 				Menu:AddLabel("#acf.menu.gyros.dual_desc")
 			end
+
+			if Menu.ComponentPreview then
+				Menu.ComponentPreview:SetModelScale(1, true)
+			end
+		end
+	end
+
+	do	-- Turret Controllers
+		function ACF.CreateTurretControllerMenu(Data, Menu, Ctx)
+			Ctx:Set("Controller", { Type = Classes.GetTypeName(Data), Data = {} })
+
+			local MassText = language.GetPhrase("acf.menu.turrets.mass_text")
+			Menu:AddLabel(MassText:format(Data.Mass))
+			Menu:AddLabel(language.GetPhrase("acf.menu.turrets.cost_text"):format(ACF.FormatCost(Data.IsRemote and 70 or 5)))
 
 			if Menu.ComponentPreview then
 				Menu.ComponentPreview:SetModelScale(1, true)
@@ -1039,6 +1060,7 @@ do -- Default turret menus
 
 			local MassText = language.GetPhrase("acf.menu.turrets.mass_text")
 			Menu:AddLabel(MassText:format(Data.Mass))
+			Menu:AddLabel(language.GetPhrase("acf.menu.turrets.cost_text"):format(ACF.FormatCost(5)))
 
 			if Menu.ComponentPreview then
 				Menu.ComponentPreview:SetModelScale(1, true)

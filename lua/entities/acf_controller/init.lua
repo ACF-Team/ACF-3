@@ -133,7 +133,7 @@ do
 		self:PhysicsInit(SOLID_VPHYSICS)
 		self:SetMoveType(MOVETYPE_VPHYSICS)
 
-		self:SetNWString("WireName", "ACF All In One Controller")
+		self:ACF_SetEntityName("ACF All In One Controller")
 
 		ACF.Activate(self, true)
 
@@ -321,6 +321,12 @@ do
 		local Parent3 = IsValid(self:GetCam3Parent()) and self:GetCam3Parent():EntIndex() or 0
 		duplicator.StoreEntityModifier(self, "CamParents", {Parent1, Parent2, Parent3})
 
+		-- Handle manually linked weapon selection
+		local Gun1 = IsValid(self:GetGun1()) and self:GetGun1():EntIndex() or 0
+		local Gun2 = IsValid(self:GetGun2()) and self:GetGun2():EntIndex() or 0
+		local Gun3 = IsValid(self:GetGun3()) and self:GetGun3():EntIndex() or 0
+		duplicator.StoreEntityModifier(self, "Guns123", {Gun1, Gun2, Gun3})
+
 		-- AutoRegisterV2 wraps this as the original PreEntityCopy and handles the wire/base dupe info.
 	end
 
@@ -346,6 +352,14 @@ do
 			self:SetCam2Parent(CreatedEntities[EntMods.CamParents[2]])
 			self:SetCam3Parent(CreatedEntities[EntMods.CamParents[3]])
 			EntMods.CamParents = nil
+		end
+
+		-- Handle manually linked weapon selection
+		if EntMods.Guns123 then
+			self:SetGun1(CreatedEntities[EntMods.Guns123[1]])
+			self:SetGun2(CreatedEntities[EntMods.Guns123[2]])
+			self:SetGun3(CreatedEntities[EntMods.Guns123[3]])
+			EntMods.Guns123 = nil
 		end
 
 		-- AutoRegisterV2 wraps this as the original PostEntityPaste and handles the wire/base dupe info.

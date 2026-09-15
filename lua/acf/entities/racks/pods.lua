@@ -5,6 +5,7 @@ Classes.DefineClass("ACF.Racks.40mm7xPOD", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Description	= "A lightweight pod for small rockets which is vulnerable to shots and explosions."
 	CLASS.Model		= "models/missiles/launcher7_40mm.mdl"
 	CLASS.EntType		= "Pod"
+	CLASS.CostPerSlot		= 0.5
 	CLASS.Caliber		= 40
 	CLASS.Mass		= 10
 	CLASS.Year		= 1940
@@ -31,6 +32,7 @@ Classes.DefineClass("ACF.Racks.57mm16xPOD", "ACF.Racks.BaseRack", function(CLASS
 	CLASS.Description	= "A lightweight pod for small rockets which is vulnerable to shots and explosions."
 	CLASS.Model		= "models/failz/ub_16.mdl"
 	CLASS.EntType		= "Pod"
+	CLASS.CostPerSlot		= 0.5
 	CLASS.Caliber		= 57
 	CLASS.Mass		= 30
 	CLASS.Year		= 1956
@@ -67,6 +69,7 @@ Classes.DefineClass("ACF.Racks.57mm32xPOD", "ACF.Racks.BaseRack", function(CLASS
 	CLASS.Description	= "A lightweight pod for small rockets which is vulnerable to shots and explosions."
 	CLASS.Model		= "models/failz/ub_32.mdl"
 	CLASS.EntType		= "Pod"
+	CLASS.CostPerSlot		= 0.5
 	CLASS.Caliber		= 57
 	CLASS.Mass		= 130
 	CLASS.Year		= 1956
@@ -119,6 +122,7 @@ Classes.DefineClass("ACF.Racks.70mm7xPOD", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Description	= "A lightweight pod for rockets which is vulnerable to shots and explosions."
 	CLASS.Model		= "models/missiles/launcher7_70mm.mdl"
 	CLASS.EntType		= "Pod"
+	CLASS.CostPerSlot		= 0.5
 	CLASS.Caliber		= 70
 	CLASS.Mass		= 30
 	CLASS.Year		= 1940
@@ -146,6 +150,7 @@ Classes.DefineClass("ACF.Racks.70mm19xPOD", "ACF.Racks.BaseRack", function(CLASS
 	CLASS.Description	= "A lightweight pod for rockets which is vulnerable to shots and explosions."
 	CLASS.Model		= "models/failz/lau_61.mdl"
 	CLASS.EntType		= "Pod"
+	CLASS.CostPerSlot		= 0.5
 	CLASS.Caliber		= 70
 	CLASS.Mass		= 90
 	CLASS.Year		= 1960
@@ -185,6 +190,7 @@ Classes.DefineClass("ACF.Racks.80mm20xPOD", "ACF.Racks.BaseRack", function(CLASS
 	CLASS.Description	= "A lightweight pod for rockets which is vulnerable to shots and explosions."
 	CLASS.Model		= "models/failz/b8.mdl"
 	CLASS.EntType		= "Pod"
+	CLASS.CostPerSlot		= 0.5
 	CLASS.Caliber		= 80
 	CLASS.Mass		= 120
 	CLASS.Year		= 1970
@@ -294,6 +300,7 @@ Classes.DefineClass("ACF.Racks.380mmRW61", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Description	= "A lightweight pod for rocket-asisted mortars which is vulnerable to shots and explosions."
 	CLASS.Model		= "models/launcher/rw61.mdl"
 	CLASS.EntType		= "Pod"
+	CLASS.Cost			= 45
 	CLASS.Caliber		= 380
 	CLASS.Mass		= 429
 	CLASS.Year		= 1945
@@ -361,6 +368,7 @@ Classes.DefineClass("ACF.Racks.1xFIM-92", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Description	= "An FIM-92 rack designed to carry 1 missile."
 	CLASS.Model		= "models/missiles/fim_92_1xrk.mdl"
 	CLASS.EntType		= "Pod"
+	CLASS.CostPerSlot		= 1
 	CLASS.Caliber		= 70
 	CLASS.Mass		= 11
 	CLASS.Year		= 1984
@@ -382,6 +390,7 @@ Classes.DefineClass("ACF.Racks.2xFIM-92", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Description	= "An FIM-92 rack designed to carry 2 missiles."
 	CLASS.Model		= "models/missiles/fim_92_2xrk.mdl"
 	CLASS.EntType		= "Pod"
+	CLASS.CostPerSlot		= 1
 	CLASS.Caliber		= 70
 	CLASS.Mass		= 16
 	CLASS.Year		= 1984
@@ -404,6 +413,7 @@ Classes.DefineClass("ACF.Racks.4xFIM-92", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Description	= "An FIM-92 rack designed to carry 4 missiles."
 	CLASS.Model		= "models/missiles/fim_92_4xrk.mdl"
 	CLASS.EntType		= "Pod"
+	CLASS.CostPerSlot		= 1
 	CLASS.Caliber		= 70
 	CLASS.Mass		= 42
 	CLASS.Year		= 1984
@@ -514,6 +524,7 @@ Classes.DefineClass("ACF.Racks.1xSPG9", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Description	= "Launch tube for SPG-9 recoilless rocket."
 	CLASS.Model		= "models/spg9/spg9.mdl"
 	CLASS.EntType		= "Pod"
+	CLASS.Cost			= 5
 	CLASS.Caliber		= 73
 	CLASS.Mass		= 26
 	CLASS.Year		= 1968

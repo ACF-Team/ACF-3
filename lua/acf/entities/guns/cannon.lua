@@ -9,13 +9,13 @@ ACF.Classes.DefineClass("ACF.Guns.Cannon", "ACF.Guns.BaseScalableGun", function(
 	CLASS.MassCenter    = Vector(0, 0, 0)
 	CLASS.Sound       	= "acf_base/weapons/cannon_new.mp3"
 	CLASS.MuzzleFlash 	= "cannon_muzzleflash_noscale"
-	CLASS.Mass        	= 2031
+	CLASS.Mass        	= 1229
 	CLASS.Spread      	= 0.08
 	CLASS.ScaleFactor 	= 0.84 -- Corrective factor to account for improperly scaled base models
-	CLASS.TransferMult 	= 4 -- Thermal energy transfer rate
 	CLASS.Round 		= {
 		MaxLength  = 80,
 		PropLength = 65,
+		CaseScale  = 1.33, -- 120x570mm (M256): 160mm case over a 120mm projectile
 	}
 	CLASS.Preview 		= {
 		Height = 50,

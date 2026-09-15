@@ -11,10 +11,10 @@ ACF.Classes.DefineClass("ACF.Guns.Mortar", "ACF.Guns.BaseScalableGun", function(
 	CLASS.Spread      	= 0.72
 	CLASS.Mass        	= 459
 	CLASS.ScaleFactor 	= 0.84 -- Corrective factor to account for improperly scaled base models
-	CLASS.TransferMult 	= 4 -- Thermal energy transfer rate
 	CLASS.Round = {
 		MaxLength  = 40,
 		PropLength = 3,
+		CaseScale  = 1, -- Propellant rings sit under the fins, narrower than the projectile itself
 	}
 	CLASS.Preview 		= {
 		Height = 80,
@@ -32,7 +32,7 @@ ACF.Classes.DefineClass("ACF.Guns.Mortar", "ACF.Guns.BaseScalableGun", function(
 			{Name = "Barrel", LPos = Vector(37.0706, 0, 0.015625), LAng = Angle(180, 0, 0), Width = 11.023622047244, Height = 11.023622047244},
 		}
 	}
-	CLASS.CostScalar	= 0.35
+	CLASS.CostScalar	= 0.29
 end)
 
 ACF.SetCustomAttachment("models/mortar/mortar_120mm.mdl", "muzzle", Vector(24.02), Angle(0, 0, 90))

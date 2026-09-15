@@ -1,14 +1,16 @@
 local Classes = ACF.Classes
 Classes.DefineClass("ACF.Missiles.Guidance.WireSACLOS", "ACF.Missiles.Guidance.WireMCLOS", function(CLASS)
 	CLASS.Name = "Wire (SACLOS)"
+	-- Shared so the ammo menu can price missile rounds clientside.
+	function CLASS:GetCost()
+		return 5
+	end
+
 	if CLIENT then
 		CLASS.Description = "This guidance package allows you to control the direction of the missile using a computer's aiming position."
 	else
 		local ZERO = Vector()
 
-		function CLASS:GetCost()
-			return 3
-		end
 
 		function CLASS:CheckComputer()
 			local Computer = self:GetComputer()

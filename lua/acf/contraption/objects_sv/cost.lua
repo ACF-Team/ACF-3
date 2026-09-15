@@ -65,10 +65,14 @@ do
 
 						C = op(ent)
 
-						ClassCost = ClassCost + C
-
 						local BulkCostAmt = Breakdown[BulkCostAmtID] or 0
-						Breakdown[BulkCostAmtID] = BulkCostAmt + C
+
+						if C == nil then
+							ACF.Utilities.Messages.PrintLog("Warning", "Nil cost for entity: " .. tostring(ent))
+						else
+							ClassCost = ClassCost + C
+							Breakdown[BulkCostAmtID] = BulkCostAmt + C
+						end
 					end
 				else
 					for ent in pairs(entlist) do
@@ -79,7 +83,11 @@ do
 
 						C = ent:GetCost()
 
-						ClassCost = ClassCost + C
+						if C == nil then
+							ACF.Utilities.Messages.PrintLog("Warning", "Nil cost for entity: " .. tostring(ent))
+						else
+							ClassCost = ClassCost + C
+						end
 					end
 				end
 			end
@@ -96,6 +104,26 @@ do
 			Cost = Cost + C
 
 			Breakdown["**" .. string.upper(identifier)] = C
+		end
+
+		-- Missiles opt out of CFW contraptions, so the walk above misses them; racks are members and
+		-- know what they carry. Counted skips any the walk did reach (entity-list callers don't filter).
+		local Counted     = Ctrp.entsbyclass.acf_missile
+		local MissileCost = 0
+
+		for Rack in pairs(Ctrp.entsbyclass.acf_rack or {}) do
+			if not IsValid(Rack) then continue end
+
+			for _, Missile in pairs(Rack.Missiles or {}) do
+				if IsValid(Missile) and Missile.GetCost and not (Counted and Counted[Missile]) then
+					MissileCost = MissileCost + Missile:GetCost()
+				end
+			end
+		end
+
+		if MissileCost > 0 then
+			Cost = Cost + MissileCost
+			Breakdown.acf_missile = (Breakdown.acf_missile or 0) + MissileCost
 		end
 
 		self.Cost		= Cost

@@ -25,13 +25,25 @@ do
 	function ENT:ProcessRadars(SelfTbl)
 		local Radar = SelfTbl.Radar
 		if not IsValid(Radar) then return end
-		local Count = math.min(#Radar.Outputs.IDs.Value, 15)
+
+		local IDs = Radar.Outputs.IDs.Value
+		local Types = Radar.Outputs.Type.Value
+
+		-- The driver HUD should only show contraption targets
+		local Indexes = {}
+		for i = 1, #IDs do
+			if Types[i] ~= "Contraption" then continue end
+
+			Indexes[#Indexes + 1] = i
+
+			if #Indexes >= 15 then break end
+		end
 
 		net.Start("ACF_Controller_Radar")
 		net.WriteEntity(self)
-		net.WriteUInt(Count, 4)
-		for i = 1, Count do
-			local ID = Radar.Outputs.IDs.Value[i] or 0
+		net.WriteUInt(#Indexes, 4)
+		for _, i in ipairs(Indexes) do
+			local ID = IDs[i] or 0
 			net.WriteUInt(ID, 6)
 			net.WriteString(Radar.Outputs.Owner.Value[i] or "")
 			net.WriteVector(Radar.Outputs.Position.Value[i] or vector_origin)

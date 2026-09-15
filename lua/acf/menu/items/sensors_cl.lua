@@ -75,7 +75,7 @@ local function Build(Menu, Contexts)
 
 		Menu:ClearTemporal(Base)
 		Menu:StartTemporal(Base)
-		if Group.CreateMenu then Group.CreateMenu(Base, Data) end -- informational labels only
+		if Group.CreateMenu then Group.CreateMenu(Base, Data) end
 		Menu:EndTemporal(Base)
 	end
 

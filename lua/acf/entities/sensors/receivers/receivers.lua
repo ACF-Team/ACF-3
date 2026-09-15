@@ -57,6 +57,7 @@ do -- Laser Receiver
 		CLASS.Model       = "models/bluemetaknight/laser_detector.mdl"
 
 		CLASS.Mass        = 25
+		CLASS.Cost        = 1.5
 		CLASS.Health      = 10
 		CLASS.Armor       = 10
 		CLASS.Offset      = Vector(0, 0, 3)
@@ -120,6 +121,7 @@ do -- Radar Receiver
 		CLASS.Model       = "models/jaanus/wiretool/wiretool_siren.mdl"
 
 		CLASS.Mass        = 25
+		CLASS.Cost        = 4
 		CLASS.Health      = 10
 		CLASS.Armor       = 10
 		CLASS.Offset      = Vector(0, 0, 6)

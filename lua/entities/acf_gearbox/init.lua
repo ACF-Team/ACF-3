@@ -70,11 +70,6 @@ do -- Spawn and Update functions -----------------------
 		end
 
 		local MaxGears = Class.CanSetGears and (Class.MaxGear or ClientData.GearAmount or Class.Gears.Max) or Class.Gears.Max
-		local ToLegacy = tobool(ClientData.GearboxConvertRatio)
-		ClientData.GearboxConvertRatio = false -- one-shot; don't reconvert on dupes
-
-		-- Pre-scalable gearboxes stored inverted ratios; the compat patch flags those dupes here since the
-		-- V2 classes no longer carry InvertGearRatios. One-shot (not a declared field).
 		local Invert = Class.InvertGearRatios or ClientData.InvertGearRatios
 		ClientData.InvertGearRatios = nil
 
@@ -93,7 +88,7 @@ do -- Spawn and Update functions -----------------------
 				Gear = math.Round(1 / Gear, 2)
 			end
 
-			Gears[I] = ACF.ConvertGearRatio(Gear, ToLegacy)
+			Gears[I] = math.Round(Gear, 3)
 		end
 
 		for I = MaxGears + 1, #Gears do Gears[I] = nil end
@@ -110,7 +105,7 @@ do -- Spawn and Update functions -----------------------
 			Final = math.Round(1 / Final, 2)
 		end
 
-		ClientData.FinalDrive = ACF.ConvertGearRatio(Final, ToLegacy)
+		ClientData.FinalDrive = math.Round(Final, 3)
 
 		-- Class-specific verification (automatic ShiftPoints/Reverse, CVT MinRPM/MaxRPM).
 		if Class.VerifyData then Class.VerifyData(ClientData, Class) end
@@ -186,7 +181,7 @@ do -- Spawn and Update functions -----------------------
 			Entity.Name = Entity.Name .. ", Dual Clutch"
 		end
 
-		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
+		Entity:ACF_SetEntityName("ACF " .. Entity.Name)
 
 		ACF.Activate(Entity, true)
 
@@ -202,6 +197,14 @@ do -- Spawn and Update functions -----------------------
 
 		-- ChangeGear doesn't update GearRatio if the gearbox is already in gear 1
 		Entity.GearRatio = Entity.Gears[1] * Entity.FinalDrive
+	end
+
+	function ENT:UpdateDriverMod()
+		local Contraption = self:CFW_GetContraption()
+		local Baseplate = Contraption and Contraption.ACF_Baseplate
+		local Val = IsEntityValid(Baseplate) and Baseplate.DriverCrewMod or ACF.CrewFallbackCoef
+		self.DriverCrewMod = Clamp(Val, ACF.CrewFallbackCoef, 1)
+		return self.DriverCrewMod
 	end
 
 	local function CheckRopes(Entity, Target)
@@ -308,6 +311,10 @@ do -- Spawn and Update functions -----------------------
 		self:SetScaledModel(Gearbox.Model)
 
 		duplicator.ClearEntityModifier(self, "mass")
+		self.DriverCrewMod = ACF.CrewFallbackCoef
+
+		-- Drivers let gearboxes apply full torque to wheels; poll the baseplate's driver crew.
+		ACF.AugmentedTimer(function(cfg) self:UpdateDriverMod(cfg) end, function() return IsEntityValid(self) end, nil, {MinTime = 0.1, MaxTime = 0.25})
 	end
 
 	function ENT.ACF_CheckSpawnLimit(Player)
@@ -719,6 +726,7 @@ do -- Movement -----------------------------------------
 	function ENT:Calc(InputRPM, InputInertia)
 		local SelfTbl = self:GetTable()
 		if SelfTbl.Disabled then return 0 end
+		if SelfTbl.ACF.Health <= 0 then return 0 end -- Destroyed
 		if SelfTbl.LastActive == Clock.CurTime then return SelfTbl.TorqueOutput end
 
 		if SelfTbl.ChangeFinished < Clock.CurTime then
@@ -846,6 +854,7 @@ do -- Movement -----------------------------------------
 	function ENT:Act(Torque, DeltaTime, MassRatio, FlyRPM)
 		local SelfTbl = ENTITY.GetTable(self)
 		if SelfTbl.Disabled then return end
+		if SelfTbl.ACF.Health <= 0 then return end -- Destroyed
 
 		if Torque == 0 then
 			SelfTbl.LastActive = Clock.CurTime
@@ -869,11 +878,13 @@ do -- Movement -----------------------------------------
 		end
 
 		local Braking = SelfTbl.Braking
+		local DriverCrewMod = SelfTbl.DriverCrewMod or 1
 
 		for Ent, Link in pairs(SelfTbl.Wheels) do
 			-- If the gearbox is braking, always
 			if not Braking or not Link.IsBraking then
-				local WheelTorque = Link.ReqTq * AvailTq
+				-- Applied here, not to AvailTq, so gearbox-to-gearbox transfer stays unaffected
+				local WheelTorque = Link.ReqTq * AvailTq * DriverCrewMod
 				ReactTq = ReactTq + WheelTorque
 
 				Link:TransferWheel(Ent, WheelTorque, DeltaTime)
@@ -892,7 +903,7 @@ do -- Movement -----------------------------------------
 		end
 
 		for Effector, Link in pairs(SelfTbl.Effectors) do
-			Link:TransferEffector(Effector, Link.ReqTq * AvailTq, DeltaTime, MassRatio, FlyRPM)
+			Link:TransferEffector(Effector, Link.ReqTq * AvailTq * DriverCrewMod, DeltaTime, MassRatio, FlyRPM)
 		end
 
 		SelfTbl.LastActive = Clock.CurTime

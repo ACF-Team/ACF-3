@@ -251,6 +251,27 @@ local function FreezeDetours()
     end
 end
 
+-- TARGET  : primitiveEdit (primitive addon)
+-- METHODS : Expression 2, Starfall (Entity binding)
+-- ON CALL : If target's contraption is an ACF contraption, disable the contraption and block the call.
+-- primitiveEdit writes directly to a primitive entity's editable variables (size, mass, etc.), so we
+-- treat it the same as SetPos, block it during combat but allow the owner to keep building.
+local function PrimitiveEditDetours()
+    do
+        local Func Func = Detours.Expression2("primitiveEdit(es...)", function(Scope, Args, ...)
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Args[1], "primitiveEdit(e, s, ...)") then return end
+            return Func(Scope, Args, ...)
+        end)
+    end
+
+    do
+        local Func Func = Detours.Starfall("instance.Types.Entity.Methods.primitiveEdit", function(Instance, Ent, ...)
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:primitiveEdit(s, ...)") then return end
+            return Func(Instance, Ent, ...)
+        end)
+    end
+end
+
 -- TARGET  : Entering seats on ACF contraptions remotely
 -- METHODS : Expression 2, Starfall (Entity & Physobj bindings), Wiremod
 -- ON CALL : If target's contraption is an ACF contraption, evaluate the distance between the player, and the to-be-used entity.
@@ -973,6 +994,7 @@ local function TriggerDetourRebuild()
 
     FreezeDetours()
     UseDetours()
+    PrimitiveEditDetours()
 
     AddAngleVelocityDetours()
     AddVelocityDetours()

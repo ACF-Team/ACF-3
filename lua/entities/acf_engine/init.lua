@@ -270,20 +270,6 @@ local function SetActive(Entity, Value, EntTbl)
 	Entity:UpdateOutputs(EntTbl)
 end
 
-do -- Random timer crew stuff
-	function ENT:FindPropagator()
-		local Temp = self:GetParent()
-		if IsValid(Temp) and Temp:GetClass() == "acf_baseplate" then return Temp end
-		return nil
-	end
-
-	function ENT:UpdateFuelMod(cfg)
-		local Propagator = self:FindPropagator(cfg)
-		local Val = Propagator and Propagator.FuelCrewMod or 0
-		self.FuelCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
-		return self.FuelCrewMod
-	end
-end
 --===============================================================================================--
 
 do -- Spawn and Update functions
@@ -371,7 +357,7 @@ do -- Spawn and Update functions
 			Entity.Out = ACF.LocalPlane(vector_origin, Vector(0, 1, 0))
 		end
 
-		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
+		Entity:ACF_SetEntityName("ACF " .. Entity.Name)
 
 		-- Calculate base fuel usage
 		if Type.CalculateFuelUsage then
@@ -442,10 +428,6 @@ do -- Spawn and Update functions
 				end
 			end
 		end
-	end
-
-	function ENT:ACF_PostSpawn()
-		ACF.AugmentedTimer(function(cfg) self:UpdateFuelMod(cfg) end, function() return IsEntityValid(self) end, nil, {MinTime = 0.1, MaxTime = 0.25})
 	end
 
 	ACF.RegisterLinkSource("acf_engine", "FuelTanks")
@@ -539,6 +521,7 @@ ACF.AddInputAction("acf_engine", "Active", function(Entity, Value)
 	SetActive(Entity, tobool(Value), Entity:GetTable())
 end)
 
+<<<<<<< HEAD
 -- Non-directional for now...
 -- TODO: Eventually we might want to use an output angle, for particle effects coming out of this very entity or from the engine itself
 ACF.AddInputAction("acf_engine", "Exhaust", function(Entity, Value)
@@ -578,6 +561,8 @@ function ENT:ACF_Activate(Recalc)
 	self.ACF.MaxArmour = Armour
 	self.ACF.Type      = "Prop"
 end
+=======
+>>>>>>> dev
 
 --This function needs to return HitRes
 function ENT:ACF_OnDamage(DmgResult, DmgInfo)
@@ -586,16 +571,26 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	-- Adjusting performance based on damage
 	local TorqueMult = Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, self.TorqueScale, 1)
 
-	self.PeakTorque = self.PeakTorqueHeld * TorqueMult
+	if self.ACF.Health <= 0 then TorqueMult = 0 end -- Destroyed engines produce no power
 
+	self.PeakTorque = self.PeakTorqueHeld * TorqueMult
 	return HitRes
 end
 
+<<<<<<< HEAD
 -- The function to either create or update on the client the sounds of an engine by networking the necesary data.
 -- Checks only if there was one soundbank with one sound and the latter is an empty path, so it becomes muted and saves on networking.
 -- Otherwise just networks RPM and Throttle values to the client. If the client does not have the soundTable, it can just request it.
 function ENT:UpdateSoundBank(SelfTbl)
 	SelfTbl = SelfTbl or ENTITY.GetTable(self)
+=======
+function ENT:ACF_OnRepaired()
+	self.PeakTorque = self.PeakTorqueHeld
+end
+
+function ENT:UpdateSound(SelfTbl)
+	SelfTbl = SelfTbl or self:GetTable()
+>>>>>>> dev
 
 	local SoundBanks = SelfTbl.SoundBanks
 
@@ -726,11 +721,11 @@ function ENT:GetConsumption(Throttle, RPM, FuelTank, SelfTbl)
 	FuelTank = FuelTank or SelfTbl.FuelTank
 	if not IsEntityValid(FuelTank) then return 0 end
 
-	if SelfTbl.IsElectric then
-		return Throttle * SelfTbl.FuelUse * SelfTbl.Torque * RPM * 1.05e-4 / SelfTbl.FuelCrewMod
+	if FuelTank.IsElectric then
+		return Throttle * SelfTbl.FuelUse * SelfTbl.Torque * RPM * 1.05e-4
 	else
 		local IdleConsumption = SelfTbl.PeakPower * 5e2
-		return SelfTbl.FuelUse * (IdleConsumption + Throttle * SelfTbl.Torque * RPM) / FuelTank.FuelDensity / SelfTbl.FuelCrewMod
+		return SelfTbl.FuelUse * (IdleConsumption + Throttle * SelfTbl.Torque * RPM) / FuelTank.FuelDensity
 	end
 end
 
@@ -740,6 +735,7 @@ function ENT:Think()
 
 	if not SelfTbl.Active then return end
 	if SelfTbl.Disabled then return end
+	if SelfTbl.ACF.Health <= 0 then return end
 
 	self:CalcRPM(SelfTbl)
 
@@ -926,7 +922,11 @@ end
 function ENT:GetCost()
 	local selftbl = self:GetTable()
 
+<<<<<<< HEAD
 	return Max(5, (selftbl.PeakTorque / 160) + (selftbl.PeakPower / 80))
+=======
+	return math.max(5, (selftbl.PeakTorque / 180) + (selftbl.PeakPower / 100))
+>>>>>>> dev
 end
 
 -- Remove-only teardown. Captured by AutoRegisterV2 as OrigOnRemove; the generated OnRemove still runs

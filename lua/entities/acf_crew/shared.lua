@@ -1,6 +1,6 @@
 DEFINE_BASECLASS("acf_base_simple")
 
-ACF.Entities.AutoRegisterV2(function(CLASS)
+ACF.Entities.AutoRegister(2026091001, function(CLASS)
 	MENU_FIELD("String",  "CrewTypeID",                {Default = "Commander"})
 	MENU_FIELD("String",  "CrewModelID",               {Default = "Sitting"})
 	MENU_FIELD("String",  "CrewPoseID",                {Default = ""})
@@ -16,6 +16,8 @@ ACF.Entities.AutoRegisterV2(function(CLASS)
 	function CLASS:VerifyData()
 	end
 end, "Crew", "Crews")
+
+ENT.ConvexMaterial = "Flesh"
 
 ENT.ACF_StaticWireOutputs = {
 	"ModelEff",

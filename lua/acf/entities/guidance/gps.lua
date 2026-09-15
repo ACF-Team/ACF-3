@@ -2,12 +2,14 @@ local ACF       = ACF
 local Classes 	= ACF.Classes
 Classes.DefineClass("ACF.Missiles.Guidance.GPSGuided", "ACF.Missiles.Guidance.RadioMCLOS", function(CLASS, BASE)
 	CLASS.Name = "GPS Guided"
+	-- Shared so the ammo menu can price missile rounds clientside.
+	function CLASS:GetCost()
+		return 2
+	end
+
 	if CLIENT then
 		CLASS.Description = "This guidance package allows you to guide the munition to a desired point in the map."
 	else
-		function CLASS:GetCost()
-			return 1
-		end
 
 		function CLASS:OnLaunched(Missile)
 			BASE.OnLaunched(self, Missile)

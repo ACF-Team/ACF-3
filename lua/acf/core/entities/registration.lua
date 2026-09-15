@@ -49,13 +49,29 @@ local function PrepareWiremodFunctions(ENT)
         end
     end
 
+    -- Allows WireName to be used to custom-name an entity.
+    -- Therefore, it may not always return the value of ACF_EntityName.
+    function ENT:ACF_GetEntityName()
+        local WireName = self:GetNWString("WireName")
+        if WireName and #WireName > 0 then return WireName end
+        return self.ACF_EntityName or self.PrintName or "ACF Entity"
+    end
+
+    -- Called by entities in their update function.
+    -- Does not reset WireName!
+    function ENT:ACF_SetEntityName(Name)
+        self.ACF_EntityName = Name
+    end
+
     -- ACF SENT hook
     if not ENT.ACF_SetupWireIO then ENT.ACF_SetupWireIO = function() end end
 end
-
+local function UpdateOverlayProxy(self) self:UpdateOverlay() end
 local function PrepareSpawnFunctions(ENT, ClassName)
     local ClassDef      = ENT.ACF_ClassDef
     local Serialization = ACF.Classes.Serialization
+
+    local ACF_Version = ENT.ACF_Version
 
     cleanup.Register(ClassName)
 
@@ -130,7 +146,7 @@ local function PrepareSpawnFunctions(ENT, ClassName)
         return true, (self.PrintName or ClassName) .. " updated successfully!"
     end
 
-    local function DoSpawn(Player, Pos, Angle, ClientData, IsMenuSpawn)
+    local function DoSpawn(Player, Pos, Angle, ClientData, _, IsMenuSpawn)
         local Func = CheckSpawnLimit or Player.CheckLimit
         if IsValid(Player) and not Func(Player, "_" .. ClassName) then return end
 
@@ -139,6 +155,7 @@ local function PrepareSpawnFunctions(ENT, ClassName)
 
         local Entity = ents.Create(ClassName)
         if not IsValid(Entity) then return end
+        Entity.ACF_Version = ACF_Version
 
         Entity:SetPos(Pos)
         Entity:SetAngles(Angle)
@@ -151,6 +168,12 @@ local function PrepareSpawnFunctions(ENT, ClassName)
         if IsValid(Player) then
             Player:AddCount("_" .. ClassName, Entity)
             Player:AddCleanup(ClassName, Entity)
+        end
+
+        do
+            -- This might suck!
+            -- If something overrides it at least, it just breaks the overlay...
+            Entity:SetNWVarProxy("WireName", UpdateOverlayProxy)
         end
 
         if Entity.ACF_OnSpawn then Entity:ACF_OnSpawn(Player, Pos, Angle, ClientData) end
@@ -171,14 +194,14 @@ local function PrepareSpawnFunctions(ENT, ClassName)
 
     Entities.SpawnFuncs[ClassName] = DoSpawn
 
-    duplicator.RegisterEntityClass(ClassName, DoSpawn, "Pos", "Angle", "ACF_UserData")
+    duplicator.RegisterEntityClass(ClassName, DoSpawn, "Pos", "Angle", "ACF_UserData", "ACF_Version")
 end
 
 function Entities.DoSpawnInternal(ClassName, Player, Pos, Ang, ClientData)
     local DoSpawn = Entities.SpawnFuncs[ClassName]
     if not DoSpawn then return end
 
-    local Entity = DoSpawn(Player, Pos, Ang, ClientData or {}, true)
+    local Entity = DoSpawn(Player, Pos, Ang, ClientData or {}, nil, true)
     if IsValid(Entity) then return Entity end
 end
 
@@ -256,8 +279,10 @@ local function PrepareNames(ENT, SingleName, PluralName)
     end
 end
 
-function ACF.Entities.AutoRegisterV2(DefineFields, SingleName, PluralName)
+function ACF.Entities.AutoRegister(CurrentVersion, DefineFields, SingleName, PluralName)
     ENT.IsACFEntity = true
+    ENT.ACF_Version = CurrentVersion
+
     PrepareNames(ENT, SingleName, PluralName)
     ClassNameTrick(ENT)
     PrepareIsFlag(ENT)

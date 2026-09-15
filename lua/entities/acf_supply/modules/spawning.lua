@@ -57,18 +57,17 @@ do -- Updating
 		self:SetSize(Size)
 
 		local OldCapacity = self.Capacity
-		local Volume, Capacity, EmptyMass = self:CalcVolumeAndCapacity(Size)
+		local Volume, Capacity = self:CalcVolumeAndCapacity(Size)
 
-		self.Volume    = Volume
-		self.Capacity  = Capacity
-		self.EmptyMass = EmptyMass
+		self.Volume   = Volume
+		self.Capacity = Capacity
 
 		-- Preserve the current fill ratio when resizing an existing crate;
 		-- fresh and duped crates spawn full (matches the legacy behaviour).
 		local Percentage = (OldCapacity and self.Amount) and (self.Amount / OldCapacity) or 1
 		self:SetAmount(Percentage * Capacity)
 
-		self:SetNWString("WireName", "ACF Supply Crate")
+		self:ACF_SetEntityName("ACF Supply Crate")
 
 		-- ACF.Activate(self, true) is invoked automatically by ACF_UpdateEntityData after this.
 
@@ -79,7 +78,7 @@ end
 
 do -- Overlay
 	function ENT:ACF_UpdateOverlayState(State)
-		State:AddLabel(self:CanConsume() and "Supplying" or "Idle")
+		State:AddLabel(self.ACF.Health == 0 and "Destroyed" or self:CanConsume() and "Supplying" or "Idle")
 		local SizeX, SizeY, SizeZ = self:GetSize():Unpack()
 		State:AddSize("Size", SizeX, SizeY, SizeZ)
 		State:AddProgressBar("Mass Remaining", Round(self.Amount or 0, 2), Round(self.Capacity or 0, 2), " kg", 2)
