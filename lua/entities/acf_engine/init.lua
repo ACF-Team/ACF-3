@@ -521,7 +521,6 @@ ACF.AddInputAction("acf_engine", "Active", function(Entity, Value)
 	SetActive(Entity, tobool(Value), Entity:GetTable())
 end)
 
-<<<<<<< HEAD
 -- Non-directional for now...
 -- TODO: Eventually we might want to use an output angle, for particle effects coming out of this very entity or from the engine itself
 ACF.AddInputAction("acf_engine", "Exhaust", function(Entity, Value)
@@ -561,8 +560,6 @@ function ENT:ACF_Activate(Recalc)
 	self.ACF.MaxArmour = Armour
 	self.ACF.Type      = "Prop"
 end
-=======
->>>>>>> dev
 
 --This function needs to return HitRes
 function ENT:ACF_OnDamage(DmgResult, DmgInfo)
@@ -577,20 +574,12 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	return HitRes
 end
 
-<<<<<<< HEAD
--- The function to either create or update on the client the sounds of an engine by networking the necesary data.
--- Checks only if there was one soundbank with one sound and the latter is an empty path, so it becomes muted and saves on networking.
--- Otherwise just networks RPM and Throttle values to the client. If the client does not have the soundTable, it can just request it.
-function ENT:UpdateSoundBank(SelfTbl)
-	SelfTbl = SelfTbl or ENTITY.GetTable(self)
-=======
 function ENT:ACF_OnRepaired()
 	self.PeakTorque = self.PeakTorqueHeld
 end
 
 function ENT:UpdateSound(SelfTbl)
 	SelfTbl = SelfTbl or self:GetTable()
->>>>>>> dev
 
 	local SoundBanks = SelfTbl.SoundBanks
 
@@ -922,11 +911,7 @@ end
 function ENT:GetCost()
 	local selftbl = self:GetTable()
 
-<<<<<<< HEAD
-	return Max(5, (selftbl.PeakTorque / 160) + (selftbl.PeakPower / 80))
-=======
-	return math.max(5, (selftbl.PeakTorque / 180) + (selftbl.PeakPower / 100))
->>>>>>> dev
+	return Max(5, (selftbl.PeakTorque / 180) + (selftbl.PeakPower / 100))
 end
 
 -- Remove-only teardown. Captured by AutoRegisterV2 as OrigOnRemove; the generated OnRemove still runs
