@@ -249,7 +249,8 @@ do -- Random timer stuff
 		-- Update oxygen levels and apply drowning if necessary
 		local MouthPos = ENTITY.LocalToWorld(self, SelfTbl.CrewModel.MouthOffsetL) -- Probably well underwater at this point
 		-- Debug.Cross(MouthPos, 4, 1, Red, true)
-		if bit.band(util.PointContents(MouthPos), CONTENTS_WATER) == CONTENTS_WATER then
+		local LiquidMask = bit.bor(CONTENTS_WATER, CONTENTS_SLIME)
+		if bit.band(util.PointContents(MouthPos), LiquidMask) ~= 0 then
 			SelfTbl.Oxygen = SelfTbl.Oxygen - DeltaTime * ACF.CrewOxygenLossRate
 		else
 			SelfTbl.Oxygen = SelfTbl.Oxygen + DeltaTime * ACF.CrewOxygenGainRate
