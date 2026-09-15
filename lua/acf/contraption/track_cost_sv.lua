@@ -236,9 +236,10 @@ end
 do -- Cost limit enforcement
 	local CostLimitSettings = { ["ACF.Baseplates.GroundVehicle"] = "CostLimitGround", ["ACF.Baseplates.Aircraft"] = "CostLimitAir" }
 	local AircraftArmorTypes = { Wing = true, Default = true }
-	CostSystem.AircraftVolumeLimit = 32000 -- Sum of convex volumes, in^3
+	local AircraftVolumeType = "Wing"
+	CostSystem.AircraftVolumeLimit = 32000 -- Sum of aircraft aluminum convex volumes, in^3
 
-	-- Sums an aircraft's convex armor volume, and reports whether any convex uses a disallowed material
+	-- Sums an aircraft's aircraft aluminum convex volume, and reports whether any convex uses a disallowed material
 	function CostSystem.GetAircraftArmorInfo(Contraption)
 		local Volume = 0
 		local BadMaterial = false
@@ -251,9 +252,10 @@ do -- Cost limit enforcement
 			if not MeshData then continue end
 
 			for _, Convex in ipairs(MeshData.Convexes) do
-				if not AircraftArmorTypes[Convex.Material or "Default"] then BadMaterial = true end
+				local Material = Convex.Material or "Default"
 
-				Volume = Volume + Convex.Volume
+				if not AircraftArmorTypes[Material] then BadMaterial = true end
+				if Material == AircraftVolumeType then Volume = Volume + Convex.Volume end
 			end
 		end
 
