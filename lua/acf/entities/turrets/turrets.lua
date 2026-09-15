@@ -141,6 +141,10 @@ do	-- Turret drives
 
 			local FinalAccel = Accel * math.Clamp(MaxPower / ReqAccelPower, 0, 1) * 6 -- converting back to deg/s^2
 
+			-- The power ratios above divide by zero while the turret still reports no mass, such as during a dupe paste
+			-- math.max(1, x) in the bail-outs above hides a NaN from them, so stop it here instead
+			if FinalTopSpeed ~= FinalTopSpeed or FinalAccel ~= FinalAccel then return {SlewAccel = 0, MaxSlewRate = 0} end
+
 			return {SlewAccel = FinalAccel, MaxSlewRate = FinalTopSpeed, MotorMaxSpeed = TopSpeed * 6, MotorGearRatio = GearRatio, EffortScale = math.min(1, 1 / (MaxPower / ReqConstantPower))}
 		end
 	end)

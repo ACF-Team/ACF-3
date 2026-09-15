@@ -1130,7 +1130,8 @@ do -- Metamethods
 			local AngleChange	= SelfTbl.CurrentAngle
 
 			-- Something or another has caused the turret to be unable to rotate, so don't waste the extra processing time
-			if MaxImpulse == 0 then
+			-- Also catches a NaN rate from CalcSpeed, which would otherwise poison CurrentAngle
+			if not (MaxImpulse > 0) then
 				SelfTbl.LastTurretAngle = ENTITY.GetAngles(self)
 				SelfTbl.LastThinkTime	= Clock.CurTime
 
