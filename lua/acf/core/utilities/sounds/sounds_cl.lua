@@ -1,4 +1,73 @@
 local Sounds = ACF.Utilities.Sounds
+local Clock  = ACF.Utilities.Clock
+
+local Clamp = math.Clamp
+local max   = math.max
+
+do -- Doppler effect
+	local LocalPlayer = LocalPlayer
+	local IsValid = IsValid
+
+	local SpeedOfSound = ACF.SpeedOfSound
+	local MinimumDenominator = SpeedOfSound * 0.1 -- Floor for the denominator below, so an extreme closing speed can't blow the ratio up towards infinity or flip its sign
+
+	-- Lets store our last entity positions in this weak table so whenever the entity that had its data stored gets removed, does so from this table too.
+	local LastPosition = setmetatable({}, {__mode = "k"})
+
+	-- Given the fact that Ent:GetPos() is a method of ENTITY but Ent:GetVelocity() is a method of PHYSOBJ, simply calling the previous function wont work
+	-- for parented entities(they don't have any physobj's) so instead we have to manually calculate the velocity of our sound source. 
+	local function GetVelocity(Ent, Pos)
+		local Time = Clock.CurTime
+		local Last = LastPosition[Ent]
+
+		if Last and Last.Time == Time then return Last.Velocity end
+
+		local Velocity = vector_origin
+
+		if Last then
+			local DeltaTime = Time - Last.Time
+			if DeltaTime > 0 then
+				Velocity = (Pos - Last.Pos) / DeltaTime
+
+				-- In the case that a teleport (spawning, respawning, prop repositioning) happens, 
+				-- it'd cause a naughty one tick velocity spike, so lets prevent that. 
+				if Velocity:Length() > SpeedOfSound * 2 then
+					Velocity = vector_origin
+				end
+			end
+		end
+
+		LastPosition[Ent] = {Pos = Pos, Time = Time, Velocity = Velocity}
+
+		return Velocity
+	end
+
+	--- Computes a pitch multiplier representing the Doppler shift caused by Origin's motion relative to the local player.
+	--- @param Origin table The entity the sound is actually playing from
+	--- @return number A multiplier to apply to the sound's base pitch
+	function Sounds.GetDopplerPitchMultiplier(Origin)
+		local Ply = LocalPlayer()
+		if not IsValid(Ply) or not IsValid(Origin) then return 1 end
+
+		local PlayerPos = Ply:EyePos()
+		local SourcePos = Origin:GetPos()
+
+		local Dir = SourcePos - PlayerPos
+		local Dist = Dir:Length()
+		if Dist < 1 then return 1 end  -- Right on top of the source
+
+		Dir = Dir / Dist
+
+		local RelativeVelocity = GetVelocity(Origin, SourcePos) - GetVelocity(Ply, PlayerPos)
+		local VelocityTowardsPlayer = -RelativeVelocity:Dot(Dir)
+
+		local Denominator = max(SpeedOfSound - VelocityTowardsPlayer, MinimumDenominator)
+		-- Sanity clamp so a sudden teleport/velocity spike, can't send the pitch to an absurd extreme for a tick
+		local Factor = Clamp(SpeedOfSound / Denominator, 0.5, 2)
+
+		return Factor
+	end
+end
 
 do -- Valid sound check
 	local file     = file
@@ -27,9 +96,6 @@ do -- Valid sound check
 	end
 end
 
--- MARCH/TODO: universal ACF constant for speed of sound (maybe it already exists and I don't know :P)
-local SpeedOfSound = 343 * 39.37
-
 local function DistanceToOrigin(Origin)
 	if isentity(Origin) and IsValid(Origin) then
 		return LocalPlayer():EyePos():Distance(Origin:GetPos())
@@ -46,7 +112,7 @@ end
 local function DoDelayed(Origin, Call, Instant)
 	if Instant then return Call() end
 
-	local Delay = DistanceToOrigin(Origin) / SpeedOfSound
+	local Delay = DistanceToOrigin(Origin) / ACF.SpeedOfSound
 	if Delay > 0.1 then
 		timer.Simple(Delay, function() Call() end)
 	else
@@ -63,7 +129,8 @@ do -- Playing regular sounds
 	--- @param Pitch? integer The sound's pitch from 0-255
 	--- @param Volume number A float representing the sound's volume; this is multiplied by the client's volume setting
 	--- @param UseBASS? boolean Whether the sound should be played through BASS instead; use this for things like volumes greater than 1
-	function Sounds.PlaySound(Origin, Path, Level, Pitch, Volume, UseBASS)
+	--- @param Callback? function Called with the resulting IGModAudioChannel after it's been created
+	function Sounds.PlaySound(Origin, Path, Level, Pitch, Volume, UseBASS, Callback)
 		Volume = ACF.Volume * Volume
 
 		if isentity(Origin) and IsValid(Origin) then
@@ -78,6 +145,8 @@ do -- Playing regular sounds
 						Channel:SetVolume(Volume)
 						Channel:Play()
 					end
+
+					if Callback then Callback(Channel) end
 				end)
 			else
 				sound.Play(Path, Origin, Level, Pitch, Volume)
@@ -115,6 +184,7 @@ do -- Processing adjustable sounds (for example, engine noises)
 		if not Sound then return end
 
 		Volume = Volume * ACF.Volume
+		Pitch  = Clamp(Pitch * Sounds.GetDopplerPitchMultiplier(Origin), 1, 255) -- Doppler effect
 
 		if Sound:IsPlaying() then
 			Sound:ChangePitch(Pitch, 0.05)
@@ -130,9 +200,10 @@ do -- Processing adjustable sounds (for example, engine noises)
 	--- @param Path string The path to the sound to be played local to the game's sound folder
 	--- @param Pitch integer The sound's pitch from 0-255
 	--- @param Volume number A float representing the sound's volume
+	--- @return Sound CSoundPatch The sound object
 	function Sounds.CreateAdjustableSound(Origin, Path, Pitch, Volume)
 		if not IsValid(Origin) then return end
-		if Origin.Sound then return end
+		if not Sounds.IsValidSound(Path) then return end
 
 		local Sound = CreateSound(Origin, Path)
 		Origin.Sound = Sound
@@ -142,7 +213,8 @@ do -- Processing adjustable sounds (for example, engine noises)
 			Sounds.DestroyAdjustableSound(Entity, true)
 		end)
 
-		Sounds.UpdateAdjustableSound(Origin, Pitch, Volume)
+		Sounds.UpdateAdjustableSound(Sound, Pitch, Volume)
+		return Sound
 	end
 
 	--- Stops an existing adjustable sound on the origin.
@@ -181,6 +253,280 @@ do -- Processing adjustable sounds (for example, engine noises)
 	end)
 end
 
+-- Fade function taken from:
+-- https://dsp.stackexchange.com/questions/37477/understanding-equal-power-crossfades
+-- https://dsp.stackexchange.com/questions/14754/equal-power-crossfade
+function Sounds.Fade(N, Min, Mid, Max)
+	local cos = math.cos
+	local _PI = math.pi
+
+	if N < Min or N > Max then return 0 end
+
+	if N > Mid then
+		Min = Mid - (Max - Mid)
+	end
+
+	return cos((1 - ((N - Min) / (Mid - Min))) * (_PI / 2))
+end
+
+-- This is where the magic to interpolate sounds happen.
+-- In order to make yourself a better idea of what this does you can consult the image below:
+-- https://i.imgur.com/KaFmaMf.png
+local function DoPitchVolumeAtRPM(Origin, Throttle, RPM)
+	local Fade  = Sounds.Fade -- idk if this is faster to do, but given this is a hot path, might as well be...
+	local Remap = math.Remap
+	local abs   = math.abs
+
+	local SoundObjects = Origin.SoundObjects
+	if not SoundObjects or table.IsEmpty(SoundObjects) then return end
+
+	for _, SoundBank in ipairs(SoundObjects) do
+		local Entity = SoundBank.PlayAtEntity
+		if not IsValid(Entity) then Entity = Origin end
+
+		local OffVolume = SoundBank.OffThrottle
+		local OnVolume = SoundBank.OnThrottle
+		local SoundCount = #SoundBank.Sounds
+
+		for Idx, SoundTable in ipairs(SoundBank.Sounds) do
+			if not SoundTable.RPM then continue end
+
+			local AddCurveWidth = SoundTable.Width or 0
+			local EnginePitch = SoundTable.Pitch or 1
+			local Min    = Idx == 1 and -1000000 or SoundBank.Sounds[Clamp(Idx - 1 - AddCurveWidth, 1, SoundCount)].RPM
+			local Mid    = SoundTable.RPM
+			local Max    = Idx == SoundCount and 1000000 or SoundBank.Sounds[Clamp(Idx + 1 + AddCurveWidth, 1, SoundCount)].RPM
+			local Curve  = Fade(RPM, Min, Mid, Max)
+			local Volume = Curve * Remap(Throttle, 0, 100, OffVolume, OnVolume) * (SoundTable.Volume or 1)
+			local Pitch  = (RPM / SoundTable.RPM) * EnginePitch
+			local LastPitch  = SoundTable.LastPitch
+			local LastVolume = SoundTable.LastVolume
+
+			-- Don't even bother updating if neither value has changed meaningfully since the last update
+			if LastPitch and LastVolume and abs(Pitch - LastPitch) < 0.5 and abs(Volume - LastVolume) < 0.01 then
+				continue -- Yeah...
+			end
+
+			SoundTable.LastPitch = Pitch
+			SoundTable.LastVolume = Volume
+
+			Entity.Sound = SoundTable.Sound
+
+			Sounds.UpdateAdjustableSound(Entity, Pitch, Volume)
+		end
+	end
+end
+
+do -- Multiple Engine Sounds(ex. Interpolated sounds)
+	local IsValid = IsValid
+	local Messages = ACF.Utilities.Messages
+
+	 -- Weak keyed table so it doesn't stay around when its awaiting a request to arrive and the entity gets removed.
+	local PendingSoundRequests = setmetatable({}, {__mode = "k"})
+
+	--- Ask the server for the Entity's soundbank data, if we didn't have it yet but we receive a Throttle/RPM update.
+	local function RequestMultipleAdjustableSounds(Origin)
+		if not IsValid(Origin) then return end
+		if PendingSoundRequests[Origin] then return end -- Already asked, waiting on the response
+
+		PendingSoundRequests[Origin] = true
+
+		net.Start("ACF_Sounds_AdjustableRequest_Multi")
+			net.WriteEntity(Origin)
+		net.SendToServer()
+	end
+
+	-- Create the sound adjustable by pitch and volume. It is created mute so it remains ready to be manipulated later.
+	local function CreateSound(Entity, Path, Pitch)
+		local Sound = Sounds.CreateAdjustableSound(Entity, Path, Pitch or 100, 0)
+
+		if not Sound then return end
+		return Sound
+	end
+
+	--- Creates many sounds from a table, and stores their entries in the Origin's entity.
+	--- Reuses existing methods to create and update sounds.
+	--- @param Origin table The entity to play the sounds from
+	--- @param SoundTable table The networked table with nested table containing rpm, sound path, pitch, volume, width and empty sound
+	function Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable)
+		local SoundTable       = SoundTable
+		local SoundBankErrored = 0
+		local SoundBankCount   = 0
+		local SoundCount       = 0
+
+		for BankIdx, SoundBankTable in ipairs(SoundTable) do
+			local Entity = SoundBankTable.PlayAtEntity
+			if not IsValid(Entity) then continue end -- Just in case
+
+			local HasErrored = false
+
+			for _, SndTable in ipairs(SoundBankTable.Sounds) do
+				if not HasErrored then
+					local Sound = CreateSound(Entity, SndTable.Path, SndTable.Pitch)
+
+					-- Invalidate the entire soundbank at the very first error
+					if not Sound then
+						SoundBankErrored = SoundBankErrored + 1
+						HasErrored = true
+						continue
+					end
+
+					SoundCount = SoundCount + 1
+					SndTable.Sound = Sound
+				end
+			end
+
+			-- If an error happened, clear this soundtable and instead create a default sound.
+			-- TODO: We should be networking the default sound table instead!
+			if HasErrored then
+				SoundTable[BankIdx].Sounds = {}
+
+				local Sound = CreateSound(Entity, "vehicles/junker/jnk_fourth_cruise_loop2.wav", 100)
+
+				SoundTable[BankIdx].Sounds = {{
+					RPM = 5000,
+					Path = "vehicles/junker/jnk_fourth_cruise_loop2.wav",
+					Pitch = 100,
+					Volume = 1,
+					Width = 0,
+					Sound = Sound
+				}}
+
+				SoundCount = SoundCount + 1
+			end
+			-- Sort the table by the rpm before moving on, so it can be iterated in sequential order
+			table.sort(SoundBankTable.Sounds, function(a, b) return a.RPM < b.RPM end)
+
+			SoundBankCount = SoundBankCount + 1
+		end
+
+		if #SoundTable == SoundBankCount and SoundBankErrored ~= 0 then
+			local Message = SoundBankErrored ~= 1 and tostring(SoundBankErrored .. " sound banks") or tostring(SoundBankErrored .. "sound bank")
+			Messages.PrintChat("Error", ("Failed to create sounds for %s, at %s. Resetting to default sound."):format(Message, Origin))
+		end
+
+		Origin.SoundBankCount = SoundBankCount
+		Origin.SoundObjects = SoundTable
+		Origin.SoundCount = SoundCount
+		PendingSoundRequests[Origin] = nil -- Our response arrived, clear the request.
+
+		-- Ensuring that the sounds can't stick around if the server doesn't properly ask for them to be destroyed
+		Origin:CallOnRemove("ACF_ForceStopMultipleAdjustableSounds", function(Entity)
+			Sounds.DeleteMultipleAdjustableSounds(Entity, true)
+		end)
+	end
+
+	--- Stops all the existing sounds from the entity
+	--- @param Origin table The entity to stop all the sounds from
+	function Sounds.DeleteMultipleAdjustableSounds(Origin, _)
+		if not IsValid(Origin) then return end
+		if not Origin.SoundObjects then return end
+
+		for Idx, Bank in ipairs(Origin.SoundObjects) do
+			for _, Snd in ipairs(Bank.Sounds) do
+				-- Check if it exists first, clients that failed to create the sound wont have the sound object, so nothing occurs. 
+				if Snd.Sound then
+					Snd.Sound:Stop()
+				end
+			end
+			Origin.SoundObjects[Idx] = nil
+		end
+		Origin.SoundCount 	  = 0
+		Origin.SoundBankCount = 0
+	end
+
+	local _BIT_NUM_SOUNDBANKS = ACF.GetHighestPowerOfTwo(ACF.MaxSoundBanks)
+	local _BIT_NUM_SOUNDS = ACF.GetHighestPowerOfTwo(ACF.MaxSounds)
+	-- For multiple sounds creation
+	net.Receive("ACF_Sounds_AdjustableCreate_Multi", function()
+		-- print("Received " .. len .. " bits from \"ACF_Sounds_AdjustableCreate_Multi\" for sound creation!") -- Debug print
+		local Origin = net.ReadEntity()
+		local Exhaust = net.ReadEntity()
+		local SoundBankCount = net.ReadUInt(_BIT_NUM_SOUNDBANKS)
+
+		local SoundTable = {}
+
+		for Bank = 1, SoundBankCount do
+			local PlaysAtExhaust = net.ReadBool()
+			local OffThrottle = net.ReadUInt(8)
+			local OnThrottle = net.ReadUInt(8)
+			local SoundCount = net.ReadUInt(_BIT_NUM_SOUNDS)
+
+			if not IsValid(Exhaust) then Exhaust = Origin end
+			local PlayAtEntity = PlaysAtExhaust and Exhaust or Origin
+
+			OffThrottle = OffThrottle * 0.01 -- Reduce the received values down to a float
+			OnThrottle = OnThrottle * 0.01
+
+			table.insert(SoundTable, {PlayAtEntity = PlayAtEntity,
+									  OffThrottle = OffThrottle,
+									  OnThrottle = OnThrottle,
+									  Sounds = {}
+									 })
+
+			for _ = 1, SoundCount do
+				local RPM 		 = net.ReadUInt(ACF.NetSoundRPMBitLimit)
+				local StringPath = net.ReadString()
+				local Pitch 	 = net.ReadUInt(8)
+				local Volume 	 = net.ReadUInt(8)
+				local Width 	 = net.ReadUInt(4)
+
+				Volume = Volume * 0.01 -- Reduce the received value down to a float
+				table.insert(SoundTable[Bank].Sounds, { RPM    = RPM,
+													    Path   = StringPath,
+														Pitch  = Pitch or 100,
+														Volume = Volume or 1,
+														Width  = Width or 0,
+														Sound  = nil }) -- Fuck it we ball
+			end
+		end
+		if not IsValid(Origin) then return end
+		Sounds.CreateMultipleAdjustableSounds(Origin, SoundTable)
+	end)
+
+	-- For updates on multiple sounds
+	net.Receive("ACF_Sounds_Adjustable_Multi", function()
+		-- print("Received " .. len .. " bits from \"ACF_Sounds_Adjustable_Multi\" for sound creation!") -- Debug print
+		local Origin = net.ReadEntity()
+		local ShouldStop = net.ReadBool()
+
+		if not IsValid(Origin) then return end
+
+		if ShouldStop then
+			Sounds.DeleteMultipleAdjustableSounds(Origin)
+		else
+			local Throttle = net.ReadUInt(7)
+			local RPM = net.ReadUInt(ACF.NetSoundRPMBitLimit)
+
+			-- In case we don't just have the soundbank table yet, we do a request for it instead.
+			if not Origin.SoundObjects or table.IsEmpty(Origin.SoundObjects) then
+				RequestMultipleAdjustableSounds(Origin)
+				return
+			end
+
+			DoPitchVolumeAtRPM(Origin, Throttle, RPM)
+		end
+	end)
+
+	net.Receive("ACF_Sounds_InvalidateEngineSoundInfo", function()
+		local Origin = net.ReadEntity()
+		if not IsValid(Origin) then return end
+		if not Origin.SoundObjects or table.IsEmpty(Origin.SoundObjects) then return end
+
+		for _, SoundBank in ipairs(Origin.SoundObjects) do
+			if SoundBank.PlayAtEntity ~= Origin then
+				for _, Snd in ipairs(SoundBank.Sounds) do
+					-- Check if it exists first, then stop it
+					if Snd.Sound then
+						Snd.Sound:Stop()
+					end
+
+					Snd.Sound = nil
+				end
+			end
+		end
+	end)
+end
 	--- Returns a table of sound infomation depending on what the trace hit.
 	--- @param Data table The effect data relating to the projectile
 	--- @param Trace table The trace data relating to the projectile
