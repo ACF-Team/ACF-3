@@ -451,12 +451,19 @@ function ACF.MakeMissile(Player, Pos, Ang, Rack, MountPoint, Crate)
 	if Missile.NoThrust then
 		Missile.MotorLength = 0
 		Missile.SpeedBoost = 0
+		Missile.BulletData.MuzzleVel = 0
 	else
 		local TotalLength = Missile.BulletData.PropMass / (Missile.FuelConsumption * Missile.MaxThrust)
 
 		Missile.MaxMotorLength = TotalLength
 		Missile.MotorLength = (1 - Missile.StarterPercent) * TotalLength
 		Missile.SpeedBoost = Missile.StarterPercent * TotalLength * Missile.MaxThrust / (Missile.ProjMass + Missile.PropMass * 0.5)
+
+		-- Rocket equation estimate of burnout speed, drag ignored
+		local MassStart = Missile.ProjMass + Missile.PropMass * (1 - Missile.StarterPercent)
+		local TopSpeed  = Missile.SpeedBoost + (1 / Missile.FuelConsumption) * math.log(MassStart / Missile.ProjMass)
+
+		Missile.BulletData.MuzzleVel = TopSpeed * ACF.InchToMeter
 	end
 
 	if Missile.NoDamage then

@@ -403,6 +403,14 @@ do -- Spawning and Updating --------------------
 			contraption.Racks[ent] = nil
 		end
 	end)
+
+	-- Tracks the turret a rack is mounted to, for turret auto-leveling
+	function ENT:CFW_OnParentedTo(_, NewParent)
+		if not IsValid(NewParent) then return end
+		if NewParent:GetClass() == "acf_turret_rotator" then NewParent = NewParent:GetTable().Turret end
+
+		self.BreechReference = NewParent
+	end
 end ---------------------------------------------
 
 do -- Custom ACF damage ------------------------

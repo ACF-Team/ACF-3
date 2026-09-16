@@ -9,8 +9,9 @@ local function Init(Entity)
 	Entity.Racks            = {}    -- All racks
 	Entity.GuidanceComputer = nil   -- The guidance computer, if any
 	Entity.TurretComputer   = nil   -- The turret computer, if any
-	Entity.GunsPrimary      = {}    -- All guns sharing Gun1's weapon
-	Entity.GunsSecondary    = {}    -- All guns sharing Gun2's weapon
+	Entity.GunsPrimary      = {}    -- All guns/racks sharing Gun1's weapon
+	Entity.GunsSecondary    = {}    -- All guns/racks sharing Gun2's weapon
+	Entity.RacksTertiary    = {}    -- Racks not claimed by Gun1/Gun2
 	Entity.GunsSmoke        = {}    -- Smoke and flare launchers
 	Entity.TurretLocked     = false -- Whether the turret is locked or not
 	Entity.Smoke            = nil   -- Reference smoke launcher, for HUD purposes
@@ -22,6 +23,28 @@ end
 
 -- Turret related
 do
+	-- Classify a single linked gun into the firing group matching Gun1's/Gun2's weapon
+	local function ClassifyGun(self, Gun)
+		local Primary, Secondary = self:GetGun1(), self:GetGun2()
+		if IsValid(Primary) and Gun.Weapon == Primary.Weapon then
+			self.GunsPrimary[Gun] = true
+		elseif IsValid(Secondary) and Gun.Weapon == Secondary.Weapon then
+			self.GunsSecondary[Gun] = true
+		end
+	end
+
+	-- Classify a single linked rack the same way, keyed by rack type instead of weapon
+	local function ClassifyRack(self, Rack)
+		local Primary, Secondary = self:GetGun1(), self:GetGun2()
+		if IsValid(Primary) and Rack.ClassData == Primary.ClassData then
+			self.GunsPrimary[Rack] = true
+		elseif IsValid(Secondary) and Rack.ClassData == Secondary.ClassData then
+			self.GunsSecondary[Rack] = true
+		else
+			self.RacksTertiary[Rack] = true
+		end
+	end
+
 	function ENT:AnalyzeGuns(Gun)
 		if Gun.Weapon == "ACF.Guns.SmokeLauncher" then
 			self.GunsSmoke[Gun] = true
@@ -38,22 +61,14 @@ do
 			self:SetGun2(Gun)
 		end
 
-		-- Rebuild the firing groups from every linked gun sharing Gun1's/Gun2's weapon
-		table.Empty(self.GunsPrimary)
-		table.Empty(self.GunsSecondary)
-		local Primary, Secondary = self:GetGun1(), self:GetGun2()
-		for LinkedGun in pairs(self.Guns) do
-			if IsValid(Primary) and LinkedGun.Weapon == Primary.Weapon then
-				self.GunsPrimary[LinkedGun] = true
-			elseif IsValid(Secondary) and LinkedGun.Weapon == Secondary.Weapon then
-				self.GunsSecondary[LinkedGun] = true
-			end
-		end
+		ClassifyGun(self, Gun)
 	end
 
 	function ENT:AnalyzeRacks(Rack)
 		self.Racks[Rack] = true
 		if not IsValid(self:GetGun3()) then self:SetGun3(Rack) end
+
+		ClassifyRack(self, Rack)
 	end
 
 	-- Fire guns
@@ -88,7 +103,7 @@ do
 
 		HandleFire(Fire1, SelfTbl.GunsPrimary)
 		HandleFire(Fire2, SelfTbl.GunsSecondary)
-		HandleFire(Fire3, SelfTbl.Racks, SelfTbl:GetFireDelay())
+		HandleFire(Fire3, SelfTbl.RacksTertiary, SelfTbl:GetFireDelay())
 		HandleFire(Fire4, SelfTbl.GunsSmoke)
 	end
 
