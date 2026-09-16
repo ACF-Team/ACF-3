@@ -195,6 +195,19 @@ function ACF.MuzzleVelocity(PropMass, ProjMass, Efficiency)
 	return (2 * Energy / ProjMass) ^ 0.5
 end
 
+-- Estimates a rocket motor's burnout speed via the rocket equation, drag ignored, in m/s.
+function ACF.MissileMuzzleVel(NoThrust, Round, ProjMass, PropMass)
+	if NoThrust then return 0 end
+
+	local FuelConsumption = Round.FuelConsumption * 0.001
+	local TotalLength     = PropMass / (FuelConsumption * Round.Thrust)
+	local MassStart       = ProjMass + PropMass * (1 - Round.StarterPercent)
+	local SpeedBoost      = Round.StarterPercent * TotalLength * Round.Thrust / (ProjMass + PropMass * 0.5)
+	local TopSpeed        = SpeedBoost + (1 / FuelConsumption) * math.log(MassStart / ProjMass)
+
+	return TopSpeed * ACF.InchToMeter
+end
+
 function ACF.Kinetic(Speed, Mass)
 	Speed = Speed * ACF.InchToMeter -- From in/s to m/s
 
