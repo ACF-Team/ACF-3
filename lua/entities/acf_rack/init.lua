@@ -1072,6 +1072,7 @@ do -- Misc -------------------------------------
 
 	function ENT:SetState(State)
 		self.State = State
+		self.MagazineReloading = State ~= "Loaded" -- Racks reload per shot, mirroring a gun's magazine reload for fire_control.lua's leveling check
 
 		self:UpdateOverlay()
 
