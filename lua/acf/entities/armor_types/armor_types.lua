@@ -277,3 +277,33 @@ function Armor:OnLoaded()
     self.ExplosiveThreshold = 500
     self.ExplosiveFiller    = 0.01
 end
+
+-- Reinforced Concrete
+local Armor = Types.Register("ReinforcedConcrete")
+function Armor:OnLoaded()
+    self.Name        = "Reinforced Concrete"
+    self.ShortName   = "Reinforced Concrete"
+    self.Description = "Cheap and weak protection per unit volume compared to RHA, but low enough cost to make up for it in large stationary structures."
+    self.Density     = 2500 -- https://www.civilengicon.com/2024/02/density-of-rcc-pcc-sand-cement.html
+    self.CostMul     = 6.5 
+    self.HealthMul   = 0.2  
+    self.KineticMul  = 0.22 
+    self.ChemicalMul = 0.3  
+    self.SpallMul    = 1.6 
+    self.Color       = Color(70, 70, 70)
+end
+
+-- Wood
+local Armor = Types.Register("Wood")
+function Armor:OnLoaded()
+    self.Name        = "Wood"
+    self.ShortName   = "Wood"
+    self.Description = "The cheapest and lightest material available. Offers almost no meaningful protection against anything, but its low cost and low density make it usable for early aircraft, or non-combat use as scaffolds and housing."
+    self.Density     = 900 -- https://www.engineeringtoolbox.com/wood-density-d_40.html specifically oak.
+    self.CostMul     = 4 
+    self.HealthMul   = 0.08
+    self.KineticMul  = 0.06 
+    self.ChemicalMul = 0.07  
+    self.SpallMul    = 0.75 
+    self.Color       = Color(133, 94, 66)
+end
