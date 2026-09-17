@@ -9,8 +9,10 @@ do
         Contraption.ACF_LastDamageAttacker = DmgInfo:GetAttacker()
         Contraption.ACF_LastDamageInflictor = DmgInfo:GetInflictor()
 
-        -- Cached: recomputing after the entity is removed would undercount its own cost.
-        Contraption.ACF_LastCost = (ACF.Contraption.CostSystem.CalcCostsFromContraption(Contraption))
+        -- Cost cached on the first damage event
+        if not Contraption.ACF_LastCost then
+            Contraption.ACF_LastCost = (ACF.Contraption.CostSystem.CalcCostsFromContraption(Contraption))
+        end
     end)
 
 
