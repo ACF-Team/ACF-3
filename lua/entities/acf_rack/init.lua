@@ -798,7 +798,7 @@ do -- Loading ----------------------------------
 
 	local function AddMissile(Rack, Point, Crate, LimitConVar, Owner)
 		local Pos, Ang = GetMissileAngPos(Crate.BulletData, Point)
-		local Missile = ACF.MakeMissile(Rack.Owner, Pos, Ang, Rack, Point, Crate)
+		local Missile = ACF.MakeMissile(Rack:CPPIGetOwner(), Pos, Ang, Rack, Point, Crate)
 
 		Sounds.SendSound(Rack, "acf_missiles/fx/bomb_reload.mp3", 70, math.random(99, 101), 1)
 

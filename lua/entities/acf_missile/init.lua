@@ -495,7 +495,7 @@ function ENT:CreateBulletData(Crate)
 	self.RoundData         = Ammo
 	self.BulletData        = Ammo:ServerConvert()
 	self.BulletData.Crate  = self:EntIndex()
-	self.BulletData.Owner  = self:GetPlayer()
+	self.BulletData.Owner  = self:CPPIGetOwner()
 	self.BulletData.Gun    = self
 	self.BulletData.Filter = self.Filter
 
