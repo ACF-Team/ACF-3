@@ -67,6 +67,7 @@ local Pending = {}
 --- @param VictimCost number|nil
 --- @param InflictorClass string|nil The class of the weapon/entity used to deal the damage
 --- @param IsDrone boolean Whether this was a crewless-drone destruction rather than a player death
+--- Runs the ACF_OnKillLogged hook (same args, Attacker nil'd out if not a player) for gamemode integration.
 function ACF.RecordKill(Attacker, AttackerCost, Victim, VictimCost, InflictorClass, IsDrone)
     if not IsValid(Victim) or not Victim:IsPlayer() then return end
 
@@ -84,6 +85,15 @@ function ACF.RecordKill(Attacker, AttackerCost, Victim, VictimCost, InflictorCla
         Inflictor       = InflictorClass,
         IsDrone         = IsDrone or false,
     }
+
+    hook.Run("ACF_OnKillLogged", {
+        Attacker     = HasAttacker and Attacker or nil,
+        AttackerCost = AttackerCost,
+        Victim       = Victim,
+        VictimCost   = VictimCost,
+        Inflictor    = InflictorClass,
+        IsDrone      = IsDrone or false,
+    })
 end
 
 -- Turns a Lua value into a literal safe to splice into a query string ("NULL" for nil).
