@@ -49,10 +49,24 @@ local function PrepareWiremodFunctions(ENT)
         end
     end
 
+    -- Allows WireName to be used to custom-name an entity.
+    -- Therefore, it may not always return the value of ACF_EntityName.
+    function ENT:ACF_GetEntityName()
+        local WireName = self:GetNWString("WireName")
+        if WireName and #WireName > 0 then return WireName end
+        return self.ACF_EntityName or self.PrintName or "ACF Entity"
+    end
+
+    -- Called by entities in their update function.
+    -- Does not reset WireName!
+    function ENT:ACF_SetEntityName(Name)
+        self.ACF_EntityName = Name
+    end
+
     -- ACF SENT hook
     if not ENT.ACF_SetupWireIO then ENT.ACF_SetupWireIO = function() end end
 end
-
+local function UpdateOverlayProxy(self) self:UpdateOverlay() end
 local function PrepareSpawnFunctions(ENT, ClassName)
     local ClassDef      = ENT.ACF_ClassDef
     local Serialization = ACF.Classes.Serialization
@@ -154,6 +168,12 @@ local function PrepareSpawnFunctions(ENT, ClassName)
         if IsValid(Player) then
             Player:AddCount("_" .. ClassName, Entity)
             Player:AddCleanup(ClassName, Entity)
+        end
+
+        do
+            -- This might suck!
+            -- If something overrides it at least, it just breaks the overlay...
+            Entity:SetNWVarProxy("WireName", UpdateOverlayProxy)
         end
 
         if Entity.ACF_OnSpawn then Entity:ACF_OnSpawn(Player, Pos, Angle, ClientData) end

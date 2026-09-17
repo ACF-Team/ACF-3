@@ -145,7 +145,7 @@ do -- Updating
 		self.ForcedHealth = Sensor.Health
 		self.ForcedArmor  = Sensor.Armor
 
-		self:SetNWString("WireName", "ACF " .. self.Name)
+		self:ACF_SetEntityName("ACF " .. self.Name)
 
 		-- ACF.Activate(self, true) is invoked automatically by ACF_UpdateEntityData after this.
 

@@ -468,7 +468,7 @@ do
 		Entity.Focus = 1
 		Entity.ModelEff = CrewModel.BaseErgoScores[CrewTypeID] or 1
 
-		Entity:SetNWString("WireName", "ACF Crew Member") -- Set overlay wire entity name
+		Entity:ACF_SetEntityName("ACF Crew Member") -- Set overlay wire entity name
 
 		Entity.ACF.Model = CrewModel.Model
 

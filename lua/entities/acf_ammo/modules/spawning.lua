@@ -284,7 +284,7 @@ do -- Spawn/Update/Remove
 
 		Entity.WireAmountName = "Ammo"
 
-		Entity:SetNWString("WireName", "ACF " .. (WireName or WeaponName .. " Ammo Crate"))
+		Entity:ACF_SetEntityName("ACF " .. (WireName or WeaponName .. " Ammo Crate"))
 
 		local Percentage = Entity.Capacity and Entity.Amount / Entity.Capacity or 1
 		local MagSize    = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 0

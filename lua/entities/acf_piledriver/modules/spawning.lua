@@ -121,7 +121,7 @@ do -- Updating
         end
 
         -- Set NWvars
-        self:SetNWString("WireName", "ACF " .. self.Name)
+        self:ACF_SetEntityName("ACF " .. self.Name)
 
         ACF.Activate(self, true)
 

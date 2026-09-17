@@ -157,7 +157,7 @@ do -- Spawn and update function
 
 		-- Wire IO is (re)built by AutoRegisterV2's ACF_SetupWireFunctions after this runs (see ACF_SetupWireIO).
 
-		Entity:SetNWString("WireName", "ACF " .. Computer.Name)
+		Entity:ACF_SetEntityName("ACF " .. Computer.Name)
 		Entity:SetNW2String("ID", ComputerID)
 
 		ACF.Activate(Entity, true)
