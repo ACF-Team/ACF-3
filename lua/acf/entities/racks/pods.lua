@@ -524,7 +524,7 @@ Classes.DefineClass("ACF.Racks.1xSPG9", "ACF.Racks.BaseRack", function(CLASS)
 	CLASS.Description	= "Launch tube for SPG-9 recoilless rocket."
 	CLASS.Model		= "models/spg9/spg9.mdl"
 	CLASS.EntType		= "Pod"
-	CLASS.Cost			= 5
+	CLASS.Cost			= 20
 	CLASS.Caliber		= 73
 	CLASS.Mass		= 26
 	CLASS.Year		= 1968

@@ -175,7 +175,7 @@ do
 			-- We just want to know if there are any in air we should be lasing for...
 			local FoundInAir = false
 
-			for Gun in pairs(SelfTbl.FireGroups[1]) do
+			for Gun in pairs(SelfTbl.Guns) do
 				if FoundInAir then break end
 				if Gun.Outputs["In Air"].Value > 0 then FoundInAir = true end
 			end
