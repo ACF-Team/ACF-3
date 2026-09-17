@@ -29,26 +29,22 @@ do
 	-- Groups are keyed by weapon name, never by raw caliber alone,
 	-- since a gun and a rack's missile can share the same caliber number but aren't the same weapon
 	local function AnalyzeWeapon(self, Weapon)
-		if self.SlotsFrozen == nil then
-			self.SlotsFrozen = false
-			for i = 1, NUM_WEAPONS do
-				self.SlotsFrozen = self.SlotsFrozen or IsValid(self["GetGun" .. i](self))
-			end
-		end
-
 		local Key = Weapon.Name
 		local Set = self.WeaponGroups[Key] or {}
 		self.WeaponGroups[Key] = Set
 		Set[Weapon] = true
 
-		-- Auto mode picks the slots: one representative per weapon type, biggest caliber first
-		if not self.SlotsFrozen then
+		-- The user's LockWeaponSlots checkbox decides auto-detection, instead of us guessing
+		-- intent from whether Gun1/2/3 happen to be set (e.g. from a dupe restore)
+		if not self:GetLockWeaponSlots() then
 			local Reps = {}
 			for _, Group in pairs(self.WeaponGroups) do Reps[#Reps + 1] = next(Group) end
 			-- Equal calibers across types are expected, so break ties by key to keep slots stable
+			-- A rack's Caliber can still be nil if it hasn't been given ammo yet
 			table.sort(Reps, function(A, B)
-				if A.Caliber == B.Caliber then return A.Name < B.Name end
-				return A.Caliber > B.Caliber
+				local CaliberA, CaliberB = A.Caliber or 0, B.Caliber or 0
+				if CaliberA == CaliberB then return A.Name < B.Name end
+				return CaliberA > CaliberB
 			end)
 
 			for i = 1, NUM_WEAPONS do self["SetGun" .. i](self, Reps[i] or NULL) end
