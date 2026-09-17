@@ -403,6 +403,14 @@ do -- Spawning and Updating --------------------
 			contraption.Racks[ent] = nil
 		end
 	end)
+
+	-- Tracks the turret a rack is mounted to, for turret auto-leveling
+	function ENT:CFW_OnParentedTo(_, NewParent)
+		if not IsValid(NewParent) then return end
+		if NewParent:GetClass() == "acf_turret_rotator" then NewParent = NewParent:GetTable().Turret end
+
+		self.BreechReference = NewParent
+	end
 end ---------------------------------------------
 
 do -- Custom ACF damage ------------------------
@@ -790,7 +798,7 @@ do -- Loading ----------------------------------
 
 	local function AddMissile(Rack, Point, Crate, LimitConVar, Owner)
 		local Pos, Ang = GetMissileAngPos(Crate.BulletData, Point)
-		local Missile = ACF.MakeMissile(Rack.Owner, Pos, Ang, Rack, Point, Crate)
+		local Missile = ACF.MakeMissile(Rack:CPPIGetOwner(), Pos, Ang, Rack, Point, Crate)
 
 		Sounds.SendSound(Rack, "acf_missiles/fx/bomb_reload.mp3", 70, math.random(99, 101), 1)
 
@@ -1064,6 +1072,7 @@ do -- Misc -------------------------------------
 
 	function ENT:SetState(State)
 		self.State = State
+		self.MagazineReloading = State ~= "Loaded" -- Racks reload per shot, mirroring a gun's magazine reload for fire_control.lua's leveling check
 
 		self:UpdateOverlay()
 

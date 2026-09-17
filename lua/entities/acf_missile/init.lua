@@ -459,6 +459,8 @@ function ACF.MakeMissile(Player, Pos, Ang, Rack, MountPoint, Crate)
 		Missile.SpeedBoost = Missile.StarterPercent * TotalLength * Missile.MaxThrust / (Missile.ProjMass + Missile.PropMass * 0.5)
 	end
 
+	Missile.BulletData.MuzzleVel = ACF.MissileMuzzleVel(Missile.NoThrust, Round, Missile.ProjMass, Missile.PropMass)
+
 	if Missile.NoDamage then
 		Missile.ACF_InvisibleToBallistics = true
 		Missile.ACF_InvisibleToTrace = true
@@ -493,7 +495,7 @@ function ENT:CreateBulletData(Crate)
 	self.RoundData         = Ammo
 	self.BulletData        = Ammo:ServerConvert()
 	self.BulletData.Crate  = self:EntIndex()
-	self.BulletData.Owner  = self:GetPlayer()
+	self.BulletData.Owner  = self:CPPIGetOwner()
 	self.BulletData.Gun    = self
 	self.BulletData.Filter = self.Filter
 

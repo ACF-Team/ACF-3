@@ -37,7 +37,7 @@ end
 -- Mirrors GM's death-notice list so we can attach cost fields.
 local Deaths = {}
 
-local function InsertDeath(Left, Color1, Icon, Right, Color2, VictimCost, AttackerCost)
+local function InsertDeath(Left, Color1, Icon, Right, Color2, VictimCost, AttackerCost, IsDrone)
     table.insert(Deaths, {
         time         = CurTime(),
         left         = Left,
@@ -47,6 +47,16 @@ local function InsertDeath(Left, Color1, Icon, Right, Color2, VictimCost, Attack
         attackerCost = AttackerCost,
         color1       = Color1,
         color2       = Color2,
+    })
+
+    -- Same fields as ACF_OnKillLogged, but with display strings in place of entities
+    hook.Run("ACF_KillFeedEntryAdded", {
+        Attacker     = Left,
+        AttackerCost = AttackerCost,
+        Victim       = Right,
+        VictimCost   = VictimCost,
+        Inflictor    = Icon,
+        IsDrone      = IsDrone or false,
     })
 end
 
@@ -63,7 +73,7 @@ hook.Add("AddDeathNotice", "ACF_KillFeed_TrackCost", function(Attacker, Team1, I
         PendingCost[Victim] = nil
     end
 
-    InsertDeath(ClipName(Attacker), GetDeathColor(Team1), Inflictor, ClipName(Victim), GetDeathColor(Team2), VictimCost, AttackerCost)
+    InsertDeath(ClipName(Attacker), GetDeathColor(Team1), Inflictor, ClipName(Victim), GetDeathColor(Team2), VictimCost, AttackerCost, false)
 end)
 
 -- A vehicle dying isn't a player death, so it bypasses AddDeathNotice entirely.
@@ -80,7 +90,7 @@ net.Receive("ACF_KillFeed_VehicleEntry", function()
     local Color1 = GetDeathColor(Attacker:Team())
     local Color2 = GetDeathColor(Owner:Team())
 
-    InsertDeath(Left, Color1, InflictorClass, ClipName(Owner:Name()) .. "'s Vehicle", Color2, OwnerCost, AttackerCost)
+    InsertDeath(Left, Color1, InflictorClass, ClipName(Owner:Name()) .. "'s Vehicle", Color2, OwnerCost, AttackerCost, true)
 end)
 
 -- Draws a "(N pts)" label at X (its leading edge per Align) and returns its rendered width.
