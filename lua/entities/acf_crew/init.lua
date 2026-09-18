@@ -795,7 +795,7 @@ do
 			local Baseplate = Contraption.ACF_Baseplate
 			local Position = IsValid(Baseplate) and Baseplate:GetPos() or self:GetPos()
 
-			ACF.DestroyContraption(Contraption, Position, vector_up, 100000)
+			ACF.DestroyContraption(Contraption, Position, nil, 100000)
 
 			Contraption.ACF_AllCrewKilled = true -- Flag set for other entities/block vehicle entrance/etc
 		end

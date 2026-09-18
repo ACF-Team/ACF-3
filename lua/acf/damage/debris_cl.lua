@@ -10,6 +10,7 @@ local GibLife     = GetConVar("acf_debris_giblifetime")
 local GibModel    = "models/gibs/metal_gib%s.mdl"
 local MeshMat     = Material("hunter/myplastic") -- Default primitive material, used if one can't be read off the entity
 local MaxRetries  = 20 -- About 0.1s of waiting for an entity's clientside data to arrive
+local ForceMult   = 4 -- Debris is thrown this much harder than the blast energy alone
 
 local math = math
 
@@ -74,6 +75,8 @@ local function ApplyMeshData(Entity, Data, Color)
     DebrisMesh:BuildFromTriangles(Data.Tris)
 
     Entity:SetRenderBounds(Data.Mins, Data.Maxs)
+    Entity:PhysicsInitBox(Data.Mins, Data.Maxs) -- The placeholder model's hull is the wrong size for the mesh
+    Entity:SetMoveType(MOVETYPE_VPHYSICS)
 
     local Mat     = Data.Material
     local R, G, B = Color.r / 255, Color.g / 255, Color.b / 255
@@ -157,7 +160,7 @@ local function CreateDebris(Model, Position, Angles, Material, Color, Normal, Po
     local PhysObj = Debris:GetPhysicsObject()
 
     if IsValid(PhysObj) then
-        PhysObj:ApplyForceOffset(Normal * Power, Position + VectorRand() * 20)
+        PhysObj:ApplyForceOffset(Normal * Power * ForceMult, Position + VectorRand() * 20)
     end
 
     timer.Simple(Lifetime, function()

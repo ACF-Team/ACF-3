@@ -283,7 +283,7 @@ do -- Cost limit enforcement
 					Notify.WarningToPlayer(Owner, "Aircraft destroyed", "Your aircraft used disallowed armor or exceeded the armor volume limit of " .. CostSystem.AircraftVolumeLimit .. " units.")
 				end
 
-				ACF.DestroyContraption(Contraption, Baseplate:GetPos(), vector_up, 100000)
+				ACF.DestroyContraption(Contraption, Baseplate:GetPos(), nil, 100000)
 				return
 			end
 		end
@@ -303,7 +303,7 @@ do -- Cost limit enforcement
 			Notify.WarningToPlayer(Owner, "Vehicle destroyed", "Your vehicle exceeded the cost limit of " .. CostLimit .. " points (cost: " .. math.Round(Cost) .. ").")
 		end
 
-		ACF.DestroyContraption(Contraption, Baseplate:GetPos(), vector_up, 100000)
+		ACF.DestroyContraption(Contraption, Baseplate:GetPos(), nil, 100000)
 	end
 
 	-- Contraptions are only worth checking once they've actually been driven
