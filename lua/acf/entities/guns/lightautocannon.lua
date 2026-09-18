@@ -31,11 +31,11 @@ ACF.Classes.DefineClass("ACF.Guns.LightAutocannon", "ACF.Guns.BaseScalableGun", 
 	CLASS.CaliberLimits		= {
 		Base = 40,
 		Min  = 20,
-		Max  = 40,
+		Max  = 57,
 	}
 	CLASS.Cyclic 		= {
 		Min = 600,
-		Max = 400,
+		Max = 230,
 	}
 	CLASS.LimitConVar 		= {
 		Name = "_acf_lightautocannon",
