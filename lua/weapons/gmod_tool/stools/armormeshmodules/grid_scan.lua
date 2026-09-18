@@ -5,10 +5,10 @@ return function(ArmorTrace, GetClassFilter, ResolutionMin, ResolutionMax, SizeMi
 	local PenMin, PenMax                   = 0, 1500
 	local TransparencyMin, TransparencyMax = 0, 100
 
-	local ScanPen          = CreateClientConVar("acfarmormesh_scan_pen", 100, false, true, "", PenMin, PenMax)
-	local ScanTransparency = CreateClientConVar("acfarmormesh_scan_transparency", 50, false, true, "", TransparencyMin, TransparencyMax)
-	CreateClientConVar("acfarmormesh_scan_resolution", 64, false, true, "", ResolutionMin, ResolutionMax)
-	CreateClientConVar("acfarmormesh_scan_size", 160, false, true, "", SizeMin, SizeMax)
+	local ScanPen          = CreateClientConVar("acfarmormesh_scan_pen", 100, true, true, "", PenMin, PenMax)
+	local ScanTransparency = CreateClientConVar("acfarmormesh_scan_transparency", 50, true, true, "", TransparencyMin, TransparencyMax)
+	CreateClientConVar("acfarmormesh_scan_resolution", 64, true, true, "", ResolutionMin, ResolutionMax)
+	CreateClientConVar("acfarmormesh_scan_size", 160, true, true, "", SizeMin, SizeMax)
 
 	local ScanViewParams
 	local ScanRTPending = false
