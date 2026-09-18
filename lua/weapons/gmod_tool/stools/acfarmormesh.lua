@@ -551,8 +551,8 @@ elseif SERVER then
 			local ArmorType = ACF.Classes.ArmorTypes.Get(Material)
 			if ArmorType and ArmorType.Color then
 				Entity:SetColor(ArmorType.Color)
-				Entity:SetRenderMode(RENDERMODE_TRANSCOLOR)
-				duplicator.StoreEntityModifier(Entity, "colour", { Color = ArmorType.Color, RenderMode = RENDERMODE_TRANSCOLOR })
+				Entity:SetRenderMode(RENDERMODE_NORMAL)
+				duplicator.StoreEntityModifier(Entity, "colour", { Color = ArmorType.Color, RenderMode = RENDERMODE_NORMAL })
 			end
 		end
 
