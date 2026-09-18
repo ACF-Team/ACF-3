@@ -8,6 +8,8 @@ local DebrisLife  = GetConVar("acf_debris_lifetime")
 local GibMult     = GetConVar("acf_debris_gibmultiplier")
 local GibLife     = GetConVar("acf_debris_giblifetime")
 local GibModel    = "models/gibs/metal_gib%s.mdl"
+local MeshMat     = Material("hunter/myplastic") -- Default primitive material, used if one can't be read off the entity
+local MaxRetries  = 20 -- About 0.1s of waiting for an entity's clientside data to arrive
 
 local math = math
 
@@ -65,7 +67,35 @@ local function Ignite(Entity, Lifetime, IsGib)
     end
 end
 
-local function CreateDebris(Model, Position, Angles, Material, Color, Normal, Power, ShouldIgnite, AutoLOD)
+-- Draws debris with a mesh captured from the removed entity instead of its model
+local function ApplyMeshData(Entity, Data, Color)
+    local DebrisMesh = Mesh()
+
+    DebrisMesh:BuildFromTriangles(Data.Tris)
+
+    Entity:SetRenderBounds(Data.Mins, Data.Maxs)
+
+    local Mat     = Data.Material
+    local R, G, B = Color.r / 255, Color.g / 255, Color.b / 255
+
+    Entity.RenderOverride = function(Debris)
+        render.SetMaterial(Mat)
+        render.SetColorModulation(R, G, B)
+
+        cam.PushModelMatrix(Debris:GetWorldTransformMatrix())
+        DebrisMesh:Draw()
+        cam.PopModelMatrix()
+
+        render.SetColorModulation(1, 1, 1)
+    end
+
+    Entity:CallOnRemove("ACF_Debris_Mesh", function()
+        if DebrisMesh:IsValid() then DebrisMesh:Destroy() end
+    end)
+end
+
+-- NOTE: The caller passes both CanGib and Ignite here, so ShouldIgnite/AutoLOD are offset and the 10th argument is unused
+local function CreateDebris(Model, Position, Angles, Material, Color, Normal, Power, ShouldIgnite, AutoLOD, _, MeshData)
     -- TODO: This fixes a crashing bug, but the underlying issue that Model can sometimes be blank ("") isn't fixed yet
     if not util.IsValidModel(Model) then return end
 
@@ -111,6 +141,8 @@ local function CreateDebris(Model, Position, Angles, Material, Color, Normal, Po
     end
 
     Debris:Spawn()
+
+    if MeshData then ApplyMeshData(Debris, MeshData, Color) end
 
     if DoParticles then
         Debris.EmberParticle = Particle(Debris, "embers_medium_01")
@@ -192,13 +224,13 @@ local function CreateGib(Position, Angles, Material, Color, Normal, Power, Min, 
     return true
 end
 
-function Damage.CreateDebris(Model, Position, Angles, Material, Color, Normal, Power, CanGib, Ignite)
+function Damage.CreateDebris(Model, Position, Angles, Material, Color, Normal, Power, CanGib, Ignite, MeshData)
     if not AllowDebris:GetBool() then return end
     if not Model then return end
 
     local AutoLOD = AutoLod:GetBool()
 
-    local Debris = CreateDebris(Model, Position, Angles, Material, Color, Normal, Power, CanGib, Ignite, AutoLOD)
+    local Debris = CreateDebris(Model, Position, Angles, Material, Color, Normal, Power, CanGib, Ignite, AutoLOD, MeshData)
 
     if IsValid(Debris) then
         local Multiplier = GibMult:GetFloat()
@@ -231,10 +263,18 @@ end
 
 local EntData = {}
 
-local function SpawnDebris(EntID, Normal, Power, CanGib, Ignite)
+local function SpawnDebris(EntID, Normal, Power, CanGib, Ignite, Retries)
     timer.Simple(0.005, function()
         local EntInfo = EntData[EntID]
-        if not EntInfo then return SpawnDebris(EntID, Normal, Power, CanGib, Ignite) end
+
+        if not EntInfo then
+            Retries = (Retries or 0) + 1
+
+            -- The entity was never tracked clientside, stop waiting on data that isn't coming
+            if Retries > MaxRetries then return end
+
+            return SpawnDebris(EntID, Normal, Power, CanGib, Ignite, Retries)
+        end
 
         local NewColor = EntInfo.Color:ToVector() * math.Rand(0.3, 0.6)
 
@@ -247,20 +287,30 @@ local function SpawnDebris(EntID, Normal, Power, CanGib, Ignite)
             Normal,
             Power,
             CanGib,
-            Ignite
+            Ignite,
+            EntInfo.Mesh
         )
 
         EntData[EntID] = nil
     end)
 end
 
-local DoNotDebris = {
-    primitive_shape = true,
-    primitive_staircase = true,
-    primitive_ladder = true,
-    primitive_airfoil = true,
-    primitive_rail_slider = true
-}
+-- Every primitive shares one placeholder model, so grab the mesh the client actually renders it with
+local function GetMeshData(Ent)
+    local Result = Ent.primitive.result
+    local Tris   = istable(Result) and Result.tris
+
+    if not Tris or #Tris < 3 then return end
+
+    local Render = Ent.primitive.renderMesh
+
+    return {
+        Tris = Tris,
+        Material = istable(Render) and Render.Material or MeshMat,
+        Mins = Ent:OBBMins(),
+        Maxs = Ent:OBBMaxs(),
+    }
+end
 
 -- Store data of potentially ACF-killed entities for debris use, then remove from cache soon after
 hook.Add("EntityRemoved", "ACF_Debris_TrackEnts", function(Ent, IsFullUpdate)
@@ -269,7 +319,11 @@ hook.Add("EntityRemoved", "ACF_Debris_TrackEnts", function(Ent, IsFullUpdate)
     local EntID = Ent:EntIndex()
     if EntID == -1 then return end
 
-    if DoNotDebris[Ent:GetClass()] then return end
+    local IsPrimitive = istable(Ent.primitive)
+    local MeshData    = IsPrimitive and GetMeshData(Ent) or nil
+
+    -- A primitive with no mesh built yet has nothing to show but its placeholder model, so skip it
+    if IsPrimitive and not MeshData then return end
 
     EntData[EntID] = {
         Model = Ent:GetModel(),
@@ -277,6 +331,7 @@ hook.Add("EntityRemoved", "ACF_Debris_TrackEnts", function(Ent, IsFullUpdate)
         Color = Ent:GetColor(),
         Position = Ent:GetPos(),
         Angles = Ent:GetAngles(),
+        Mesh = MeshData,
     }
 
     timer.Simple(10, function()
