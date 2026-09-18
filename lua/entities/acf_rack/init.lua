@@ -125,11 +125,13 @@ do
 	function ENT:UpdateLoadMod()
 		self.CrewsByType = self.CrewsByType or {}
 		local Blocked = false
+		local Reason
 
 		if IsValid(self.Autoloader) and self.Autoloader.ACF.Health > 0 and table.Count(self.MountPoints) == 1 then
-			local Sum1, AutoBlocked = self.Autoloader:GetReloadEffAuto(self, self.CurrentCrate)
+			local Sum1, AutoBlocked, AutoReason = self.Autoloader:GetReloadEffAuto(self, self.CurrentCrate)
 			self.LoadCrewMod = self.LoadCrewModOverride or math.Clamp(Sum1, ACF.AutoloaderFallbackCoef, ACF.AutoloaderMaxBonus)
 			Blocked = AutoBlocked
+			Reason = AutoReason
 		else
 			BlockedCrew = 0
 			local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.CurrentCrate or self)
@@ -137,6 +139,7 @@ do
 			self.LoadCrewMod = self.LoadCrewModOverride or math.Clamp(Sum1 + Sum2, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
 			-- A crewed rack only stalls once every last crew member has lost sight of the breech
 			Blocked = BlockedCrew > 0 and BlockedCrew == Count1 + Count2
+			if Blocked then Reason = "Reloading is stalled, no loader can see the breech" end
 		end
 
 		-- Check space behind breech
@@ -179,13 +182,18 @@ do
 			local IsBlocked = (tr.Hit or (tr2 and tr2.Hit))
 			self.OverlayErrors.BreechCheck = IsBlocked and "Not enough space behind breech!\nHover with ACF menu tool" or nil
 			self:UpdateOverlay()
-			if IsBlocked then Blocked = true end
+			if IsBlocked then
+				Blocked = true
+				Reason = "Reloading is stalled, there is no room to work behind the breech"
+			end
 		end
 
 		-- A ground crew loading the rack works around whatever is in the way
 		if self.LoadCrewModOverride then Blocked = false end
 
 		self.LoadBlocked = Blocked
+		self.OverlayWarnings.LoadBlocked = Blocked and Reason or nil
+		self:UpdateOverlay()
 
 		return self.LoadCrewMod, Blocked
 	end
@@ -266,6 +274,7 @@ do -- Spawning and Updating --------------------
 		Entity.InAirMissiles  = {}
 
 		Entity.OverlayErrors = {}
+		Entity.OverlayWarnings = {}
 
 		Entity:ACF_SetEntityName("ACF " .. Entity.Name)
 		Entity:SetNWString("ACF_Class", Entity.Class)
@@ -651,9 +660,8 @@ do -- Entity Overlay ----------------------------
 			State:AddError(Error)
 		end
 
-		-- The crew LOS error lives on the crew, so flag the stall here too
-		if self.LoadBlocked then
-			State:AddWarning("Reloading is stalled until the breech can be reached")
+		for _, Warning in pairs(self.OverlayWarnings) do
+			State:AddWarning(Warning)
 		end
 
 		local ReadyToFire = 0

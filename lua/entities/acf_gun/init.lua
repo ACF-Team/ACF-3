@@ -115,12 +115,14 @@ do -- Random timer crew stuff
 	function ENT_UpdateLoadMod(self)
 		local SelfTbl = ENTITY.GetTable(self)
 		local Blocked = false
+		local Reason
 
 		SelfTbl.CrewsByType = SelfTbl.CrewsByType or {}
 		if IsValid(SelfTbl.Autoloader) and ENTITY.GetTable(SelfTbl.Autoloader).ACF.Health > 0 then
-			local Sum1, AutoBlocked = SelfTbl.Autoloader:GetReloadEffAuto(self, SelfTbl.CurrentCrate)
+			local Sum1, AutoBlocked, AutoReason = SelfTbl.Autoloader:GetReloadEffAuto(self, SelfTbl.CurrentCrate)
 			SelfTbl.LoadCrewMod = math.Clamp(Sum1, ACF.AutoloaderFallbackCoef, ACF.AutoloaderMaxBonus)
 			Blocked = AutoBlocked
+			Reason = AutoReason
 		else
 			BlockedCrew = 0
 			local Sum1, Count1 = ACF.WeightedLinkSum(SelfTbl.CrewsByType.Loader or {}, GetReloadEff, self, SelfTbl.CurrentCrate or self)
@@ -128,6 +130,7 @@ do -- Random timer crew stuff
 			SelfTbl.LoadCrewMod = math.Clamp(Sum1 + Sum2, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
 			-- A crewed gun only stalls once every last crew member has lost sight of the breech
 			Blocked = BlockedCrew > 0 and BlockedCrew == Count1 + Count2
+			if Blocked then Reason = "Reloading is stalled, no loader can see the breech" end
 		end
 
 		-- Check space behind breech
@@ -169,10 +172,15 @@ do -- Random timer crew stuff
 			local IsBlocked = (TraceResult.Hit or (tr2 and tr2.Hit))
 			SelfTbl.OverlayErrors.BreechCheck = IsBlocked and "Not enough space behind breech!\nHover with ACF menu tool" or nil
 			self:UpdateOverlay()
-			if IsBlocked then Blocked = true end
+			if IsBlocked then
+				Blocked = true
+				Reason = "Reloading is stalled, there is no room to work behind the breech"
+			end
 		end
 
 		SelfTbl.LoadBlocked = Blocked
+		SelfTbl.OverlayWarnings.LoadBlocked = Blocked and Reason or nil
+		self:UpdateOverlay()
 
 		return SelfTbl.LoadCrewMod, Blocked
 	end
@@ -242,7 +250,7 @@ do -- Random timer crew stuff
 		TraceLine(TraceConfig)
 
 		if TraceResult.Hit then
-			SelfTbl.OverlayErrors.BreechClipping = "Breech is clipping through" .. (tostring(TraceResult.Entity) or "<INVALID ENTITY???>")
+			SelfTbl.OverlayErrors.BreechClipping = "Breech is clipping through " .. (tostring(TraceResult.Entity) or "<INVALID ENTITY???>")
 			self:Disable()
 		else
 			SelfTbl.OverlayErrors.BreechClipping = nil
@@ -352,6 +360,7 @@ do -- Spawn and Update functions --------------------------------
 		end
 
 		Entity.OverlayErrors = {}
+		Entity.OverlayWarnings = {}
 
 		-- Set NWvars
 		Entity:ACF_SetEntityName("ACF " .. Entity.Name)
@@ -1213,30 +1222,40 @@ do -- Metamethods --------------------------------
 			local AmmoType  = ACF.GetLegacyStyleClassName(SelfTbl.BulletData.AmmoType) .. (SelfTbl.BulletData.Tracer ~= 0 and "-T" or "")
 			local Firerate  = math.floor(60 / SelfTbl.ReloadTime)
 			local CrateAmmo = 0
-			if next(SelfTbl.OverlayErrors) then
-				for _, Error in pairs(SelfTbl.OverlayErrors) do
-					State:AddError(Error)
-				end
-			else
-				if not next(SelfTbl.Crates) then
-					State:AddError("Not linked to an ammo crate!")
-				else
-					if SelfTbl.State == "Loaded" then
-						State:AddSuccess("Loaded with " .. AmmoType)
-					else
-						State:AddWarning(SelfTbl.State)
-					end
-				end
-			end
-
-			-- The crew LOS error lives on the crew, so flag the stall here too
-			if SelfTbl.LoadBlocked and SelfTbl.State ~= "Loaded" then
-				State:AddWarning("Reloading is stalled until the breech can be reached")
-			end
+			local StageOneAmmo = false
 
 			for Crate in pairs(SelfTbl.Crates) do -- Tally up the amount of ammo being provided by active crates
 				if Crate:CanConsume() then
 					CrateAmmo = CrateAmmo + Crate.Ammo
+					if Crate.AmmoStage == ACF.AmmoStageMin then StageOneAmmo = true end
+				end
+			end
+
+			for _, Error in pairs(SelfTbl.OverlayErrors) do
+				State:AddError(Error)
+			end
+
+			-- Stalls are only worth mentioning while something is actually waiting on them
+			for Name, Warning in pairs(SelfTbl.OverlayWarnings) do
+				if Name ~= "LoadBlocked" or SelfTbl.State ~= "Loaded" then
+					State:AddWarning(Warning)
+				end
+			end
+
+			if not next(SelfTbl.Crates) then
+				State:AddError("Not linked to an ammo crate!")
+			elseif SelfTbl.State == "Loaded" then
+				State:AddSuccess("Loaded with " .. AmmoType)
+			else
+				State:AddWarning(SelfTbl.State)
+			end
+
+			-- Weapons only ever start a reload from a stage 1 crate, so staged ammo alone leaves them empty
+			if SelfTbl.State == "Empty" and CrateAmmo > 0 then
+				if not StageOneAmmo then
+					State:AddError("No linked crate is at ammo stage " .. ACF.AmmoStageMin .. "!\nWeapons only load from stage " .. ACF.AmmoStageMin .. " crates,\nhigher stages only restock the ones below them")
+				else
+					State:AddError("Ammo is available but the weapon is not loading!\nFire it or use the Reload input to try again")
 				end
 			end
 
