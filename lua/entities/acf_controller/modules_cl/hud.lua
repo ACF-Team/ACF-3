@@ -13,6 +13,8 @@ local Classes      = ACF.Classes
 local TraceLine = util.TraceLine
 local CurTime = CurTime
 
+local MAX_RADAR_TARGET_SCREEN_DIST = 100 -- Screen pixels, targets past this can't be selected, so moving off them disengages the lock
+
 return function(State)
     -- Hardest hitting ammo first, name breaks ties so the order stays stable
     local function SortByPenetration(A, B)
@@ -389,11 +391,11 @@ return function(State)
         local radius = 10 * Scale
         SetDrawColor(Col2)
         local MinTargetID = nil
-        local MinTargetDist = math.huge
+        local MinTargetDist = MAX_RADAR_TARGET_SCREEN_DIST ^ 2
         for ID, Data in pairs(State.MyController.RadarData or {}) do
             local SP = Data[1]:ToScreen()
 
-            -- Find closest target to center of screen
+            -- Find closest target to center of screen, within range so moving off-target disengages the lock
             local Dist = (SP.x - x) ^ 2 + (SP.y - y) ^ 2
             if Dist < MinTargetDist then MinTargetDist = Dist MinTargetID = ID end
 

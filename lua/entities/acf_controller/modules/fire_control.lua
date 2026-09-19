@@ -134,6 +134,8 @@ do
 	end
 
 	function ENT:ToggleTurretLocks(SelfTbl, Key, Down)
+		if self:GetDisableTurretLock() then return end
+
 		if Key == IN_RELOAD and Down then
 			local Turrets = SelfTbl.Turrets
 			SelfTbl.TurretLocked = not SelfTbl.TurretLocked
@@ -158,21 +160,13 @@ do
 		-- Mag-fed guns chamber a fresh round between shots too, only level for the actual magazine reload
 		local ShouldLevel = ReloadAngle ~= 0 and IsValid(Primary) and Primary.State ~= "Loaded" and (not Primary.MagSize or Primary.MagazineReloading)
 
-		-- Liddul... if you can hear me...
-		local TurretComputer = self.TurretComputer
-		local SuperElevation = nil
-		if TurretComputer  then
-			if TurretComputer.Computer == "DIR-BalComp" then SuperElevation = TurretComputer.Outputs.Elevation.Value
-			elseif TurretComputer.Computer == "IND-BalComp" then SuperElevation = TurretComputer.Outputs.Angle[1] end
+		local AntiDrop, AntiDrift = vector_origin, vector_origin
+		if self:GetEnableFCS() and not SelfTbl.SelectedTargetID then
+			local MuzzleVel = IsValid(Primary) and Primary.BulletData.MuzzleVel or 0
+			local Time = MuzzleVel > 0 and (self.Baseplate:GetPos():Distance(HitPos) / 39.37 / MuzzleVel) or 0
+			AntiDrop = Vector(0, 0, 300 * Time * Time)
+			AntiDrift = -self.Baseplate:GetVelocity() * Time
 		end
-
-		if SuperElevation ~= nil and SuperElevation ~= SelfTbl.LastSuperElevation then
-			local TrueSuperElevation = SuperElevation - (SelfTbl.LasePitch or 0) -- Compute pitch offset to account for drop
-			SelfTbl.Drop = (SelfTbl.LaseDist or 0) * math.tan(math.rad(-TrueSuperElevation)) -- Compute vector offset to account for drop
-			SelfTbl.TravelTime = SelfTbl.LaseDist ~= 0 and TurretComputer.Outputs["Flight Time"].Value or 0
-		end
-		local AntiDrop = Vector(0, 0, SelfTbl.Drop or 0)
-		local AntiDrift = -self.Baseplate:GetVelocity() * (SelfTbl.TravelTime or 0)
 
 		for Turret, _ in pairs(Turrets) do
 			if IsValid(Turret) then
@@ -180,7 +174,15 @@ do
 				elseif BreechReference and Turret == BreechReference:GetParent() and ShouldLevel and ReloadAngleHorizontal ~= 0 then Turret:InputDirection(ReloadAngleHorizontal)
 				else Turret:InputDirection(HitPos + AntiDrop + AntiDrift) end
 
-				if Turret == SelfTbl.RadarVertical and SelfTbl.SelectedTargetID then Turret:InputDirection(SelfTbl.SelectedTargetPos) end
+				if Turret == SelfTbl.RadarVertical and SelfTbl.SelectedTargetID then
+					Turret:InputDirection(SelfTbl.SelectedTargetPos)
+
+					if self:GetEnableTimeFuse() and IsValid(Primary) then
+						local MuzzleVel = Primary.BulletData.MuzzleVel or 0
+						local RadarTime = MuzzleVel > 0 and (self.Baseplate:GetPos():Distance(SelfTbl.SelectedTargetPos) / 39.37 / MuzzleVel) or 0
+						Primary:TriggerInput("Fuze", RadarTime * 1.27)
+					end
+				end
 			end
 		end
 	end
