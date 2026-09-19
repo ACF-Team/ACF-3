@@ -23,18 +23,9 @@ local function SendQueue()
 	end
 end
 
-local DoNotDebris = {
-	primitive_shape = true,
-	primitive_staircase = true,
-	primitive_ladder = true,
-	primitive_airfoil = true,
-	primitive_rail_slider = true
-}
-
 local function DebrisNetter(Entity, Normal, Power, CanGib, Ignite)
 	if not ACF.GetServerBool("CreateDebris") then return end
 	if Queue[Entity] then return end
-	if DoNotDebris[Entity:GetClass()] then return end
 
 	if not next(Queue) then
 		timer.Create("ACF_DebrisQueue", 0, 1, SendQueue)
@@ -178,7 +169,7 @@ end
 --- one explosion effect at Position.
 --- @param Contraption table
 --- @param Position vector|nil Explosion effect origin; skips the effect if nil
---- @param Normal vector Blast direction
+--- @param Normal vector|nil Blast direction; thrown outwards from Position when nil
 --- @param Energy number Passed to ACF.HEKill for gib/debris force
 --- @param PlayEffect boolean|nil Whether to play the finishing explosion effect (default true)
 function ACF.DestroyContraption(Contraption, Position, Normal, Energy, PlayEffect)
@@ -190,7 +181,12 @@ function ACF.DestroyContraption(Contraption, Position, Normal, Energy, PlayEffec
 	end
 
 	for Entity in pairs(Contraption.ents) do
-		ACF.HEKill(Entity, Normal, Energy, Position, nil, true)
+		local Dir = Normal
+
+		if not Dir and Position then Dir = (Entity:GetPos() - Position):GetNormalized() end
+		if not Dir or Dir:IsZero() then Dir = vector_up end -- No blast origin to work from, or the entity sits on it
+
+		ACF.HEKill(Entity, Dir, Energy, Position, nil, true)
 	end
 
 	if PlayEffect ~= false and Position then
