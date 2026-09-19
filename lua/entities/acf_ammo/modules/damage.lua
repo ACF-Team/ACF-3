@@ -50,7 +50,7 @@ function CookoffCrate(Entity)
 			BulletData.Flight    = VectorRand():GetNormalized() * Speed * ACF.MeterToInch + Entity:GetAncestor():GetVelocity() -- Random direction including baseplate speed
 			BulletData.IsCookOff = true
 
-			BulletData.Owner  = Entity.Inflictor or Entity.Owner
+			BulletData.Owner  = Entity.Attacker or Entity.Owner
 			BulletData.Gun    = Entity
 			BulletData.Crate  = Entity:EntIndex()
 

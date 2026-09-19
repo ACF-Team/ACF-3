@@ -542,6 +542,11 @@ do -- Overlay
 			if Round and Round.ActualLength then
 				Length = Round.ActualLength * ACF.InchToCm
 			end
+
+			-- Use estimated missile muzzle velocity instead
+			if Round then
+				BulletData.MuzzleVel = ACF.MissileMuzzleVel(MissileClass.NoThrust, Round, BulletData.ProjMass, BulletData.PropMass)
+			end
 		end
 
 		State:AddKeyValue("Shell dimensions", ShellDiameter .. "mm x " .. Length .. "cm")

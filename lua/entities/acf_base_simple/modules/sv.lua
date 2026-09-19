@@ -156,7 +156,7 @@ return function()
         end
 
         function ENT:GetOwnerPlayer()
-            local Player = self:GetPlayer() -- Not set on entities restored from a duplication, use CPPI instead
+            local Player = self.GetPlayer and self:GetPlayer() -- Not set on entities restored from a duplication, use CPPI instead
 
             return IsValid(Player) and Player or self:CPPIGetOwner()
         end

@@ -160,10 +160,14 @@ local TraceConfig = {start = Vector(), endpos = Vector(), filter = nil}
 --- Calculates the reload efficiency of this autoloader for a gun and an ammo crate
 --- @return number # The reload efficiency, always a usable value
 --- @return boolean # Whether the autoloader currently can't load at all, which stalls the reload
+--- @return string # Why the autoloader is blocked, nil when it isn't
 function ENT:GetReloadEffAuto(Gun, Ammo)
-	if not IsValid(Gun) or not IsValid(Ammo) then return ACF.AutoloaderFallbackCoef, true end
+	if not IsValid(Gun) then return ACF.AutoloaderFallbackCoef, true, "Reloading is stalled, the autoloader has no weapon to feed" end
+	-- A weapon that has never loaded has no crate to measure against, which is not a blockage
+	if not IsValid(Ammo) then return ACF.AutoloaderFallbackCoef, false end
 
 	local Blocked = false
+	local Reason
 	local BreechPos = Gun:LocalToWorld(Gun.BreechPos)
 	local BreechAng = Gun:LocalToWorldAngles(Gun.BreechAng)
 	local GunForward = Gun:GetForward()
@@ -180,9 +184,12 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	local RamAngle = math.deg(math.acos(math.Clamp(self:GetForward():Dot(GunForward), -1, 1)))
 	local GunArmAngle = PositionAngle + RamAngle
 	local GunArmAngleAligned = GunArmAngle < ACF.AutoloaderMaxAngleDiff
-	self.OverlayWarnings.GunArmAlignment = not GunArmAngleAligned and "Autoloader is not aligned\nWith the breech of: " .. (tostring(Gun) or "<INVALID ENTITY???>") .. "\nDeviation: " .. math.Round(GunArmAngle, 2) .. ", Acceptable: " .. ACF.AutoloaderMaxAngleDiff or nil
+	self.OverlayErrors.GunArmAlignment = not GunArmAngleAligned and "Autoloader is not aligned\nWith the breech of: " .. (tostring(Gun) or "<INVALID ENTITY???>") .. "\nDeviation: " .. math.Round(GunArmAngle, 2) .. ", Acceptable: " .. ACF.AutoloaderMaxAngleDiff or nil
 	self:UpdateOverlay()
-	if not GunArmAngleAligned then Blocked = true end
+	if not GunArmAngleAligned then
+		Blocked = true
+		Reason = "Reloading is stalled, the autoloader is not aligned with the breech"
+	end
 
 	TraceConfig.filter = function(x) return not (x == self or x == Gun or x == Ammo or x == self:GetParent() or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or x.IsACFMissile or self.AmmoCrates[x] or ACF.GlobalFilter[x:GetClass()]) end
 
@@ -192,7 +199,10 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	local TraceResult = TraceLine(TraceConfig)
 	self.OverlayErrors.ArmBreechLOS = TraceResult.Hit and "Autoloader cannot see the breech\nOf: " .. (tostring(Gun) or "<INVALID ENTITY???>") .. "\nBlocked by " .. (tostring(TraceResult.Entity) or "<INVALID ENTITY???>") or nil
 	self:UpdateOverlay()
-	if TraceResult.Hit then Blocked = true end
+	if TraceResult.Hit then
+		Blocked = true
+		Reason = "Reloading is stalled, the autoloader cannot reach the breech"
+	end
 
 	-- Check LOS from arm to ammo is unobstructed
 	TraceConfig.start = AutoloaderPos
@@ -200,7 +210,10 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	TraceResult = TraceLine(TraceConfig)
 	self.OverlayErrors.ArmAmmoLOS = TraceResult.Hit and "Autoloader cannot see the ammo\nOf: " .. (tostring(Ammo) or "<INVALID ENTITY???>") .. "\nBlocked by " .. (tostring(TraceResult.Entity) or "<INVALID ENTITY???>") or nil
 	self:UpdateOverlay()
-	if TraceResult.Hit then Blocked = true end
+	if TraceResult.Hit then
+		Blocked = true
+		Reason = "Reloading is stalled, the autoloader cannot reach the ammo"
+	end
 
 	self.OverlayErrors.MountPoint = Gun.IsACFRack and table.Count(Gun.MountPoints) ~= 1 and "Autoloader is linked to a rack with\nMultiple mount points, which is unsupported." or nil
 
@@ -216,10 +229,10 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	local VerticalScore = ACF.Normalize(math.abs(GunMoveOffset.z) + math.abs(AmmoMoveOffset.z), ACF.AutoloaderWorstDistVertical, ACF.AutoloaderBestDistVertical)
 	local AngularScore = ACF.Normalize(AmmoAngleDiff, ACF.AutoloaderWorstDistAngular, ACF.AutoloaderBestDistAngular)
 
-	if AngularScore <= 0 then self.OverlayWarnings.AngularScore = "Autoloader or ammo are probably backwards or greatly misaligned." end
+	self.OverlayWarnings.AngularScore = AngularScore <= 0 and "Autoloader or ammo are probably backwards or greatly misaligned." or nil
 
 	local HealthScore = self.ACF.Health / self.ACF.MaxHealth
-	return 1 * HorizontalScore * VerticalScore * AngularScore * HealthScore, Blocked
+	return 1 * HorizontalScore * VerticalScore * AngularScore * HealthScore, Blocked, Reason
 end
 
 function ENT:GetCost()
@@ -236,11 +249,12 @@ function ENT:Think()
 	local LinkedToCrate = AmmoCrate and IsValid(AmmoCrate)
 
 	if LinkedToGun and LinkedToCrate then
-		local Efficiency, Blocked = self:GetReloadEffAuto(Gun, AmmoCrate)
+		local Efficiency, Blocked, Reason = self:GetReloadEffAuto(Gun, AmmoCrate)
 
 		-- Clamped like the gun does, so the estimate matches what the weapon will do
 		self.EstimatedEfficiency = math.Clamp(Efficiency, ACF.AutoloaderFallbackCoef, ACF.AutoloaderMaxBonus)
 		self.LoadBlocked = Blocked
+		self.OverlayWarnings.LoadBlocked = Blocked and Reason or nil
 		self.EstimatedReload = ACF.CalcReloadTime(Gun.Caliber, Gun.ClassData, Gun.WeaponData, AmmoCrate.BulletData, Gun) / self.EstimatedEfficiency
 		-- Only guns with a magazine have a meaningful magazine reload
 		self.EstimatedReloadMag = Gun.MagReload and ACF.CalcReloadTimeMag(Gun.Caliber, Gun.ClassData, Gun.WeaponData, AmmoCrate.BulletData, Gun) / self.EstimatedEfficiency or nil
@@ -262,7 +276,6 @@ function ENT:ACF_UpdateOverlayState(State)
 	if next(self.OverlayWarnings) then
 		for _, Warning in pairs(self.OverlayWarnings) do State:AddWarning(Warning) end
 	end
-	if self.LoadBlocked then State:AddWarning("Reloading is stalled until the autoloader can reach the breech and the ammo") end
 	State:AddNumber("Max Shell Caliber (mm)", self:ACF_GetUserVar("AutoloaderCaliber"))
 	State:AddNumber("Max Shell Length (cm)", self:ACF_GetUserVar("AutoloaderLength"))
 	State:AddNumber("Estimated Reload (s)", math.Round(self.EstimatedReload or 0, 4))

@@ -11,6 +11,7 @@ Classes.DefineClass("ACF.Ammunition.APDS", "ACF.Ammunition.AP", function(CLASS, 
 		["ACF.Guns.Autocannon"] = true,
 		["ACF.Guns.SemiautomaticCannon"] = true,
 		["ACF.Guns.RotaryAutocannon"] = true,
+		["ACF.Guns.LightAutocannon"] = true,
 	})
 
 	function CLASS:UpdateRoundData()

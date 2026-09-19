@@ -61,13 +61,13 @@ if CLIENT then
 	local ScanSizeMin, ScanSizeMax             = 10, 10000
 	local NudgeExponentMin, NudgeExponentMax   = 0, 1
 
-	local SphereRadius      = CreateClientConVar("acfarmormesh_sphere_radius", 0, false, true, "", SphereRadiusMin, SphereRadiusMax)
-	CreateClientConVar("acfarmormesh_thickness", 0, false, true, "", ThicknessMin, ThicknessMax)
-	local AlphaConVar       = CreateClientConVar("acfarmormesh_alpha", 50, false, true, "", AlphaMin, AlphaMax)
-	local ClassFilter       = CreateClientConVar("acfarmormesh_class_filter", "", false, true)
-	local NudgeExponent     = CreateClientConVar("acfarmormesh_nudge_exponent", 0, false, true, "", NudgeExponentMin, NudgeExponentMax)
-	CreateClientConVar("acfarmormesh_ignore_elevation", 0, false, true, "", 0, 1)
-	CreateClientConVar("acfarmormesh_color_entity", 0, false, true, "", 0, 1)
+	local SphereRadius      = CreateClientConVar("acfarmormesh_sphere_radius", 0, true, true, "", SphereRadiusMin, SphereRadiusMax)
+	CreateClientConVar("acfarmormesh_thickness", 0, true, true, "", ThicknessMin, ThicknessMax)
+	local AlphaConVar       = CreateClientConVar("acfarmormesh_alpha", 50, true, true, "", AlphaMin, AlphaMax)
+	local ClassFilter       = CreateClientConVar("acfarmormesh_class_filter", "", true, true)
+	local NudgeExponent     = CreateClientConVar("acfarmormesh_nudge_exponent", 0, true, true, "", NudgeExponentMin, NudgeExponentMax)
+	CreateClientConVar("acfarmormesh_ignore_elevation", 0, true, true, "", 0, 1)
+	CreateClientConVar("acfarmormesh_color_entity", 0, true, true, "", 0, 1)
 
 	local function GetClassFilter()
 		local Filter = {}
@@ -551,8 +551,8 @@ elseif SERVER then
 			local ArmorType = ACF.Classes.ArmorTypes.Get(Material)
 			if ArmorType and ArmorType.Color then
 				Entity:SetColor(ArmorType.Color)
-				Entity:SetRenderMode(RENDERMODE_TRANSCOLOR)
-				duplicator.StoreEntityModifier(Entity, "colour", { Color = ArmorType.Color, RenderMode = RENDERMODE_TRANSCOLOR })
+				Entity:SetRenderMode(RENDERMODE_NORMAL)
+				duplicator.StoreEntityModifier(Entity, "colour", { Color = ArmorType.Color, RenderMode = RENDERMODE_NORMAL })
 			end
 		end
 

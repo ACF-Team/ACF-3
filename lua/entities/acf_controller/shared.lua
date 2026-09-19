@@ -44,6 +44,7 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "Entity", "Gun1", { KeyName = "gun1", Edit = { type = "Entity", order = 500, category = "Weapon Settings", tooltip = "Primary weapon (auto-detected if unset)" } } )
 	self:NetworkVar( "Entity", "Gun2", { KeyName = "gun2", Edit = { type = "Entity", order = 501, category = "Weapon Settings", tooltip = "Secondary weapon (auto-detected if unset)" } } )
 	self:NetworkVar( "Entity", "Gun3", { KeyName = "gun3", Edit = { type = "Entity", order = 502, category = "Weapon Settings", tooltip = "Tertiary weapon, e.g. a rack (auto-detected if unset)" } } )
+	self:NetworkVar( "Bool", "LockWeaponSlots", { KeyName = "lockweaponslots", Edit = { type = "Bool", order = 503, category = "Weapon Settings", tooltip = "Locks Gun1/2/3 as set above, disabling auto-detection of newly linked weapons" } } )
 
 	self:NetworkVar( "Int", "HUDType", { KeyName = "hudtype", Edit = { type = "Combo", order = 400, category = "HUD Settings", values = {Minimal = 0, Sosna = 1, Leopard = 2}, tooltip = "HUD style" } } )
 	self:NetworkVar( "Float", "HUDScale", { KeyName = "hudscale", Edit = { type = "Float", order = 401, category = "HUD Settings", min = 0, max = 3, tooltip = "HUD scale" } } )

@@ -6,6 +6,7 @@ util.AddNetworkString("ACF_KillFeed_VehicleEntry")
 
 hook.Add("cfw.contraption.entityRemoved", "ACF_KillFeed_VehicleRemoved", function(Contraption, Ent)
     if not IsValid(Ent) or Ent:GetClass() ~= "acf_baseplate" then return end
+    -- print("ACF_KillFeed_VehicleRemoved", Ent, Contraption, Contraption.ACF_LastDamageAttacker)
 
     local Attacker = Contraption.ACF_LastDamageAttacker
     if not IsValid(Attacker) or not Attacker:IsPlayer() then return end -- Never took damage

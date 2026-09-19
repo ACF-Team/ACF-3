@@ -115,9 +115,11 @@ local function IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Play
     return IfEntManipulationOnACFContraption_ThenDisableContraption(Player, Ent, Type, PostContraptionCheck)
 end
 
+-- Aircraft over the armor volume limit lose their exemption, so they get treated like a ground vehicle
 local function PostContraptionCheck_IsNotGroundVehicle(Contraption)
-    if Contraption:ACF_IsAircraft() or Contraption:ACF_IsRecreational() then
-        return true
+    if Contraption:ACF_IsRecreational() then return true end
+    if Contraption:ACF_IsAircraft() then
+        return not Contraption.ACF_ExceedsAircraftLimits
     end
 end
 

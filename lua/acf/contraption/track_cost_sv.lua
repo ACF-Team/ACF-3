@@ -246,7 +246,7 @@ do -- Cost limit enforcement
 
 		for Entity in pairs(Contraption.ents) do
 			if not IsValid(Entity) then continue end
-			if Entity.IsACFEntity then continue end
+			if Entity.IsACFEntity or Entity.IsACFMissile then continue end
 
 			local MeshData = Entity.ACF_Volumetric_Mesh
 			if not MeshData then continue end
@@ -258,6 +258,8 @@ do -- Cost limit enforcement
 				if Material == AircraftVolumeType then Volume = Volume + Convex.Volume end
 			end
 		end
+
+		Contraption.ACF_ExceedsAircraftLimits = BadMaterial or Volume >= CostSystem.AircraftVolumeLimit
 
 		return Volume, BadMaterial
 	end
@@ -275,15 +277,15 @@ do -- Cost limit enforcement
 		if not Setting then return end
 
 		if TypeID == "ACF.Baseplates.Aircraft" then
-			local Volume, BadMaterial = CostSystem.GetAircraftArmorInfo(Contraption)
+			CostSystem.GetAircraftArmorInfo(Contraption)
 
-			if BadMaterial or Volume >= CostSystem.AircraftVolumeLimit then
+			if Contraption.ACF_ExceedsAircraftLimits then
 				local Owner = Baseplate:CPPIGetOwner()
 				if IsValid(Owner) and Owner:IsPlayer() then
 					Notify.WarningToPlayer(Owner, "Aircraft destroyed", "Your aircraft used disallowed armor or exceeded the armor volume limit of " .. CostSystem.AircraftVolumeLimit .. " units.")
 				end
 
-				ACF.DestroyContraption(Contraption, Baseplate:GetPos(), vector_up, 100000)
+				ACF.DestroyContraption(Contraption, Baseplate:GetPos(), nil, 100000)
 				return
 			end
 		end
@@ -303,7 +305,7 @@ do -- Cost limit enforcement
 			Notify.WarningToPlayer(Owner, "Vehicle destroyed", "Your vehicle exceeded the cost limit of " .. CostLimit .. " points (cost: " .. math.Round(Cost) .. ").")
 		end
 
-		ACF.DestroyContraption(Contraption, Baseplate:GetPos(), vector_up, 100000)
+		ACF.DestroyContraption(Contraption, Baseplate:GetPos(), nil, 100000)
 	end
 
 	-- Contraptions are only worth checking once they've actually been driven

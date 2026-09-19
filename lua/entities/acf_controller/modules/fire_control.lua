@@ -3,14 +3,16 @@ local TimerSimple = timer.Simple
 local RecacheBindOutput = ENT.RecacheBindOutput
 local GetKeyState = ENT.GetKeyState
 
+local NUM_WEAPONS = 3 -- Number of Gun1/Gun2/Gun3 slots
+
 local function Init(Entity)
 	Entity.Turrets          = {}    -- Turrets, both horizontal and vertical
 	Entity.Guns             = {}    -- All guns
 	Entity.Racks            = {}    -- All racks
 	Entity.GuidanceComputer = nil   -- The guidance computer, if any
 	Entity.TurretComputer   = nil   -- The turret computer, if any
-	Entity.GunsPrimary      = {}    -- All guns sharing Gun1's weapon
-	Entity.GunsSecondary    = {}    -- All guns sharing Gun2's weapon
+	Entity.FireGroups       = {}    -- [1]/[2]/[3]: guns/racks sharing Gun1's/Gun2's/Gun3's ShortName
+	Entity.WeaponGroups     = {}    -- ShortName -> Set of every linked gun/rack of that type
 	Entity.GunsSmoke        = {}    -- Smoke and flare launchers
 	Entity.TurretLocked     = false -- Whether the turret is locked or not
 	Entity.Smoke            = nil   -- Reference smoke launcher, for HUD purposes
@@ -18,11 +20,46 @@ local function Init(Entity)
 	Entity.TravelTime       = 0
 	Entity.LaseDist         = 0
 	Entity.LasePitch        = 0
+
+	for i = 1, NUM_WEAPONS do Entity.FireGroups[i] = {} end
 end
 
 -- Turret related
 do
+	-- Groups are keyed by weapon name, never by raw caliber alone,
+	-- since a gun and a rack's missile can share the same caliber number but aren't the same weapon
+	local function AnalyzeWeapon(self, Weapon)
+		local Key = Weapon.Name
+		local Set = self.WeaponGroups[Key] or {}
+		self.WeaponGroups[Key] = Set
+		Set[Weapon] = true
+
+		-- The user's LockWeaponSlots checkbox decides auto-detection, instead of us guessing
+		-- intent from whether Gun1/2/3 happen to be set (e.g. from a dupe restore)
+		if not self:GetLockWeaponSlots() then
+			local Reps = {}
+			for _, Group in pairs(self.WeaponGroups) do Reps[#Reps + 1] = next(Group) end
+			-- Equal calibers across types are expected, so break ties by key to keep slots stable
+			-- A rack's Caliber can still be nil if it hasn't been given ammo yet
+			table.sort(Reps, function(A, B)
+				local CaliberA, CaliberB = A.Caliber or 0, B.Caliber or 0
+				if CaliberA == CaliberB then return A.Name < B.Name end
+				return CaliberA > CaliberB
+			end)
+
+			for i = 1, NUM_WEAPONS do self["SetGun" .. i](self, Reps[i] or NULL) end
+		end
+
+		-- Either way, each slot's group is everything sharing that slot's weapon identity
+		for i = 1, NUM_WEAPONS do
+			local Gun = self["GetGun" .. i](self)
+			self.FireGroups[i] = IsValid(Gun) and self.WeaponGroups[Gun.Name] or {}
+		end
+	end
+
 	function ENT:AnalyzeGuns(Gun)
+		self.Guns[Gun] = true
+
 		if Gun.Weapon == "ACF.Guns.SmokeLauncher" then
 			self.GunsSmoke[Gun] = true
 			if not IsValid(self.Smoke) then self.Smoke = Gun end
@@ -31,29 +68,13 @@ do
 			return
 		end
 
-		-- Auto-fill Gun1/Gun2 with the first distinct weapons seen, unless already set
-		if not IsValid(self:GetGun1()) then
-			self:SetGun1(Gun)
-		elseif not IsValid(self:GetGun2()) and Gun.Weapon ~= self:GetGun1().Weapon then
-			self:SetGun2(Gun)
-		end
-
-		-- Rebuild the firing groups from every linked gun sharing Gun1's/Gun2's weapon
-		table.Empty(self.GunsPrimary)
-		table.Empty(self.GunsSecondary)
-		local Primary, Secondary = self:GetGun1(), self:GetGun2()
-		for LinkedGun in pairs(self.Guns) do
-			if IsValid(Primary) and LinkedGun.Weapon == Primary.Weapon then
-				self.GunsPrimary[LinkedGun] = true
-			elseif IsValid(Secondary) and LinkedGun.Weapon == Secondary.Weapon then
-				self.GunsSecondary[LinkedGun] = true
-			end
-		end
+		AnalyzeWeapon(self, Gun)
 	end
 
 	function ENT:AnalyzeRacks(Rack)
 		self.Racks[Rack] = true
-		if not IsValid(self:GetGun3()) then self:SetGun3(Rack) end
+
+		AnalyzeWeapon(self, Rack)
 	end
 
 	-- Fire guns
@@ -84,12 +105,13 @@ do
 	function ENT:ProcessGuns(SelfTbl)
 		if SelfTbl:GetDisableFiring() then return end
 
-		local Fire1, Fire2, Fire3, Fire4 = GetKeyState(SelfTbl, IN_ATTACK), GetKeyState(SelfTbl, IN_ATTACK2), GetKeyState(SelfTbl, IN_WALK), GetKeyState(SelfTbl, IN_SPEED)
+		local Fires = {GetKeyState(SelfTbl, IN_ATTACK), GetKeyState(SelfTbl, IN_ATTACK2), GetKeyState(SelfTbl, IN_WALK)}
 
-		HandleFire(Fire1, SelfTbl.GunsPrimary)
-		HandleFire(Fire2, SelfTbl.GunsSecondary)
-		HandleFire(Fire3, SelfTbl.Racks, SelfTbl:GetFireDelay())
-		HandleFire(Fire4, SelfTbl.GunsSmoke)
+		for i = 1, NUM_WEAPONS do
+			HandleFire(Fires[i], SelfTbl.FireGroups[i], i == NUM_WEAPONS and SelfTbl:GetFireDelay() or nil)
+		end
+
+		HandleFire(GetKeyState(SelfTbl, IN_SPEED), SelfTbl.GunsSmoke)
 	end
 
 	function ENT:ToggleTurretLocks(SelfTbl, Key, Down)
@@ -153,7 +175,7 @@ do
 			-- We just want to know if there are any in air we should be lasing for...
 			local FoundInAir = false
 
-			for Gun in pairs(SelfTbl.GunsPrimary) do
+			for Gun in pairs(SelfTbl.Guns) do
 				if FoundInAir then break end
 				if Gun.Outputs["In Air"].Value > 0 then FoundInAir = true end
 			end
