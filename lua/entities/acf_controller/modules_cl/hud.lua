@@ -13,7 +13,7 @@ local Classes      = ACF.Classes
 local TraceLine = util.TraceLine
 local CurTime = CurTime
 
-local MAX_RADAR_TARGET_SCREEN_DIST = 100 -- Screen pixels, targets past this can't be selected, so moving off them disengages the lock
+local MAX_RADAR_TARGET_SCREEN_DIST = 200 -- Screen pixels, targets past this can't be selected, so moving off them disengages the lock
 
 return function(State)
     -- Hardest hitting ammo first, name breaks ties so the order stays stable

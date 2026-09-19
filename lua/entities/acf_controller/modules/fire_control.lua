@@ -114,7 +114,6 @@ do
 			end
 
 			local Delay = (OverrideDelay or CurrentGun.FireDelay or CurrentGun.ReloadTime or 0) / Count
-			print(Delay)
 			timer.Create(TimerName, Delay, 1, FireNext)
 		end
 
@@ -168,21 +167,20 @@ do
 			AntiDrift = -self.Baseplate:GetVelocity() * Time
 		end
 
+		if self:GetEnableTimeFuse() and IsValid(Primary) then
+			local MuzzleVel = Primary.BulletData.MuzzleVel or 0
+			local RadarTime = MuzzleVel > 0 and (self.Baseplate:GetPos():Distance(SelfTbl.SelectedTargetPos) / 39.37 / MuzzleVel) or 0
+			local FuzeTime = RadarTime * 1.27
+			for Weapon in pairs(SelfTbl.FireGroups[1]) do
+				if IsValid(Weapon) then Weapon:TriggerInput("Fuze", FuzeTime) end
+			end
+		end
+
 		for Turret, _ in pairs(Turrets) do
 			if IsValid(Turret) then
 				if Turret == BreechReference and ShouldLevel then Turret:InputDirection(ReloadAngle)
 				elseif BreechReference and Turret == BreechReference:GetParent() and ShouldLevel and ReloadAngleHorizontal ~= 0 then Turret:InputDirection(ReloadAngleHorizontal)
 				else Turret:InputDirection(HitPos + AntiDrop + AntiDrift) end
-
-				if Turret == SelfTbl.RadarVertical and SelfTbl.SelectedTargetID then
-					Turret:InputDirection(SelfTbl.SelectedTargetPos)
-
-					if self:GetEnableTimeFuse() and IsValid(Primary) then
-						local MuzzleVel = Primary.BulletData.MuzzleVel or 0
-						local RadarTime = MuzzleVel > 0 and (self.Baseplate:GetPos():Distance(SelfTbl.SelectedTargetPos) / 39.37 / MuzzleVel) or 0
-						Primary:TriggerInput("Fuze", RadarTime * 1.27)
-					end
-				end
 			end
 		end
 	end
