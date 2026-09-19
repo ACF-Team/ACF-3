@@ -51,9 +51,9 @@ end
 
 -- Links all entities of Type1 to all entities of Type2
 local function LinkAll(Env, Type1, Type2)
-    for _, Ent1 in pairs(Env.Contraption.entsbyclass[Type1] or {}) do
-        for _, Ent2 in pairs(Env.Contraption.entsbyclass[Type2] or {}) do
-            Ent1:LinkTo(Ent2)
+    for Ent1 in pairs(Env.Contraption.entsbyclass[Type1] or {}) do
+        for Ent2 in pairs(Env.Contraption.entsbyclass[Type2] or {}) do
+            Ent1:Link(Ent2)
         end
     end
 end
@@ -218,7 +218,7 @@ end, function(Env)
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_gun, {"Crew", "Autoloader"})) do
         if not e.IsBelted and e.Weapon ~= "ACF.Guns.SmokeLauncher" and e.Weapon ~= "40mmFGL" then
             for _, crew in pairs(Env.Contraption.Crews or {}) do
-                if crew.Type == "Loader" then e:LinkTo(crew.Ent) end
+                if crew.Type == "Loader" then e:Link(crew.Ent) end
             end
         end
     end
