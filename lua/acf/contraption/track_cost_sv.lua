@@ -259,6 +259,8 @@ do -- Cost limit enforcement
 			end
 		end
 
+		Contraption.ACF_ExceedsAircraftLimits = BadMaterial or Volume >= CostSystem.AircraftVolumeLimit
+
 		return Volume, BadMaterial
 	end
 
@@ -275,9 +277,9 @@ do -- Cost limit enforcement
 		if not Setting then return end
 
 		if TypeID == "ACF.Baseplates.Aircraft" then
-			local Volume, BadMaterial = CostSystem.GetAircraftArmorInfo(Contraption)
+			CostSystem.GetAircraftArmorInfo(Contraption)
 
-			if BadMaterial or Volume >= CostSystem.AircraftVolumeLimit then
+			if Contraption.ACF_ExceedsAircraftLimits then
 				local Owner = Baseplate:CPPIGetOwner()
 				if IsValid(Owner) and Owner:IsPlayer() then
 					Notify.WarningToPlayer(Owner, "Aircraft destroyed", "Your aircraft used disallowed armor or exceeded the armor volume limit of " .. CostSystem.AircraftVolumeLimit .. " units.")
