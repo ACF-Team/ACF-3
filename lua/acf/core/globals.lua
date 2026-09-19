@@ -111,6 +111,16 @@ do
 	end
 end
 
+do -- Generic global funcs
+	-- Get the nearest binary step of a number. Useful for getting the nearest bit value to network stuff.
+	function ACF.GetHighestPowerOfTwo(Num)
+		if Num <= 0 then return 1 end
+
+		local exponent = math.ceil(math.log(Num + 1) / math.log(2))
+		return exponent
+	end
+end
+
 do -- ACF global vars
 	ACF.AmmoCrates           = ACF.AmmoCrates or {}
 	ACF.FuelTanks            = ACF.FuelTanks or {}
@@ -189,7 +199,7 @@ do -- ACF global vars
 	ACF.DefineSetting("KillLogMaxSessions",   20,    "Kill log max retained sessions has been set to %s.", ACF.FloatDataCallback(1, 500, 0))
 	ACF.DefineSetting("KillLogQueryCooldown", 10,    "Kill log query cooldown has been set to %s seconds.", ACF.FloatDataCallback(0, 120, 0))
 
-	ACF.Year                 = 1945
+	ACF.Year                 = 2026 -- Was 1945. Define this hardcoded for now, always the year in course unless more work on this gets done and does actually get used properly
 	ACF.IllegalDisableTime   = 30 -- Time in seconds for an entity to be disabled when it fails ACF.IsLegal
 	ACF.Volume               = 1 -- Global volume for ACF sounds
 	ACF.MobilityLinkDistance = 650 -- Maximum distance, in inches, at which mobility-related components will remain linked with each other
@@ -228,6 +238,14 @@ do -- ACF global vars
 	ACF.NmToFtLb             = 0.73756 -- Newton meters to foot-pounds
 	ACF.KwToHp               = 1.341 -- Kilowatts to horsepower
 	ACF.LToGal               = 0.264172 -- Liters to gallons
+
+	-- Miscellaneous Sound Stuff
+	ACF.SpeedOfSound 		 = 343 * ACF.MeterToInch -- in Meters per Second. Source internally uses inches(or units) so we have to convert
+													 -- Actually this would vary as a function of temperature and air pressure, but this should suffice for now
+	-- acf_engine exclusive constants
+	ACF.MaxSounds            = 16 -- Maximum amount of sounds per engine is allowed to play in interpolation. 
+	ACF.MaxSoundBanks        = 16 -- Maximum amount of soundbanks that an engine can have.
+	ACF.NetSoundRPMBitLimit  = 14 -- Maximum networked size of an engine's RPM in bits (IF SET TOO LOW, ENGINE'S WILL HAVE LIMITED SOUND PITCH RANGE)
 
 	-- Fuzes
 	ACF.MinFuzeCaliber       = 25 -- Minimum caliber in millimeters that can be fuzed
