@@ -213,9 +213,8 @@ RegisterTest("Links", "Guns, Racks and Ammo", function(Env)
     -- for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_rack, {"Crew", "Autoloader"})) do table.insert(Faults, {Ent = e, Msg = "Ammo unlinked from Guns"}) end
     return #Faults == 0, Faults
 end, function(Env)
-    LinkAll(Env, "acf_gun", "Crates")
-    LinkAll(Env, "acf_rack", "Crates")
-    LinkAll(Env, "acf_ammo", "Weapons")
+    LinkAll(Env, "acf_gun", "acf_ammo")
+    LinkAll(Env, "acf_rack", "acf_ammo")
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_gun, {"Crew", "Autoloader"})) do
         if not e.IsBelted and e.Weapon ~= "ACF.Guns.SmokeLauncher" and e.Weapon ~= "40mmFGL" then
             for _, crew in pairs(Env.Contraption.Crews or {}) do
@@ -247,9 +246,8 @@ RegisterTest("Links", "Engines, Fuel and Gearboxes", function(Env)
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_gearbox, {"GearboxOut", "Wheels", "Effectors"})) do table.insert(Faults, {Ent = e, Msg = "Gearbox missing Output link"}) end
     return #Faults == 0, Faults
 end, function(Env)
-    LinkAll(Env, "acf_fueltank", "Engines")
-    LinkAll(Env, "acf_engine", "FuelTanks")
-    LinkAll(Env, "acf_engine", "Gearboxes")
+    LinkAll(Env, "acf_fueltank", "acf_engine")
+    LinkAll(Env, "acf_engine", "acf_gearbox")
 end, "Ensure all engines are linked to fuel tanks and gearboxes, and all gearboxes have proper input and output links")
 
 RegisterTest("Baseplate", "Orientation", function(Env)
