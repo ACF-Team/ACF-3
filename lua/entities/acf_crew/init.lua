@@ -642,20 +642,11 @@ do
 
 	-- Fully revives a dead crew member. Called by gamemodes like AAS and by acf_supply.
 	function ENT:Restore()
-		local WasDead = not self.IsAlive
-
 		self.ACF.Health = self.ACF.MaxHealth
 		self.IsAlive = true
 		self:SetMaterial(self.MaterialPath or "") -- Reset to default material
 		self:SetColor(Color(255, 255, 255, 255)) -- Reset the flesh-white tint KillCrew applies
 		self:UpdateOverlay()
-
-		if WasDead then
-			local Contraption = self:CFW_GetContraption()
-			if Contraption and Contraption.ACF_CrewDeathCount then
-				Contraption.ACF_CrewDeathCount = math.max(0, Contraption.ACF_CrewDeathCount - 1)
-			end
-		end
 	end
 
 	-- Timer only runs while the crew actually needs healing; DamageCrew re-arms it. In-combat
@@ -792,17 +783,15 @@ do
 		local Contraption = self:CFW_GetContraption()
 		if not Contraption then return end
 		local Crews = Contraption and Contraption.Crews
-		local Alive = 0
+		local Alive, Dead = 0, 0
 		if Crews then
 			for crew, _ in pairs(Crews) do
-				if crew.IsAlive then Alive = Alive + 1 end
+				if crew.IsAlive then Alive = Alive + 1 else Dead = Dead + 1 end
 			end
 		end
 
-		Contraption.ACF_CrewDeathCount = (Contraption.ACF_CrewDeathCount or 0) + 1
-
-		-- Destroy the vehicle once all crew are dead, or after enough cumulative deaths to discourage spamming disposable crew.
-		if Alive <= 0 or Contraption.ACF_CrewDeathCount >= ACF.CrewFatalDeathCount then
+		-- Destroy the vehicle once all crew are dead, or after enough are dead at once to discourage spamming disposable crew.
+		if Alive <= 0 or Dead >= ACF.CrewFatalDeathCount then
 			local Baseplate = Contraption.ACF_Baseplate
 			local Position = IsValid(Baseplate) and Baseplate:GetPos() or self:GetPos()
 
