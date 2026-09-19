@@ -399,6 +399,8 @@ do -- ACF global vars
 
 	ACF.CrewRegenFraction	= 0.05	-- Fraction of max health a living, non-full-health crew member regenerates roughly every 10 seconds
 
+	ACF.CrewFatalDeathCount	= 4		-- Cumulative crew deaths on a contraption before the vehicle is destroyed
+
 	ACF.CrewSpaceLengthMod 	= 0.425	-- Changes contribution of shell length to ideal crew space
 	ACF.CrewSpaceCaliberMod = 1.0	-- Changes contribution of shell caliber to ideal crew space
 
@@ -430,8 +432,6 @@ do -- ACF global vars
 	ACF.AutoloaderWorstDistAngular = 90 -- Angular distance (degrees) after which autoloaders are least effective
 
 	ACF.InitReloadDelay		= 10		-- Delay after spawning that belt feds are loaded
-
-	ACF.CommanderCapacity 	= 3		-- The number of crew members a commander can handle before focus reduces
 
 	-- Gearboxes
 	ACF.GearboxMinSize     = 0.75 -- Defines the smallest possible multiplier for the scale of a gearbox
