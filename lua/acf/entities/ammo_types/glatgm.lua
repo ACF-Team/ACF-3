@@ -9,7 +9,6 @@ Classes.DefineClass("ACF.Ammunition.GLATGM", "ACF.Ammunition.HEATFS", function(C
 	CLASS.Blacklist = ACF.GetWeaponBlacklist({
 		["ACF.Guns.Cannon"] = true,
 		["ACF.Guns.Howitzer"] = true,
-		["ACF.Guns.Mortar"] = true,
 		["ACF.Guns.ShortBarrelledCannon"] = true,
 	})
 
