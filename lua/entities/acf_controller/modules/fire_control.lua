@@ -160,7 +160,21 @@ do
 		local ShouldLevel = ReloadAngle ~= 0 and IsValid(Primary) and Primary.State ~= "Loaded" and (not Primary.MagSize or Primary.MagazineReloading)
 
 		local AntiDrop, AntiDrift = vector_origin, vector_origin
-		if self:GetEnableFCS() and not SelfTbl.SelectedTargetID then
+		local TurretComputer = self.TurretComputer
+		if TurretComputer then
+			-- Liddul... if you can hear me...
+			local SuperElevation = nil
+			if TurretComputer.Computer == "DIR-BalComp" then SuperElevation = TurretComputer.Outputs.Elevation.Value
+			elseif TurretComputer.Computer == "IND-BalComp" then SuperElevation = TurretComputer.Outputs.Angle[1] end
+
+			if SuperElevation ~= nil and SuperElevation ~= SelfTbl.LastSuperElevation then
+				local TrueSuperElevation = SuperElevation - (SelfTbl.LasePitch or 0) -- Compute pitch offset to account for drop
+				SelfTbl.Drop = (SelfTbl.LaseDist or 0) * math.tan(math.rad(-TrueSuperElevation)) -- Compute vector offset to account for drop
+				SelfTbl.TravelTime = SelfTbl.LaseDist ~= 0 and TurretComputer.Outputs["Flight Time"].Value or 0
+			end
+			AntiDrop = Vector(0, 0, SelfTbl.Drop or 0)
+			AntiDrift = -self.Baseplate:GetVelocity() * (SelfTbl.TravelTime or 0)
+		elseif self:GetEnableFCS() and not SelfTbl.SelectedTargetID then
 			local MuzzleVel = IsValid(Primary) and Primary.BulletData.MuzzleVel or 0
 			local Time = MuzzleVel > 0 and (self.Baseplate:GetPos():Distance(HitPos) / 39.37 / MuzzleVel) or 0
 			AntiDrop = Vector(0, 0, 300 * Time * Time)
