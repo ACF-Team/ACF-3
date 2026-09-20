@@ -75,7 +75,7 @@ local function Build(Menu, Contexts)
 
 		Menu:ClearTemporal(Base)
 		Menu:StartTemporal(Base)
-		if Group.CreateMenu then Group.CreateMenu(Base, Data) end
+		if Group.CreateMenu then Group.CreateMenu(Data, Base, Ctx) end
 		Menu:EndTemporal(Base)
 	end
 
