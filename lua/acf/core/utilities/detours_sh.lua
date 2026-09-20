@@ -96,6 +96,13 @@ end
 
 local E2Detours = {}
 function Detours.Expression2(E2HelperSig, Hook)
+    local Sig = Detours.E2HelperSignatureToBaseSignature(E2HelperSig)
+
+    -- Check defined?
+    local IsDefined = wire_expression2_funcs and wire_expression2_funcs[Sig]
+    -- Check function?
+    IsDefined = IsDefined and IsDefined[3]
+
     local Signature = "(wire_expression2_funcs[" .. ParentTableName .. ".Detours.E2HelperSignatureToBaseSignature(\"" .. E2HelperSig .. "\")] or {})[3]"
     local Obj = E2Detours[Signature]
     if not Obj then
@@ -106,6 +113,11 @@ function Detours.Expression2(E2HelperSig, Hook)
         E2Detours[Signature] = Obj
     else
         Obj.Hook = Hook
+    end
+
+    -- If defined, we will store the original now...
+    if IsDefined and not Obj.Original then
+        Obj.Original = Detours.New(Signature, Obj.Hook)
     end
 
     return function(...)
