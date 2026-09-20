@@ -29,9 +29,10 @@ Classes.DefineClass("ACF.Sensors.Radar.Standard", "ACF.Sensors.Radar", function(
 		return MinSizeAtRange * (Dist / Range) ^ MinSizeExponent
 	end
 
-	--- @param Menu userdata The collapsible the sensor page builds into
 	--- @param Item table The selected radar class
-	function CLASS.CreateMenu(Menu, Item)
+	--- @param Menu userdata The collapsible the sensor page builds into
+	--- @param Ctx table The acf_radar entity's spawn context
+	function CLASS.CreateMenu(Item, Menu, Ctx)
 		local ViewCone  = (Item.ViewCone or 180) * 2
 		local ViewRange = Item.Range and (math.Round(Item.Range * ACF.InchToMeter) .. " m") or "Unlimited"
 		local MinSize   = Item.MinSizeAtRange and (Item.MinSizeAtRange .. " in") or "N/A"
@@ -42,7 +43,7 @@ Classes.DefineClass("ACF.Sensors.Radar.Standard", "ACF.Sensors.Radar", function(
 		local function UpdateStats()
 			local Cost = Item.Cost or 0
 
-			if ACF.GetClientBool("DetectContraptions", true) ~= ACF.GetClientBool("DetectMissiles", true) then
+			if Ctx:Get("DetectContraptions") ~= Ctx:Get("DetectMissiles") then
 				Cost = Cost - ACF.RadarSingleTypeDiscount
 			end
 
@@ -88,7 +89,7 @@ Classes.DefineClass("ACF.Sensors.Radar.Standard", "ACF.Sensors.Radar", function(
 				DetectMissiles:SetValue(true)
 			end
 
-			ACF.SetClientData("DetectContraptions", Value)
+			Ctx:Set("DetectContraptions", Value)
 			UpdateStats()
 		end
 
@@ -97,13 +98,13 @@ Classes.DefineClass("ACF.Sensors.Radar.Standard", "ACF.Sensors.Radar", function(
 				DetectContraptions:SetValue(true)
 			end
 
-			ACF.SetClientData("DetectMissiles", Value)
+			Ctx:Set("DetectMissiles", Value)
 			UpdateStats()
 		end
 
 		-- Triggered once on menu creation and every time either checkbox is toggled.
-		DetectContraptions:SetValue(ACF.GetClientBool("DetectContraptions", true))
-		DetectMissiles:SetValue(ACF.GetClientBool("DetectMissiles", true))
+		DetectContraptions:SetValue(Ctx:Get("DetectContraptions"))
+		DetectMissiles:SetValue(Ctx:Get("DetectMissiles"))
 	end
 end)
 

@@ -289,16 +289,7 @@ Classes.DefineClass("ACF.CrewTypes.Commander", "ACF.CrewTypes.BaseCrewType", fun
 		Crew.TotalEff = math.Clamp(MyEff, ACF.CrewFallbackCoef, 1)
 	end
 	CLASS.UpdateFocus = function(Crew) -- Represents the fraction of efficiency a crew can give to its linked entities
-		local Contraption = Crew:CFW_GetContraption() or table_empty
-
-		local AliveCount = -1 -- Excluding the commander
-		for Crew, _ in pairs(Contraption.Crews or table_empty) do
-			if IsValid(Crew) and Crew.IsAlive then
-				AliveCount = AliveCount + 1
-			end
-		end
-
-		local Count = table.Count(Crew.Targets) + (AliveCount * 1 / ACF.CommanderCapacity) -- 1 to each target, 1/CommanderCapacity to each crew
+		local Count = table.Count(Crew.Targets) -- 1 to each target
 		Crew.Focus = (Count > 0) and math.min(1 / Count, 1) or 1
 	end
 	CLASS.EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, ACF.Classes.GetTypeByName("ACF.Baseplates.GroundVehicle")) end

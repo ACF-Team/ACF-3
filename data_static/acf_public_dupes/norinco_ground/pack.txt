@@ -4,7 +4,6 @@ VALUES ('norinco_ground', 'Norinco Ground', 'Len', 'lengthened_gradient');
 
 -- Insert dupes using the string packid
 INSERT INTO DupeData (path, name, cost, weight, type, mobility, packid, description) VALUES
-('atm152', 'ATM152', 61.86, 7951.07, 'ATGM', 'Wheeled', 'norinco_ground', ', align rack to original angle to avoid'),
 ('ifv10030', 'IFV-10030', 269.83, 24273.29, 'IFV', 'Tracked', 'norinco_ground', ''),
 ('aa35', 'AA-35', 269.83, 24273.29, 'IFV', 'Tracked', 'norinco_ground', ''),
 ('spg170', 'SPG-170', 269.83, 24273.29, 'IFV', 'Tracked', 'norinco_ground', ''),

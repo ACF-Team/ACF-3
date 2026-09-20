@@ -1,5 +1,3 @@
-local TimerSimple = timer.Simple
-
 local RecacheBindOutput = ENT.RecacheBindOutput
 local GetKeyState = ENT.GetKeyState
 
@@ -14,6 +12,7 @@ local function Init(Entity)
 	Entity.FireGroups       = {}    -- [1]/[2]/[3]: guns/racks sharing Gun1's/Gun2's/Gun3's ShortName
 	Entity.WeaponGroups     = {}    -- ShortName -> Set of every linked gun/rack of that type
 	Entity.GunsSmoke        = {}    -- Smoke and flare launchers
+	Entity.FireState        = {}    -- [1]/[2]/[3]/Smoke: round robin index per fire group
 	Entity.TurretLocked     = false -- Whether the turret is locked or not
 	Entity.Smoke            = nil   -- Reference smoke launcher, for HUD purposes
 	Entity.Drop             = 0
@@ -21,7 +20,12 @@ local function Init(Entity)
 	Entity.LaseDist         = 0
 	Entity.LasePitch        = 0
 
-	for i = 1, NUM_WEAPONS do Entity.FireGroups[i] = {} end
+	for i = 1, NUM_WEAPONS do
+		Entity.FireGroups[i] = {}
+		Entity.FireState[i]  = {Index = 1}
+	end
+
+	Entity.FireState.Smoke = {Index = 1}
 end
 
 -- Turret related
@@ -77,29 +81,43 @@ do
 		AnalyzeWeapon(self, Rack)
 	end
 
-	-- Fire guns
-	-- TODO:  Add fire sequencing
-	local function HandleFire(Fire, Guns, OverrideDelay)
-		local Gun = next(Guns)
-		if not Gun then return end
+	-- Fire guns one at a time, round robin, resuming from the last index on the next Fire press
+	local function HandleFire(Entity, State, Fire, Guns, OverrideDelay)
+		local TimerName = "ACF Fire Control " .. Entity:EntIndex() .. " " .. tostring(State)
 
-		local Delay = OverrideDelay or Gun.ReloadTime or 0
-		local Count = table.Count(Guns)
-		local Counter = 0
-		for Gun in pairs(Guns) do
-			local CurrentGun = Gun
-			if CurrentGun.Firing == Fire then continue end -- Don't make a timer if nothing changed
-			CurrentGun.Firing = Fire
-			local TrueDelay = Counter * Delay / Count -- It's called good luck
-			TimerSimple(TrueDelay, function()
-				if IsValid(CurrentGun) and Fire then
-					local GunCanFire = CurrentGun.CanFire and CurrentGun:CanFire()
-					local RackCanFire = CurrentGun.CanShoot and CurrentGun:CanShoot()
-					if (GunCanFire or RackCanFire) then CurrentGun:Shoot() end
-				end
-			end)
-			Counter = Counter + 1
+		if not Fire then
+			timer.Remove(TimerName)
+
+			return
 		end
+
+		if timer.Exists(TimerName) then return end
+
+		local function FireNext()
+			local Order = {}
+			for Gun in pairs(Guns) do Order[#Order + 1] = Gun end
+
+			local Count = #Order
+			if Count == 0 then return end
+
+			if State.Index > Count then State.Index = 1 end
+
+			local CurrentGun = Order[State.Index]
+			State.Index = State.Index + 1
+
+			if IsValid(CurrentGun) then
+				CurrentGun.Firing = true
+				local GunCanFire = CurrentGun.CanFire and CurrentGun:CanFire()
+				local RackCanFire = CurrentGun.CanShoot and CurrentGun:CanShoot()
+				if (GunCanFire or RackCanFire) then CurrentGun:Shoot() end
+				CurrentGun.Firing = false
+			end
+
+			local Delay = (OverrideDelay or CurrentGun.FireDelay or CurrentGun.ReloadTime or 0) / Count
+			timer.Create(TimerName, Delay, 1, FireNext)
+		end
+
+		FireNext()
 	end
 
 	function ENT:ProcessGuns(SelfTbl)
@@ -108,13 +126,15 @@ do
 		local Fires = {GetKeyState(SelfTbl, IN_ATTACK), GetKeyState(SelfTbl, IN_ATTACK2), GetKeyState(SelfTbl, IN_WALK)}
 
 		for i = 1, NUM_WEAPONS do
-			HandleFire(Fires[i], SelfTbl.FireGroups[i], i == NUM_WEAPONS and SelfTbl:GetFireDelay() or nil)
+			HandleFire(self, SelfTbl.FireState[i], Fires[i], SelfTbl.FireGroups[i], i == NUM_WEAPONS and SelfTbl:GetFireDelay() or nil)
 		end
 
-		HandleFire(GetKeyState(SelfTbl, IN_SPEED), SelfTbl.GunsSmoke)
+		HandleFire(self, SelfTbl.FireState.Smoke, GetKeyState(SelfTbl, IN_SPEED), SelfTbl.GunsSmoke)
 	end
 
 	function ENT:ToggleTurretLocks(SelfTbl, Key, Down)
+		if self:GetDisableTurretLock() then return end
+
 		if Key == IN_RELOAD and Down then
 			local Turrets = SelfTbl.Turrets
 			SelfTbl.TurretLocked = not SelfTbl.TurretLocked
@@ -139,29 +159,42 @@ do
 		-- Mag-fed guns chamber a fresh round between shots too, only level for the actual magazine reload
 		local ShouldLevel = ReloadAngle ~= 0 and IsValid(Primary) and Primary.State ~= "Loaded" and (not Primary.MagSize or Primary.MagazineReloading)
 
-		-- Liddul... if you can hear me...
+		local AntiDrop, AntiDrift = vector_origin, vector_origin
 		local TurretComputer = self.TurretComputer
-		local SuperElevation = nil
-		if TurretComputer  then
+		if TurretComputer then
+			-- Liddul... if you can hear me...
+			local SuperElevation = nil
 			if TurretComputer.Computer == "DIR-BalComp" then SuperElevation = TurretComputer.Outputs.Elevation.Value
 			elseif TurretComputer.Computer == "IND-BalComp" then SuperElevation = TurretComputer.Outputs.Angle[1] end
+
+			if SuperElevation ~= nil and SuperElevation ~= SelfTbl.LastSuperElevation then
+				local TrueSuperElevation = SuperElevation - (SelfTbl.LasePitch or 0) -- Compute pitch offset to account for drop
+				SelfTbl.Drop = (SelfTbl.LaseDist or 0) * math.tan(math.rad(-TrueSuperElevation)) -- Compute vector offset to account for drop
+				SelfTbl.TravelTime = SelfTbl.LaseDist ~= 0 and TurretComputer.Outputs["Flight Time"].Value or 0
+			end
+			AntiDrop = Vector(0, 0, SelfTbl.Drop or 0)
+			AntiDrift = -self.Baseplate:GetVelocity() * (SelfTbl.TravelTime or 0)
+		elseif self:GetEnableFCS() and not SelfTbl.SelectedTargetID then
+			local MuzzleVel = IsValid(Primary) and Primary.BulletData.MuzzleVel or 0
+			local Time = MuzzleVel > 0 and (self.Baseplate:GetPos():Distance(HitPos) / 39.37 / MuzzleVel) or 0
+			AntiDrop = Vector(0, 0, 300 * Time * Time)
+			AntiDrift = -self.Baseplate:GetVelocity() * Time
 		end
 
-		if SuperElevation ~= nil and SuperElevation ~= SelfTbl.LastSuperElevation then
-			local TrueSuperElevation = SuperElevation - (SelfTbl.LasePitch or 0) -- Compute pitch offset to account for drop
-			SelfTbl.Drop = (SelfTbl.LaseDist or 0) * math.tan(math.rad(-TrueSuperElevation)) -- Compute vector offset to account for drop
-			SelfTbl.TravelTime = SelfTbl.LaseDist ~= 0 and TurretComputer.Outputs["Flight Time"].Value or 0
+		if self:GetEnableTimeFuse() and IsValid(Primary) then
+			local MuzzleVel = Primary.BulletData.MuzzleVel or 0
+			local RadarTime = MuzzleVel > 0 and (self.Baseplate:GetPos():Distance(SelfTbl.SelectedTargetPos) / 39.37 / MuzzleVel) or 0
+			local FuzeTime = RadarTime * 1.27
+			for Weapon in pairs(SelfTbl.FireGroups[1]) do
+				if IsValid(Weapon) then Weapon:TriggerInput("Fuze", FuzeTime) end
+			end
 		end
-		local AntiDrop = Vector(0, 0, SelfTbl.Drop or 0)
-		local AntiDrift = -self.Baseplate:GetVelocity() * (SelfTbl.TravelTime or 0)
 
 		for Turret, _ in pairs(Turrets) do
 			if IsValid(Turret) then
 				if Turret == BreechReference and ShouldLevel then Turret:InputDirection(ReloadAngle)
 				elseif BreechReference and Turret == BreechReference:GetParent() and ShouldLevel and ReloadAngleHorizontal ~= 0 then Turret:InputDirection(ReloadAngleHorizontal)
 				else Turret:InputDirection(HitPos + AntiDrop + AntiDrift) end
-
-				if Turret == SelfTbl.RadarVertical and SelfTbl.SelectedTargetID then Turret:InputDirection(SelfTbl.SelectedTargetPos) end
 			end
 		end
 	end

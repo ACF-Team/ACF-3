@@ -265,6 +265,14 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function(CLASS, 
 			if Bullet.Detonated then return end	-- Prevents GLATGM spawned HEAT projectiles from detonating twice, or for that matter this running twice at all
 			Bullet.Detonated = true
 
+			-- Externally built bullets (SWEPs, addons) only supply the jet velocity range, so recover the average from it.
+			if not Bullet.JetAvgVel then
+				local MinVel = Bullet.JetMinVel
+				local MaxVel = Bullet.JetMaxVel
+
+				Bullet.JetAvgVel = ((MinVel * MinVel + MinVel * MaxVel + MaxVel * MaxVel) / 3) ^ 0.5
+			end
+
 			local Filler    = Bullet.BoomFillerMass
 			local Fragments = Bullet.CasingMass
 			local DmgInfo   = Objects.DamageInfo(Bullet.Owner, Bullet.Gun)

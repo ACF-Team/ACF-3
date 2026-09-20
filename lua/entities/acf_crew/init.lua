@@ -783,15 +783,15 @@ do
 		local Contraption = self:CFW_GetContraption()
 		if not Contraption then return end
 		local Crews = Contraption and Contraption.Crews
-		local Alive = 0
+		local Alive, Dead = 0, 0
 		if Crews then
 			for crew, _ in pairs(Crews) do
-				if crew.IsAlive then Alive = Alive + 1 end
+				if crew.IsAlive then Alive = Alive + 1 else Dead = Dead + 1 end
 			end
 		end
 
-		-- If all crew die, destroy the vehicle, same as an aircraft on a fatal impact.
-		if Alive <= 0 then
+		-- Destroy the vehicle once all crew are dead, or after enough are dead at once to discourage spamming disposable crew.
+		if Alive <= 0 or Dead >= ACF.CrewFatalDeathCount then
 			local Baseplate = Contraption.ACF_Baseplate
 			local Position = IsValid(Baseplate) and Baseplate:GetPos() or self:GetPos()
 
