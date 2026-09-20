@@ -245,7 +245,7 @@ do	-- Spawn and Update funcs
 
 		self.ScaledArmor  = (Turret.Armor.Min * (1 - SizePerc)) + (Turret.Armor.Max * SizePerc)
 
-		self:SetNWString("WireName", "ACF " .. self.Name)
+		self:ACF_SetEntityName("ACF " .. self.Name)
 		self:SetNWString("Class", self.Class)
 
 		WireLib.TriggerOutput(self, "Mass", 0)

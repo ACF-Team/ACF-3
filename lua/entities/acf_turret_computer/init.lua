@@ -60,7 +60,7 @@ do	-- Spawn and Update funcs
 
 		self.NextRun      = Clock.CurTime
 
-		self:SetNWString("WireName", "ACF " .. self.Name)
+		self:ACF_SetEntityName("ACF " .. self.Name)
 		self:SetNWString("Class", self.Class)
 
 		-- ACF.Activate(self, true) is invoked automatically by ACF_UpdateEntityData after this.

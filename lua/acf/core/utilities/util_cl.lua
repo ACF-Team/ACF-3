@@ -193,11 +193,10 @@ do -- Default gearbox menus
 
 			local ValuesData = Values[ClassID]
 
-			-- Collect the per-gear sliders into the entity's "Gears" array field.
 			local GearValues = {}
 			local function PushGears()
 				local Arr = {}
-				for I = 1, Gears do Arr[I] = GearValues[I] or 0 end
+				for I = 1, Gears do Arr[I] = ACF.ConvertGearRatio(GearValues[I] or 0, UseLegacyRatios) end
 				Ctx:Set("Gears", Arr)
 			end
 
@@ -234,11 +233,11 @@ do -- Default gearbox menus
 				Value = math.Round(Value, 2)
 				self:SetValue(Value)
 				ValuesData.FinalDrive = Value
-				Ctx:Set("FinalDrive", Value)
+				Ctx:Set("FinalDrive", ACF.ConvertGearRatio(Value, UseLegacyRatios))
 			end
 
 			PushGears()
-			Ctx:Set("FinalDrive", ValuesData.FinalDrive)
+			Ctx:Set("FinalDrive", ACF.ConvertGearRatio(ValuesData.FinalDrive, UseLegacyRatios))
 		end
 	end
 
@@ -284,9 +283,10 @@ do -- Default gearbox menus
 
 			local ValuesData = Values[ClassID]
 
-			-- CVT gear 1 is always 1:1; gear 2 is the user-set ratio.
+			-- CVT gear 1 is always 1:1; gear 2 is the user-set ratio. Gear 2 is converted from legacy-mode
+			-- input into the canonical ratio the entity stores (gear 1 is 1:1 in either convention).
 			local function PushGears()
-				Ctx:Set("Gears", { 1, ValuesData.Gear2 or -1 })
+				Ctx:Set("Gears", { 1, ACF.ConvertGearRatio(ValuesData.Gear2 or -1, UseLegacyRatios) })
 			end
 
 			for _, GearData in ipairs(CVTData) do
@@ -306,8 +306,10 @@ do -- Default gearbox menus
 
 					if Variable == "Gear2" then
 						PushGears()
+					elseif Variable == "FinalDrive" then
+						Ctx:Set(Variable, ACF.ConvertGearRatio(Value, UseLegacyRatios))
 					else
-						Ctx:Set(Variable, Value) -- MinRPM / MaxRPM / FinalDrive are entity fields
+						Ctx:Set(Variable, Value) -- MinRPM / MaxRPM are RPM fields, not ratios
 					end
 				end
 			end
@@ -315,7 +317,7 @@ do -- Default gearbox menus
 			PushGears()
 			Ctx:Set("MinRPM", ValuesData.MinRPM)
 			Ctx:Set("MaxRPM", ValuesData.MaxRPM)
-			Ctx:Set("FinalDrive", ValuesData.FinalDrive)
+			Ctx:Set("FinalDrive", ACF.ConvertGearRatio(ValuesData.FinalDrive, UseLegacyRatios))
 		end
 	end
 
@@ -379,11 +381,9 @@ do -- Default gearbox menus
 			local ShiftValues = {}
 			local ShiftWangs  = {}
 
-			-- Gears -> entity "Gears" array; upshift speeds -> "ShiftPoints" array (internal units:
-			-- the display speed * the selected unit multiplier).
 			local function PushGears()
 				local Arr = {}
-				for I = 1, Gears do Arr[I] = GearValues[I] or 0 end
+				for I = 1, Gears do Arr[I] = ACF.ConvertGearRatio(GearValues[I] or 0, UseLegacyRatios) end
 				Ctx:Set("Gears", Arr)
 			end
 
@@ -471,7 +471,7 @@ do -- Default gearbox menus
 					Value = math.Round(Value, GearData.Decimals)
 					self:SetValue(Value)
 					ValuesData[Variable] = Value
-					Ctx:Set(Variable, Value)
+					Ctx:Set(Variable, ACF.ConvertGearRatio(Value, UseLegacyRatios))
 				end
 			end
 
@@ -527,8 +527,8 @@ do -- Default gearbox menus
 
 			PushGears()
 			PushShifts()
-			Ctx:Set("Reverse", ValuesData.Reverse or -1)
-			Ctx:Set("FinalDrive", ValuesData.FinalDrive or 1)
+			Ctx:Set("Reverse", ACF.ConvertGearRatio(ValuesData.Reverse or -1, UseLegacyRatios))
+			Ctx:Set("FinalDrive", ACF.ConvertGearRatio(ValuesData.FinalDrive or 1, UseLegacyRatios))
 		end
 	end
 end
