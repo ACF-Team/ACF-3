@@ -617,6 +617,22 @@ local function AddCrateInformation(Base, ToolData)
 	hook.Run("ACF_OnCreateCrateInformation", Base, Crate, ToolData, Ammo, BulletData)
 end
 
+-- CLASS:GetKineticEnergyData lets each ammo type say what mass/speed its energy is actually carried by
+-- (e.g. HEAT's jet instead of the shell), so this doesn't need per-type duplication in the menu.
+local function AddKineticEnergyInformation(Base)
+	local KineticLabel = Base:AddLabel()
+	ACF.AmmoMenu.Reactive(KineticLabel, function()
+		local Text = language.GetPhrase("acf.menu.ammo.kinetic_energy_stats")
+		local Mass, Vel = Ammo:GetKineticEnergyData(BulletData)
+
+		-- Stored in m/s, but ACF.Kinetic expects in/s and converts back internally
+		local Speed   = Vel * ACF.MeterToInch
+		local Kinetic = math.Round(ACF.Kinetic(Speed, Mass).Kinetic)
+
+		KineticLabel:SetText(Text:format(Kinetic))
+	end)
+end
+
 local function AddInformation(Base, ToolData)
 	if Ammo.PreCreateAmmoInformation then
 		local Result = Ammo:PreCreateAmmoInformation(Base, ToolData, BulletData)
@@ -631,6 +647,8 @@ local function AddInformation(Base, ToolData)
 	if Ammo.OnCreateAmmoInformation then
 		Ammo:OnCreateAmmoInformation(Base, ToolData, BulletData)
 	end
+
+	AddKineticEnergyInformation(Base)
 
 	hook.Run("ACF_OnCreateAmmoInformation", Base, ToolData, Ammo, BulletData)
 end

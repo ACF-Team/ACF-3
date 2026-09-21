@@ -57,6 +57,11 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function(CLASS, 
 		return Ret
 	end
 
+	-- HEAT deals its damage through the shaped charge jet, not the shell itself
+	function CLASS:GetKineticEnergyData(Bullet)
+		return Bullet.JetMass, Bullet.JetAvgVel
+	end
+
 	function CLASS:GetDisplayData(Data)
 		local FragInfo   = ACF.Damage.getFragmentInfo(Data.BoomFillerMass, Data.CasingMass) -- Single source of truth shared with the damage code
 		local Display    = {
