@@ -145,19 +145,25 @@ Classes.DefineClass("ACF.Ammunition.HE", "ACF.Ammunition.APHE", function(CLASS, 
 			end)
 		end
 
-		-- Ammo menu graph: fragment penetration over distance from the detonation.
+		-- Reference target area (cm2) for a 96x192x1 baseplate, used to plot blast penetration
+		local BlastRefArea = 111106.71786837
+
+		-- Ammo menu graph: fragment and blast penetration over distance from the detonation.
 		function CLASS:PlotAmmoGraph(Panel, _, BulletData)
 			local Damage     = ACF.Damage
-			local PenText    = language.GetPhrase("acf.menu.ammo.penetration")
+			local FragText   = language.GetPhrase("acf.menu.ammo.penetration") .. " (Frag)"
+			local BlastText  = language.GetPhrase("acf.menu.ammo.penetration") .. " (Blast)"
 			-- Blast radius is display data, so it lives on GUIData rather than the bullet
 			local BlastRadius = self.GUIData.BlastRadius -- Fragments reach zero velocity here; distance shares the same units
 			local FillerMass  = BulletData.FillerMass
 			local FragMass    = BulletData.ProjMass - FillerMass
 
-			local Radius = math.max(BlastRadius, 1)
-			local MaxPen = math.max(Damage.getFragmentPenetration(FillerMass, FragMass, BlastRadius, 0), 1)
+			local Radius   = math.max(BlastRadius, 1)
+			local FragPen  = Damage.getFragmentPenetration(FillerMass, FragMass, BlastRadius, 0)
+			local BlastPen = Damage.getBlastPenetrationAtDistance(FillerMass, BlastRefArea, 0)
+			local MaxPen   = math.max(FragPen, BlastPen, 1)
 
-			Panel:SetYLabel(PenText)
+			Panel:SetYLabel(language.GetPhrase("acf.menu.ammo.penetration"))
 			Panel:SetXLabel("#acf.menu.ammo.distance")
 
 			Panel:SetXRange(0, Radius)
@@ -166,8 +172,12 @@ Classes.DefineClass("ACF.Ammunition.HE", "ACF.Ammunition.APHE", function(CLASS, 
 			Panel:SetXSpacing(Radius / 10)
 			Panel:SetYSpacing(MaxPen * 1.1 / 10)
 
-			Panel:PlotFunction(PenText, ACF.GraphColors.RedAlt, function(X)
+			Panel:PlotFunction(FragText, ACF.GraphColors.RedAlt, function(X)
 				return Damage.getFragmentPenetration(FillerMass, FragMass, BlastRadius, X)
+			end)
+
+			Panel:PlotFunction(BlastText, ACF.GraphColors.Red, function(X)
+				return Damage.getBlastPenetrationAtDistance(FillerMass, BlastRefArea, X)
 			end)
 		end
 	end
