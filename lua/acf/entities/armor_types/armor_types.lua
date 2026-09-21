@@ -245,7 +245,7 @@ function Armor:OnLoaded()
     self.ShortName   = "Light ERA"
     self.Description = "Explosive Reactive Armor. Effective primarily against shaped charges. Will explode when hit with enough energy."
     self.Density     = 5000 -- * https://below-the-turret-ring.blogspot.com/2016/04/explosive-reactive-armor-some-history.html
-    self.CostMul     = 39.7
+    self.CostMul     = 20
     self.HealthMul   = 0.23
     self.KineticMul  = 0.3
     self.ChemicalMul = 2.0
