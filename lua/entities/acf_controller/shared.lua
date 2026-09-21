@@ -46,7 +46,7 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "Entity", "Gun2", { KeyName = "gun2", Edit = { type = "Entity", order = 501, category = "Weapon Settings", tooltip = "Secondary weapon (auto-detected if unset)" } } )
 	self:NetworkVar( "Entity", "Gun3", { KeyName = "gun3", Edit = { type = "Entity", order = 502, category = "Weapon Settings", tooltip = "Tertiary weapon, e.g. a rack (auto-detected if unset)" } } )
 	self:NetworkVar( "Bool", "LockWeaponSlots", { KeyName = "lockweaponslots", Edit = { type = "Bool", order = 503, category = "Weapon Settings", tooltip = "Locks Gun1/2/3 as set above, disabling auto-detection of newly linked weapons" } } )
-	self:NetworkVar( "Bool", "EnableFCS", { KeyName = "enablefcs", Edit = { type = "Bool", order = 504, category = "Weapon Settings", tooltip = "Enables lead calculation, computed onboard from muzzle velocity" } } )
+	self:NetworkVar( "Bool", "EnableFCS", { KeyName = "enablefcs", Edit = { type = "Bool", order = 504, category = "Weapon Settings", tooltip = "Enables drop and drift compensation." } } )
 	self:NetworkVar( "Bool", "EnableTimeFuse", { KeyName = "enabletimefuse", Edit = { type = "Bool", order = 505, category = "Weapon Settings", tooltip = "Sets the primary weapon's Fuze wire input to the FCS's computed travel time" } } )
 
 	self:NetworkVar( "Int", "HUDType", { KeyName = "hudtype", Edit = { type = "Combo", order = 400, category = "HUD Settings", values = {Minimal = 0, Sosna = 1, Leopard = 2}, tooltip = "HUD style" } } )
