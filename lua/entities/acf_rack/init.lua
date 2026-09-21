@@ -36,8 +36,9 @@ local function GetMissileClass(ID)
 	end
 end
 
-local function RackShortID(Class)
-	return Classes.GetTypeName(Class):match("[^.]+$")
+local function ShortName(Class, Prefix)
+	local Name = Classes.GetTypeName(Class):gsub("^" .. Prefix, "")
+	return Name
 end
 
 -- Force unregisters an entity from the Count/Limit system in Sandbox
@@ -250,7 +251,7 @@ do -- Spawning and Updating --------------------
 		Entity:PhysicsInit(SOLID_VPHYSICS)
 		Entity:SetMoveType(MOVETYPE_VPHYSICS)
 
-		local RackID = RackShortID(Rack)
+		local RackID = ShortName(Rack, "ACF%.Racks%.")
 
 		Entity.Name           = Rack.Name
 		Entity.ShortName      = RackID
