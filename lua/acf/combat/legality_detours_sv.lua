@@ -253,6 +253,25 @@ local function FreezeDetours()
     end
 end
 
+-- TARGET  : propDraw and equiv. NoDraw setters
+-- METHODS : Expression 2, Starfall (Entity binding)
+-- ON CALL : If target's contraption is an ACF contraption, disable the contraption and block the call.
+-- Hiding a contraption's props mid-combat has no legitimate building use.
+local function PropDrawDetours()
+    do
+        local Func Func = Detours.Expression2("e:propDraw(n)", function(Scope, Args, ...)
+            if Args[2] == 0 and not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Args[1], "e:propDraw(n)") then return end
+            return Func(Scope, Args, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.Starfall("instance.Types.Entity.Methods.setNoDraw", function(Instance, Ent, Draw, ...)
+            if Draw and not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:setNoDraw(b)") then return end
+            return Func(Instance, Ent, Draw, ...)
+        end)
+    end
+end
+
 -- TARGET  : primitiveEdit (primitive addon)
 -- METHODS : Expression 2, Starfall (Entity binding)
 -- ON CALL : If target's contraption is an ACF contraption, disable the contraption and block the call.
@@ -996,6 +1015,7 @@ local function TriggerDetourRebuild()
 
     FreezeDetours()
     UseDetours()
+    PropDrawDetours()
     PrimitiveEditDetours()
 
     AddAngleVelocityDetours()
