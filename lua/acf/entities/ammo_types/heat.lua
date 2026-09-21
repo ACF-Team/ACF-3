@@ -12,10 +12,8 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function(CLASS, 
 	CLASS.Description = "#acf.descs.ammo.heat"
 	CLASS.IsChemical  = true
 	CLASS.Blacklist = {
-		["ACF.Guns.Autocannon"] = true,
 		["ACF.Guns.Machinegun"] = true,
 		["ACF.Guns.SmokeLauncher"] = true,
-		["ACF.Guns.LightAutocannon"] = true,
 		["ACF.Guns.RotaryAutocannon"] = true,
 	}
 
