@@ -34,7 +34,7 @@ ACF.Classes.DefineClass("ACF.Guns.Autocannon", "ACF.Guns.BaseScalableGun", funct
 	}
 	CLASS.LimitConVar 		= {
 		Name = "_acf_autocannon",
-		Amount = 4,
+		Amount = 2,
 		Text = "Maximum amount of ACF auto cannons a player can create."
 	}
 	CLASS.CostScalar		= 0.75
