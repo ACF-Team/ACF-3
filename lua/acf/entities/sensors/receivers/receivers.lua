@@ -85,13 +85,15 @@ do -- Radar Receiver
 		local ReceiverOrigin = Receiver:LocalToWorld(Receiver.Origin)
 
 		for k in pairs(ACF.ActiveRadars) do -- Radar entities
-			if k.EntType ~= "Targeting Radar" then continue end
+			if not k.DetectContraptions then continue end -- Only contraption-detecting radars should trip receivers
+
 			local RadarOrigin = k:LocalToWorld(k.Origin)
 
-			if k.Range then -- Spherical
-				if RadarOrigin:DistToSqr(ReceiverOrigin) <= (k.Range ^ 2) then RadarSource[k] = true end
-			else -- Directional
-				if Countermeasures.ConeContainsPos(RadarOrigin, k:GetForward(), k.ConeDegs, ReceiverOrigin) then RadarSource[k] = true end
+			if RadarOrigin:DistToSqr(ReceiverOrigin) > (k.Range ^ 2) then continue end
+
+			-- Only check against view cone if the radar has one
+			if not k.ConeDegs or Countermeasures.ConeContainsPos(RadarOrigin, k:GetForward(), k.ConeDegs, ReceiverOrigin) then
+				RadarSource[k] = true
 			end
 		end
 
