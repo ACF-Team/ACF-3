@@ -274,7 +274,7 @@ function Armor:OnLoaded()
     self.Color       = Color(127, 111, 63)
 
     self.IsExplosive        = true
-    self.ExplosiveThreshold = 500
+    self.ExplosiveThreshold = 200
     self.ExplosiveFiller    = 0.01
 end
 
