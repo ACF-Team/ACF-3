@@ -578,32 +578,10 @@ function ENT:ACF_OnRepaired()
 	self.PeakTorque = self.PeakTorqueHeld
 end
 
-function ENT:UpdateSound(SelfTbl)
+function ENT:UpdateSoundBank(SelfTbl)
 	SelfTbl = SelfTbl or self:GetTable()
 
 	local SoundBanks = SelfTbl.SoundBanks
-
-	-- TODO: Remove this if it works after the merge and nothing that required this was broken, since we're doing it elsewhere instead.
-	-- -- Populate a placeholder SoundTable if none is found for the engine
-	-- if table.IsEmpty(SoundBanks) then
-	-- 	if table.IsEmpty(SelfTbl.DefaultSoundBanks) then
-	-- 		local Idle = SelfTbl.IdleRPM
-	-- 		local Redline = SelfTbl.LimitRPM
-	-- 		SoundBanks = {{	Sounds = {{
-	-- 						RPM = (Idle + Redline) / 2,
-	-- 						Path = SelfTbl.DefaultSound,
-	-- 						Pitch = SelfTbl.SoundPitch or 100,
-	-- 						Volume = SelfTbl.SoundVolume or 1}
-	-- 					}
-	-- 					}}
-	-- 		SelfTbl.SoundBanks = SoundBanks
-	-- 	else
-	-- 		SelfTbl.SoundBanks = SelfTbl.DefaultSoundBanks
-	-- 	end
-	-- 	self:UpdateOverlay() -- Update the overlay too!
-	-- 	return
-	-- end
-
 	local SoundBankCount, SoundCount = GetSoundCount(SelfTbl)
 
 	-- Exit early if only one soundbank was found and has an empty soundpath
