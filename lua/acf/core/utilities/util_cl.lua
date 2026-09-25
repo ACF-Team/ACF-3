@@ -538,6 +538,15 @@ do -- Default turret menus
 	local GraphBlue	= Color(65, 65, 200)
 	local GraphRed	= Color(200, 65, 65)
 
+	-- SetValue skips OnValueChanged on an unchanged value, which would leave the context holding a stale one
+	local function RestoreSlider(Slider, Value)
+		local Old = Slider:GetValue()
+
+		Slider:SetValue(Value)
+
+		if Slider:GetValue() == Old then Slider:OnValueChanged(Old) end
+	end
+
 	do	-- Turret ring
 		local Orange	= Color(255, 127, 0)
 		local Red		= Color(255, 0, 0)
@@ -593,8 +602,9 @@ do -- Default turret menus
 			local MinDegText	= language.GetPhrase("acf.menu.turrets.arc_min")
 			local MaxDegText	= language.GetPhrase("acf.menu.turrets.arc_max")
 			local TotalArcText	= language.GetPhrase("acf.menu.turrets.arc_total")
-			local MinDeg		= ArcSettings:AddSlider("#acf.menu.turrets.min_degrees", -180, 0, 1)
-			local MaxDeg		= ArcSettings:AddSlider("#acf.menu.turrets.max_degrees", 0, 180, 1)
+			local ArcLimit		= Data.ID == "Turret-V" and 90 or 180 -- SetMin/SetMax would fire OnValueChanged, so size the sliders up front
+			local MinDeg		= ArcSettings:AddSlider("#acf.menu.turrets.min_degrees", -ArcLimit, 0, 1)
+			local MaxDeg		= ArcSettings:AddSlider("#acf.menu.turrets.max_degrees", 0, ArcLimit, 1)
 
 			local ArcDraw = vgui.Create("Panel", ArcSettings)
 			ArcDraw:SetSize(64, 64)
@@ -648,29 +658,23 @@ do -- Default turret menus
 				end
 			end
 
+			-- Saved under new keys since the old ones hold a Turret-V MaxDeg of 0 written by the SetMax bug
 			function MinDeg:OnValueChanged(Value)
-				local N = math.Clamp(math.Round(Value, 1), -180, 0)
+				local N = math.Clamp(math.Round(Value, 1), -ArcLimit, 0)
 				self:SetValue(N)
 				Ctx:Set("MinDeg", N)
-				SaveSetting("MinDeg", N)
+				SaveSetting("ArcMin", N)
 			end
 
 			function MaxDeg:OnValueChanged(Value)
-				local N = math.Clamp(math.Round(Value, 1), 0, 180)
+				local N = math.Clamp(math.Round(Value, 1), 0, ArcLimit)
 				self:SetValue(N)
 				Ctx:Set("MaxDeg", N)
-				SaveSetting("MaxDeg", N)
+				SaveSetting("ArcMax", N)
 			end
 
-			local DefMinDeg, DefMaxDeg = -180, 180
-			if Data.ID == "Turret-V" then
-				MinDeg:SetMin(-90)
-				MaxDeg:SetMax(90)
-				DefMinDeg, DefMaxDeg = -90, 90
-			end
-
-			MinDeg:SetValue(LoadSetting("MinDeg", DefMinDeg))
-			MaxDeg:SetValue(LoadSetting("MaxDeg", DefMaxDeg))
+			RestoreSlider(MinDeg, LoadSetting("ArcMin", -ArcLimit))
+			RestoreSlider(MaxDeg, LoadSetting("ArcMax", ArcLimit))
 
 			local EstMass	= Menu:AddSlider("#acf.menu.turrets.estimated_mass", 0, 100000, 0)
 			local EstDist	= Menu:AddSlider("#acf.menu.turrets.mass_center_distance", 0, 2, 2)
@@ -783,10 +787,10 @@ do -- Default turret menus
 			local SavedRing  = math.Clamp(LoadSetting("RingSize", Data.Size.Base), Data.Size.Min, Data.Size.Max)
 			local SavedSpeed = LoadSetting("MaxSpeed", 0)
 
-			RingSize:SetValue(SavedRing)
+			RestoreSlider(RingSize, SavedRing)
 			EstMass:SetValue(0)
 			EstDist:SetValue(0)
-			MaxSpeed:SetValue(SavedSpeed)
+			RestoreSlider(MaxSpeed, SavedSpeed)
 
 			TurretData.Ready	= true
 			HandCrankLbl:UpdateSim()
@@ -954,7 +958,7 @@ do -- Default turret menus
 				Ctx:Set("CompSize", N)
 				SaveSetting("CompSize", N)
 			end
-			CompSize:SetValue(LoadSetting("CompSize", 1))
+			RestoreSlider(CompSize, LoadSetting("CompSize", 1))
 
 			function TeethAmt:OnValueChanged(Value)
 				local N = math.Clamp(math.Round(Value), Data.Teeth.Min, Data.Teeth.Max)
@@ -968,7 +972,7 @@ do -- Default turret menus
 				Ctx:Set("Teeth", N)
 				SaveSetting("Teeth", N)
 			end
-			TeethAmt:SetValue(LoadSetting("Teeth", Data.Teeth.Base))
+			RestoreSlider(TeethAmt, LoadSetting("Teeth", Data.Teeth.Base))
 
 			TurretSize.OnValueChanged = function(_, Value)
 				TurretData.Size			= Value
