@@ -498,6 +498,8 @@ end
 -- Intersections: unsorted list from RayIntersectMesh, sorted here. ClosestOnly returns the first hit
 -- or nil. Otherwise returns the full front-to-back list of
 -- { Entity, ConvexID, GeoThick, ArmorType, HitAngle, EntryPos, ExitPos, EntryNormal }.
+local MinGeoThick = 1 -- minimum thickness to be considered a hit
+
 function ACF.ResolveConvexStack(Intersections, Direction, ClosestOnly)
     table.sort(Intersections, SortIntersections)
 
@@ -530,6 +532,8 @@ function ACF.ResolveConvexStack(Intersections, Direction, ClosestOnly)
         if Right.T <= Left.T then continue end
 
         local Hit = BuildGapHit(Left, Right, Owner, Direction)
+        if Hit.GeoThick < MinGeoThick then continue end
+
         if ClosestOnly then return Hit end
         Hits[#Hits + 1] = Hit
     end
