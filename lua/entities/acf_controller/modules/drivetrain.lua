@@ -304,7 +304,16 @@ do
 			SetBoth(SelfTbl, "Gear", TransferGear)
 
 			-- Setang steering stuff
-			local TURN_ANGLE = A and BrakeStrength or D and -BrakeStrength or 0
+			local SteerLow, SteerTop = self:GetSteerLow(), self:GetSteerTop()
+			local SteerStrength = BrakeStrength
+			if SteerLow ~= 0 or SteerTop ~= 0 then
+				SteerStrength = SteerLow
+				if MinSpeed ~= MaxSpeed then
+					SteerStrength = math.Remap(Speed, MinSpeed, MaxSpeed, SteerLow, SteerTop)
+				end
+			end
+
+			local TURN_ANGLE = A and SteerStrength or D and -SteerStrength or 0
 			local TURN_RATE = self:GetSteerRate() or 0
 			local SteerPercents = {self:GetSteerPercent1(), self:GetSteerPercent2(), self:GetSteerPercent3(), self:GetSteerPercent4()}
 			for Index, SteerPlate in ipairs(SelfTbl.SteerPlatesSorted) do
