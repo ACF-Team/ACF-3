@@ -197,6 +197,14 @@ function ENT:Think()
 	return true
 end
 
+function ENT:OnRemove(IsFullUpdate)
+	if IsFullUpdate then return end
+
+	for Gearbox in pairs(self.Gearboxes) do
+		self:Unlink(Gearbox)
+	end
+end
+
 function ENT:ACF_UpdateOverlayState(State)
 	State:AddNumber("Scale", self:ACF_GetUserVar("WaterjetSize"))
 	State:AddNumber("Pitch", self.Pitch)
