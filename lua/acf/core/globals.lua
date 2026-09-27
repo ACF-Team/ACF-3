@@ -115,7 +115,6 @@ do -- ACF global vars
 	ACF.AmmoCrates           = ACF.AmmoCrates or {}
 	ACF.FuelTanks            = ACF.FuelTanks or {}
 	ACF.ActiveCrews          = ACF.ActiveCrews or {}
-	ACF.Repositories         = ACF.Repositories or {}
 	ACF.ClientData           = ACF.ClientData or {}
 	ACF.ServerData           = ACF.ServerData or {}
 	ACF.ModelData            = ACF.ModelData or { Models = {} }
@@ -151,12 +150,9 @@ do -- ACF global vars
 	ACF.FuelRate = 15 -- Multiplier for fuel usage, 1.0 is approx real world
 	ACF.DefineSetting("FuelFactor",           1,      "Fuel rate multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("FuelRate", 0.01, 2, 2))
 
-	ACF.MinimumArmor         = 0.01     -- Minimum possible armor that can be given to an entity
-	ACF.MaximumArmor         = 5000  -- Maximum possible armor that can be given to an entity
 	ACF.MaxExplosiveConvexVolume = 10000 -- Maximum convex volume (in^3) that can be assigned an explosive armor material
 	ACF.MinimumMass          = 0.1   -- The minimum amount of mass that can be set on an entity
-	ACF.MaximumMass          = 50000 -- The maximum amount of mass that can be set on an entity
-	ACF.DefineSetting("MaxThickness",         300,    nil, ACF.FloatDataCallback(ACF.MinimumArmor, ACF.MaximumArmor, 0))
+	ACF.DefineSetting("MaxThickness",         300,    nil, ACF.FloatDataCallback(0.01, 5000, 0))
 
 	ACF.DefineSetting("SmokeWind",            20,     "Wind smoke multiplier has been set to a factor of %.2f.", ACF.FloatDataCallback(0, 1000, 2))
 
@@ -189,7 +185,6 @@ do -- ACF global vars
 	ACF.DefineSetting("KillLogMaxSessions",   20,    "Kill log max retained sessions has been set to %s.", ACF.FloatDataCallback(1, 500, 0))
 	ACF.DefineSetting("KillLogQueryCooldown", 10,    "Kill log query cooldown has been set to %s seconds.", ACF.FloatDataCallback(0, 120, 0))
 
-	ACF.Year                 = 1945
 	ACF.IllegalDisableTime   = 30 -- Time in seconds for an entity to be disabled when it fails ACF.IsLegal
 	ACF.Volume               = 1 -- Global volume for ACF sounds
 	ACF.MobilityLinkDistance = 650 -- Maximum distance, in inches, at which mobility-related components will remain linked with each other
@@ -212,7 +207,6 @@ do -- ACF global vars
 		return ACF.ColorArray[(Index % ColorArraySize) + 1]
 	end
 
-	ACF.NetMessageSizeLimit  = 13	-- Maximum size of a net message in bytes (IF SET TOO LOW, CERTAIN MODELS MAY NOT BE NETWORKED PROPERLY)
 	ACF.FilterMakeSpherical  = true -- Whether Make Spherical entities should be filtered out of ballistics traces. Not intended to be disabled in actual gameplay
 
 	-- Unit Conversion
@@ -279,12 +273,8 @@ do -- ACF global vars
 		sent_prop2mesh = true,
 	}
 
-	ACF.AmbientTemperature   = 288.15 -- Ambient temperature in kelvin (15°C @ sea level) from google search
-
 	-- Ammo
-	ACF.AmmoPadding          = 0.3 -- Ratio of wasted space to projectile case diameter
 	ACF.AmmoCaseScale        = 1 -- Fallback max case/projectile diameter ratio when a Round omits CaseScale
-	ACF.AmmoMinSize          = 6 -- Defines the shortest possible length of ammo crates for all their axises, in gmu
 	ACF.AmmoMaxLength        = 192 -- Defines the highest possible length of ammo crates for the X axis (length), in gmu
 	ACF.AmmoMaxWidth         = 96 -- Defines the highest possible width of ammo crates for the Y and Z axes (width/height), in gmu
 	ACF.AmmoSupplyColor      = Color(255, 255, 0, 10) -- The color to use for the ammo supply effect
@@ -307,7 +297,6 @@ do -- ACF global vars
 	ACF.MaxChargeHeadLen     = 1.2     -- Maximum shaped charge head length (in charge diameters), lengths above will incur diminishing returns
 	ACF.HEATPenMul           = 0.85 * 8    -- Linear jet penetration multiplier
 	ACF.HEATMinPenVel        = 1000    -- m/s, minimum velocity of the copper jet that contributes to penetration
-	ACF.HEATSpallingArc      = 0.5     -- Cossine of the HEAT spalling angle
 	ACF.HEATBoomConvert      = 1 / 3   -- Percentage of filler that creates HE damage at detonation
 	ACF.HEATStandOffMul      = 0.11 -- Percentage of standoff to use in penetration calculation (Original was too hig)
 	ACF.HEATBreakUpMul       = 0.15 -- Percentage of breakup time to use in penetration calculation (Original was too high)
@@ -375,7 +364,6 @@ do -- ACF global vars
 	ACF.LiIonED            = 0.458 -- li-ion energy density: kw hours / liter
 	ACF.SupplyDistance     = 300 -- Distance in which supply units distribute mass to containers.
 	ACF.SupplyMassRate     = 0.007017 -- kg per second per cubic inch of supply unit volume (no distance attenuation)
-	ACF.RefuelSpeed        = 700 -- Refueling speed for fuel tanks
 
 	-- Crew
 	-- Total efficiency = clamp(CommanderEff * CommanderCoef + SelfEff * SelfCoef, FallBackCoef, 1)
