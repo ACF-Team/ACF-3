@@ -237,12 +237,12 @@ do -- Cost limit enforcement
 	local CostLimitSettings = { ["ACF.Baseplates.GroundVehicle"] = "CostLimitGround", ["ACF.Baseplates.Aircraft"] = "CostLimitAir" }
 	local AircraftArmorTypes = { Wing = true, Default = true }
 	local AircraftVolumeType = "Wing"
-	CostSystem.AircraftVolumeLimit = 32000 -- Sum of aircraft aluminum convex volumes, in^3
 
 	-- Sums an aircraft's aircraft aluminum convex volume, and reports whether any convex uses a disallowed material
 	function CostSystem.GetAircraftArmorInfo(Contraption)
 		local Volume = 0
 		local BadMaterial = false
+		local VolumeLimit = ACF.MaxArmorVolumeAir
 
 		for Entity in pairs(Contraption.ents) do
 			if not IsValid(Entity) then continue end
@@ -259,7 +259,7 @@ do -- Cost limit enforcement
 			end
 		end
 
-		Contraption.ACF_ExceedsAircraftLimits = BadMaterial or Volume >= CostSystem.AircraftVolumeLimit
+		Contraption.ACF_ExceedsAircraftLimits = BadMaterial or (VolumeLimit > 0 and Volume >= VolumeLimit)
 
 		return Volume, BadMaterial
 	end
@@ -276,22 +276,22 @@ do -- Cost limit enforcement
 		local Setting = TypeID and CostLimitSettings[TypeID]
 		if not Setting then return end
 
-		if TypeID == "ACF.Baseplates.Aircraft" then
+		local CostLimit = ACF[Setting]
+		if CostLimit == 0 then return end
+
+		if TypeID == "ACF.Baseplates.Aircraft" and Contraption.ACF_UsedApplyForce then
 			CostSystem.GetAircraftArmorInfo(Contraption)
 
 			if Contraption.ACF_ExceedsAircraftLimits then
 				local Owner = Baseplate:CPPIGetOwner()
 				if IsValid(Owner) and Owner:IsPlayer() then
-					Notify.WarningToPlayer(Owner, "Aircraft destroyed", "Your aircraft used disallowed armor or exceeded the armor volume limit of " .. CostSystem.AircraftVolumeLimit .. " units.")
+					Notify.WarningToPlayer(Owner, "Aircraft destroyed", "Your aircraft used disallowed armor or exceeded the armor volume limit of " .. ACF.MaxArmorVolumeAir .. " units.")
 				end
 
 				ACF.DestroyContraption(Contraption, Baseplate:GetPos(), nil, 100000)
 				return
 			end
 		end
-
-		local CostLimit = ACF[Setting]
-		if CostLimit == 0 then return end
 
 		local Cost = CostSystem.CalcCostsFromContraption(Contraption)
 		if Cost <= CostLimit then return end

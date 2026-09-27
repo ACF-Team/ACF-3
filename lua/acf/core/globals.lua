@@ -127,7 +127,7 @@ do -- ACF global vars
 	ACF.DefineSetting("NameAndShame",         true,   "Console messages for failed legality checks have been %s.", ACF.BooleanDataCallback(), false)
 	ACF.DefineSetting("CostLimitGround",      500,    "Ground vehicle cost limit has been set to %s.", ACF.FloatDataCallback(0, 5000, 0), 0)
 	ACF.DefineSetting("CostLimitAir",         200,    "Aircraft cost limit has been set to %s.", ACF.FloatDataCallback(0, 2000, 0), 0)
-	ACF.DefineSetting("MaxArmorVolumeAir",    0,      "Aircraft max armor volume has been set to %s.", ACF.FloatDataCallback(0, 5000, 0), 0)
+	ACF.DefineSetting("MaxArmorVolumeAir",    32000,  "Aircraft max armor volume has been set to %s.", ACF.FloatDataCallback(0, 100000, 0), 0)
 	ACF.DefineSetting("VehicleLegalChecks",   true,   "Legality checks for vehicles has been %s.", ACF.BooleanDataCallback(), false)
 	ACF.DefineSetting("LegalityDetours",      true,   "Legality detours have been %s.", ACF.BooleanDataCallback(), false)
 
