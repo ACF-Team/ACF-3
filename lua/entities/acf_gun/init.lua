@@ -1038,7 +1038,7 @@ do -- Metamethods --------------------------------
 					local Time = IdealTime / Eff
 
 					UpdateNextFire(self, Config, Eff, Blocked)
-					ACF.PlayAutoloaderSound(self, Config, Blocked)
+					if IsValid(SelfTbl.Autoloader) then SelfTbl.Autoloader:PlayLoadSound(self, Config, Blocked) end
 
 					SelfTbl.ReloadTime = Time
 
@@ -1142,7 +1142,7 @@ do -- Metamethods --------------------------------
 					local Time = IdealTime / Eff
 
 					UpdateNextFire(self, Config, Eff, Blocked)
-					if Manual then ACF.PlayAutoloaderSound(self, Config, Blocked) end
+					if Manual and IsValid(SelfTbl.Autoloader) then SelfTbl.Autoloader:PlayLoadSound(self, Config, Blocked) end
 
 					if Manual then WireLib.TriggerOutput(self, "Mag Reload Time", Time) end
 					SelfTbl.MagReload = Time

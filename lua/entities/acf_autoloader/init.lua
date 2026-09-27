@@ -236,12 +236,12 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	return 1 * HorizontalScore * VerticalScore * AngularScore * HealthScore, Blocked, Reason
 end
 
---- Plays a weapon's autoloader sound once per reload, when loading actually begins
---- Meant to be called from the weapon's reload loop, after its UpdateLoadMod
+--- Plays the autoloader's sound once per reload, when loading actually begins
+--- Meant to be called from the linked weapon's reload loop, after its UpdateLoadMod
 --- @param Weapon entity The gun or rack being reloaded
 --- @param Config table The reload's progress timer config, nil on instant reloads
 --- @param Blocked boolean Whether the reload is currently stalled
-function ACF.PlayAutoloaderSound(Weapon, Config, Blocked)
+function ENT:PlayLoadSound(Weapon, Config, Blocked)
 	if Blocked or not Config or Config.LoadSoundPlayed then return end
 
 	Config.LoadSoundPlayed = true
@@ -249,13 +249,10 @@ function ACF.PlayAutoloaderSound(Weapon, Config, Blocked)
 	-- Crew-loaded reloads stay silent, UpdateLoadMod decides who is doing the loading
 	if not Weapon.AutoloaderFeeding then return end
 
-	local Autoloader = Weapon.Autoloader
-	if not IsValid(Autoloader) then return end
-
-	local Path = Autoloader:ACF_GetUserVar("SoundPath")
+	local Path = self:ACF_GetUserVar("SoundPath")
 	if not Path or Path == "" then return end
 
-	Sounds.SendSound(Autoloader, Path, 70, 100 * Autoloader:ACF_GetUserVar("SoundPitch"), Autoloader:ACF_GetUserVar("SoundVolume"))
+	Sounds.SendSound(self, Path, 70, 100 * self:ACF_GetUserVar("SoundPitch"), self:ACF_GetUserVar("SoundVolume"))
 end
 
 function ENT:GetCost()

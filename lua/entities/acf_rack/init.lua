@@ -883,7 +883,7 @@ do -- Loading ----------------------------------
 					Point.NextFire = Clock.CurTime + math.max(Config.Goal - Config.Progress, 0) / (Eff or 1)
 				end
 
-				ACF.PlayAutoloaderSound(self, Config, Blocked)
+				if IsValid(self.Autoloader) then self.Autoloader:PlayLoadSound(self, Config, Blocked) end
 
 				self.ReloadTime = Time
 
