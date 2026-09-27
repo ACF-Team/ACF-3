@@ -239,16 +239,15 @@ end, "Ensure all ground loaders are linked to racks and ammo crates")
 
 RegisterTest("Links", "Engines, Fuel and Gearboxes", function(Env)
     local Faults = {}
-    for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_fueltank, {"Engines"})) do table.insert(Faults, {Ent = e, Msg = "Fuel Tank needs link to Engines"}) end
-    for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_engine, {"FuelTanks"})) do table.insert(Faults, {Ent = e, Msg = "Engine needs link to Fuel or Gearbox"}) end
-    for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_engine, {"Gearboxes"})) do table.insert(Faults, {Ent = e, Msg = "Engine needs link to Fuel or Gearbox"}) end
+    for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_fueltank, {"Engines"})) do table.insert(Faults, {Ent = e, Msg = "Fuel Tank shares no parent with a compatible engine"}) end
+    for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_engine, {"FuelTanks"})) do table.insert(Faults, {Ent = e, Msg = "Engine shares no parent with a compatible fuel tank"}) end
+    for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_engine, {"Gearboxes"})) do table.insert(Faults, {Ent = e, Msg = "Engine needs link to Gearbox"}) end
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_gearbox, {"GearboxIn", "Engines"})) do table.insert(Faults, {Ent = e, Msg = "Gearbox missing Input link"}) end
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_gearbox, {"GearboxOut", "Wheels", "Effectors"})) do table.insert(Faults, {Ent = e, Msg = "Gearbox missing Output link"}) end
     return #Faults == 0, Faults
 end, function(Env)
-    LinkAll(Env, "acf_fueltank", "acf_engine")
-    LinkAll(Env, "acf_engine", "acf_gearbox")
-end, "Ensure all engines are linked to fuel tanks and gearboxes, and all gearboxes have proper input and output links")
+    LinkAll(Env, "acf_engine", "acf_gearbox") -- Fuel can't be fixed by linking; tanks must share the engine's parent
+end, "Ensure engines share a parent with compatible fuel tanks, engines are linked to gearboxes, and all gearboxes have proper input and output links")
 
 RegisterTest("Baseplate", "Orientation", function(Env)
     local Deviation = math.deg(math.acos(Env.Baseplate:GetForward():Dot(Vector(0, 1, 0))))
