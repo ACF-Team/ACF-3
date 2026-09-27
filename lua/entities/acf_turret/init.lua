@@ -329,6 +329,7 @@ do	-- Spawn and Update funcs
 		-- Whether this turret carries a weapon directly, or any sub-turret below it does
 		self.HasDirectWeapon	= false
 		self.IsWeaponized		= false
+		self.DirectWeapons		= {} -- Weapons on this turret, excluding any on sub-turrets
 
 		-- Three different mass types to track, all checked differently
 		--[[
@@ -582,6 +583,7 @@ do	-- Spawn and Update funcs
 
 		Entity.DynamicEntities	= {}
 		Entity.SubTurrets		= {}
+		Entity.DirectWeapons	= {}
 
 		local ChildList = GetFilteredChildren(Entity, {}, "acf_turret")
 
@@ -590,7 +592,10 @@ do	-- Spawn and Update funcs
 		for k in pairs(ChildList) do
 			local Class = k:GetClass()
 
-			if ACF.WeaponClasses[Class] then HasDirectWeapon = true end
+			if ACF.WeaponClasses[Class] then
+				HasDirectWeapon = true
+				Entity.DirectWeapons[k] = true
+			end
 
 			k.ACF_TurretAncestor = nil
 			if Class == "acf_turret" then

@@ -165,8 +165,42 @@ do	-- Metamethods
 			return true
 		end
 
+		local function GetDirectWeaponCost(Turret)
+			local Cost = 0
+
+			for Weapon in pairs(Turret.DirectWeapons or {}) do
+				if IsValid(Weapon) and Weapon.GetCost then Cost = Cost + Weapon:GetCost() end
+			end
+
+			return Cost
+		end
+
+		-- Remote cost scales with the weapons it lets the crew aim: the linked turrets, plus the
+		-- verticals a horizontal cascades control to. Turrets further up are excluded
 		function ENT:GetCost()
-			return self.IsRemote and 70 or 5
+			if not self.IsRemote then return 5 end
+
+			local Crew    = self.Crew
+			local Turrets = IsValid(Crew) and Crew.TargetsByType and Crew.TargetsByType.acf_turret
+			if not Turrets then return 0 end
+
+			local Cost = 0
+
+			for Turret in pairs(Turrets) do
+				if not IsValid(Turret) then continue end
+
+				Cost = Cost + GetDirectWeaponCost(Turret)
+
+				if Turret.Turret ~= "Turret-H" then continue end
+
+				for SubTurret in pairs(Turret.SubTurrets or {}) do
+					if IsValid(SubTurret) and SubTurret.Turret == "Turret-V" and not Turrets[SubTurret] then -- Skip if already counted as a linked turret
+						Cost = Cost + GetDirectWeaponCost(SubTurret)
+					end
+				end
+			end
+
+			return Cost
 		end
 	end
 
