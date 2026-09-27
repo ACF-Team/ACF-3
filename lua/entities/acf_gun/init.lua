@@ -121,9 +121,11 @@ do -- Random timer crew stuff
 		if IsValid(SelfTbl.Autoloader) and ENTITY.GetTable(SelfTbl.Autoloader).ACF.Health > 0 then
 			local Sum1, AutoBlocked, AutoReason = SelfTbl.Autoloader:GetReloadEffAuto(self, SelfTbl.CurrentCrate)
 			SelfTbl.LoadCrewMod = math.Clamp(Sum1, ACF.AutoloaderFallbackCoef, ACF.AutoloaderMaxBonus)
+			SelfTbl.AutoloaderFeeding = true
 			Blocked = AutoBlocked
 			Reason = AutoReason
 		else
+			SelfTbl.AutoloaderFeeding = false
 			BlockedCrew = 0
 			local Sum1, Count1 = ACF.WeightedLinkSum(SelfTbl.CrewsByType.Loader or {}, GetReloadEff, self, SelfTbl.CurrentCrate or self)
 			local Sum2, Count2 = ACF.WeightedLinkSum(SelfTbl.CrewsByType.Commander or {}, GetReloadEff, self, SelfTbl.CurrentCrate or self)
@@ -927,16 +929,6 @@ do -- Metamethods --------------------------------
 			Entity.NextFire = Clock.CurTime + math.max(Config.Goal - Config.Progress, 0) / Eff
 		end
 
-		-- Plays the autoloader's sound once per reload, when loading actually begins rather than while it's stalled
-		local function PlayAutoloaderSound(Entity, Config, Blocked)
-			if Blocked or not Config or Config.LoadSoundPlayed then return end
-
-			Config.LoadSoundPlayed = true
-
-			local Autoloader = Entity.Autoloader
-			if IsValid(Autoloader) then Autoloader:PlayLoadSound() end
-		end
-
 		--- Finds the next crate
 		--- @param Current any Optionally specified current crate to check against (optimization measure)
 		--- @param Check any Function used to check if a crate meets our criteria
@@ -1046,7 +1038,7 @@ do -- Metamethods --------------------------------
 					local Time = IdealTime / Eff
 
 					UpdateNextFire(self, Config, Eff, Blocked)
-					PlayAutoloaderSound(self, Config, Blocked)
+					ACF.PlayAutoloaderSound(self, Config, Blocked)
 
 					SelfTbl.ReloadTime = Time
 
@@ -1150,7 +1142,7 @@ do -- Metamethods --------------------------------
 					local Time = IdealTime / Eff
 
 					UpdateNextFire(self, Config, Eff, Blocked)
-					if Manual then PlayAutoloaderSound(self, Config, Blocked) end
+					if Manual then ACF.PlayAutoloaderSound(self, Config, Blocked) end
 
 					if Manual then WireLib.TriggerOutput(self, "Mag Reload Time", Time) end
 					SelfTbl.MagReload = Time

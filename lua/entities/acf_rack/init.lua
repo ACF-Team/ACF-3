@@ -131,9 +131,11 @@ do
 		if IsValid(self.Autoloader) and self.Autoloader.ACF.Health > 0 and table.Count(self.MountPoints) == 1 then
 			local Sum1, AutoBlocked, AutoReason = self.Autoloader:GetReloadEffAuto(self, self.CurrentCrate)
 			self.LoadCrewMod = self.LoadCrewModOverride or math.Clamp(Sum1, ACF.AutoloaderFallbackCoef, ACF.AutoloaderMaxBonus)
+			self.AutoloaderFeeding = true
 			Blocked = AutoBlocked
 			Reason = AutoReason
 		else
+			self.AutoloaderFeeding = false
 			BlockedCrew = 0
 			local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.CurrentCrate or self)
 			local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.CurrentCrate or self)
@@ -881,13 +883,7 @@ do -- Loading ----------------------------------
 					Point.NextFire = Clock.CurTime + math.max(Config.Goal - Config.Progress, 0) / (Eff or 1)
 				end
 
-				-- Plays the autoloader's sound once per reload, when loading actually begins rather than while it's stalled
-				if not Blocked and Config and not Config.LoadSoundPlayed then
-					Config.LoadSoundPlayed = true
-
-					-- Autoloaders only feed racks with a single mount point
-					if IsValid(self.Autoloader) and table.Count(self.MountPoints) == 1 then self.Autoloader:PlayLoadSound() end
-				end
+				ACF.PlayAutoloaderSound(self, Config, Blocked)
 
 				self.ReloadTime = Time
 
