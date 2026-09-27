@@ -95,6 +95,8 @@ local function Build(Menu, Contexts)
 	local SizeY = Menu:AddSlider("#acf.menu.fuel.tank_width", Min, Max)
 	local SizeZ = Menu:AddSlider("#acf.menu.fuel.tank_height", Min, Max)
 
+	Menu:AddField(Fuel, "FuelPriority", { Title = "#acf.menu.fuel.priority", wang = true })
+
 	local FuelBase    = Menu:AddCollapsible("#acf.menu.fuel.tank_info", nil, "icon16/cup_edit.png")
 	local FuelDesc    = FuelBase:AddLabel()
 	local FuelPreview = FuelBase:AddModelPreview(nil, true, "Secondary")
@@ -233,7 +235,7 @@ ACF.Menu.RegisterPage({
 	Actions = {
 		{ Bind = "left",       Context = "Engine", Preview = true, Desc = "Spawn a new engine, or update the one you're aiming at." },
 		{ Bind = "shift+left", Context = "Fuel",   Preview = true, Desc = "Spawn a new fuel tank, or update the one you're aiming at." },
-		{ Bind = "right",      Commit = "link", Desc = "Select entities, then an engine/tank, to link them (hold R to unlink)." },
+		{ Bind = "right",      Commit = "link", Desc = "Select gearboxes, then an engine, to link them (hold R to unlink)." },
 	},
 
 	Build = Build,

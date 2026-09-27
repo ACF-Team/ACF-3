@@ -75,6 +75,8 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "Float", "SteerPercent3", { KeyName = "steerpercent3", Edit = { type = "Float", order = 902, category = "Car Steering Settings", min = -1, max = 1, tooltip = "Percent of brake strength used to steer 3rd wheel pair" } } )
 	self:NetworkVar( "Float", "SteerPercent4", { KeyName = "steerpercent4", Edit = { type = "Float", order = 903, category = "Car Steering Settings", min = -1, max = 1, tooltip = "Percent of brake strength used to steer 4th wheel pair" } } )
 	self:NetworkVar( "Float", "SteerRate", { KeyName = "steerrate", Edit = { type = "Float", order = 904, category = "Car Steering Settings", min = -45, max = 45, tooltip = "Speed wheels are steered at" } } )
+	self:NetworkVar( "Int", "SteerLow", { KeyName = "steerlow", Edit = { type = "Int", order = 905, category = "Car Steering Settings", min = 0, max = 1000, tooltip = "Steer angle at low speed, if 0 and SteerTop is 0 the brake strength is used instead" } } )
+	self:NetworkVar( "Int", "SteerTop", { KeyName = "steertop", Edit = { type = "Int", order = 906, category = "Car Steering Settings", min = 0, max = 1000, tooltip = "Steer angle at top speed, if 0 and SteerLow is 0 the brake strength is used instead" } } )
 end
 
 -- Thank you march (https://github.com/marchc1/imagestickers/blob/master/lua/imagestickers/properties.lua)
