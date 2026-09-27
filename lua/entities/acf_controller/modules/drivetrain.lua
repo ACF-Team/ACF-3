@@ -123,6 +123,18 @@ do
 		for Gearbox, Side in pairs(SelfTbl.RightGearboxes) do TriggerSafe(SelfTbl, Gearbox, (NotSided and "" or Side .. " ") .. Name, Value) end
 	end
 
+	-- Locks or releases the brake on both sides. When locking, also blocks the clutches and engages the weld latches
+	local function SetParkingBrake(SelfTbl, State, BrakeStrength)
+		BrakeStrength = State and BrakeStrength or 0
+		SetLeft(SelfTbl, "Brake", BrakeStrength) SetRight(SelfTbl, "Brake", BrakeStrength)
+		SetLeft(SelfTbl, "Brake", BrakeStrength, true) SetRight(SelfTbl, "Brake", BrakeStrength, true) -- Differentials HAVE TO BE DIFFERENT
+
+		if State then
+			SetLeft(SelfTbl, "Clutch", CLUTCH_BLOCK) SetRight(SelfTbl, "Clutch", CLUTCH_BLOCK)
+			SetLatches(SelfTbl, true)
+		end
+	end
+
 	--- Steer a plate left or right
 	local function SetSteerPlate(SelfTbl, BasePlate, SteerPlate, TURN_ANGLE, TURN_RATE)
 		local TURN = SelfTbl.SteerAngles[SteerPlate] or 0
@@ -224,6 +236,13 @@ do
 		self.LastTrueGear = 0
 	end
 
+	--- Applies or releases the wire parking brake, and toggles mobility control accordingly
+	function ENT:SetWireParkingBrake(SelfTbl, State)
+		self:SetDisableMobility(State)
+		SetParkingBrake(SelfTbl, State, self:GetBrakeStrengthTop())
+		if not State then SetLatches(SelfTbl, false) end
+	end
+
 	--- Handles driving, gearing, clutches, latches and brakes
 	function ENT:ProcessDrivetrain(SelfTbl)
 		-- Log speed even if drivetrain is invalid
@@ -263,10 +282,7 @@ do
 		end
 
 		if IsBraking or (self:GetBrakeEngagement() == 1 and not IsMoving) then -- Braking
-			SetLeft(SelfTbl, "Brake", BrakeStrength) SetRight(SelfTbl, "Brake", BrakeStrength)
-			SetLeft(SelfTbl, "Brake", BrakeStrength, true) SetRight(SelfTbl, "Brake", BrakeStrength, true) -- Differentials HAVE TO BE DIFFERENT
-			SetLeft(SelfTbl, "Clutch", CLUTCH_BLOCK) SetRight(SelfTbl, "Clutch", CLUTCH_BLOCK)
-			SetLatches(SelfTbl, true)
+			SetParkingBrake(SelfTbl, true, BrakeStrength)
 			return
 		end
 
@@ -290,8 +306,7 @@ do
 			end
 		else
 			-- Car steering
-			SetLeft(SelfTbl, "Brake", 0) SetRight(SelfTbl, "Brake", 0)
-			SetLeft(SelfTbl, "Brake", 0, true) SetRight(SelfTbl, "Brake", 0, true)
+			SetParkingBrake(SelfTbl, false)
 			SetLeft(SelfTbl, "Clutch", CLUTCH_FLOW) SetRight(SelfTbl, "Clutch", CLUTCH_FLOW)
 			SetLatches(SelfTbl, false) -- Revert braking if not braking
 

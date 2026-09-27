@@ -62,12 +62,14 @@ ACF.ControllerKeyBindings = KEY_WIRE_BINDINGS
 
 local Inputs = {
 	"Filter (Filters out entities from the camera trace) [ARRAY]",
-	"FLIR (Enables/disables FLIR while in the baseplate seat)"
+	"FLIR (Enables/disables FLIR while in the baseplate seat)",
+	"ParkingBrake (Enables brakes and disables mobility when 1, releases brakes and re-enables mobility when 0)"
 }
 
 local ADDITIONAL_OUTPUTS = {
 	"HitPos (The position the driver is looking at) [VECTOR]",
 	"CamAng (The direction of the camera.) [ANGLE]",
+	"CamIndex (The currently active camera index)",
 	"IsTurretLocked (Whether the turret is locked or not.)",
 	"Active",
 	"Speed (Determined by selected unit)",
@@ -185,6 +187,11 @@ do
 			if Value == nil or not isnumber(Value) then return end
 			Controller.UseWireFLIR = Value ~= 0
 			Controller:FLIR_OnChange(Value ~= 0)
+		end)
+
+		ACF.AddInputAction("acf_controller", "ParkingBrake", function(Controller, Value)
+			if Value == nil or not isnumber(Value) then return end
+			Controller:SetWireParkingBrake(Controller:GetTable(), Value ~= 0)
 		end)
 	end
 end
