@@ -8,6 +8,7 @@ ENT.ACF_KillableButIndestructible = true
 local ACF         = ACF
 local TraceLine   = util.TraceLine
 local Classes     = ACF.Classes
+local Sounds      = ACF.Utilities.Sounds
 
 util.AddNetworkString("ACF_Autoloader_Links")
 util.AddNetworkString("ACF_Autoloader_AmmoLinks")
@@ -233,6 +234,16 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 
 	local HealthScore = self.ACF.Health / self.ACF.MaxHealth
 	return 1 * HorizontalScore * VerticalScore * AngularScore * HealthScore, Blocked, Reason
+end
+
+--- Plays the autoloader's custom sound, if it has one, when it starts loading a round
+function ENT:PlayLoadSound()
+	if self.ACF.Health <= 0 then return end
+
+	local Path = self:ACF_GetUserVar("SoundPath")
+	if not Path or Path == "" then return end
+
+	Sounds.SendSound(self, Path, 70, 100 * self:ACF_GetUserVar("SoundPitch"), self:ACF_GetUserVar("SoundVolume"))
 end
 
 function ENT:GetCost()

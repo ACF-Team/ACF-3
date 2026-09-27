@@ -881,6 +881,14 @@ do -- Loading ----------------------------------
 					Point.NextFire = Clock.CurTime + math.max(Config.Goal - Config.Progress, 0) / (Eff or 1)
 				end
 
+				-- Plays the autoloader's sound once per reload, when loading actually begins rather than while it's stalled
+				if not Blocked and Config and not Config.LoadSoundPlayed then
+					Config.LoadSoundPlayed = true
+
+					-- Autoloaders only feed racks with a single mount point
+					if IsValid(self.Autoloader) and table.Count(self.MountPoints) == 1 then self.Autoloader:PlayLoadSound() end
+				end
+
 				self.ReloadTime = Time
 
 				WireLib.TriggerOutput(self, "Reload Time", Time)
