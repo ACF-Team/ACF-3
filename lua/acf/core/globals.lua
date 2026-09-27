@@ -411,6 +411,9 @@ do -- ACF global vars
 	ACF.AmmoStageMin 		= 1		-- Minimum stage index for ammo stowages
 	ACF.AmmoStageMax 		= 5		-- Maximum stage index for ammo stowages
 
+	ACF.FuelPriorityMin 	= 1		-- Fuel tanks with lower priority values are drained first
+	ACF.FuelPriorityMax 	= 5
+
 	ACF.LoaderBestDist 		= 100	-- Distance before which loaders are most effective
 	ACF.LoaderWorstDist 	= 300	-- Distance after which loaders are least effective
 	ACF.LoaderMaxBonus 		= 2		-- Maximum bonus loaders can give to reload time
