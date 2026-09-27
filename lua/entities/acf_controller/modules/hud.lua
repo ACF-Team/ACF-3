@@ -1,5 +1,6 @@
 
 local RecacheBindNW = ENT.RecacheBindNW
+local CountedFuels  = {} -- Reused to dedupe tanks shared between engines
 -- Hud related
 do
 	local BallCompStatusToCode = {
@@ -66,13 +67,23 @@ do
 		RecacheBindNW(self, SelfTbl, "AHS_Speed", math.Round(SelfTbl.Speed or 0), self.SetNWInt)
 		if IsValid(SelfTbl.Gearbox) then RecacheBindNW(self, SelfTbl, "AHS_Gear", SelfTbl.Gearbox.Gear, self.SetNWInt) end
 
-		local FuelLevel = 0
+		-- Read live: engines' tanks follow parenting, which can change after the drivetrain was analyzed
+		local FuelLevel, FuelCapacity = 0, 0
 		local Conv = self:GetFuelUnit() == 0 and 1 or 0.264172 -- Liters / Gallons
-		for Fuel in pairs(SelfTbl.Fuels) do
-			if IsValid(Fuel) then FuelLevel = FuelLevel + Fuel.Amount end
+		for Engine in pairs(SelfTbl.Engines) do
+			if IsValid(Engine) then
+				for Fuel in pairs(Engine.FuelTanks) do
+					if not CountedFuels[Fuel] then
+						CountedFuels[Fuel] = true
+						FuelLevel    = FuelLevel + Fuel.Amount
+						FuelCapacity = FuelCapacity + Fuel.Capacity
+					end
+				end
+			end
 		end
+		table.Empty(CountedFuels)
 		RecacheBindNW(self, SelfTbl, "AHS_Fuel", math.Round(FuelLevel * Conv), self.SetNWInt)
-		RecacheBindNW(self, SelfTbl, "AHS_FuelCap", math.Round(SelfTbl.FuelCapacity * Conv), self.SetNWInt) -- Should only run once effectively
+		RecacheBindNW(self, SelfTbl, "AHS_FuelCap", math.Round(FuelCapacity * Conv), self.SetNWInt)
 
 		local RPM = 0
 		local EngineCount = 0
