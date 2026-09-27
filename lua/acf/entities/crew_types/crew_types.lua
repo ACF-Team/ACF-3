@@ -227,9 +227,12 @@ Classes.DefineClass("ACF.CrewTypes.Driver", "ACF.CrewTypes.BaseCrewType", functi
 		local Baseplate = Contraption and Contraption.ACF_Baseplate
 		if not IsValid(Baseplate) then Crew.DriverAligned = false return end
 
+		local Up = Baseplate:GetUp()
 		local Facing = -Crew:GetRight() -- Crew models face their -Right
-		local Yaw = math.deg(math.atan2(Facing:Dot(Baseplate:GetRight()), Facing:Dot(Baseplate:GetForward())))
-		Crew.DriverAligned = math.abs(Yaw) <= ACF.DriverMaxYawDiff
+		Facing = Facing - Up * Facing:Dot(Up) -- Flatten so only yaw counts, not recline
+		Facing:Normalize()
+		local Yaw = math.deg(math.acos(math.Clamp(Facing:Dot(Baseplate:GetForward()), -1, 1)))
+		Crew.DriverAligned = Yaw <= ACF.DriverMaxYawDiff
 		Crew.OverlayErrors.DriverYaw = not Crew.DriverAligned and "Driver must face the baseplate's forward!\nYaw deviation: " .. math.Round(Yaw, 2) .. ", Acceptable: " .. ACF.DriverMaxYawDiff or nil
 	end
 	CLASS.EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, ACF.Classes.GetTypeByName("ACF.Baseplates.GroundVehicle")) end
