@@ -120,6 +120,26 @@ Sounds.acf_turret_motor = {
 	end
 }
 
+Sounds.acf_autoloader = {
+	GetSound = function(Ent)
+		return {
+			Sound  = Ent:ACF_GetUserVar("SoundPath"),
+			Pitch  = Ent:ACF_GetUserVar("SoundPitch"),
+			Volume = Ent:ACF_GetUserVar("SoundVolume"),
+		}
+	end,
+	SetSound = function(Ent, SoundData)
+		Ent:ACF_SetUserVar("SoundPath", SoundData.Sound:Trim():lower())
+		Ent:ACF_SetUserVar("SoundPitch", SoundData.Pitch)
+		Ent:ACF_SetUserVar("SoundVolume", SoundData.Volume)
+	end,
+	ResetSound = function(Ent)
+		Ent:ACF_SetUserVar("SoundPath", "")
+		Ent:ACF_SetUserVar("SoundPitch", 1)
+		Ent:ACF_SetUserVar("SoundVolume", 1)
+	end
+}
+
 Sounds.acf_waterjet = {
 	GetSound = function(Ent)
 		return {
