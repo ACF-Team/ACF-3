@@ -74,15 +74,8 @@ Chapter1:AddInstruction("ShowText", {
     Time = 0,
     Position = FuelPos
 })
-Chapter1:AddInstruction("Delay", {Length = 2})
-
-local LinkingTime1 = Chapter1:AddInstruction("ACF Menu", {
-    Children = {"Fuel"},
-    Target = "Engine",
-    Easing = math.ease.InOutQuad
-})
-Chapter1:AddInstruction("HideToolgun", {Time = LinkingTime1, Length = 0.5})
-Chapter1:AddInstruction("Delay", {Length = 2})
+Chapter1:AddInstruction("HideToolgun", {Length = 0.5})
+Chapter1:AddInstruction("Delay", {Length = 4.5})
 Chapter1:AddInstruction("HideText", {Name = "ExplainFuel3", Time = 1})
 Chapter1:AddInstruction("Delay", {Length = 2})
 

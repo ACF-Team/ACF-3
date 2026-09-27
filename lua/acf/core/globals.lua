@@ -384,6 +384,7 @@ do -- ACF global vars
 	ACF.CrewSelfCoef 		= 1.0	-- Portion of a crew's efficiency they provide
 
 	ACF.DriverEfficiencyThreshold = 0.3	-- Minimum TotalEff a Driver/Pilot needs to grant full gearbox torque
+	ACF.DriverMaxYawDiff = 5	-- Max yaw (Degs) between a Driver's facing and its baseplate's forward
 	ACF.GunnerEfficiencyThreshold = 0.3	-- Minimum TotalEff a Gunner/Commander/Pilot needs to render a turret controlled
 	ACF.WeaponClasses = { -- Entity classes that make a turret weaponized if directly parented to it
 		acf_gun		= true,
@@ -410,6 +411,9 @@ do -- ACF global vars
 
 	ACF.AmmoStageMin 		= 1		-- Minimum stage index for ammo stowages
 	ACF.AmmoStageMax 		= 5		-- Maximum stage index for ammo stowages
+
+	ACF.FuelPriorityMin 	= 1		-- Fuel tanks with lower priority values are drained first
+	ACF.FuelPriorityMax 	= 5
 
 	ACF.LoaderBestDist 		= 100	-- Distance before which loaders are most effective
 	ACF.LoaderWorstDist 	= 300	-- Distance after which loaders are least effective

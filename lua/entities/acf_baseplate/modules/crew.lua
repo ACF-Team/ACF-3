@@ -4,7 +4,12 @@ function ENT:UpdateDriverMod()
     local Contraption = self:CFW_GetContraption() or {}
     local CrewsByType = Contraption.CrewsByType or {}
     self.CrewsByType = self.CrewsByType or {}
-    local Sum1, Count1 = ACF.WeightedLinkSum(CrewsByType.Driver or {}, function(Crew) return Crew.TotalEff end)
+    local Sum1, Count1 = 0, 0
+    for Crew in pairs(CrewsByType.Driver or {}) do
+        if IsValid(Crew) and Crew.DriverAligned then -- Misaligned drivers are ignored rather than dragging the average down
+            Sum1, Count1 = Sum1 + Crew.TotalEff, Count1 + 1
+        end
+    end
     local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Pilot or {}, function(Crew) return Crew.TotalEff end)
     local Sum, Count = Sum1 + Sum2, Count1 + Count2
     local Val = (Count > 0) and (Sum / Count) or 0
