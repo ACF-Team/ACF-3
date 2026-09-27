@@ -131,9 +131,11 @@ do
 		if IsValid(self.Autoloader) and self.Autoloader.ACF.Health > 0 and table.Count(self.MountPoints) == 1 then
 			local Sum1, AutoBlocked, AutoReason = self.Autoloader:GetReloadEffAuto(self, self.CurrentCrate)
 			self.LoadCrewMod = self.LoadCrewModOverride or math.Clamp(Sum1, ACF.AutoloaderFallbackCoef, ACF.AutoloaderMaxBonus)
+			self.AutoloaderFeeding = true
 			Blocked = AutoBlocked
 			Reason = AutoReason
 		else
+			self.AutoloaderFeeding = false
 			BlockedCrew = 0
 			local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.CurrentCrate or self)
 			local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.CurrentCrate or self)
@@ -880,6 +882,8 @@ do -- Loading ----------------------------------
 				if not Blocked and Config and Config.Goal then
 					Point.NextFire = Clock.CurTime + math.max(Config.Goal - Config.Progress, 0) / (Eff or 1)
 				end
+
+				if IsValid(self.Autoloader) then self.Autoloader:PlayLoadSound(self, Config, Blocked) end
 
 				self.ReloadTime = Time
 

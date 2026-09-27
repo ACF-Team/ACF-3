@@ -121,9 +121,11 @@ do -- Random timer crew stuff
 		if IsValid(SelfTbl.Autoloader) and ENTITY.GetTable(SelfTbl.Autoloader).ACF.Health > 0 then
 			local Sum1, AutoBlocked, AutoReason = SelfTbl.Autoloader:GetReloadEffAuto(self, SelfTbl.CurrentCrate)
 			SelfTbl.LoadCrewMod = math.Clamp(Sum1, ACF.AutoloaderFallbackCoef, ACF.AutoloaderMaxBonus)
+			SelfTbl.AutoloaderFeeding = true
 			Blocked = AutoBlocked
 			Reason = AutoReason
 		else
+			SelfTbl.AutoloaderFeeding = false
 			BlockedCrew = 0
 			local Sum1, Count1 = ACF.WeightedLinkSum(SelfTbl.CrewsByType.Loader or {}, GetReloadEff, self, SelfTbl.CurrentCrate or self)
 			local Sum2, Count2 = ACF.WeightedLinkSum(SelfTbl.CrewsByType.Commander or {}, GetReloadEff, self, SelfTbl.CurrentCrate or self)
@@ -1036,6 +1038,7 @@ do -- Metamethods --------------------------------
 					local Time = IdealTime / Eff
 
 					UpdateNextFire(self, Config, Eff, Blocked)
+					if IsValid(SelfTbl.Autoloader) then SelfTbl.Autoloader:PlayLoadSound(self, Config, Blocked) end
 
 					SelfTbl.ReloadTime = Time
 
@@ -1139,6 +1142,7 @@ do -- Metamethods --------------------------------
 					local Time = IdealTime / Eff
 
 					UpdateNextFire(self, Config, Eff, Blocked)
+					if Manual and IsValid(SelfTbl.Autoloader) then SelfTbl.Autoloader:PlayLoadSound(self, Config, Blocked) end
 
 					if Manual then WireLib.TriggerOutput(self, "Mag Reload Time", Time) end
 					SelfTbl.MagReload = Time

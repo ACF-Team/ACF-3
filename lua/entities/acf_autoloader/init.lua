@@ -8,6 +8,7 @@ ENT.ACF_KillableButIndestructible = true
 local ACF         = ACF
 local TraceLine   = util.TraceLine
 local Classes     = ACF.Classes
+local Sounds      = ACF.Utilities.Sounds
 
 util.AddNetworkString("ACF_Autoloader_Links")
 util.AddNetworkString("ACF_Autoloader_AmmoLinks")
@@ -233,6 +234,25 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 
 	local HealthScore = self.ACF.Health / self.ACF.MaxHealth
 	return 1 * HorizontalScore * VerticalScore * AngularScore * HealthScore, Blocked, Reason
+end
+
+--- Plays the autoloader's sound once per reload, when loading actually begins
+--- Meant to be called from the linked weapon's reload loop, after its UpdateLoadMod
+--- @param Weapon entity The gun or rack being reloaded
+--- @param Config table The reload's progress timer config, nil on instant reloads
+--- @param Blocked boolean Whether the reload is currently stalled
+function ENT:PlayLoadSound(Weapon, Config, Blocked)
+	if Blocked or not Config or Config.LoadSoundPlayed then return end
+
+	Config.LoadSoundPlayed = true
+
+	-- Crew-loaded reloads stay silent, UpdateLoadMod decides who is doing the loading
+	if not Weapon.AutoloaderFeeding then return end
+
+	local Path = self:ACF_GetUserVar("SoundPath")
+	if not Path or Path == "" then return end
+
+	Sounds.SendSound(self, Path, 70, 100 * self:ACF_GetUserVar("SoundPitch"), self:ACF_GetUserVar("SoundVolume"))
 end
 
 function ENT:GetCost()
