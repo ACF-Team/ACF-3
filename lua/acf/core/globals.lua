@@ -384,6 +384,7 @@ do -- ACF global vars
 	ACF.CrewSelfCoef 		= 1.0	-- Portion of a crew's efficiency they provide
 
 	ACF.DriverEfficiencyThreshold = 0.3	-- Minimum TotalEff a Driver/Pilot needs to grant full gearbox torque
+	ACF.DriverMaxYawDiff = 5	-- Max yaw (Degs) between a Driver's facing and its baseplate's forward
 	ACF.GunnerEfficiencyThreshold = 0.3	-- Minimum TotalEff a Gunner/Commander/Pilot needs to render a turret controlled
 	ACF.WeaponClasses = { -- Entity classes that make a turret weaponized if directly parented to it
 		acf_gun		= true,
