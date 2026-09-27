@@ -191,7 +191,7 @@ Classes.DefineClass("ACF.CrewTypes.Driver", "ACF.CrewTypes.BaseCrewType", functi
 	CLASS.Name        = "Driver"
 	CLASS.Icon		= "icon16/car.png"
 	CLASS.Description = "Drivers permit gearboxes to apply torque to wheels at full effect. They prefer sitting poses."
-	CLASS.ExtraNotes	= "Drivers affect all gearboxes on a contraption without needing to be linked, similar to how a Commander affects the crew."
+	CLASS.ExtraNotes	= "Drivers affect all gearboxes on a contraption without needing to be linked, similar to how a Commander affects the crew. They must face the baseplate's forward (within a few degrees of yaw) to provide their benefit."
 	CLASS.Cost	= 1
 	CLASS.LimitConVar	= {
 		Name	= "_acf_crew_driver",
@@ -221,6 +221,16 @@ Classes.DefineClass("ACF.CrewTypes.Driver", "ACF.CrewTypes.BaseCrewType", functi
 	end
 	CLASS.UpdateFocus = function(Crew)
 		Crew.Focus = 1
+	end
+	CLASS.UpdateHighFreq = function(Crew)
+		local Contraption = Crew:CFW_GetContraption()
+		local Baseplate = Contraption and Contraption.ACF_Baseplate
+		if not IsValid(Baseplate) then Crew.DriverAligned = false return end
+
+		local Facing = -Crew:GetRight() -- Crew models face their -Right
+		local Yaw = math.deg(math.atan2(Facing:Dot(Baseplate:GetRight()), Facing:Dot(Baseplate:GetForward())))
+		Crew.DriverAligned = math.abs(Yaw) <= ACF.DriverMaxYawDiff
+		Crew.OverlayErrors.DriverYaw = not Crew.DriverAligned and "Driver must face the baseplate's forward!\nYaw deviation: " .. math.Round(Yaw, 2) .. ", Acceptable: " .. ACF.DriverMaxYawDiff or nil
 	end
 	CLASS.EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, ACF.Classes.GetTypeByName("ACF.Baseplates.GroundVehicle")) end
 end)
