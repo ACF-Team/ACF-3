@@ -126,6 +126,13 @@ local function OnLinkedSeat(Controller, Target)
 		if not IsValid(Controller) or not IsValid(Target) then return end
 		if Ply ~= Controller.Driver then return end
 		OnButtonChanged(Controller, Key, true)
+
+		-- PlayerButtonDown doesn't fire client side in singleplayer, so the server forwards it there
+		if game.SinglePlayer() then
+			net.Start("ACF_Controller_Button")
+			net.WriteUInt(Key, 8)
+			net.Send(Ply)
+		end
 	end)
 
 	hook.Add("PlayerButtonUp", "ACFControllerSeatButtonUp" .. Controller:EntIndex(), function(Ply, Key)
@@ -140,6 +147,8 @@ local function OnLinkedSeat(Controller, Target)
 		hook.Remove("PlayerLeaveVehicle", "ACFControllerSeatExit" .. Ent:EntIndex())
 		hook.Remove("KeyPress", "ACFControllerSeatKeyPress" .. Ent:EntIndex())
 		hook.Remove("KeyRelease", "ACFControllerSeatKeyRelease" .. Ent:EntIndex())
+		hook.Remove("PlayerButtonDown", "ACFControllerSeatButtonDown" .. Ent:EntIndex())
+		hook.Remove("PlayerButtonUp", "ACFControllerSeatButtonUp" .. Ent:EntIndex())
 	end)
 end
 
