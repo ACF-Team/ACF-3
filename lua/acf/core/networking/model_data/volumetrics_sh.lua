@@ -108,9 +108,9 @@ do
 
             local ArmorType = ArmorTypes.Get(Material) or ArmorTypes.Get("Default")
 
-            if ArmorType.IsExplosive and Convex.Volume > ACF.MaxExplosiveConvexVolume then
+            if ArmorType.IsExplosive and (Convex.Volume < ACF.MinExplosiveConvexVolume or Convex.Volume > ACF.MaxExplosiveConvexVolume) then
                 if SERVER and IsValid(Player) then
-                    ACF.Utilities.Messages.SendChat(Player, "Error", "Convex " .. ConvexID .. " is too large for an explosive material (limit: " .. ACF.MaxExplosiveConvexVolume .. " in³).")
+                    ACF.Utilities.Messages.SendChat(Player, "Error", "Convex " .. ConvexID .. " is outside the allowed size for an explosive material (range: " .. ACF.MinExplosiveConvexVolume .. "-" .. ACF.MaxExplosiveConvexVolume .. " in³).")
                 end
                 AllOK = false
                 continue
