@@ -115,11 +115,13 @@ local function IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Play
     return IfEntManipulationOnACFContraption_ThenDisableContraption(Player, Ent, Type, PostContraptionCheck)
 end
 
--- Aircraft over the armor volume limit lose their exemption, so they get treated like a ground vehicle
+-- Marks the contraption as having used applyforce-family methods, so the aircraft armor volume
+-- limit only enforces against aircraft that actually rely on them for thrust/lift, not fin aircraft
 local function PostContraptionCheck_IsNotGroundVehicle(Contraption)
     if Contraption:ACF_IsRecreational() then return true end
     if Contraption:ACF_IsAircraft() then
-        return not Contraption.ACF_ExceedsAircraftLimits
+        Contraption.ACF_UsedApplyForce = true
+        return true
     end
 end
 
@@ -249,6 +251,25 @@ local function FreezeDetours()
             then
                 return false
             end
+        end)
+    end
+end
+
+-- TARGET  : propDraw and equiv. NoDraw setters
+-- METHODS : Expression 2, Starfall (Entity binding)
+-- ON CALL : If target's contraption is an ACF contraption, disable the contraption and block the call.
+-- Hiding a contraption's props mid-combat has no legitimate building use.
+local function PropDrawDetours()
+    do
+        local Func Func = Detours.Expression2("e:propDraw(n)", function(Scope, Args, ...)
+            if Args[2] == 0 and not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Args[1], "e:propDraw(n)") then return end
+            return Func(Scope, Args, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.Starfall("instance.Types.Entity.Methods.setNoDraw", function(Instance, Ent, Draw, ...)
+            if Draw and not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:setNoDraw(b)") then return end
+            return Func(Instance, Ent, Draw, ...)
         end)
     end
 end
@@ -996,6 +1017,7 @@ local function TriggerDetourRebuild()
 
     FreezeDetours()
     UseDetours()
+    PropDrawDetours()
     PrimitiveEditDetours()
 
     AddAngleVelocityDetours()

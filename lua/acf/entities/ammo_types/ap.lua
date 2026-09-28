@@ -155,6 +155,12 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 		return ACF.CalcSpeed(Penetration, Bullet.ProjMass, Bullet.Diameter * 10)
 	end
 
+	--- Mass and speed used to report the round's kinetic energy; override for ammo types that deal damage
+	--- through something other than the shell itself (e.g. HEAT's jet).
+	function CLASS:GetKineticEnergyData(Bullet)
+		return Bullet.ProjMass, Bullet.MuzzleVel
+	end
+
 	function CLASS:GetDisplayData(Data)
 		local Display = {
 			MaxPen = self:GetPenetration(Data, Data.MuzzleVel)
@@ -451,18 +457,6 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 				local Text   = language.GetPhrase("acf.menu.ammo.pen_stats_ap")
 				local MaxPen = math.Round(self.GUIData.MaxPen, 2)
 				MaxPenLabel:SetText(Text:format(MaxPen))
-			end)
-
-			local KineticLabel = Base:AddLabel()
-			ACF.AmmoMenu.Reactive(KineticLabel, function()
-				local Text = language.GetPhrase("acf.menu.ammo.kinetic_energy_stats")
-
-				-- Same formula ballistics_sv.lua uses against ArmorType.ExplosiveThreshold. MuzzleVel is
-				-- stored in m/s, but ACF.Kinetic expects in/s and converts back internally
-				local Speed   = self.BulletData.MuzzleVel * ACF.MeterToInch
-				local Kinetic = math.Round(ACF.Kinetic(Speed, self.BulletData.ProjMass).Kinetic)
-
-				KineticLabel:SetText(Text:format(Kinetic))
 			end)
 		end
 	end

@@ -26,7 +26,6 @@ local ACFTrace   = ACF.trace
 local HEPower    = ACF.HEPower
 local InchToCm   = ACF.InchToCm
 local BlastAreaCoef = ACF.BlastAreaCoef
-local InchToMeter = ACF.InchToMeter
 
 -- Debugging
 local White      = Color(255, 255, 255)
@@ -133,10 +132,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 	local Power       = FillerMass * HEPower
 	local Radius      = Damage.getBlastRadius(FillerMass)
-	local RadiusScale = math.exp((Radius / Damage.getBlastRadius(1) - 1) * 0.6)
-
-	-- Prevent runaway exponential scaling for huge explosions
-	RadiusScale = min(max(RadiusScale, 0.05), 5)
+	local RadiusScale = Damage.getRadiusScale(Radius)
 
 	Debug.Sphere(Position, Radius, 15, BlastColor, true)
 
@@ -201,10 +197,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 	-- Per-explosion fragment constants, consumed per target in Phase 2
 	local FragInfo     = Damage.getFragmentInfo(FillerMass, FragMass)
 	local Fragments    = FragInfo.Count
-	local FragMassCalc = FragInfo.Mass
-	local BaseFragV    = FragInfo.Velocity
 	local FragArea     = FragInfo.Area
-	local FragCaliber  = FragInfo.Caliber
 
 	if EventViewer.Enabled() then
 		local MaxSphere = 4 * pi * (Radius * InchToCm) ^ 2
@@ -346,14 +339,8 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		-- not gain extra total penetration from the old concave scaling curve.
 		local BlastPen = Damage.getBlastPenetration(PowerFraction * BlastArea, BlastArea)
 
-		local FragHit  = ceil(Fragments * SolidAngle)
-		local FragPen  = 0
-
-		if FragHit > 0 then
-			local Loss    = BaseFragV * Distance / Radius
-			local FragVel = max(BaseFragV - Loss, 0) * InchToMeter
-			FragPen       = ACF.Penetration(FragVel, FragMassCalc, FragCaliber)
-		end
+		local FragHit = ceil(Fragments * SolidAngle)
+		local FragPen = FragHit > 0 and Damage.getFragmentPenetration(FillerMass, FragMass, Radius, Distance) or 0
 
 		local BlastThickness, FragThickness, HitAngle, BlastHits, FragHits
 

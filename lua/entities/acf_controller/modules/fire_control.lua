@@ -184,7 +184,7 @@ do
 		if self:GetEnableTimeFuse() and IsValid(Primary) then
 			local MuzzleVel = Primary.BulletData.MuzzleVel or 0
 			local RadarTime = MuzzleVel > 0 and (self.Baseplate:GetPos():Distance(SelfTbl.SelectedTargetPos) / 39.37 / MuzzleVel) or 0
-			local FuzeTime = RadarTime * 1.27
+			local FuzeTime = RadarTime
 			for Weapon in pairs(SelfTbl.FireGroups[1]) do
 				if IsValid(Weapon) then Weapon:TriggerInput("Fuze", FuzeTime) end
 			end

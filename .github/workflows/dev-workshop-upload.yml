@@ -1,0 +1,51 @@
+name: Deploy Dev to Workshop
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    if: github.repository == 'ACF-Team/ACF-3'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          path: project
+          fetch-depth: 0
+          ref: dev
+
+      - name: Check for commits in the last day
+        id: check
+        working-directory: project
+        run: |
+          if [ -n "$(git log --since='25 hours ago' --oneline)" ]; then
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "changelog<<CHANGELOG_EOF"
+              git log --since='25 hours ago' --pretty=format:'- %s'
+              echo ""
+              echo "CHANGELOG_EOF"
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo "should_deploy=false" >> "$GITHUB_OUTPUT"
+            echo "No commits in the last 24 hours; skipping upload."
+          fi
+
+      - name: Upload to Workshop
+        if: steps.check.outputs.should_deploy == 'true' || github.event_name == 'workflow_dispatch'
+        uses: CFC-Servers/gmod-upload@master
+        with:
+          id: 3805418201
+          changelog: "${{ steps.check.outputs.changelog }}"
+          title: "[ACF] Armored Combat Framework (dev branch)"
+          type: "Tool"
+          tag1: "build"
+          tag2: "fun"
+          tag3: "realism"
+        env:
+          STEAM_USERNAME: ${{ secrets.ACF_STEAM_ACCOUNT }}
+          STEAM_PASSWORD: ${{ secrets.ACF_STEAM_PASSWORD }}

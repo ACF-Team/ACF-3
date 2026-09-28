@@ -125,7 +125,6 @@ do -- ACF global vars
 	ACF.AmmoCrates           = ACF.AmmoCrates or {}
 	ACF.FuelTanks            = ACF.FuelTanks or {}
 	ACF.ActiveCrews          = ACF.ActiveCrews or {}
-	ACF.Repositories         = ACF.Repositories or {}
 	ACF.ClientData           = ACF.ClientData or {}
 	ACF.ServerData           = ACF.ServerData or {}
 	ACF.ModelData            = ACF.ModelData or { Models = {} }
@@ -137,7 +136,7 @@ do -- ACF global vars
 	ACF.DefineSetting("NameAndShame",         true,   "Console messages for failed legality checks have been %s.", ACF.BooleanDataCallback(), false)
 	ACF.DefineSetting("CostLimitGround",      500,    "Ground vehicle cost limit has been set to %s.", ACF.FloatDataCallback(0, 5000, 0), 0)
 	ACF.DefineSetting("CostLimitAir",         200,    "Aircraft cost limit has been set to %s.", ACF.FloatDataCallback(0, 2000, 0), 0)
-	ACF.DefineSetting("MaxArmorVolumeAir",    0,      "Aircraft max armor volume has been set to %s.", ACF.FloatDataCallback(0, 5000, 0), 0)
+	ACF.DefineSetting("MaxArmorVolumeAir",    32000,  "Aircraft max armor volume has been set to %s.", ACF.FloatDataCallback(0, 100000, 0), 0)
 	ACF.DefineSetting("VehicleLegalChecks",   true,   "Legality checks for vehicles has been %s.", ACF.BooleanDataCallback(), false)
 	ACF.DefineSetting("LegalityDetours",      true,   "Legality detours have been %s.", ACF.BooleanDataCallback(), false)
 
@@ -161,12 +160,9 @@ do -- ACF global vars
 	ACF.FuelRate = 15 -- Multiplier for fuel usage, 1.0 is approx real world
 	ACF.DefineSetting("FuelFactor",           1,      "Fuel rate multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("FuelRate", 0.01, 2, 2))
 
-	ACF.MinimumArmor         = 0.01     -- Minimum possible armor that can be given to an entity
-	ACF.MaximumArmor         = 5000  -- Maximum possible armor that can be given to an entity
 	ACF.MaxExplosiveConvexVolume = 10000 -- Maximum convex volume (in^3) that can be assigned an explosive armor material
 	ACF.MinimumMass          = 0.1   -- The minimum amount of mass that can be set on an entity
-	ACF.MaximumMass          = 50000 -- The maximum amount of mass that can be set on an entity
-	ACF.DefineSetting("MaxThickness",         300,    nil, ACF.FloatDataCallback(ACF.MinimumArmor, ACF.MaximumArmor, 0))
+	ACF.DefineSetting("MaxThickness",         300,    nil, ACF.FloatDataCallback(0.01, 5000, 0))
 
 	ACF.DefineSetting("SmokeWind",            20,     "Wind smoke multiplier has been set to a factor of %.2f.", ACF.FloatDataCallback(0, 1000, 2))
 
@@ -222,7 +218,6 @@ do -- ACF global vars
 		return ACF.ColorArray[(Index % ColorArraySize) + 1]
 	end
 
-	ACF.NetMessageSizeLimit  = 13	-- Maximum size of a net message in bytes (IF SET TOO LOW, CERTAIN MODELS MAY NOT BE NETWORKED PROPERLY)
 	ACF.FilterMakeSpherical  = true -- Whether Make Spherical entities should be filtered out of ballistics traces. Not intended to be disabled in actual gameplay
 
 	-- Unit Conversion
@@ -297,12 +292,8 @@ do -- ACF global vars
 		sent_prop2mesh = true,
 	}
 
-	ACF.AmbientTemperature   = 288.15 -- Ambient temperature in kelvin (15°C @ sea level) from google search
-
 	-- Ammo
-	ACF.AmmoPadding          = 0.3 -- Ratio of wasted space to projectile case diameter
 	ACF.AmmoCaseScale        = 1 -- Fallback max case/projectile diameter ratio when a Round omits CaseScale
-	ACF.AmmoMinSize          = 6 -- Defines the shortest possible length of ammo crates for all their axises, in gmu
 	ACF.AmmoMaxLength        = 192 -- Defines the highest possible length of ammo crates for the X axis (length), in gmu
 	ACF.AmmoMaxWidth         = 96 -- Defines the highest possible width of ammo crates for the Y and Z axes (width/height), in gmu
 	ACF.AmmoSupplyColor      = Color(255, 255, 0, 10) -- The color to use for the ammo supply effect
@@ -325,7 +316,6 @@ do -- ACF global vars
 	ACF.MaxChargeHeadLen     = 1.2     -- Maximum shaped charge head length (in charge diameters), lengths above will incur diminishing returns
 	ACF.HEATPenMul           = 0.85 * 8    -- Linear jet penetration multiplier
 	ACF.HEATMinPenVel        = 1000    -- m/s, minimum velocity of the copper jet that contributes to penetration
-	ACF.HEATSpallingArc      = 0.5     -- Cossine of the HEAT spalling angle
 	ACF.HEATBoomConvert      = 1 / 3   -- Percentage of filler that creates HE damage at detonation
 	ACF.HEATStandOffMul      = 0.11 -- Percentage of standoff to use in penetration calculation (Original was too hig)
 	ACF.HEATBreakUpMul       = 0.15 -- Percentage of breakup time to use in penetration calculation (Original was too high)
@@ -393,7 +383,6 @@ do -- ACF global vars
 	ACF.LiIonED            = 0.458 -- li-ion energy density: kw hours / liter
 	ACF.SupplyDistance     = 300 -- Distance in which supply units distribute mass to containers.
 	ACF.SupplyMassRate     = 0.007017 -- kg per second per cubic inch of supply unit volume (no distance attenuation)
-	ACF.RefuelSpeed        = 700 -- Refueling speed for fuel tanks
 
 	-- Crew
 	-- Total efficiency = clamp(CommanderEff * CommanderCoef + SelfEff * SelfCoef, FallBackCoef, 1)
@@ -402,6 +391,7 @@ do -- ACF global vars
 	ACF.CrewSelfCoef 		= 1.0	-- Portion of a crew's efficiency they provide
 
 	ACF.DriverEfficiencyThreshold = 0.3	-- Minimum TotalEff a Driver/Pilot needs to grant full gearbox torque
+	ACF.DriverMaxYawDiff = 5	-- Max yaw (Degs) between a Driver's facing and its baseplate's forward
 	ACF.GunnerEfficiencyThreshold = 0.3	-- Minimum TotalEff a Gunner/Commander/Pilot needs to render a turret controlled
 	ACF.WeaponClasses = { -- Entity classes that make a turret weaponized if directly parented to it
 		acf_gun		= true,
@@ -428,6 +418,9 @@ do -- ACF global vars
 
 	ACF.AmmoStageMin 		= 1		-- Minimum stage index for ammo stowages
 	ACF.AmmoStageMax 		= 5		-- Maximum stage index for ammo stowages
+
+	ACF.FuelPriorityMin 	= 1		-- Fuel tanks with lower priority values are drained first
+	ACF.FuelPriorityMax 	= 5
 
 	ACF.LoaderBestDist 		= 100	-- Distance before which loaders are most effective
 	ACF.LoaderWorstDist 	= 300	-- Distance after which loaders are least effective

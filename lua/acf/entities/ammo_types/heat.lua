@@ -12,10 +12,8 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function(CLASS, 
 	CLASS.Description = "#acf.descs.ammo.heat"
 	CLASS.IsChemical  = true
 	CLASS.Blacklist = {
-		["ACF.Guns.Autocannon"] = true,
 		["ACF.Guns.Machinegun"] = true,
 		["ACF.Guns.SmokeLauncher"] = true,
-		["ACF.Guns.LightAutocannon"] = true,
 		["ACF.Guns.RotaryAutocannon"] = true,
 	}
 
@@ -57,6 +55,11 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function(CLASS, 
 
 		local Ret = math.max(Penetration * ACF.HEATPenMul * PenMul * 1e3, 0) -- m to mm
 		return Ret
+	end
+
+	-- HEAT deals its damage through the shaped charge jet, not the shell itself
+	function CLASS:GetKineticEnergyData(Bullet)
+		return Bullet.JetMass, Bullet.JetAvgVel
 	end
 
 	function CLASS:GetDisplayData(Data)

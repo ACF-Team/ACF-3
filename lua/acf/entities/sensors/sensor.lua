@@ -5,7 +5,7 @@ Classes.DefineClass("ACF.Sensors.Sensor", function() end)
 
 Classes.DefineClass("ACF.Sensors.Radar", "ACF.Sensors.Sensor", function(CLASS)
 	-- Shared info panel for every radar group (Item is the selected item class).
-	function CLASS.CreateMenu(Menu, Item)
+	function CLASS.CreateMenu(Item, Menu)
 		local ViewCone  = (Item.ViewCone or 180) * 2
 		local ViewRange = Item.Range and (math.Round(Item.Range * ACF.InchToMeter, 2) .. " m") or "Unlimited"
 
@@ -14,7 +14,7 @@ Classes.DefineClass("ACF.Sensors.Radar", "ACF.Sensors.Sensor", function(CLASS)
 end)
 
 Classes.DefineClass("ACF.Sensors.Receiver", "ACF.Sensors.Sensor", function(CLASS)
-	function CLASS.CreateMenu(Menu, Item)
+	function CLASS.CreateMenu(Item, Menu)
 		Menu:AddLabel(string.format("Mass : %s kg\nCost : %s\n", Item.Mass, ACF.FormatCost(Item.Cost or 0)))
 	end
 end)

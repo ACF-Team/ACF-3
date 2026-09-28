@@ -146,7 +146,7 @@ function TOOL:GetContraptionReadout(Trace, UseCostBreakdown)
 				local Volume, BadMaterial = Contraption.CostSystem.GetAircraftArmorInfo(Contraption_)
 				local Warning = BadMaterial and " | uses disallowed armor material" or ""
 
-				Messages.SendChat(Player, nil, Text7:format(math.Round(Volume), Contraption.CostSystem.AircraftVolumeLimit, Warning))
+				Messages.SendChat(Player, nil, Text7:format(math.Round(Volume), ACF.MaxArmorVolumeAir, Warning))
 			end
 		end
 	end

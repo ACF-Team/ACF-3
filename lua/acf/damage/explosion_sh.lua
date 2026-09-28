@@ -25,7 +25,7 @@ function Damage.getFragmentInfo(FillerMass, FragMass)
 	return {
 		Count    = Count,
 		Mass     = FragMassEa,
-		Velocity = (Power * 50000 / FragMassEa / Count) ^ 0.5,
+		Velocity = (Power * 10350 / FragMassEa / Count) ^ 0.5, -- Calibrated against measured TNTe-to-penetration data
 		Area     = (FragMassEa / 7.8) ^ 0.33,
 		Caliber  = 20 * (FragMassEa / math.pi) ^ 0.5,
 	}
@@ -45,7 +45,49 @@ function Damage.getFragmentPenetration(FillerMass, FragMass, Radius, Distance)
 	local Loss    = Radius > 0 and Frag.Velocity * Distance / Radius or Frag.Velocity
 	local FragVel = math.max(Frag.Velocity - Loss, 0) * ACF.InchToMeter
 
-	return ACF.Penetration(FragVel, Frag.Mass, Frag.Caliber)
+	-- Bridges the formula's fixed FillerMass^0.225 scaling up to the measured ^0.46.
+	local Calibration = FillerMass ^ 0.235
+
+	return ACF.Penetration(FragVel, Frag.Mass, Frag.Caliber) * Calibration
+end
+
+--- Returns the penetration of a blast.
+-- @param Energy The energy of the blast in KJ.
+-- @param Area The area of the blast in cm2.
+-- @return The penetration of the blast in RHA mm.
+function Damage.getBlastPenetration(Energy, Area)
+	return Energy / Area * 0.00125 -- Emperically derived
+end
+
+--- Clamped multiplier that prevents runaway exponential scaling for huge explosions.
+-- @param Radius The blast radius in inches.
+-- @return A multiplier applied to the blast area, clamped to [0.05, 5].
+function Damage.getRadiusScale(Radius)
+	local RadiusScale = math.exp((Radius / Damage.getBlastRadius(1) - 1) * 0.6)
+
+	return math.Clamp(RadiusScale, 0.05, 5)
+end
+
+--- Penetration of an HE explosion's blast wave at a given distance from the detonation.
+-- @param FillerMass The amount of HE filler in kilograms.
+-- @param EntArea The target's surface area in cm2, as ACF.UpdateArea computes it.
+-- @param Distance The distance from the detonation to evaluate, in inches.
+-- @return The blast penetration in mm.
+function Damage.getBlastPenetrationAtDistance(FillerMass, EntArea, Distance)
+	local Power       = FillerMass * ACF.HEPower
+	local Radius      = Damage.getBlastRadius(FillerMass)
+	local RadiusScale = Damage.getRadiusScale(Radius)
+
+	-- Fraction of the blast wavefront the target's surface subtends, capped at a hemisphere.
+	local Sphere        = 4 * math.pi * (Distance * ACF.InchToCm) ^ 2
+	local SolidAngle    = math.min(EntArea / Sphere, 0.5)
+	local PowerFraction = Power * SolidAngle
+
+	-- Hopkinson-Cranz cube-root scaling: blast impulse decays linearly out to the lethal radius.
+	local Falloff   = 1 - math.min(Distance / Radius, 1)
+	local BlastArea = EntArea * ACF.BlastAreaCoef * Falloff * RadiusScale
+
+	return Damage.getBlastPenetration(PowerFraction * BlastArea, BlastArea)
 end
 
 --- Helper function to create the default ACF explosion effect.
