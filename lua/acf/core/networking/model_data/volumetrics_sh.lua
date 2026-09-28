@@ -405,7 +405,8 @@ end
 -- (default 1e5, which is past any mesh's extent), so a convex the ray began inside only yields its exit
 -- here; the missing entry is synthesized below at T = 0.
 -- Filter (optional): a per-entity set { [ConvexID] = true } of convexes to treat as transparent.
-function ACF.RayIntersectMesh(Entity, Start, Direction, IncludeDead, Filter, MaxDist)
+-- IncludeDefault (optional): also hit convexes with an unassigned material, for tool selection traces.
+function ACF.RayIntersectMesh(Entity, Start, Direction, IncludeDead, IncludeDefault, Filter, MaxDist)
     local MeshData = Entity.ACF_Volumetric_Mesh
     if not MeshData then return {} end
 
@@ -430,7 +431,7 @@ function ACF.RayIntersectMesh(Entity, Start, Direction, IncludeDead, Filter, Max
 
     for ConvexID, Convex in ipairs(MeshData.Convexes) do
         if Convex.Health <= 0 and not IncludeDead then continue end -- destroyed convex is transparent to projectiles
-        if Convex.Material == "Default" then continue end -- unassigned material is transparent to projectiles and explosions
+        if not IncludeDefault and Convex.Material == "Default" then continue end -- unassigned material is transparent to projectiles and explosions
         if Filter and Filter[ConvexID] then continue end -- explicitly filtered (already penetrated this flight)
 
         -- Meshes built before bounds existed (a live reload) simply skip the broadphase
@@ -546,22 +547,22 @@ end
 -- Every convex entry/exit pair the ray passes through a single entity's mesh, in order (see
 -- ACF.ResolveConvexStack). GeoThick is in mm; multiply by ArmorType.KineticMul/.ChemicalMul as needed.
 -- Filter (optional) is a per-entity set { [ConvexID] = true } of convexes to treat as transparent.
-function ACF.GetConvexHits(Entity, HitPos, Direction, IncludeDead, Filter)
+function ACF.GetConvexHits(Entity, HitPos, Direction, IncludeDead, IncludeDefault, Filter)
     if not Entity.ACF_Volumetric_Mesh then return {} end
 
     local Start = HitPos - Direction * 2
-    local Hits  = ACF.RayIntersectMesh(Entity, Start, Direction, IncludeDead, Filter)
+    local Hits  = ACF.RayIntersectMesh(Entity, Start, Direction, IncludeDead, IncludeDefault, Filter)
 
     return ACF.ResolveConvexStack(Hits, Direction)
 end
 
 -- Convenience wrapper returning only the closest convex entry/exit pair (or nil if none); see
 -- ACF.ResolveConvexStack's ClosestOnly argument.
-function ACF.GetConvexHit(Entity, HitPos, Direction, IncludeDead, Filter)
+function ACF.GetConvexHit(Entity, HitPos, Direction, IncludeDead, IncludeDefault, Filter)
     if not Entity.ACF_Volumetric_Mesh then return nil end
 
     local Start = HitPos - Direction * 2
-    local Hits  = ACF.RayIntersectMesh(Entity, Start, Direction, IncludeDead, Filter)
+    local Hits  = ACF.RayIntersectMesh(Entity, Start, Direction, IncludeDead, IncludeDefault, Filter)
 
     return ACF.ResolveConvexStack(Hits, Direction, true)
 end

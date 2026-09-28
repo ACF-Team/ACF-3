@@ -362,7 +362,7 @@ if CLIENT then
 		HiddenEntity = Entity
 
 		local Dir         = LocalPlayer():GetAimVector()
-		local ConvexHit   = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
+		local ConvexHit   = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true, true)
 		local HighlightID = ConvexHit and ConvexHit.ConvexID
 
 		DrawConvexes(Entity, HighlightID)
@@ -376,7 +376,7 @@ if CLIENT then
 			local ArmorType  = ACF.Classes.ArmorTypes.Get(Material) or ACF.Classes.ArmorTypes.Get("Default")
 			local Mass       = Volume * CubicInchToM3 * ArmorType.Density -- Volume is in^3, Density is kg/m^3
 			local Cost       = Volume * CubicInchToM3 * ArmorType.CostMul -- CostMul is points per m^3
-			local NominalHit = ACF.GetConvexHit(Entity, Trace.HitPos, -Trace.HitNormal, true)
+			local NominalHit = ACF.GetConvexHit(Entity, Trace.HitPos, -Trace.HitNormal, true, true)
 			local Nominal    = NominalHit and NominalHit.GeoThick or 0
 
 			local EffKE = ConvexHit.GeoThick * ArmorType.KineticMul
@@ -479,7 +479,7 @@ elseif SERVER then
 			EntHealth, EntMaxHealth = ACF.GetEntityHealth(Entity)
 
 			local Dir = Player:GetAimVector()
-			ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
+			ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true, true)
 		end
 
 		Weapon:SetNWFloat("EntHealth", EntHealth)
@@ -541,7 +541,7 @@ elseif SERVER then
 			ACF.SetConvexMaterials(Entity, Materials, Player)
 		else
 			local Dir       = Player:GetAimVector()
-			local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
+			local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true, true)
 			if not ConvexHit then return false end
 
 			if ACF.SetConvexMaterial(Entity, ConvexHit.ConvexID, Material, Player) == false then return false end
@@ -579,7 +579,7 @@ elseif SERVER then
 		if not Entity.ACF_Volumetric_Mesh then return false end
 
 		local Dir       = self:GetOwner():GetAimVector()
-		local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
+		local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true, true)
 		if not ConvexHit then return false end
 
 		local Convex = Entity.ACF_Volumetric_Mesh.Convexes[ConvexHit.ConvexID]

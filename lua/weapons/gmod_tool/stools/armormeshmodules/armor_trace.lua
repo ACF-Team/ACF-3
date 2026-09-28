@@ -22,7 +22,7 @@ local function GetArmorLayers(StartTrace, Dir, Filter)
 
 	local Intersections = {}
 	for _, Entity in ipairs(FoundEnts) do
-		local Hits = ACF.RayIntersectMesh(Entity, Start, Dir, true)
+		local Hits = ACF.RayIntersectMesh(Entity, Start, Dir, true, true)
 		for _, Hit in ipairs(Hits) do
 			Intersections[#Intersections + 1] = Hit
 		end
