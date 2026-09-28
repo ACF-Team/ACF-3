@@ -430,6 +430,7 @@ function ACF.RayIntersectMesh(Entity, Start, Direction, IncludeDead, Filter, Max
 
     for ConvexID, Convex in ipairs(MeshData.Convexes) do
         if Convex.Health <= 0 and not IncludeDead then continue end -- destroyed convex is transparent to projectiles
+        if Convex.Material == "Default" then continue end -- unassigned material is transparent to projectiles and explosions
         if Filter and Filter[ConvexID] then continue end -- explicitly filtered (already penetrated this flight)
 
         -- Meshes built before bounds existed (a live reload) simply skip the broadphase
