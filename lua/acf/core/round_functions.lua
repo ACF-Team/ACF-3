@@ -151,6 +151,8 @@ function ACF.GetWeaponBlacklist(Whitelist)
 				if Whitelist[Classes.GetTypeName(Class)] then Allowed = true break end
 				if Class.IsWeaponOption then
 					Class = Classes.GetBaseClass(Class)
+				else
+					break
 				end
 			end
 
