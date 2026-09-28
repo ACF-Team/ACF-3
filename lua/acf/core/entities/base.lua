@@ -22,9 +22,6 @@ do -- Spawning and updating
 		local Entity = Entities.DoSpawnInternal(Class, Player, Position, Angles, Data)
 		if not IsValid(Entity) then return false, "The spawn function for " .. Class .. " didn't return an entity." end
 
-		Entity:CPPISetOwner(Player)
-		Entity:SetPlayer(Player)
-
 		Entity.ACF       = Entity.ACF or {}
 		Entity.Owner     = Player -- MUST be stored on ent for PP (supposedly)
 
