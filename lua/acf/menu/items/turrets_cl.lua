@@ -13,6 +13,9 @@ local function GetGroups()
 		Groups[#Groups + 1] = Group
 	end
 
+	local Servo = Classes.GetTypeByName("ACF.Turrets.Servo") -- Inherits Drive, so it isn't a direct child of the root
+	if Servo then Groups[#Groups + 1] = Servo end
+
 	return Groups
 end
 
@@ -48,7 +51,8 @@ local function Build(Menu, Contexts)
 		ClassDesc:SetText(Data.Description or "#acf.menu.no_description_provided")
 		Contexts.Active = ContextFor(Data)
 
-		ACF.Menu.LoadClassCombo(ComponentClass, Classes.GetChildren(Data), "Name", "Model", PAGE, "item")
+		local IsDrive = Classes.GetTypeName(Data) == "ACF.Turrets.Drive"
+		ACF.Menu.LoadClassCombo(ComponentClass, IsDrive and ACF.GetTurretDrives() or Classes.GetChildren(Data), "Name", "Model", PAGE, "item")
 	end
 
 	function ComponentClass:OnSelect(Index, _, Data)

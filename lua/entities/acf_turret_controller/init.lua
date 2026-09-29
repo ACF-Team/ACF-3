@@ -175,6 +175,25 @@ do	-- Metamethods
 			return Cost
 		end
 
+		-- Sums the verticals and servos a horizontal cascades control to, following servos down
+		local function GetCascadeCost(Turret, Counted)
+			local Cost = 0
+
+			for SubTurret in pairs(Turret.SubTurrets or {}) do
+				if not IsValid(SubTurret) or Counted[SubTurret] then continue end
+
+				if SubTurret.Turret == "Turret-V" or SubTurret.IsServo then
+					Cost = Cost + GetDirectWeaponCost(SubTurret)
+				end
+
+				if SubTurret.IsServo then
+					Cost = Cost + GetCascadeCost(SubTurret, Counted)
+				end
+			end
+
+			return Cost
+		end
+
 		-- Remote cost scales with the weapons it lets the crew aim: the linked turrets, plus the
 		-- verticals a horizontal cascades control to. Turrets further up are excluded
 		function ENT:GetCost()
@@ -193,11 +212,7 @@ do	-- Metamethods
 
 				if Turret.Turret ~= "Turret-H" then continue end
 
-				for SubTurret in pairs(Turret.SubTurrets or {}) do
-					if IsValid(SubTurret) and SubTurret.Turret == "Turret-V" and not Turrets[SubTurret] then -- Skip if already counted as a linked turret
-						Cost = Cost + GetDirectWeaponCost(SubTurret)
-					end
-				end
+				Cost = Cost + GetCascadeCost(Turret, Turrets) -- Skips any already counted as a linked turret
 			end
 
 			return Cost

@@ -795,6 +795,153 @@ do -- Default turret menus
 			TurretData.Ready	= true
 			HandCrankLbl:UpdateSim()
 		end
+
+		-- The servo group inherits from Drive but is listed as its own category
+		function ACF.GetTurretDrives()
+			local Items = {}
+
+			for ID, Class in pairs(Classes.GetChildren(Classes.GetTypeByName("ACF.Turrets.Drive"))) do
+				if not Class.IsServoGroup then Items[ID] = Class end
+			end
+
+			return Items
+		end
+
+		function ACF.CreateTurretServoMenu(Data, Menu, Ctx)
+			local TurretClass	= Classes.GetTypeByName("ACF.Turrets.Drive")
+			Ctx:Set("Turret", { Type = Classes.GetTypeName(Data), Data = {} })
+
+			local function SaveSetting(Field, Value)
+				ACF.Menu.SetUIState("acf_turret", Data.ID .. "." .. Field, Value)
+			end
+			local function LoadSetting(Field, Default)
+				local V = ACF.Menu.GetUIState("acf_turret", Data.ID .. "." .. Field)
+				if V == nil then return Default end
+				return V
+			end
+
+			local TurretData	= {
+				Ready		= false,
+				TurretClass	= Data.ID,
+				Teeth		= TurretClass.GetTeethCount(Data, Data.Size.Base),
+				TotalMass	= 0,
+				MaxMass		= 0,
+				RingSize	= Data.Size.Base,
+				RingHeight	= TurretClass.GetRingHeight({Type = Data.ID, Ratio = Data.Size.Ratio}, Data.Size.Base),
+				LocalCoM	= Vector(),
+				Tilt		= 1
+			}
+
+			local RingSize	= Menu:AddSlider("#acf.menu.turrets.ring_diameter", Data.Size.Min, Data.Size.Max, 2)
+			local MaxSpeed	= Menu:AddSlider("#acf.menu.turrets.max_speed", 0, 120, 2)
+
+			Menu:AddLabel("#acf.menu.turrets.max_speed_desc")
+
+			local TurretText	= language.GetPhrase("acf.menu.turrets.turret_text")
+			local MassText		= language.GetPhrase("acf.menu.turrets.mass_text")
+			local RingStats		= Menu:AddLabel(TurretText:format(0))
+			local MassLbl		= Menu:AddLabel(MassText:format(0))
+			local CostText		= language.GetPhrase("acf.menu.turrets.cost_text")
+			local CostLbl		= Menu:AddLabel(CostText:format(0))
+
+			local Angles	= Menu:AddCollapsible("#acf.menu.turrets.servo_angles", nil, "icon16/chart_pie_edit.png")
+
+			Angles:AddLabel("#acf.menu.turrets.servo_angles_desc")
+
+			local OnAngle	= Angles:AddSlider("#acf.menu.turrets.on_angle", -180, 180, 1)
+			local OffAngle	= Angles:AddSlider("#acf.menu.turrets.off_angle", -180, 180, 1)
+
+			function OnAngle:OnValueChanged(Value)
+				local N = math.Clamp(math.Round(Value, 1), -180, 180)
+				self:SetValue(N)
+				Ctx:Set("OnAngle", N)
+				SaveSetting("OnAngle", N)
+			end
+
+			function OffAngle:OnValueChanged(Value)
+				local N = math.Clamp(math.Round(Value, 1), -180, 180)
+				self:SetValue(N)
+				Ctx:Set("OffAngle", N)
+				SaveSetting("OffAngle", N)
+			end
+
+			RestoreSlider(OnAngle, LoadSetting("OnAngle", 15))
+			RestoreSlider(OffAngle, LoadSetting("OffAngle", 0))
+
+			local EstMass	= Menu:AddSlider("#acf.menu.turrets.estimated_mass", 0, 20000, 0)
+			local EstDist	= Menu:AddSlider("#acf.menu.turrets.mass_center_distance", 0, 2, 2)
+
+			local ServoText	= language.GetPhrase("acf.menu.turrets.servo_text")
+			local ServoLbl	= Menu:AddLabel(ServoText:format(0, 0))
+
+			ServoLbl.UpdateSim = function(Panel)
+				if TurretData.Ready == false then return end
+
+				local Info = TurretClass.CalcSpeed(TurretData, Data.Power)
+
+				Panel:SetText(ServoText:format(math.Round(Info.MaxSlewRate, 2), math.Round(Info.SlewAccel, 4)))
+			end
+
+			function RingSize:OnValueChanged(Value)
+				local N = Value
+
+				self:SetValue(N)
+
+				local Teeth		= TurretClass.GetTeethCount(Data, N)
+				local MaxMass	= TurretClass.GetMaxMass(Data, N)
+
+				RingStats:SetText(TurretText:format(Teeth))
+				MassLbl:SetText(language.GetPhrase("acf.menu.turrets.turret_mass_text"):format(TurretClass.GetMass(Data, N), MaxMass))
+				CostLbl:SetText(CostText:format(ACF.FormatCost(0.15 * N)))
+
+				TurretData.Teeth		= Teeth
+				TurretData.RingSize		= N
+				TurretData.RingHeight	= TurretClass.GetRingHeight({Type = Data.ID, Ratio = Data.Size.Ratio}, N)
+				TurretData.MaxMass		= MaxMass
+
+				if Menu.ComponentPreview then
+					Menu.ComponentPreview:SetModelScale(Vector(N, N, TurretData.RingHeight))
+				end
+
+				EstDist:SetMinMax(0, math.max(N * 2, 24))
+				MaxSpeed:SetValue(0)
+
+				ServoLbl:UpdateSim()
+
+				Ctx:Set("RingSize", N)
+				SaveSetting("RingSize", N)
+			end
+
+			function MaxSpeed:OnValueChanged(Value)
+				self:SetValue(Value)
+				Ctx:Set("MaxSpeed", Value)
+				SaveSetting("MaxSpeed", Value)
+			end
+
+			EstMass.OnValueChanged = function(_, Value)
+				TurretData.TotalMass = Value
+
+				ServoLbl:UpdateSim()
+			end
+
+			EstDist.OnValueChanged = function(_, Value)
+				TurretData.LocalCoM = Vector(Value, 0, Value)
+
+				ServoLbl:UpdateSim()
+			end
+
+			-- Capture the saved speed before setting the ring size (changing the ring zeroes MaxSpeed)
+			local SavedRing  = math.Clamp(LoadSetting("RingSize", Data.Size.Base), Data.Size.Min, Data.Size.Max)
+			local SavedSpeed = LoadSetting("MaxSpeed", 0)
+
+			RestoreSlider(RingSize, SavedRing)
+			EstMass:SetValue(0)
+			EstDist:SetValue(0)
+			RestoreSlider(MaxSpeed, SavedSpeed)
+
+			TurretData.Ready	= true
+			ServoLbl:UpdateSim()
+		end
 	end
 
 	do	-- Turret Motors
@@ -1022,7 +1169,7 @@ do -- Default turret menus
 				MotorInfo:UpdateSim()
 			end
 
-			ACF.LoadSortedList(TurretType, Classes.GetChildren(Classes.GetTypeByName("ACF.Turrets.Drive")), "ID")
+			ACF.LoadSortedList(TurretType, ACF.GetTurretDrives(), "ID")
 		end
 	end
 
