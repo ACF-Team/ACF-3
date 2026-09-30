@@ -38,7 +38,7 @@ local function GetPropertiesHealth(Slot)
     local Decimals  = Slot.NumData >= 5 and Slot.Data[5] or 0
 
     local MinColor  = Slot.NumData >= 6 and Slot.Data[6] or HEALTH_BAD
-    local MaxColor  = Slot.NumData >= 6 and Slot.Data[6] or HEALTH_GOOD
+    local MaxColor  = Slot.NumData >= 7 and Slot.Data[7] or HEALTH_GOOD
 
     local Ratio = SafeRatio(Health, MaxHealth)
     return ("%d/%d%s (%." .. Decimals .. "f%%)"):format(Health, MaxHealth, Unit, Ratio * 100), Ratio, MinColor, MaxColor
@@ -51,7 +51,7 @@ local function GetPropertiesProgress(Slot)
     local Decimals  = Slot.NumData >= 5 and Slot.Data[5] or 0
 
     local MinColor  = Slot.NumData >= 6 and Slot.Data[6] or PROGRESS_EMPTY
-    local MaxColor  = Slot.NumData >= 6 and Slot.Data[6] or PROGRESS_FULL
+    local MaxColor  = Slot.NumData >= 7 and Slot.Data[7] or PROGRESS_FULL
 
     local Ratio = SafeRatio(Health, MaxHealth)
     return ("%d/%d%s (%." .. Decimals .. "f%%)"):format(Health, MaxHealth, Unit, Ratio * 100), Ratio, MinColor, MaxColor
@@ -68,7 +68,7 @@ local function GetPropertiesTime(Slot)
     end
 
     local MinColor  = Slot.NumData >= 6 and Slot.Data[6] or PROGRESS_EMPTY
-    local MaxColor  = Slot.NumData >= 6 and Slot.Data[6] or HEALTH_GOOD
+    local MaxColor  = Slot.NumData >= 7 and Slot.Data[7] or HEALTH_GOOD
 
     return ("%.1f seconds"):format(Remaining), Ratio, MinColor, MaxColor, math.ease.InExpo
 end
