@@ -97,8 +97,7 @@ return function(State)
         net.SendToServer()
     end
 
-    hook.Add("PlayerButtonDown", "ACFControllerSeatButtonDown", function(_, Button)
-        if not IsFirstTimePredicted() then return end
+    local function OnButtonDown(Button)
         if not IsValid(State.MyController) then return end
 
         -- Autogenerate keys for ammo selection. KEY_1 = 2
@@ -107,6 +106,16 @@ return function(State)
         end
 
         if Button == KEY_F then SelectRadarTarget() end
+    end
+
+    hook.Add("PlayerButtonDown", "ACFControllerSeatButtonDown", function(_, Button)
+        if not IsFirstTimePredicted() then return end
+        OnButtonDown(Button)
+    end)
+
+    -- Singleplayer fallback, PlayerButtonDown doesn't fire client side there, so the server forwards it
+    net.Receive("ACF_Controller_Button", function()
+        OnButtonDown(net.ReadUInt(8))
     end)
 
     local rangerTrace = {}

@@ -189,6 +189,9 @@ local function PrepareSpawnFunctions(ENT, ClassName)
             WireLib.TriggerOutput(Entity, "Entity", Entity)
         end
 
+        Entity:CPPISetOwner(Player)
+        Entity:SetPlayer(Player)
+
         return Entity
     end
 

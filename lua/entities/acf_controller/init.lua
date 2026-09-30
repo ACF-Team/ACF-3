@@ -33,6 +33,7 @@ util.AddNetworkString("ACF_Controller_Zoom")	-- Relay camera zooms
 util.AddNetworkString("ACF_Controller_Ammo")	-- Relay ammo counts
 util.AddNetworkString("ACF_Controller_Receivers")	-- Relay LWS/RWS data
 util.AddNetworkString("ACF_Controller_Radar")	-- Relay radar data
+util.AddNetworkString("ACF_Controller_Button")	-- Forward button presses to the client, PlayerButtonDown doesn't fire client side in singleplayer
 
 local Clock = Utilities.Clock
 local Defaults = include("modules/defaults.lua")

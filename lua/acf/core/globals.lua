@@ -161,6 +161,7 @@ do -- ACF global vars
 	ACF.DefineSetting("FuelFactor",           1,      "Fuel rate multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("FuelRate", 0.01, 2, 2))
 
 	ACF.MaxExplosiveConvexVolume = 10000 -- Maximum convex volume (in^3) that can be assigned an explosive armor material
+	ACF.MinExplosiveConvexVolume = 100   -- Minimum convex volume (in^3) that can be assigned an explosive armor material
 	ACF.MinimumMass          = 0.1   -- The minimum amount of mass that can be set on an entity
 	ACF.DefineSetting("MaxThickness",         300,    nil, ACF.FloatDataCallback(0.01, 5000, 0))
 
@@ -398,7 +399,7 @@ do -- ACF global vars
 		acf_rack	= true
 	}
 	ACF.LightweightTurretMassLimit = 250	-- kg. Turrets at or under this carried mass can be controlled by a shared-parent Gunner, or a Lightweight Turret Controller, without needing to be mounted on it
-	ACF.CasemateArcLimit = 45	-- Degrees of total arc (MaxDeg - MinDeg) at or under which a shared-parent Gunner controls a turret at any mass, so casemate mounts don't need the gunner parented to the ring
+	ACF.CasemateArcLimit = 30	-- Degrees of total arc (MaxDeg - MinDeg) at or under which a shared-parent Gunner controls a turret at any mass, so casemate mounts don't need the gunner parented to the ring
 
 	ACF.CrewRepTimeBase 	= 3		-- Base time to replace a crew member
 	ACF.CrewRepDistToTime 	= 0.05 	-- Time it takes for crew to move one inch during replacement
