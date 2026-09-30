@@ -15,9 +15,10 @@ local function GetAxisValue(Data, Key)
 	return Data[Key] or 0
 end
 
-local function GetAxisFraction(Data, Axis, Range)
+-- Every axis is anchored at 0, only the outer edge (Max) varies per axis.
+local function GetAxisFraction(Data, Axis, Max)
 	local Value = GetAxisValue(Data, Axis.Key)
-	local Fraction = Range.Max > Range.Min and (Value - Range.Min) / (Range.Max - Range.Min) or 0
+	local Fraction = Max > 0 and (Value / Max) or 0
 
 	if Axis.Reversed then
 		Fraction = 1 - Fraction
@@ -31,7 +32,7 @@ local function BuildAxisRanges(List, Visible)
 	local Ranges = {}
 
 	for _, Axis in ipairs(Axes) do
-		Ranges[Axis.Key] = { Min = math.huge, Max = -math.huge }
+		Ranges[Axis.Key] = 0
 	end
 
 	for _, Data in ipairs(List) do
@@ -39,10 +40,8 @@ local function BuildAxisRanges(List, Visible)
 
 		for _, Axis in ipairs(Axes) do
 			local Value = GetAxisValue(Data, Axis.Key)
-			local Range = Ranges[Axis.Key]
 
-			Range.Min = math.min(Range.Min, Value)
-			Range.Max = math.max(Range.Max, Value)
+			Ranges[Axis.Key] = math.max(Ranges[Axis.Key], Value)
 		end
 	end
 
