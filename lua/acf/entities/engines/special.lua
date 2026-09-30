@@ -78,7 +78,7 @@ do -- Special I4 Engines
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
 		CLASS.Mass		 = 150
-		CLASS.Torque		 = 220
+		CLASS.Torque	 = 220
 		CLASS.FlywheelMass = 0.06
 		CLASS.RPM = {
 			Idle	= 950,

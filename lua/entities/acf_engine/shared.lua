@@ -12,6 +12,7 @@ end, "Engine", "Engines")
 ENT.ACF_StaticWireInputs = {
 	"Active (If set to a non-zero value, it'll attempt to start the engine.)",
 	"Throttle (On a range from 0 to 100, defines how much power will be given to the engine.)",
+	"Exhaust (The entity meant to play exhaust sounds from.) [ENTITY]",
 }
 
 ENT.ACF_StaticWireOutputs = {
