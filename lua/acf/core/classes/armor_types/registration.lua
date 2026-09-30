@@ -7,6 +7,10 @@ Classes.ArmorTypes = Classes.ArmorTypes or {}
 local ArmorTypes = Classes.ArmorTypes
 local Entries    = Classes.GetOrCreateEntries(ArmorTypes)
 
+-- Entries is keyed by ID, so pairs() iteration order is hash-based, not definition order. RegisterOrder
+-- tracks the order types were registered in, so callers that want definition order can sort by it.
+local RegisterCount = 0
+
 --- Registers an armor type.
 --- Armor types stay keyed by a plain ID rather than a fully qualified class name, because that ID is
 --- what a convex stores as its material and what gets networked, so it has to survive serialization.
@@ -20,6 +24,11 @@ function ArmorTypes.Register(ID, Base)
 
 	Class.ID    = ID
 	Entries[ID] = Class
+
+	if not Class.RegisterOrder then
+		RegisterCount = RegisterCount + 1
+		Class.RegisterOrder = RegisterCount
+	end
 
 	if Base then
 		local BaseClass = Entries[Base]

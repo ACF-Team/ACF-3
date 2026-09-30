@@ -58,7 +58,7 @@ local function GetSortedList(ArmorTypes)
 		List[#List + 1] = Data
 	end
 
-	table.SortByMember(List, "Name", true)
+	table.SortByMember(List, "RegisterOrder", true)
 
 	return List
 end
