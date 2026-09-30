@@ -485,29 +485,6 @@ ACF.AddInputAction("acf_engine", "Exhaust", function(Entity, Value)
 	end
 end)
 
-function ENT:ACF_Activate(Recalc)
-	local PhysObj = self.ACF.PhysObj
-	local Mass    = PhysObj:GetMass()
-	local Area    = PhysObj:GetSurfaceArea() * ACF.InchToCmSq
-	-- Fucking ArmoUr :face_vomiting: :face_vomiting: :face_vomiting: :face_vomiting: :face_vomiting:
-	-- Britons gave us americans the english language so we can sanitize it and have it sound more or less understandable and be more legible!
-	-- TODO: Replace this variable name and all instances of it with the correct word and fix the comment since its wrong lol
-	local Armour  = Mass * 1000 / Area / 0.78 * ACF.ArmorMod -- Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
-	local Health  = Area / ACF.Threshold
-	local Percent = 1
-
-	if Recalc and self.ACF.Health and self.ACF.MaxHealth then
-		Percent = self.ACF.Health / self.ACF.MaxHealth
-	end
-
-	self.ACF.Area      = Area
-	self.ACF.Health    = Health * Percent * self.HealthMult
-	self.ACF.MaxHealth = Health * self.HealthMult
-	self.ACF.Armour    = Armour * (0.5 + Percent * 0.5)
-	self.ACF.MaxArmour = Armour
-	self.ACF.Type      = "Prop"
-end
-
 --This function needs to return HitRes
 function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	local HitRes = Damage.doPropDamage(self, DmgResult, DmgInfo)
