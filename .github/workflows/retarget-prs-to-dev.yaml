@@ -1,0 +1,25 @@
+name: Retarget PRs to dev
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+    branches: [master]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  retarget:
+    if: >-
+      github.event.pull_request.head.ref != 'dev' ||
+      github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Change base branch to dev
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr edit "$PR_NUMBER" --base dev
+          gh pr comment "$PR_NUMBER" --body "This PR was automatically retargeted from \`master\` to \`dev\`. We wish for all feature requests to target \`dev\` rather than directly merging into \`master\`. If you desire to target master (say, for patching one-off bugs currently live in production,) you may manually switch the base branch back to master."
