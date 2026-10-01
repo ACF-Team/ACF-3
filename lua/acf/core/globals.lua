@@ -426,6 +426,8 @@ do -- ACF global vars
 
 	ACF.InitReloadDelay		= 10		-- Delay after spawning that belt feds are loaded
 
+	ACF.EngineKwPerPoint = 25.5 -- Engine cost is based off of power
+
 	-- Gearboxes
 	ACF.GearboxMinSize     = 0.75 -- Defines the smallest possible multiplier for the scale of a gearbox
 	ACF.GearboxMaxSize     = 3 -- Defines the largest possible multiplier for the scale of a gearbox

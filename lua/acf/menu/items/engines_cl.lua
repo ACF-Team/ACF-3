@@ -22,7 +22,7 @@ local function UpdateEngineStats(Label, Data)
 	local PeakkW     = Data.PeakPower * GetTorqueMult()
 	local PeakkWRPM  = Data.PeakPowerRPM
 	local Mass       = ACF.FormatMass(Data.Mass or 0)
-	local Cost       = ACF.FormatCost(math.max(5, (Data.Torque / 180) + (Data.PeakPower / 100)))
+	local Cost       = ACF.FormatCost(math.max(5, Data.PeakPower / ACF.EngineKwPerPoint))
 	local Torque     = math.Round(Data.Torque * GetTorqueMult())
 	local TorqueFeet = math.Round(Data.Torque * GetTorqueMult() * ACF.NmToFtLb)
 	local Type       = GetEngineType(Data.Type)

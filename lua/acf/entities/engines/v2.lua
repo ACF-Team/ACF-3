@@ -12,8 +12,8 @@ do -- Petrol Engines
 		CLASS.Sound		 = "acf_base/engines/vtwin_small.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
-		CLASS.Mass		 = 30
-		CLASS.Torque		 = 62
+		CLASS.Mass		 = 50
+		CLASS.Torque		 = 46
 		CLASS.FlywheelMass = 0.01
 		CLASS.RPM = {
 			Idle	= 900,
@@ -31,8 +31,8 @@ do -- Petrol Engines
 		CLASS.Sound		 = "acf_base/engines/vtwin_medium.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
-		CLASS.Mass		 = 50
-		CLASS.Torque		 = 106
+		CLASS.Mass		 = 75
+		CLASS.Torque		 = 83
 		CLASS.FlywheelMass = 0.02
 		CLASS.RPM = {
 			Idle	= 725,
@@ -50,8 +50,8 @@ do -- Petrol Engines
 		CLASS.Sound		 = "acf_base/engines/vtwin_large.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
-		CLASS.Mass		 = 100
-		CLASS.Torque		 = 200
+		CLASS.Mass		 = 140
+		CLASS.Torque		 = 167
 		CLASS.FlywheelMass = 0.075
 		CLASS.RPM = {
 			Idle	= 900,

@@ -14,8 +14,8 @@ do -- Forward-facing Gas Turbines
 		CLASS.Sound		 = "acf_base/engines/turbine_small.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true, ["ACF.FuelTypes.Diesel"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.Turbine"
-		CLASS.Mass		 = 200
-		CLASS.Torque		 = 589
+		CLASS.Mass		 = 255
+		CLASS.Torque		 = 521
 		CLASS.FlywheelMass = 2.9
 		CLASS.IsElectric	 = true
 		CLASS.RPM = {
@@ -35,8 +35,8 @@ do -- Forward-facing Gas Turbines
 		CLASS.Sound		 = "acf_base/engines/turbine_medium.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true, ["ACF.FuelTypes.Diesel"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.Turbine"
-		CLASS.Mass		 = 400
-		CLASS.Torque		 = 1312
+		CLASS.Mass		 = 465
+		CLASS.Torque		 = 1226
 		CLASS.FlywheelMass = 4.3
 		CLASS.IsElectric	 = true
 		CLASS.RPM = {
@@ -79,8 +79,8 @@ do -- Transaxial Gas Turbines
 		CLASS.Sound		 = "acf_base/engines/turbine_small.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true, ["ACF.FuelTypes.Diesel"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.Turbine"
-		CLASS.Mass		 = 160
-		CLASS.Torque		 = 387
+		CLASS.Mass		 = 210
+		CLASS.Torque		 = 336
 		CLASS.FlywheelMass = 2.3
 		CLASS.IsElectric	 = true
 		CLASS.IsTrans		 = true
@@ -101,8 +101,8 @@ do -- Transaxial Gas Turbines
 		CLASS.Sound		 = "acf_base/engines/turbine_medium.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true, ["ACF.FuelTypes.Diesel"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.Turbine"
-		CLASS.Mass		 = 320
-		CLASS.Torque		 = 750
+		CLASS.Mass		 = 385
+		CLASS.Torque		 = 689
 		CLASS.FlywheelMass = 3.4
 		CLASS.IsElectric	 = true
 		CLASS.IsTrans		 = true
@@ -123,8 +123,8 @@ do -- Transaxial Gas Turbines
 		CLASS.Sound		 = "acf_base/engines/turbine_large.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true, ["ACF.FuelTypes.Diesel"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.Turbine"
-		CLASS.Mass		 = 880
-		CLASS.Torque		 = 1710
+		CLASS.Mass		 = 900
+		CLASS.Torque		 = 1694
 		CLASS.FlywheelMass = 8.4
 		CLASS.IsElectric	 = true
 		CLASS.IsTrans		 = true
@@ -152,8 +152,8 @@ do -- Forward-facing Ground Gas Turbines
 		CLASS.Sound		 = "acf_base/engines/turbine_small.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true, ["ACF.FuelTypes.Diesel"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.Turbine"
-		CLASS.Mass		 = 220
-		CLASS.Torque		 = 1860
+		CLASS.Mass		 = 280
+		CLASS.Torque		 = 1659
 		CLASS.FlywheelMass = 35.5
 		CLASS.IsElectric	 = true
 		CLASS.RPM = {
@@ -173,8 +173,8 @@ do -- Forward-facing Ground Gas Turbines
 		CLASS.Sound		 = "acf_base/engines/turbine_medium.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true, ["ACF.FuelTypes.Diesel"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.Turbine"
-		CLASS.Mass		 = 440
-		CLASS.Torque		 = 3540
+		CLASS.Mass		 = 505
+		CLASS.Torque		 = 3332
 		CLASS.FlywheelMass = 38.7
 		CLASS.IsElectric	 = true
 		CLASS.Pitch		 = 1.15
@@ -219,8 +219,8 @@ do -- Transaxial Ground Gas Turbines
 		CLASS.Sound		 = "acf_base/engines/turbine_small.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true, ["ACF.FuelTypes.Diesel"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.Turbine"
-		CLASS.Mass		 = 200
-		CLASS.Torque		 = 1040
+		CLASS.Mass		 = 255
+		CLASS.Torque		 = 920
 		CLASS.FlywheelMass = 20.7
 		CLASS.IsElectric	 = true
 		CLASS.IsTrans		 = true
@@ -241,8 +241,8 @@ do -- Transaxial Ground Gas Turbines
 		CLASS.Sound		 = "acf_base/engines/turbine_medium.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true, ["ACF.FuelTypes.Diesel"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.Turbine"
-		CLASS.Mass		 = 480
-		CLASS.Torque		 = 1123
+		CLASS.Mass		 = 545
+		CLASS.Torque		 = 1064
 		CLASS.FlywheelMass = 23.7
 		CLASS.IsElectric	 = true
 		CLASS.IsTrans		 = true

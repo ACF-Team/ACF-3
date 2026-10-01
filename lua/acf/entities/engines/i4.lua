@@ -13,8 +13,8 @@ do -- Petrol Engines
 		CLASS.Sound		 = "acf_base/engines/i4_petrolsmall2.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
-		CLASS.Mass		 = 50
-		CLASS.Torque		 = 119
+		CLASS.Mass		 = 75
+		CLASS.Torque		 = 94
 		CLASS.FlywheelMass = 0.06
 		CLASS.RPM = {
 			Idle	= 900,
@@ -32,8 +32,8 @@ do -- Petrol Engines
 		CLASS.Sound		 = "acf_base/engines/i4_petrolmedium2.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
-		CLASS.Mass		 = 200
-		CLASS.Torque		 = 305
+		CLASS.Mass		 = 255
+		CLASS.Torque		 = 270
 		CLASS.FlywheelMass = 0.2
 		CLASS.RPM = {
 			Idle	= 900,
@@ -51,8 +51,8 @@ do -- Petrol Engines
 		CLASS.Sound		 = "acf_base/engines/i4_petrollarge.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
-		CLASS.Mass		 = 600
-		CLASS.Torque		 = 1165
+		CLASS.Mass		 = 655
+		CLASS.Torque		 = 1122
 		CLASS.FlywheelMass = 4
 		CLASS.RPM = {
 			Idle	= 500,
@@ -72,8 +72,8 @@ do -- Diesel Engines
 		CLASS.Sound		 = "acf_base/engines/i4_diesel2.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
-		CLASS.Mass		 = 90
-		CLASS.Torque		 = 184
+		CLASS.Mass		 = 130
+		CLASS.Torque		 = 152
 		CLASS.FlywheelMass = 0.2
 		CLASS.RPM = {
 			Idle	= 650,
@@ -91,8 +91,8 @@ do -- Diesel Engines
 		CLASS.Sound		 = "acf_base/engines/i4_dieselmedium.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
-		CLASS.Mass		 = 250
-		CLASS.Torque		 = 510
+		CLASS.Mass		 = 310
+		CLASS.Torque		 = 459
 		CLASS.FlywheelMass = 1
 		CLASS.RPM = {
 			Idle	= 500,
@@ -110,8 +110,8 @@ do -- Diesel Engines
 		CLASS.Sound		 = "acf_base/engines/i4_diesellarge.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
-		CLASS.Mass		 = 800
-		CLASS.Torque		 = 2060
+		CLASS.Mass		 = 830
+		CLASS.Torque		 = 2027
 		CLASS.FlywheelMass = 5
 		CLASS.RPM = {
 			Idle	= 450,

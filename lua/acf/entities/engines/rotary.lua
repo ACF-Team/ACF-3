@@ -12,8 +12,8 @@ do
 		CLASS.Sound		 = "acf_base/engines/wankel_small.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.Wankel"
-		CLASS.Mass		 = 50
-		CLASS.Torque		 = 97
+		CLASS.Mass		 = 75
+		CLASS.Torque		 = 76
 		CLASS.FlywheelMass = 0.06
 		CLASS.RPM = {
 			Idle	= 950,
@@ -31,8 +31,8 @@ do
 		CLASS.Sound		 = "acf_base/engines/wankel_medium.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.Wankel"
-		CLASS.Mass		 = 140
-		CLASS.Torque		 = 155
+		CLASS.Mass		 = 190
+		CLASS.Torque		 = 133
 		CLASS.FlywheelMass = 0.06
 		CLASS.RPM = {
 			Idle	= 950,
@@ -50,8 +50,8 @@ do
 		CLASS.Sound		 = "acf_base/engines/wankel_large.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.Wankel"
-		CLASS.Mass		 = 200
-		CLASS.Torque		 = 235
+		CLASS.Mass		 = 255
+		CLASS.Torque		 = 208
 		CLASS.FlywheelMass = 0.1
 		CLASS.RPM = {
 			Idle	= 950,
