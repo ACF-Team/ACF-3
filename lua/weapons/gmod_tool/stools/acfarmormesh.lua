@@ -20,6 +20,7 @@ AddCSLuaFile("armormeshmodules/recursive_trace.lua")
 AddCSLuaFile("armormeshmodules/grid_scan.lua")
 AddCSLuaFile("armormeshmodules/contraption_readout.lua")
 AddCSLuaFile("armormeshmodules/cost_comparison.lua")
+AddCSLuaFile("armormeshmodules/stats_graph.lua")
 
 include("armormeshmodules/contraption_readout.lua")
 
@@ -91,6 +92,7 @@ if CLIENT then
 	local DoRecursiveArmorTrace = include("armormeshmodules/recursive_trace.lua")(ArmorTrace, GetClassFilter)
 	local DoArmorScan           = include("armormeshmodules/grid_scan.lua")(ArmorTrace, GetClassFilter, ScanResolutionMin, ScanResolutionMax, ScanSizeMin, ScanSizeMax)
 	local BuildCostComparison   = include("armormeshmodules/cost_comparison.lua")
+	local BuildStatsGraph       = include("armormeshmodules/stats_graph.lua")
 
 	function TOOL:LeftClick(_) return true end
 	function TOOL:RightClick(_) return true end
@@ -137,6 +139,9 @@ if CLIENT then
 		local MatChemical = Base:AddLabel()
 		local MatSpall    = Base:AddLabel()
 		local MatCost     = Base:AddLabel()
+
+		local StatsGraphBase = Base:AddCollapsible("Stats Graph", false)
+		BuildStatsGraph(StatsGraphBase, ArmorTypes)
 
 		local CostBase = Base:AddCollapsible("Cost Comparison", false)
 		BuildCostComparison(CostBase, ArmorTypes)

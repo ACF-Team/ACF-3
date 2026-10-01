@@ -111,9 +111,9 @@ function Armor:OnLoaded()
     self.Description = "Decent protection for its price and density."
     self.Density     = 2700 -- https://en.wikipedia.org/wiki/Aluminium
     self.CostMul     = 30
-    self.HealthMul   = 0.275510
+    self.HealthMul   = 0.5
     self.KineticMul  = 0.5
-    self.ChemicalMul = 0.6
+    self.ChemicalMul = 0.3
     self.SpallMul    = 0.5
     self.Color       = Color(255, 255, 255)
 end
@@ -140,7 +140,7 @@ function Armor:OnLoaded()
     self.ShortName   = "HHRHA"
     self.Description = "Harder than RHA, but more brittle."
     self.Density     = 7850 -- https://metalzenith.com/blogs/steel-properties/rha-steel-properties-and-key-applications-in-defense
-    self.CostMul     = 47.04
+    self.CostMul     = 54
     self.HealthMul   = 0.75
     self.KineticMul  = 1.25
     self.ChemicalMul = 1.15
@@ -203,7 +203,7 @@ function Armor:OnLoaded()
     self.CostMul     = 35
     self.HealthMul   = 0.4
     self.KineticMul  = 0.5
-    self.ChemicalMul = 1.3
+    self.ChemicalMul = 0.7
     self.SpallMul    = 0.3
     self.Color       = Color(255, 191, 0)
 end
