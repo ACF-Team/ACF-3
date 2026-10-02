@@ -395,9 +395,9 @@ do	-- Turret servos
 		}
 
 		CLASS.Size = {
-			Base  = 12,
+			Base  = 8,
 			Min   = 4,
-			Max   = 30,
+			Max   = 10,
 			Ratio = 0.5
 		}
 
@@ -411,9 +411,9 @@ do	-- Turret servos
 			Max = 30
 		}
 
-		CLASS.MassLimit = { -- Between the horizontal and vertical drives
+		CLASS.MassLimit = { -- Squared for the final capacity: 256kg at the smallest size, 4000kg at the largest
 			Min = 16,
-			Max = 192
+			Max = math.sqrt(4000)
 		}
 
 		-- Built-in power, fed to CalcSpeed in place of a motor or the handcrank

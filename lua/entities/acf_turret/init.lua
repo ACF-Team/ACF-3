@@ -95,7 +95,7 @@ do -- Random timer crew stuff
 
 		local Controlled = IsGrantedControl(self, false)
 
-		if not Controlled and (SelfTbl.Turret == "Turret-V" or SelfTbl.IsServo) then
+		if not Controlled and SelfTbl.Turret == "Turret-V" then
 			local Ancestor = SelfTbl.ACF_TurretAncestor
 
 			-- Servos pass the horizontal drive's cascade along
@@ -735,6 +735,10 @@ do	-- Spawn and Update funcs
 			SoundPath  = Motor.SoundPath
 			SoundPitch = Motor.SoundPitch and math_Clamp(Motor.SoundPitch * 100, 0, 255) or SoundPitch
 			SoundVolume = Motor.SoundVolume or SoundVolume
+		elseif SelfTbl.IsServo then -- Set by the sound replacer tool
+			SoundPath   = SelfTbl.CustomSound or SoundPath
+			SoundPitch  = SelfTbl.CustomPitch and math_Clamp(SelfTbl.CustomPitch * 100, 0, 255) or SoundPitch
+			SoundVolume = SelfTbl.CustomVolume or SoundVolume
 		end
 
 		SelfTbl.SoundPath   = SoundPath
@@ -902,15 +906,17 @@ do -- Overlay
 			State:AddKeyValue("On/Off Angle", SelfTbl.OnAngle .. "/" .. SelfTbl.OffAngle)
 		end
 
-		if SelfTbl.IsWeaponized then
-			State:AddKeyValue("Weaponized", "Yes")
-			if SelfTbl.IsControlled then
-				State:AddKeyValue("Controlled", "Yes")
+		if not SelfTbl.IsServo then -- Weapons never gate a servo
+			if SelfTbl.IsWeaponized then
+				State:AddKeyValue("Weaponized", "Yes")
+				if SelfTbl.IsControlled then
+					State:AddKeyValue("Controlled", "Yes")
+				else
+					State:AddError("Uncontrolled: not aiming")
+				end
 			else
-				State:AddError("Uncontrolled: not aiming")
+				State:AddKeyValue("Weaponized", "No")
 			end
-		else
-			State:AddKeyValue("Weaponized", "No")
 		end
 
 		if IsValid(SelfTbl.Motor) then
@@ -1140,7 +1146,6 @@ do -- Metamethods
 		function ENT:InputState(On)
 			local SelfTbl = ENTITY.GetTable(self)
 			if SelfTbl.Disabled or not SelfTbl.IsServo then return end
-			if SelfTbl.IsWeaponized and not SelfTbl.IsControlled then return end
 
 			SelfTbl.ServoOn = On
 			ApplyDirection(SelfTbl, On and SelfTbl.OnAngle or SelfTbl.OffAngle)
