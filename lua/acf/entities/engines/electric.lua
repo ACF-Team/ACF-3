@@ -14,8 +14,8 @@ do -- Electric Motors
 		CLASS.Sound		 = "acf_base/engines/electric_small.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Electric"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.Electric"
-		CLASS.Mass		 = 310
-		CLASS.Torque		 = 432
+		CLASS.Mass		 = 320
+		CLASS.Torque		 = 428
 		CLASS.FlywheelMass = 0.3
 		CLASS.IsElectric	 = true
 		CLASS.RPM = {
@@ -35,8 +35,8 @@ do -- Electric Motors
 		CLASS.Sound		 = "acf_base/engines/electric_medium.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Electric"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.Electric"
-		CLASS.Mass		 = 875
-		CLASS.Torque		 = 1423
+		CLASS.Mass		 = 880
+		CLASS.Torque		 = 1422
 		CLASS.FlywheelMass = 1.5
 		CLASS.IsElectric	 = true
 		CLASS.RPM = {
@@ -81,7 +81,7 @@ do -- Electric Standalone Motors
 		CLASS.Sound		 = "acf_base/engines/electric_small.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Electric"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.Electric"
-		CLASS.Mass		 = 75
+		CLASS.Mass		 = 80
 		CLASS.Torque		 = 31
 		CLASS.FlywheelMass = 0.025
 		CLASS.IsElectric	 = true
@@ -102,8 +102,8 @@ do -- Electric Standalone Motors
 		CLASS.Sound		 = "acf_base/engines/electric_small.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Electric"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.Electric"
-		CLASS.Mass		 = 170
-		CLASS.Torque		 = 327
+		CLASS.Mass		 = 180
+		CLASS.Torque		 = 321
 		CLASS.FlywheelMass = 0.3
 		CLASS.IsElectric	 = true
 		CLASS.RPM = {
@@ -123,8 +123,8 @@ do -- Electric Standalone Motors
 		CLASS.Sound		 = "acf_base/engines/electric_medium.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Electric"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.Electric"
-		CLASS.Mass		 = 630
-		CLASS.Torque		 = 1106
+		CLASS.Mass		 = 640
+		CLASS.Torque		 = 1102
 		CLASS.FlywheelMass = 1.5
 		CLASS.IsElectric	 = true
 		CLASS.RPM = {

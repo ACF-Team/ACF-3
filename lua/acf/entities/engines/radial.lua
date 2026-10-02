@@ -12,8 +12,8 @@ do
 		CLASS.Sound		 = "acf_base/engines/r7_petrolsmall.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.Radial"
-		CLASS.Mass		 = 270
-		CLASS.Torque		 = 344
+		CLASS.Mass		 = 275
+		CLASS.Torque		 = 340
 		CLASS.FlywheelMass = 0.22
 		CLASS.RPM = {
 			Idle	= 700,
@@ -31,8 +31,8 @@ do
 		CLASS.Sound		 = "acf_base/engines/r7_petrolmedium.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.Radial"
-		CLASS.Mass		 = 450
-		CLASS.Torque		 = 652
+		CLASS.Mass		 = 460
+		CLASS.Torque		 = 647
 		CLASS.FlywheelMass = 0.45
 		CLASS.RPM = {
 			Idle	= 600,
@@ -50,8 +50,8 @@ do
 		CLASS.Sound		 = "acf_base/engines/r7_petrolmedium.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true, ["ACF.FuelTypes.Diesel"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
-		CLASS.Mass		 = 515
-		CLASS.Torque		 = 943
+		CLASS.Mass		 = 525
+		CLASS.Torque		 = 937
 		CLASS.FlywheelMass = 1
 		CLASS.RPM = {
 			Idle	= 400,
@@ -70,7 +70,7 @@ do
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.Radial"
 		CLASS.Mass		 = 960
-		CLASS.Torque		 = 1983
+		CLASS.Torque		 = 1982
 		CLASS.FlywheelMass = 3.4
 		CLASS.RPM = {
 			Idle	= 750,

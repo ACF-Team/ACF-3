@@ -12,8 +12,8 @@ do -- Diesel Engines
 		CLASS.Sound		 = "acf_base/engines/i4_diesel2.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
-		CLASS.Mass		 = 155
-		CLASS.Torque		 = 174
+		CLASS.Mass		 = 160
+		CLASS.Torque		 = 170
 		CLASS.FlywheelMass = 0.3
 		CLASS.RPM = {
 			Idle	= 650,
@@ -31,8 +31,8 @@ do -- Diesel Engines
 		CLASS.Sound		 = "acf_base/engines/i4_dieselmedium.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
-		CLASS.Mass		 = 340
-		CLASS.Torque		 = 545
+		CLASS.Mass		 = 345
+		CLASS.Torque		 = 539
 		CLASS.FlywheelMass = 1.05
 		CLASS.RPM = {
 			Idle	= 600,
