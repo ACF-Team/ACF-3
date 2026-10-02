@@ -139,9 +139,10 @@ do
 			BlockedCrew = 0
 			local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.CurrentCrate or self)
 			local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.CurrentCrate or self)
-			self.LoadCrewMod = self.LoadCrewModOverride or math.Clamp(Sum1 + Sum2, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
+			local Sum3, Count3 = ACF.WeightedLinkSum(self.CrewsByType.Gunner or {}, GetReloadEff, self, self.CurrentCrate or self)
+			self.LoadCrewMod = self.LoadCrewModOverride or math.Clamp(Sum1 + Sum2 + Sum3, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
 			-- A crewed rack only stalls once every last crew member has lost sight of the breech
-			Blocked = BlockedCrew > 0 and BlockedCrew == Count1 + Count2
+			Blocked = BlockedCrew > 0 and BlockedCrew == Count1 + Count2 + Count3
 			if Blocked then Reason = "Reloading is stalled, no loader can see the breech" end
 		end
 

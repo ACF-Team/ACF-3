@@ -129,9 +129,10 @@ do -- Random timer crew stuff
 			BlockedCrew = 0
 			local Sum1, Count1 = ACF.WeightedLinkSum(SelfTbl.CrewsByType.Loader or {}, GetReloadEff, self, SelfTbl.CurrentCrate or self)
 			local Sum2, Count2 = ACF.WeightedLinkSum(SelfTbl.CrewsByType.Commander or {}, GetReloadEff, self, SelfTbl.CurrentCrate or self)
-			SelfTbl.LoadCrewMod = math.Clamp(Sum1 + Sum2, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
+			local Sum3, Count3 = ACF.WeightedLinkSum(SelfTbl.CrewsByType.Gunner or {}, GetReloadEff, self, SelfTbl.CurrentCrate or self)
+			SelfTbl.LoadCrewMod = math.Clamp(Sum1 + Sum2 + Sum3, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
 			-- A crewed gun only stalls once every last crew member has lost sight of the breech
-			Blocked = BlockedCrew > 0 and BlockedCrew == Count1 + Count2
+			Blocked = BlockedCrew > 0 and BlockedCrew == Count1 + Count2 + Count3
 			if Blocked then Reason = "Reloading is stalled, no loader can see the breech" end
 		end
 
