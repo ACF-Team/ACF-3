@@ -20,6 +20,24 @@ local function WillUseSmallModel(Size) return Size <= 12.5 end
 
 Classes.DefineClass("ACF.Turrets.Component", function() end)
 
+-- Slewing ring friction moments (Nm) for a load, per drive style. Servos blend the two.
+local function HorizontalMz(TurretData, Weight, Diameter, CoMDistance, OffBaseDistance)
+	local Mk = Weight * OffBaseDistance -- Sum of tilting moments (kNm) (off balance load)
+	local Fa = Weight * math.Clamp(1 - (CoMDistance * 2), 0, 1) * TurretData.Tilt -- Sum of axial dynamic forces (kN) (on balance load)
+	local Fr = Weight * math.Clamp(1 - (CoMDistance * 2), 0, 1) * (1 - TurretData.Tilt) * 1.73 -- Sum of radial dynamic forces (kN), 1.73 is the coefficient for prevailing load, which is already determined by CoMDistance and Tilt
+
+	return 0.004 * 4.4 * (((Mk * 1000) / Diameter) + (Fa / 4.4) + (Fr / 2)) * (Diameter / 2000)
+end
+
+local function VerticalMz(TurretData, Weight, Diameter, CoMDistance)
+	local ZDist           = TurretData.LocalCoM.z * (InchToMm / 1000)
+	local OffBaseDistance = math.max(ZDist - math.max(ZDist - ((TurretData.RingHeight * InchToMm) / 2), 0), 0)
+	local Mk              = Weight * OffBaseDistance
+	local Fr              = Weight * math.Clamp(1 - (CoMDistance * 2), 0, 1) -- Sum of radial dynamic forces (kN), included for vertical turret drives
+
+	return 0.004 * 4.4 * (((Mk * 1000) / Diameter) + (Fr / 2)) * (Diameter / 2000)
+end
+
 do	-- Turret drives
 	Classes.DefineClass("ACF.Turrets.Drive", "ACF.Turrets.Component", function(CLASS)
 		CLASS.Name        = "Turrets"
@@ -102,20 +120,12 @@ do	-- Turret drives
 			local Weight = (TurretData.TotalMass * 9.81) / 1000
 			local Mz     = 0 -- Nm resistance to torque
 
-			local Mk, Fa, Fr
-
 			if TurretData.TurretClass == "Turret-H" then
-				Mk = Weight * OffBaseDistance -- Sum of tilting moments (kNm) (off balance load)
-				Fa = Weight * math.Clamp(1 - (CoMDistance * 2), 0, 1) * TurretData.Tilt -- Sum of axial dynamic forces (kN) (on balance load)
-				Fr = Weight * math.Clamp(1 - (CoMDistance * 2), 0, 1) * (1 - TurretData.Tilt) * 1.73 -- Sum of radial dynamic forces (kN), 1.73 is the coefficient for prevailing load, which is already determined by CoMDistance and Tilt
-				Mz = 0.004 * 4.4 * (((Mk * 1000) / Diameter) +  (Fa / 4.4) + (Fr / 2)) * (Diameter / 2000)
+				Mz = HorizontalMz(TurretData, Weight, Diameter, CoMDistance, OffBaseDistance)
+			elseif TurretData.TurretClass == "Turret-S" then
+				Mz = (HorizontalMz(TurretData, Weight, Diameter, CoMDistance, OffBaseDistance) + VerticalMz(TurretData, Weight, Diameter, CoMDistance)) * 0.5
 			else
-				local ZDist = TurretData.LocalCoM.z * (InchToMm / 1000)
-
-				OffBaseDistance = math.max(ZDist - math.max(ZDist - ((TurretData.RingHeight * InchToMm) / 2), 0), 0)
-				Mk = Weight * OffBaseDistance -- Sum of tilting moments (kNm) (off balance load)
-				Fr = Weight * math.Clamp(1 - (CoMDistance * 2), 0, 1) -- Sum of radial dynamic forces (kN), included for vertical turret drives
-				Mz = 0.004 * 4.4 * (((Mk * 1000) / Diameter) + (Fr / 2)) * (Diameter / 2000)
+				Mz = VerticalMz(TurretData, Weight, Diameter, CoMDistance)
 			end
 
 			-- 9.55 is 1 rad/s to RPM
@@ -360,6 +370,70 @@ do	-- Turret drives
 			}
 		end)
 	end
+end
+
+do	-- Turret servos
+	-- Inherits Drive so acf_turret's Turret field accepts it; the menu lists it as its own category
+	Classes.DefineClass("ACF.Turrets.Servo", "ACF.Turrets.Drive", function(CLASS)
+		CLASS.Name         = "Servos"
+		CLASS.ID           = "6-Servo"
+		CLASS.SpawnModel   = "models/holograms/cylinder.mdl"
+		CLASS.Description  = "#acf.descs.servos"
+		CLASS.CreateMenu   = ACF.CreateTurretServoMenu
+		CLASS.IsServoGroup = true
+	end)
+
+	Classes.DefineClass("ACF.Turrets.Servo.Standard", "ACF.Turrets.Servo", function(CLASS)
+		CLASS.Name         = "Servo"
+		CLASS.ID           = "Turret-S"
+		CLASS.Description  = "#acf.descs.servos.standard"
+		CLASS.Model        = "models/holograms/cylinder.mdl"
+		CLASS.Mass         = 20 -- At default size, this is the mass of the servo. Will scale up/down with diameter difference
+
+		CLASS.Preview = {
+			FOV = 105,
+		}
+
+		CLASS.Size = {
+			Base  = 8,
+			Min   = 4,
+			Max   = 10,
+			Ratio = 0.5
+		}
+
+		CLASS.Teeth = {
+			Min = 8,
+			Max = 96
+		}
+
+		CLASS.Armor = {
+			Min = 5,
+			Max = 30
+		}
+
+		CLASS.MassLimit = { -- Squared for the final capacity: 256kg at the smallest size, 4000kg at the largest
+			Min = 16,
+			Max = math.sqrt(4000)
+		}
+
+		-- Built-in power, fed to CalcSpeed in place of a motor or the handcrank
+		CLASS.Power = {
+			Teeth      = 12,
+			Speed      = 300,
+			Torque     = 300,
+			Efficiency = 0.9,
+			Accel      = 1,
+			Sound      = "acf_base/fx/turret_electric.wav",
+		}
+
+		CLASS.SetupInputs = function(_, List)
+			local Count = #List
+
+			List[Count + 1] = "State (Moves to the ON angle when non-zero, the OFF angle when zero)"
+		end
+
+		CLASS.SlewFuncs = Classes.GetTypeByName("ACF.Turrets.Drive.Horizontal").SlewFuncs -- Yaws about Up like a horizontal drive
+	end)
 end
 
 do	-- Turret motors

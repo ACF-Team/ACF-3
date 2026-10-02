@@ -120,6 +120,33 @@ Sounds.acf_turret_motor = {
 	end
 }
 
+-- Only servos have a replaceable sound; other drives take the tool but ignore it
+Sounds.acf_turret = {
+	GetSound = function(Ent)
+		return {
+			Sound  = Ent.CustomSound or (Ent.PowerData and Ent.PowerData.Sound) or "",
+			Pitch  = Ent.CustomPitch or 0.7,
+			Volume = Ent.CustomVolume or 0.1,
+		}
+	end,
+	SetSound = function(Ent, SoundData)
+		if not Ent.IsServo then return end
+
+		Ent.CustomSound  = SoundData.Sound:Trim():lower()
+		Ent.CustomPitch  = SoundData.Pitch
+		Ent.CustomVolume = SoundData.Volume
+
+		Ent:UpdateSound()
+	end,
+	ResetSound = function(Ent)
+		Ent.CustomSound  = nil
+		Ent.CustomPitch  = nil
+		Ent.CustomVolume = nil
+
+		if Ent.IsServo then Ent:UpdateSound() end
+	end
+}
+
 Sounds.acf_autoloader = {
 	GetSound = function(Ent)
 		return {

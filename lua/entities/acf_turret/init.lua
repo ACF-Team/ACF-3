@@ -97,6 +97,12 @@ do -- Random timer crew stuff
 
 		if not Controlled and SelfTbl.Turret == "Turret-V" then
 			local Ancestor = SelfTbl.ACF_TurretAncestor
+
+			-- Servos pass the horizontal drive's cascade along
+			while IsValid(Ancestor) and Ancestor.IsServo do
+				Ancestor = Ancestor.ACF_TurretAncestor
+			end
+
 			if IsValid(Ancestor) and Ancestor.Turret == "Turret-H" then
 				Controlled = IsGrantedControl(Ancestor, true)
 			end
@@ -184,6 +190,11 @@ do	-- Spawn and Update funcs
 	-- generated wire setup runs before deserialization.
 	function ENT:ACF_SetupWireIO(Inputs, _)
 		local Turret = self:ACF_GetUserVar("Turret")
+
+		if Turret and Turret.IsServoGroup then -- Servos only take State
+			for I = #Inputs, 1, -1 do Inputs[I] = nil end
+		end
+
 		if Turret and Turret.SetupInputs then Turret.SetupInputs(self, Inputs) end
 	end
 
@@ -272,7 +283,7 @@ do	-- Spawn and Update funcs
 
 		local RingHeight = Group.GetRingHeight({Type = TurretID, Ratio = Turret.Size.Ratio}, Size)
 
-		if TurretID == "Turret-H" then
+		if TurretID == "Turret-H" or TurretID == "Turret-S" then
 			self:SetSize(Vector(Size, Size, RingHeight))
 		else
 			self:SetScale(Size / 20)
@@ -286,6 +297,8 @@ do	-- Spawn and Update funcs
 		self.ClassData   = Group
 		self.Turret      = TurretID
 		self.ID          = Turret.ID
+		self.IsServo     = TurretID == "Turret-S"
+		self.PowerData   = Turret.Power -- Servos only, replaces the handcrank/motor
 
 		local SizePerc = (Size - Turret.Size.Min) / (Turret.Size.Max - Turret.Size.Min)
 		local MaxMass  = ((Turret.MassLimit.Min * (1 - SizePerc)) + (Turret.MassLimit.Max * SizePerc)) ^ 2
@@ -314,6 +327,12 @@ do	-- Spawn and Update funcs
 		self.UseVector     = false
 		self.DesiredVector = Vector()
 		self.DesiredDeg    = 0
+
+		if self.IsServo then
+			self.OnAngle  = self:ACF_GetUserVar("OnAngle")
+			self.OffAngle = self:ACF_GetUserVar("OffAngle")
+			self.DesiredDeg = self.ServoOn and self.OnAngle or self.OffAngle
+		end
 
 		-- Whether a Gunner/Commander/Pilot (or component) controls this turret; only matters
 		-- while weaponized (see InputDirection for what happens when uncontrolled)
@@ -344,7 +363,7 @@ do	-- Spawn and Update funcs
 		self.SubTurretMass = 0
 		self.SubTurretCoM  = Vector()
 
-		self.Active           = false
+		self.Active           = self.IsServo -- Servos are always powered
 		self.SlewRate         = 0 -- Rotation rate
 		self.Stabilized       = false
 		self.StabilizeAmount  = 0
@@ -360,6 +379,10 @@ do	-- Spawn and Update funcs
 			self.MinDeg = MinDeg
 			self.MaxDeg = MaxDeg
 			self.HasArc = not ((MinDeg == -180) and (MaxDeg == 180))
+		elseif self.IsServo then
+			self.MinDeg = -180
+			self.MaxDeg = 180
+			self.HasArc = false
 		else
 			self.MinDeg = math_max(self:ACF_GetUserVar("MinDeg"), -90)
 			self.MaxDeg = math_min(self:ACF_GetUserVar("MaxDeg"), 90)
@@ -379,7 +402,7 @@ do	-- Spawn and Update funcs
 			Sounds.SendAdjustableSound(self, true)
 		end
 		self.SoundPlaying = false
-		self.SoundPath    = self.HandGear.Sound
+		self.SoundPath    = (self.PowerData or self.HandGear).Sound
 
 		self.ScaledArmor  = (Turret.Armor.Min * (1 - SizePerc)) + (Turret.Armor.Max * SizePerc)
 
@@ -704,7 +727,7 @@ do	-- Spawn and Update funcs
 		local SelfTbl = ENTITY.GetTable(self)
 
 		local Motor       = SelfTbl.Motor
-		local SoundPath   = SelfTbl.HandGear.Sound
+		local SoundPath   = (SelfTbl.PowerData or SelfTbl.HandGear).Sound
 		local SoundPitch  = 70
 		local SoundVolume = 0.1
 
@@ -712,6 +735,10 @@ do	-- Spawn and Update funcs
 			SoundPath  = Motor.SoundPath
 			SoundPitch = Motor.SoundPitch and math_Clamp(Motor.SoundPitch * 100, 0, 255) or SoundPitch
 			SoundVolume = Motor.SoundVolume or SoundVolume
+		elseif SelfTbl.IsServo then -- Set by the sound replacer tool
+			SoundPath   = SelfTbl.CustomSound or SoundPath
+			SoundPitch  = SelfTbl.CustomPitch and math_Clamp(SelfTbl.CustomPitch * 100, 0, 255) or SoundPitch
+			SoundVolume = SelfTbl.CustomVolume or SoundVolume
 		end
 
 		SelfTbl.SoundPath   = SoundPath
@@ -722,7 +749,7 @@ do	-- Spawn and Update funcs
 	function ENT_UpdateTurretSlew(self, SelfTbl)
 		SelfTbl		        = SelfTbl or ENTITY.GetTable(self)
 
-		local SlewInput 	= SelfTbl.HandGear
+		local SlewInput 	= SelfTbl.PowerData or SelfTbl.HandGear
 		local Stabilized	= false
 		local StabilizeAmount	= 0
 		local MotorDistance = IsValid(SelfTbl.Motor) and (SelfTbl.Motor.CompSize * 7.5) or 0
@@ -874,17 +901,22 @@ do -- Overlay
 
 		if SelfTbl.HasArc then
 			State:AddKeyValue("Arc", SelfTbl.MinDeg .. "/" .. SelfTbl.MaxDeg)
+		elseif SelfTbl.IsServo then
+			State:AddKeyValue("State", SelfTbl.ServoOn and "On" or "Off")
+			State:AddKeyValue("On/Off Angle", SelfTbl.OnAngle .. "/" .. SelfTbl.OffAngle)
 		end
 
-		if SelfTbl.IsWeaponized then
-			State:AddKeyValue("Weaponized", "Yes")
-			if SelfTbl.IsControlled then
-				State:AddKeyValue("Controlled", "Yes")
+		if not SelfTbl.IsServo then -- Weapons never gate a servo
+			if SelfTbl.IsWeaponized then
+				State:AddKeyValue("Weaponized", "Yes")
+				if SelfTbl.IsControlled then
+					State:AddKeyValue("Controlled", "Yes")
+				else
+					State:AddError("Uncontrolled: not aiming")
+				end
 			else
-				State:AddError("Uncontrolled: not aiming")
+				State:AddKeyValue("Weaponized", "No")
 			end
-		else
-			State:AddKeyValue("Weaponized", "No")
 		end
 
 		if IsValid(SelfTbl.Motor) then
@@ -911,6 +943,7 @@ do -- Metamethods
 		-- Motor links
 
 		ACF.RegisterClassLink("acf_turret", "acf_turret_motor", function(This, Motor)
+			if This.IsServo then return false, "Servos are self-powered and can't take a motor!" end
 			if IsValid(This.Motor) then return false, "This turret already has a motor linked!" end
 			if IsValid(Motor.Turret) and (Motor.Turret ~= This) then return false, "This motor is already linked to different turret!" end
 			if IsValid(Motor.Turret) and (Motor.Turret == This) then return false, "This motor is already linked to this turret!" end
@@ -948,6 +981,7 @@ do -- Metamethods
 		-- Gyro links
 
 		ACF.RegisterClassLink("acf_turret", "acf_turret_gyro", function(This, Gyro)
+			if This.IsServo then return false, "Servos can't be stabilized!" end
 			if IsValid(This.Gyro) then return false, "This turret already has a gyro linked!" end
 			if Gyro.IsDual then
 				if IsValid(Gyro[This.ID]) then return false, "This gyro is already linked to this type of turret!" end
@@ -1101,12 +1135,20 @@ do -- Metamethods
 
 		function ENT:InputDirection(Direction)
 			local SelfTbl = ENTITY.GetTable(self)
-			if SelfTbl.Disabled then return end
+			if SelfTbl.Disabled or SelfTbl.IsServo then return end -- Servos only take State
 
 			-- Uncontrolled weaponized turrets don't aim at all; stabilization/slewing continue as normal
 			if SelfTbl.IsWeaponized and not SelfTbl.IsControlled then return end
 
 			ApplyDirection(SelfTbl, Direction)
+		end
+
+		function ENT:InputState(On)
+			local SelfTbl = ENTITY.GetTable(self)
+			if SelfTbl.Disabled or not SelfTbl.IsServo then return end
+
+			SelfTbl.ServoOn = On
+			ApplyDirection(SelfTbl, On and SelfTbl.OnAngle or SelfTbl.OffAngle)
 		end
 
 		-- The meat and POE-TAE-TOES of the turret working. Called by the ACF_OnTick coordinator below,
@@ -1238,9 +1280,13 @@ do -- Metamethods
 
 	do	-- Input/Outputs/Eventually linking
 		ACF.AddInputAction("acf_turret", "Active", function(Entity, Value)
-			if Entity.Disabled then return end
+			if Entity.Disabled or Entity.IsServo then return end
 
 			Entity.Active = tobool(Value)
+		end)
+
+		ACF.AddInputAction("acf_turret", "State", function(Entity, Value) -- Only on servos
+			Entity:InputState(tobool(Value))
 		end)
 
 		ACF.AddInputAction("acf_turret", "Angle", function(Entity, Value)
@@ -1271,6 +1317,8 @@ do -- Metamethods
 	do	-- Activation and Damage handling
 
 		function ENT:Enable()
+			if self.IsServo then self.Active = true end
+
 			self:UpdateOverlay()
 		end
 
@@ -1371,6 +1419,8 @@ do -- Metamethods
 
 			if SelfTbl.Turret == "Turret-H" then
 				return 0.1 * Size
+			elseif SelfTbl.IsServo then
+				return 0.15 * Size
 			else
 				return 0.2 * Size
 			end
