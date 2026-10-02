@@ -721,7 +721,7 @@ end
 function ENT:GetCost()
 	local selftbl = self:GetTable()
 
-	return math.max(5, selftbl.PeakPower / ACF.EngineKwPerPoint)
+	return 5 + selftbl.PeakPower / ACF.EngineKwPerPoint
 end
 
 -- Remove-only teardown. Captured by AutoRegisterV2 as OrigOnRemove; the generated OnRemove still runs
