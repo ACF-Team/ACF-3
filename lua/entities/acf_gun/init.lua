@@ -198,10 +198,17 @@ do -- Random timer crew stuff
 		Temp = ENTITY.GetParent(self)
 		if Temp == Test then return Temp end
 
-		-- Possibly a vertical turret
+		-- Possibly a vertical turret, or servos between it and the horizontal
 		TempTbl = IsValid(Temp) and ENTITY.GetTable(Temp)
 		Temp = (TempTbl and TempTbl.IsACFTurret and TempTbl.Turret == "Turret-V") and ENTITY.GetParent(Temp) or Temp
 		if Temp == Test then return Temp end
+
+		TempTbl = IsValid(Temp) and ENTITY.GetTable(Temp)
+		while TempTbl and TempTbl.IsACFTurret and TempTbl.IsServo do
+			Temp    = ENTITY.GetParent(Temp)
+			TempTbl = IsValid(Temp) and ENTITY.GetTable(Temp)
+			if Temp == Test then return Temp end
+		end
 
 		-- Followed by a Horizontal or baseplate
 		TempTbl = IsValid(Temp) and ENTITY.GetTable(Temp)

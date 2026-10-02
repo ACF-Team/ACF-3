@@ -3,7 +3,7 @@ DEFINE_BASECLASS("acf_base_scalable")
 ENT.ACF_Limit = 20
 ENT.ConvexMaterial = "RHA"
 
-ACF.Entities.AutoRegister(2026091001, function()
+ACF.Entities.AutoRegister(2026092801, function()
 	MENU_FIELD("ACF.Turrets.Drive", "Turret", {
 		InstantiateTypeForDefault = "ACF.Turrets.Drive.Horizontal",
 		OnlyAllowSubtypes         = true,
@@ -12,6 +12,8 @@ ACF.Entities.AutoRegister(2026091001, function()
 	MENU_FIELD("Number", "MinDeg",   {Min = -180, Max = 0,   Default = -180, Decimals = 1})
 	MENU_FIELD("Number", "MaxDeg",   {Min = 0,    Max = 180, Default = 180,  Decimals = 1})
 	MENU_FIELD("Number", "MaxSpeed", {Min = 0,    Max = 120, Default = 0,    Decimals = 2})
+	MENU_FIELD("Number", "OnAngle",  {Min = -180, Max = 180, Default = 15,   Decimals = 1}) -- Servos only
+	MENU_FIELD("Number", "OffAngle", {Min = -180, Max = 180, Default = 0,    Decimals = 1}) -- Servos only
 end, "Turret Drive", "Turret Drives")
 
 ENT.ACF_StaticWireInputs = {
