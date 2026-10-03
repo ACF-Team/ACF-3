@@ -379,7 +379,7 @@ do -- ACF global vars
 		acf_gun		= true,
 		acf_rack	= true
 	}
-	ACF.LightweightTurretMassLimit = 250	-- kg. Turrets at or under this carried mass can be controlled by a shared-parent Gunner, or a Lightweight Turret Controller, without needing to be mounted on it
+	ACF.LightweightTurretMassLimit = 300	-- kg. Turrets at or under this carried mass can be controlled by a shared-parent Gunner, or a Lightweight Turret Controller, without needing to be mounted on it
 	ACF.CasemateArcLimit = 30	-- Degrees of total arc (MaxDeg - MinDeg) at or under which a shared-parent Gunner controls a turret at any mass, so casemate mounts don't need the gunner parented to the ring
 
 	ACF.CrewRepTimeBase 	= 3		-- Base time to replace a crew member
