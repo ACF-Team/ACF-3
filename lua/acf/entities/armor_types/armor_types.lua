@@ -293,6 +293,21 @@ function Armor:OnLoaded()
     self.ExplosiveFiller    = 0.01
 end
 
+-- NERA
+local Armor = Types.Register("NERA")
+function Armor:OnLoaded()
+    self.Name        = "NERA"
+    self.ShortName   = "NERA"
+    self.Description = "Non-Explosive Reactive Armor, steel plates around rubber interlayers like the Abrams turret cassettes. Bulges against shaped charges and long rods, but never detonates. Weaker than ERA against HEAT, in exchange for being safe and sustained."
+    self.Density     = 5164 -- 60% RHA and 40% rubber by volume
+    self.CostMul     = 40 -- Between the raw material cost (28) and Heavy ERA (47.1), for the cassette assembly
+    self.HealthMul   = 0.8
+    self.KineticMul  = 0.75 -- Just above the linear steel and rubber mix (0.72), the bulging plates disrupt rods a little
+    self.ChemicalMul = 1.5 -- Linear mix is 0.75, the bulge doubles it, still short of ERA's 2.0
+    self.SpallMul    = 0.7 -- Steel plates still spall, but the rubber layers soak up some
+    self.Color       = Color(110, 125, 140)
+end
+
 -- Reinforced Concrete
 local Armor = Types.Register("ReinforcedConcrete")
 function Armor:OnLoaded()
