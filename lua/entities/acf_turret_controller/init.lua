@@ -175,18 +175,18 @@ do	-- Metamethods
 			return Cost
 		end
 
-		-- Sums the verticals and servos a horizontal cascades control to, following servos down
+		-- Sums the weapons on the verticals, servos and actuators a horizontal cascades control to; the drives themselves add nothing
 		local function GetCascadeCost(Turret, Counted)
 			local Cost = 0
 
 			for SubTurret in pairs(Turret.SubTurrets or {}) do
 				if not IsValid(SubTurret) or Counted[SubTurret] then continue end
 
-				if SubTurret.Turret == "Turret-V" or SubTurret.IsServo then
+				if SubTurret.Turret == "Turret-V" or SubTurret.IsPassthrough then
 					Cost = Cost + GetDirectWeaponCost(SubTurret)
 				end
 
-				if SubTurret.IsServo then
+				if SubTurret.IsPassthrough then
 					Cost = Cost + GetCascadeCost(SubTurret, Counted)
 				end
 			end

@@ -796,12 +796,12 @@ do -- Default turret menus
 			HandCrankLbl:UpdateSim()
 		end
 
-		-- The servo group inherits from Drive but is listed as its own category
+		-- The servo and actuator groups inherit from Drive but are listed as their own categories
 		function ACF.GetTurretDrives()
 			local Items = {}
 
 			for ID, Class in pairs(Classes.GetChildren(Classes.GetTypeByName("ACF.Turrets.Drive"))) do
-				if not Class.IsServoGroup then Items[ID] = Class end
+				if not Class.IsPassthroughGroup then Items[ID] = Class end
 			end
 
 			return Items
@@ -941,6 +941,87 @@ do -- Default turret menus
 
 			TurretData.Ready	= true
 			ServoLbl:UpdateSim()
+		end
+
+		function ACF.CreateTurretActuatorMenu(Data, Menu, Ctx)
+			local Group	= Classes.GetTypeByName("ACF.Turrets.Actuator")
+			local Ready	= false
+			Ctx:Set("Turret", { Type = Classes.GetTypeName(Data), Data = {} })
+
+			local function SaveSetting(Field, Value)
+				ACF.Menu.SetUIState("acf_turret", Data.ID .. "." .. Field, Value)
+			end
+			local function LoadSetting(Field, Default)
+				local V = ACF.Menu.GetUIState("acf_turret", Data.ID .. "." .. Field)
+				if V == nil then return Default end
+				return V
+			end
+
+			local Bore		= Menu:AddSlider("#acf.menu.turrets.actuator_bore", Data.Size.Min, Data.Size.Max, 2)
+			local Stroke	= Menu:AddSlider("#acf.menu.turrets.actuator_stroke", Data.Stroke.Min, Data.Stroke.Max, 1)
+
+			Menu:AddLabel("#acf.menu.turrets.actuator_size_desc")
+
+			local MaxSpeed	= Menu:AddSlider("#acf.menu.turrets.actuator_max_speed", 0, 36, 2)
+
+			Menu:AddLabel("#acf.menu.turrets.max_speed_desc")
+
+			local MassLbl	= Menu:AddLabel("")
+			local CostText	= language.GetPhrase("acf.menu.turrets.cost_text")
+			local CostLbl	= Menu:AddLabel(CostText:format(0))
+
+			local EstMass	= Menu:AddSlider("#acf.menu.turrets.estimated_mass", 0, 4000, 0)
+			local SimText	= language.GetPhrase("acf.menu.turrets.actuator_text")
+			local SimLbl	= Menu:AddLabel(SimText:format(0, 0))
+
+			local function UpdateStats()
+				if not Ready then return end
+
+				local B, S		= Bore:GetValue(), Stroke:GetValue()
+				local MaxLoad	= Group.GetMaxLoad(B, S)
+				local Info		= Group.CalcSpeed({RingSize = B, TotalMass = EstMass:GetValue(), MaxMass = MaxLoad})
+				local Text		= SimText:format(math.Round(Info.MaxSlewRate, 2), math.Round(Info.SlewAccel, 2))
+
+				if Info.Overloaded then Text = Text .. "\n" .. language.GetPhrase("acf.menu.turrets.actuator_overloaded") end
+
+				MassLbl:SetText(language.GetPhrase("acf.menu.turrets.turret_mass_text"):format(Group.GetActuatorMass(B, S), MaxLoad))
+				CostLbl:SetText(CostText:format(ACF.FormatCost(Group.GetActuatorCost(B, S))))
+				SimLbl:SetText(Text)
+
+				if Menu.ComponentPreview then
+					Menu.ComponentPreview:SetModelScale(Vector(B, B, S + B))
+				end
+			end
+
+			function Bore:OnValueChanged(Value)
+				self:SetValue(Value)
+				Ctx:Set("RingSize", Value)
+				SaveSetting("RingSize", Value)
+				UpdateStats()
+			end
+
+			function Stroke:OnValueChanged(Value)
+				self:SetValue(Value)
+				Ctx:Set("Stroke", Value)
+				SaveSetting("Stroke", Value)
+				UpdateStats()
+			end
+
+			function MaxSpeed:OnValueChanged(Value)
+				self:SetValue(Value)
+				Ctx:Set("MaxSpeed", Value)
+				SaveSetting("MaxSpeed", Value)
+			end
+
+			EstMass.OnValueChanged = function() UpdateStats() end
+
+			RestoreSlider(Bore, math.Clamp(LoadSetting("RingSize", Data.Size.Base), Data.Size.Min, Data.Size.Max))
+			RestoreSlider(Stroke, math.Clamp(LoadSetting("Stroke", Data.Stroke.Base), Data.Stroke.Min, Data.Stroke.Max))
+			RestoreSlider(MaxSpeed, LoadSetting("MaxSpeed", 0))
+			EstMass:SetValue(0)
+
+			Ready = true
+			UpdateStats()
 		end
 	end
 

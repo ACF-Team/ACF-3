@@ -122,6 +122,8 @@ do	-- Overlay
 	local Mat	= Material("vgui/white")
 
 	function ENT:DrawHome()
+		if self:GetNWFloat("ACF.ActuatorBore", 0) > 0 then return end -- Actuators have no home angle
+
 		if not self.HasData then
 			self:RequestTurretInfo()
 
@@ -152,6 +154,35 @@ do	-- Overlay
 		render.DrawQuad(Origin + FWD * UX, Origin + WorldRightDir * UX + FWD * (-UX / 2), Origin, Origin + WorldRightDir * -UX + FWD * (-UX / 2), orange)
 	end
 
+	local function DrawActuatorOverlay(self, SelfTbl, Bore)
+		local Rotator = SelfTbl.Rotator
+		if not IsValid(Rotator) then return end
+
+		local Stroke	= self:GetNWFloat("ACF.ActuatorStroke", 0)
+		local Up		= self:GetUp()
+		local Base		= self:LocalToWorld(Vector(0, 0, (Stroke + Bore) / 2))
+		local Extension	= math.Round(self:WorldToLocal(Rotator:GetPos()).z, 1)
+		local CoM		= Rotator:LocalToWorld(SelfTbl.LocalCoM)
+
+		ACF.DrawOutlineBeam(0.25, arcColor, Base, Base + Up * Stroke)
+		ACF.DrawOutlineBeam(0.5, curColor, Base, Base + Up * Extension)
+		ACF.DrawOutlineBeam(0.25, red, self:LocalToWorld(self:OBBCenter()), CoM)
+
+		render.OverrideDepthEnable(true, true)
+			render.DrawWireframeSphere(CoM, 1.5, 4, 3, red)
+		render.OverrideDepthEnable(false, false)
+
+		local EndPos	= (Base + Up * Stroke):ToScreen()
+		local CurPos	= (Base + Up * Extension):ToScreen()
+		local CoMPos	= (CoM - Vector(0, 0, 2)):ToScreen()
+
+		cam.Start2D()
+			draw.SimpleTextOutlined("Stroke: " .. Stroke .. "in", "ACF_Control", EndPos.x, EndPos.y - 16, arcColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
+			draw.SimpleTextOutlined("Current: " .. Extension .. "in", "ACF_Title", CurPos.x, CurPos.y, curColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
+			draw.SimpleTextOutlined("Mass: " .. SelfTbl.Mass .. "kg", "ACF_Control", CoMPos.x, CoMPos.y, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
+		cam.End2D()
+	end
+
 	local NoAng = Angle(0, 0, 0)
 	function ENT:DrawOverlay(Trace)
 		local SelfTbl = self:GetTable()
@@ -163,6 +194,9 @@ do	-- Overlay
 		elseif Clock.CurTime > SelfTbl.Age then
 			self:RequestTurretInfo()
 		end
+
+		local Bore = self:GetNWFloat("ACF.ActuatorBore", 0)
+		if Bore > 0 then return DrawActuatorOverlay(self, SelfTbl, Bore) end
 
 		render.SetMaterial(Mat)
 

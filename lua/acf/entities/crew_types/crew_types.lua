@@ -160,7 +160,7 @@ Classes.DefineClass("ACF.CrewTypes.Gunner", "ACF.CrewTypes.BaseCrewType", functi
 		acf_turret = {
 			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
 				if CheckCount(Crew, "acf_turret") then return false, "Gunners can only link to one turret." end
-				if Target.Turret == "Turret-V" or Target.IsServo then return false, "Gunners cannot link to vertical drives or servos." end
+				if Target.Turret == "Turret-V" or Target.IsPassthrough then return false, "Gunners cannot link to vertical drives, servos or actuators." end
 				return true, "Crew linked."
 			end
 		},
@@ -330,7 +330,7 @@ Classes.DefineClass("ACF.CrewTypes.Pilot", "ACF.CrewTypes.BaseCrewType", functio
 		acf_turret = {
 			CanLink = function(Crew, Target) -- Called when a crew member tries to link to an entity
 				if CheckCount(Crew) then return false, "Pilot can only link to one entity." end
-				if Target.Turret == "Turret-V" or Target.IsServo then return false, "Pilot cannot link to vertical drives or servos." end
+				if Target.Turret == "Turret-V" or Target.IsPassthrough then return false, "Pilot cannot link to vertical drives, servos or actuators." end
 				return true, "Crew linked."
 			end
 		},
