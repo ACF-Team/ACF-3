@@ -263,7 +263,7 @@ do	-- Spawn and Update funcs
 		Rod.Actuator = self
 		Rod.Rotator  = self.Rotator
 
-		Rod:SetNWEntity("ACF.Actuator", self) -- So clients show the actuator's overlay on the rod
+		Rod:SetNWEntity("ACF.Actuator", self) -- So clients can mirror the actuator's color and material on the rod
 	end
 
 	-- The actuator rod is a solid child inside the body, which would block the drop trace

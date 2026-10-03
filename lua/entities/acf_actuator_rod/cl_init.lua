@@ -4,12 +4,6 @@ include("shared.lua")
 
 local ENTITY = FindMetaTable("Entity")
 
-function ENT:ACF_GetOverlayTarget()
-	local Actuator = self:GetNWEntity("ACF.Actuator")
-
-	if IsValid(Actuator) then return Actuator end
-end
-
 -- base_wire_entity's Draw would add the Wiremod tooltip; the ACF overlay replaces it
 function ENT:Draw()
 	local RenderContext = ACF.RenderContext

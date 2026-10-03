@@ -20,6 +20,25 @@ function ENT:CFW_PreParentedTo()
 	if not self.AllowReparent then return false end
 end
 
+-- ACF overlay showing just the name; it never changes, so the state is built once
+function ENT:GetOverlayState()
+	local State = self.OverlayState
+
+	if not State then
+		State = ACF.Overlay.State()
+
+		State:Begin()
+		State:AddHeader(self.PrintName)
+		State:End()
+
+		self.OverlayState = State
+	end
+
+	return State
+end
+
+function ENT:ACF_UpdateOverlayState() end -- The overlay system only serves entities that define this
+
 -- Hits come off the actuator's health
 function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	local Actuator = self.Actuator
