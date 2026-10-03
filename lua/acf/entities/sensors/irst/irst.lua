@@ -2,7 +2,7 @@ local ACF     = ACF
 local Classes = ACF.Classes
 
 Classes.DefineClass("ACF.Sensors.IRST.Infrared", "ACF.Sensors.IRST", function(CLASS)
-	CLASS.Name       = "Infrared Search / Track Sensor"
+	CLASS.Name       = "Infrared Search & Track Sensor"
 	CLASS.ID         = "IRST"
 	CLASS.Entity     = "acf_irst"
 	CLASS.SpawnModel = "models/props_lab/monitor01b.mdl"

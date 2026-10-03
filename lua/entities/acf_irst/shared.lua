@@ -8,7 +8,7 @@ ACF.Entities.AutoRegister(2026091001, function()
 		InstantiateTypeForDefault = "ACF.Sensors.IRST.Infrared.Standard",
 		OnlyAllowSubtypes         = true,
 	})
-end, "Infrared Search / Track Sensor", "Infrared Search / Track Sensors")
+end, "Infrared Search & Track Sensor", "Infrared Search & Track Sensors")
 
 ENT.ACF_StaticWireInputs = {
 	"Active (If set to a non-zero value, attempts to start the sensor activation.)",

@@ -7,7 +7,16 @@ ENT.PluralName      = "ACF Sensor Synchronizers"
 ENT.IsACFSensorSync = true
 ENT.ACF_Limit       = 2
 
-ACF.Entities.AutoRegister(2026091001, function() end, "Sensor Synchronizer", "Sensor Synchronizers")
+-- Sensor entities a Synchronizer can link to. Each must implement the sensor interface used in init.lua:
+-- Active, ThinkTicks, Damage, SyncSource, DetectContraptions/DetectMissiles/DetectPlayers,
+-- GetScanShape, CheckTargetLOS, StopIndependentScanning and ResumeIndependentScanning
+ENT.ACF_SensorClasses = { acf_radar = true, acf_irst = true }
+
+local SensorClasses = ENT.ACF_SensorClasses
+
+ACF.Entities.AutoRegister(2026091001, function()
+	LINKED_ENTITY_ARRAY_FIELD("Sensors", { AcceptableClasses = SensorClasses })
+end, "Sensor Synchronizer", "Sensor Synchronizers")
 
 ENT.ACF_StaticWireOutputs = {
 	"Detected (Returns the amount of targets detected across all linked sensors.)",

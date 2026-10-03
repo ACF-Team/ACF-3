@@ -15,10 +15,6 @@ local TimerCreate = timer.Create
 local TimerRemove = timer.Remove
 local hook        = hook
 
--- Sensor entities a Synchronizer can link to. Each must implement the sensor interface used below:
--- Active, ThinkTicks, Damage, SyncSource, DetectContraptions/DetectMissiles/DetectPlayers,
--- GetScanShape, CheckTargetLOS, StopIndependentScanning and ResumeIndependentScanning
-local SensorClasses = { "acf_radar", "acf_irst" }
 
 -- Tracks every currently-spawned Synchronizer so the shared ACF_OnTick hook below can advance each one's
 -- rate-group counters; mirrors the ACF.ActiveRadars pattern used for standalone radars
@@ -345,7 +341,7 @@ end
 
 -- When linked, a sensor stops running its own scan and outputs, and instead becomes a passive
 -- reference point for the Synchronizer's aggregated scan
-for _, SensorClass in ipairs(SensorClasses) do
+for SensorClass in pairs(ENT.ACF_SensorClasses) do
 	ACF.RegisterClassLink("acf_sensorsync", SensorClass, function(Sync, Sensor)
 		if IsValid(Sensor.SyncSource) then return false, "This sensor is already linked to a synchronizer!" end
 
@@ -398,7 +394,6 @@ do -- Spawning
 	end
 
 	function ENT:ACF_OnSpawn()
-		self.Sensors      = {}
 		self.RateGroups   = {}
 		self.BatchResults = {}
 		self.TargetCount  = 0
@@ -440,6 +435,7 @@ do -- Updating
 		self.ClassData = Class
 		self.SoundPath = Class.Sound or ACF.DefaultRadarSound
 		self.Origin    = Vector()
+		self.Sensors   = self:ACF_GetUserVar("Sensors") -- Auto-registered linked field, so dupes save and restore links
 
 		self:SetNWString("WireName", "ACF " .. self.Name)
 
@@ -485,35 +481,6 @@ end
 -- rate groups stay in sync
 function ENT:RefreshRateGroups()
 	RebuildRateGroups(self)
-end
-
-do -- Duplicator support
-	function ENT:PreEntityCopy()
-		local Indexes = {}
-
-		for Sensor in pairs(self.Sensors) do
-			if IsValid(Sensor) then Indexes[#Indexes + 1] = Sensor:EntIndex() end
-		end
-
-		if next(Indexes) then
-			duplicator.StoreEntityModifier(self, "ACFSensorSync", Indexes)
-		end
-	end
-
-	function ENT:PostEntityPaste(_, Ent, CreatedEntities)
-		local EntMods = Ent.EntityMods
-		local Linked  = EntMods and EntMods.ACFSensorSync
-
-		if not Linked then return end
-
-		for _, EntIndex in ipairs(Linked) do
-			local Sensor = CreatedEntities[EntIndex]
-
-			if IsValid(Sensor) then self:Link(Sensor) end
-		end
-
-		EntMods.ACFSensorSync = nil
-	end
 end
 
 function ENT:OnRemove()

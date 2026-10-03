@@ -1311,5 +1311,32 @@ do -- Default turret menus
 				render.DrawBeam(args[i], args[i + 1], width, 0, 1, color)
 			end
 		end
+
+		local ConeSegments = 8
+
+		--- Draws a cone's outline from Origin along Direction, used by sensor overlays.
+		--- Degrees is its half-angle and Length its slant length. FillColor also draws its faces.
+		function ACF.DrawCone(Origin, Direction, Degrees, Length, LineColor, FillColor)
+			local Ang     = Direction:Angle()
+			local Forward = Ang:Forward() * (math.cos(math.rad(Degrees)) * Length)
+			local Spread  = math.sin(math.rad(Degrees)) * Length
+			local Right   = Ang:Right()
+			local Up      = Ang:Up()
+			local Last
+
+			for I = 0, ConeSegments do
+				local Roll  = math.rad(I * 360 / ConeSegments)
+				local Point = Origin + Forward + (Right * math.cos(Roll) + Up * math.sin(Roll)) * Spread
+
+				if Last then
+					if FillColor then render.DrawQuad(Origin, Last, Point, Last, FillColor) end
+
+					render.DrawLine(Last, Point, LineColor, true)
+					render.DrawLine(Origin, Point, LineColor, true)
+				end
+
+				Last = Point
+			end
+		end
 	end
 end

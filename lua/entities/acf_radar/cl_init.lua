@@ -53,21 +53,7 @@ do	-- Overlay/networking
 		if SelfTbl.Spherical then
 			render.DrawWireframeSphere(Origin, SelfTbl.Range, 50, 50, Col2)
 		else
-
-			for I = 0, 7 do
-				local Dir = Vector(SelfTbl.Range, 0, 0)
-				Dir:Rotate(Angle(SelfTbl.Cone, 0, 0))
-				Dir:Rotate(Angle(0, 0, 45 * I))
-				local Point = self:LocalToWorld(SelfTbl.Origin + Dir)
-				local Dir2 = Vector(SelfTbl.Range, 0, 0)
-				Dir2:Rotate(Angle(SelfTbl.Cone, 0, 0))
-				Dir2:Rotate(Angle(0, 0, 45 * (I + 1)))
-				local Point2 = self:LocalToWorld(SelfTbl.Origin + Dir2)
-
-				render.DrawQuad(Origin, Point, Point2, Point, Col)
-				render.DrawLine(Point, Point2, Col, true)
-				render.DrawLine(Origin, Point, Col, true)
-			end
+			ACF.DrawCone(Origin, self:GetForward(), SelfTbl.Cone, SelfTbl.Range, Col, Col)
 		end
 	end
 end
