@@ -41,6 +41,8 @@ do -- Laser Receiver
 
 	local TraceData = { start = true, endpos = true, mask = MASK_SOLID }
 	local function CheckLOS(Receiver, Source, Start, End)
+		if ACF.TraceSmoke(Start, End) then return false end
+
 		TraceData.start = Start
 		TraceData.endpos = End
 		if IsValid(Source.Player) then

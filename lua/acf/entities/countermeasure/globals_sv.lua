@@ -110,7 +110,7 @@ end
 
 --- Tests every active missile against a list of shapes (cones and/or spheres) in a single pass, instead of
 --- iterating the active missile pool once per shape. See ACF.GetEntitiesInShapes for the contraption side
---- equivalent and the batching use case (e.g. a Radar Synchronizer batching same-rate-group radars).
+--- equivalent and the batching use case (e.g. a Sensor Synchronizer batching same-rate-group sensors).
 --- @param Shapes table An array of shape entries: {Radar = <key>, Position = Vector, Direction = Vector, Degrees = number} for a cone, or {Radar = <key>, Position = Vector, Radius = number} for a sphere.
 --- @return table<Entity, table> A table mapping matched missiles to an array of the Radar keys (from Shapes) whose geometry matched them.
 function Countermeasures.GetMissilesInShapes(Shapes)
