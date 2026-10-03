@@ -322,7 +322,8 @@ do -- Obstacle resolution --------------------------
 	-- Returns false when nothing on the line is left to hit, leaving it in flight mode.
 	function Ballistics.BeginPenetration(Projectile, Trace)
 		local Direction = Projectile.Flight:GetNormalized()
-		local Start     = Trace.HitPos - Direction * 2 -- same backoff ACF.GetConvexHits uses
+		local Backoff   = math.min(2, Trace.HitPos:Distance(Trace.StartPos)) -- Never behind the projectile, e.g. a ricochet retracing from the face it left
+		local Start     = Trace.HitPos - Direction * Backoff
 		local Stack     = ACF.ResolveConvexStack(GatherMeshIntersections(Projectile, Start, Direction), Direction)
 
 		if #Stack == 0 then return false end
