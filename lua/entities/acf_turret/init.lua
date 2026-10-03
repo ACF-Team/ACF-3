@@ -1246,7 +1246,7 @@ do -- Metamethods
 
 		function ENT:InputDirection(Direction)
 			local SelfTbl = ENTITY.GetTable(self)
-			if SelfTbl.Disabled or SelfTbl.IsPassthrough then return end -- Servos and actuators only take State/Extension
+			if SelfTbl.Disabled or SelfTbl.IsPassthrough then return end -- Servos and actuators only take State/Extend
 
 			-- Uncontrolled weaponized turrets don't aim at all; stabilization/slewing continue as normal
 			if SelfTbl.IsWeaponized and not SelfTbl.IsControlled then return end
@@ -1417,7 +1417,7 @@ do -- Metamethods
 			Entity:InputState(tobool(Value))
 		end)
 
-		ACF.AddInputAction("acf_turret", "Extension", function(Entity, Value) -- Only on actuators
+		ACF.AddInputAction("acf_turret", "Extend", function(Entity, Value) -- Only on actuators
 			if not isnumber(Value) then return end
 
 			Entity:InputExtension(Value)
