@@ -1,4 +1,4 @@
--- Shared detection-scan helpers used by both acf_radar and acf_radarsync
+-- Shared detection-scan helpers used by acf_radar, acf_irst and acf_sensorsync
 local ACF = ACF
 ACF.RadarHelpers = ACF.RadarHelpers or {}
 
@@ -36,6 +36,8 @@ function RadarHelpers.GetEntityOwner(Owner, Entity)
 		return "Unknown"
 	end
 
+	if Entity:IsPlayer() then return Entity:GetName() end
+
 	local EntOwner = Entity:CPPIGetOwner()
 
 	if not IsValid(EntOwner) then
@@ -45,11 +47,17 @@ function RadarHelpers.GetEntityOwner(Owner, Entity)
 	return EntOwner:GetName()
 end
 
--- Classifies a detected candidate and measures its size. Missiles are sized by caliber, contraptions by
--- their AABB diagonal. Returns 0, nil for anything else
+-- Classifies a detected candidate and measures its size. Missiles are sized by caliber, contraptions and
+-- players by their bounding box diagonal. Returns 0, nil for anything else
 function RadarHelpers.GetEntSizeAndType(Ent)
 	if Ent.IsACFMissile then
 		return math.Round((Ent.Caliber or 0) / ACF.InchToMm), "Missile"
+	end
+
+	if Ent:IsPlayer() then
+		local Mins, Maxs = Ent:OBBMins(), Ent:OBBMaxs()
+
+		return math.Round((Maxs - Mins):Length()), "Player"
 	end
 
 	local EntContraption = Ent:CFW_GetContraption()
@@ -61,4 +69,24 @@ function RadarHelpers.GetEntSizeAndType(Ent)
 	end
 
 	return 0, nil
+end
+
+function RadarHelpers.GetTargetPos(Ent)
+	if Ent:IsPlayer() then return Ent:WorldSpaceCenter() end
+
+	return Ent.ACF_Position or Ent:GetPos()
+end
+
+-- Seated players are skipped; the contraption they're riding is what gets detected
+function RadarHelpers.GetPlayersInShapes(Shapes, Contraption)
+	local Result = {}
+
+	for _, Ply in player.Iterator() do
+		if not Ply:Alive() or Ply:InVehicle() then continue end
+		if Contraption and Ply:CFW_GetContraption() == Contraption then continue end
+
+		ACF.Countermeasures.MatchShapes(Result, Ply, Ply:WorldSpaceCenter(), Shapes)
+	end
+
+	return Result
 end

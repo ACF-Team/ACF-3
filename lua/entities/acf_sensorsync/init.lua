@@ -15,6 +15,11 @@ local TimerCreate = timer.Create
 local TimerRemove = timer.Remove
 local hook        = hook
 
+-- Sensor entities a Synchronizer can link to. Each must implement the sensor interface used below:
+-- Active, ThinkTicks, Damage, SyncSource, DetectContraptions/DetectMissiles/DetectPlayers,
+-- GetScanShape, CheckTargetLOS, StopIndependentScanning and ResumeIndependentScanning
+local SensorClasses = { "acf_radar", "acf_irst" }
+
 -- Tracks every currently-spawned Synchronizer so the shared ACF_OnTick hook below can advance each one's
 -- rate-group counters; mirrors the ACF.ActiveRadars pattern used for standalone radars
 local ActiveSyncs = {}
@@ -41,7 +46,7 @@ local function GetEntityIndex(Entity)
 
 	local EntID = Indexes[Entity]
 
-	Entity:CallOnRemove("RadarSync Index", function()
+	Entity:CallOnRemove("SensorSync Index", function()
 		Indexes[Entity] = nil
 		Unused[EntID] = true
 	end)
@@ -64,25 +69,12 @@ local function ClearTargets(Entity)
 	end
 end
 
--- Picks, among the radars that matched a candidate within one rate-group batch, the healthiest
--- one to attribute the candidate's detection roll/spread/LOS origin to
-local function GetBestMatchingRadar(MatchedRadars)
-	local Best, BestDamage
-
-	for _, Radar in ipairs(MatchedRadars) do
-		local RadarDamage = Radar.Damage or 0
-
-		if not Best or RadarDamage < BestDamage then
-			Best = Radar
-			BestDamage = RadarDamage
-		end
-	end
-
-	return Best
+local function SortByDamage(A, B)
+	return (A.Damage or 0) < (B.Damage or 0)
 end
 
 -- Rewrites this Synchronizer's combined Targets/TargetInfo from the current BatchResults snapshot and
--- re-fires wire outputs. Safe to call with an empty BatchResults (e.g. all radars unlinked). Clk only
+-- re-fires wire outputs. Safe to call with an empty BatchResults (e.g. all sensors unlinked). Clk only
 -- bumps when the calling batch itself confirmed a detection this cycle
 local function RefreshOutputs(Entity, BatchDetected)
 	local TargetInfo = Entity.TargetInfo
@@ -114,7 +106,7 @@ local function RefreshOutputs(Entity, BatchDetected)
 			Distance = Data.Distance,
 			Spread   = Data.Spread,
 			Type     = Data.Type,
-			Sensor   = Data.FromRadar,
+			Sensor   = Data.FromSensor,
 		}
 
 		IDs[Count] = Index
@@ -124,7 +116,7 @@ local function RefreshOutputs(Entity, BatchDetected)
 		Distance[Count] = Data.Distance
 		Size[Count] = Data.Size
 		Type[Count] = Data.Type
-		Sensor[Count] = Data.FromRadar
+		Sensor[Count] = Data.FromSensor
 
 		if Data.Distance < Closest then
 			Closest = Data.Distance
@@ -145,10 +137,10 @@ local function RefreshOutputs(Entity, BatchDetected)
 	WireLib.TriggerOutput(Entity, "Sensor", Sensor)
 
 	local LinkedCount = 0
-	for Radar in pairs(Entity.Radars) do
-		if IsValid(Radar) then LinkedCount = LinkedCount + 1 end
+	for Linked in pairs(Entity.Sensors) do
+		if IsValid(Linked) then LinkedCount = LinkedCount + 1 end
 	end
-	WireLib.TriggerOutput(Entity, "Linked Radars", LinkedCount)
+	WireLib.TriggerOutput(Entity, "Linked Sensors", LinkedCount)
 
 	-- Only bump Clk when this specific batch confirmed a detection
 	if BatchDetected then
@@ -168,78 +160,84 @@ local function RefreshOutputs(Entity, BatchDetected)
 	-- Guidance packages read a rack-linked radar's own .Targets/.TargetCount directly; mirror this
 	-- Synchronizer's combined results back onto every currently-linked radar so a rack linked to any one
 	-- of them transparently sees the aggregated picture with no guidance-side changes needed
-	for Radar in pairs(Entity.Radars) do
-		if not IsValid(Radar) then continue end
+	for Linked in pairs(Entity.Sensors) do
+		if not IsValid(Linked) or Linked:GetClass() ~= "acf_radar" then continue end
 
-		Radar.Targets = Targets
-		Radar.TargetCount = Count
+		Linked.Targets = Targets
+		Linked.TargetCount = Count
 	end
 end
 
--- Runs one rate-group batch: gathers all its radars' geometry into one ACF.GetEntitiesInShapes /
--- Countermeasures.GetMissilesInShapes call (single pass over the tracked pools instead of one pass per
--- radar), resolves overlaps to the healthiest matching radar, then refreshes this Synchronizer's combined
--- Targets/TargetInfo from the union of all rate-groups' most recent results and re-fires wire outputs.
--- Radars are split into separate contraption/missile shape lists per their own DetectContraptions/
--- DetectMissiles settings, so a radar that can't see missiles never contributes to missile detection here
--- (and likewise for a radar that can't see contraptions); mirrors the per-radar gating in radar.lua
-local function RunBatch(Entity, GroupRadars)
-	local Countermeasures = ACF.Countermeasures
-	local ContraptionShapes = {}
-	local MissileShapes = {}
+local function MergeMatches(Matches, Found)
+	for Ent, MatchedSensors in pairs(Found) do
+		local List = Matches[Ent]
 
-	for Radar in pairs(GroupRadars) do
-		if not IsValid(Radar) or Radar.ACF.Health <= 0 then continue end
-
-		local Origin = Radar:LocalToWorld(Radar.Origin)
-		local Shape
-
-		if Radar.ConeDegs then
-			Shape = { Radar = Radar, Position = Origin, Direction = Radar:GetForward(), Degrees = Radar.ConeDegs }
+		if not List then
+			Matches[Ent] = MatchedSensors
 		else
-			Shape = { Radar = Radar, Position = Origin, Radius = Radar.Range }
-		end
-
-		if Radar.DetectContraptions then ContraptionShapes[#ContraptionShapes + 1] = Shape end
-		if Radar.DetectMissiles then MissileShapes[#MissileShapes + 1] = Shape end
-	end
-
-	if #ContraptionShapes == 0 and #MissileShapes == 0 then return RefreshOutputs(Entity, false) end
-
-	local Matches = #ContraptionShapes > 0 and ACF.GetEntitiesInShapes(ContraptionShapes) or {}
-
-	if #MissileShapes > 0 then
-		for Ent, MatchedRadars in pairs(Countermeasures.GetMissilesInShapes(MissileShapes)) do
-			local List = Matches[Ent]
-
-			if not List then
-				Matches[Ent] = MatchedRadars
-			else
-				for _, Radar in ipairs(MatchedRadars) do
-					List[#List + 1] = Radar
-				end
+			for _, Sensor in ipairs(MatchedSensors) do
+				List[#List + 1] = Sensor
 			end
 		end
 	end
+end
+
+-- Runs one rate-group batch: gathers all its sensors' geometry into one pass per candidate pool
+-- (contraptions, missiles, players) instead of one pass per sensor, then attributes each candidate to the
+-- healthiest matching sensor that has line of sight to it. Sensors are only added to the pools they're
+-- set to detect, so e.g. a missile-only radar never contributes to contraption detection here
+local function RunBatch(Entity, GroupSensors)
+	local ContraptionShapes = {}
+	local MissileShapes = {}
+	local PlayerShapes = {}
+
+	for Sensor in pairs(GroupSensors) do
+		if not IsValid(Sensor) or Sensor.ACF.Health <= 0 then continue end
+
+		local Shape = Sensor:GetScanShape()
+
+		if Sensor.DetectContraptions then ContraptionShapes[#ContraptionShapes + 1] = Shape end
+		if Sensor.DetectMissiles then MissileShapes[#MissileShapes + 1] = Shape end
+		if Sensor.DetectPlayers then PlayerShapes[#PlayerShapes + 1] = Shape end
+	end
+
+	if #ContraptionShapes == 0 and #MissileShapes == 0 and #PlayerShapes == 0 then return RefreshOutputs(Entity, false) end
+
+	local OwnContraption = Entity:CFW_GetContraption()
+	local Matches = {}
+
+	if #ContraptionShapes > 0 then MergeMatches(Matches, ACF.GetEntitiesInShapes(ContraptionShapes, OwnContraption)) end
+	if #MissileShapes > 0 then MergeMatches(Matches, ACF.Countermeasures.GetMissilesInShapes(MissileShapes)) end
+	if #PlayerShapes > 0 then MergeMatches(Matches, RadarHelpers.GetPlayersInShapes(PlayerShapes, OwnContraption)) end
 
 	local Confirmed = {}
 
-	for Ent, MatchedRadars in pairs(Matches) do
-		local Radar = GetBestMatchingRadar(MatchedRadars)
-		if not Radar then continue end
+	for Ent, MatchedSensors in pairs(Matches) do
+		local EntPos = RadarHelpers.GetTargetPos(Ent)
+		local Sensor, Origin
 
-		local Origin = Radar:LocalToWorld(Radar.Origin)
-		local EntPos = Ent.ACF_Position or Ent:GetPos()
+		table.sort(MatchedSensors, SortByDamage)
 
-		if not RadarHelpers.CheckLOS(Origin, EntPos) then continue end
+		for _, Candidate in ipairs(MatchedSensors) do
+			local CandidateOrigin = Candidate:LocalToWorld(Candidate.Origin)
 
-		local EntDamage = Radar.Damage or 0
+			if Candidate:CheckTargetLOS(CandidateOrigin, Ent, EntPos) then
+				Sensor = Candidate
+				Origin = CandidateOrigin
+
+				break
+			end
+		end
+
+		if not Sensor then continue end
+
+		local EntDamage = Sensor.Damage or 0
 		if math.Rand(0, 1) < (EntDamage / 10) then continue end
 
 		local EntDist = Origin:Distance(EntPos)
 		local EntSize, EntType = RadarHelpers.GetEntSizeAndType(Ent)
 
-		if EntSize < RadarHelpers.GetMinDetectableSize(Radar, EntDist) then continue end
+		if EntSize < RadarHelpers.GetMinDetectableSize(Sensor, EntDist) then continue end
 
 		local Spread = ACF.MaxDamageInaccuracy * EntDamage
 		local EntSpread = VectorRand(-Spread, Spread)
@@ -248,22 +246,22 @@ local function RunBatch(Entity, GroupRadars)
 		Confirmed[Ent] = true
 
 		Entity.BatchResults[Ent] = {
-			Owner    = RadarHelpers.GetEntityOwner(Entity.Owner, Ent),
-			Position = EntPos + EntSpread,
-			Velocity = EntVel + EntSpread,
-			Distance = EntDist,
-			Size     = EntSize,
-			Type     = EntType,
-			Spread   = EntSpread,
-			FromRadar = Radar,
+			Owner      = RadarHelpers.GetEntityOwner(Entity.Owner, Ent),
+			Position   = EntPos + EntSpread,
+			Velocity   = EntVel + EntSpread,
+			Distance   = EntDist,
+			Size       = EntSize,
+			Type       = EntType,
+			Spread     = EntSpread,
+			FromSensor = Sensor,
 		}
 	end
 
 	-- Drop stale results this rate-group no longer confirms (failed LOS/damage-roll/min-size this cycle,
-	-- or moved out of every linked radar's zone), without touching results still being reported by other
+	-- or moved out of every linked sensor's zone), without touching results still being reported by other
 	-- rate-groups
 	for Ent, Data in pairs(Entity.BatchResults) do
-		if GroupRadars[Data.FromRadar] and not Confirmed[Ent] then
+		if GroupSensors[Data.FromSensor] and not Confirmed[Ent] then
 			Entity.BatchResults[Ent] = nil
 		end
 	end
@@ -271,26 +269,26 @@ local function RunBatch(Entity, GroupRadars)
 	RefreshOutputs(Entity, next(Confirmed) ~= nil)
 end
 
--- Regroups this Synchronizer's linked radars by their exact ThinkTicks, so radars are never sped up or
--- slowed down by another linked radar's scan rate. Each distinct tick interval gets its own counter, 
+-- Regroups this Synchronizer's linked sensors by their exact ThinkTicks, so sensors are never sped up or
+-- slowed down by another linked sensor's scan rate. Each distinct tick interval gets its own counter,
 -- advanced by the shared ACF_OnTick hook below
 local function RebuildRateGroups(Entity)
 	local Groups = {}
 
-	for Radar in pairs(Entity.Radars) do
-		if not IsValid(Radar) or not Radar.Active then continue end
+	for Sensor in pairs(Entity.Sensors) do
+		if not IsValid(Sensor) or not Sensor.Active then continue end
 
-		local Ticks = Radar.ThinkTicks
-		Groups[Ticks] = Groups[Ticks] or { Radars = {}, Counter = 0, ThinkTicks = Ticks }
-		Groups[Ticks].Radars[Radar] = true
+		local Ticks = Sensor.ThinkTicks
+		Groups[Ticks] = Groups[Ticks] or { Sensors = {}, Counter = 0, ThinkTicks = Ticks }
+		Groups[Ticks].Sensors[Sensor] = true
 	end
 
 	Entity.RateGroups = Groups
 
-	-- Prune results attributed to a radar that's no longer linked/active in any current group
+	-- Prune results attributed to a sensor that's no longer linked/active in any current group
 	for Ent, Data in pairs(Entity.BatchResults) do
-		local Group = Data.FromRadar and Groups[Data.FromRadar.ThinkTicks]
-		local StillGrouped = Group and Group.Radars[Data.FromRadar]
+		local Group = Data.FromSensor and Groups[Data.FromSensor.ThinkTicks]
+		local StillGrouped = Group and Group.Sensors[Data.FromSensor]
 
 		if not StillGrouped then
 			Entity.BatchResults[Ent] = nil
@@ -298,7 +296,7 @@ local function RebuildRateGroups(Entity)
 	end
 
 	if not next(Groups) then
-		-- No active linked radars left
+		-- No active linked sensors left
 		RefreshOutputs(Entity, false)
 
 		return
@@ -306,13 +304,13 @@ local function RebuildRateGroups(Entity)
 
 	-- Run each group once immediately so it doesn't wait a full cycle for its first result
 	for _, Group in pairs(Groups) do
-		RunBatch(Entity, Group.Radars)
+		RunBatch(Entity, Group.Sensors)
 	end
 end
 
 -- Advances every currently-spawned Synchronizer's rate-group counters each server tick, running a group's
--- batch every N ticks (N = that group's shared ThinkTicks), same scan rate as standalone radars
-hook.Add("ACF_OnTick", "ACF RadarSync Scan", function()
+-- batch every N ticks (N = that group's shared ThinkTicks), same scan rate as standalone sensors
+hook.Add("ACF_OnTick", "ACF SensorSync Scan", function()
 	for Entity in pairs(ActiveSyncs) do
 		if not IsValid(Entity) then continue end
 
@@ -322,7 +320,7 @@ hook.Add("ACF_OnTick", "ACF RadarSync Scan", function()
 			if Group.Counter >= Group.ThinkTicks then
 				Group.Counter = 0
 
-				RunBatch(Entity, Group.Radars)
+				RunBatch(Entity, Group.Sensors)
 			end
 		end
 	end
@@ -345,13 +343,50 @@ end
 
 --===============================================================================================--
 
-ACF.RegisterLinkSource("acf_radarsync", "Radars")
+-- When linked, a sensor stops running its own scan and outputs, and instead becomes a passive
+-- reference point for the Synchronizer's aggregated scan
+for _, SensorClass in ipairs(SensorClasses) do
+	ACF.RegisterClassLink("acf_sensorsync", SensorClass, function(Sync, Sensor)
+		if IsValid(Sensor.SyncSource) then return false, "This sensor is already linked to a synchronizer!" end
+
+		Sync.Sensors[Sensor] = true
+		Sensor.SyncSource = Sync
+
+		Sensor:StopIndependentScanning()
+		Sync:RefreshRateGroups()
+
+		Sync:UpdateOverlay()
+		Sensor:UpdateOverlay()
+
+		return true, "Sensor linked successfully!"
+	end)
+
+	ACF.RegisterClassUnlink("acf_sensorsync", SensorClass, function(Sync, Sensor)
+		if not Sync.Sensors[Sensor] and Sensor.SyncSource ~= Sync then
+			return false, "This sensor is not linked to this synchronizer."
+		end
+
+		Sync.Sensors[Sensor] = nil
+		Sensor.SyncSource = nil
+
+		Sensor:ResumeIndependentScanning()
+
+		if IsValid(Sync) then Sync:RefreshRateGroups() end
+
+		Sync:UpdateOverlay()
+		Sensor:UpdateOverlay()
+
+		return true, "Sensor unlinked successfully!"
+	end)
+end
+
+ACF.RegisterLinkSource("acf_sensorsync", "Sensors")
 
 --===============================================================================================--
 -- Spawning and Updating
 --===============================================================================================--
 
-local SyncClass = "ACF.Components.RadarSync"
+local SyncClass = "ACF.Components.SensorSync"
 
 do -- Spawning
 	function ENT:ACF_PreSpawn()
@@ -363,7 +398,7 @@ do -- Spawning
 	end
 
 	function ENT:ACF_OnSpawn()
-		self.Radars       = {}
+		self.Sensors      = {}
 		self.RateGroups   = {}
 		self.BatchResults = {}
 		self.TargetCount  = 0
@@ -381,10 +416,10 @@ do -- Spawning
 
 		ActiveSyncs[self] = true
 
-		TimerCreate("ACF RadarSync Clock " .. self:EntIndex(), 3, 0, function()
+		TimerCreate("ACF SensorSync Clock " .. self:EntIndex(), 3, 0, function()
 			if not IsValid(self) then return end
 
-			CheckDistantLinks(self, "Radars")
+			CheckDistantLinks(self, "Sensors")
 		end)
 	end
 end
@@ -423,7 +458,7 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 end
 
 function ENT:GetCost()
-	return ACF.RadarSyncCost
+	return ACF.SensorSyncCost
 end
 
 function ENT:Enable() end
@@ -431,35 +466,64 @@ function ENT:Disable() end
 
 function ENT:ACF_UpdateOverlayState(State)
 	local LinkedCount = 0
-	for Radar in pairs(self.Radars) do
-		if IsValid(Radar) then LinkedCount = LinkedCount + 1 end
+	for Sensor in pairs(self.Sensors) do
+		if IsValid(Sensor) then LinkedCount = LinkedCount + 1 end
 	end
 
 	if self.TargetCount > 0 then
 		State:AddSuccess(self.TargetCount .. " target(s) detected")
 	elseif LinkedCount == 0 then
-		State:AddWarning("No radars linked")
+		State:AddWarning("No sensors linked")
 	else
 		State:AddSuccess("Active")
 	end
 
-	State:AddKeyValue("Linked radars", LinkedCount)
+	State:AddKeyValue("Linked sensors", LinkedCount)
 end
 
--- Called by a linked radar whenever its own ThinkTicks changes (spawn, update, or when a radar with a
--- different rate joins/leaves) so this Synchronizer's rate groups stay in sync
+-- Called by a linked sensor whenever its own ThinkTicks or Active state changes so this Synchronizer's
+-- rate groups stay in sync
 function ENT:RefreshRateGroups()
 	RebuildRateGroups(self)
 end
 
+do -- Duplicator support
+	function ENT:PreEntityCopy()
+		local Indexes = {}
+
+		for Sensor in pairs(self.Sensors) do
+			if IsValid(Sensor) then Indexes[#Indexes + 1] = Sensor:EntIndex() end
+		end
+
+		if next(Indexes) then
+			duplicator.StoreEntityModifier(self, "ACFSensorSync", Indexes)
+		end
+	end
+
+	function ENT:PostEntityPaste(_, Ent, CreatedEntities)
+		local EntMods = Ent.EntityMods
+		local Linked  = EntMods and EntMods.ACFSensorSync
+
+		if not Linked then return end
+
+		for _, EntIndex in ipairs(Linked) do
+			local Sensor = CreatedEntities[EntIndex]
+
+			if IsValid(Sensor) then self:Link(Sensor) end
+		end
+
+		EntMods.ACFSensorSync = nil
+	end
+end
+
 function ENT:OnRemove()
-	for Radar in pairs(self.Radars) do
-		self:Unlink(Radar)
+	for Sensor in pairs(self.Sensors) do
+		self:Unlink(Sensor)
 	end
 
 	ActiveSyncs[self] = nil
 
-	TimerRemove("ACF RadarSync Clock " .. self:EntIndex())
+	TimerRemove("ACF SensorSync Clock " .. self:EntIndex())
 
 	WireLib.Remove(self)
 end

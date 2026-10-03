@@ -479,7 +479,7 @@ do -- Optical guidance computer
 			TraceData.endpos = GetTraceEndPos(Entity, 50000)
 			TraceData.filter = Entity.Filter
 
-			local Result = ACF.trace(TraceData)
+			local Result = ACF.ClipTraceToSmoke(TraceData.start, ACF.trace(TraceData))
 
 			Entity.TraceDir  = Result.Normal
 			Entity.TracePos  = Result.HitPos

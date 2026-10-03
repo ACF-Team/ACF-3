@@ -24,17 +24,19 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function(CLASS, BA
 	end
 
 	function CLASS:GetDisplayData(Data)
-		local SMFiller = math.min(math.log(1 + Data.FillerMass * 8 * ACF.MeterToInch) * 43.4216, 350)
-		local WPFiller = math.min(math.log(1 + Data.WPMass * 8 * ACF.MeterToInch) * 43.4216, 350)
+		local SMFiller = ACF.GetSmokeFiller(Data.FillerMass)
+		local WPFiller = ACF.GetSmokeFiller(Data.WPMass)
+		local SMRadius = ACF.GetSmokeRadius(Data.FillerMass) * ACF.InchToMeter
+		local WPRadius = ACF.GetSmokeRadius(Data.WPMass) * ACF.InchToMeter
 		local Display  = {
 			SMFiller    = SMFiller,
-			SMLife      = math.Round(10 + SMFiller * 0.25, 2),
-			SMRadiusMin = math.Round(SMFiller * 1.25 * 0.15 * ACF.InchToMeter, 2),
-			SMRadiusMax = math.Round(SMFiller * 1.25 * 2 * ACF.InchToMeter, 2),
+			SMLife      = math.Round(math.min(5 + SMFiller * 0.125, 30), 2),
+			SMRadiusMin = math.Round(SMRadius * 0.075, 2),
+			SMRadiusMax = math.Round(SMRadius, 2),
 			WPFiller    = WPFiller,
-			WPLife      = math.Round(5 + WPFiller * 0.1, 2),
-			WPRadiusMin = math.Round(WPFiller * 1.25 * ACF.InchToMeter, 2),
-			WPRadiusMax = math.Round(WPFiller * 1.25 * 2 * ACF.InchToMeter, 2),
+			WPLife      = math.Round(math.min(2.5 + WPFiller * 0.05, 30), 2),
+			WPRadiusMin = math.Round(WPRadius * 0.5, 2),
+			WPRadiusMax = math.Round(WPRadius, 2),
 		}
 
 		hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
@@ -106,8 +108,6 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function(CLASS, BA
 	if SERVER then
 		local Ballistics = ACF.Ballistics
 
-
-
 		function CLASS:OnLast(Entity)
 			BASE.OnLast(self, Entity)
 
@@ -165,21 +165,29 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function(CLASS, BA
 		function CLASS:WorldImpact()
 			return false
 		end
+
+		function CLASS:OnFlightEnd(Bullet, Trace)
+			local Airburst = Bullet.DetByFuze
+			local Origin   = Airburst and Bullet.Pos or Trace.HitPos
+			local Crate    = Entity(Bullet.Crate or 0)
+			local Color    = IsValid(Crate) and Crate:GetColor() or nil
+
+			ACF.CreateSmokeScreen(Origin, Bullet.FillerMass or 0, Bullet.WPMass or 0, Color, Airburst and Bullet.Flight or nil)
+
+			BASE.OnFlightEnd(self, Bullet, Trace)
+		end
 	else
 		local Effects = ACF.Utilities.Effects
 
 		ACF.RegisterAmmoDecal("ACF.Ammunition.SM", "damage/he_pen", "damage/he_rico")
 
+		-- Smoke clouds themselves are created by the server and networked separately (see core/smoke)
 		function CLASS:ImpactEffect(_, Bullet)
-			local Crate = Bullet.Crate
-			local Color = IsValid(Crate) and Crate:GetColor() or Color(255, 255, 255)
-
 			local EffectTable = {
 				Origin = Bullet.SimPos,
 				Normal = Bullet.SimFlight:GetNormalized(),
 				Scale = math.max(Bullet.FillerMass * 8 * ACF.MeterToInch, 0),
 				Magnitude = math.max(Bullet.WPMass * 8 * ACF.MeterToInch, 0),
-				Start = Vector(Color.r, Color.g, Color.b),
 				Radius = Bullet.Caliber,
 			}
 

@@ -42,7 +42,7 @@ local function CheckReceive(Entity)
 	local Origin = Entity:LocalToWorld(Entity.Origin)
 
 	for Ent in pairs(Sources) do
-		local EntPos = Ent.ACF_Position or Ent:GetPos()
+		local EntPos = Ent.ACF_Position or Ent.Position or Ent:GetPos() -- Wiremod laser pointers are plain tables with a Position
 		local EntDamage = Entity.Damage
 		local Spread = math.max(Entity.Divisor, 15) * 2 * EntDamage
 

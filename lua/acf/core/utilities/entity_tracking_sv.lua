@@ -128,7 +128,7 @@ end
 
 --- Tests every tracked contraption against a list of shapes (cones and/or spheres) in a single pass, instead
 --- of iterating the tracked contraption pool once per shape. Intended for aggregating many radars' detection
---- zones at once (e.g. a Radar Synchronizer batching same-rate-group radars) where a naive per-radar call to
+--- zones at once (e.g. a Sensor Synchronizer batching same-rate-group sensors) where a naive per-radar call to
 --- GetEntitiesInCone or GetEntitiesInSphere would mean one full iteration of the tracked pool per radar.
 --- @param Shapes table An array of shape entries: {Radar = <key>, Position = Vector, Direction = Vector, Degrees = number} for a cone, or {Radar = <key>, Position = Vector, Radius = number} for a sphere.
 --- @param Contraption table|nil If supplied, candidates belonging to this contraption are skipped for every shape (self filter).

@@ -16,7 +16,8 @@ ACF.Classes.DefineClass("ACF.Guns.SmokeLauncher", "ACF.Guns.BaseScalableGun", fu
 	CLASS.ScaleFactor 	= 0.96 -- Corrective factor to account for improperly scaled base models
 	CLASS.LimitConVar 	= {
 		Name = "_acf_smokelauncher",
-		Amount = 10,
+		Amount = 12,
+		LegacyDefault = 10,
 		Text = "Maximum amount of ACF smoke launchers a player can create."
 	}
 	CLASS.Round 		= {

@@ -34,42 +34,6 @@ ACF.RegisterClassUnlink("acf_radar", "acf_rack", function(Radar, Target)
 	return false, "This rack is not linked to this radar."
 end)
 
--- Radar Synchronizer link: when linked, a radar stops running its own scan timer/outputs and instead
--- becomes a passive reference point for the Synchronizer (see SetScanning below and 
--- lua/entities/acf_radarsync/init.lua for the aggregation side)
-ACF.RegisterClassLink("acf_radarsync", "acf_radar", function(Sync, Radar)
-	if IsValid(Radar.SyncSource) then return false, "This radar is already linked to a synchronizer!" end
-
-	Sync.Radars[Radar] = true
-	Radar.SyncSource = Sync
-
-	Radar:StopIndependentScanning()
-	Sync:RefreshRateGroups()
-
-	Sync:UpdateOverlay()
-	Radar:UpdateOverlay()
-
-	return true, "Radar linked successfully!"
-end)
-
-ACF.RegisterClassUnlink("acf_radarsync", "acf_radar", function(Sync, Radar)
-	if not Sync.Radars[Radar] and Radar.SyncSource ~= Sync then
-		return false, "This radar is not linked to this synchronizer."
-	end
-
-	Sync.Radars[Radar] = nil
-	Radar.SyncSource = nil
-
-	Radar:ResumeIndependentScanning()
-
-	if IsValid(Sync) then Sync:RefreshRateGroups() end
-
-	Sync:UpdateOverlay()
-	Radar:UpdateOverlay()
-
-	return true, "Radar unlinked successfully!"
-end)
-
 --===============================================================================================--
 -- Local Funcs and Vars
 --===============================================================================================--
@@ -265,7 +229,7 @@ local function SetScanning(Entity, Active)
 
 	WireLib.TriggerOutput(Entity, "Scanning", Active and 1 or 0)
 
-	-- When linked to a Radar Synchronizer, this radar is used as a passive reference point for the 
+	-- When linked to a Sensor Synchronizer, this radar is used as a passive reference point for the 
 	-- Synchronizer's own aggregated scan; it does not run its own scan cycle or populate its own
 	-- outputs. Its Scanning/Active state is still used (a synced radar can still be turned off, which
 	-- excludes it from the Synchronizer's aggregation), only the independent scan loop is skipped
@@ -279,9 +243,9 @@ end
 
 -- Deterministic, tick-counted scan rate: one shared hook advances every currently-scanning, standalone
 -- radar's own tick counter each tick, and runs a scan exactly every Entity.ThinkTicks ticks- as opposed 
--- to a timer, which may not be precise. Radars linked to a Radar Synchronizer are skipped 
+-- to a timer, which may not be precise. Radars linked to a Sensor Synchronizer are skipped 
 -- here; their scanning is driven by the Synchronizer's own batching logic instead 
--- (see lua/entities/acf_radarsync/init.lua)
+-- (see lua/entities/acf_sensorsync/init.lua)
 hook.Add("ACF_OnTick", "ACF Radar Scan", function()
 	for Entity in pairs(Radars) do
 		if not IsValid(Entity) or not Entity.Scanning then continue end
@@ -463,14 +427,14 @@ function ENT:ACF_OnRepaired() -- OldArmor, OldHealth, Armor, Health
 	self.Damage = (1 - math.Round(self.ACF.Health / self.ACF.MaxHealth, 2))
 end
 
--- Called when this radar gets linked to a Radar Synchronizer: zeroes this radar's own outputs. The shared
+-- Called when this radar gets linked to a Sensor Synchronizer: zeroes this radar's own outputs. The shared
 -- ACF_OnTick scan hook already skips any radar with a valid SyncSource, so no scan cycle needs stopping
 -- here; Active/Scanning stay meaningful for the Synchronizer to read.
 function ENT:StopIndependentScanning()
 	ResetOutputs(self)
 end
 
--- Called when this radar gets unlinked from a Radar Synchronizer: resumes independent scanning exactly
+-- Called when this radar gets unlinked from a Sensor Synchronizer: resumes independent scanning exactly
 -- as if freshly spawned, if it's still meant to be active.
 function ENT:ResumeIndependentScanning()
 	if self.Active and self.Scanning then
@@ -530,28 +494,19 @@ function ENT:ACF_UpdateOverlayState(State)
 	State:AddKeyValue("Detects", Detects)
 end
 
-do -- Duplicator support
-	function ENT:PreEntityCopy()
-		if IsValid(self.SyncSource) then
-			duplicator.StoreEntityModifier(self, "ACFRadarSync", { self.SyncSource:EntIndex() })
+do -- Sensor Synchronizer interface
+	function ENT:GetScanShape()
+		local Origin = self:LocalToWorld(self.Origin)
+
+		if self.ConeDegs then
+			return { Radar = self, Position = Origin, Direction = self:GetForward(), Degrees = self.ConeDegs }
 		end
 
-		self.BaseClass.PreEntityCopy(self)
+		return { Radar = self, Position = Origin, Radius = self.Range }
 	end
 
-	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
-		local EntMods = Ent.EntityMods
-
-		if EntMods.ACFRadarSync then
-			local _, EntIndex = next(EntMods.ACFRadarSync)
-			local Sync = CreatedEntities[EntIndex]
-
-			if IsValid(Sync) then Sync:Link(self) end
-
-			EntMods.ACFRadarSync = nil
-		end
-
-		self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
+	function ENT:CheckTargetLOS(Origin, _, EntPos)
+		return RadarHelpers.CheckLOS(Origin, EntPos)
 	end
 end
 

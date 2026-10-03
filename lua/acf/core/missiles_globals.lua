@@ -12,7 +12,7 @@ ACF.DefaultRadarSound       = "buttons/button16.wav"
 
 -- Discount applied when a radar can only detect one target type instead of both
 ACF.RadarSingleTypeDiscount = 5
-ACF.RadarSyncCost           = 1
+ACF.SensorSyncCost          = 1
 ACF.GroundLoaderCost        = 15
 
 game.AddParticles("particles/flares_fx.pcf")
