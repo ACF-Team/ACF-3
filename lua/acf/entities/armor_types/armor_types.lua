@@ -183,13 +183,13 @@ local Armor = Types.Register("Rubber")
 function Armor:OnLoaded()
     self.Name        = "Rubber"
     self.ShortName   = "Rubber"
-    self.Description = "Very cheap and light, but offers very little protection."
-    self.Density     = 1500 -- * https://rubberandseal.com/what-is-the-density-of-rubber-sheets/
-    self.CostMul     = 15
+    self.Description = "Very cheap and light, but offers very little protection and does not stop spall."
+    self.Density     = 1150 -- Typical vulcanized rubber, 1100-1200 kg/m^3
+    self.CostMul     = 11.5 -- Kept at 0.01 points/kg
     self.HealthMul   = 0.7
-    self.KineticMul  = 0.15
-    self.ChemicalMul = 0.35
-    self.SpallMul    = 0.2
+    self.KineticMul  = 0.3 -- Hydrodynamic limit is 0.38, lower since RHA still has some strength
+    self.ChemicalMul = 0.38 -- Hydrodynamic jet penetration, sqrt of the density ratio to RHA
+    self.SpallMul    = 0.8 -- Behaves like a fluid at high velocity, so it is a poor spall liner
     self.Color       = Color(36, 36, 36)
 end
 
@@ -206,6 +206,21 @@ function Armor:OnLoaded()
     self.ChemicalMul = 0.7
     self.SpallMul    = 0.3
     self.Color       = Color(255, 191, 0)
+end
+
+-- Aramid
+local Armor = Types.Register("Aramid")
+function Armor:OnLoaded()
+    self.Name        = "Aramid"
+    self.ShortName   = "Aramid"
+    self.Description = "Kevlar style aramid fiber laminate. Poor protection against large threats, but an excellent spall liner. Expensive and tears easily."
+    self.Density     = 1300 -- Aramid and resin laminate, the fiber alone is 1440 kg/m^3
+    self.CostMul     = 52 -- Reference: 0.04 points/kg
+    self.HealthMul   = 0.35
+    self.KineticMul  = 0.45
+    self.ChemicalMul = 0.4
+    self.SpallMul    = 0.05
+    self.Color       = Color(95, 160, 120)
 end
 
 -- DU
