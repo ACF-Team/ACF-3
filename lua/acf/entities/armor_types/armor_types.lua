@@ -126,7 +126,7 @@ function Armor:OnLoaded()
     self.Description = "Rolled Homogeneous Armor. The standard by which all other armor types are measured."
     self.Density     = 7840 -- https://metalzenith.com/blogs/steel-properties/rha-steel-properties-and-key-applications-in-defense
     self.CostMul     = 39.2 -- Reference: 0.005 points/kg
-    self.HealthMul   = 1
+    self.HealthMul   = 2
     self.KineticMul  = 1.0
     self.ChemicalMul = 1.0
     self.SpallMul    = 1.0
@@ -216,7 +216,7 @@ function Armor:OnLoaded()
     self.Description = "Expensive and dense with high protection."
     self.Density     = 19050 -- https://en.wikipedia.org/wiki/Uranium
     self.CostMul     = 69.3
-    self.HealthMul   = 2.14668
+    self.HealthMul   = 4.29336
     self.KineticMul  = 1.8
     self.ChemicalMul = 1.3
     self.SpallMul    = 1.3

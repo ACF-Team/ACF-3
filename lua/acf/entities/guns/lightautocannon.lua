@@ -16,7 +16,7 @@ ACF.Classes.DefineClass("ACF.Guns.LightAutocannon", "ACF.Guns.BaseScalableGun", 
 	CLASS.CyclicCeilMult 	= 2 -- How high above base cyclic the gun can be set to
 	CLASS.Round 			= {
 		MaxLength  = 32,
-		PropLength = 26,
+		PropLength = 20,
 		CaseScale  = 1.08, -- 30x90mm (MK 108): 32.3mm case over a 30mm projectile
 	}
 	CLASS.LongBarrel 		= {
@@ -44,7 +44,6 @@ ACF.Classes.DefineClass("ACF.Guns.LightAutocannon", "ACF.Guns.BaseScalableGun", 
 		Text = "Maximum amount of ACF light auto cannons a player can create."
 	}
 	CLASS.CostScalar		= 0.5
-	CLASS.DamageMultiplier	= 0.01
 end)
 
 ACF.SetCustomAttachments("models/machinegun/machinegun_40mm_compact.mdl", {

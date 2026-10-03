@@ -13,7 +13,7 @@ ACF.Classes.DefineClass("ACF.Guns.ShortBarrelledCannon", "ACF.Guns.BaseScalableG
 	CLASS.ScaleFactor 	= 1.0 -- Corrective factor to account for improperly scaled base models
 	CLASS.Round 		= {
 		MaxLength  = 80,
-		PropLength = 65,
+		PropLength = 50,
 		Efficiency = 0.5,
 		CaseScale  = 1.04, -- 90x353mm (Cockerill 90mm): 94mm case over a 90mm projectile
 	}

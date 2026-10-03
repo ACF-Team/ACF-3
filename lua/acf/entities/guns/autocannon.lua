@@ -16,7 +16,7 @@ ACF.Classes.DefineClass("ACF.Guns.Autocannon", "ACF.Guns.BaseScalableGun", funct
 	CLASS.CyclicCeilMult 	= 2 -- How high above base cyclic the gun can be set to
 	CLASS.Round 			= {
 		MaxLength  = 40, -- Relative to the Base caliber, in cm
-		PropLength = 32.5, -- Relative to the Base caliber, in cm
+		PropLength = 25, -- Relative to the Base caliber, in cm
 		CaseScale  = 1.37, -- 35x228mm (Bushmaster III): 48mm case over a 35mm projectile
 	}
 	CLASS.Preview			= {

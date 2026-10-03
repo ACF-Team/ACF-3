@@ -16,7 +16,7 @@ ACF.Classes.DefineClass("ACF.Guns.Machinegun", "ACF.Guns.BaseScalableGun", funct
 	CLASS.CyclicCeilMult 	= 2 -- How high above base cyclic the gun can be set to
 	CLASS.Round 			= {
 		MaxLength  = 16,
-		PropLength = 13,
+		PropLength = 10,
 		CaseScale  = 1.61, -- 12.7x99mm (.50 BMG): 20.4mm case over a 12.7mm projectile
 	}
 	CLASS.Preview 			= {
