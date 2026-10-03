@@ -110,7 +110,7 @@ function Armor:OnLoaded()
     self.ShortName   = "Aluminum"
     self.Description = "Decent protection for its price and density."
     self.Density     = 2700 -- https://en.wikipedia.org/wiki/Aluminium
-    self.CostMul     = 30
+    self.CostMul     = 52
     self.HealthMul   = 0.5
     self.KineticMul  = 0.5
     self.ChemicalMul = 0.3
@@ -185,7 +185,7 @@ function Armor:OnLoaded()
     self.ShortName   = "Rubber"
     self.Description = "Very cheap and light, but offers very little protection and does not stop spall."
     self.Density     = 1150 -- Typical vulcanized rubber, 1100-1200 kg/m^3
-    self.CostMul     = 11.5 -- Kept at 0.01 points/kg
+    self.CostMul     = 23 -- Reference: 0.02 points/kg
     self.HealthMul   = 0.7
     self.KineticMul  = 0.3 -- Hydrodynamic limit is 0.38, lower since RHA still has some strength
     self.ChemicalMul = 0.38 -- Hydrodynamic jet penetration, sqrt of the density ratio to RHA
@@ -200,7 +200,7 @@ function Armor:OnLoaded()
     self.ShortName   = "Textolite"
     self.Description = "Layered fibrous laminate material. Not much protection, but is cheap and light."
     self.Density     = 1800 -- * http://www.china-anza.com/2-1-7-textolite-3025.html
-    self.CostMul     = 30
+    self.CostMul     = 32
     self.HealthMul   = 0.2
     self.KineticMul  = 0.5
     self.ChemicalMul = 0.7
@@ -245,7 +245,7 @@ function Armor:OnLoaded()
     self.ShortName   = "SiC"
     self.Description = "Excellent protection, but brittle and expensive."
     self.Density     = 3210 -- https://en.wikipedia.org/wiki/Silicon_carbide
-    self.CostMul     = 80
+    self.CostMul     = 100
     self.HealthMul   = 0.05
     self.KineticMul  = 2.2
     self.ChemicalMul = 1.6
@@ -260,7 +260,7 @@ function Armor:OnLoaded()
     self.ShortName   = "Light ERA"
     self.Description = "Explosive Reactive Armor. Effective primarily against shaped charges. Will explode when hit with enough energy."
     self.Density     = 5000 -- * https://below-the-turret-ring.blogspot.com/2016/04/explosive-reactive-armor-some-history.html
-    self.CostMul     = 27.79
+    self.CostMul     = 32
     self.HealthMul   = 0.23
     self.KineticMul  = 0.3
     self.ChemicalMul = 2.0
@@ -280,7 +280,7 @@ function Armor:OnLoaded()
     self.ShortName   = "Heavy ERA"
     self.Description = "Heavy Explosive Reactive Armor. Offers better protection against kinetic threats and takes more energy to detonate than Light ERA, but is twice as dense and more expensive."
     self.Density     = 10000 -- * https://below-the-turret-ring.blogspot.com/2016/04/explosive-reactive-armor-some-history.html
-    self.CostMul     = 47.1
+    self.CostMul     = 54
     self.HealthMul   = 0.55
     self.KineticMul  = 1.33
     self.ChemicalMul = 2.0
