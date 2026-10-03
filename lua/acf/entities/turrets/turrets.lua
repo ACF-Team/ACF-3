@@ -502,7 +502,7 @@ do	-- Linear actuators
 		}
 
 		CLASS.SetupInputs = function(_, List)
-			List[#List + 1] = "Extension (Fraction of the stroke to extend to, from 0 to 1)"
+			List[#List + 1] = "Extend (Fraction of the stroke to extend to, from 0 to 1)"
 		end
 
 		CLASS.SetupOutputs = function(_, List)
