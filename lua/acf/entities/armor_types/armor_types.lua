@@ -125,7 +125,7 @@ function Armor:OnLoaded()
     self.ShortName   = "RHA"
     self.Description = "Rolled Homogeneous Armor. The standard by which all other armor types are measured."
     self.Density     = 7840 -- https://metalzenith.com/blogs/steel-properties/rha-steel-properties-and-key-applications-in-defense
-    self.CostMul     = 39.2 -- Reference: 0.005 points/kg
+    self.CostMul     = 54 -- Reference: 0.005 points/kg
     self.HealthMul   = 1
     self.KineticMul  = 1.0
     self.ChemicalMul = 1.0
@@ -140,7 +140,7 @@ function Armor:OnLoaded()
     self.ShortName   = "HHRHA"
     self.Description = "Harder than RHA, but more brittle."
     self.Density     = 7850 -- https://metalzenith.com/blogs/steel-properties/rha-steel-properties-and-key-applications-in-defense
-    self.CostMul     = 54
+    self.CostMul     = 68
     self.HealthMul   = 0.75
     self.KineticMul  = 1.25
     self.ChemicalMul = 1.15
@@ -200,8 +200,8 @@ function Armor:OnLoaded()
     self.ShortName   = "Textolite"
     self.Description = "Layered fibrous laminate material. Not much protection, but is cheap and light."
     self.Density     = 1800 -- * http://www.china-anza.com/2-1-7-textolite-3025.html
-    self.CostMul     = 35
-    self.HealthMul   = 0.4
+    self.CostMul     = 30
+    self.HealthMul   = 0.2
     self.KineticMul  = 0.5
     self.ChemicalMul = 0.7
     self.SpallMul    = 0.3
@@ -230,7 +230,7 @@ function Armor:OnLoaded()
     self.ShortName   = "DU"
     self.Description = "Expensive and dense with high protection."
     self.Density     = 19050 -- https://en.wikipedia.org/wiki/Uranium
-    self.CostMul     = 69.3
+    self.CostMul     = 157
     self.HealthMul   = 2.14668
     self.KineticMul  = 1.8
     self.ChemicalMul = 1.3
