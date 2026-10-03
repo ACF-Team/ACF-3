@@ -424,8 +424,7 @@ do	-- Spawn and Update funcs
 
 		if self.IsServo then
 			self.OnAngle  = self:ACF_GetUserVar("OnAngle")
-			self.OffAngle = self:ACF_GetUserVar("OffAngle")
-			self.DesiredDeg = self.ServoOn and self.OnAngle or self.OffAngle
+			self.DesiredDeg = self.ServoOn and self.OnAngle or 0
 		end
 
 		if IsActuator then -- Kept as a fraction so a stroke change rescales it
@@ -1015,7 +1014,7 @@ do -- Overlay
 			State:AddKeyValue("Arc", SelfTbl.MinDeg .. "/" .. SelfTbl.MaxDeg)
 		elseif SelfTbl.IsServo then
 			State:AddKeyValue("State", SelfTbl.ServoOn and "On" or "Off")
-			State:AddKeyValue("On/Off Angle", SelfTbl.OnAngle .. "/" .. SelfTbl.OffAngle)
+			State:AddKeyValue("On Angle", SelfTbl.OnAngle)
 		end
 
 		if not SelfTbl.IsPassthrough then -- Weapons never gate a servo or actuator
@@ -1260,7 +1259,7 @@ do -- Metamethods
 			if SelfTbl.Disabled or not SelfTbl.IsServo then return end
 
 			SelfTbl.ServoOn = On
-			ApplyDirection(SelfTbl, On and SelfTbl.OnAngle or SelfTbl.OffAngle)
+			ApplyDirection(SelfTbl, On and SelfTbl.OnAngle or 0)
 		end
 
 		function ENT:InputExtension(Frac)

@@ -849,7 +849,6 @@ do -- Default turret menus
 			Angles:AddLabel("#acf.menu.turrets.servo_angles_desc")
 
 			local OnAngle	= Angles:AddSlider("#acf.menu.turrets.on_angle", -180, 180, 1)
-			local OffAngle	= Angles:AddSlider("#acf.menu.turrets.off_angle", -180, 180, 1)
 
 			function OnAngle:OnValueChanged(Value)
 				local N = math.Clamp(math.Round(Value, 1), -180, 180)
@@ -858,15 +857,7 @@ do -- Default turret menus
 				SaveSetting("OnAngle", N)
 			end
 
-			function OffAngle:OnValueChanged(Value)
-				local N = math.Clamp(math.Round(Value, 1), -180, 180)
-				self:SetValue(N)
-				Ctx:Set("OffAngle", N)
-				SaveSetting("OffAngle", N)
-			end
-
 			RestoreSlider(OnAngle, LoadSetting("OnAngle", 15))
-			RestoreSlider(OffAngle, LoadSetting("OffAngle", 0))
 
 			local EstMass	= Menu:AddSlider("#acf.menu.turrets.estimated_mass", 0, 20000, 0)
 			local EstDist	= Menu:AddSlider("#acf.menu.turrets.mass_center_distance", 0, 2, 2)

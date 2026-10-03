@@ -13,7 +13,6 @@ ACF.Entities.AutoRegister(2026100201, function()
 	MENU_FIELD("Number", "MaxDeg",   {Min = 0,    Max = 180, Default = 180,  Decimals = 1})
 	MENU_FIELD("Number", "MaxSpeed", {Min = 0,    Max = 120, Default = 0,    Decimals = 2})
 	MENU_FIELD("Number", "OnAngle",  {Min = -180, Max = 180, Default = 15,   Decimals = 1}) -- Servos only
-	MENU_FIELD("Number", "OffAngle", {Min = -180, Max = 180, Default = 0,    Decimals = 1}) -- Servos only
 	MENU_FIELD("Number", "Stroke",   {Min = 4,    Max = 72,  Default = 24,   Decimals = 1}) -- Actuators only
 end, "Turret Drive", "Turret Drives")
 
