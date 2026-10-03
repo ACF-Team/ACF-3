@@ -7,6 +7,12 @@ local Clouds = ACF.SmokeClouds
 ACF.SmokeBlockShare = 0.85 -- Portion of a cloud's visual lifetime it blocks for, its particles thin out after that
 
 local MaxRadius = 800 -- Inches, ~20 m
+local MaxLife   = 30
+local WindDrift = Vector(0.5, 0, 0) -- Inches per second per point of SmokeWind
+local Types     = {
+	Smoke = { Offset = 0, MinScale = 0.075, Deploy = 1.5, BaseLife = 5, LifeScale = 0.125 }, -- Slow build but long lasting
+	WP    = { Offset = 1, MinScale = 0.5, Deploy = 0.5, BaseLife = 2.5, LifeScale = 0.05 }, -- Quick build and dissipate
+}
 
 -- Drives lifetime, which flattens out quickly with mass
 function ACF.GetSmokeFiller(Mass)
@@ -22,6 +28,55 @@ function ACF.GetSmokeRadius(Mass)
 	local CubeRadius = ACF.GetSmokeFiller(1) * 1.25 * Mass ^ (1 / 3)
 
 	return math.min(math.max(LogRadius, CubeRadius), MaxRadius)
+end
+
+--- Returns the min radius, max radius, lifetime and burst duration of a cloud of the given filler type ("Smoke" or "WP").
+function ACF.GetSmokeCloudStats(Mass, Type)
+	local Data   = Types[Type]
+	local Radius = ACF.GetSmokeRadius(Mass)
+	local Life   = math.Clamp(Data.BaseLife + ACF.GetSmokeFiller(Mass) * Data.LifeScale, 1, MaxLife)
+
+	return Radius * Data.MinScale, Radius, Life, Data.Deploy
+end
+
+--- Builds and registers the clouds of one smoke impact. Runs identically on the server and every client from the
+--- same impact data, so only that data needs networking. Base holds Start, Color, Center, Normal, Grounded, Carry
+--- and FloorZ.
+function ACF.AddSmokeClouds(ImpactID, Base, FillerMass, WPMass)
+	local Result = {}
+	local Drift  = WindDrift * (ACF.SmokeWind or 0)
+
+	for Type, Mass in pairs({ Smoke = FillerMass, WP = WPMass }) do
+		if Mass <= 0 then continue end
+
+		local MinRadius, MaxRadius, Life, Deploy = ACF.GetSmokeCloudStats(Mass, Type)
+		local ID = ImpactID * 2 + Types[Type].Offset
+
+		local Cloud = {
+			ID        = ID,
+			Center    = Base.Center,
+			Normal    = Base.Normal,
+			Grounded  = Base.Grounded,
+			Carry     = Base.Carry,
+			FloorZ    = Base.FloorZ,
+			Start     = Base.Start,
+			Color     = Base.Color,
+			Drift     = Drift,
+			Life      = Life,
+			Deploy    = Deploy,
+			MinRadius = MinRadius,
+			MaxRadius = MaxRadius,
+		}
+
+		Clouds[ID]          = Cloud
+		Result[#Result + 1] = Cloud
+
+		timer.Simple(math.max(Cloud.Start + Life - CurTime(), 0), function()
+			if Clouds[ID] == Cloud then Clouds[ID] = nil end
+		end)
+	end
+
+	return Result
 end
 
 function ACF.IsSmokeCloudBlocking(Cloud, Time)
@@ -74,12 +129,12 @@ end
 function ACF.TraceSmoke(Start, End)
 	if not next(Clouds) then return end
 
-	local Time  = CurTime()
 	local Delta = End - Start
-	local A     = Delta:Dot(Delta)
-	local Best
 
-	if A == 0 then return end
+	if Delta:IsZero() then return end
+
+	local Time = CurTime()
+	local Best
 
 	for ID, Cloud in pairs(Clouds) do
 		if not ACF.IsSmokeCloudBlocking(Cloud, Time) then
@@ -89,20 +144,13 @@ function ACF.TraceSmoke(Start, End)
 		end
 
 		local Center, Radius = ACF.GetSmokeCloudState(Cloud, Time)
-		local Offset = Start - Center
-		local C      = Offset:Dot(Offset) - Radius * Radius
+		local Enter, Exit    = util.IntersectRayWithSphere(Start, Delta, Center, Radius)
 
-		if C <= 0 then return 0 end
+		if not Enter or Exit < 0 or Enter > 1 then continue end
+		if Enter <= 0 then return 0 end -- Starts inside the cloud
 
-		local B    = 2 * Offset:Dot(Delta)
-		local Disc = B * B - 4 * A * C
-
-		if Disc < 0 then continue end
-
-		local Fraction = (-B - math.sqrt(Disc)) / (2 * A)
-
-		if Fraction >= 0 and Fraction <= 1 and (not Best or Fraction < Best) then
-			Best = Fraction
+		if not Best or Enter < Best then
+			Best = Enter
 		end
 	end
 

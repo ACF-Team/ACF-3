@@ -24,19 +24,17 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function(CLASS, BA
 	end
 
 	function CLASS:GetDisplayData(Data)
-		local SMFiller = ACF.GetSmokeFiller(Data.FillerMass)
-		local WPFiller = ACF.GetSmokeFiller(Data.WPMass)
-		local SMRadius = ACF.GetSmokeRadius(Data.FillerMass) * ACF.InchToMeter
-		local WPRadius = ACF.GetSmokeRadius(Data.WPMass) * ACF.InchToMeter
-		local Display  = {
-			SMFiller    = SMFiller,
-			SMLife      = math.Round(math.min(5 + SMFiller * 0.125, 30), 2),
-			SMRadiusMin = math.Round(SMRadius * 0.075, 2),
-			SMRadiusMax = math.Round(SMRadius, 2),
-			WPFiller    = WPFiller,
-			WPLife      = math.Round(math.min(2.5 + WPFiller * 0.05, 30), 2),
-			WPRadiusMin = math.Round(WPRadius * 0.5, 2),
-			WPRadiusMax = math.Round(WPRadius, 2),
+		local SMMin, SMMax, SMLife = ACF.GetSmokeCloudStats(Data.FillerMass, "Smoke")
+		local WPMin, WPMax, WPLife = ACF.GetSmokeCloudStats(Data.WPMass, "WP")
+		local Display = {
+			SMFiller    = ACF.GetSmokeFiller(Data.FillerMass),
+			SMLife      = math.Round(SMLife, 2),
+			SMRadiusMin = math.Round(SMMin * ACF.InchToMeter, 2),
+			SMRadiusMax = math.Round(SMMax * ACF.InchToMeter, 2),
+			WPFiller    = ACF.GetSmokeFiller(Data.WPMass),
+			WPLife      = math.Round(WPLife, 2),
+			WPRadiusMin = math.Round(WPMin * ACF.InchToMeter, 2),
+			WPRadiusMax = math.Round(WPMax * ACF.InchToMeter, 2),
 		}
 
 		hook.Run("ACF_OnRequestDisplayData", self, Data, Display)

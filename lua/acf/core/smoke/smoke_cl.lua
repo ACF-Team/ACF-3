@@ -5,6 +5,7 @@ local Clouds      = ACF.SmokeClouds
 local DebugCol    = Color(255, 0, 255)
 local Developer
 local FadeShare   = 0.15 -- Last portion of a cloud's life spent fading out
+local Burster     = 0.05 -- Share of the filler mass used to size the purely visual burst explosion
 local GoldenAng   = math.pi * (3 - math.sqrt(5))
 -- Fractions of the cloud radius. Sprites only visibly fill about half their size, so a central core plus an
 -- evenly spaced shell of overlapping sprites covers the whole sphere
@@ -50,7 +51,8 @@ local function GetShellDirections(Cloud)
 end
 
 -- Follows the cloud every frame while it bursts out and coasts, then hands off to constant velocity and linear
--- growth so the engine moves it. After that it only thinks again to stop sinking once landed, and to fade out
+-- growth so the engine moves it. After that it only thinks once to stop sinking when landed, and once to hand
+-- the fade out to the engine
 local function GetParticleThink(Cloud, Dir, Offset, Size, Alpha)
 	local Start       = Cloud.Start
 	local DeployAt    = Start + Cloud.Deploy
@@ -63,6 +65,7 @@ local function GetParticleThink(Cloud, Dir, Offset, Size, Alpha)
 	local Growth      = (Cloud.MaxRadius - Cloud.MinRadius) / (Cloud.Life - Cloud.Deploy)
 	local HandedOff   = false
 	local Falling     = false
+	local Fading      = false
 
 	local function SetMotion(Particle, Now)
 		local Center, Radius = ACF.GetSmokeCloudState(Cloud, Now)
@@ -107,17 +110,26 @@ local function GetParticleThink(Cloud, Dir, Offset, Size, Alpha)
 			SetMotion(Particle, Now)
 		end
 
-		if Now >= FadeStart then
-			local Current = Alpha * math.Clamp((DieAt - Now) / FadeTime, 0, 1)
+		if not Fading and Now >= FadeStart then
+			local _, Radius = ACF.GetSmokeCloudState(Cloud, Now)
+			local Remaining = DieAt - Now
 
-			Particle:SetStartAlpha(Current)
-			Particle:SetEndAlpha(Current)
-			Particle:SetNextThink(Now)
+			Fading = true
 
-			return
+			-- Lifetime is rebased again so the engine lerps alpha down to zero while size keeps growing linearly
+			Particle:SetLifeTime(0)
+			Particle:SetDieTime(Remaining)
+			Particle:SetStartAlpha(Alpha * math.Clamp(Remaining / FadeTime, 0, 1))
+			Particle:SetEndAlpha(0)
+			Particle:SetStartSize(Size * Radius)
+			Particle:SetEndSize(Size * Cloud.MaxRadius)
 		end
 
-		Particle:SetNextThink(Falling and math.min(LandAt, FadeStart) or FadeStart)
+		local Next = Fading and DieAt + 1 or FadeStart -- Past its death once nothing is left to do
+
+		if Falling then Next = math.min(Next, LandAt) end
+
+		Particle:SetNextThink(Next)
 	end
 end
 
@@ -170,30 +182,53 @@ local function CreateParticles(Cloud)
 	Emitter:Finish()
 end
 
-net.Receive("ACF_SmokeCloud", function()
-	local Cloud = {
-		ID        = net.ReadUInt(16),
-		Center    = net.ReadVector(),
-		Drift     = net.ReadVector(),
-		Normal    = net.ReadNormal(),
-		Grounded  = net.ReadBool(),
-		Carry     = net.ReadVector(),
-		FloorZ    = net.ReadFloat(),
-		Start     = net.ReadFloat(),
-		Life      = net.ReadFloat(),
-		Deploy    = net.ReadFloat(),
-		MinRadius = net.ReadFloat(),
-		MaxRadius = net.ReadFloat(),
-		Color     = net.ReadColor(false),
+local function CreateBurst(Origin, Mass)
+	local Sparks = math.Clamp(Mass * 2, 1, 8)
+
+	ACF.Damage.explosionEffect(Origin, nil, Mass * Burster)
+	ACF.Utilities.Effects.CreateEffect("Sparks", {
+		Origin    = Origin,
+		Normal    = vector_up,
+		Magnitude = Sparks,
+		Radius    = Sparks,
+		Scale     = Sparks,
+	})
+end
+
+net.Receive("ACF_SmokeImpact", function()
+	-- Read in order, table constructor fields have no guaranteed evaluation order
+	local ID         = net.ReadUInt(15)
+	local Burst      = net.ReadBool()
+	local Origin     = net.ReadVector()
+	local Start      = net.ReadFloat()
+	local Color      = net.ReadColor(false)
+	local FillerMass = net.ReadBool() and net.ReadFloat() or 0
+	local WPMass     = net.ReadBool() and net.ReadFloat() or 0
+	local Base       = {
+		Origin   = Origin,
+		Start    = Start,
+		Color    = Color,
+		Grounded = net.ReadBool(),
+		Center   = Origin,
+		Normal   = vector_up,
+		Carry    = Vector(),
+		FloorZ   = Origin.z,
 	}
 
-	Clouds[Cloud.ID] = Cloud
+	if Base.Grounded then
+		Base.Center = Origin - vector_up * net.ReadUInt(5)
+		Base.Normal = net.ReadNormal()
+	else
+		if net.ReadBool() then Base.Carry = net.ReadVector() end
 
-	timer.Simple(math.max(Cloud.Start + Cloud.Life - CurTime(), 0), function()
-		if Clouds[Cloud.ID] == Cloud then Clouds[Cloud.ID] = nil end
-	end)
+		Base.FloorZ = net.ReadFloat()
+	end
 
-	CreateParticles(Cloud)
+	for _, Cloud in ipairs(ACF.AddSmokeClouds(ID, Base, FillerMass, WPMass)) do
+		CreateParticles(Cloud)
+	end
+
+	if Burst then CreateBurst(Origin, FillerMass + WPMass) end
 end)
 
 -- Draws each cloud's blocking sphere while it blocks, for acf_developer modes that include the client
