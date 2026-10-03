@@ -380,7 +380,7 @@ do	-- Turret servos
 		CLASS.SpawnModel   = "models/holograms/cylinder.mdl"
 		CLASS.Description  = "#acf.descs.servos"
 		CLASS.CreateMenu   = ACF.CreateTurretServoMenu
-		CLASS.IsServoGroup = true
+		CLASS.IsPassthroughGroup = true
 	end)
 
 	Classes.DefineClass("ACF.Turrets.Servo.Standard", "ACF.Turrets.Servo", function(CLASS)
@@ -433,6 +433,113 @@ do	-- Turret servos
 		end
 
 		CLASS.SlewFuncs = Classes.GetTypeByName("ACF.Turrets.Drive.Horizontal").SlewFuncs -- Yaws about Up like a horizontal drive
+	end)
+end
+
+do	-- Linear actuators
+	-- Hydraulic: force scales with piston area, speed with pump flow over it, and long thin rods buckle
+	local ForceCoef    = 31.25 -- kg per in^2 of bore
+	local BucklingCoef = 4000
+	local SpeedCoef    = 72 -- in/s at 1" bore
+	local CachedPos    = Vector()
+
+	-- Inherits Drive so acf_turret's Turret field accepts it; the menu lists it as its own category.
+	-- Reuses the turret slew loop with CurrentAngle as inches of extension, and RingSize as the bore
+	Classes.DefineClass("ACF.Turrets.Actuator", "ACF.Turrets.Drive", function(CLASS)
+		CLASS.Name         = "Actuators"
+		CLASS.ID           = "7-Actuator"
+		CLASS.SpawnModel   = "models/holograms/cylinder.mdl"
+		CLASS.Description  = "#acf.descs.actuators"
+		CLASS.CreateMenu   = ACF.CreateTurretActuatorMenu
+		CLASS.IsPassthroughGroup = true
+
+		CLASS.GetMaxLoad = function(Bore, Stroke)
+			return math.Round(math.min(ForceCoef * Bore ^ 2, BucklingCoef * Bore ^ 4 / Stroke ^ 2), 1)
+		end
+
+		CLASS.GetActuatorMass = function(Bore, Stroke)
+			return math.Round(math.max(0.04 * Bore ^ 2 * (2 * Stroke + Bore), 2), 1) -- Steel in the barrel and rod
+		end
+
+		CLASS.GetActuatorCost = function(Bore, Stroke)
+			return 0.15 * Bore * (1 + Stroke / 72)
+		end
+
+		CLASS.CalcSpeed = function(TurretData)
+			local TopSpeed = SpeedCoef / TurretData.RingSize
+			local LoadPerc = TurretData.TotalMass / math.max(TurretData.MaxMass, 1)
+			local Speed    = TopSpeed * (1 - 0.5 * math.min(LoadPerc, 1))
+
+			return {MaxSlewRate = Speed, SlewAccel = Speed * 4, MotorMaxSpeed = TopSpeed, EffortScale = math.min(LoadPerc, 1), Overloaded = LoadPerc > 1}
+		end
+	end)
+
+	Classes.DefineClass("ACF.Turrets.Actuator.Hydraulic", "ACF.Turrets.Actuator", function(CLASS)
+		CLASS.Name        = "Hydraulic Actuator"
+		CLASS.ID          = "Turret-L"
+		CLASS.Description = "#acf.descs.actuators.hydraulic"
+		CLASS.Model       = "models/holograms/cylinder.mdl"
+
+		CLASS.Preview = {
+			FOV = 105,
+		}
+
+		CLASS.Size = { -- Bore
+			Base  = 4,
+			Min   = 2,
+			Max   = 10,
+			Ratio = 1
+		}
+
+		CLASS.Stroke = {
+			Base = 24,
+			Min  = 4,
+			Max  = 72
+		}
+
+		CLASS.Power = {
+			Sound = "acf_base/fx/turret_hydraulic.wav",
+		}
+
+		CLASS.SetupInputs = function(_, List)
+			List[#List + 1] = "Extension (Fraction of the stroke to extend to, from 0 to 1)"
+		end
+
+		CLASS.SetupOutputs = function(_, List)
+			for I = #List, 1, -1 do
+				if string.StartsWith(List[I], "Degrees") then table.remove(List, I) end
+			end
+
+			List[#List + 1] = "Extension (Current fraction of the stroke extended, from 0 to 1.)"
+			List[#List + 1] = "Length (Current extension in inches.)"
+		end
+
+		CLASS.SlewFuncs = {
+			GetStab = function() return 0 end,
+
+			GetTargetBearing = function(Turret)
+				local TurretTbl = ENTITY.GetTable(Turret)
+				local Gap       = TurretTbl.DesiredExtension - TurretTbl.CurrentAngle
+
+				-- Overloaded actuators can still retract. A zero gap alone leaves SlewRate coasting, so stall it
+				if TurretTbl.Overloaded and Gap > 0 then
+					TurretTbl.SlewRate = math.min(TurretTbl.SlewRate, 0)
+
+					return 0
+				end
+
+				return Gap
+			end,
+
+			GetWorldTarget = function(Turret)
+				return ENTITY.GetAngles(Turret)
+			end,
+
+			SetRotatorAngle = function(Turret, Rotator)
+				CachedPos:SetUnpacked(0, 0, Turret.CurrentAngle)
+				ENTITY.SetLocalPos(Rotator, CachedPos)
+			end
+		}
 	end)
 end
 

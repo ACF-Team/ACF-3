@@ -723,6 +723,11 @@ do
     end)
 
     hook.Add("ACF_RenderContext_LookAtChanged", "ACF_Overlay_DetermineLookat", function(_, New)
+        -- Lets an entity show another's overlay, e.g. an actuator rod showing its actuator's
+        if IsValid(New) and New.ACF_GetOverlayTarget then
+            New = New:ACF_GetOverlayTarget() or New
+        end
+
         if IsValid(New) then
             Overlays[New] = true
             New.ACF_OverlayStartTime = RealTime()

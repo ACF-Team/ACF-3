@@ -120,7 +120,7 @@ Sounds.acf_turret_motor = {
 	end
 }
 
--- Only servos have a replaceable sound; other drives take the tool but ignore it
+-- Only servos and actuators have a replaceable sound; other drives take the tool but ignore it
 Sounds.acf_turret = {
 	GetSound = function(Ent)
 		return {
@@ -130,7 +130,7 @@ Sounds.acf_turret = {
 		}
 	end,
 	SetSound = function(Ent, SoundData)
-		if not Ent.IsServo then return end
+		if not Ent.IsPassthrough then return end
 
 		Ent.CustomSound  = SoundData.Sound:Trim():lower()
 		Ent.CustomPitch  = SoundData.Pitch
@@ -143,7 +143,7 @@ Sounds.acf_turret = {
 		Ent.CustomPitch  = nil
 		Ent.CustomVolume = nil
 
-		if Ent.IsServo then Ent:UpdateSound() end
+		if Ent.IsPassthrough then Ent:UpdateSound() end
 	end
 }
 

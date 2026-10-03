@@ -199,13 +199,13 @@ do -- Random timer crew stuff
 		Temp = ENTITY.GetParent(self)
 		if Temp == Test then return Temp end
 
-		-- Possibly a vertical turret, or servos between it and the horizontal
+		-- Possibly a vertical turret, or servos/actuators between it and the horizontal
 		TempTbl = IsValid(Temp) and ENTITY.GetTable(Temp)
 		Temp = (TempTbl and TempTbl.IsACFTurret and TempTbl.Turret == "Turret-V") and ENTITY.GetParent(Temp) or Temp
 		if Temp == Test then return Temp end
 
 		TempTbl = IsValid(Temp) and ENTITY.GetTable(Temp)
-		while TempTbl and TempTbl.IsACFTurret and TempTbl.IsServo do
+		while TempTbl and TempTbl.IsACFTurret and TempTbl.IsPassthrough do
 			Temp    = ENTITY.GetParent(Temp)
 			TempTbl = IsValid(Temp) and ENTITY.GetTable(Temp)
 			if Temp == Test then return Temp end
@@ -639,6 +639,8 @@ do -- Metamethods --------------------------------
 		end)
 
 		ACF.RegisterClassLink("acf_gun", "acf_turret", function(This, Turret)
+			if Turret.IsActuator then return false, "Actuators don't aim, so weapons can't be linked to them." end
+
 			This.TurretLink = true
 			This.Turret	= Turret
 

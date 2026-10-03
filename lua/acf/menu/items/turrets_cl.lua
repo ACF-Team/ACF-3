@@ -13,8 +13,11 @@ local function GetGroups()
 		Groups[#Groups + 1] = Group
 	end
 
-	local Servo = Classes.GetTypeByName("ACF.Turrets.Servo") -- Inherits Drive, so it isn't a direct child of the root
-	if Servo then Groups[#Groups + 1] = Servo end
+	-- These inherit Drive, so they aren't direct children of the root
+	for _, Name in ipairs({"ACF.Turrets.Servo", "ACF.Turrets.Actuator"}) do
+		local Group = Classes.GetTypeByName(Name)
+		if Group then Groups[#Groups + 1] = Group end
+	end
 
 	return Groups
 end
