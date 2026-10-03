@@ -31,6 +31,7 @@ local function GetArmorLayers(StartTrace, Dir, Filter)
 	local Hits = ACF.ResolveConvexStack(Intersections, Dir)
 
 	local TerminalEntity
+	local Prev -- Previous layer's armor type and effective KE thickness, for the density interface cost
 	for _, Hit in ipairs(Hits) do
 		-- The first non-filtered ACF entity hit ends the scan and is not added as an armor layer.
 		if Hit.Entity.IsACFEntity and not Filter[Hit.Entity:GetClass()] then
@@ -38,16 +39,21 @@ local function GetArmorLayers(StartTrace, Dir, Filter)
 			break
 		end
 
-		local Convex = Hit.Entity.ACF_Volumetric_Mesh.Convexes[Hit.ConvexID]
+		local Convex    = Hit.Entity.ACF_Volumetric_Mesh.Convexes[Hit.ConvexID]
+		local BaseKE    = Hit.GeoThick * Hit.ArmorType.KineticMul
+		local Interface = Prev and ACF.GetInterfaceCost(Prev.ArmorType, Prev.Eff, Hit.ArmorType, BaseKE) or 0
 
 		table.insert(Layers, {
-			Terminal = false,
-			Entity   = Hit.Entity,
-			Material = Convex.Material,
-			GeoThick = Hit.GeoThick,
-			EffKE    = Hit.GeoThick * Hit.ArmorType.KineticMul,
-			EffCE    = Hit.GeoThick * Hit.ArmorType.ChemicalMul,
+			Terminal  = false,
+			Entity    = Hit.Entity,
+			Material  = Convex.Material,
+			GeoThick  = Hit.GeoThick,
+			Interface = Interface,
+			EffKE     = BaseKE + Interface,
+			EffCE     = Hit.GeoThick * Hit.ArmorType.ChemicalMul,
 		})
+
+		Prev = { ArmorType = Hit.ArmorType, Eff = BaseKE }
 	end
 
 	if TerminalEntity then

@@ -567,6 +567,16 @@ function ACF.GetConvexHit(Entity, HitPos, Direction, IncludeDead, IncludeDefault
     return ACF.ResolveConvexStack(Hits, Direction, true)
 end
 
+-- Extra RHA mm equivalent a kinetic round spends crossing from armor A into armor B. Density mismatch
+-- reflects and shears the penetrator, with |dRho| / (RhoA + RhoB) standing in for the reflection coefficient.
+function ACF.GetInterfaceCost(TypeA, EffA, TypeB, EffB)
+    local DensityA = TypeA.Density
+    local DensityB = TypeB.Density
+    local Mismatch = math.abs(DensityA - DensityB) / (DensityA + DensityB)
+
+    return ACF.InterfaceShear * Mismatch * math.min(EffA, EffB)
+end
+
 -- Returns an entity's total health and max health. ACF entities track this directly on their ACF table (damage is
 -- deferred to it), while armorable props take damage per convex, so their totals are summed from their convexes.
 function ACF.GetEntityHealth(Entity)

@@ -108,17 +108,26 @@ function Damage.getBulletDamage(Bullet, Trace)
 			-- Penetration is spent sequentially as the round traverses each convex in hit order. Each convex
 			-- removes only the channel it was actually bored through, so a round that stalls partway (or never
 			-- penetrates) carves a shorter tunnel instead of always assuming a full-thickness penetration.
-			local Budget = Penetration
-			local Hits   = {}
+			local Budget   = Penetration
+			local Hits     = {}
+			local Kinetic  = MulField == "KineticMul" -- Only kinetic rounds shear at density interfaces
+			local Prev     = Kinetic and Bullet.PenPrev -- Last armor this round crossed
+			local PrevType = Prev and Prev.ArmorType
+			local PrevEff  = Prev and Prev.Eff
 			for _, Hit in ipairs(ConvexHits) do
 				local Effective = Hit.GeoThick * Hit.ArmorType[MulField] -- Effective armor (RHA mm) this convex presents along the path
-				local Consumed  = math.min(Effective, Budget) -- Effective armor actually defeated before the round stalls
-				local Frac      = Effective > 0 and (Consumed / Effective) or 0 -- Fraction of this convex's geometric thickness traversed
+				local Interface = Kinetic and PrevType and ACF.GetInterfaceCost(PrevType, PrevEff, Hit.ArmorType, Effective) or 0 -- Extra RHA mm lost entering from a different density
+				local Consumed  = math.min(Effective + Interface, Budget) -- Effective armor actually defeated before the round stalls
+				local Frac      = Effective > 0 and (math.max(Consumed - Interface, 0) / Effective) or 0 -- Fraction of this convex's geometric thickness traversed, the interface is paid first
 
-				Thickness = Thickness + Effective
+				Thickness = Thickness + Effective + Interface
 				Budget    = Budget - Consumed
 				Hits[#Hits + 1] = { ConvexID = Hit.ConvexID, Volume = Hit.GeoThick * Frac * 0.1 * Area / ACF.InchToCmCu } -- (mm)(mm to cm)(cm^2) = cm^3, then cm^3 to in^3
+
+				PrevType, PrevEff = Hit.ArmorType, Effective
 			end
+
+			if Kinetic then Bullet.PenPrev = { ArmorType = PrevType, Eff = PrevEff } end
 
 			Angle = 0 -- GeoThick already accounts for obliquity
 			DmgInfo:SetConvexHits(Hits)

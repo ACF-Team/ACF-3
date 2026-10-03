@@ -345,6 +345,7 @@ do -- Obstacle resolution --------------------------
 		Projectile.PenStack  = nil
 		Projectile.PenIndex  = nil
 		Projectile.PenTrace  = nil
+		Projectile.PenPrev   = nil
 		Projectile.ConvexHit = nil
 	end
 
