@@ -22,7 +22,7 @@ jobs:
         id: check
         working-directory: project
         run: |
-          if [ -n "$(git log --since='25 hours ago' --oneline)" ]; then
+          if [ -n "$(git log --since='25 hours ago' --pretty=format:'- %s' | sed 's/[()]/\\&/g' | sed 's/"/\\"/g')" ]; then
             echo "should_deploy=true" >> "$GITHUB_OUTPUT"
             {
               echo "changelog<<CHANGELOG_EOF"
