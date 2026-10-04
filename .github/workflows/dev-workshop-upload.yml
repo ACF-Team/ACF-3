@@ -50,7 +50,7 @@ jobs:
           changelog: |
             ${{ steps.check.outputs.changelog }}
           title: "[ACF] Armored Combat Framework, dev branch"
-          type: "Tool"
+          type: "tool"
           tag1: "build"
           tag2: "fun"
           tag3: "realism"
