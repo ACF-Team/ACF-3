@@ -42,7 +42,7 @@ jobs:
           id: 3805418201
           changelog: |
             ${{ steps.check.outputs.changelog }}
-          title: "[ACF] Armored Combat Framework (dev branch)"
+          title: "[ACF] Armored Combat Framework, dev branch"
           type: "Tool"
           tag1: "build"
           tag2: "fun"
