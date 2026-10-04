@@ -26,7 +26,7 @@ jobs:
             echo "should_deploy=true" >> "$GITHUB_OUTPUT"
             {
               echo "changelog<<CHANGELOG_EOF"
-              git log --since='25 hours ago' --pretty=format:'- %s'
+              git log --since='25 hours ago' --pretty=format:'- %s' | sed 's/[()]/\\&/g'
               echo ""
               echo "CHANGELOG_EOF"
             } >> "$GITHUB_OUTPUT"
