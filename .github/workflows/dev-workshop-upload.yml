@@ -22,11 +22,11 @@ jobs:
         id: check
         working-directory: project
         run: |
-          if [ -n "$(git log --since='25 hours ago' --oneline)" ]; then
+          if [ -n "$(git log --since='25 hours ago' --pretty=format:'- %s' | sed 's/[()]/\\&/g' | sed 's/"/\\"/g')" ]; then
             echo "should_deploy=true" >> "$GITHUB_OUTPUT"
             {
               echo "changelog<<CHANGELOG_EOF"
-              git log --since='25 hours ago' --pretty=format:'- %s'
+              git log --since='25 hours ago' --pretty=format:'- %s' | sed 's/[()]/\\&/g'
               echo ""
               echo "CHANGELOG_EOF"
             } >> "$GITHUB_OUTPUT"
@@ -40,8 +40,9 @@ jobs:
         uses: CFC-Servers/gmod-upload@master
         with:
           id: 3805418201
-          changelog: "${{ steps.check.outputs.changelog }}"
-          title: "[ACF] Armored Combat Framework (dev branch)"
+          changelog: |
+            ${{ steps.check.outputs.changelog }}
+          title: "[ACF] Armored Combat Framework, dev branch"
           type: "Tool"
           tag1: "build"
           tag2: "fun"

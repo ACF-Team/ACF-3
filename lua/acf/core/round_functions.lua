@@ -255,7 +255,19 @@ function ACF.GetWeaponBlacklist(Whitelist)
 
 	hook.Add("ACF_OnLoadAddon", HookName, function()
 		for _, TypeFQN in ipairs(Classes.GetSubtypeFQNs("ACF.Weapons.BaseWeapon")) do
-			if not Whitelist[TypeFQN] then
+			local Allowed = false
+			local Class   = Classes.GetTypeByName(TypeFQN)
+
+			while Class do
+				if Whitelist[Classes.GetTypeName(Class)] then Allowed = true break end
+				if Class.IsWeaponOption then
+					Class = Classes.GetBaseClass(Class)
+				else
+					break
+				end
+			end
+
+			if not Allowed then
 				Result[TypeFQN] = true
 			end
 		end
