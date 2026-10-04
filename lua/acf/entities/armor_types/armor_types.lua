@@ -125,7 +125,7 @@ function Armor:OnLoaded()
     self.ShortName   = "RHA"
     self.Description = "Rolled Homogeneous Armor. The standard by which all other armor types are measured."
     self.Density     = 7840 -- https://metalzenith.com/blogs/steel-properties/rha-steel-properties-and-key-applications-in-defense
-    self.CostMul     = 39.2 -- Reference: 0.005 points/kg
+    self.CostMul     = 45 -- Reference: 0.005 points/kg
     self.HealthMul   = 2
     self.KineticMul  = 1.0
     self.ChemicalMul = 1.0
@@ -140,7 +140,7 @@ function Armor:OnLoaded()
     self.ShortName   = "HHRHA"
     self.Description = "Harder than RHA, but more brittle."
     self.Density     = 7850 -- https://metalzenith.com/blogs/steel-properties/rha-steel-properties-and-key-applications-in-defense
-    self.CostMul     = 54
+    self.CostMul     = 59.8
     self.HealthMul   = 0.75
     self.KineticMul  = 1.25
     self.ChemicalMul = 1.15
