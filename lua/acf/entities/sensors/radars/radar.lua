@@ -141,7 +141,6 @@ do -- Directional radars
 		CLASS.Range          = 23622 -- ~600m
 		CLASS.MinSizeAtRange = 24
 		CLASS.Origin         = "radar"
-		CLASS.SwitchDelay    = 2
 		CLASS.ThinkTicks     = 3
 		CLASS.Preview        = { FOV = 105 }
 		CLASS.Detect         = DetectEntities
@@ -158,7 +157,6 @@ do -- Directional radars
 		CLASS.Range          = 31496 -- ~800m
 		CLASS.MinSizeAtRange = 14
 		CLASS.Origin         = "radar"
-		CLASS.SwitchDelay    = 4
 		CLASS.ThinkTicks     = 3
 		CLASS.Preview        = { FOV = 110 }
 		CLASS.Detect         = DetectEntities
@@ -175,7 +173,6 @@ do -- Directional radars
 		CLASS.Range          = 39370 -- ~1000m
 		CLASS.MinSizeAtRange = 7
 		CLASS.Origin         = "radar"
-		CLASS.SwitchDelay    = 8
 		CLASS.ThinkTicks     = 3
 		CLASS.Preview        = { FOV = 110 }
 		CLASS.Detect         = DetectEntities
@@ -217,7 +214,6 @@ do -- Spherical radars
 		CLASS.Range          = 18898 -- ~480m
 		CLASS.MinSizeAtRange = 24
 		CLASS.Origin         = "radar"
-		CLASS.SwitchDelay    = 3
 		CLASS.ThinkTicks     = 10
 		CLASS.Preview        = { FOV = 120 }
 		CLASS.Detect         = DetectEntities
@@ -233,7 +229,6 @@ do -- Spherical radars
 		CLASS.Range          = 25197 -- ~640m
 		CLASS.MinSizeAtRange = 14
 		CLASS.Origin         = "radar"
-		CLASS.SwitchDelay    = 6
 		CLASS.ThinkTicks     = 10
 		CLASS.Preview        = { FOV = 120 }
 		CLASS.Detect         = DetectEntities
@@ -249,7 +244,6 @@ do -- Spherical radars
 		CLASS.Range          = 31496 -- ~800m
 		CLASS.MinSizeAtRange = 7
 		CLASS.Origin         = "radar"
-		CLASS.SwitchDelay    = 12
 		CLASS.ThinkTicks     = 10
 		CLASS.Preview        = { FOV = 120 }
 		CLASS.Detect         = DetectEntities

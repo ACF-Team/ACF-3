@@ -44,6 +44,7 @@ local Sounds      = ACF.Utilities.Sounds
 local RadarHelpers = ACF.RadarHelpers
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
+local SwitchDelay = 2 -- Seconds between activation and the first scan
 local Indexes	  = {}
 local Unused	  = {}
 local IndexCount  = 0
@@ -89,12 +90,13 @@ local function ResetOutputs(Entity)
 end
 
 local function SetSequence(Entity, Active)
-	local SequenceName = Active and "active" or "idle"
-	local Sequence = Entity:LookupSequence(SequenceName)
+	local Sequence = Entity:LookupSequence("idle")
 
 	Entity:ResetSequence(Sequence or 0)
 
-	Entity.AutomaticFrameAdvance = Active
+	Entity.AutomaticFrameAdvance = false
+
+	Entity:SetNW2Bool("ACF_RadarSpin", Active) -- Clients spin the dish bone themselves, see cl_init.lua
 end
 
 local function GetEntityIndex(Entity)
@@ -274,7 +276,7 @@ local function SetActive(Entity, Active)
 
 	if not Active then return SetScanning(Entity, Active) end
 
-	TimerCreate("ACF Radar Switch " .. Entity:EntIndex(), Entity.SwitchDelay, 1, function()
+	TimerCreate("ACF Radar Switch " .. Entity:EntIndex(), SwitchDelay, 1, function()
 		if IsValid(Entity) then
 			return SetScanning(Entity, Active)
 		end
@@ -395,7 +397,6 @@ do -- Updating
 		self.Range          = Sensor.Range
 		self.MinSizeAtRange = Sensor.MinSizeAtRange
 		self.BaseCost       = Sensor.Cost
-		self.SwitchDelay    = Sensor.SwitchDelay
 		self.ThinkTicks     = Sensor.ThinkTicks -- Number of ticks between scans
 		self.TickCounter    = self.TickCounter or 0
 		self.GetDetected    = Sensor.Detect or Group.Detect
