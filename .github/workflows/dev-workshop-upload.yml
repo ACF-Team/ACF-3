@@ -22,12 +22,19 @@ jobs:
         id: check
         working-directory: project
         run: |
-          if [ -n "$(git log --since='25 hours ago' --pretty=format:'- %s' | sed 's/[()]/\\&/g' | sed 's/"/\\"/g')" ]; then
+          LOG="$(git log --since='25 hours ago' --pretty=format:'- %s')"
+
+          if [ -n "$LOG" ]; then
+            # Sanitize: the upload action interpolates this into a shell script,
+            # so swap parens for brackets and drop quotes, backticks, $, \, etc.
+            CLEAN="$(printf '%s\n' "$LOG" \
+              | sed 's/(/[/g; s/)/]/g' \
+              | tr -d '"'"'"'`$\\;&|<>{}')"
+
             echo "should_deploy=true" >> "$GITHUB_OUTPUT"
             {
               echo "changelog<<CHANGELOG_EOF"
-              git log --since='25 hours ago' --pretty=format:'- %s' | sed 's/[()]/\\&/g'
-              echo ""
+              printf '%s\n' "$CLEAN"
               echo "CHANGELOG_EOF"
             } >> "$GITHUB_OUTPUT"
           else
