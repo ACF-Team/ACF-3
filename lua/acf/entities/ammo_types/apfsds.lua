@@ -14,6 +14,7 @@ Classes.DefineClass("ACF.Ammunition.APFSDS", "ACF.Ammunition.AP", function(CLASS
 	CLASS.Blacklist = ACF.GetWeaponBlacklist({
 		["ACF.Guns.Cannon"] = true,
 		["ACF.Guns.Autocannon"] = true,
+		["ACF.Guns.LightAutocannon"] = true,
 		["ACF.Guns.SemiautomaticCannon"] = true,
 		["ACF.Guns.ShortBarrelledCannon"] = true,
 	})
