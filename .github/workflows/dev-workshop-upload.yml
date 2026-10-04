@@ -40,7 +40,8 @@ jobs:
         uses: CFC-Servers/gmod-upload@master
         with:
           id: 3805418201
-          changelog: "${{ steps.check.outputs.changelog }}"
+          changelog: |
+            ${{ steps.check.outputs.changelog }}
           title: "[ACF] Armored Combat Framework (dev branch)"
           type: "Tool"
           tag1: "build"
