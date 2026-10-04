@@ -315,10 +315,10 @@ do -- ACF global vars
 	ACF.PointConversion		 = {
 		Steel		= 0.032,	-- Projectile steel
 		Aluminum	= 0.2,	-- Sabot material
-		Copper		= 0.12,	-- Liner for HEAT cones
+		Copper		= 0.1,	-- Liner for HEAT cones
 		Tungsten	= 0.24,	-- Expensive
 		CompB		= 0.08,	-- Normal explosives
-		Octol		= 0.32,	-- Snowflakium, needs to be expensive as a balancing measure
+		Octol		= 0.24,	-- Snowflakium, needs to be expensive as a balancing measure
 
 		WP			= 0.008,	-- White phosphorus
 		SF			= 0.016,	-- Smoke filler
