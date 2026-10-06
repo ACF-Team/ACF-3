@@ -189,7 +189,7 @@ function Armor:OnLoaded()
     self.HealthMul   = 0.7
     self.KineticMul  = 0.15
     self.ChemicalMul = 0.35
-    self.SpallMul    = 0.2
+    self.SpallMul    = 0.8
     self.Color       = Color(36, 36, 36)
 end
 
@@ -206,6 +206,21 @@ function Armor:OnLoaded()
     self.ChemicalMul = 0.7
     self.SpallMul    = 0.3
     self.Color       = Color(255, 191, 0)
+end
+
+-- Aramid
+local Armor = Types.Register("Aramid")
+function Armor:OnLoaded()
+    self.Name        = "Aramid"
+    self.ShortName   = "Aramid"
+    self.Description = "Woven aramid fibre laminate, used as a spall liner. Light enough to line a crew compartment, catching the lighter fragments thrown off to the sides of a penetration."
+    self.Density     = 1440 -- https://en.wikipedia.org/wiki/Kevlar
+    self.CostMul     = 50
+    self.HealthMul   = 0.6
+    self.KineticMul  = 0.4
+    self.ChemicalMul = 0.4
+    self.SpallMul    = 0.05 -- Fibres tear instead of shattering
+    self.Color       = Color(200, 170, 60)
 end
 
 -- NERA

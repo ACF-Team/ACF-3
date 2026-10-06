@@ -8,7 +8,7 @@ local MinSpeed        = 50 -- m/s, below this a fragment is assumed spent
 local MaxRange        = 8000 -- Trace length used to find a fragment's next obstacle, in world units
 
 --- A straight-line, non-ricocheting projectile resolved in one closed-form pass instead of per-tick iteration.
---- Data: Pos, Flight (world units/s), ProjMass, ProjArea, Diameter, DragCoef, Owner, Gun, Entity, Filter.
+--- Data: Pos, Flight (world units/s), ProjMass, ProjArea, Diameter, DragCoef, Owner, Gun, Entity, Filter, Color (optional, debug overlay).
 function Ballistics.CreateFragment(Data)
 	local Ammo = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", "ACF.Ammunition.AP")
 
@@ -23,7 +23,7 @@ function Ballistics.CreateFragment(Data)
 		Diameter = Data.Diameter,
 		DragCoef = Data.DragCoef,
 		Filter   = table.Copy(Data.Filter or {}),
-		Color    = ColorRand(100, 255),
+		Color    = Data.Color or ColorRand(100, 255),
 		IsSpall  = true,
 		Mode     = "Flight", -- Flight looks ahead with a trace, Penetration walks a frozen ray through armor
 	}

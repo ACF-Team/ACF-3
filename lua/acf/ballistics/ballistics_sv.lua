@@ -647,10 +647,10 @@ do -- Terminal ballistics --------------------------
 
 	-- Tuning constants for DoSpall; kept as locals (rather than ACF globals) so they can be edited and hot-reloaded from this file alone, without a full game restart.
 	local SpallFragFraction   = 0.01 -- Fraction of the spall energy budget that goes into forming countable fragments
-	local SpallEnergyFraction = 0.005 -- Fraction of the spall energy budget imparted to the ejected mass as kinetic energy
+	local SpallEnergyFraction = 0.05 -- Fraction of the spall energy budget imparted to the ejected mass as kinetic energy
 	local SpallMinCone        = 30     -- Degrees, spall cone half angle with maximum overmatch (Loss near 0)
 	local SpallMaxCone        = 90    -- Degrees, spall cone half angle near the ballistic limit (Loss near 1)
-	local SpallAnglePower     = 2 -- Bias for angle sampling; higher packs more fragments near the cone axis
+	local SpallAngleSigma     = 0.5 -- Standard deviation of the fragment angle distribution, as a fraction of the cone half angle
 	local SpallEnergyFalloff  = 2   -- Power of the cos(angle) energy falloff used to split speed across fragments
 
 	local SpallMinFragCount   = 1 -- Minimum number of fragments created; ensures at least one fragment is formed even with very low energy
@@ -690,9 +690,6 @@ do -- Terminal ballistics --------------------------
 
 		if FragCount < 1 then return end -- No fragments formed
 
-		local FragMassAvg = RemovedMass / FragCount 	-- Average mass of the fragments (kg)
-		local MottMu      = FragMassAvg / 2 			-- Mott's characteristic mass; mean fragment mass = 2*mu
-
 		-- Total kinetic energy budget for the spall, split per-fragment below so mass, angle and speed all vary together instead of one bulk speed for everyone.
 		local TotalFragEnergy = SpallEnergy * SpallEnergyFraction * 1000 -- kJ to J
 
@@ -709,22 +706,28 @@ do -- Terminal ballistics --------------------------
 		local Right = FragDirInit:Cross(Vector(0, 0, 1)):GetNormalized()
 		local Up = FragDirInit:Cross(Right):GetNormalized()
 
-		-- Sample fragment masses from Mott's distribution (m = mu * ln(1/u)^2, decreasing in u) and reuse the same draw for this fragment's cone angle (BaseCone * u^SpallAnglePower, increasing in u), so a heavy fragment naturally pairs with a small angle and a light one with a wide angle.
+		-- Sample fragment angles from a half normal distribution clamped to the cone, and weight each fragment's mass by the same curve so the center carries the heavy fragments.
+		local Sigma = BaseCone * SpallAngleSigma
 		local Masses, Weights, MassSum, WeightSum = {}, {}, 0, 0
+		local MinWeight, MaxWeight = math.huge, 0
 		for i = 1, FragCount do
 			local U = 1 - math.random()
+			local Angle = math.min(math.abs(Sigma * math.sqrt(-2 * math.log(U)) * math.cos(2 * math.pi * math.random())), BaseCone) -- Box-Muller
 
-			local Mass = math.max(MottMu * math.log(1 / U) ^ 2, 1e-6)
+			-- Penetration scales with the cube root of fragment mass, so cubing the normal curve makes penetration follow it
+			local Mass = math.max(math.exp(-1.5 * (Angle / Sigma) ^ 2), 1e-6)
 			Masses[i] = Mass
 			MassSum = MassSum + Mass
 
-			local Angle = BaseCone * U ^ SpallAnglePower
-			local Weight = math.cos(math.rad(Angle)) ^ SpallEnergyFalloff
+			-- Energy share scales with mass so heavy center fragments keep their speed
+			local Weight = Mass * math.cos(math.rad(Angle)) ^ SpallEnergyFalloff
 			Weights[i] = { Angle = Angle, Weight = Weight }
 			WeightSum = WeightSum + Weight
+			MinWeight = math.min(MinWeight, Weight)
+			MaxWeight = math.max(MaxWeight, Weight)
 		end
 
-		-- Rescale so the sampled masses still sum to RemovedMass, since a small sample of fragments won't average to 2*mu exactly.
+		-- Rescale so the sampled masses still sum to RemovedMass
 		local MassScale = RemovedMass / MassSum
 
 		-- Create the fragments
@@ -747,6 +750,9 @@ do -- Terminal ballistics --------------------------
 			local SpreadDir = Up * SpreadRadius * math.cos(SpreadAngle) + Right * SpreadRadius * math.sin(SpreadAngle)
 			local FragDir = (FragDirInit + SpreadDir):GetNormalized()
 
+			-- Debug color from yellow (least energetic fragment in this burst) to red (most energetic)
+			local EnergyFrac = MaxWeight > MinWeight and (Weights[i].Weight - MinWeight) / (MaxWeight - MinWeight) or 1
+
 			Ballistics.CreateFragment({
 				Diameter = FragSize,
 				Owner    = Bullet.Owner,
@@ -758,6 +764,7 @@ do -- Terminal ballistics --------------------------
 				DragCoef = DragCoef,
 				Flight   = FragDir * FragSpeed,
 				Filter   = Filter,
+				Color    = Color(255, 255 * (1 - EnergyFrac), 0),
 			})
 		end
 	end
