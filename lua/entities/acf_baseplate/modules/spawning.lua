@@ -48,7 +48,10 @@ function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 	end)
 
 	local Baseplate = self
-	timer.Create("ACFPhysicalChecks" .. self:EntIndex(), 3, 0, function()
+	local TimerName = "ACFPhysicalChecks" .. self:EntIndex()
+	timer.Create(TimerName, 3, 0, function()
+		if not IsValid(Baseplate) then timer.Remove(TimerName) return end
+
 		local Physical, _, _ = Con.GetEnts(Baseplate)
 		for Ent in pairs(Physical) do
 			if not IsValid(Ent) then continue end
