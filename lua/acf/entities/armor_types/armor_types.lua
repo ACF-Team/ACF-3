@@ -229,7 +229,7 @@ Classes.DefineClass("ACF.ArmorTypes.NERA", "ACF.ArmorTypes.BaseArmorType", funct
     CLASS.Name        = "NERA"
     CLASS.ShortName   = "NERA"
     CLASS.Description = "Non-Explosive Reactive Armor, steel plates around rubber interlayers like the Abrams turret cassettes. Bulges against shaped charges and long rods, but never detonates. Weaker than ERA against HEAT, in exchange for being safe and sustained."
-    CLASS.Density     = 4.25 -- 60% RHA and 40% rubber by volume
+    CLASS.Density     = 2.58 -- 50% air, 30% RHA, 20% rubber by volume
     CLASS.CostMul     = 38 -- Between the raw material cost (28) and Heavy ERA (47.1), for the cassette assembly
     CLASS.HealthMul   = 0.25
     CLASS.KineticMul  = 0.365 -- Just above the linear steel and rubber mix (0.72), the bulging plates disrupt rods a little
