@@ -34,15 +34,3 @@ function Classes.AddSboxLimit(Data)
 		end
 	end
 end
-
---- Gets or creates an entries table.
---- Requires that the class-type defines GetStored
-function Classes.GetOrCreateEntries(Namespace)
-	if not Namespace then ErrorNoHaltWithStack("ACF.Classes.GetOrCreateEntries: Got nil Namespace!") return end
-
-	if Namespace.GetStored then
-		return Namespace.GetStored() or {}
-	end
-
-	return {}
-end

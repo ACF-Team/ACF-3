@@ -1,7 +1,10 @@
 local ACF = ACF
 local IsValid = IsValid
+local Classes = ACF.Classes
 
 local CubicInchToM3 = ACF.InchToMCu
+
+local function GetArmorType(ID) return Classes.GetSubtypeByName("ACF.ArmorTypes.BaseArmorType", "ACF.ArmorTypes." .. tostring(ID)) end
 
 TOOL.Category   = (ACF and ACF.CustomToolCategory and ACF.CustomToolCategory:GetBool()) and "ACF" or "Construction"
 TOOL.Name       = "#tool.acfarmormesh.name"
@@ -123,7 +126,7 @@ if CLIENT then
 	end)
 
 	local function CreateArmorMeshMenu(Panel)
-		local ArmorTypes = ACF.Classes.ArmorTypes
+		local ArmorTypeList = Classes.GetSubtypesAsList("ACF.ArmorTypes.BaseArmorType")
 		local Menu = ACF.InitMenuBase(Panel, "ArmorMeshMenu", "acf_reload_armor_mesh_menu")
 
 		local Materials = Menu:AddComboBox()
@@ -141,10 +144,10 @@ if CLIENT then
 		local MatCost     = Base:AddLabel()
 
 		local StatsGraphBase = Base:AddCollapsible("Stats Graph", false)
-		BuildStatsGraph(StatsGraphBase, ArmorTypes)
+		BuildStatsGraph(StatsGraphBase, ArmorTypeList)
 
 		local CostBase = Base:AddCollapsible("Armor Comparison", false)
-		BuildArmorComparison(CostBase, ArmorTypes)
+		BuildArmorComparison(CostBase, ArmorTypeList)
 
 		function Materials:OnSelect(Index, _, Data)
 			if self.Selected == Data then return end
@@ -164,7 +167,7 @@ if CLIENT then
 			RunConsoleCommand("acfarmormesh_material", Data.ID)
 		end
 
-		ACF.LoadSortedList(Materials, ArmorTypes.GetEntries(), "Name")
+		ACF.LoadSortedList(Materials, ArmorTypeList, "Name")
 
 		-- Keeps the combo box and info panel in sync when the material is sampled via right-click.
 		cvars.AddChangeCallback("acfarmormesh_material", function(_, _, New)
@@ -378,7 +381,7 @@ if CLIENT then
 			local MaxHealth = Weapon:GetNWFloat("ConvexMaxHealth", 0)
 			local Volume    = Entity.ACF_Volumetric_Mesh.Convexes[HighlightID].Volume
 
-			local ArmorType  = ACF.Classes.ArmorTypes.Get(Material) or ACF.Classes.ArmorTypes.Get("Default")
+			local ArmorType  = GetArmorType(Material) or GetArmorType("Default")
 			local Mass       = Volume * CubicInchToM3 * ArmorType.Density -- Volume is in^3, Density is kg/m^3
 			local Cost       = Volume * CubicInchToM3 * ArmorType.CostMul -- CostMul is points per m^3
 			local NominalHit = ACF.GetConvexHit(Entity, Trace.HitPos, -Trace.HitNormal, true, true)
@@ -553,7 +556,7 @@ elseif SERVER then
 		end
 
 		if tobool(self:GetClientInfo("color_entity")) then
-			local ArmorType = ACF.Classes.ArmorTypes.Get(Material)
+			local ArmorType = GetArmorType(Material)
 			if ArmorType and ArmorType.Color then
 				Entity:SetColor(ArmorType.Color)
 				Entity:SetRenderMode(RENDERMODE_NORMAL)

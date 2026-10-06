@@ -48,16 +48,14 @@ local function BuildAxisRanges(List, Visible)
 	return Ranges
 end
 
-local function GetSortedList(ArmorTypes)
+local function GetSortedList(RawList)
 	local List = {}
 
-	for _, Data in pairs(ArmorTypes.GetEntries()) do
+	for _, Data in ipairs(RawList) do
 		if Data.SuppressLoad then continue end
 
 		List[#List + 1] = Data
 	end
-
-	table.SortByMember(List, "RegisterOrder", true)
 
 	return List
 end
@@ -69,8 +67,8 @@ local StaticRangeExcludedIDs = { Default = true, Flesh = true, Wing = true, Rein
 -- now; the axes instead stay fixed against the same static material set the old ExcludeFromStatsGraph used.
 local RebuildRangesOnSelect = false
 
-return function(Base, ArmorTypes)
-	local List    = GetSortedList(ArmorTypes)
+return function(Base, RawList)
+	local List    = GetSortedList(RawList)
 	local Visible = {}
 
 	local StaticVisible = {}

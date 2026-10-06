@@ -11,7 +11,7 @@ local Axes = {
 	{ Key = "SpallMul",    Label = "Sp", FullLabel = "Spall Multiplier",       Tooltip = "Spall fragment mass." },
 }
 
-return function(CostBase, ArmorTypes)
+return function(CostBase, RawList)
 	local Numerator   = CostBase:AddComboBox()
 	local Denominator = CostBase:AddComboBox()
 	local FlipButton  = CostBase:AddButton("Flip")
@@ -26,7 +26,7 @@ return function(CostBase, ArmorTypes)
 	local function BuildRows(NumKey, DenKey, LeftoverAxes)
 		local Rows = {}
 
-		for _, Data in pairs(ArmorTypes.GetEntries()) do
+		for _, Data in ipairs(RawList) do
 			if Data.SuppressLoad then continue end
 
 			local Num = Data[NumKey] or 0
@@ -44,7 +44,7 @@ return function(CostBase, ArmorTypes)
 			Rows[#Rows + 1] = Row
 		end
 
-		table.SortByMember(Rows, "Name", true)
+		table.SortByMember(Rows, "Ratio", true)
 
 		return Rows
 	end

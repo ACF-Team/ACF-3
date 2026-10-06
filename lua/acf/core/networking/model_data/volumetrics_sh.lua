@@ -7,7 +7,9 @@ local ModelData = ACF.ModelData
 local CubicInchToM3 = ACF.InchToMCu
 local HealthMul = ACF.HealthCoef
 local ArmorCoef = ACF.ArmorCoef
-local ArmorTypes = ACF.Classes.ArmorTypes
+local Classes = ACF.Classes
+
+local function GetArmorType(ID) return Classes.GetSubtypeByName("ACF.ArmorTypes.BaseArmorType", "ACF.ArmorTypes." .. tostring(ID)) end
 
 -- Networking: whenever a convex's material is set (serverside), the new material is sent straight to
 -- every client. No request/refresh cycle -- just send it the moment it changes.
@@ -19,7 +21,11 @@ local ArmorTypeIndexByID = {} -- armor type ID string -> index (1-based int)
 
 -- Built once after all armor types are registered; neither table changes after this.
 hook.Add("ACF_OnLoadAddon", "ACF_BuildArmorTypeIndex", function()
-    local List = ArmorTypes.GetList()
+    local List = {}
+    for I, Entry in ipairs(Classes.GetSubtypesAsList("ACF.ArmorTypes.BaseArmorType")) do
+        List[I] = Entry
+    end
+
     table.sort(List, function(A, B) return A.ID < B.ID end)
 
     for I, Entry in ipairs(List) do
@@ -76,8 +82,6 @@ local ArmorableClasses = {
 }
 
 do
-    local ArmorTypes = ACF.Classes.ArmorTypes
-
     -- Sets the materials ({[ConvexID] = MaterialID, ...}) of one or more convexes.
     -- Batches network updates.
     -- Returns false if any convex was rejected (e.g. an explosive material on too large a convex)
@@ -92,7 +96,7 @@ do
             -- picks them up once the mesh exists, instead of silently dropping them.
             for ConvexID, Material in pairs(Materials) do
                 -- print("SetConvexMaterial", Entity, ConvexID, Material)
-                local ArmorType = ArmorTypes.Get(Material) or ArmorTypes.Get("Default")
+                local ArmorType = GetArmorType(Material) or GetArmorType("Default")
                 Entity.ACF_Volumetric_Materials[ConvexID] = ArmorType.ID
             end
             return
@@ -106,7 +110,7 @@ do
             local Convex = MeshData.Convexes[ConvexID]
             if not Convex then continue end
 
-            local ArmorType = ArmorTypes.Get(Material) or ArmorTypes.Get("Default")
+            local ArmorType = GetArmorType(Material) or GetArmorType("Default")
 
             if ArmorType.IsExplosive and (Convex.Volume < ACF.MinExplosiveConvexVolume or Convex.Volume > ACF.MaxExplosiveConvexVolume) then
                 if SERVER and IsValid(Player) then
@@ -469,7 +473,7 @@ end
 local function BuildGapHit(Left, Right, Source, Direction)
     local Entity, ConvexID = Source.Entity, Source.ConvexID
     local Convex    = Entity.ACF_Volumetric_Mesh.Convexes[ConvexID]
-    local ArmorType = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("Default")
+    local ArmorType = GetArmorType(Convex.Material) or GetArmorType("Default")
 
     return {
         Entity      = Entity,

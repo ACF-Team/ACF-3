@@ -20,7 +20,9 @@ local IndexLimit   = 2000
 local SkyGraceZone = Ballistics.SkyboxGraceZone
 local FlightTr     = { start = true, endpos = true, filter = true, mask = true }
 local GlobalFilter = ACF.GlobalFilter
-local ArmorTypes   = ACF.Classes.ArmorTypes
+local Classes      = ACF.Classes
+
+local function GetArmorType(ID) return Classes.GetSubtypeByName("ACF.ArmorTypes.BaseArmorType", "ACF.ArmorTypes." .. tostring(ID)) end
 
 -- This will create, or update, the tracer effect on the clientside
 function Ballistics.BulletClient(Bullet, Type, Hit, HitPos)
@@ -670,7 +672,7 @@ do -- Terminal ballistics --------------------------
 		if MeshData and ConvexHits and #ConvexHits > 0 then
 			local ExitHit   = ConvexHits[#ConvexHits]
 			local Convex    = MeshData.Convexes[ExitHit.ConvexID]
-			local ArmorType = ArmorTypes.Get(Convex.Material) or ArmorTypes.Get("Default")
+			local ArmorType = GetArmorType(Convex.Material) or GetArmorType("Default")
 
 			RemovedMass = ExitHit.Volume * ACF.InchToMCu * ArmorType.Density -- ExitHit.Volume is the actual penetration channel volume (in^3), Density is kg/m^3
 			Density     = ArmorType.Density * 1e-6 -- kg/m^3 to kg/cm^3, to match FragSize's cm-based units below
@@ -790,7 +792,7 @@ do -- Terminal ballistics --------------------------
 			local Convex = MeshData.Convexes[Hit.ConvexID]
 			if not Convex or not Convex.IsExplosive or Convex.Detonated then continue end
 
-			local ArmorType = ArmorTypes.Get(Convex.Material)
+			local ArmorType = GetArmorType(Convex.Material)
 			if not ArmorType then continue end
 			if KE < (ArmorType.ExplosiveThreshold or math.huge) then continue end
 
