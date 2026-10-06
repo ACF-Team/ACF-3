@@ -1,7 +1,7 @@
 local RecacheBindOutput = ENT.RecacheBindOutput
 local GetKeyState = ENT.GetKeyState
 
-local NUM_WEAPONS = 3 -- Number of Gun1/Gun2/Gun3 slots
+local NUM_WEAPONS = ENT.NUM_WEAPONS
 
 local function Init(Entity)
 	Entity.Turrets          = {}    -- Turrets, both horizontal and vertical

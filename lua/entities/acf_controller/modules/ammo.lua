@@ -1,7 +1,12 @@
 local Classes = ACF.Classes
 
+local NUM_WEAPONS = ENT.NUM_WEAPONS
+
 local function Init(Entity)
-	Entity.PrimaryAmmoCountsByName = {}
+	Entity.AmmoCountsByWeaponAndName = {}
+	for WeaponSlot = 1, NUM_WEAPONS do
+		Entity.AmmoCountsByWeaponAndName[WeaponSlot] = {}
+	end
 end
 
 -- Crates sharing an ammo type can still differ in penetration, so entries are named after both.
@@ -23,54 +28,58 @@ end
 do
 	net.Receive("ACF_Controller_Ammo", function(_, ply)
 		local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
+		local WeaponSlot = net.ReadUInt(2)
 		local SelectAmmoName = net.ReadString()
 		local ForceReload = net.ReadBool()
 		local Entity = Entity(EntIndex)
 		if not IsValid(Entity) then return end
 		if Entity.Driver ~= ply then return end
 
-		local PrimaryGun = Entity:GetGun1()
-		if not IsValid(PrimaryGun) then return end
-		for Crate, _ in pairs(PrimaryGun.Crates) do
+		local Gun = Entity:GetWeapon(WeaponSlot)
+		if not IsValid(Gun) then return end
+		for Crate, _ in pairs(Gun.Crates) do
 			if IsValid(Crate) then
 				local AmmoName = GetAmmoName(Crate)
 				Crate:TriggerInput("Load", AmmoName == SelectAmmoName and 1 or 0)
 			end
 		end
-		if ForceReload then PrimaryGun:TriggerInput("Reload", 1) end
+		if ForceReload then Gun:TriggerInput("Reload", 1) end
 	end)
 
 	function ENT:ProcessAmmo(SelfTbl)
 		local Contraption = self:CFW_GetContraption()
 		if Contraption == nil then return end
 
-		-- Determine current counts
-		local PrimaryGun = self:GetGun1()
-		if not IsValid(PrimaryGun) then return end
+		for WeaponSlot = 1, NUM_WEAPONS do
+			local Gun = self:GetWeapon(WeaponSlot)
+			if not IsValid(Gun) then continue end
 
-		local PrimaryAmmoByName = {}
-		for Crate, _ in pairs(PrimaryGun.Crates) do
-			if IsValid(Crate) then
-				local AmmoName, RoundID, MaxPen = GetAmmoName(Crate)
-				local Ammo = PrimaryAmmoByName[AmmoName]
-				if not Ammo then
-					Ammo = {RoundID = RoundID, MaxPen = MaxPen, Count = 0}
-					PrimaryAmmoByName[AmmoName] = Ammo
+			local AmmoByName = {}
+			for Crate, _ in pairs(Gun.Crates) do
+				if IsValid(Crate) then
+					local AmmoName, RoundID, MaxPen = GetAmmoName(Crate)
+					local Ammo = AmmoByName[AmmoName]
+					if not Ammo then
+						Ammo = {RoundID = RoundID, MaxPen = MaxPen, Count = 0}
+						AmmoByName[AmmoName] = Ammo
+					end
+					Ammo.Count = Ammo.Count + (Crate.Amount or 0)
 				end
-				Ammo.Count = Ammo.Count + (Crate.Amount or 0)
 			end
-		end
 
-		for AmmoName, Ammo in pairs(PrimaryAmmoByName) do
-			if SelfTbl.PrimaryAmmoCountsByName[AmmoName] ~= Ammo.Count then
-				SelfTbl.PrimaryAmmoCountsByName[AmmoName] = Ammo.Count
-				net.Start("ACF_Controller_Ammo")
-				net.WriteEntity(self)
-				net.WriteString(AmmoName)
-				net.WriteString(Ammo.RoundID)
-				net.WriteUInt(Ammo.MaxPen, 16)
-				net.WriteUInt(Ammo.Count, 16)
-				net.Send(self.Driver)
+			local Counts = SelfTbl.AmmoCountsByWeaponAndName[WeaponSlot]
+			for AmmoName, Ammo in pairs(AmmoByName) do
+				if Counts[AmmoName] ~= Ammo.Count then
+					Counts[AmmoName] = Ammo.Count
+					net.Start("ACF_Controller_Ammo")
+					net.WriteEntity(self)
+					net.WriteUInt(WeaponSlot, 2)
+					net.WriteString(AmmoName)
+					net.WriteString(Ammo.RoundID)
+					net.WriteUInt(Ammo.MaxPen, 16)
+					net.WriteUInt(Ammo.Count, 16)
+					net.Send(self.Driver)
+				end
 			end
 		end
 	end

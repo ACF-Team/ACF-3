@@ -2,6 +2,13 @@ DEFINE_BASECLASS("acf_base_simple")
 
 ENT.ACF_InvisibleToBallistics = true
 
+-- Number of Gun1/Gun2/Gun3 slots, shared by every module that iterates or looks up weapons by slot
+ENT.NUM_WEAPONS = 3
+
+function ENT:GetWeapon(Slot)
+	return self["GetGun" .. Slot](self)
+end
+
 -- The controller's live settings are NetworkVars (see below). The only serialized field is a request
 -- for the default config, applied by init.lua's ACF_OnVerifyClientData on spawn (always true from the
 -- menu, matching the previous behavior).
