@@ -25,7 +25,7 @@ function ResetTime(Entity)
 end
 
 -- CFW hooks to initialize state and handle splitting
-hook.Add("cfw.contraption.created", "ACF_CFW_TrackPlayersInContraptions", function(Contraption)
+hook.Add("cfw.contraption.init", "ACF_CFW_TrackPlayersInContraptions", function(Contraption)
     Contraption.ACF_TrackPlayers = {}
 end)
 

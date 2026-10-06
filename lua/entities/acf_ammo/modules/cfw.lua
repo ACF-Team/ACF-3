@@ -1,4 +1,4 @@
-hook.Add("cfw.contraption.created", "ACF_CFWAmmoContraptionCreated", function(contraption)
+hook.Add("cfw.contraption.init", "ACF_CFWAmmoContraptionCreated", function(contraption)
 	contraption.Ammos = {}
 	contraption.AmmosByStage = {}
 end)

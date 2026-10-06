@@ -712,7 +712,7 @@ do -- Metamethods --------------------------------
 			acf_turret = true,
 		}
 
-		hook.Add("cfw.contraption.created", "ACF_CFW_BulletFilter", function(Contraption)
+		hook.Add("cfw.contraption.init", "ACF_CFW_BulletFilter", function(Contraption)
 			Contraption.BulletFilter = {}
 			Contraption.BarrelFilter = {}
 		end)

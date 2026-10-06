@@ -1,4 +1,4 @@
-hook.Add("cfw.contraption.created", "ACF_CFWFuelContraptionCreated", function(contraption)
+hook.Add("cfw.contraption.init", "ACF_CFWFuelContraptionCreated", function(contraption)
 	contraption.Fuels = {}
 end)
 

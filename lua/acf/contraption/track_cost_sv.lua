@@ -216,8 +216,8 @@ do	-- CFW Hooks
 
 	-- Custom information to track on contraptions
 	-- Not all of this is directly related to cost
-	hook.Add("cfw.contraption.created", "ACF_CFW_CostTrack", function(Contraption)
-		-- print("cfw.contraption.created", Contraption)
+	hook.Add("cfw.contraption.init", "ACF_CFW_CostTrack", function(Contraption)
+		-- print("cfw.contraption.init", Contraption)
 		Contraption.AmmoTypes = {} -- Index ammo types (Estimate of firepower)
 
 		Contraption.CostObj	= Objects.Cost(Contraption)

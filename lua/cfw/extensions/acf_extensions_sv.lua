@@ -3,7 +3,7 @@ local Notify = ACF.Utilities.Notify
 -- Track ACF changes on a contraption
 do
     -- Maintain a record in the contraption of its current baseplate
-    hook.Add("cfw.contraption.created", "ACF_CFW_Indexing", function(contraption)
+    hook.Add("cfw.contraption.init", "ACF_CFW_Indexing", function(contraption)
         contraption.ACF_EntitiesCount = 0
     end)
 
