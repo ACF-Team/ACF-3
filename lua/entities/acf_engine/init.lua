@@ -476,30 +476,6 @@ function ENT:CFW_OnParentedTo()
 	self:UpdateOverlay()
 end
 
-hook.Add("cfw.contraption.entityAdded", "ACF_Engine_ContraptionChecks", function(Contraption, Ent)
-	if Ent:GetClass() == "acf_engine" then
-		if Contraption.Engines then
-			Contraption.Engines[Ent] = true
-		else
-			Contraption.Engines = {[Ent] = true}
-		end
-
-		Contraption.HasEngines   = true
-		Contraption.TotalEngines = (Contraption.TotalEngines or 0) + 1
-	end
-end)
-
-hook.Add("cfw.contraption.entityRemoved", "ACF_Engine_ContraptionChecks", function(Contraption, Ent)
-	if Ent:GetClass() == "acf_engine" then
-		if Contraption.Engines then
-			Contraption.Engines[Ent] = nil
-		end
-
-		Contraption.HasEngines   = next(Contraption.Engines) and true or nil
-		Contraption.TotalEngines = Contraption.HasEngines and 0 or table.Count(Contraption.Engines)
-	end
-end)
-
 -- specialized calcmassratio for engines
 function ENT:CalcMassRatio(SelfTbl)
 	SelfTbl        = SelfTbl or ENTITY.GetTable(self)
