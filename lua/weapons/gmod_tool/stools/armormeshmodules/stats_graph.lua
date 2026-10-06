@@ -140,6 +140,9 @@ return function(Base, RawList)
 	Graph.Paint = function(_, W, H)
 		local AxisCount = #Axes
 
+		surface.SetDrawColor(200, 200, 200, 25)
+		surface.DrawRect(0, 0, W, H)
+
 		-- Grid rings
 		surface.SetDrawColor(175, 175, 175, 255)
 		for Ring = 1, 4 do
