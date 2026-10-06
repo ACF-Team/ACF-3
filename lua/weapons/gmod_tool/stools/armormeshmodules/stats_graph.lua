@@ -82,8 +82,29 @@ return function(Base, RawList)
 		Visible[Data] = false
 	end
 
+	local NormalizeKey
+
+	local NormalizeBox = Base:AddPanel("DComboBox")
+	NormalizeBox:Dock(TOP)
+	NormalizeBox:DockMargin(0, 0, 0, 5)
+	NormalizeBox:SetValue("Normalize on...")
+	NormalizeBox:SetSortItems(false)
+	NormalizeBox:AddChoice("---", "")
+
+	for _, Axis in ipairs(Axes) do
+		NormalizeBox:AddChoice(Axis.Label, Axis.Key)
+	end
+
 	local Graph = Base:AddPanel("DPanel")
 	Graph:SetTall(220)
+
+	function NormalizeBox:OnSelect(_, _, Key)
+		NormalizeKey = Key ~= "" and Key or nil
+
+		if not NormalizeKey then
+			self:SetValue("Normalize on...")
+		end
+	end
 
 	local AxisLabels = {}
 
@@ -146,15 +167,58 @@ return function(Base, RawList)
 		-- One filled, translucent polygon per toggled-on armor type
 		draw.NoTexture()
 
+		local AllFractions = {}
+		local LongestFraction = 0
+
+		for _, Data in ipairs(List) do
+			if not Visible[Data] then continue end
+
+			local Fractions = {}
+			local NormFraction
+
+			for Index, Axis in ipairs(Axes) do
+				local Fraction = GetAxisFraction(Data, Axis, Ranges[Axis.Key])
+				Fractions[Index] = Fraction
+
+				if Axis.Key == NormalizeKey then
+					NormFraction = Fraction
+				end
+			end
+
+			-- Scales every axis by the same factor so the chosen axis lands exactly on the outer ring.
+			if NormFraction and NormFraction > 0 then
+				local Scale = 1 / NormFraction
+
+				for Index = 1, #Fractions do
+					Fractions[Index] = Fractions[Index] * Scale
+				end
+			end
+
+			for _, Fraction in ipairs(Fractions) do
+				LongestFraction = math.max(LongestFraction, Fraction)
+			end
+
+			AllFractions[Data] = Fractions
+		end
+
+		-- Shrinks every material by the same amount so the single longest axis across all of them just reaches the ring.
+		if LongestFraction > 1 then
+			for _, Fractions in pairs(AllFractions) do
+				for Index = 1, #Fractions do
+					Fractions[Index] = Fractions[Index] / LongestFraction
+				end
+			end
+		end
+
 		for ListIndex, Data in ipairs(List) do
 			if not Visible[Data] then continue end
 
 			local Col = ACF.GetIndexColor(ListIndex - 1)
 			local Poly = {}
+			local Fractions = AllFractions[Data]
 
-			for Index, Axis in ipairs(Axes) do
-				local Fraction = GetAxisFraction(Data, Axis, Ranges[Axis.Key])
-				local X, Y = GetPoint(W, H, Index, Fraction)
+			for Index in ipairs(Axes) do
+				local X, Y = GetPoint(W, H, Index, Fractions[Index])
 
 				Poly[Index] = { x = X, y = Y }
 			end
@@ -202,6 +266,7 @@ return function(Base, RawList)
 		Label:SetText(Data.ShortName or Data.Name)
 		Label:SetDark(true)
 		Label:SetMouseInputEnabled(false)
+		Label:SetAlpha(Visible[Data] and 255 or 120)
 
 		function Row:DoClick()
 			Visible[Data] = not Visible[Data]
