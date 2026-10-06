@@ -7,6 +7,7 @@ local function Init(Entity)
 	Entity.Turrets          = {}    -- Turrets, both horizontal and vertical
 	Entity.Guns             = {}    -- All guns
 	Entity.Racks            = {}    -- All racks
+	Entity.Weapons          = {}    -- All guns and racks together
 	Entity.GuidanceComputer = nil   -- The guidance computer, if any
 	Entity.TurretComputer   = nil   -- The turret computer, if any
 	Entity.FireGroups       = {}    -- [1]/[2]/[3]: guns/racks sharing Gun1's/Gun2's/Gun3's ShortName
@@ -63,6 +64,7 @@ do
 
 	function ENT:AnalyzeGuns(Gun)
 		self.Guns[Gun] = true
+		self.Weapons[Gun] = true
 
 		if Gun.Weapon == "ACF.Guns.SmokeLauncher" then
 			self.GunsSmoke[Gun] = true
@@ -77,6 +79,7 @@ do
 
 	function ENT:AnalyzeRacks(Rack)
 		self.Racks[Rack] = true
+		self.Weapons[Rack] = true
 
 		AnalyzeWeapon(self, Rack)
 	end
@@ -208,18 +211,18 @@ do
 			-- We just want to know if there are any in air we should be lasing for...
 			local FoundInAir = false
 
-			for Gun in pairs(SelfTbl.Guns) do
-				if FoundInAir then break end
-				if Gun.Outputs["In Air"].Value > 0 then FoundInAir = true end
-			end
-
-			for Rack in pairs(SelfTbl.Racks) do
-				if FoundInAir then break end
-				if Rack.Outputs["In Air"].Value > 0 then FoundInAir = true end
+			for Weapon in pairs(SelfTbl.Weapons) do
+				if Weapon.Outputs["In Air"].Value > 0 then
+					FoundInAir = true
+					break
+				end
 			end
 
 			GuideComp:TriggerInput("Lase", FoundInAir and 1 or 0)
+
+			-- Update with whatever input format the computer takes
 			GuideComp:TriggerInput("HitPos", SelfTbl.HitPos)
+			GuideComp:TriggerInput("Coordinates", SelfTbl.HitPos)
 		end
 	end
 end
@@ -246,7 +249,9 @@ ACF.RegisterControllerLink("acf_computer", {
 	Field = "GuidanceComputer",
 	Single = true,
 	PreLink = function(_, Target)
-		if Target.Computer ~= "CPR-LSR" and Target.Computer ~= "CPR-OPT" then return false, "Only laser/optical guidance computers are supported." end
+		if Target.InputHitPos == nil and Target.InputCoords == nil then
+			return false, "This guidance computer has no vector input to aim."
+		end
 		return true
 	end,
 })

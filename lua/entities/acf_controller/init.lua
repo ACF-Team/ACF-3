@@ -295,6 +295,7 @@ do
 		if iters % 7 == 0 then self:ProcessHUDs(SelfTbl) end
 
 		if iters % SelfTbl.RadarUpdateRate == 0 then self:ProcessRadars(SelfTbl) end
+		self:ProcessRadarSlaving(SelfTbl)
 
 		SelfTbl.iters = iters + 1
 		self:UpdateOverlay()

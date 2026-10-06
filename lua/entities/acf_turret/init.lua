@@ -1155,6 +1155,10 @@ do -- Metamethods
 				duplicator.StoreEntityModifier(self, "ACFGyro", {SelfTbl.Gyro:EntIndex()})
 			end
 
+			if IsValid(SelfTbl.Radar) then
+				duplicator.StoreEntityModifier(self, "ACFRadar", {SelfTbl.Radar:EntIndex()})
+			end
+
 			-- Stored turret-side since the controller's periodic link Check would otherwise
 			-- gate the very first paste-time relink before contraption/mass data has settled
 			if SelfTbl.LightweightControllers and next(SelfTbl.LightweightControllers) then
@@ -1184,6 +1188,12 @@ do -- Metamethods
 				self:Link(CreatedEntities[EntMods.ACFGyro[1]])
 
 				EntMods.ACFGyro = nil
+			end
+
+			if EntMods.ACFRadar then
+				self:Link(CreatedEntities[EntMods.ACFRadar[1]])
+
+				EntMods.ACFRadar = nil
 			end
 
 			if EntMods.ACFLightweightControllers then

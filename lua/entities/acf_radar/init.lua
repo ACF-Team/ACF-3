@@ -34,6 +34,34 @@ ACF.RegisterClassUnlink("acf_radar", "acf_rack", function(Radar, Target)
 	return false, "This rack is not linked to this radar."
 end)
 
+-- Linked turrets are slaved to this radar's locked target (see acf_controller/modules/radar.lua)
+ACF.RegisterClassLink("acf_radar", "acf_turret", function(Radar, Turret)
+	if Radar.Turrets[Turret] then return false, "This turret is already linked to this radar!" end
+	if Turret.Radar == Radar then return false, "This turret is already linked to this radar!" end
+
+	Radar.Turrets[Turret] = true
+	Turret.Radar = Radar
+
+	Radar:UpdateOverlay()
+	Turret:UpdateOverlay()
+
+	return true, "Turret linked successfully!"
+end)
+
+ACF.RegisterClassUnlink("acf_radar", "acf_turret", function(Radar, Turret)
+	if Radar.Turrets[Turret] or Turret.Radar == Radar then
+		Radar.Turrets[Turret] = nil
+		Turret.Radar = nil
+
+		Radar:UpdateOverlay()
+		Turret:UpdateOverlay()
+
+		return true, "Turret unlinked successfully!"
+	end
+
+	return false, "This turret is not linked to this radar."
+end)
+
 --===============================================================================================--
 -- Local Funcs and Vars
 --===============================================================================================--
@@ -311,6 +339,7 @@ hook.Add("ACF_PreUpdateEntity", "ACF Radar Update Guard", function(Class, Entity
 end)
 
 ACF.RegisterLinkSource("acf_radar", "Weapons")
+ACF.RegisterLinkSource("acf_radar", "Turrets")
 
 --===============================================================================================--
 -- Spawning and Updating
@@ -334,6 +363,7 @@ do -- Spawning
 		self.TargetCount = 0
 		self.Damage      = 0
 		self.Weapons     = {}
+		self.Turrets     = {}
 		self.Targets     = {}
 		self.SyncSource  = nil
 		self.TickCounter = 0
@@ -351,6 +381,7 @@ do -- Spawning
 			if not IsValid(self) then return end
 
 			CheckDistantLinks(self, "Weapons")
+			CheckDistantLinks(self, "Turrets")
 		end)
 	end
 
@@ -522,6 +553,10 @@ function ENT:OnRemove()
 
 	for Weapon in pairs(self.Weapons) do
 		self:Unlink(Weapon)
+	end
+
+	for Turret in pairs(self.Turrets) do
+		self:Unlink(Turret)
 	end
 
 	if IsValid(self.SyncSource) then

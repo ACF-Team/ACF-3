@@ -1,10 +1,11 @@
 local function Init(Entity)
-	Entity.Radar             = nil      -- Radar, if any
-	Entity.RadarVertical     = nil      -- Radar vertical turret, if any
-	Entity.RadarUpdateRate   = 7        -- How often to update the radar, in ticks.
-	Entity.SelectedTargetID  = nil      -- Currently selected radar target ID
-	Entity.SelectedTargetPos = Vector() -- Position of currently selected radar target
-	Entity.SelectedTargetVel = Vector() -- Velocity of currently selected radar target
+	Entity.Radar                  = nil      -- Radar, if any
+	Entity.RadarVertical          = nil      -- Radar vertical turret, if any
+	Entity.RadarUpdateRate        = 7        -- How often to update the radar, in ticks.
+	Entity.SelectedTargetID       = nil      -- Currently selected radar target ID
+	Entity.SelectedTargetPos      = Vector() -- Position of currently selected radar target, as of the last radar update
+	Entity.SelectedTargetVel      = Vector() -- Velocity of currently selected radar target
+	Entity.SelectedTargetSampleAt = 0        -- CurTime() the above pair was sampled, for slaving extrapolation
 end
 
 -- Radar related
@@ -49,12 +50,39 @@ do
 			net.WriteVector(Radar.Outputs.Position.Value[i] or vector_origin)
 
 			if ID == SelfTbl.SelectedTargetID then
-				SelfTbl.SelectedTargetPos = Radar.Outputs.Position.Value[i] or vector_origin
-				SelfTbl.SelectedTargetVel = Radar.Outputs.Velocity.Value[i] or vector_origin
+				SelfTbl.SelectedTargetPos      = Radar.Outputs.Position.Value[i] or vector_origin
+				SelfTbl.SelectedTargetVel      = Radar.Outputs.Velocity.Value[i] or vector_origin
+				SelfTbl.SelectedTargetSampleAt = CurTime()
 			end
 		end
 		net.WriteVector(SelfTbl.SelectedTargetVel)
 		net.Send(self.Driver)
+	end
+
+	-- Slaves the turret and guidance computers to the radar's selected target.
+	function ENT:ProcessRadarSlaving(SelfTbl)
+		local Radar = SelfTbl.Radar
+		if not IsValid(Radar) or not SelfTbl.SelectedTargetID then return end
+
+		local HasTurrets = next(Radar.Turrets)
+		local GuideComp = SelfTbl.GuidanceComputer
+		if not HasTurrets and not IsValid(GuideComp) then return end
+
+		local Elapsed = CurTime() - SelfTbl.SelectedTargetSampleAt
+		local Pos = SelfTbl.SelectedTargetPos + SelfTbl.SelectedTargetVel * Elapsed
+
+		if HasTurrets then
+			for Turret in pairs(Radar.Turrets) do
+				if IsValid(Turret) then
+					Turret:InputDirection(Pos)
+				end
+			end
+		end
+
+		if IsValid(GuideComp) then
+			GuideComp:TriggerInput("HitPos", Pos)
+			GuideComp:TriggerInput("Coordinates", Pos)
+		end
 	end
 end
 
