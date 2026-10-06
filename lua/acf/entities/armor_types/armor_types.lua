@@ -136,12 +136,12 @@ end
 -- HHRHA
 local Armor = Types.Register("HHRHA")
 function Armor:OnLoaded()
-    self.Name        = "High Hardness RHA"
-    self.ShortName   = "HHRHA"
+    self.Name        = "Maraging Steel"
+    self.ShortName   = "Maraging Steel"
     self.Description = "Harder than RHA, but more brittle."
     self.Density     = 7850 -- https://metalzenith.com/blogs/steel-properties/rha-steel-properties-and-key-applications-in-defense
-    self.CostMul     = 59.8
-    self.HealthMul   = 0.75
+    self.CostMul     = 68
+    self.HealthMul   = 0.265
     self.KineticMul  = 1.25
     self.ChemicalMul = 1.15
     self.SpallMul    = 1.3
@@ -206,6 +206,21 @@ function Armor:OnLoaded()
     self.ChemicalMul = 0.7
     self.SpallMul    = 0.3
     self.Color       = Color(255, 191, 0)
+end
+
+-- NERA
+local Armor = Types.Register("NERA")
+function Armor:OnLoaded()
+    self.Name        = "NERA"
+    self.ShortName   = "NERA"
+    self.Description = "Non-Explosive Reactive Armor, steel plates around rubber interlayers like the Abrams turret cassettes. Bulges against shaped charges and long rods, but never detonates. Weaker than ERA against HEAT, in exchange for being safe and sustained."
+    self.Density     = 4250 -- 60% RHA and 40% rubber by volume
+    self.CostMul     = 38 -- Between the raw material cost (28) and Heavy ERA (47.1), for the cassette assembly
+    self.HealthMul   = 0.25
+    self.KineticMul  = 0.365 -- Just above the linear steel and rubber mix (0.72), the bulging plates disrupt rods a little
+    self.ChemicalMul = 1-- Linear mix is 0.75, the bulge doubles it, still short of ERA's 2.0
+    self.SpallMul    = 0.7 -- Steel plates still spall, but the rubber layers soak up some
+    self.Color       = Color(110, 125, 140)
 end
 
 -- DU
