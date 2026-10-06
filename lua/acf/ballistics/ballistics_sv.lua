@@ -5,6 +5,7 @@ local Damage      = ACF.Damage
 local Clock       = ACF.Utilities.Clock
 local Effects     = ACF.Utilities.Effects
 local EventViewer = ACF.EventViewer
+local GCmToKgIn    = ACF.gCmToKgIn
 
 Ballistics.Bullets         = Ballistics.Bullets or {}
 Ballistics.UnusedIndexes   = Ballistics.UnusedIndexes or {}
@@ -674,8 +675,8 @@ do -- Terminal ballistics --------------------------
 			local Convex    = MeshData.Convexes[ExitHit.ConvexID]
 			local ArmorType = GetArmorType(Convex.Material) or GetArmorType("Default")
 
-			RemovedMass = ExitHit.Volume * ACF.InchToMCu * ArmorType.Density -- ExitHit.Volume is the actual penetration channel volume (in^3), Density is kg/m^3
-			Density     = ArmorType.Density * 1e-6 -- kg/m^3 to kg/cm^3, to match FragSize's cm-based units below
+			RemovedMass = ExitHit.Volume * ArmorType.Density * GCmToKgIn -- ExitHit.Volume is the actual penetration channel volume (in^3), Density is g/cm^3
+			Density     = ArmorType.Density * 1e-3 -- g/cm^3 to kg/cm^3, to match FragSize's cm-based units below
 			SpallMul    = ArmorType.SpallMul
 		else
 			RemovedMass = HitRes.Damage * ACF.RHADensity -- Damage is used as a proxy for volume (cm^3) and RHA density is in kg/cm^3

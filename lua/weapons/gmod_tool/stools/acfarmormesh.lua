@@ -3,6 +3,7 @@ local IsValid = IsValid
 local Classes = ACF.Classes
 
 local CubicInchToM3 = ACF.InchToMCu
+local GCmToKgIn      = ACF.gCmToKgIn
 
 local function GetArmorType(ID) return Classes.GetSubtypeByName("ACF.ArmorTypes.BaseArmorType", "ACF.ArmorTypes." .. tostring(ID)) end
 
@@ -157,7 +158,7 @@ if CLIENT then
 
 			MatName:SetText(Data.Name)
 			MatDesc:SetText(Data.Description)
-			MatDensity:SetText(string.format("Density: %g kg/m^3", Data.Density))
+			MatDensity:SetText(string.format("Density: %g g/cm^3", Data.Density))
 			MatHealth:SetText(string.format("Health Multiplier: %gx", Data.HealthMul))
 			MatKinetic:SetText(string.format("Kinetic Multiplier: %gx", Data.KineticMul))
 			MatChemical:SetText(string.format("Chemical Multiplier: %gx", Data.ChemicalMul))
@@ -382,7 +383,7 @@ if CLIENT then
 			local Volume    = Entity.ACF_Volumetric_Mesh.Convexes[HighlightID].Volume
 
 			local ArmorType  = GetArmorType(Material) or GetArmorType("Default")
-			local Mass       = Volume * CubicInchToM3 * ArmorType.Density -- Volume is in^3, Density is kg/m^3
+			local Mass       = Volume * ArmorType.Density * GCmToKgIn -- Volume is in^3, Density is g/cm^3
 			local Cost       = Volume * CubicInchToM3 * ArmorType.CostMul -- CostMul is points per m^3
 			local NominalHit = ACF.GetConvexHit(Entity, Trace.HitPos, -Trace.HitNormal, true, true)
 			local Nominal    = NominalHit and NominalHit.GeoThick or 0
