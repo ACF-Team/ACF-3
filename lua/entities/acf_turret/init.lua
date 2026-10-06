@@ -181,7 +181,9 @@ local ENT_GetTurretMassCenter
 local ENT_UpdateTurretSlew
 
 do	-- Spawn and Update funcs
-	CFW.addParentDetour("acf_turret", "Rotator")
+	-- The rotator owns the turret's transform, so children are engine-parented to it, but it is
+	-- internal: CFW resolves through it so it never appears as a parent, child, link or family member.
+	CFW.addTransformProxy("acf_turret", "Rotator", "acf_turret_rotator", "Turret")
 
 	local DefaultType = "ACF.Turrets.Drive.Horizontal"
 
