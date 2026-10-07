@@ -817,12 +817,9 @@ do -- Metamethods
 			if IsValid(SelfTbl.Gyro) then
 				duplicator.StoreEntityModifier(self, "ACFGyro", {SelfTbl.Gyro:EntIndex()})
 			end
-
-			-- Wire dupe info
-			self.BaseClass.PreEntityCopy(self)
 		end
 
-		function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+		function ENT:PostEntityPaste(_, Ent, CreatedEntities)
 			local EntMods = Ent.EntityMods
 
 			if EntMods.ACFMotor then
@@ -836,8 +833,6 @@ do -- Metamethods
 
 				EntMods.ACFGyro = nil
 			end
-
-			self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
 		end
 	end
 
