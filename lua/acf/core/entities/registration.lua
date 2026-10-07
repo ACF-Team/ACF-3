@@ -152,7 +152,7 @@ local function PrepareSpawnFunctions(ENT, ClassName)
             if not Func(Player, "_" .. ClassName, ClientData) then return end
         end
 
-        local CanSpawn  = hook.Run("ACF_PreSpawnEntity", ClassName, Player, ClientData, HookArgs)
+        local CanSpawn  = hook.Run("ACF_PreSpawnEntity", ClassName, Player, ClientData)
         if CanSpawn == false then return end
 
         local Entity = ents.Create(ClassName)
