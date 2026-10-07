@@ -1,3 +1,18 @@
+local function WaitForContraption()
+    if ACF.Contraption.SetModel then return end
+
+    local Co = coroutine.running()
+
+    timer.Create( "ACF Tests Wait For Contraption", 0, 0, function()
+        if not ACF.Contraption.SetModel then return end
+
+        timer.Remove( "ACF Tests Wait For Contraption" )
+        coroutine.resume( Co )
+    end )
+
+    coroutine.yield()
+end
+
 local function GetClassDef( Class )
     return scripted_ents.GetStored( Class ).t.ACF_ClassDef
 end
@@ -84,7 +99,12 @@ return {
 
         {
             name = "Spawning with an invalid class field uses the default instead of erroring",
+            async = true,
+            coroutine = true,
+            timeout = 10,
             func = function()
+                WaitForContraption()
+
                 stub( FindMetaTable( "Entity" ), "CPPISetOwner" )
 
                 local Ent = ACF.Entities.DoSpawnInternal( "acf_radar", nil, Vector(), Angle(), { Sensor = { Type = "ACF.Ammunition.AP" } } )
@@ -93,6 +113,8 @@ return {
                 expect( ACF.Classes.GetTypeName( Ent:ACF_GetUserVar( "Sensor" ):GetType() ) ).to.equal( "ACF.Sensors.Radar.Targeting.SmallDirectional" )
 
                 Ent:Remove()
+
+                done()
             end
         },
     }

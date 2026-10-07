@@ -1,3 +1,18 @@
+local function WaitForContraption()
+    if ACF.Contraption.SetModel then return end
+
+    local Co = coroutine.running()
+
+    timer.Create( "ACF Tests Wait For Contraption", 0, 0, function()
+        if not ACF.Contraption.SetModel then return end
+
+        timer.Remove( "ACF Tests Wait For Contraption" )
+        coroutine.resume( Co )
+    end )
+
+    coroutine.yield()
+end
+
 local function GetCheckedLimit( Class, ClientData )
     local Checked
     local Player = {
@@ -86,7 +101,12 @@ return {
 
         {
             name = "Spawning without a player skips limit checks",
+            async = true,
+            coroutine = true,
+            timeout = 10,
             func = function()
+                WaitForContraption()
+
                 stub( FindMetaTable( "Entity" ), "CPPISetOwner" )
 
                 local Ent = ACF.Entities.DoSpawnInternal( "acf_radar", nil, Vector(), Angle(), {} )
@@ -94,6 +114,8 @@ return {
                 expect( Ent ).to.beValid()
 
                 Ent:Remove()
+
+                done()
             end
         },
     }

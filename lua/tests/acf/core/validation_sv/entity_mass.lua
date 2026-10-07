@@ -1,3 +1,18 @@
+local function WaitForContraption()
+    if ACF.Contraption.SetModel then return end
+
+    local Co = coroutine.running()
+
+    timer.Create( "ACF Tests Wait For Contraption", 0, 0, function()
+        if not ACF.Contraption.SetModel then return end
+
+        timer.Remove( "ACF Tests Wait For Contraption" )
+        coroutine.resume( Co )
+    end )
+
+    coroutine.yield()
+end
+
 local function Spawn( Class, Data )
     local Ent = ACF.Entities.DoSpawnInternal( Class, nil, Vector( 0, 0, 500 ), Angle(), Data )
 
@@ -21,19 +36,31 @@ return {
     cases = {
         {
             name = "Gearboxes keep their scaled mass",
+            async = true,
+            coroutine = true,
+            timeout = 10,
             func = function( State )
+                WaitForContraption()
+
                 local Class = ACF.Classes.GetTypeByName( "ACF.Gearboxes.Manual-L" )
                 local Expected = ACF.GetGearboxStats( Class.Mass, 1.5, Class.MaxTorque, 6 )
                 local Ent, Mass = Spawn( "acf_gearbox", { Gearbox = "ACF.Gearboxes.Manual-L", GearboxScale = 1.5, GearAmount = 6 } )
                 State.Ents[1] = Ent
 
                 expect( Mass ).to.equal( Expected )
+
+                done()
             end
         },
 
         {
             name = "Entities without their own ACF_Activate keep their class mass",
+            async = true,
+            coroutine = true,
+            timeout = 10,
             func = function( State )
+                WaitForContraption()
+
                 local Cases = {
                     { "acf_computer", { Computer = "ACF.Components.LaserGuidanceComputer" }, "ACF.Components.LaserGuidanceComputer" },
                     { "acf_rack", { Rack = "ACF.Racks.2xRK" }, "ACF.Racks.2xRK" },
@@ -46,12 +73,19 @@ return {
 
                     expect( Mass ).to.equal( ACF.Classes.GetTypeByName( Case[3] ).Mass )
                 end
+
+                done()
             end
         },
 
         {
             name = "A stale mass modifier does not override an ACF entity's mass",
+            async = true,
+            coroutine = true,
+            timeout = 10,
             func = function( State )
+                WaitForContraption()
+
                 local Ent, Mass = Spawn( "acf_rack", { Rack = "ACF.Racks.2xRK" } )
                 State.Ents[1] = Ent
 
@@ -59,6 +93,8 @@ return {
                 ACF.Activate( Ent, true )
 
                 expect( Ent:GetPhysicsObject():GetMass() ).to.equal( Mass )
+
+                done()
             end
         },
     }

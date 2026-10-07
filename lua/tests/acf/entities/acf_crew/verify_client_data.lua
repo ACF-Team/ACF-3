@@ -1,3 +1,18 @@
+local function WaitForContraption()
+    if ACF.Contraption.SetModel then return end
+
+    local Co = coroutine.running()
+
+    timer.Create( "ACF Tests Wait For Contraption", 0, 0, function()
+        if not ACF.Contraption.SetModel then return end
+
+        timer.Remove( "ACF Tests Wait For Contraption" )
+        coroutine.resume( Co )
+    end )
+
+    coroutine.yield()
+end
+
 return {
     groupName = "acf_crew:ACF_OnVerifyClientData",
 
@@ -78,7 +93,12 @@ return {
 
         {
             name = "A spawned crew with an unknown type uses a valid type ID",
+            async = true,
+            coroutine = true,
+            timeout = 10,
             func = function()
+                WaitForContraption()
+
                 stub( FindMetaTable( "Entity" ), "CPPISetOwner" )
 
                 local Crew = ACF.Entities.DoSpawnInternal( "acf_crew", nil, Vector(), Angle(), { CrewTypeID = "Junk" } )
@@ -88,6 +108,8 @@ return {
                 expect( Crew:GetCrewType() ).to.equal( ACF.Classes.GetTypeByName( "ACF.CrewTypes.Commander" ) )
 
                 Crew:Remove()
+
+                done()
             end
         },
     }
