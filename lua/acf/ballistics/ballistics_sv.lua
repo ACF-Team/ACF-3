@@ -378,6 +378,24 @@ do -- Obstacle resolution --------------------------
 				Trace.HitPos    = Hit.EntryPos
 				Trace.HitNormal = Hit.EntryNormal
 
+				if Convex.IsExplosive and Hit.ArmorType.ExplosiveThreshold then
+					-- Projectile.Energy is only refreshed at impact, after this runs, so work it out from the current flight
+					local CanSetOff = not Projectile.IsSpall and not Projectile.IsCookOff
+					local KE        = CanSetOff and ACF.Kinetic(Projectile.Flight:Length() / ACF.Scale, Projectile.ProjMass).Kinetic or 0
+
+					-- The flyer plates need open space in front of the face to swing out into
+					local Clear = not util.TraceLine({
+						start  = Hit.EntryPos,
+						endpos = Hit.EntryPos + Hit.EntryNormal * Convex.MinWidth * Hit.ArmorType.FlyerClearance,
+						mask   = MASK_SOLID,
+					}).Hit
+
+					if KE < Hit.ArmorType.ExplosiveThreshold or not Clear then
+						-- Unspent or boxed in reactive armor only contributes a fraction of its thickness
+						Hit.GeoThick = Hit.GeoThick * (Hit.ArmorType.UnspentMul or 1)
+					end
+				end
+
 				return Trace, Hit
 			end
 		end

@@ -15,6 +15,8 @@ Classes.DefineClass("ACF.ArmorTypes.BaseArmorType", function() end)
 -- IsExplosive       : marks the material as reactive; convexes detonate when penetrated with enough kinetic energy
 -- ExplosiveThreshold: kinetic energy (KJ) a penetrating round must carry to set off the reactive charge
 -- ExplosiveFiller   : fraction of the convex's mass that detonates as HE filler when triggered
+-- UnspentMul        : fraction of KineticMul/ChemicalMul kept by rounds below ExplosiveThreshold
+-- FlyerClearance    : multiple of the convex's MinWidth that must be open in front of the face, otherwise the plate counts as unspent
 
 -- Default special type. Does not set mass, but abysmal for armor usage
 Classes.DefineClass("ACF.ArmorTypes.Default", "ACF.ArmorTypes.BaseArmorType", function(CLASS)
@@ -286,6 +288,8 @@ Classes.DefineClass("ACF.ArmorTypes.LightERA", "ACF.ArmorTypes.BaseArmorType", f
     CLASS.IsExplosive        = true
     CLASS.ExplosiveThreshold = 100
     CLASS.ExplosiveFiller    = 0.01
+    CLASS.UnspentMul         = 0.25
+    CLASS.FlyerClearance     = 1.5
 end)
 
 -- Heavy ERA
@@ -306,6 +310,8 @@ Classes.DefineClass("ACF.ArmorTypes.HeavyERA", "ACF.ArmorTypes.BaseArmorType", f
     CLASS.IsExplosive        = true
     CLASS.ExplosiveThreshold = 200
     CLASS.ExplosiveFiller    = 0.01
+    CLASS.UnspentMul         = 0.25
+    CLASS.FlyerClearance     = 1.5
 end)
 
 -- Reinforced Concrete
