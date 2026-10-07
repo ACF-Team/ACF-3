@@ -149,14 +149,14 @@ local function PrepareSpawnFunctions(ENT, ClassName)
     local function DoSpawn(Player, Pos, Angle, ClientData, _, IsMenuSpawn)
         if IsValid(Player) then
             local Func = CheckSpawnLimit or Player.CheckLimit
-            if not Func(Player, "_" .. ClassName, ClientData) then return end
+            if not Func(Player, "_" .. ClassName, ClientData) then return nil, "You've reached the spawn limit for this entity." end
         end
 
-        local CanSpawn  = hook.Run("ACF_PreSpawnEntity", ClassName, Player, ClientData)
-        if CanSpawn == false then return end
+        local CanSpawn, Reason = hook.Run("ACF_PreSpawnEntity", ClassName, Player, ClientData)
+        if CanSpawn == false then return nil, Reason or "Spawning this entity was blocked." end
 
         local Entity = ents.Create(ClassName)
-        if not IsValid(Entity) then return end
+        if not IsValid(Entity) then return nil, "Couldn't create a " .. ClassName .. " entity." end
         Entity.ACF_Version = ACF_Version
 
         Entity:SetPos(Pos)
@@ -181,7 +181,12 @@ local function PrepareSpawnFunctions(ENT, ClassName)
         if Entity.ACF_OnSpawn then Entity:ACF_OnSpawn(Player, Pos, Angle, ClientData) end
         hook.Run("ACF_OnSpawnEntity", ClassName, Entity, ClientData)
 
-        Entity:ACF_UpdateEntityData(ClientData)
+        local Updated, UpdateReason = Entity:ACF_UpdateEntityData(ClientData)
+        if Updated == false then
+            Entity:Remove()
+            return nil, UpdateReason or "The entity couldn't be initialized."
+        end
+
         if Entity.ACF_PostSpawn then Entity:ACF_PostSpawn(Player, Pos, Angle, ClientData) end
         if IsMenuSpawn and Entity.ACF_PostMenuSpawn then Entity:ACF_PostMenuSpawn() end
 
@@ -204,10 +209,12 @@ end
 
 function Entities.DoSpawnInternal(ClassName, Player, Pos, Ang, ClientData)
     local DoSpawn = Entities.SpawnFuncs[ClassName]
-    if not DoSpawn then return end
+    if not DoSpawn then return nil, ClassName .. " is not a registered ACF entity class." end
 
-    local Entity = DoSpawn(Player, Pos, Ang, ClientData or {}, nil, true)
+    local Entity, Reason = DoSpawn(Player, Pos, Ang, ClientData or {}, nil, true)
     if IsValid(Entity) then return Entity end
+
+    return nil, Reason
 end
 
 local function PrepareSerializationFunctions(ENT, ClassName)
