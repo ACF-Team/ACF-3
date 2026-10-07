@@ -400,8 +400,16 @@ do -- Spawn and Update functions --------------------------------
 		duplicator.ClearEntityModifier(self, "mass")
 	end
 
-	function ENT.ACF_CheckSpawnLimit(Player)
-		return Player:CheckLimit("_acf_weapon")
+	local function GetWeaponClass(ClientData)
+		local Raw = ClientData and ClientData.Weapon
+		local FQN = istable(Raw) and Raw.Type or Raw
+
+		return isstring(FQN) and Classes.GetSubtypeByName("ACF.Guns.BaseGun", FQN)
+			or Classes.GetTypeByName("ACF.Guns.Cannon")
+	end
+
+	function ENT.ACF_CheckSpawnLimit(Player, _, ClientData)
+		return Player:CheckLimit(GetWeaponClass(ClientData).LimitConVar.Name)
 	end
 
 	function ENT:ACF_PreUpdateEntityData()
@@ -451,7 +459,7 @@ do -- Spawn and Update functions --------------------------------
 	function ENT:ACF_PostSpawn(Player, _, _, _)
 		-- Count toward the weapon spawn limit checked by ENT.ACF_CheckSpawnLimit.
 		if IsValid(Player) then
-			Player:AddCount("_acf_weapon", self)
+			Player:AddCount(self:GetWeapon():GetType().LimitConVar.Name, self)
 		end
 
 		WireLib.TriggerOutput(self, "Status", "Empty")

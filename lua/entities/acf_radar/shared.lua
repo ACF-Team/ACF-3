@@ -1,7 +1,6 @@
 DEFINE_BASECLASS("acf_base_simple")
 
 ENT.Author    = "Bubbus"
-ENT.ACF_Limit = 4
 
 ACF.Entities.AutoRegister(2026091001, function()
 	MENU_FIELD("ACF.Sensors.Radar", "Sensor", {

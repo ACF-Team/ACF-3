@@ -147,8 +147,10 @@ local function PrepareSpawnFunctions(ENT, ClassName)
     end
 
     local function DoSpawn(Player, Pos, Angle, ClientData, _, IsMenuSpawn)
-        local Func = CheckSpawnLimit or Player.CheckLimit
-        if IsValid(Player) and not Func(Player, "_" .. ClassName) then return end
+        if IsValid(Player) then
+            local Func = CheckSpawnLimit or Player.CheckLimit
+            if not Func(Player, "_" .. ClassName, ClientData) then return end
+        end
 
         local CanSpawn  = hook.Run("ACF_PreSpawnEntity", ClassName, Player, ClientData, HookArgs)
         if CanSpawn == false then return end
