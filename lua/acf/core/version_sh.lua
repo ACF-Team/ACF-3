@@ -190,7 +190,9 @@ function ACF.UpdateVersionConVars()
 		Packed[#Packed + 1] = table.concat({Repository, Branch, Commit, Workshop}, ",")
 	end
 
-	acf3_versioning:SetString(table.concat(Packed, "|"))
+	if game.IsDedicated() then
+		acf3_versioning:SetString(table.concat(Packed, "|"))
+	end
 end
 
 ACF.Extensions = ACF.Extensions or {}
@@ -237,7 +239,6 @@ if SERVER then
 	end)
 elseif CLIENT then
 	-- Receive version info from server
-	ACF.ServerExtensions = ACF.ServerExtensions or {}
 	net.Receive("ACF_VersionInfo", function()
 		ACF.ServerExtensions = util.JSONToTable(net.ReadString())
 
