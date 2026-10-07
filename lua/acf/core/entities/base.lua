@@ -22,8 +22,7 @@ do -- Spawning and updating
 		local Entity, Reason = Entities.DoSpawnInternal(Class, Player, Position, Angles, Data)
 		if not IsValid(Entity) then return false, Reason or ("The spawn function for " .. Class .. " didn't return an entity.") end
 
-		Entity.ACF       = Entity.ACF or {}
-		Entity.Owner     = Player -- MUST be stored on ent for PP (supposedly)
+		Entity.ACF = Entity.ACF or {}
 
 		if not NoUndo then
 			undo.Create(Entity.Name or Class)
@@ -31,12 +30,6 @@ do -- Spawning and updating
 				undo.SetPlayer(Player)
 			undo.Finish()
 		end
-
-		if Entity.UpdateOverlay then
-			Entity:UpdateOverlay(true)
-		end
-
-		ACF.CheckLegal(Entity)
 
 		return true, Entity
 	end

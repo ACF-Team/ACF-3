@@ -191,6 +191,13 @@ local function PrepareSpawnFunctions(ENT, ClassName)
 
         Entity:CPPISetOwner(Player)
         Entity:SetPlayer(Player)
+        Entity.Owner = Player -- MUST be stored on ent for PP (supposedly)
+
+        if Entity.UpdateOverlay then
+            Entity:UpdateOverlay(true)
+        end
+
+        ACF.CheckLegal(Entity)
 
         return Entity
     end
