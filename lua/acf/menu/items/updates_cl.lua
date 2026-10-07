@@ -56,7 +56,7 @@ local function CreateMenu(Menu)
 	Menu:AddTitle("#acf.menu.updates.version_status")
 
 	for _, ExtensionName in ipairs(ACF.ExtensionOrders) do
-		local ClientExtension = ACF.Extensions and [ExtensionName]
+		local ClientExtension = ACF.Extensions and ACF.Extensions[ExtensionName]
 		local ServerExtension = ACF.ServerExtensions and ACF.ServerExtensions[ExtensionName]
 		local Base = Menu:AddCollapsible(ExtensionName, true, "icon16/package.png")
 		DrawGitCommit(Base, ServerExtension.Commit)
