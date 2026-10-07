@@ -2,8 +2,7 @@ include("shared.lua")
 
 local Classes = ACF.Classes
 
--- Crew poses are V2 (ACF.CrewPoses.*) addressed by short id (the FQN suffix, which is also the holo's
--- animation sequence name).
+-- Crew poses are V2 (ACF.CrewPoses.*) addressed by short id (the FQN suffix).
 local function GetCrewPose(ID)
 	return Classes.GetSubtypeByName("ACF.CrewPoses.BaseCrewPose", "ACF.CrewPoses." .. tostring(ID))
 end
@@ -62,7 +61,7 @@ function ENT:CreateCrewHolo(PoseID)
 	self.CrewHolo:SetBodyGroups(self.PlayerModelBodygroups)
 	self.CrewHolo:SetSkin(self.PlayerModelSkin)
 	self.CrewHolo:SetParent(self)
-	self.CrewHolo:ResetSequence(self.CrewHolo:LookupSequence(PoseID))
+	self.CrewHolo:ResetSequence(self.CrewHolo:LookupSequence(ClassData.Sequence))
 	self.CrewHolo:SetCycle(0)
 	self.CrewHolo:SetPlaybackRate(1)
 end
