@@ -62,14 +62,31 @@ do
 	-- Slaves the turret and guidance computers to the radar's selected target.
 	function ENT:ProcessRadarSlaving(SelfTbl)
 		local Radar = SelfTbl.Radar
-		if not IsValid(Radar) or not SelfTbl.SelectedTargetID then return end
+		if not IsValid(Radar) then return end
 
-		local HasTurrets = next(Radar.Turrets)
+		-- The IRST gimbal follows HitPos while it is non-zero, so release it once the selection clears
+		if Radar.InputHitPos and not SelfTbl.SelectedTargetID then
+			if SelfTbl.IRSTSlaved then
+				SelfTbl.IRSTSlaved = nil
+				Radar:TriggerInput("HitPos", Vector())
+			end
+
+			return
+		end
+
+		if not SelfTbl.SelectedTargetID then return end
+
+		local HasTurrets = Radar.Turrets and next(Radar.Turrets)
 		local GuideComp = SelfTbl.GuidanceComputer
-		if not HasTurrets and not IsValid(GuideComp) then return end
+		if not HasTurrets and not Radar.InputHitPos and not IsValid(GuideComp) then return end
 
 		local Elapsed = CurTime() - SelfTbl.SelectedTargetSampleAt
 		local Pos = SelfTbl.SelectedTargetPos + SelfTbl.SelectedTargetVel * Elapsed
+
+		if Radar.InputHitPos then
+			SelfTbl.IRSTSlaved = true
+			Radar:TriggerInput("HitPos", Pos)
+		end
 
 		if HasTurrets then
 			for Turret in pairs(Radar.Turrets) do
@@ -87,6 +104,14 @@ do
 end
 
 ACF.RegisterControllerLink("acf_radar", {
+	Field = "Radar",
+	Single = true,
+	OnLinked = function(Controller, Target)
+		Controller:AnalyzeRadars(Target)
+	end,
+})
+
+ACF.RegisterControllerLink("acf_irst", {
 	Field = "Radar",
 	Single = true,
 	OnLinked = function(Controller, Target)
