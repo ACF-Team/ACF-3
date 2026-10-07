@@ -139,7 +139,7 @@ local function CreateNewEntity(Player, Trace)
 		Message = "#tool.acfcopy.create_succeed"
 	end
 
-	Messages.SendChat(Player, Result and "Info" or "Error", Message)
+	Messages.SendChat(Player, Success and "Info" or "Error", Message)
 
 	return true
 end
