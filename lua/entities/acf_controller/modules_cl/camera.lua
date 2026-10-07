@@ -46,16 +46,13 @@ return function(State)
         if #Temp > 0 then State.MyFilter = Temp end
     end)
 
-    hook.Add("KeyPress", "ACFControllerCamMode", function(ply, key)
-        if not IsValid(ply) or ply ~= LocalPlayer() then return end
-        if not IsFirstTimePredicted() then return end
+    hook.Add("ACF_ControllerBindChanged", "ACFControllerCamMode", function(ActionID, Down)
+        if ActionID ~= "CameraCycle" or not Down then return end
         if not IsValid(State.MyController) then return end
 
-        if key == IN_DUCK then
-            State.Mode = State.Mode + 1
-            if State.Mode > State.MyController:GetCamCount() then State.Mode = 1 end
-            ActivateCamera(ply)
-        end
+        State.Mode = State.Mode + 1
+        if State.Mode > State.MyController:GetCamCount() then State.Mode = 1 end
+        ActivateCamera(LocalPlayer())
     end)
 
     hook.Add("InputMouseApply", "ACFControllerCamMove", function(_, x, y, _)

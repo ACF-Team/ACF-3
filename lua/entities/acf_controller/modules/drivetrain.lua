@@ -1,5 +1,5 @@
 local RecacheBindOutput = ENT.RecacheBindOutput
-local GetKeyState = ENT.GetKeyState
+local GetBindState = ENT.GetBindState
 
 local function Init(Entity)
 	Entity.Gearbox              = nil  -- Main gearbox of the vehicle
@@ -257,8 +257,8 @@ do
 		if not IsValid(SelfTbl.Gearbox) then return end
 		if self:GetDisableMobility() then return end
 
-		local W, A, S, D = GetKeyState(SelfTbl, IN_FORWARD), GetKeyState(SelfTbl, IN_MOVELEFT), GetKeyState(SelfTbl, IN_BACK), GetKeyState(SelfTbl, IN_MOVERIGHT)
-		local IsBraking = GetKeyState(SelfTbl, IN_JUMP)
+		local W, A, S, D = GetBindState(SelfTbl, "MoveForward"), GetBindState(SelfTbl, "TurnLeft"), GetBindState(SelfTbl, "MoveBack"), GetBindState(SelfTbl, "TurnRight")
+		local IsBraking = GetBindState(SelfTbl, "Brake")
 
 		if self:GetFlipAD() then A, D = D, A end
 
@@ -342,7 +342,7 @@ do
 		local Gearbox = SelfTbl.Gearbox
 		if not IsValid(Gearbox) then return end
 
-		local _, S = GetKeyState(SelfTbl, IN_FORWARD), GetKeyState(SelfTbl, IN_BACK)
+		local _, S = GetBindState(SelfTbl, "MoveForward"), GetBindState(SelfTbl, "MoveBack")
 
 		local Gear = SelfTbl.LastGear
 

@@ -16,6 +16,7 @@ local function OnActiveChanged(Controller, Ply, Active)
 
 	-- Reset all key states and outputs when getting in or out of the vehicle
 	Controller.KeyStates = {}
+	Controller.ActionStates = {}
 	for Key, Output in pairs(IN_ENUM_TO_WIRE_OUTPUT) do
 		RecacheBindOutput(Controller, SelfTbl, Output, 0)
 		RecacheBindState(SelfTbl, Key, false)
@@ -74,31 +75,6 @@ local function OnKeyChanged(Controller, Key, Down)
 		RecacheBindOutput(Controller, SelfTbl, Output, Down and 1 or 0)
 		RecacheBindState(SelfTbl, Key, Down)
 	end
-
-	Controller:ToggleTurretLocks(SelfTbl, Key, Down)
-end
-
-local function OnButtonChanged(Controller, Button, Down)
-	if not IsFirstTimePredicted() then return end
-	if Button == MOUSE_MIDDLE and Down and IsValid(Controller.TurretComputer) then
-		-- Reset computer lase
-		if Controller.Driver:KeyDown( IN_DUCK ) then
-			Controller.Additive = vector_origin
-			Controller.LaseDist = 0
-			Controller.LasePitch = 0
-			Controller.Drop = 0
-			Controller.TravelTime = 0
-			return
-		end
-
-		-- Otherwise log metrics on lase, and use these later
-		Controller.TurretComputer.Inputs.Position.Value = Controller.HitPos
-		Controller.TurretComputer:TriggerInput("Calculate Superelevation", 1)
-
-		local Diff = (Controller:GetGun1():GetPos() - Controller.HitPos)
-		Controller.LasePitch = math.deg(math.asin(Diff.z / Diff:Length()))
-		Controller.LaseDist = Diff:Length()
-	end
 end
 
 local function OnLinkedSeat(Controller, Target)
@@ -122,23 +98,24 @@ local function OnLinkedSeat(Controller, Target)
 		OnKeyChanged(Controller, Key, false)
 	end)
 
-	hook.Add("PlayerButtonDown", "ACFControllerSeatButtonDown" .. Controller:EntIndex(), function(Ply, Key)
+	-- PlayerButtonDown/Up don't fire client side in singleplayer, so forward them to binds_sh.lua there
+	local function ForwardButton(Ply, Key, Down)
 		if not IsValid(Controller) or not IsValid(Target) then return end
 		if Ply ~= Controller.Driver then return end
-		OnButtonChanged(Controller, Key, true)
+		if not game.SinglePlayer() then return end
 
-		-- PlayerButtonDown doesn't fire client side in singleplayer, so the server forwards it there
-		if game.SinglePlayer() then
-			net.Start("ACF_Controller_Button")
-			net.WriteUInt(Key, 8)
-			net.Send(Ply)
-		end
+		net.Start("ACF_Controller_Button")
+		net.WriteUInt(Key, 8)
+		net.WriteBool(Down)
+		net.Send(Ply)
+	end
+
+	hook.Add("PlayerButtonDown", "ACFControllerSeatButtonDown" .. Controller:EntIndex(), function(Ply, Key)
+		ForwardButton(Ply, Key, true)
 	end)
 
 	hook.Add("PlayerButtonUp", "ACFControllerSeatButtonUp" .. Controller:EntIndex(), function(Ply, Key)
-		if not IsValid(Controller) or not IsValid(Target) then return end
-		if Ply ~= Controller.Driver then return end
-		OnButtonChanged(Controller, Key, false)
+		ForwardButton(Ply, Key, false)
 	end)
 
 	-- Remove the hooks when the controller is removed

@@ -1,5 +1,5 @@
 local RecacheBindOutput = ENT.RecacheBindOutput
-local GetKeyState = ENT.GetKeyState
+local GetBindState = ENT.GetBindState
 
 local NUM_WEAPONS = ENT.NUM_WEAPONS
 
@@ -126,27 +126,49 @@ do
 	function ENT:ProcessGuns(SelfTbl)
 		if SelfTbl:GetDisableFiring() then return end
 
-		local Fires = {GetKeyState(SelfTbl, IN_ATTACK), GetKeyState(SelfTbl, IN_ATTACK2), GetKeyState(SelfTbl, IN_WALK)}
+		local Fires = {GetBindState(SelfTbl, "Fire1"), GetBindState(SelfTbl, "Fire2"), GetBindState(SelfTbl, "Fire3")}
 
 		for i = 1, NUM_WEAPONS do
 			HandleFire(self, SelfTbl.FireState[i], Fires[i], SelfTbl.FireGroups[i], i == NUM_WEAPONS and SelfTbl:GetFireDelay() or nil)
 		end
 
-		HandleFire(self, SelfTbl.FireState.Smoke, GetKeyState(SelfTbl, IN_SPEED), SelfTbl.GunsSmoke)
+		HandleFire(self, SelfTbl.FireState.Smoke, GetBindState(SelfTbl, "FireSmoke"), SelfTbl.GunsSmoke)
 	end
 
-	function ENT:ToggleTurretLocks(SelfTbl, Key, Down)
+	function ENT:ToggleTurretLock(SelfTbl)
 		if self:GetDisableTurretLock() then return end
 
-		if Key == IN_RELOAD and Down then
-			local Turrets = SelfTbl.Turrets
-			SelfTbl.TurretLocked = not SelfTbl.TurretLocked
-			RecacheBindOutput(self, SelfTbl, "IsTurretLocked", SelfTbl.TurretLocked and 1 or 0)
-			for Turret, _ in pairs(Turrets) do
-				if IsValid(Turret) then Turret:TriggerInput("Active", not SelfTbl.TurretLocked) end
-			end
+		local Turrets = SelfTbl.Turrets
+		SelfTbl.TurretLocked = not SelfTbl.TurretLocked
+		RecacheBindOutput(self, SelfTbl, "IsTurretLocked", SelfTbl.TurretLocked and 1 or 0)
+		for Turret, _ in pairs(Turrets) do
+			if IsValid(Turret) then Turret:TriggerInput("Active", not SelfTbl.TurretLocked) end
 		end
 	end
+	ENT.AddBindHandler("ToggleTurretLock", ENT.ToggleTurretLock)
+
+	-- Records range and pitch to the lased point, which ProcessTurrets corrects drop and drift against
+	function ENT:LaseTarget(SelfTbl)
+		local TurretComputer = SelfTbl.TurretComputer
+		if not IsValid(TurretComputer) then return end
+
+		TurretComputer.Inputs.Position.Value = SelfTbl.HitPos
+		TurretComputer:TriggerInput("Calculate Superelevation", 1)
+
+		local Diff = self:GetGun1():GetPos() - SelfTbl.HitPos
+		SelfTbl.LasePitch = math.deg(math.asin(Diff.z / Diff:Length()))
+		SelfTbl.LaseDist = Diff:Length()
+	end
+	ENT.AddBindHandler("Lase", ENT.LaseTarget)
+
+	-- Clears the lase, dropping ProcessTurrets back to uncorrected aim
+	function ENT:ResetLase(SelfTbl)
+		SelfTbl.LaseDist   = 0
+		SelfTbl.LasePitch  = 0
+		SelfTbl.Drop       = 0
+		SelfTbl.TravelTime = 0
+	end
+	ENT.AddBindHandler("LaseReset", ENT.ResetLase)
 
 	-- Aim turrets
 	function ENT:ProcessTurrets(SelfTbl, HitPos)
