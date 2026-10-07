@@ -12,6 +12,16 @@ local Classes		= ACF.Classes
 local DefaultType = "ACF.Turrets.Gyro.Single"
 
 do	-- Spawn and Update funcs
+	function ENT.ACF_CheckSpawnLimit(Player)
+		return Player:CheckLimit("_acf_turret")
+	end
+
+	function ENT:ACF_PostSpawn(Player)
+		if IsValid(Player) then
+			Player:AddCount("_acf_turret", self)
+		end
+	end
+
 	function ENT:ACF_PreSpawn(_, _, _, Data)
 		self.ACF = {}
 

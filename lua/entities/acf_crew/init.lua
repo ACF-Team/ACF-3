@@ -53,6 +53,7 @@ local IsEntityValid  = ACF.Optimizations.IsEntityValid
 -- by short id (the FQN suffix). Resolve via the registry.
 local function GetCrewType(ID)  return Classes.GetSubtypeByName("ACF.CrewTypes.BaseCrewType",   "ACF.CrewTypes."   .. tostring(ID)) end
 local function GetCrewModel(ID) return Classes.GetSubtypeByName("ACF.CrewModels.BaseCrewModel", "ACF.CrewModels." .. tostring(ID)) end
+local function GetCrewPose(ID)  return Classes.GetSubtypeByName("ACF.CrewPoses.BaseCrewPose",   "ACF.CrewPoses."   .. tostring(ID)) end
 
 -- Fall back to the defaults if a (legacy) id no longer maps to a class, so reconfigure/dupe never nils.
 function ENT:GetCrewType()  return GetCrewType(self:ACF_GetUserVar("CrewTypeID")) or GetCrewType("Commander") end
@@ -427,9 +428,20 @@ do -- Random timer stuff
 end
 
 do
-	-- Field defaults + numeric clamps are handled by the serializer; only the player-model string
-	-- truncation needs a verify step.
+	-- Field defaults + numeric clamps are handled by the serializer.
 	function ENT.ACF_OnVerifyClientData(ClientData)
+		if ClientData.CrewTypeID ~= nil and not GetCrewType(ClientData.CrewTypeID) then
+			ClientData.CrewTypeID = "Commander"
+		end
+
+		if ClientData.CrewModelID ~= nil and not GetCrewModel(ClientData.CrewModelID) then
+			ClientData.CrewModelID = "Sitting"
+		end
+
+		if ClientData.CrewPoseID ~= nil and ClientData.CrewPoseID ~= "" and not GetCrewPose(ClientData.CrewPoseID) then
+			ClientData.CrewPoseID = ""
+		end
+
 		if isstring(ClientData.CrewPlayerModel) then
 			ClientData.CrewPlayerModel = string.sub(ClientData.CrewPlayerModel, 1, 260)
 		end

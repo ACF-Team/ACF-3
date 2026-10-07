@@ -385,7 +385,15 @@ do -- Spawning
 		end)
 	end
 
-	function ENT:ACF_PostSpawn()
+	function ENT.ACF_CheckSpawnLimit(Player)
+		return Player:CheckLimit("_acf_sensor")
+	end
+
+	function ENT:ACF_PostSpawn(Player)
+		if IsValid(Player) then
+			Player:AddCount("_acf_sensor", self)
+		end
+
 		-- Radars should be active by default
 		self:TriggerInput("Active", 1)
 	end

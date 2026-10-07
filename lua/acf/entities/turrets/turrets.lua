@@ -20,6 +20,12 @@ local function WillUseSmallModel(Size) return Size <= 12.5 end
 
 Classes.DefineClass("ACF.Turrets.Component", function() end)
 
+Classes.AddSboxLimit({
+	Name   = "_acf_turret",
+	Amount = 24,
+	Text   = "Maximum amount of ACF turrets a player can create."
+})
+
 -- Slewing ring friction moments (Nm) for a load, per drive style. Servos blend the two.
 local function HorizontalMz(TurretData, Weight, Diameter, CoMDistance, OffBaseDistance)
 	local Mk = Weight * OffBaseDistance -- Sum of tilting moments (kNm) (off balance load)

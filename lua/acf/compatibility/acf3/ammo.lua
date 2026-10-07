@@ -14,7 +14,7 @@ end
 local WeaponFQNTable = {
 	["AC"] = "ACF.Guns.Autocannon",
 	["C"] = "ACF.Guns.Cannon",
-	["FGL"] = "ACF.Guns.FlareLauncher",
+	["FGL"] = "ACF.Guns.40mmFlareLauncher",
 	["GL"] = "ACF.Guns.GrenadeLauncher",
 	["HW"] = "ACF.Guns.Howitzer",
 	["LAC"] = "ACF.Guns.LightAutocannon",

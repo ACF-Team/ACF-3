@@ -3,6 +3,12 @@ local Classes = ACF.Classes
 
 Classes.DefineClass("ACF.Sensors.Sensor", function() end)
 
+Classes.AddSboxLimit({
+	Name   = "_acf_sensor",
+	Amount = 16,
+	Text   = "Maximum amount of ACF sensors a player can create."
+})
+
 Classes.DefineClass("ACF.Sensors.Radar", "ACF.Sensors.Sensor", function(CLASS)
 	-- Shared info panel for every radar group (Item is the selected item class).
 	function CLASS.CreateMenu(Item, Menu)

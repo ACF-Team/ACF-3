@@ -27,6 +27,16 @@ do	-- Spawn and Update funcs
 		if Computer.SetupOutputs then Computer.SetupOutputs(self, Outputs) end
 	end
 
+	function ENT.ACF_CheckSpawnLimit(Player)
+		return Player:CheckLimit("_acf_turret")
+	end
+
+	function ENT:ACF_PostSpawn(Player)
+		if IsValid(Player) then
+			Player:AddCount("_acf_turret", self)
+		end
+	end
+
 	function ENT:ACF_PreSpawn(_, _, _, Data)
 		self.ACF = {}
 
@@ -494,12 +504,9 @@ do	-- Metamethods and other important stuff
 			if self.Gun then
 				duplicator.StoreEntityModifier(self, "ACFGun", {self.Gun:EntIndex()})
 			end
-
-			-- Wire dupe info
-			self.BaseClass.PreEntityCopy(self)
 		end
 
-		function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+		function ENT:PostEntityPaste(_, Ent, CreatedEntities)
 			local EntMods = Ent.EntityMods
 
 			if EntMods.ACFGun then
@@ -507,8 +514,6 @@ do	-- Metamethods and other important stuff
 
 				EntMods.ACFGun = nil
 			end
-
-			self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
 		end
 	end
 

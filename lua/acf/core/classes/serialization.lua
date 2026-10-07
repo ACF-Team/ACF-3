@@ -13,6 +13,14 @@ local function ParseType(TypeStr)
     return TypeStr, false
 end
 
+local function IsAllowedType(ActualType, ClassType, Options)
+    if not IsAssignableTo(ActualType, ClassType) then return false end
+    if Options.OnlyAllowSubtypes and ActualType == ClassType then return false end
+    if Options.OnlyAllowLeafTypes and next(Classes.GetChildren(ActualType)) ~= nil then return false end
+
+    return true
+end
+
 local function ValidateNumericalPiece(Value, Default, Min, Max, Decimals)
     local N = tonumber(Value)
     if N == nil then return Default end
@@ -119,7 +127,7 @@ local function DeserializeValue(ElemType, Raw, Options)
         if ClassType then
             if type(Raw) == "string" then
                 local ActualType = GetTypeByName(Raw)
-                if ActualType and IsAssignableTo(ActualType, ClassType) and (not Options.OnlyAllowSubtypes or ActualType ~= ClassType) then
+                if ActualType and IsAllowedType(ActualType, ClassType, Options) then
                     return ActualType()
                 end
 
@@ -130,7 +138,7 @@ local function DeserializeValue(ElemType, Raw, Options)
             elseif type(Raw) == "table" and Raw.Type then
                 -- Class instance: serialized as { Type, Data }
                 local ActualType = GetTypeByName(Raw.Type)
-                if ActualType and IsAssignableTo(ActualType, ClassType) and (not Options.OnlyAllowSubtypes or ActualType ~= ClassType) then
+                if ActualType and IsAllowedType(ActualType, ClassType, Options) then
                     return Serialization.DeserializePartial(ActualType, Raw.Data)
                 end
 
@@ -159,7 +167,7 @@ local function CoerceScalar(ElemType, Value, Options)
     if ClassType and type(Value) == "table" and Value.GetType then
         -- Already a live instance; accept it if it's assignable to the field's declared type.
         local ActualType = Value:GetType()
-        if IsAssignableTo(ActualType, ClassType) and (not Options.OnlyAllowSubtypes or ActualType ~= ClassType) then
+        if IsAllowedType(ActualType, ClassType, Options) then
             return Value
         end
         return nil
@@ -188,6 +196,32 @@ function Serialization.CoerceField(FieldDef, Value)
     end
 
     return CoerceScalar(ElemType, Value, Options)
+end
+
+function Serialization.SanitizeClassFields(Class, Data)
+    if type(Data) ~= "table" then return Data end
+
+    for _, Field in ipairs(Classes.GetTypeFields(Class)) do
+        local ElemType, IsArray = ParseType(Field.Type)
+        local ClassType         = GetTypeByName(ElemType)
+        local Raw               = Data[Field.Name]
+
+        if Field.Menu and ClassType and not IsArray and Raw ~= nil then
+            local RawType    = type(Raw)
+            local FQN        = RawType == "string" and Raw or (RawType == "table" and Raw.Type)
+            local ActualType = type(FQN) == "string" and GetTypeByName(FQN)
+
+            if ActualType and IsAllowedType(ActualType, ClassType, Field.Options) then
+                local FieldData = RawType == "table" and Raw.Data
+
+                Data[Field.Name] = {Type = FQN, Data = type(FieldData) == "table" and FieldData or {}}
+            else
+                Data[Field.Name] = nil
+            end
+        end
+    end
+
+    return Data
 end
 
 local function ScalarDefault(ElemType, Options)

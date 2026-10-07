@@ -272,66 +272,91 @@ function acf_library.listAllAmmoTypes()
 	return Result
 end
 
--- The class/item two-tier grouping no longer exists; the "class" list variants now return the same
--- flat subtype list as their non-class siblings so existing chips keep working. IDs are now FQNs.
-local function ListSubtypeUnqualifiedNames(BaseFQN)
-	local List   = Classes.GetSubtypeFQNs(BaseFQN)
+local function IsGroup(Class)
+	return next(Classes.GetChildren(Class)) ~= nil
+end
+
+local function IsItem(Class)
+	return not IsGroup(Class)
+end
+
+local function IsWeaponClass(Class)
+	return Class.IsWeapon == true
+end
+
+local function IsWeaponItem(Class)
+	return Class.IsWeaponOption == true
+end
+
+local function ListLegacyStyleNames(BaseFQN, Filter)
 	local Result = {}
 
-	for K, V in ipairs(List) do
-		Result[K] = ACF.GetLegacyStyleClassName(V)
+	for _, FQN in ipairs(Classes.GetSubtypeFQNs(BaseFQN)) do
+		if not Filter or Filter(Classes.GetTypeByName(FQN)) then
+			Result[#Result + 1] = ACF.GetLegacyStyleClassName(FQN)
+		end
 	end
 
 	return Result
+end
+
+local function GetSpecs(BaseFQN, ID, Filter, Error)
+	CheckLuaType(ID, TYPE_STRING)
+
+	local Class = ACF.GetSubtypeByLegacyStyleName(BaseFQN, ID)
+
+	if not Class or (Filter and not Filter(Class)) then SF.Throw(Error, 3) end
+
+	return WrapTable(Class, Ignored)
 end
 
 --- Returns a list of every registered ACF engine class
 -- @shared
 -- @return table The list of engine classes
 function acf_library.listAllEngineClasses()
-	return ListSubtypeUnqualifiedNames("ACF.Engines.BaseEngine")
+	return ListLegacyStyleNames("ACF.Engines.BaseEngine", IsGroup)
 end
 
 --- Returns a list of every registered ACF engine
 -- @shared
 -- @return table The list of engines
 function acf_library.listAllEngines()
-	return ListSubtypeUnqualifiedNames("ACF.Engines.BaseEngine")
+	return ListLegacyStyleNames("ACF.Engines.BaseEngine", IsItem)
 end
 
 --- Returns a list of every registered ACF fuel type
 -- @shared
 -- @return table The list of fuel types
 function acf_library.listAllFuelTypes()
-	return ListSubtypeUnqualifiedNames("ACF.FuelTypes.FuelType")
+	return ListLegacyStyleNames("ACF.FuelTypes.FuelType")
 end
 
 --- Returns a list of every registered ACF gearbox class
 -- @shared
 -- @return table The list of gearbox classes
 function acf_library.listAllGearboxClasses()
-	return ListSubtypeUnqualifiedNames("ACF.Gearboxes.BaseGearbox")
+	return ListLegacyStyleNames("ACF.Gearboxes.BaseGearbox", IsGroup)
 end
 
 --- Returns a list of every registered ACF gearbox
 -- @shared
 -- @return table The list of gearboxes
 function acf_library.listAllGearboxes()
-	return ListSubtypeUnqualifiedNames("ACF.Gearboxes.BaseGearbox")
+	return ListLegacyStyleNames("ACF.Gearboxes.BaseGearbox", IsItem)
 end
 
 --- Returns a list of every registered ACF weapon class
 -- @shared
 -- @return table The list of weapon classes
 function acf_library.listAllWeaponClasses()
-	return ListSubtypeUnqualifiedNames("ACF.Guns.BaseGun")
+	return ListLegacyStyleNames("ACF.Guns.BaseGun", IsWeaponClass)
 end
 
 --- Returns a list of every registered ACF weapon
 -- @shared
 -- @return table The list of weapons
 function acf_library.listAllWeapons()
-	return ListSubtypeUnqualifiedNames("ACF.Guns.BaseGun")
+	return ListLegacyStyleNames("ACF.Guns.BaseGun", IsWeaponItem)
 end
 
 --- Returns the specifications of an ACF ammo type
@@ -339,41 +364,23 @@ end
 -- @shared
 -- @return table The specifications of the ammo
 function acf_library.getAmmoTypeSpecs(id)
-	CheckLuaType(id, TYPE_STRING)
-
-	local Ammo = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", id)
-
-	if not Ammo then SF.Throw("Invalid ammo type ID, not found.", 2) end
-
-	return WrapTable(Ammo, Ignored)
+	return GetSpecs("ACF.Ammunition.BaseAmmo", id, nil, "Invalid ammo type ID, not found.")
 end
 
 --- Returns the specifications of an ACF engine class
--- @param string id The ID (FQN suffix) of the engine you want to get the information from
+-- @param string id The ID of the engine class you want to get the information from
 -- @shared
 -- @return table The specifications of the engine class
 function acf_library.getEngineClassSpecs(id)
-	CheckLuaType(id, TYPE_STRING)
-
-	local Class = Classes.GetSubtypeByName("ACF.Engines.BaseEngine", id)
-
-	if not Class then SF.Throw("Invalid engine class ID, not found.", 2) end
-
-	return WrapTable(Class, Ignored)
+	return GetSpecs("ACF.Engines.BaseEngine", id, IsGroup, "Invalid engine class ID, not found.")
 end
 
 --- Returns the specifications of an ACF engine
--- @param string id The ID (FQN suffix) of the engine you want to get the information from
+-- @param string id The ID of the engine you want to get the information from
 -- @shared
 -- @return table The specifications of the engine
 function acf_library.getEngineSpecs(id)
-	CheckLuaType(id, TYPE_STRING)
-
-	local Engine = Classes.GetSubtypeByName("ACF.Engines.BaseEngine", id)
-
-	if not Engine then SF.Throw("Invalid engine ID, not found.", 2) end
-
-	return WrapTable(Engine, Ignored)
+	return GetSpecs("ACF.Engines.BaseEngine", id, IsItem, "Invalid engine ID, not found.")
 end
 
 --- Returns the specifications of an ACF fuel type
@@ -381,69 +388,39 @@ end
 -- @shared
 -- @return table The specifications of the fuel type
 function acf_library.getFuelTypeSpecs(id)
-	CheckLuaType(id, TYPE_STRING)
-
-	local Type = Classes.GetSubtypeByName("ACF.FuelTypes.FuelType", id)
-
-	if not Type then SF.Throw("Invalid fuel type ID, not found.", 2) end
-
-	return WrapTable(Type, Ignored)
+	return GetSpecs("ACF.FuelTypes.FuelType", id, nil, "Invalid fuel type ID, not found.")
 end
 
 --- Returns the specifications of an ACF gearbox class
--- @param string id The ID (FQN suffix) of the gearbox you want to get the information from
+-- @param string id The ID of the gearbox class you want to get the information from
 -- @shared
 -- @return table The specifications of the gearbox class
 function acf_library.getGearboxClassSpecs(id)
-	CheckLuaType(id, TYPE_STRING)
-
-	local Class = Classes.GetSubtypeByName("ACF.Gearboxes.BaseGearbox", id)
-
-	if not Class then SF.Throw("Invalid gearbox class ID, not found.", 2) end
-
-	return WrapTable(Class, Ignored)
+	return GetSpecs("ACF.Gearboxes.BaseGearbox", id, IsGroup, "Invalid gearbox class ID, not found.")
 end
 
 --- Returns the specifications of an ACF gearbox
--- @param string id The ID (FQN suffix) of the gearbox you want to get the information from
+-- @param string id The ID of the gearbox you want to get the information from
 -- @shared
 -- @return table The specifications of the gearbox
 function acf_library.getGearboxSpecs(id)
-	CheckLuaType(id, TYPE_STRING)
-
-	local Gearbox = Classes.GetSubtypeByName("ACF.Gearboxes.BaseGearbox", id)
-
-	if not Gearbox then SF.Throw("Invalid gearbox ID, not found.", 2) end
-
-	return WrapTable(Gearbox, Ignored)
+	return GetSpecs("ACF.Gearboxes.BaseGearbox", id, IsItem, "Invalid gearbox ID, not found.")
 end
 
 --- Returns the specifications of an ACF weapon class
--- @param string id The ID (FQN suffix) of the weapon you want to get the information from
+-- @param string id The ID of the weapon class you want to get the information from
 -- @shared
 -- @return table The specifications of the weapon class
 function acf_library.getWeaponClassSpecs(id)
-	CheckLuaType(id, TYPE_STRING)
-
-	local Class = Classes.GetSubtypeByName("ACF.Guns.BaseGun", id)
-
-	if not Class then SF.Throw("Invalid weapon class ID, not found.", 2) end
-
-	return WrapTable(Class, Ignored)
+	return GetSpecs("ACF.Guns.BaseGun", id, IsWeaponClass, "Invalid weapon class ID, not found.")
 end
 
 --- Returns the specifications of an ACF weapon
--- @param string id The ID (FQN suffix) of the weapon you want to get the information from
+-- @param string id The ID of the weapon you want to get the information from
 -- @shared
 -- @return table The specifications of the weapon
 function acf_library.getWeaponSpecs(id)
-	CheckLuaType(id, TYPE_STRING)
-
-	local Weapon = Classes.GetSubtypeByName("ACF.Guns.BaseGun", id)
-
-	if not Weapon then SF.Throw("Invalid weapon ID, not found.", 2) end
-
-	return WrapTable(Weapon, Ignored)
+	return GetSpecs("ACF.Guns.BaseGun", id, nil, "Invalid weapon ID, not found.")
 end
 
 --===============================================================================================--

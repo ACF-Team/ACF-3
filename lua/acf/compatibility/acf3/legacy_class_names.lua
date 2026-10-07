@@ -387,3 +387,15 @@ local LegacyClassNames = {
 function ACF.GetLegacyStyleClassName(FQN)
     return LegacyClassNames[FQN] or ACF.Classes.FullyQualifiedNameToUnqualifiedName(FQN) or ""
 end
+
+function ACF.GetSubtypeByLegacyStyleName(BaseFQN, Name)
+    local Classes = ACF.Classes
+    local Class   = Classes.GetSubtypeByName(BaseFQN, Name)
+    if Class then return Class end
+
+    for _, FQN in ipairs(Classes.GetSubtypeFQNs(BaseFQN)) do
+        if ACF.GetLegacyStyleClassName(FQN) == Name then
+            return Classes.GetTypeByName(FQN)
+        end
+    end
+end
