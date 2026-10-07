@@ -251,6 +251,7 @@ if SERVER then
 	end)
 elseif CLIENT then
 	-- Receive version info from server
+	ACF.ServerExtensions = ACF.ServerExtensions or {}
 	net.Receive("ACF_VersionInfo", function()
 		ACF.ServerExtensions = util.JSONToTable(net.ReadString())
 

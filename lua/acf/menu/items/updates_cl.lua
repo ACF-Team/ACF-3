@@ -56,11 +56,11 @@ local function CreateMenu(Menu)
 	Menu:AddTitle("#acf.menu.updates.version_status")
 
 	-- Server versions arrive in a net message after load, so they can still be missing here
-	local ServerExtensions = ACF.ServerExtensions or {}
+	local ServerExtensions = ACF.ServerExtensions
 
 	for _, ExtensionName in ipairs(ACF.ExtensionOrders) do
 		local ClientExtension = ACF.Extensions[ExtensionName]
-		local ServerExtension = ServerExtensions[ExtensionName]
+		local ServerExtension = ServerExtensions and ServerExtensions[ExtensionName]
 		local Commit          = ServerExtension and ServerExtension.Commit
 		local Base            = Menu:AddCollapsible(ExtensionName, true, "icon16/package.png")
 
