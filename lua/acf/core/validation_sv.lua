@@ -188,6 +188,10 @@ function ACF.UpdateThickness(Entity, PhysObj, Area, Ductility)
 	local Thickness = ArmorMod and ArmorMod.Thickness
 	local MassMod   = EntMods and EntMods.mass
 
+	if Entity.IsACFEntity and not Entity.ACF_UserWeighable then
+		MassMod = nil
+	end
+
 	if Thickness then
 		if not MassMod then
 			local Mass = Area * (1 + Ductility) ^ 0.5 * Thickness * 0.00078

@@ -2,7 +2,7 @@ DEFINE_BASECLASS("acf_base_scalable")
 
 ACF.Entities.AutoRegister(2026091001, function(CLASS)
 	-- The gearbox variant this entity represents (e.g. ACF.Gearboxes.Manual-T).
-	MENU_FIELD("ACF.Gearboxes.BaseGearbox", "Gearbox", {OnlyAllowSubtypes = true, InstantiateTypeForDefault = "ACF.Gearboxes.2Gear-T"})
+	MENU_FIELD("ACF.Gearboxes.BaseGearbox", "Gearbox", {OnlyAllowSubtypes = true, OnlyAllowLeafTypes = true, InstantiateTypeForDefault = "ACF.Gearboxes.2Gear-T"})
 
 	-- Tunable scalars. The gear ratios / shift points live in the arrays below; everything else here is
 	-- a flat per-entity setting validated by the serializer.

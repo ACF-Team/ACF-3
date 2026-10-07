@@ -378,6 +378,14 @@ do -- Spawn and Update functions --------------------------------
 
 	-------------------------------------------------------------------------------
 
+	local function GetWeaponClass(ClientData)
+		local Raw = ClientData and ClientData.Weapon
+		local FQN = istable(Raw) and Raw.Type or Raw
+
+		return isstring(FQN) and Classes.GetSubtypeByName("ACF.Guns.BaseGun", FQN)
+			or Classes.GetTypeByName("ACF.Guns.Cannon")
+	end
+
 	-- Spawn-only initialisation (runs before Entity:Spawn(), so the model is ready for physics).
 	function ENT:ACF_PreSpawn(_, _, _, ClientData)
 		self.ACF                = {}
@@ -391,17 +399,13 @@ do -- Spawn and Update functions --------------------------------
 		self.HasInitialLoaded   = false
 		self.ParentState        = 0
 
-		-- ClientData isn't verified yet here; resolve defensively for the pre-spawn model.
-		local Class = Classes.GetSubtypeByName("ACF.Weapons.BaseWeapon", ClientData.Weapon)
-			or Classes.GetSubtypeByName("ACF.Weapons.BaseWeapon", "ACF.Guns.Cannon")
-
-		Contraption.SetModel(self, Class.Model)
+		Contraption.SetModel(self, GetWeaponClass(ClientData).Model)
 
 		duplicator.ClearEntityModifier(self, "mass")
 	end
 
-	function ENT.ACF_CheckSpawnLimit(Player)
-		return Player:CheckLimit("_acf_weapon")
+	function ENT.ACF_CheckSpawnLimit(Player, _, ClientData)
+		return Player:CheckLimit(GetWeaponClass(ClientData).LimitConVar.Name)
 	end
 
 	function ENT:ACF_PreUpdateEntityData()
@@ -451,7 +455,7 @@ do -- Spawn and Update functions --------------------------------
 	function ENT:ACF_PostSpawn(Player, _, _, _)
 		-- Count toward the weapon spawn limit checked by ENT.ACF_CheckSpawnLimit.
 		if IsValid(Player) then
-			Player:AddCount("_acf_weapon", self)
+			Player:AddCount(self:GetWeapon():GetType().LimitConVar.Name, self)
 		end
 
 		WireLib.TriggerOutput(self, "Status", "Empty")

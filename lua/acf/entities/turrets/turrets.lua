@@ -35,6 +35,12 @@ local function WillUseSmallModel(Size) return Size <= 12.5 end
 
 Classes.DefineClass("ACF.Turrets.Component", function() end)
 
+Classes.AddSboxLimit({
+	Name   = "_acf_turret",
+	Amount = 24,
+	Text   = "Maximum amount of ACF turrets a player can create."
+})
+
 do	-- Turret drives
 	Classes.DefineClass("ACF.Turrets.Drive", "ACF.Turrets.Component", function(CLASS)
 		CLASS.Name        = "Turrets"

@@ -80,6 +80,16 @@ do	-- Spawn and Update funcs
 		return math_Round(math_max(Turret.Mass * (Size / Turret.Size.Base), 5) ^ 1.5, 1)
 	end
 
+	function ENT.ACF_CheckSpawnLimit(Player)
+		return Player:CheckLimit("_acf_turret")
+	end
+
+	function ENT:ACF_PostSpawn(Player)
+		if IsValid(Player) then
+			Player:AddCount("_acf_turret", self)
+		end
+	end
+
 	function ENT:ACF_PreSpawn(_, _, _, Data)
 		self.ACF = {}
 
@@ -807,12 +817,9 @@ do -- Metamethods
 			if IsValid(SelfTbl.Gyro) then
 				duplicator.StoreEntityModifier(self, "ACFGyro", {SelfTbl.Gyro:EntIndex()})
 			end
-
-			-- Wire dupe info
-			self.BaseClass.PreEntityCopy(self)
 		end
 
-		function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+		function ENT:PostEntityPaste(_, Ent, CreatedEntities)
 			local EntMods = Ent.EntityMods
 
 			if EntMods.ACFMotor then
@@ -826,8 +833,6 @@ do -- Metamethods
 
 				EntMods.ACFGyro = nil
 			end
-
-			self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
 		end
 	end
 

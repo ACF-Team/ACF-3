@@ -2,12 +2,37 @@ local Classes = ACF.Classes
 
 -- The weapon alias compat resolves a legacy item id ("40mmSL") to a short group id ("SL"); the V2
 -- serializer needs the class FQN, so map the short id to it by scanning the weapon registry.
-local function WeaponFQNFromID(ID)
-	if Classes.GetSubtypeByName("ACF.Weapons.BaseWeapon", ID) then return ID end -- already an FQN
+local function ResolveWeaponOption(Class, Caliber)
+	if not Class.IsWeapon or Class.IsScalable then return Class end
 
-	for _, Class in ipairs(Classes.GetSubtypesAsList("ACF.Weapons.BaseWeapon")) do
-		if Class.ID == ID then return Classes.GetTypeName(Class) end
+	local Fallback
+
+	for _, Option in SortedPairs(Classes.GetChildren(Class)) do
+		if Option.IsWeaponOption then
+			if Option.Caliber == tonumber(Caliber) then return Option end
+
+			Fallback = Fallback or Option
+		end
 	end
+
+	return Fallback or Class
+end
+
+local function WeaponFQNFromID(ID, Caliber)
+	local Class = Classes.GetSubtypeByName("ACF.Weapons.BaseWeapon", ID) -- already an FQN
+
+	if not Class then
+		for _, Subtype in ipairs(Classes.GetSubtypesAsList("ACF.Weapons.BaseWeapon")) do
+			if Subtype.ID == ID then
+				Class = Subtype
+				break
+			end
+		end
+	end
+
+	if not Class then return end
+
+	return Classes.GetTypeName(ResolveWeaponOption(Class, Caliber))
 end
 
 ---------------------------------------------------------------------------------------------------------------------
@@ -117,14 +142,14 @@ do
 		local GroupChange = OldWeaponGroups[ID]
 		if GroupChange then ID = GroupChange end
 
-		return WeaponFQNFromID(ID), Caliber
+		return WeaponFQNFromID(ID, Caliber), Caliber
 	end
 
 	ACF.Entities.RegisterCompatPatch("acf_gun", 2021101801, function(Data)
 		-- changes pre-scalable -> scalable
 		local AliasData = OldWeapons[Data.Weapon or Data.Id or "C"]
 		if AliasData then
-			Data.Caliber = AliasData.Caliber or Caliber
+			Data.Caliber = AliasData.Caliber or Data.Caliber
 			Data.Weapon  = AliasData.ID -- short group id, e.g. "C" / "SL"
 			Data.Id = nil
 		end
@@ -144,7 +169,7 @@ ACF.Entities.RegisterCompatPatch("acf_gun", 2026062601, function(Data)
 
 	local Weapon  = Data.Weapon or Data.Id or "C"
 	local Caliber = Data.Caliber
-	Weapon = WeaponFQNFromID(Weapon) or "ACF.Guns.Cannon"
+	Weapon = WeaponFQNFromID(Weapon, Caliber) or "ACF.Guns.Cannon"
 
 	Data.ACF_UserData = {
 		Weapon      = {Type = Weapon, Data = {Caliber = Caliber}},

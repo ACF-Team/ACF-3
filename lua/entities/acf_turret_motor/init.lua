@@ -17,6 +17,16 @@ do	-- Spawn and Update funcs
 		return math.Round(math.max(Motor.Mass * SizePerc, 5), 1)
 	end
 
+	function ENT.ACF_CheckSpawnLimit(Player)
+		return Player:CheckLimit("_acf_turret")
+	end
+
+	function ENT:ACF_PostSpawn(Player)
+		if IsValid(Player) then
+			Player:AddCount("_acf_turret", self)
+		end
+	end
+
 	function ENT:ACF_PreSpawn(_, _, _, Data)
 		self.ACF = {}
 
