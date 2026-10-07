@@ -67,6 +67,7 @@ local function PrepareWiremodFunctions(ENT)
     if not ENT.ACF_SetupWireIO then ENT.ACF_SetupWireIO = function() end end
 end
 local function UpdateOverlayProxy(self) self:UpdateOverlay() end
+local function OnInitializeError(Error) ErrorNoHaltWithStack(Error) end
 local function PrepareSpawnFunctions(ENT, ClassName)
     local ClassDef      = ENT.ACF_ClassDef
     local Serialization = ACF.Classes.Serialization
@@ -148,19 +149,7 @@ local function PrepareSpawnFunctions(ENT, ClassName)
         return true, (self.PrintName or ClassName) .. " updated successfully!"
     end
 
-    local function DoSpawn(Player, Pos, Angle, ClientData, _, IsMenuSpawn)
-        Serialization.SanitizeClassFields(ClassDef, ClientData)
-
-        if IsValid(Player) then
-            local Func = CheckSpawnLimit or Player.CheckLimit
-            if not Func(Player, "_" .. ClassName, ClientData) then return nil, "You've reached the spawn limit for this entity." end
-        end
-
-        local CanSpawn, Reason = hook.Run("ACF_PreSpawnEntity", ClassName, Player, ClientData)
-        if CanSpawn == false then return nil, Reason or "Spawning this entity was blocked." end
-
-        local Entity = ents.Create(ClassName)
-        if not IsValid(Entity) then return nil, "Couldn't create a " .. ClassName .. " entity." end
+    local function InitializeEntity(Entity, Player, Pos, Angle, ClientData, IsMenuSpawn)
         Entity.ACF_Version = ACF_Version
 
         Entity:SetPos(Pos)
@@ -204,6 +193,31 @@ local function PrepareSpawnFunctions(ENT, ClassName)
         Entity:SetPlayer(Player)
 
         return Entity
+    end
+
+    local function DoSpawn(Player, Pos, Angle, ClientData, _, IsMenuSpawn)
+        Serialization.SanitizeClassFields(ClassDef, ClientData)
+
+        if IsValid(Player) then
+            local Func = CheckSpawnLimit or Player.CheckLimit
+            if not Func(Player, "_" .. ClassName, ClientData) then return nil, "You've reached the spawn limit for this entity." end
+        end
+
+        local CanSpawn, Reason = hook.Run("ACF_PreSpawnEntity", ClassName, Player, ClientData)
+        if CanSpawn == false then return nil, Reason or "Spawning this entity was blocked." end
+
+        local Entity = ents.Create(ClassName)
+        if not IsValid(Entity) then return nil, "Couldn't create a " .. ClassName .. " entity." end
+
+        local Ok, Result, InitReason = xpcall(InitializeEntity, OnInitializeError, Entity, Player, Pos, Angle, ClientData, IsMenuSpawn)
+
+        if not Ok then
+            if IsValid(Entity) then Entity:Remove() end
+
+            return nil, "An error occurred while initializing the entity."
+        end
+
+        return Result, InitReason
     end
 
     Entities.SpawnFuncs[ClassName] = DoSpawn
