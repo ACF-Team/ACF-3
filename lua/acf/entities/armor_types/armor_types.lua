@@ -215,9 +215,9 @@ Classes.DefineClass("ACF.ArmorTypes.Aramid", "ACF.ArmorTypes.BaseArmorType", fun
     CLASS.ShortName   = "Aramid"
     CLASS.Description = "Woven aramid fibre laminate, used as a spall liner. Light enough to line a crew compartment, catching the lighter fragments thrown off to the sides of a penetration."
     CLASS.Density     = 1.44 -- https://en.wikipedia.org/wiki/Kevlar
-    CLASS.CostMul     = 35
-    CLASS.HealthMul   = 0.6
-    CLASS.KineticMul  = 0.4
+    CLASS.CostMul     = 45
+    CLASS.HealthMul   = 0.17
+    CLASS.KineticMul  = 0.32
     CLASS.ChemicalMul = 0.4
     CLASS.SpallMul    = 0.05 -- Fibres tear instead of shattering
     CLASS.Color       = Color(200, 170, 60)
