@@ -124,7 +124,7 @@ do
 		-- changes pre-scalable -> scalable
 		local AliasData = OldWeapons[Data.Weapon or Data.Id or "C"]
 		if AliasData then
-			Data.Caliber = AliasData.Caliber or Caliber
+			Data.Caliber = AliasData.Caliber or Data.Caliber
 			Data.Weapon  = AliasData.ID -- short group id, e.g. "C" / "SL"
 			Data.Id = nil
 		end
