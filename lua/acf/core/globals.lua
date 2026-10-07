@@ -316,7 +316,7 @@ do -- ACF global vars
 		Steel		= 0.032,	-- Projectile steel
 		Aluminum	= 0.2,	-- Sabot material
 		Copper		= 0.1,	-- Liner for HEAT cones
-		Tungsten	= 0.24,	-- Expensive
+		Tungsten	= 0.165,	-- Expensive
 		CompB		= 0.08,	-- Normal explosives
 		Octol		= 0.24,	-- Snowflakium, needs to be expensive as a balancing measure
 
