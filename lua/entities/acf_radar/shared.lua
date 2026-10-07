@@ -6,6 +6,7 @@ ACF.Entities.AutoRegister(2026091001, function()
 	MENU_FIELD("ACF.Sensors.Radar", "Sensor", {
 		InstantiateTypeForDefault = "ACF.Sensors.Radar.Targeting.SmallDirectional",
 		OnlyAllowSubtypes         = true,
+		OnlyAllowLeafTypes        = true,
 	})
 end, "Radar")
 

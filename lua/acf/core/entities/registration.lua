@@ -107,6 +107,8 @@ local function PrepareSpawnFunctions(ENT, ClassName)
         ClientData = ClientData or {}
         self.ACF = self.ACF or {}
 
+        Serialization.SanitizeClassFields(ClassDef, ClientData)
+
         if ENT.ACF_OnVerifyClientData then
             ENT.ACF_OnVerifyClientData(ClientData)
         end
@@ -147,6 +149,8 @@ local function PrepareSpawnFunctions(ENT, ClassName)
     end
 
     local function DoSpawn(Player, Pos, Angle, ClientData, _, IsMenuSpawn)
+        Serialization.SanitizeClassFields(ClassDef, ClientData)
+
         if IsValid(Player) then
             local Func = CheckSpawnLimit or Player.CheckLimit
             if not Func(Player, "_" .. ClassName, ClientData) then return nil, "You've reached the spawn limit for this entity." end

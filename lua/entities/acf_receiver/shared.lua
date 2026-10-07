@@ -6,6 +6,7 @@ ACF.Entities.AutoRegister(2026091001, function()
 	MENU_FIELD("ACF.Sensors.Receiver", "Sensor", {
 		InstantiateTypeForDefault = "ACF.Sensors.Receiver.Warning.Laser",
 		OnlyAllowSubtypes         = true,
+		OnlyAllowLeafTypes        = true,
 	})
 end, "Receiver")
 
