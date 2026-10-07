@@ -10,12 +10,28 @@ util.AddNetworkString("ACF_MenuLinkClear")
 ACF.Menu = ACF.Menu or {}
 
 local NextCommit = {} -- [Player] = next allowed CurTime
+local ToolMode   = "acf_menu"
+
+function ACF.Menu.GetCommitTrace(Player, Button)
+	if not IsValid(Player) then return end
+
+	local Weapon = Player:GetActiveWeapon()
+	if not IsValid(Weapon) or Weapon:GetClass() ~= "gmod_tool" then return end
+	if Weapon:GetMode() ~= ToolMode then return end
+
+	local Tool = Weapon:GetToolObject()
+	if not Tool or not Tool:Allowed() then return end
+
+	local Trace = Weapon:DoToolTrace()
+	if not Trace then return end
+
+	if not gamemode.Call("CanTool", Player, Trace, ToolMode, Tool, Button) then return end
+
+	return Trace
+end
 
 local function CanCommit(Player)
 	if not IsValid(Player) then return false end
-
-	local Weapon = Player:GetActiveWeapon()
-	if not IsValid(Weapon) or Weapon:GetClass() ~= "gmod_tool" then return false end
 
 	local Now = CurTime()
 	if (NextCommit[Player] or 0) > Now then return false end
@@ -28,8 +44,7 @@ end
 -- Spawn / update
 -- =============================================================================================
 
-local function DoSpawn(Player, ClassName, Data)
-	local Trace = Player:GetEyeTrace()
+local function DoSpawn(Player, Trace, ClassName, Data)
 	if Trace.HitSky then return end
 
 	local Entity = Trace.Entity
@@ -171,8 +186,7 @@ local function LinkEntities(Player, Target)
 	end
 end
 
-local function DoLink(Player)
-	local Trace  = Player:GetEyeTrace()
+local function DoLink(Player, Trace)
 	local Entity = Trace.Entity
 
 	if Trace.HitWorld then
@@ -210,14 +224,20 @@ end
 -- Page functions
 -- =============================================================================================
 
-local function DoFunc(Player, PageID, ActionIndex)
+local function GetFuncAction(PageID, ActionIndex)
 	local Page = ACF.Menu.GetPage and ACF.Menu.GetPage(PageID)
 	if not Page or not Page.Actions then return end
 
 	local Action = Page.Actions[ActionIndex]
 	if not Action or not Action.Func then return end
 
-	Action.Func(Player, Player:GetEyeTrace())
+	return Action
+end
+
+local function GetActionButton(Action)
+	local Bind = Action and Action.Bind or ""
+
+	return Bind:find("right", 1, true) and 2 or 1
 end
 
 -- =============================================================================================
@@ -241,11 +261,23 @@ net.Receive("ACF_MenuCommit", function(_, Player)
 	if not CanCommit(Player) then return end
 
 	if Kind == "spawn" then
-		DoSpawn(Player, ClassName, Data)
+		local Trace = ACF.Menu.GetCommitTrace(Player, 1)
+		if not Trace then return end
+
+		DoSpawn(Player, Trace, ClassName, Data)
 	elseif Kind == "func" then
-		DoFunc(Player, PageID, ActionIndex)
+		local Action = GetFuncAction(PageID, ActionIndex)
+		if not Action then return end
+
+		local Trace = ACF.Menu.GetCommitTrace(Player, GetActionButton(Action))
+		if not Trace then return end
+
+		Action.Func(Player, Trace)
 	elseif Kind == "link" then
-		DoLink(Player)
+		local Trace = ACF.Menu.GetCommitTrace(Player, 2)
+		if not Trace then return end
+
+		DoLink(Player, Trace)
 	end
 end)
 
