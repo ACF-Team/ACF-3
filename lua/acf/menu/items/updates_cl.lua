@@ -33,7 +33,7 @@ local function DrawGitStatus(Menu, ExtensionName, Version, MostRecentCommit)
 	if MostRecentCommit then
 		local StatusValue = language.GetPhrase(Outdated and "acf.menu.updates.outdated" or "acf.menu.updates.up_to_date")
 		if Outdated and Version.date and Version.date > 0 then
-			local Diff      = MostRecentCommit.date - Version.date
+			local Diff      = (MostRecentCommit.date or 0) - Version.date
 			local Direction = Diff >= 0 and "behind" or "ahead"
 			StatusValue     = StatusValue .. " (" .. string.FormattedTime(math.abs(Diff), "%dh") .. " " .. Direction .. ")"
 		end
@@ -65,6 +65,11 @@ local function CreateMenu(Menu)
 		local Base            = Menu:AddCollapsible(ExtensionName, true, "icon16/package.png")
 
 		DrawGitCommit(Base, Commit)
+    
+    -- The listen server host is always going to match.
+		if LocalPlayer():IsListenServerHost() then
+			ClientExtension = ServerExtension or ClientExtension
+		end
 
 		if ClientExtension and ClientExtension.Version then
 			DrawGitStatus(Base, ExtensionName, ClientExtension.Version, Commit)
@@ -73,7 +78,6 @@ local function CreateMenu(Menu)
 		if ServerExtension and ServerExtension.Version then
 			DrawGitStatus(Base, ExtensionName, ServerExtension.Version, Commit)
 		end
-	end
 end
 
 ACF.Menu.RegisterPage({
