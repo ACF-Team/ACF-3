@@ -5,20 +5,35 @@ local Clamp  = math.Clamp
 --===============================================================================================--
 -- Damage
 --===============================================================================================--
+function ENT:UpdateTorqueDamageMult()
+	-- Adjusting performance based on damage
+	local TorqueMult = Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, self.TorqueScale, 1)
+	if self.ACF.Health <= 0 then TorqueMult = 0 end
+
+	self.PeakTorque = self.PeakTorqueHeld * TorqueMult
+end
 
 --This function needs to return HitRes
 function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	local HitRes = Damage.doPropDamage(self, DmgResult, DmgInfo)
 
-	-- Adjusting performance based on damage
-	local TorqueMult = Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, self.TorqueScale, 1)
+	self:UpdateTorqueDamageMult()
 
-	if self.ACF.Health <= 0 then TorqueMult = 0 end -- Destroyed engines produce no power
+	-- Turn off the engine if it was destroyed
+	if self.ACF.Health <= 0 then
+		self.IsDestroyed = true
+		self:Disable()
+	end
 
-	self.PeakTorque = self.PeakTorqueHeld * TorqueMult
 	return HitRes
 end
 
 function ENT:ACF_OnRepaired()
-	self.PeakTorque = self.PeakTorqueHeld
+	self:UpdateTorqueDamageMult()
+
+	-- Restore engine state if it was destroyed
+	if self.ACF.Health >= self.ACF.MaxHealth and self.IsDestroyed then
+		self.IsDestroyed = false
+		self:UpdateOverlay()
+	end
 end

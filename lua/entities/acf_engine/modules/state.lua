@@ -67,7 +67,7 @@ local function SetActive(Entity, Value, EntTbl)
 	local ActBool = tobool(Value)
 
 	if EntTbl.Active == ActBool then return end -- Already in the desired state
-	if ActBool and EntTbl.Disabled then return end -- Can't activate a disabled engine
+	if ActBool and (EntTbl.Disabled or EntTbl.IsDestroyed) then return end -- Can't activate a disabled engine
 
 	if ActBool then -- Was off, turn on
 		EntTbl.Active = true
@@ -160,7 +160,7 @@ function ENT:Think()
 
 	if not SelfTbl.Active then return end
 	if SelfTbl.Disabled then return end
-	if SelfTbl.ACF.Health <= 0 then return end
+	if SelfTbl.IsDestroyed then return end
 
 	self:CalcRPM(SelfTbl)
 
@@ -335,10 +335,16 @@ function ENT:UpdateOutputs(SelfTbl)
 end
 
 function ENT:ACF_UpdateOverlayState(State)
-	if self.Active then
-		State:AddSuccess("Active")
+	if self.IsDestroyed then
+		State:AddError("Destroyed")
+	elseif self.Disabled then
+		State:AddError("Disabled!")
 	else
-		State:AddWarning("Idle")
+		if self.Active then
+			State:AddSuccess("Active")
+		else
+			State:AddWarning("Idle")
+		end
 	end
 
 	if ACF.RequireFuel and not next(self.FuelTanks) then

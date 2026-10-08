@@ -150,6 +150,7 @@ do -- Spawn and Update functions
         self.FuelUsage         = 0
         self.Throttle          = 0
         self.FlyRPM            = 0
+        self.IsDestroyed       = false
         self.LastPitch         = 0
         self.LastTorque        = 0
         self.LastFuelUsage     = 0
