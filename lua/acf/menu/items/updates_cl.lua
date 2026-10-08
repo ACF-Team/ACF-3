@@ -65,8 +65,8 @@ local function CreateMenu(Menu)
 		local Base            = Menu:AddCollapsible(ExtensionName, true, "icon16/package.png")
 
 		DrawGitCommit(Base, Commit)
-    
-    -- The listen server host is always going to match.
+
+		-- The listen server host is always going to match.
 		if LocalPlayer():IsListenServerHost() then
 			ClientExtension = ServerExtension or ClientExtension
 		end
@@ -78,6 +78,7 @@ local function CreateMenu(Menu)
 		if ServerExtension and ServerExtension.Version then
 			DrawGitStatus(Base, ExtensionName, ServerExtension.Version, Commit)
 		end
+	end
 end
 
 ACF.Menu.RegisterPage({
