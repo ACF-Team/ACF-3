@@ -56,24 +56,6 @@ local function CalcWheel(Entity, Link, Wheel, ChassisAngVel)
 	return RelAngVel * GearRatio / -6
 end
 
-
--- local function CalcWheel(Entity, Link, Wheel, SelfWorld)
--- 	local EntityTable = ENTITY.GetTable(Entity)
-
--- 	local WheelPhys   = ENTITY.GetPhysicsObject(Wheel)
--- 	local VelDiff     = PHYSOBJ.LocalToWorldVector(WheelPhys, PHYSOBJ.GetAngleVelocity(WheelPhys))
--- 	VECTOR.Sub(VelDiff, SelfWorld)
-
--- 	local BaseRPM     = VECTOR.Dot(VelDiff, PHYSOBJ.LocalToWorldVector(WheelPhys, Link.Axis))
--- 	local GearRatio   = EntityTable.GearRatio
--- 	Link.Vel = BaseRPM
-
--- 	if GearRatio == 0 then return 0 end
-
--- 	-- Reported BaseRPM is in angle per second and in the wrong direction, so we convert and add the gear ratio
--- 	return BaseRPM * GearRatio / -6
--- end
-
 do -- Inputs -------------------------------------------
 	local function SetCanApplyBrakes(Gearbox)
 		local CanApply = Gearbox.LBrake ~= 0 or Gearbox.RBrake ~= 0
