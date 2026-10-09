@@ -10,15 +10,17 @@ function ENT:CFW_PreParentedTo(_, NewEntity)
 end
 
 function ENT:PhysicsCollide(CollisionData, Collider)
-	local Hook = self:ACF_GetUserVar("BaseplateType").PhysicsCollide
+	local BaseplateType = self:ACF_GetUserVar("BaseplateType")
+	local Hook = BaseplateType.PhysicsCollide
 	if Hook then
-		Hook(self, CollisionData, Collider)
+		Hook(BaseplateType, self, CollisionData, Collider)
 	end
 end
 
 function ENT:Think()
-	local Hook = self:ACF_GetUserVar("BaseplateType").Think
+	local BaseplateType = self:ACF_GetUserVar("BaseplateType")
+	local Hook = BaseplateType.Think
 	if Hook then
-		return Hook(self)
+		return Hook(BaseplateType, self)
 	end
 end

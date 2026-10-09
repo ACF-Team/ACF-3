@@ -1,0 +1,13 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "models\missiles/9m31_ramp"
+	$halflambert 			1
+	$blendtintbybasealpha		1
+	$bumpmap		models\missiles/9m31_ramp_normal
+	$surfaceprop	metal
+	"$model" "1"		
+	$phong 1
+	$phongboost	5
+	$phongfresnelranges	"[0.05 0.5 1]"
+
+}

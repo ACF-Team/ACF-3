@@ -51,9 +51,9 @@ end
 
 -- Links all entities of Type1 to all entities of Type2
 local function LinkAll(Env, Type1, Type2)
-    for _, Ent1 in pairs(Env.Contraption.entsbyclass[Type1] or {}) do
-        for _, Ent2 in pairs(Env.Contraption.entsbyclass[Type2] or {}) do
-            Ent1:LinkTo(Ent2)
+    for Ent1 in pairs(Env.Contraption.entsbyclass[Type1] or {}) do
+        for Ent2 in pairs(Env.Contraption.entsbyclass[Type2] or {}) do
+            Ent1:Link(Ent2)
         end
     end
 end
@@ -205,7 +205,7 @@ RegisterTest("Links", "Guns, Racks and Ammo", function(Env)
 
     -- Don't have to have a loader for belt fed or smoke launchers
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_gun, {"Crews", "Autoloader"})) do
-        if not e.IsBelted and e.Weapon ~= "SL" and e.Weapon ~= "40mmFGL" then
+        if not e.IsBelted and e.Weapon ~= "ACF.Guns.SmokeLauncher" and e.Weapon ~= "40mmFGL" then
             table.insert(Faults, {Ent = e, Msg = "Gun needs link to loader/autoloader"})
         end
     end
@@ -213,13 +213,12 @@ RegisterTest("Links", "Guns, Racks and Ammo", function(Env)
     -- for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_rack, {"Crew", "Autoloader"})) do table.insert(Faults, {Ent = e, Msg = "Ammo unlinked from Guns"}) end
     return #Faults == 0, Faults
 end, function(Env)
-    LinkAll(Env, "acf_gun", "Crates")
-    LinkAll(Env, "acf_rack", "Crates")
-    LinkAll(Env, "acf_ammo", "Weapons")
+    LinkAll(Env, "acf_gun", "acf_ammo")
+    LinkAll(Env, "acf_rack", "acf_ammo")
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_gun, {"Crew", "Autoloader"})) do
-        if not e.IsBelted and e.Weapon ~= "SL" and e.Weapon ~= "40mmFGL" then
+        if not e.IsBelted and e.Weapon ~= "ACF.Guns.SmokeLauncher" and e.Weapon ~= "40mmFGL" then
             for _, crew in pairs(Env.Contraption.Crews or {}) do
-                if crew.Type == "Loader" then e:LinkTo(crew.Ent) end
+                if crew.Type == "Loader" then e:Link(crew.Ent) end
             end
         end
     end
@@ -240,17 +239,15 @@ end, "Ensure all ground loaders are linked to racks and ammo crates")
 
 RegisterTest("Links", "Engines, Fuel and Gearboxes", function(Env)
     local Faults = {}
-    for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_fueltank, {"Engines"})) do table.insert(Faults, {Ent = e, Msg = "Fuel Tank needs link to Engines"}) end
-    for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_engine, {"FuelTanks"})) do table.insert(Faults, {Ent = e, Msg = "Engine needs link to Fuel or Gearbox"}) end
-    for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_engine, {"Gearboxes"})) do table.insert(Faults, {Ent = e, Msg = "Engine needs link to Fuel or Gearbox"}) end
+    for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_fueltank, {"Engines"})) do table.insert(Faults, {Ent = e, Msg = "Fuel Tank shares no parent with a compatible engine"}) end
+    for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_engine, {"FuelTanks"})) do table.insert(Faults, {Ent = e, Msg = "Engine shares no parent with a compatible fuel tank"}) end
+    for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_engine, {"Gearboxes"})) do table.insert(Faults, {Ent = e, Msg = "Engine needs link to Gearbox"}) end
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_gearbox, {"GearboxIn", "Engines"})) do table.insert(Faults, {Ent = e, Msg = "Gearbox missing Input link"}) end
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_gearbox, {"GearboxOut", "Wheels", "Effectors"})) do table.insert(Faults, {Ent = e, Msg = "Gearbox missing Output link"}) end
     return #Faults == 0, Faults
 end, function(Env)
-    LinkAll(Env, "acf_fueltank", "Engines")
-    LinkAll(Env, "acf_engine", "FuelTanks")
-    LinkAll(Env, "acf_engine", "Gearboxes")
-end, "Ensure all engines are linked to fuel tanks and gearboxes, and all gearboxes have proper input and output links")
+    LinkAll(Env, "acf_engine", "acf_gearbox") -- Fuel can't be fixed by linking; tanks must share the engine's parent
+end, "Ensure engines share a parent with compatible fuel tanks, engines are linked to gearboxes, and all gearboxes have proper input and output links")
 
 RegisterTest("Baseplate", "Orientation", function(Env)
     local Deviation = math.deg(math.acos(Env.Baseplate:GetForward():Dot(Vector(0, 1, 0))))

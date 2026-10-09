@@ -262,7 +262,7 @@ do -- Unit conversion
 		end
 	end
 
-	function ACF.GetProperMass(Kilograms)
+	function ACF.FormatMass(Kilograms)
 		local Unit, Mult = "g", 1000
 
 		if Kilograms >= 1000 then
@@ -272,6 +272,13 @@ do -- Unit conversion
 		end
 
 		return math.Round(Kilograms * Mult, 2) .. " " .. Unit
+	end
+
+	--- Formats a contraption cost the same way the menu and overlays present it.
+	--- @param Points number The cost in points
+	--- @return string Text The formatted cost
+	function ACF.FormatCost(Points)
+		return math.Round(Points or 0, 2) .. " pts"
 	end
 end
 --[[
@@ -935,9 +942,10 @@ do -- Crew related
 		return OutMin + (Transform(ACF.Normalize(Value, InMin, InMax)) * (OutMax - OutMin))
 	end
 
-	local function UpdateDelta(Config)
+	-- PausedFor is time spent paused since the last iteration, it never counts towards the delta
+	local function UpdateDelta(Config, PausedFor)
 		local CT = CurTime()
-		Config.DeltaTime = (CT - Config.LastTime)
+		Config.DeltaTime = math.max(CT - Config.LastTime - PausedFor, 0)
 		Config.LastTime = CT
 		Config.Elapsed = Config.Elapsed + Config.DeltaTime
 	end
@@ -946,12 +954,14 @@ do -- Crew related
 		Config.DeltaTime = 0
 		Config.Elapsed = 0
 		Config.LastTime = CurTime()
+		Config.Paused = false
 	end
 
 	--- Similar to a mix of timer.create and timer.simple but with random steps.
 	--- Every iteration it asks Loop to return the amount of time left. It will walk a random step or the time left, whichever is faster.
+	--- Loop's optional second return pauses the timer while true and resumes it while false, a paused timer can never Finish.
 	--- Its principal use case is in dynamic reloading where the time until a loader Finishes loading changes during loading and must be checked at random.
-	--- @param Loop function A function that returns the time left until the next iteration
+	--- @param Loop function A function that returns the time left until the next iteration, optionally followed by a blocked flag
 	--- @param Depends function A function that returns whether the timer should continue
 	--- @param Finish function A function that is called when the timer Finishes
 	--- @param Config table A table with the fields: MinTime, MaxTime, Delay
@@ -959,26 +969,76 @@ do -- Crew related
 		InitFields(Config)
 
 		local RealLoop
-		local Cancelled = false
-		local Finished  = false
-		local Paused = false
+		local Cancelled  = false
+		local Finished   = false
+		local Paused     = false
+		local PauseStart = 0
+		local PausedTime = 0
+
+		local ProxyObject = {}
+
+		function ProxyObject:Pause()
+			if Paused then return end
+			Paused = true
+			PauseStart = CurTime()
+			Config.Paused = true
+		end
+
+		function ProxyObject:Resume()
+			if not Paused then return end
+			Paused = false
+			PausedTime = PausedTime + (CurTime() - PauseStart)
+			Config.Paused = false
+		end
+
+		function ProxyObject:IsPaused()
+			return Paused
+		end
+
+		function ProxyObject:Cancel(RunFinisher)
+			Cancelled = true
+			if RunFinisher and Finish and not Finished then
+				Finished = true
+				Finish(Config)
+			end
+		end
+
+		function ProxyObject:Finish()
+			Finished = true
+			Finish(Config)
+		end
+
+		-- Returns the paused time owed to this iteration, billing an ongoing pause up to now
+		local function ConsumePausedTime()
+			local Total = PausedTime
+
+			if Paused then
+				local CT = CurTime()
+				Total = Total + (CT - PauseStart)
+				PauseStart = CT
+			end
+
+			PausedTime = 0
+
+			return Total
+		end
+
 		function RealLoop()
 			if Cancelled then return end
 			if Depends and not Depends(Config) then return end
 
-			UpdateDelta(Config)
+			UpdateDelta(Config, ConsumePausedTime())
 
-			-- If the timer is paused, don't run the loop
-			-- This also causes the timer to continue running indefinitely yet not affect anything
-			local left = nil
-			if not Paused then
-				left = Loop(Config)
+			-- Runs even while paused, it is what decides whether the process is still blocked
+			local left, Blocked = Loop(Config)
+			if Blocked ~= nil then
+				if Blocked then ProxyObject:Pause() else ProxyObject:Resume() end
 			end
 
 			local rand = Config.MinTime + (Config.MaxTime - Config.MinTime) * math.random()
 
-			-- Random step or Finishing step, whichever is faster.
-			local timeleft = left and math.min(left, rand) or rand
+			-- Random step or Finishing step, whichever is faster, a paused timer only walks random steps
+			local timeleft = (not Paused and left) and math.min(left, rand) or rand
 			-- If time left then recurse, otherwise call Finish
 			if timeleft > engine.TickInterval() then
 				timer.Simple(timeleft, RealLoop)
@@ -991,43 +1051,30 @@ do -- Crew related
 		if not Config.Delay then RealLoop()
 		else timer.Simple(Config.Delay, RealLoop) end
 
-		local ProxyObject = {}
-		function ProxyObject:Cancel(RunFinisher)
-			Cancelled = true
-			if RunFinisher and Finish and not Finished then
-				Finished = true
-				Finish(Config)
-			end
-		end
-
-		function ProxyObject:Pause()
-			Paused = true
-		end
-
-		function ProxyObject:Resume()
-			Paused = false
-		end
-
-		function ProxyObject:Finish()
-			Finished = true
-			Finish(Config)
-		end
-
 		return ProxyObject
 	end
 
 	--- Wrapper for augmented timers, keeps a record of a "progress" and a "goal".
 	--- Progress increases at the rate determined by Loop, until it reaches "goal"
+	--- Progress is credited before Loop runs, and Loop's optional second return freezes it while true.
 	--- @param Ent any The entity to attach the timer to (checks its validity)
-	--- @param Loop any	A function that returns the efficiency of the process
+	--- @param Loop any	A function that returns the efficiency of the process, optionally followed by a blocked flag
 	--- @param Finish any A function that is called when the timer Finishes
 	--- @param Config any A table with the fields: MinTime, MaxTime, Delay, Goal, Progress
 	function ACF.ProgressTimer(Ent, Loop, Finish, Config)
 		return ACF.AugmentedTimer(
 			function(Config)
-				local eff = Loop(Config)
-				Config.Progress = Config.Progress + Config.DeltaTime * eff
-				return (Config.Goal - Config.Progress) / eff
+				-- The interval that just elapsed ran at the efficiency measured when it started
+				Config.Progress = Config.Progress + Config.DeltaTime * (Config.Efficiency or 0)
+
+				local eff, Blocked = Loop(Config)
+
+				-- No efficiency means no progress, block rather than divide by zero
+				if not eff or eff <= 0 then return nil, true end
+
+				Config.Efficiency = eff
+
+				return (Config.Goal - Config.Progress) / eff, Blocked
 			end,
 			function(Config)
 				return IsValid(Ent) and Config.Progress < Config.Goal
@@ -1085,7 +1132,7 @@ do -- Crew related
 		local LongestBullet = nil
 		for Crate in pairs(Gun.Crates) do
 			local BulletData = Crate.BulletData
-			local Length = BulletData.PropLength + BulletData.ProjLength
+			local Length = BulletData.RoundLength or (BulletData.PropLength + BulletData.ProjLength)
 			if Length > LongestLength then
 				LongestLength = Length
 				LongestBullet = BulletData
@@ -1112,8 +1159,14 @@ do -- Reload related
 		-- Reload mod scales the final reload value and represents the ease of manipulating the weapon's ammunition
 		local ReloadMod = ACF.GetWeaponValue("ReloadMod", Caliber, Class, Weapon) or 1
 
-		local BaseTime = ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime) + ((BulletData.PropLength + BulletData.ProjLength) * ACF.LengthToTime)
-		return math.Clamp(BaseTime * ReloadMod, 0, 60), true -- Clamped to a maximum of 60 seconds of ideal loading
+		-- Two piece ammunition loads as that many shells of a fraction of the mass,
+		-- one motion each. The handling term is split between them, so only the fixed setup
+		-- cost of a motion is really paid twice.
+		local Pieces     = BulletData.TwoPiece and ACF.TwoPieceCount or 1
+		local PieceMass  = BulletData.CartMass / Pieces
+
+		local BaseTime = ACF.BaseReload + (PieceMass * ACF.MassToTime)
+		return math.Clamp(BaseTime * Pieces * ReloadMod, 0, 60), true -- Clamped to a maximum of 60 seconds of ideal loading
 	end
 
 	--- Calculates the time it takes for a gun to reload its magazine
@@ -1130,6 +1183,12 @@ do -- Reload related
 		-- Reload mod scales the final reload value and represents the ease of manipulating the weapon's ammunition
 		local ReloadMod = ACF.GetWeaponValue("ReloadMod", Caliber, Class, Weapon) or 1
 
+		-- Two piece ammunition loads as that many shells of a fraction of the mass,
+		-- one motion each. A magazine still holds whole rounds, so it takes that many times
+		-- as many motions to fill, each carrying its share of the mass.
+		local Pieces    = BulletData.TwoPiece and ACF.TwoPieceCount or 1
+		local PieceMass = BulletData.CartMass / Pieces
+
 		-- If the weapon has a boxed or belted magazine, use the magazine size, otherwise it's manual with one shell.
 		local DefaultMagSize = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 1
 
@@ -1137,8 +1196,8 @@ do -- Reload related
 		local MagSize = math.max(MagSizeOverride or DefaultMagSize, DefaultMagSize)
 
 		-- Note: Currently represents a projectile of the same dimensions with the mass of the entire magazine
-		local BaseTime = ACF.BaseReload + (BulletData.CartMass * ACF.MassToTime) * MagSize + ((BulletData.PropLength + BulletData.ProjLength) * ACF.LengthToTime)
-		return math.Clamp(BaseTime * ReloadMod, 0, 60), true -- Clamped to a maximum of 60 seconds of ideal loading
+		local BaseTime = ACF.BaseReload + (PieceMass * ACF.MassToTime) * MagSize
+		return math.Clamp(BaseTime * Pieces * ReloadMod, 0, 60), true -- Clamped to a maximum of 60 seconds of ideal loading
 	end
 
 	local ModelToPlayerStart = {
@@ -1268,9 +1327,9 @@ end
 
 do
 	local VECTOR = FindMetaTable("Vector")
-	--- Sets up a table to track G forces. The vectors inside are mutable!! Be careful of that!!!!
+	--- Sets up a table to track G-forces. The vectors inside are mutable!! Be careful of that!!!!
 	--- (this is for performance reasons so we don't make thousands vectors per second potentially)
-	--- Use with ACF.UpdateGForceTracker to update the G force tracker.
+	--- Use with ACF.UpdateGForceTracker to update the G-force tracker.
 	--- @param pos? Vector The initial position
 	--- @param vel? Vector The initial velocity
 	--- @param accel? Vector The initial acceleration
@@ -1303,10 +1362,10 @@ do
 
 	local DeltaTime = engine.TickInterval()
 
-	--- Returns the G force given the current position and the time since the last update.
-	--- @param tbl table The table storing the G force tracker data
+	--- Returns the G-force given the current position and the time since the last update.
+	--- @param tbl table The table storing the G-force tracker data
 	--- @param newPos Vector The new position to update the tracker with
-	--- @return number, number The G force experienced and the delta time since the last update
+	--- @return number, number The G-force experienced and the delta time since the last update
 	function ACF.UpdateGForceTracker(tbl, newPos, sampleRate)
 		if not tbl then return end
 

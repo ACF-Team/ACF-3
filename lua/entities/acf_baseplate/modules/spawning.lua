@@ -2,16 +2,12 @@ local ACF      		= ACF
 local Notify        = ACF.Utilities.Notify
 local Con = ACF.Contraption
 
-function ENT.ACF_OnVerifyClientData(ClientData)
-	ClientData.Size = Vector(ClientData.Length, ClientData.Width, ClientData.Thickness)
-	if ClientData.BaseplateType ~= "Aircraft" then ClientData.GForceTicks = 1 end -- Only allow sample rates > 1 for aircraft baseplates
-end
-
-function ENT:ACF_PostUpdateEntityData(ClientData)
-	self:SetSize(ClientData.Size)
-	local Hook = self:ACF_GetUserVar("BaseplateType").OnInitialize
-	if Hook then
-		Hook(self)
+function ENT:ACF_PostUpdateEntityData()
+	self.BaseplateSize = Vector(self:ACF_GetUserVar("Length"), self:ACF_GetUserVar("Width"), self:ACF_GetUserVar("Thickness"))
+	self:SetSize(self.BaseplateSize)
+	local BPTypeInst = self:ACF_GetUserVar("BaseplateType")
+	if BPTypeInst and BPTypeInst.OnInitialize then
+		BPTypeInst:OnInitialize(self)
 	end
 end
 
@@ -51,14 +47,20 @@ function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 		end
 	end)
 
+	local Baseplate = self
 	timer.Create("ACFPhysicalChecks" .. self:EntIndex(), 3, 0, function()
-		local Physical, _, _ = Con.GetEnts(self)
+		local Physical, _, _ = Con.GetEnts(Baseplate)
 		for Ent in pairs(Physical) do
 			if not IsValid(Ent) then continue end
 			if Ent.ACF_ReplacedPhysicsCollide then continue end
-			local PhysCollide = self:ACF_GetUserVar("BaseplateType").PhysicsCollide
-			if not PhysCollide then continue end
-			Ent.PhysicsCollide = PhysCollide
+			local BPTypeInst = IsValid(Baseplate) and Baseplate:ACF_GetUserVar("BaseplateType")
+			if not BPTypeInst or not BPTypeInst.PhysicsCollide then continue end
+			Ent.PhysicsCollide = function(_, Data)
+				local Current = IsValid(Baseplate) and Baseplate:ACF_GetUserVar("BaseplateType")
+				if Current and Current.PhysicsCollide then
+					Current:PhysicsCollide(Ent, Data)
+				end
+			end
 			Ent.ACF_ReplacedPhysicsCollide = true
 		end
 	end)
@@ -69,8 +71,7 @@ function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 		timer.Remove("ACFPhysicalChecks" .. self:EntIndex())
 	end)
 
-	ACF.AugmentedTimer(function(cfg) self:UpdateAccuracyMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 0.1, MaxTime = 0.25})
-	ACF.AugmentedTimer(function(cfg) self:UpdateFuelMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 0.1, MaxTime = 0.25})
+	ACF.AugmentedTimer(function(cfg) self:UpdateDriverMod(cfg) end, function() return IsValid(self) end, nil, {MinTime = 0.1, MaxTime = 0.25})
 	ACF.AugmentedTimer(function(cfg) self:EnforceLooped(cfg) end, function() return IsValid(self) end, nil, {MinTime = 0.1, MaxTime = 0.25})
 	ACF.ActiveBaseplatesTable[self] = true
 	table.insert(ACF.ActiveBaseplatesArray, self)
@@ -78,6 +79,16 @@ function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 	self:CallOnRemove("ACF_RemoveBaseplateTableIndex", function(ent)
 		ACF.ActiveBaseplatesTable[ent] = nil
 		table.RemoveByValue(ACF.ActiveBaseplatesArray, ent)
+	end)
+
+	-- Deferred a tick so the seat/etc have joined the contraption first. Not kept up to date after.
+	timer.Simple(0, function()
+		if not IsValid(self) then return end
+
+		local Contraption = self:CFW_GetContraption()
+		if Contraption then
+			Contraption.ACF_Cost = ACF.Contraption.CostSystem.CalcCostsFromContraption(Contraption)
+		end
 	end)
 end
 

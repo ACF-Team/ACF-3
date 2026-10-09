@@ -1,27 +1,37 @@
 local ACF          = ACF
 local Classes      = ACF.Classes
 local Utilities    = ACF.Utilities
-local WireIO       = Utilities.WireIO
 local Notify       = Utilities.Notify
 local WireLib      = WireLib
-local Entities     = Classes.Entities
-local AmmoTypes    = Classes.AmmoTypes
-local Weapons      = Classes.Weapons
 local ActiveCrates = ACF.AmmoCrates
 local HookRun      = hook.Run
 local Clamp        = math.Clamp
 local Floor        = math.floor
 
+-- Missile weapons carry Guidance/Fuze as nested class-instance fields. The menu commit and dupes both
+-- deliver them already deserialized under the Weapon field (self:ACF_GetUserVar("Weapon")), so here we
+-- just validate that nested instance -- VerifyData clamps sub-params the field-level serializer can't
+-- (e.g. FuzeTimer/ArmingDelay, whose ranges are class/weapon-derived, not static field Options, and
+-- whose menu default of 0 sits below the class minimum). Legacy flat ClientData (the chosen FQN as a
+-- top-level key + flat sub-params) is still honoured as a fallback: rebuild the instance from it.
+local function FoldWeaponSubInstance(Weapon, FieldName, BaseFQN, Data)
+	local FQN = Data[FieldName]
 
-local Inputs = {
-	"Load (If set to a non-zero value, it'll allow weapons to use rounds from this ammo crate.)",
-}
+	if isstring(FQN) then
+		local SubClass = Classes.GetTypeByName(FQN)
+		local BaseType = Classes.GetTypeByName(BaseFQN)
+		if not (SubClass and BaseType and Classes.IsAssignableTo(SubClass, BaseType)) then return end
 
-local Outputs = {
-	"Loading (Whether or not weapons can use rounds from this crate.)",
-	"Ammo (Rounds left in this ammo crate.)",
-	"Entity (The ammo crate itself.) [ENTITY]",
-}
+		local Instance = Classes.Serialization.DeserializePartial(SubClass, Data)
+		if Instance.VerifyData then Instance:VerifyData(Weapon) end
+
+		Weapon[FieldName] = Instance
+		return
+	end
+
+	local Instance = Weapon[FieldName]
+	if Instance and Instance.VerifyData then Instance:VerifyData(Weapon) end
+end
 
 do -- IO
 	WireLib.AddInputAlias("Active", "Load")
@@ -34,115 +44,46 @@ do -- IO
 	end)
 end
 
-do -- Spawn/Update/Remove
-	local function VerifyData(Data)
-		if not isvector(Data.Size) then
-			local X = ACF.CheckNumber(Data.AmmoSizeX or Data.CrateSizeX, 24)
-			local Y = ACF.CheckNumber(Data.AmmoSizeY or Data.CrateSizeY, 24)
-			local Z = ACF.CheckNumber(Data.AmmoSizeZ or Data.CrateSizeZ, 24)
-
-			Data.Size = Vector(X, Y, Z)
-		end
-
-		do
-			local Min  = ACF.AmmoMinSize
-			local Size = Data.Size
-
-			Size.x = Clamp(Size.x, Min, ACF.AmmoMaxLength)
-			Size.y = Clamp(Size.y, Min, ACF.AmmoMaxWidth)
-			Size.z = Clamp(Size.z, Min, ACF.AmmoMaxWidth)
-
-			if not isstring(Data.Destiny) then
-				Data.Destiny = ACF.FindWeaponrySource(Data.Weapon) or "Weapons"
-			end
-
-			local Source = Classes[Data.Destiny]
-			local Class = Classes.GetGroup(Source, Data.Weapon)
-
-			-- Compatibility layer for pre-scalable guns
-			if not Class then
-				local Compat = ACF.Compatibility[Data.Destiny]
-				local AliasData = Compat and Compat.CheckGroupItem and Compat.CheckGroupItem(Data.Weapon)
-
-				if AliasData then
-					Data.Weapon = AliasData.ID
-					Data.Caliber = AliasData.Caliber or Data.Caliber
-
-					Class = Classes.GetGroup(Source, Data.Weapon)
-				end
-			end
-
-			-- No class exists!
-			if not Class then
-				Class = Weapons.Get("C")
-				Data.Destiny = "Weapons"
-				Data.Weapon  = "C"
-				Data.Caliber = Data.caliber or 50
-			end
-
-			do
-				local Weapon = Source.GetItem(Class.ID, Data.Weapon)
-				if Weapon then
-					if Class.IsScalable then
-						local Bounds  = Class.Caliber
-						local Caliber = ACF.CheckNumber(Weapon.Caliber, Bounds.Base)
-						Data.Weapon  = Class.ID
-						Data.Caliber = Clamp(Caliber, Bounds.Min, Bounds.Max)
-					else
-						Data.Caliber = ACF.CheckNumber(Weapon.Caliber, 50)
-					end
-				end
-			end
-
-			local Ammo = AmmoTypes.Get(Data.AmmoType)
-
-			if not Ammo or Ammo.Blacklist[Class.ID] then
-				Data.AmmoType = Class.DefaultAmmo or "AP"
-
-				Ammo = AmmoTypes.Get(Data.AmmoType)
-			end
-
-			if not isnumber(Data.AmmoStage) then
-				Data.AmmoStage = 1
-			end
-			Data.AmmoStage = Clamp(Data.AmmoStage, ACF.AmmoStageMin, ACF.AmmoStageMax)
-
-			do
-				Ammo:VerifyData(Data, Class)
-
-				if Class.VerifyData then
-					Class.VerifyData(Data, Class, Ammo)
-				end
-
-				hook.Run("ACF_OnVerifyData", "acf_ammo", Data, Class, Ammo)
-			end
-		end
+-- Box crates use a thin hologram cube; drums use the cylinder shape model.
+local function GetAmmoModel(ShapeClass)
+	if ShapeClass and ShapeClass.IsDrum then
+		return ShapeClass.Model or "models/acf/core/s_fuel_cyl.mdl"
 	end
 
+	return "models/holograms/hq_rcube_thin.mdl"
+end
+
+do -- Spawn/Update/Remove
 	local function UpdateCrateSize(Entity, Data, Class, _, Ammo)
-		-- Convert current tool data once to get projectile geometry
-		local Bullet = Ammo:ServerConvert(Data)
+		-- Convert the ammo instance once to get projectile geometry
+		local Bullet = Ammo:ServerConvert()
 
-		-- Check if this is an ammo drum (cylinder shape)
-		local IsDrum = Data.AmmoShape == "Cylinder"
+		-- The shape picks the drum layout; nil means this is a plain box crate
+		local Layout     = ACF.GetDrumLayout(Entity:ACF_GetUserVar("Shape"))
+		local HexPacking = Entity:ACF_GetUserVar("HexPacking")
 
-		if IsDrum then
+		if Layout then
 			local roundSize = ACF.GetRoundProperties(Class, Data, Bullet)
-			local minRounds = ACF.GetMinRoundsPerRing()
-			local maxRounds = ACF.GetMaxRoundsPerRing(roundSize, ACF.AmmoMaxWidth)
-			local maxLayers = ACF.GetMaxDrumLayers(roundSize, ACF.AmmoMaxLength)
+			local minPrimary = Layout.MinPrimary
+			local maxPrimary = Layout.GetMaxPrimary(roundSize, ACF.AmmoMaxWidth, HexPacking)
+			local maxStacks  = Layout.GetMaxStacks(roundSize, ACF.AmmoMaxLength, HexPacking)
 
-			local roundsPerRing = Clamp(Floor(tonumber(Data.CrateProjectilesX) or minRounds), minRounds, maxRounds)
-			local numLayers     = Clamp(Floor(tonumber(Data.CrateProjectilesZ) or 2), 1, maxLayers)
+			-- Primary means rounds per ring on a horizontal drum, but rings on a vertical one
+			local primary   = Clamp(Floor(tonumber(Data.CrateProjectilesX) or minPrimary), minPrimary, maxPrimary)
+			local numStacks = Clamp(Floor(tonumber(Data.CrateProjectilesZ) or 2), 1, maxStacks)
 
-			Data.CrateProjectilesX = roundsPerRing
-			Data.CrateProjectilesZ = numLayers
+			Data.CrateProjectilesX = primary
+			Data.CrateProjectilesZ = numStacks
 			Data.CrateProjectilesY = 1
-			Data.Size              = ACF.GetDrumDimensions(roundsPerRing, numLayers, roundSize)
+			Data.Size              = Layout.GetDimensions(primary, numStacks, roundSize, HexPacking)
 
 			Entity:SetSize(Data.Size)
 
-			return roundsPerRing * numLayers
+			local Rounds = Layout.GetPerDisk(primary) * numStacks
+			-- Floored with no minimum: an odd cell out holds half a round, and half a round is nothing
+			if Bullet.TwoPiece then Rounds = Floor(Rounds * 0.5) end
+
+			return Rounds
 		else
 			-- Standard box crate logic
 			local cx = tonumber(Data.CrateProjectilesX)
@@ -150,7 +91,7 @@ do -- Spawn/Update/Remove
 			local cz = tonumber(Data.CrateProjectilesZ)
 
 			if not (cx and cy and cz) then
-				cx, cy, cz = ACF.GetProjectileCountsFromCrateSize(Data.Size, Class, Data, Bullet)
+				cx, cy, cz = ACF.GetProjectileCountsFromCrateSize(Data.Size, Class, Data, Bullet, HexPacking)
 			end
 
 			cx = math.max(1, Floor(cx or 3))
@@ -159,7 +100,7 @@ do -- Spawn/Update/Remove
 
 			-- Clamp counts to maximum allowed dimensions
 			local roundSize = ACF.GetRoundProperties(Class, Data, Bullet)
-			local maxX, maxY, maxZ = ACF.GetMaxCounts(roundSize, ACF.AmmoMaxLength, ACF.AmmoMaxWidth, cy, cz)
+			local maxX, maxY, maxZ = ACF.GetMaxCounts(roundSize, ACF.AmmoMaxLength, ACF.AmmoMaxWidth, HexPacking)
 
 			cx = math.min(cx, maxX)
 			cy = math.min(cy, maxY)
@@ -171,11 +112,15 @@ do -- Spawn/Update/Remove
 			Data.CrateProjectilesZ = cz
 
 			-- Recompute and apply consistent crate size from final counts
-			Data.Size = ACF.GetCrateSizeFromProjectileCounts(cx, cy, cz, Class, Data, Bullet)
+			Data.Size = ACF.GetCrateSizeFromProjectileCounts(cx, cy, cz, Class, Data, Bullet, HexPacking)
 
 			Entity:SetSize(Data.Size)
 
-			return cx * cy * cz
+			local Rounds = cx * cy * cz
+			-- Floored with no minimum: an odd cell out holds half a round, and half a round is nothing
+			if Bullet.TwoPiece then Rounds = Floor(Rounds * 0.5) end
+
+			return Rounds
 		end
 	end
 
@@ -190,7 +135,7 @@ do -- Spawn/Update/Remove
 			local AmmoType = Entity.RoundData
 
 			-- Get model info from ammo type's unified resolver
-			local ModelInfo   = AmmoType:ResolveModel("Crate", Class, Weapon)
+			local ModelInfo   = AmmoType:ResolveModel("Crate", Class, Weapon, BulletData.TwoPiece)
 			local RoundModel  = ModelInfo.Model
 			local RoundOffset = ModelInfo.Offset
 			local Bodygroup   = ModelInfo.Bodygroup
@@ -201,11 +146,14 @@ do -- Spawn/Update/Remove
 			local RoundLength, RoundDiameter = ACF.GetModelDimensions(Round)
 
 			if not RoundLength then
-				RoundDiameter = Caliber * ACF.AmmoCaseScale * 0.1
-				RoundLength = BulletData.PropLength + BulletData.ProjLength
+				RoundDiameter = Caliber * (BulletData.CaseScale or ACF.GetMaxCaseScale(Class, Weapon)) * 0.1
+				RoundLength = BulletData.RoundLength or (BulletData.PropLength + BulletData.ProjLength)
 				RoundLength = RoundLength / ACF.InchToCm
 				RoundDiameter = RoundDiameter / ACF.InchToCm
 			end
+
+			-- Two-piece ammo stores each piece separately, so the rendered shell is half the round's length.
+			if BulletData.TwoPiece then RoundLength = RoundLength * 0.5 end
 
 			Entity.IsBelted = BeltFed
 			ExtraData.AmmoStage = Data.AmmoStage
@@ -221,12 +169,16 @@ do -- Spawn/Update/Remove
 			ExtraData.RoundOffset = RoundOffset
 			ExtraData.Bodygroup = Bodygroup
 			ExtraData.NeedsRotation = NeedsRotation
+			ExtraData.TwoPiece = BulletData.TwoPiece or false
+			ExtraData.HexPacking = Entity:ACF_GetUserVar("HexPacking") or false
 
 			-- Drum-specific data
-			ExtraData.IsDrum = Entity.Shape == "Cylinder"
+			local ShapeClass = Entity:ACF_GetUserVar("Shape")
+			ExtraData.IsDrum = ShapeClass and ShapeClass.IsDrum or false
 			if ExtraData.IsDrum then
-				ExtraData.RoundsPerRing = Entity.CrateProjectilesX
-				ExtraData.DrumLayers = Entity.CrateProjectilesZ
+				ExtraData.DrumShape = Entity.Shape
+				ExtraData.DrumPrimary = Entity.CrateProjectilesX
+				ExtraData.DrumStacks = Entity.CrateProjectilesZ
 			end
 		else
 			ExtraData = { Enabled = false }
@@ -267,8 +219,9 @@ do -- Spawn/Update/Remove
 					net.WriteBool(IsDrum)
 
 					if IsDrum then
-						net.WriteUInt(ExtraData.RoundsPerRing, 8)
-						net.WriteUInt(ExtraData.DrumLayers, 8)
+						net.WriteString(ExtraData.DrumShape)
+						net.WriteUInt(ExtraData.DrumPrimary, 8)
+						net.WriteUInt(ExtraData.DrumStacks, 8)
 					end
 
 					local HasModel = ExtraData.RoundModel ~= nil
@@ -282,6 +235,9 @@ do -- Spawn/Update/Remove
 
 					-- Send rotation flag (true = needs -90 degree rotation for cartridge models)
 					net.WriteBool(ExtraData.NeedsRotation)
+
+					net.WriteBool(ExtraData.TwoPiece)
+					net.WriteBool(ExtraData.HexPacking)
 				end
 
 			if Player then
@@ -318,7 +274,7 @@ do -- Spawn/Update/Remove
 		end
 
 		Entity.RoundData  = Ammo
-		Entity.BulletData = Ammo:ServerConvert(Data)
+		Entity.BulletData = Ammo:ServerConvert()
 		Entity.BulletData.Crate = Entity:EntIndex()
 
 		if Ammo.OnFirst then
@@ -329,29 +285,35 @@ do -- Spawn/Update/Remove
 
 		Ammo:Network(Entity, Entity.BulletData)
 
-		for _, V in ipairs(Entity.DataStore) do
-			Entity[V] = Data[V]
-		end
+		Entity.Weapon            = Data.Weapon
+		Entity.AmmoType          = Data.AmmoType
+		Entity.CrateProjectilesX = Data.CrateProjectilesX
+		Entity.CrateProjectilesY = Data.CrateProjectilesY
+		Entity.CrateProjectilesZ = Data.CrateProjectilesZ
+
+		-- Short shape name ("Cylinder"), which is what the drum layout registry is keyed on and what
+		-- gets networked to the client. The user var itself holds the ContainerShapes class instance.
+		local ShapeInst = Entity:ACF_GetUserVar("Shape")
+		local ShapeName = ShapeInst and ShapeInst.GetType and Classes.GetTypeName(ShapeInst:GetType())
+
+		Entity.Shape = ShapeName and (string.match(ShapeName, "[^.]+$") or ShapeName) or "Box"
 
 		Entity.Name       = Name or WeaponName .. " " .. Ammo.Name
-		Entity.ShortName  = ShortName or WeaponShort .. " " .. Ammo.ID
+		Entity.ShortName  = ShortName or WeaponShort .. " " .. (Ammo.ID or "")
 		Entity.EntType    = "Ammo Crate"
 		Entity.ClassData  = Class
-		Entity.Shape      = Data.AmmoShape or "Box"
 		Entity.Class      = Class.ID
 		Entity.WeaponData = Weapon
 		Entity.Caliber    = Caliber
 		Entity.AmmoStage  = Data.AmmoStage
 		Entity.UnitMass   = Entity.BulletData.CartMass
 
-		WireIO.SetupInputs(Entity, Inputs, Data, Class, Weapon, Ammo)
-		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Weapon, Ammo)
+		Entity.WireAmountName = "Ammo"
 
-			Entity.WireAmountName = "Ammo"
+		Entity:ACF_SetEntityName("ACF " .. (WireName or WeaponName .. " Ammo Crate"))
 
-		Entity:SetNWString("WireName", "ACF " .. (WireName or WeaponName .. " Ammo Crate"))
-
-		local Percentage = Entity.Capacity and Entity.Amount / Entity.Capacity or 1
+		-- Capacity can now be zero, and 0 is truthy in Lua, so test the value rather than its presence
+		local Percentage = (Entity.Capacity or 0) > 0 and Entity.Amount / Entity.Capacity or 1
 		local MagSize    = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 0
 
 		Entity.Capacity = Rounds
@@ -363,7 +325,7 @@ do -- Spawn/Update/Remove
 
 		NetworkAmmoData(Entity)
 
-		if next(Entity.Weapons) then
+		if Entity.Weapons and next(Entity.Weapons) then
 			local Unloaded
 
 			for K in pairs(Entity.Weapons) do
@@ -379,167 +341,133 @@ do -- Spawn/Update/Remove
 			end
 		end
 
-		ACF.Activate(Entity, true)
-
 		Entity.ACF.Model = Entity:GetModel()
 
 		Entity:UpdateMass(true)
 	end
 
-	function ACF.MakeAmmo(Player, Pos, Ang, Data)
-		if not Player:CheckLimit("_acf_ammo") then return end
+	function ENT:ACF_PreSpawn(_, _, _, ClientData)
+		self.ACF         = {}
+		self.Weapons     = {}
+		self.IsExplosive = true
 
-		VerifyData(Data)
+		local ShapeClass = Classes.GetTypeByName(ClientData.Shape)
+		local Model      = GetAmmoModel(ShapeClass)
 
-		local Source = Classes[Data.Destiny]
-		local Class  = Classes.GetGroup(Source, Data.Weapon)
-		local Weapon = Source.GetItem(Class.ID, Data.Weapon)
-		local Ammo   = AmmoTypes.Get(Data.AmmoType)
-
-		-- Select model based on ammo shape
-		local Model
-		if Data.AmmoShape == "Cylinder" then
-			Model = ACF.ContainerShapeModels.Cylinder or "models/acf/core/s_fuel_cyl.mdl"
-		else
-			Model = "models/holograms/hq_rcube_thin.mdl"
-		end
-
-		local CanSpawn = HookRun("ACF_PreSpawnEntity", "acf_ammo", Player, Data, Class, Weapon, Ammo)
-
-		if CanSpawn == false then return false end
-
-		local Crate = ents.Create("acf_ammo")
-
-		if not IsValid(Crate) then return end
-
-		Player:AddCleanup("acf_ammo", Crate)
-		Player:AddCount("_acf_ammo", Crate)
-
-		Crate.ACF       = Crate.ACF or {}
-		Crate.ACF.Model = Model
-
-		Crate:SetMaterial("phoenix_storms/Future_vents")
-		Crate:SetScaledModel(Model)
-		Crate:SetAngles(Ang)
-		Crate:SetPos(Pos)
-		Crate:Spawn()
-
-		Crate.IsExplosive = true
-		Crate.Weapons     = {}
-		Crate.DataStore	  = Entities.GetArguments("acf_ammo")
-
-		UpdateCrate(Crate, Data, Class, Weapon, Ammo)
-
-		if Class.OnSpawn then
-			Class.OnSpawn(Crate, Data, Class, Weapon, Ammo)
-		end
-
-		HookRun("ACF_OnSpawnEntity", "acf_ammo", Crate, Data, Class, Weapon, Ammo)
-
-		if Data.Offset then
-			local Position = Crate:LocalToWorld(Data.Offset)
-
-			ACF.SaveEntity(Crate)
-
-			Crate:SetPos(Position)
-
-			ACF.RestoreEntity(Crate)
-
-			if Data.BuildDupeInfo then
-				Data.BuildDupeInfo.PosReset = Position
-			end
-		end
-
-		Crate:TriggerInput("Load", 1)
-
-		ActiveCrates[Crate] = true
-
-		return Crate
+		self.ACF.Model = Model
+		self:SetMaterial("phoenix_storms/Future_vents")
+		self:SetScaledModel(Model)
 	end
 
-	function ENT:Update(Data)
-		VerifyData(Data)
+	function ENT:ACF_OnSpawn()
+		ActiveCrates[self] = true
+	end
 
-		local Source     = Classes[Data.Destiny]
-		local Class      = Classes.GetGroup(Source, Data.Weapon)
-		local Weapon     = Source.GetItem(Class.ID, Data.Weapon)
-		local Caliber    = Weapon and Weapon.Caliber or Data.Caliber
-		local OldClass   = self.ClassData
+	function ENT:ACF_PostSpawn()
+		self:TriggerInput("Load", 1)
+	end
+
+	function ENT:ACF_PostUpdateEntityData(ClientData)
+		self.ACF = self.ACF or {}
+
+		-- Snapshot for unlink-on-change (runtime fields still hold the previous config here).
 		local OldWeapon  = self.Weapon
 		local OldCaliber = self.Caliber
-		local OldShape   = self.Shape
-		local Ammo       = AmmoTypes.Get(Data.AmmoType)
-		local Blacklist  = Ammo.Blacklist
-		local Extra      = ""
 
-		local CanUpdate, Reason = HookRun("ACF_PreUpdateEntity", "acf_ammo", self, Data, Class, Weapon, Ammo)
-		if CanUpdate == false then return CanUpdate, Reason end
+		-- ClientData carries the ammo round parameters (projectile/propellant/tracer) needed by
+		-- Ammo:ServerConvert. Field-level sanitisation already happened in the serializer; legacy/dupe
+		-- format conversion happens in the compat patches (see compatibility/acf3/ammo.lua).
+		local Data = ClientData
 
-		if OldClass.OnLast then
-			OldClass.OnLast(self, OldClass)
+		-- Weapon/ammo come from the deserialized MENU_FIELD instances (the authoritative source -
+		-- raw dupe ClientData may carry a serialized {Type, Data} weapon rather than an FQN string).
+		local WeaponInst = self:ACF_GetUserVar("Weapon")
+		local Ammo       = self:ACF_GetUserVar("AmmoType")
+		local Class      = WeaponInst:GetType()
+
+		-- Sync the requested caliber onto the scalable weapon instance, then let it self-validate
+		-- (clamps caliber to its CaliberLimits). On dupes ClientData has no flat caliber, so the
+		-- instance's deserialized caliber is kept.
+		if Class.IsScalable and WeaponInst.Caliber ~= nil then
+			WeaponInst.Caliber = Data.Caliber or WeaponInst.Caliber
+		end
+		if WeaponInst.VerifyData then WeaponInst:VerifyData() end
+
+		-- Fold the menu-selected guidance/fuze onto missile weapons (no-op for guns and for dupes).
+		if Classes.GetTypeFieldByName(Class, "Guidance") then
+			FoldWeaponSubInstance(WeaponInst, "Guidance", "ACF.Missiles.Guidance", Data)
+			FoldWeaponSubInstance(WeaponInst, "Fuze",     "ACF.Missiles.Fuze",     Data)
 		end
 
-		HookRun("ACF_OnEntityLast", "acf_ammo", self, OldClass)
+		-- The ammo round inputs (Projectile/Propellant/Tracer + type-specific like FillerRatio) live
+		-- on the ammo instance, which reads the weapon via this back-reference. On a menu spawn
+		-- ClientData carries the inputs flat; copy any present keys onto the instance. Dupes already
+		-- have them deserialized into the instance (nested under the AmmoType field), so nil keys are
+		-- skipped to preserve those. Ammo:ServerConvert() then reads everything off the instance.
+		Ammo.Weapon = WeaponInst
 
-		ACF.SaveEntity(self)
-
-		-- Update model if shape changed
-		local NewShape = Data.AmmoShape or "Box"
-		if NewShape ~= OldShape then
-			local Model
-			if NewShape == "Cylinder" then
-				Model = ACF.ContainerShapeModels.Cylinder or "models/acf/core/s_fuel_cyl.mdl"
-			else
-				Model = "models/holograms/hq_rcube_thin.mdl"
+		for _, Field in ipairs(Classes.GetTypeFields(Ammo:GetType())) do
+			if Field.Menu and Data[Field.Name] ~= nil then
+				Ammo[Field.Name] = Data[Field.Name]
 			end
-			self.ACF.Model = Model
-			self:SetScaledModel(Model)
 		end
+
+		-- Derive the flat tool data UpdateCrate consumes from the authoritative instances.
+		Data.Weapon   = Classes.GetTypeName(Class)
+		Data.AmmoType = Classes.GetTypeName(Ammo:GetType())
+		Data.Caliber  = WeaponInst.Caliber or Data.Caliber
+
+		-- Projectile counts / ammo stage also come from the validated field set (dupe ClientData may
+		-- omit them - the serializer has already applied the field defaults).
+		Data.CrateProjectilesX = self:ACF_GetUserVar("CrateProjectilesX")
+		Data.CrateProjectilesY = self:ACF_GetUserVar("CrateProjectilesY")
+		Data.CrateProjectilesZ = self:ACF_GetUserVar("CrateProjectilesZ")
+		Data.AmmoStage         = self:ACF_GetUserVar("AmmoStage")
+
+		-- Legacy "Weapon" param meant a concrete non-scalable group item (nil for scalables); the
+		-- non-scalable weapon instance fills that role now.
+		local Weapon = not Class.IsScalable and WeaponInst or nil
+
+		-- Refresh the model from the shape (handles shape changes on update).
+		local Model = GetAmmoModel(self:ACF_GetUserVar("Shape"))
+		self.ACF.Model = Model
+		self:SetScaledModel(Model)
 
 		UpdateCrate(self, Data, Class, Weapon, Ammo)
 
-		ACF.RestoreEntity(self)
+		-- Persist the clamped projectile counts back into the serialized field set.
+		self:ACF_SetUserVar("CrateProjectilesX", Data.CrateProjectilesX)
+		self:ACF_SetUserVar("CrateProjectilesY", Data.CrateProjectilesY)
+		self:ACF_SetUserVar("CrateProjectilesZ", Data.CrateProjectilesZ)
 
-		if Class.OnUpdate then
-			Class.OnUpdate(self, Data, Class, Weapon, Ammo)
-		end
-
-		HookRun("ACF_OnUpdateEntity", "acf_ammo", self, Data, Class, Weapon, Ammo)
-
-		if Data.Weapon ~= OldWeapon or Caliber ~= OldCaliber or self.Unlinkable then
-			for Entity in pairs(self.Weapons) do
-				self:Unlink(Entity)
-			end
-
-			Extra = " All weapons have been unlinked."
-		else
-			local Count = 0
-			for Entity in pairs(self.Weapons) do
-				if Blacklist[Entity.Class] then
-					self:Unlink(Entity)
-
-					Entity:Unload()
-
-					Count = Count + 1
+		-- Unlink weapons that can no longer use this crate (legacy ENT:Update tail).
+		if self.Weapons and next(self.Weapons) then
+			if Data.Weapon ~= OldWeapon or self.Caliber ~= OldCaliber or self.Unlinkable then
+				for W in pairs(self.Weapons) do
+					self:Unlink(W)
+				end
+			else
+				local Blacklist = Ammo.Blacklist
+				for W in pairs(self.Weapons) do
+					if Blacklist[W.Weapon] then
+						self:Unlink(W)
+						W:Unload()
+					end
 				end
 			end
-
-			if Count > 0 then
-				Extra = " Unlinked " .. Count .. " weapons from this crate."
-			end
 		end
-
-		return true, "Crate updated successfully." .. Extra
 	end
 
-	function ENT:OnRemove()
+	-- Remove-only teardown. Captured by AutoRegisterV2 as OrigOnRemove; the generated OnRemove still
+	-- runs ACF_OnEntityLast + WireLib cleanup around this.
+	function ENT:OnRemove(IsFullUpdate)
+		if IsFullUpdate then return end
+
 		local Class = self.ClassData
 
-		if Class.OnLast then
+		if Class and Class.OnLast then
 			Class.OnLast(self, Class)
 		end
-
-		HookRun("ACF_OnEntityLast", "acf_ammo", self, Class)
 
 		ActiveCrates[self] = nil
 
@@ -547,33 +475,19 @@ do -- Spawn/Update/Remove
 			self.RoundData:OnLast(self)
 		end
 
-		if self.Damaged then
+		if self.ACF.Health == 0 then
 			timer.Remove("ACF Crate Cookoff " .. self:EntIndex())
 
 			self:Detonate()
 		end
 
-		for K in pairs(self.Weapons) do
-			self:Unlink(K)
-		end
-
-		if self.BaseClass.OnRemove then
-			self.BaseClass.OnRemove(self)
+		if self.Weapons then
+			for K in pairs(self.Weapons) do
+				self:Unlink(K)
+			end
 		end
 	end
 
-	function ENT:OnResized(Size)
-		local A = ACF.ContainerArmor * ACF.MmToInch
-		local ExteriorVolume = Size.x * Size.y * Size.z
-		local InteriorVolume = math.max(0, (Size.x - 2 * A) * (Size.y - 2 * A) * (Size.z - 2 * A))
-
-		local Volume = ExteriorVolume - InteriorVolume
-		local Mass   = Volume * 0.13
-
-		self.EmptyMass = Mass
-	end
-
-	Entities.Register("acf_ammo", ACF.MakeAmmo, "Weapon", "Caliber", "AmmoType", "AmmoShape", "Size", "AmmoStage", "CrateProjectilesX", "CrateProjectilesY", "CrateProjectilesZ")
 
 	ACF.RegisterLinkSource("acf_ammo", "Weapons")
 end
@@ -581,9 +495,11 @@ end
 do -- Overlay
 	function ENT:ACF_UpdateOverlayState(State)
 		local Tracer = self.BulletData.Tracer ~= 0 and "-T" or ""
-		local AmmoType = self.BulletData.Type .. Tracer
+		local AmmoType = ACF.GetLegacyStyleClassName(self.BulletData.AmmoType) .. Tracer
 
-		if next(self.Weapons) then
+		if self.ACF.Health == 0 then
+			State:AddError("Destroyed")
+		elseif next(self.Weapons) then
 			if self:CanConsume() then
 				State:AddSuccess("Providing Ammo")
 			elseif self.Amount ~= 0 then
@@ -599,13 +515,16 @@ do -- Overlay
 		local CountY = self.CrateProjectilesY
 		local CountZ = self.CrateProjectilesZ
 
-		if AmmoInfo and AmmoInfo ~= "" then
-			AmmoInfo = AmmoInfo
-		end
-
 		State:AddDivider()
 		State:AddSize("Storage (in projectiles)", CountX, CountY, CountZ)
 		State:AddKeyValue("Ammo Type", AmmoType)
+		State:AddKeyValue("Two Piece", self.BulletData.TwoPiece and "Yes" or "No")
+		State:AddKeyValue("Hex Packing", self:ACF_GetUserVar("HexPacking") and "Yes" or "No")
+
+		local Layout = ACF.GetDrumLayout(self:ACF_GetUserVar("Shape"))
+		if Layout then
+			State:AddKeyValue("Layout", Layout.Name)
+		end
 		State:AddProgressBar("Contents", self.Amount, self.Capacity)
 
 		local BulletData = self.BulletData
@@ -614,19 +533,36 @@ do -- Overlay
 		State:AddHeader("Bullet Info", 2)
 
 		local Caliber = math.Round(BulletData.Caliber * 10, 2)
-		local Length  = math.Round(BulletData.ProjLength + BulletData.PropLength, 2)
+		local ShellDiameter = math.Round(BulletData.CaseDiameter * 10, 2)
+		local Length  = math.Round(BulletData.RoundLength or (BulletData.ProjLength + BulletData.PropLength), 2)
 		if self.IsMissileAmmo then
-			local Class    	= Classes.GetGroup(Classes.Missiles, BulletData.Id)
-			local Weapon    = Class and Class.Lookup[BulletData.Id]
-			local Round 	= Weapon and Weapon.Round
-			Length = Round.ActualLength * ACF.InchToCm
-		end
-		State:AddKeyValue("Shell dimensions", Caliber .. "mm x " .. Length .. "cm")
+			local MissileClass = Classes.GetSubtypeByName("ACF.Missiles.BaseMissile", BulletData.WeaponType)
+			local Round        = MissileClass and MissileClass.Round
 
-		local IdealReloadTime = math.Round(ACF.CalcReloadTime(Caliber, self.Class, self.Weapon, self.BulletData, self.Override), 2)
-		local IdealMagReloadTime = math.Round(ACF.CalcReloadTimeMag(self.Caliber, self.Class, self.Weapon, self.BulletData, {MagSize = self.MagSize}), 2)
-		State:AddKeyValue("Ideal Reload Time", IdealReloadTime .. " s")
-		State:AddKeyValue("Ideal Mag Reload Time", IdealMagReloadTime .. " s")
+			if Round and Round.ActualLength then
+				Length = Round.ActualLength * ACF.InchToCm
+			end
+
+			-- Use estimated missile muzzle velocity instead
+			if Round then
+				BulletData.MuzzleVel = ACF.MissileMuzzleVel(MissileClass.NoThrust, Round, BulletData.ProjMass, BulletData.PropMass)
+			end
+		end
+
+		State:AddKeyValue("Shell dimensions", ShellDiameter .. "mm x " .. Length .. "cm")
+
+		local HasMag = ACF.GetWeaponValue("MagReload", Caliber, self.ClassData, self.WeaponData)
+
+		-- Per-round reload only matters without a magazine, and not for belt feds (cyclic RPM is their only timing)
+		if not HasMag and not self.IsBelted then
+			local IdealReloadTime = math.Round(ACF.CalcReloadTime(Caliber, self.ClassData, self.WeaponData, self.BulletData, self.Override), 2)
+			State:AddKeyValue("Ideal Reload Time", IdealReloadTime .. " s")
+		end
+
+		if HasMag then
+			local IdealMagReloadTime = math.Round(ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData, {MagSize = self.Amount}), 2)
+			State:AddKeyValue("Ideal Mag Reload Time", IdealMagReloadTime .. " s")
+		end
 
 		State:AddNumber("Cartridge Mass", Cartridge, " kg", 2)
 		State:AddNumber("Projectile Mass", Projectile, " kg", 2)

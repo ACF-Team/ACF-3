@@ -1,0 +1,12 @@
+"VertexLitGeneric"
+{
+	"$basetexture" "models/missiles/AIM54"
+	"$surfaceprop" "metal"
+	"$envmap" "env_cubemap"
+	"$envmaptint" "[ .25 .25 .30 ]"
+
+	"$model" 1
+	"$HalfLambert" 1
+}
+
+

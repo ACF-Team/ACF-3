@@ -1,6 +1,19 @@
 local ACF = ACF
 local Notify = ACF.Utilities.Notify
 
+do -- Combat state
+	local CombatTimeout = 30 / engine.TickInterval() -- 30 seconds
+
+	--- Whether an entity's contraption has fired a weapon or taken prop damage recently.
+	--- Shared by anything that should pause while a vehicle is actively fighting (crew health
+	--- regen, supply crate resupplying).
+	--- @param Entity table Any entity belonging to the contraption to check
+	function ACF.IsContraptionInCombat(Entity)
+		local Contraption = Entity:CFW_GetContraption()
+		return Contraption and Contraption.InCombat and (engine.TickCount() - Contraption.InCombat) < CombatTimeout
+	end
+end
+
 -- 16 Segments font created by ThorType
 -- Huge thanks to LiddulBOFH to help me get it working
 -- Source: https://www.dafont.com/16-segments.font
@@ -992,12 +1005,11 @@ do
 	end
 
 	function ACF.EnforceBaseplateType(Entity, AllowedType)
-		AllowedType = ACF.Classes.BaseplateTypes.Get(AllowedType)
 		local Baseplate = ACF.GetEntityBaseplate(Entity)
 		if IsValid(Baseplate) then
-			local Type = Baseplate:ACF_GetUserVar("BaseplateType")
+			local Type = Baseplate:ACF_GetUserVar("BaseplateType"):GetType()
 			if Type ~= AllowedType then
-				Notify.WarningToPlayer(Entity:CPPIGetOwner(), string.format("%s was removed due to being on an invalid baseplate type", tostring(Entity)), string.format("Got %s, expected %s", Type and Type.ID or "none", AllowedType.ID))
+				Notify.WarningToPlayer(Entity:CPPIGetOwner(), string.format("%s was removed due to being on an invalid baseplate type", tostring(Entity)), string.format("Got %s, expected %s", ACF.Classes.GetTypeName(Type), AllowedType))
 				Entity:Remove()
 				return
 			end

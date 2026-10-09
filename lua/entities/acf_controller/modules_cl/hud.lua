@@ -3,37 +3,58 @@ local ScrH = ScrH
 local SetDrawColor = surface.SetDrawColor
 local DrawRect = surface.DrawRect
 local DrawText = draw.DrawText
+local SimpleText = draw.SimpleText
 local DrawLine = surface.DrawLine
 local DrawOutlinedRect = surface.DrawOutlinedRect
 local DrawCircle = surface.DrawCircle
 
-local AmmoTypes    = ACF.Classes.AmmoTypes
+local Classes      = ACF.Classes
 
 local TraceLine = util.TraceLine
 local CurTime = CurTime
 
+local MAX_RADAR_TARGET_SCREEN_DIST = 200 -- Screen pixels, targets past this can't be selected, so moving off them disengages the lock
+
+local NUM_WEAPONS = ENT.NUM_WEAPONS
+
+-- Shared by the HUD readouts (reload rings, ammo text) and the ammo type selector below
+local WeaponNWPrefixes = {"AHS_Primary", "AHS_Secondary", "AHS_Tertiary"}
+
 return function(State)
+    -- Hardest hitting ammo first, name breaks ties so the order stays stable
+    local function SortByPenetration(A, B)
+        if A.MaxPen == B.MaxPen then return A.Name < B.Name end
+        return A.MaxPen > B.MaxPen
+    end
+
     -- Receive ammo count info from server
     net.Receive("ACF_Controller_Ammo", function()
         local Ent = net.ReadEntity()
-        local AmmoType = net.ReadString()
+        local WeaponSlot = net.ReadUInt(2)
+        local AmmoName = net.ReadString()
+        local RoundID = net.ReadString()
+        local MaxPen = net.ReadUInt(16)
         local AmmoCount = net.ReadUInt(16)
 
         if not IsValid(Ent) then return end
 
-        Ent.PrimaryAmmoCountsByType = Ent.PrimaryAmmoCountsByType or {}
-        if not Ent.PrimaryAmmoCountsByType[AmmoType] then
-            Ent.PrimaryAmmoCountsByType[AmmoType] = 0
+        Ent.AmmoByWeaponAndName = Ent.AmmoByWeaponAndName or {}
+        Ent.AmmoSortedByWeapon = Ent.AmmoSortedByWeapon or {}
+        local ByName = Ent.AmmoByWeaponAndName[WeaponSlot] or {}
+        Ent.AmmoByWeaponAndName[WeaponSlot] = ByName
 
-            Ent.MaterialsByType = Ent.MaterialsByType or {}
-            local IconName = AmmoTypes.Get(AmmoType).SpawnIcon -- Something bad has happened if this doesn't work
-            Ent.MaterialsByType[AmmoType] = Material(IconName)
+        local Ammo = ByName[AmmoName]
+        if not Ammo then
+            local IconName = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", RoundID).SpawnIcon -- Something bad has happened if this doesn't work
+            Ammo = {Name = AmmoName, RoundID = RoundID, MaxPen = MaxPen, Material = Material(IconName), Count = 0}
+            ByName[AmmoName] = Ammo
 
-            Ent.TypesSorted = Ent.TypesSorted or {}
-            table.insert(Ent.TypesSorted, AmmoType)
-            table.sort(Ent.TypesSorted)
+            local Sorted = Ent.AmmoSortedByWeapon[WeaponSlot] or {}
+            table.insert(Sorted, Ammo)
+            table.sort(Sorted, SortByPenetration)
+            Ent.AmmoSortedByWeapon[WeaponSlot] = Sorted
         end
-        Ent.PrimaryAmmoCountsByType[AmmoType] = AmmoCount
+        Ammo.Count = AmmoCount
     end)
 
     net.Receive("ACF_Controller_Receivers", function()
@@ -66,17 +87,21 @@ return function(State)
         Ent.TargetVelocity = TargetVelocity
     end)
 
-    local function SelectAmmoType(Index)
+    local function SelectAmmo(WeaponSlot, Index)
         if State.MyController:GetDisableAmmoSelect() then return end
-        local NewAmmoType = State.MyController.TypesSorted and State.MyController.TypesSorted[Index] or nil
-        local ForceSwitch = State.MyController.SelectedAmmoType == NewAmmoType
-        if not NewAmmoType then return end
+        local Sorted = State.MyController.AmmoSortedByWeapon
+        local NewAmmo = Sorted and Sorted[WeaponSlot] and Sorted[WeaponSlot][Index] or nil
+        if not NewAmmo then return end
+
+        State.MyController.SelectedAmmoNameByWeapon = State.MyController.SelectedAmmoNameByWeapon or {}
+        local ForceSwitch = State.MyController.SelectedAmmoNameByWeapon[WeaponSlot] == NewAmmo.Name
         net.Start("ACF_Controller_Ammo")
         net.WriteUInt(State.MyController:EntIndex(), MAX_EDICT_BITS)
-        net.WriteString(NewAmmoType)
+        net.WriteUInt(WeaponSlot, 2)
+        net.WriteString(NewAmmo.Name)
         net.WriteBool(ForceSwitch)
         net.SendToServer()
-        State.MyController.SelectedAmmoType = NewAmmoType
+        State.MyController.SelectedAmmoNameByWeapon[WeaponSlot] = NewAmmo.Name
     end
 
     local function SelectRadarTarget()
@@ -87,16 +112,30 @@ return function(State)
         net.SendToServer()
     end
 
-    hook.Add("PlayerButtonDown", "ACFControllerSeatButtonDown", function(_, Button)
-        if not IsFirstTimePredicted() then return end
+    local function OnButtonDown(Button)
         if not IsValid(State.MyController) then return end
 
-        -- Autogenerate keys for ammo selection. KEY_1 = 2
-        for i = 1, 9 do
-            if Button == i + 1 then SelectAmmoType(i) end
+        -- Keys 1-9 are handed out across each weapon's ammo types in slot order. KEY_1 = 2
+        local AllSorted = State.MyController.AmmoSortedByWeapon
+        local KeyIndex = 0
+        for WeaponSlot = 1, NUM_WEAPONS do
+            local Sorted = AllSorted and AllSorted[WeaponSlot]
+            for i = 1, #(Sorted or {}) do
+                KeyIndex = KeyIndex + 1
+                if Button == KeyIndex + 1 then SelectAmmo(WeaponSlot, i) end
+            end
         end
+    end
 
-        if Button == KEY_F then SelectRadarTarget() end
+    -- Relayed by modules_sh/binds_sh.lua, which owns the driver's button input in both realms
+    hook.Add("ACF_ControllerButton", "ACFControllerAmmoKeys", function(Button, Down)
+        if Down then OnButtonDown(Button) end
+    end)
+
+    hook.Add("ACF_ControllerBindChanged", "ACFControllerRadarLock", function(ActionID, Down)
+        if ActionID ~= "RadarLock" or not Down then return end
+        if not IsValid(State.MyController) then return end
+        SelectRadarTarget()
     end)
 
     local rangerTrace = {}
@@ -166,7 +205,7 @@ return function(State)
         end
     end
 
-    local function DrawPictograph(mat, text, font, x, y, scale, col_fg, col_bg, col_sh)
+    local function DrawPictograph(mat, text, font, x, y, scale, col_fg, col_bg, col_sh, subtext)
         surface.SetDrawColor(col_sh)
         surface.DrawRect(x, y, 40 * scale, 40 * scale)
         surface.SetDrawColor(col_bg)
@@ -175,12 +214,24 @@ return function(State)
         surface.SetMaterial(mat)
         surface.DrawTexturedRect(x + 4 * scale, y + 4 * scale, 32 * scale, 32 * scale)
         DrawText(text, font, x + 4 * scale, y + 4 * scale, col_bg, TEXT_ALIGN_LEFT)
+        if subtext then SimpleText(subtext, font, x + 4 * scale, y + 38 * scale, col_bg, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM) end
     end
 
     -- HUD RELATED
     local white = Color(255, 255, 255, 255)
     local dimmed = Color(150, 150, 150, 255)
     local shade = Color(0, 0, 0, 200)
+
+    local CachedHUDMaterialPath
+    local CachedHUDMaterial
+    local function GetHUDMaterial(Path)
+        if Path ~= CachedHUDMaterialPath then
+            CachedHUDMaterialPath = Path
+            CachedHUDMaterial = Material(Path)
+        end
+        return CachedHUDMaterial
+    end
+
     hook.Add( "HUDPaintBackground", "ACFAddonControllerHUD", function()
         if not IsValid(State.MyController) then return end
 
@@ -198,6 +249,17 @@ return function(State)
         SetDrawColor( Col )
 
         if State.MyController:GetDisableAIOHUD() then return end -- Disable hud if not enabled
+
+        -- If a HUD material is set, draw it as an overlay and skip building the rest of the HUD
+        local HUDMaterialPath = State.MyController:GetHUDMaterial()
+        if HUDMaterialPath ~= "" then
+            local Mat = GetHUDMaterial(HUDMaterialPath)
+            local w, h = Mat:Width() * Scale, Mat:Height() * Scale
+            surface.SetMaterial(Mat)
+            surface.SetDrawColor(Col)
+            surface.DrawTexturedRect(x - w / 2, y - h / 2, w, h)
+            return
+        end
 
         local Font = GetFont(Scale)
 
@@ -224,7 +286,7 @@ return function(State)
             local TertiaryTimeLeft = math.Round(State.MyController:GetNWFloat("AHS_Tertiary_NF", 0) - CurTime(), 2)
             DrawText(TertiaryTimeLeft > 0 and TertiaryTimeLeft or "0.00", Font, x + 10 * Scale, y + 90 * Scale, Col, TEXT_ALIGN_LEFT)
 
-            for Index, Prefix in pairs({ "AHS_Primary", "AHS_Secondary", "AHS_Tertiary" }) do
+            for Index, Prefix in pairs(WeaponNWPrefixes) do
                 local Ready = State.MyController:GetNWBool(Prefix .. "_RD", false)
                 local TimeLeft = Ready and 0 or math.max(math.Round(State.MyController:GetNWFloat(Prefix .. "_NF", 0) - CurTime(), 2), 0)
                 local Progress = 1 - (TimeLeft / State.MyController:GetNWFloat(Prefix .. "_RT", 0))
@@ -284,7 +346,7 @@ return function(State)
             -- Ammo type | Ammo count | Time left
             SetDrawColor( Col )
 
-            for Index, Prefix in pairs({"AHS_Primary", "AHS_Secondary", "AHS_Tertiary"}) do
+            for Index, Prefix in pairs(WeaponNWPrefixes) do
                 local AmmoType, AmmoCount = State.MyController:GetNWString(Prefix .. "_AT", ""), State.MyController:GetNWInt(Prefix .. "_SL", 0)
                 DrawText(AmmoType .. " | " .. AmmoCount, Font, x - 330 * Scale, y + (190 + Index * 20) * Scale, Col, TEXT_ALIGN_RIGHT)
                 local Ready = State.MyController:GetNWBool(Prefix .. "_RD", false)
@@ -317,21 +379,37 @@ return function(State)
             local ax, ay = x + 360 * Scale, y - 246 * Scale
             DrawPictograph(CrewMaterial, State.MyController:GetNWInt("AHS_Crew"), Font, ax, ay, Scale, white, Col, shade)
 
-            local LoadedAmmoType = State.MyController:GetNWString("AHS_Primary_AT", "")
-            for Index, AmmoType in pairs(State.MyController.TypesSorted or {}) do
-                local Material = State.MyController.MaterialsByType[AmmoType] or ""
-                local AmmoCount = State.MyController.PrimaryAmmoCountsByType[AmmoType] or 0
-                local ax = x - 400 * Scale + (46 * (Index - 1) * Scale)
-                local ay = y - 246 * Scale
+            local AllSorted = State.MyController.AmmoSortedByWeapon
+            local SelectedAmmoNameByWeapon = State.MyController.SelectedAmmoNameByWeapon or {}
 
-                -- Outline currently selected ammo type
-                if AmmoType == State.MyController.SelectedAmmoType then
-                    surface.SetDrawColor(Col)
-                    surface.DrawOutlinedRect(ax - 2 * Scale, ay - 2 * Scale, 44 * Scale, 44 * Scale)
+            -- Icons within a weapon sit at the usual spacing, groups between weapons get an extra gap
+            local IconSpacing = 46 * Scale
+            local GroupGap = 20 * Scale
+            local OffsetX = 0
+            for WeaponSlot = 1, NUM_WEAPONS do
+                local Sorted = AllSorted and AllSorted[WeaponSlot]
+                if Sorted and #Sorted > 0 then
+                    if OffsetX > 0 then OffsetX = OffsetX + GroupGap end
+
+                    local LoadedAmmoType = State.MyController:GetNWString(WeaponNWPrefixes[WeaponSlot] .. "_AT", "")
+                    for _, Ammo in ipairs(Sorted) do
+                        local ax = x - 400 * Scale + OffsetX
+                        local ay = y - 246 * Scale
+
+                        -- Outline currently selected ammo
+                        if Ammo.Name == SelectedAmmoNameByWeapon[WeaponSlot] then
+                            surface.SetDrawColor(Col)
+                            surface.DrawOutlinedRect(ax - 2 * Scale, ay - 2 * Scale, 44 * Scale, 44 * Scale)
+                        end
+
+                        -- Penetration tells apart entries sharing an ammo type
+                        local MaxPen = Ammo.MaxPen > 0 and Ammo.MaxPen or nil
+                        local Lighting = Ammo.RoundID == LoadedAmmoType and white or dimmed
+                        DrawPictograph(Ammo.Material, Ammo.Count, Font, ax, ay, Scale, Lighting, Col, shade, MaxPen)
+
+                        OffsetX = OffsetX + IconSpacing
+                    end
                 end
-
-                local Lighting = AmmoType == LoadedAmmoType and white or dimmed
-                DrawPictograph(Material, AmmoCount, Font, ax, ay, Scale, Lighting, Col, shade)
             end
         end
 
@@ -358,11 +436,11 @@ return function(State)
         local radius = 10 * Scale
         SetDrawColor(Col2)
         local MinTargetID = nil
-        local MinTargetDist = math.huge
+        local MinTargetDist = MAX_RADAR_TARGET_SCREEN_DIST ^ 2
         for ID, Data in pairs(State.MyController.RadarData or {}) do
             local SP = Data[1]:ToScreen()
 
-            -- Find closest target to center of screen
+            -- Find closest target to center of screen, within range so moving off-target disengages the lock
             local Dist = (SP.x - x) ^ 2 + (SP.y - y) ^ 2
             if Dist < MinTargetDist then MinTargetDist = Dist MinTargetID = ID end
 

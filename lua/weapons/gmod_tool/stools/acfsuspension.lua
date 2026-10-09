@@ -40,6 +40,7 @@ if CLIENT then
 
 	CreateClientConVar("acf_sus_tool_makespherical", 1, true, true)
 	CreateClientConVar("acf_sus_tool_disablecollisions", 1, true, true)
+	CreateClientConVar("acf_sus_tool_doublesocket", 0, true, true)
 
 	CreateClientConVar("acf_sus_tool_limiterlength", 40, true, true)
 
@@ -274,6 +275,11 @@ elseif SERVER then -- Serverside-only stuff
 		return constraint.AdvBallsocket(Wheel, Plate, 0, 0, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, -180, MinTol, MinTol, 180, MaxTol, MaxTol, 0, 0, 0, 1, 0)
 	end
 
+	--- Inverted variant used for extra reenforcement for wheeled vehicles
+	local function HullSocket2(Wheel, Plate)
+		return constraint.AdvBallsocket(Wheel, Plate, 0, 0, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, -180, MaxTol, MaxTol, 180, MinTol, MinTol, 0, 0, 0, 1, 0)
+	end
+
 	--- Creates a adv ballsocket constraint between the wheel and its drive wheel
 	--- This forces the wheel to rotate freely, with the drive wheel
 	local function SlaveSocket(Wheel, DriveWheel)
@@ -421,6 +427,7 @@ elseif SERVER then -- Serverside-only stuff
 		-- Handle makespherical / disable collisions BEFORE making the constraints
 		local IsSpherical = tonumber(Player:GetInfo("acf_sus_tool_makespherical"))
 		local IsDisableCollisions = tonumber(Player:GetInfo("acf_sus_tool_disablecollisions"))
+		local IsDoubleSocket = tonumber(Player:GetInfo("acf_sus_tool_doublesocket"))
 		for Wheel, _ in pairs(Selections.Wheels or EmptyTable) do
 			if not IsValid(Wheel) and checkOwner(Player, Wheel) then continue end
 
@@ -488,6 +495,8 @@ elseif SERVER then -- Serverside-only stuff
 
 					if LimiterLength > 0 then Rope(Wheel, Baseplate, Vector(0, 0, 0), Baseplate:WorldToLocal(Wheel:GetPos()), LimiterLength, false) end
 				end
+
+				if IsDoubleSocket == 1 then HullSocket2(Wheel, Plate) end
 			end
 		end
 

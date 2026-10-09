@@ -12,7 +12,7 @@ E2Lib.RegisterExtension("acf", true)
 --===============================================================================================--
 
 local ACF       = ACF
-local AmmoTypes = ACF.Classes.AmmoTypes
+local Classes   = ACF.Classes
 local Clock     = ACF.Utilities.Clock
 local Notify    = ACF.Utilities.Notify
 local match     = string.match
@@ -167,7 +167,7 @@ e2function number entity:acfIsAmmo()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	return this.IsACFAmmoCrate and 1 or 0
+	return this.IsACFAmmo and 1 or 0
 end
 
 -- Returns 1 if the entity is an ACF fuel tank
@@ -175,7 +175,7 @@ e2function number entity:acfIsFuel()
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	return this.IsACFFuelTank and 1 or 0
+	return this.IsACFFueltank and 1 or 0
 end
 
 -- Returns the capacity of an acf ammo crate or fuel tank
@@ -222,17 +222,6 @@ e2function number entity:acfPropHealth()
 	return Health and Round(Health, 2) or 0
 end
 
--- Returns the current armor of an entity
-e2function number entity:acfPropArmor()
-	if not validPhysics(this) then return 0 end
-	if RestrictInfo(self, this) then return 0 end
-	if not ACF.Check(this) then return 0 end
-
-	local Armor = this.ACF.Armour
-
-	return Armor and Round(Armor, 2) or 0
-end
-
 -- Returns the max health of an entity
 e2function number entity:acfPropHealthMax()
 	if not validPhysics(this) then return 0 end
@@ -242,17 +231,6 @@ e2function number entity:acfPropHealthMax()
 	local MaxHealth = this.ACF.MaxHealth
 
 	return MaxHealth and Round(MaxHealth, 2) or 0
-end
-
--- Returns the max armor of an entity
-e2function number entity:acfPropArmorMax()
-	if not validPhysics(this) then return 0 end
-	if RestrictInfo(self, this) then return 0 end
-	if not ACF.Check(this) then return 0 end
-
-	local MaxArmor = this.ACF.MaxArmour
-
-	return MaxArmor and Round(MaxArmor, 2) or 0
 end
 
 -- Returns the current health percentage of an entity
@@ -266,26 +244,88 @@ e2function number entity:acfPropHealthPercent()
 	return PercHealth and Round(PercHealth, 2) or 0
 end
 
--- Returns the current armor percentage of an entity
-e2function number entity:acfPropArmorPercent()
+-- Returns the current health of a specific convex of an entity
+e2function number entity:acfConvexHealth(number ConvexID)
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not ACF.Check(this) then return 0 end
 
-	local PercArmor = this.ACF.Armour / this.ACF.MaxArmour
+	local MeshData = this.ACF_Volumetric_Mesh
+	if not MeshData then return 0 end
 
-	return PercArmor and Round(PercArmor, 2) or 0
+	local Convex = MeshData.Convexes[floor(ConvexID)]
+	if not Convex then return 0 end
+
+	return Round(Convex.Health, 2)
 end
 
--- Returns the ductility of an entity
-e2function number entity:acfPropDuctility()
+-- Returns the max health of a specific convex of an entity
+e2function number entity:acfConvexHealthMax(number ConvexID)
 	if not validPhysics(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
-	if not ACF.Check(this) then return 0 end
 
-	local Ductility = this.ACF.Ductility
+	local MeshData = this.ACF_Volumetric_Mesh
+	if not MeshData then return 0 end
 
-	return Ductility and Ductility * 100 or 0
+	local Convex = MeshData.Convexes[floor(ConvexID)]
+	if not Convex then return 0 end
+
+	return Round(Convex.MaxHealth, 2)
+end
+
+-- Returns the health percentage of a specific convex of an entity
+e2function number entity:acfConvexHealthPercent(number ConvexID)
+	if not validPhysics(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+
+	local MeshData = this.ACF_Volumetric_Mesh
+	if not MeshData then return 0 end
+
+	local Convex = MeshData.Convexes[floor(ConvexID)]
+	if not Convex or Convex.MaxHealth == 0 then return 0 end
+
+	return Round(Convex.Health / Convex.MaxHealth, 2)
+end
+
+-- Returns the number of convexes of an entity
+e2function number entity:acfConvexCount()
+	if not validPhysics(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+
+	local MeshData = this.ACF_Volumetric_Mesh
+	if not MeshData then return 0 end
+
+	return #MeshData.Convexes
+end
+
+-- Returns the material of a specific convex of an entity
+e2function string entity:acfConvexMaterial(number ConvexID)
+	if not validPhysics(this) then return "" end
+	if RestrictInfo(self, this) then return "" end
+
+	local MeshData = this.ACF_Volumetric_Mesh
+	if not MeshData then return "" end
+
+	local Convex = MeshData.Convexes[floor(ConvexID)]
+	if not Convex then return "" end
+
+	return Convex.Material or ""
+end
+
+-- Returns the materials of all convexes of an entity, indexed by convex ID
+e2function array entity:acfConvexMaterials()
+	if not validPhysics(this) then return {} end
+	if RestrictInfo(self, this) then return {} end
+
+	local MeshData = this.ACF_Volumetric_Mesh
+	if not MeshData then return {} end
+
+	local Result = {}
+
+	for ConvexID, Convex in ipairs(MeshData.Convexes) do
+		Result[ConvexID] = Convex.Material or ""
+	end
+
+	return Result
 end
 
 __e2setcost(10)
@@ -301,10 +341,10 @@ e2function number ranger:acfEffectiveArmor()
 	if RestrictInfo(self, this.Entity) then return 0 end
 	if not ACF.Check(this.Entity) then return 0 end
 
-	local Armor    = this.Entity.ACF.Armour
-	local HitAngle = ACF.GetHitAngle(this, this.HitPos - this.StartPos)
+	local Direction = (this.HitPos - this.StartPos):GetNormalized()
+	local ConvexHit = ACF.GetConvexHit(this.Entity, this.HitPos, Direction)
 
-	return Round(Armor / math.abs(math.cos(math.rad(HitAngle))), 2)
+	return ConvexHit and Round(ConvexHit.GeoThick, 2) or 0
 end
 
 __e2setcost(20)
@@ -807,7 +847,7 @@ e2function number entity:acfFuel()
 	return Round(Fuel, 2)
 end
 
--- Returns the amount of fuel in an ACF fuel tank or linked to engine as a percentage of capacity
+-- Returns the amount of fuel in an ACF fuel tank or available to an engine as a percentage of capacity
 e2function number entity:acfFuelLevel()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
@@ -958,12 +998,12 @@ e2function number entity:acfTotalAmmoCount()
 	return Count
 end
 
--- Returns the magazine size for an ACF gun
+-- Returns the magazine size for an ACF gun, or the rounds it can currently fire if it has no magazine (belt feds, single-shot)
 e2function number entity:acfMagSize()
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
 
-	return this.MagSize or 0
+	return this.MagSize or this.CurrentShot or 0
 end
 
 -- Returns the number of rounds left in a magazine for an ACF gun
@@ -989,7 +1029,7 @@ e2function number entity:acfSpread()
 
 	local Spread = (this.GetSpread and this:GetSpread()) or this.Spread or 0
 
-	if this.BulletData and this.BulletData.Type == "FL" then
+	if this.BulletData and this.BulletData.AmmoType == "ACF.Ammunition.FL" then
 		return Spread + (this.BulletData.FlechetteSpread or 0)
 	end
 
@@ -1045,7 +1085,7 @@ e2function string entity:acfRoundType()
 
 	local BulletData = this.BulletData
 
-	return BulletData and BulletData.Id or ""
+	return ACF.GetLegacyStyleClassName(BulletData and BulletData.WeaponType or "")
 end
 
 -- Returns the type of ammo in a crate or gun
@@ -1055,7 +1095,7 @@ e2function string entity:acfAmmoType()
 
 	local BulletData = this.BulletData
 
-	return BulletData and BulletData.Type or ""
+	return ACF.GetLegacyStyleClassName(BulletData and BulletData.AmmoType or "")
 end
 
 -- Returns the caliber of an ammo
@@ -1160,7 +1200,7 @@ e2function number entity:acfPenetration()
 	if RestrictInfo(self, this) then return 0 end
 
 	local BulletData = this.BulletData
-	local AmmoType   = BulletData and AmmoTypes.Get(BulletData.Type)
+	local AmmoType   = BulletData and Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.AmmoType)
 
 	if not AmmoType then return 0 end
 
@@ -1176,7 +1216,7 @@ e2function number entity:acfBlastRadius()
 	if RestrictInfo(self, this) then return 0 end
 
 	local BulletData = this.BulletData
-	local AmmoType   = BulletData and AmmoTypes.Get(BulletData.Type)
+	local AmmoType   = BulletData and Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.AmmoType)
 
 	if not AmmoType then return 0 end
 

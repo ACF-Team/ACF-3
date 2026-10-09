@@ -1,0 +1,17 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "models\missiles/6pod_cover_heat"
+	$bumpmap "models\missiles/6pod_cover_heat_b"
+	$normalmap "models\missiles/6pod_cover_heat_b"
+	
+	
+	"$model" "1"
+	"$halflambert" 			1
+	$blendtintbybasealpha		1
+	$surfaceprop	metal
+
+	"$phong" "1"
+	"$phongboost" "2"
+	"$phongfresnelranges" "[.15 .5 1]"
+	$phongexponent			5			// either/or
+}

@@ -8,161 +8,80 @@ include("shared.lua")
 local ACF			= ACF
 local Contraption	= ACF.Contraption
 local Classes		= ACF.Classes
-local Utilities		= ACF.Utilities
-local HookRun		= hook.Run
+
+local DefaultType = "ACF.Turrets.Motor.Electric"
 
 do	-- Spawn and Update funcs
-	local WireIO	= Utilities.WireIO
-	local Entities	= Classes.Entities
-	local Turrets	= Classes.Turrets
-
-	local Outputs	= {
-		"Entity (The turret motor itself.) [ENTITY]"
-	}
-
-	local function VerifyData(Data)
-		if not Data.Motor then Data.Motor = Data.Id end
-
-		local Class = Classes.GetGroup(Turrets, Data.Motor)
-
-		if not Class then
-			Class = Turrets.Get("2-Motor")
-
-			Data.Destiny		= "TurretMotors"
-			Data.Motor			= "Motor-ELC"
-		end
-
-		local Motor = Turrets.GetItem(Class.ID, Data.Motor)
-
-		if not Motor then
-			Motor = Turrets.GetItem(Class.ID, "Motor-ELC")
-		end
-
-		Data.ID		= Motor.ID
-
-		Data.CompSize	= math.Clamp(Data.CompSize, Motor.ScaleLimit.Min, Motor.ScaleLimit.Max)
-
-		Data.Teeth		= math.Clamp(math.Round(Data.Teeth), Motor.Teeth.Min, Motor.Teeth.Max)
-	end
-
-	------------------
-
-	local function GetMass(Motor, Data)
-		local SizePerc = Data.CompSize ^ 2
+	local function GetMass(Motor, Size)
+		local SizePerc = Size ^ 2
 		return math.Round(math.max(Motor.Mass * SizePerc, 5), 1)
 	end
 
-	local function UpdateMotor(Entity, Data, Class, Motor)
-		local Model		= Motor.Model
-		local Size		= Data.CompSize
+	function ENT.ACF_CheckSpawnLimit(Player)
+		return Player:CheckLimit("_acf_turret")
+	end
 
-		Entity:SetScaledModel(Model)
-		Entity:SetScale(Size)
-
-		Entity.ACF.Model	= Model
-		Entity.Name			= Motor.Name
-		Entity.ShortName	= Motor.ID
-		Entity.EntType		= Class.Name
-		Entity.ClassData	= Class
-		Entity.Class		= Class.ID
-		Entity.CompSize		= Size
-		Entity.Motor		= Data.Motor
-		Entity.Active		= true
-		Entity.SoundPath	= Motor.Sound
-		Entity.DefaultSound	= Motor.Sound
-
-		Entity.Torque		= Class.GetTorque(Motor, Size)
-		Entity.Teeth		= Data.Teeth
-		Entity.Efficiency	= Motor.Efficiency
-		Entity.Speed		= Motor.Speed
-		Entity.Accel		= Motor.Accel
-		Entity.ValidPlacement	= false
-
-		Entity.ScaledArmor	= math.max(math.Round(5 * (Size ^ 1.2), 1), 2)
-
-		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Motor)
-
-		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
-		Entity:SetNWString("Class", Entity.Class)
-
-		for _, v in ipairs(Entity.DataStore) do
-			Entity[v] = Data[v]
+	function ENT:ACF_PostSpawn(Player)
+		if IsValid(Player) then
+			Player:AddCount("_acf_turret", self)
 		end
-
-		ACF.Activate(Entity, true)
-
-		Entity.DamageScale	= math.max((Entity.ACF.Health / (Entity.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
-
-		Contraption.SetMass(Entity, GetMass(Motor, Data))
 	end
 
-	function ACF.MakeTurretMotor(Player, Pos, Angle, Data)
-		VerifyData(Data)
+	function ENT:ACF_PreSpawn(_, _, _, Data)
+		self.ACF = {}
 
-		local Class = Classes.GetGroup(Turrets, Data.Motor)
-		local Limit	= Class.LimitConVar.Name
+		local Sel   = Data and Data.Motor
+		local Class = Classes.GetTypeByName(Sel and Sel.Type or DefaultType) or Classes.GetTypeByName(DefaultType)
 
-		if not Player:CheckLimit(Limit) then return end
-
-		local Motor	= Turrets.GetItem(Class.ID, Data.Motor)
-
-		local CanSpawn	= HookRun("ACF_PreSpawnEntity", "acf_turret_motor", Player, Data, Class, Motor)
-
-		if CanSpawn == false then return end
-
-		local Entity = ents.Create("acf_turret_motor")
-
-		if not IsValid(Entity) then return end
-
-		Player:AddCleanup(Class.Cleanup, Entity)
-		Player:AddCount(Limit, Entity)
-
-		Entity.ACF				= {}
-
-		Contraption.SetModel(Entity, Motor.Model)
-
-		Entity:SetAngles(Angle)
-		Entity:SetPos(Pos)
-		Entity:Spawn()
-
-		Entity.DataStore		= Entities.GetArguments("acf_turret_motor")
-
-		UpdateMotor(Entity, Data, Class, Motor)
-
-		HookRun("ACF_OnSpawnEntity", "acf_turret_motor", Entity, Data, Class, Motor)
-
-		return Entity
+		self:SetScaledModel(Class.Model)
 	end
 
-	Entities.Register("acf_turret_motor", ACF.MakeTurretMotor, "Motor", "CompSize", "Teeth")
+	function ENT:ACF_PostUpdateEntityData()
+		local Motor = self:ACF_GetUserVar("Motor")
+		local Class = Motor:GetType()
+		local Group = Classes.GetBaseClass(Class)
+		local Size  = self:ACF_GetUserVar("CompSize")
+		local Teeth = self:ACF_GetUserVar("Teeth")
+		local Model = Motor.Model
 
-	function ENT:Update(Data)
-		VerifyData(Data)
+		self:SetScaledModel(Model)
+		self:SetScale(Size)
 
-		local Class = Classes.GetGroup(Turrets, Data.Motor)
-		local Motor	= Turrets.GetItem(Class.ID, Data.Motor)
-		local OldClass	= self.ClassData
+		self.ACF.Model      = Model
+		self.Name           = Motor.Name
+		self.ShortName      = Motor.ID
+		self.EntType        = Group.Name
+		self.Class          = Group.ID
+		self.CompSize       = Size
+		self.Motor          = Motor.ID
+		self.Active         = true
+		self.SoundPath      = Motor.Sound
+		self.DefaultSound   = Motor.Sound
 
-		local CanUpdate, Reason	= HookRun("ACF_PreUpdateEntity", "acf_turret_motor", self, Data, Class, Motor)
+		self.Torque         = Group.GetTorque(Motor, Size)
+		self.Teeth          = Teeth
+		self.Efficiency     = Motor.Efficiency
+		self.Speed          = Motor.Speed
+		self.Accel          = Motor.Accel
+		self.ValidPlacement = false
 
-		if CanUpdate == false then return CanUpdate, Reason end
+		self.ScaledArmor    = math.max(math.Round(5 * (Size ^ 1.2), 1), 2)
 
-		HookRun("ACF_OnEntityLast", "acf_turret_motor", self, OldClass)
+		self:ACF_SetEntityName("ACF " .. self.Name)
+		self:SetNWString("Class", self.Class)
 
-		ACF.SaveEntity(self)
+		-- ACF.Activate(self, true) is invoked automatically by ACF_UpdateEntityData after this.
 
-		UpdateMotor(self, Data, Class, Motor)
+		local Health    = self.ACF.Health
+		local MaxHealth = self.ACF.MaxHealth
+		self.DamageScale = (Health and MaxHealth) and math.max((Health / (MaxHealth * 0.75)) - 0.25 / 0.75, 0) or 1
 
-		ACF.RestoreEntity(self)
-
-		HookRun("ACF_OnUpdateEntity", "acf_turret_motor", self, Data, Class, Motor)
+		Contraption.SetMass(self, GetMass(Motor, Size))
 
 		if IsValid(self.Turret) then
 			self.Turret:UpdateTurretSlew()
 			self:ValidatePlacement()
 		end
-
-		return true, "Motor updated successfully!"
 	end
 end
 
@@ -207,25 +126,6 @@ do	-- Metamethods and other important stuff
 			self.DamageScale = math.max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
 
 			if self.Turret then self.Turret:UpdateTurretSlew() end
-		end
-
-		function ENT:ACF_Activate(Recalc)
-			local PhysObj	= self.ACF.PhysObj
-			local Area		= PhysObj:GetSurfaceArea() * ACF.InchToCmSq
-			local Armour	= self.ScaledArmor
-			local Health	= Area / ACF.Threshold
-			local Percent	= 1
-
-			if Recalc and self.ACF.Health and self.ACF.MaxHealth then
-				Percent = self.ACF.Health / self.ACF.MaxHealth
-			end
-
-			self.ACF.Area		= Area
-			self.ACF.Health		= Health * Percent
-			self.ACF.MaxHealth	= Health
-			self.ACF.Armour		= Armour * (0.5 + Percent * 0.5)
-			self.ACF.MaxArmour	= Armour
-			self.ACF.Type		= "Prop"
 		end
 
 		function ENT:SetActive(Active, Reason)

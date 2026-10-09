@@ -1,0 +1,5 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "models\missiles/rw61m"
+	"$model" "1"
+}

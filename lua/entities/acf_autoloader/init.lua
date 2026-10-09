@@ -8,16 +8,13 @@ ENT.ACF_KillableButIndestructible = true
 local ACF         = ACF
 local TraceLine   = util.TraceLine
 local Classes     = ACF.Classes
-local HookRun     = hook.Run
+local Sounds      = ACF.Utilities.Sounds
 
 util.AddNetworkString("ACF_Autoloader_Links")
+util.AddNetworkString("ACF_Autoloader_AmmoLinks")
 
 -- Converts shell scale to model scale
 local RefSize = Vector(43.233333587646, 7.2349619865417, 7.2349619865417)
-
-function ENT.ACF_OnVerifyClientData(ClientData)
-	ClientData.AutoloaderSize = Vector(ClientData.AutoloaderLength / RefSize.x * 10, ClientData.AutoloaderCaliber / RefSize.y, ClientData.AutoloaderCaliber / RefSize.z) / ACF.InchToMm
-end
 
 function ENT:ACF_PreSpawn()
 	self:SetScaledModel("models/acf/autoloader_tractorbeam.mdl")
@@ -34,13 +31,21 @@ function ENT:ACF_PreSpawn()
 	self.OverlayWarnings = {}
 end
 
-function ENT:ACF_PostUpdateEntityData(ClientData)
-	self:SetScale(ClientData.AutoloaderSize)
+function ENT:ACF_PostUpdateEntityData()
+	local RefX, RefY, RefZ = RefSize:Unpack()
+	local Length = self:ACF_GetUserVar("AutoloaderLength")
+	local Caliber = self:ACF_GetUserVar("AutoloaderCaliber")
+	self.AutoloaderSize = Vector(Length / RefX * 10, Caliber / RefY, Caliber / RefZ) / ACF.InchToMm
+
+	self:SetScale(self.AutoloaderSize)
 
 	-- Mass is proportional to volume of the shell
-	local R, H = ClientData.AutoloaderSize.y, ClientData.AutoloaderSize.x
+	local R, H = self.AutoloaderSize.y, self.AutoloaderSize.x
 	local Volume = math.pi * R * R * H
 	ACF.Contraption.SetMass(self, Volume * 250)
+
+	-- Share the AmmoCrates LUT with ACF_LiveData so Serialize reads from Instance[Field.Name]
+	self.AmmoCrates = self.ACF_LiveData.AmmoCrates
 end
 
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
@@ -56,6 +61,7 @@ end
 -- Arm to gun links
 ACF.RegisterClassPreLinkCheck("acf_autoloader", "acf_gun", function(This, Gun)
 	if IsValid(This.Gun) or Gun.Autoloader then return false, "Autoloader is already linked to that gun." end
+	if Gun.IsBelted then return false, "Belt fed weapons don't link to autoloaders!" end
 	return true
 end)
 
@@ -67,6 +73,7 @@ end)
 ACF.RegisterClassLink("acf_autoloader", "acf_gun", function(This, Gun)
 	This.Gun = Gun
 	Gun.Autoloader = This
+	if This.ACF_LiveData then This.ACF_LiveData.Gun = Gun end
 	BroadcastEntity("ACF_Autoloader_Links", This, Gun, true)
 	return true, "Autoloader linked successfully."
 end)
@@ -75,6 +82,7 @@ ACF.RegisterClassUnlink("acf_autoloader", "acf_gun", function(This, Gun)
 	if not IsValid(This.Gun) or not Gun.Autoloader then return false, "Autoloader was not linked to that gun." end
 	This.Gun = nil
 	Gun.Autoloader = nil
+	if This.ACF_LiveData then This.ACF_LiveData.Gun = nil end
 	BroadcastEntity("ACF_Autoloader_Links", This, Gun, false)
 	return true, "Autoloader unlinked successfully."
 end)
@@ -93,6 +101,7 @@ end)
 ACF.RegisterClassLink("acf_autoloader", "acf_rack", function(This, Rack)
 	This.Gun = Rack
 	Rack.Autoloader = This
+	if This.ACF_LiveData then This.ACF_LiveData.Gun = Rack end
 	return true, "Autoloader linked successfully."
 end)
 
@@ -100,6 +109,7 @@ ACF.RegisterClassUnlink("acf_autoloader", "acf_rack", function(This, Rack)
 	if not IsValid(This.Gun) or not Rack.Autoloader then return false, "Autoloader was not linked to that rack." end
 	This.Gun = nil
 	Rack.Autoloader = nil
+	if This.ACF_LiveData then This.ACF_LiveData.Gun = nil end
 	return true, "Autoloader unlinked successfully."
 end)
 
@@ -116,13 +126,13 @@ ACF.RegisterClassLinkCheck("acf_autoloader", "acf_ammo", function(This, Ammo)
 	if not ACF.AllowArbitraryParents and Ammo:GetParent() ~= This:GetParent() then return false, "Autoloader and ammo must share the same parent." end
 
 	local BulletData = Ammo.BulletData
-	local Caliber = BulletData.Caliber
-	local Length = BulletData.ProjLength + BulletData.PropLength
+	local Caliber = BulletData.CaseDiameter -- Necked cases are wider than their bore, so the case is what has to fit
+	local Length = BulletData.RoundLength or (BulletData.ProjLength + BulletData.PropLength)
+	if BulletData.TwoPiece then Length = Length * 0.5 end
 	if Ammo.IsMissileAmmo then
-		local Class    	= Classes.GetGroup(Classes.Missiles, BulletData.Id)
-		local Weapon    = Class and Class.Lookup[BulletData.Id]
+		local Weapon    = Classes.GetSubtypeByName("ACF.Missiles.BaseMissile", BulletData.WeaponType)
 		local Round 	= Weapon and Weapon.Round
-		Length = Round.ActualLength * ACF.InchToCm
+		if Round then Length = Round.ActualLength * ACF.InchToCm end
 	end
 
 	if BulletData and (Caliber - 0.01) > This:ACF_GetUserVar("AutoloaderCaliber") / 10 then return false, "Ammo is too wide for this autoloader." end
@@ -133,6 +143,7 @@ end)
 ACF.RegisterClassLink("acf_autoloader", "acf_ammo", function(This, Ammo)
 	This.AmmoCrates[Ammo] = true
 	Ammo.Autoloaders[This] = true
+	BroadcastEntity("ACF_Autoloader_AmmoLinks", This, Ammo, true)
 	return true, "Autoloader linked successfully."
 end)
 
@@ -141,33 +152,47 @@ ACF.RegisterClassUnlink("acf_autoloader", "acf_ammo", function(This, Ammo)
 	if not This.AmmoCrates[Ammo] or not Ammo.Autoloaders[This] then return false, "Autoloader was not linked to that ammo." end -- TODO: refactor when link API is refactored
 	This.AmmoCrates[Ammo] = nil
 	Ammo.Autoloaders[This] = nil
+	BroadcastEntity("ACF_Autoloader_AmmoLinks", This, Ammo, false)
 	return true, "Autoloader unlinked successfully."
 end)
 
 local TraceConfig = {start = Vector(), endpos = Vector(), filter = nil}
 
+--- Calculates the reload efficiency of this autoloader for a gun and an ammo crate
+--- @return number # The reload efficiency, always a usable value
+--- @return boolean # Whether the autoloader currently can't load at all, which stalls the reload
+--- @return string # Why the autoloader is blocked, nil when it isn't
 function ENT:GetReloadEffAuto(Gun, Ammo)
-	if not IsValid(Gun) or not IsValid(Ammo) then return 0.0000001 end
+	if not IsValid(Gun) then return ACF.AutoloaderFallbackCoef, true, "Reloading is stalled, the autoloader has no weapon to feed" end
+	-- A weapon that has never loaded has no crate to measure against, which is not a blockage
+	if not IsValid(Ammo) then return ACF.AutoloaderFallbackCoef, false end
 
+	local Blocked = false
+	local Reason
 	local BreechPos = Gun:LocalToWorld(Gun.BreechPos)
 	local BreechAng = Gun:LocalToWorldAngles(Gun.BreechAng)
-	-- debugoverlay.Cross(BreechPos, 5, 5, Color(255, 0, 0), true)
-	-- debugoverlay.Cross(BreechPos + BreechAng:Forward() * 10, 5, 5, Color(255, 0, 0), true)
+	local GunForward = Gun:GetForward()
+	-- Debug.Cross(BreechPos, 5, 5, Color(255, 0, 0), true)
+	-- Debug.Cross(BreechPos + BreechAng:Forward() * 10, 5, 5, Color(255, 0, 0), true)
 
 	local AutoloaderPos = self:GetPos()
 	local AmmoPos = Ammo:GetPos()
 
-	-- TODO: maybe check position too later?
+	-- Autoloader must sit where the magazine would feed from...
 	local DiffNorm = (BreechPos - AutoloaderPos):GetNormalized()
-	local GunDiffAngle = math.deg(math.acos(DiffNorm:Dot(BreechAng:Forward())))
-	local ALDiffAngle = math.deg(math.acos(DiffNorm:Dot(self:GetForward())))
-	local GunArmAngle = GunDiffAngle + ALDiffAngle
+	local PositionAngle = math.deg(math.acos(math.Clamp(DiffNorm:Dot(BreechAng:Forward()), -1, 1)))
+	-- ...but ram shells in the same direction the gun fires them
+	local RamAngle = math.deg(math.acos(math.Clamp(self:GetForward():Dot(GunForward), -1, 1)))
+	local GunArmAngle = PositionAngle + RamAngle
 	local GunArmAngleAligned = GunArmAngle < ACF.AutoloaderMaxAngleDiff
-	self.OverlayWarnings.GunArmAlignment = not GunArmAngleAligned and "Autoloader is not aligned\nWith the breech of: " .. (tostring(Gun) or "<INVALID ENTITY???>") .. "\nDeviation: " .. math.Round(GunArmAngle, 2) .. ", Acceptable: " .. ACF.AutoloaderMaxAngleDiff or nil
+	self.OverlayErrors.GunArmAlignment = not GunArmAngleAligned and "Autoloader is not aligned\nWith the breech of: " .. (tostring(Gun) or "<INVALID ENTITY???>") .. "\nDeviation: " .. math.Round(GunArmAngle, 2) .. ", Acceptable: " .. ACF.AutoloaderMaxAngleDiff or nil
 	self:UpdateOverlay()
-	if not GunArmAngleAligned then return 0.000001 end
+	if not GunArmAngleAligned then
+		Blocked = true
+		Reason = "Reloading is stalled, the autoloader is not aligned with the breech"
+	end
 
-	TraceConfig.filter = function(x) return not (x == self or x == Gun or x == Ammo or x == self:GetParent() or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or x.IsACFMissile or ACF.GlobalFilter[x:GetClass()]) end
+	TraceConfig.filter = function(x) return not (x == self or x == Gun or x == Ammo or x == self:GetParent() or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or x.IsACFMissile or self.AmmoCrates[x] or ACF.GlobalFilter[x:GetClass()]) end
 
 	-- Check LOS from arm to breech is unobstructed
 	TraceConfig.start = AutoloaderPos
@@ -175,7 +200,10 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	local TraceResult = TraceLine(TraceConfig)
 	self.OverlayErrors.ArmBreechLOS = TraceResult.Hit and "Autoloader cannot see the breech\nOf: " .. (tostring(Gun) or "<INVALID ENTITY???>") .. "\nBlocked by " .. (tostring(TraceResult.Entity) or "<INVALID ENTITY???>") or nil
 	self:UpdateOverlay()
-	if TraceResult.Hit then return 0.000001 end
+	if TraceResult.Hit then
+		Blocked = true
+		Reason = "Reloading is stalled, the autoloader cannot reach the breech"
+	end
 
 	-- Check LOS from arm to ammo is unobstructed
 	TraceConfig.start = AutoloaderPos
@@ -183,7 +211,10 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	TraceResult = TraceLine(TraceConfig)
 	self.OverlayErrors.ArmAmmoLOS = TraceResult.Hit and "Autoloader cannot see the ammo\nOf: " .. (tostring(Ammo) or "<INVALID ENTITY???>") .. "\nBlocked by " .. (tostring(TraceResult.Entity) or "<INVALID ENTITY???>") or nil
 	self:UpdateOverlay()
-	if TraceResult.Hit then return 0.000001 end
+	if TraceResult.Hit then
+		Blocked = true
+		Reason = "Reloading is stalled, the autoloader cannot reach the ammo"
+	end
 
 	self.OverlayErrors.MountPoint = Gun.IsACFRack and table.Count(Gun.MountPoints) ~= 1 and "Autoloader is linked to a rack with\nMultiple mount points, which is unsupported." or nil
 
@@ -193,44 +224,42 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	-- Gun to ammo
 	local AmmoMoveOffset = self:WorldToLocal(Ammo:GetPos())
 	local AmmoDirection = Ammo:LocalToWorldAngles(Ammo.ExtraData.LocalAng):Forward()
-	local AmmoAngleDiff = math.deg(math.acos(self:GetForward():Dot(AmmoDirection)))
+	local AmmoAngleDiff = math.deg(math.acos(math.Clamp(self:GetForward():Dot(AmmoDirection), -1, 1)))
 
 	local HorizontalScore = ACF.Normalize(math.abs(GunMoveOffset.x) + math.abs(AmmoMoveOffset.x) + math.abs(GunMoveOffset.y) + math.abs(AmmoMoveOffset.y), ACF.AutoloaderWorstDistHorizontal, ACF.AutoloaderBestDistHorizontal)
 	local VerticalScore = ACF.Normalize(math.abs(GunMoveOffset.z) + math.abs(AmmoMoveOffset.z), ACF.AutoloaderWorstDistVertical, ACF.AutoloaderBestDistVertical)
 	local AngularScore = ACF.Normalize(AmmoAngleDiff, ACF.AutoloaderWorstDistAngular, ACF.AutoloaderBestDistAngular)
 
-	if AngularScore <= 0 then self.OverlayWarnings.AngularScore = "Autoloader or ammo are probably backwards or greatly misaligned." end
+	self.OverlayWarnings.AngularScore = AngularScore <= 0 and "Autoloader or ammo are probably backwards or greatly misaligned." or nil
 
 	local HealthScore = self.ACF.Health / self.ACF.MaxHealth
-	return 2 * HorizontalScore * VerticalScore * AngularScore * HealthScore
+	return 1 * HorizontalScore * VerticalScore * AngularScore * HealthScore, Blocked, Reason
 end
 
-function ENT:ACF_Activate(Recalc)
-	local PhysObj	= self.ACF.PhysObj
-	local Area		= PhysObj:GetSurfaceArea() * ACF.InchToCmSq
-	local Armour	= 1
-	local Health	= (Area / ACF.Threshold) * 0.5
-	local Percent	= 1
+--- Plays the autoloader's sound once per reload, when loading actually begins
+--- Meant to be called from the linked weapon's reload loop, after its UpdateLoadMod
+--- @param Weapon entity The gun or rack being reloaded
+--- @param Config table The reload's progress timer config, nil on instant reloads
+--- @param Blocked boolean Whether the reload is currently stalled
+function ENT:PlayLoadSound(Weapon, Config, Blocked)
+	if Blocked or not Config or Config.LoadSoundPlayed then return end
 
-	if Recalc and self.ACF.Health and self.ACF.MaxHealth then
-		Percent = self.ACF.Health / self.ACF.MaxHealth
-	end
+	Config.LoadSoundPlayed = true
 
-	self.ACF.Area		= Area
-	self.ACF.Health		= Health * Percent
-	self.ACF.MaxHealth	= Health
-	self.ACF.Armour		= Armour * Percent
-	self.ACF.MaxArmour	= Armour
-	self.ACF.Type		= "Prop"
+	-- Crew-loaded reloads stay silent, UpdateLoadMod decides who is doing the loading
+	if not Weapon.AutoloaderFeeding then return end
+
+	local Path = self:ACF_GetUserVar("SoundPath")
+	if not Path or Path == "" then return end
+
+	Sounds.SendSound(self, Path, 70, 100 * self:ACF_GetUserVar("SoundPitch"), self:ACF_GetUserVar("SoundVolume"))
 end
 
 function ENT:GetCost()
-	local AutoloaderSize = self:GetScale()
+	-- Based on caliber rather than volume, so long/short autoloaders of the same caliber cost the same
+	local Caliber = self:ACF_GetUserVar("AutoloaderCaliber")
 
-	local R, H = AutoloaderSize.y, AutoloaderSize.x
-	local Volume = math.pi * R * R * H
-
-	return Volume * 2
+	return Caliber * 0.2
 end
 
 function ENT:Think()
@@ -240,9 +269,15 @@ function ENT:Think()
 	local LinkedToCrate = AmmoCrate and IsValid(AmmoCrate)
 
 	if LinkedToGun and LinkedToCrate then
-		self.EstimatedEfficiency = self:GetReloadEffAuto(Gun, AmmoCrate, true)
+		local Efficiency, Blocked, Reason = self:GetReloadEffAuto(Gun, AmmoCrate)
+
+		-- Clamped like the gun does, so the estimate matches what the weapon will do
+		self.EstimatedEfficiency = math.Clamp(Efficiency, ACF.AutoloaderFallbackCoef, ACF.AutoloaderMaxBonus)
+		self.LoadBlocked = Blocked
+		self.OverlayWarnings.LoadBlocked = Blocked and Reason or nil
 		self.EstimatedReload = ACF.CalcReloadTime(Gun.Caliber, Gun.ClassData, Gun.WeaponData, AmmoCrate.BulletData, Gun) / self.EstimatedEfficiency
-		self.EstimatedReloadMag = ACF.CalcReloadTimeMag(Gun.Caliber, Gun.ClassData, Gun.WeaponData, AmmoCrate.BulletData, Gun) / self.EstimatedEfficiency
+		-- Only guns with a magazine have a meaningful magazine reload
+		self.EstimatedReloadMag = Gun.MagReload and ACF.CalcReloadTimeMag(Gun.Caliber, Gun.ClassData, Gun.WeaponData, AmmoCrate.BulletData, Gun) / self.EstimatedEfficiency or nil
 	end
 
 	self.OverlayErrors.LinkedToGun = not LinkedToGun and "Not linked to a weapon!" or nil
@@ -264,51 +299,12 @@ function ENT:ACF_UpdateOverlayState(State)
 	State:AddNumber("Max Shell Caliber (mm)", self:ACF_GetUserVar("AutoloaderCaliber"))
 	State:AddNumber("Max Shell Length (cm)", self:ACF_GetUserVar("AutoloaderLength"))
 	State:AddNumber("Estimated Reload (s)", math.Round(self.EstimatedReload or 0, 4))
-	State:AddNumber("Estimated Magazine Reload (s)", math.Round(self.EstimatedReloadMag or 0, 4))
-end
-
--- Adv Dupe 2 Related
-do
-	-- Hopefully we can improve this when the codebase is refactored.
-	function ENT:PreEntityCopy()
-		if IsValid(self.Gun) then
-			duplicator.StoreEntityModifier(self, "ACFGun", {self.Gun:EntIndex()})
-		end
-
-		if next(self.AmmoCrates) then
-			local Entities = {}
-			for Ent in pairs(self.AmmoCrates) do Entities[#Entities + 1] = Ent:EntIndex() end
-			duplicator.StoreEntityModifier(self, "ACFAmmoCrates", Entities)
-		end
-
-		-- Wire dupe info
-		self.BaseClass.PreEntityCopy(self)
-	end
-
-	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
-		local EntMods = Ent.EntityMods
-		if EntMods and EntMods.ACFGun then
-			local Gun = CreatedEntities[EntMods.ACFGun[1]]
-			if IsValid(Gun) then self:Link(Gun) end
-		end
-
-		if EntMods and EntMods.ACFAmmoCrates then
-			for _, EntIndex in ipairs(EntMods.ACFAmmoCrates) do
-				local Ammo = CreatedEntities[EntIndex]
-				if IsValid(Ammo) then self:Link(Ammo) end
-			end
-		end
-
-		--Wire dupe info
-		self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
-	end
-
-	function ENT:OnRemove()
-		HookRun("ACF_OnEntityLast", "acf_autoloader", self)
-		if IsValid(self.Gun) then self:Unlink(self.Gun) end
-		for v, _ in pairs(self.AmmoCrates) do self:Unlink(v) end
-		WireLib.Remove(self)
+	if self.EstimatedReloadMag then
+		State:AddNumber("Estimated Magazine Reload (s)", math.Round(self.EstimatedReloadMag, 4))
 	end
 end
 
-ACF.Classes.Entities.Register()
+function ENT:OnRemove()
+	if IsValid(self.Gun) then self:Unlink(self.Gun) end
+	for Ammo in pairs(self.AmmoCrates) do self:Unlink(Ammo) end
+end

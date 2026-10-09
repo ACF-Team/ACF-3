@@ -1,0 +1,65 @@
+local ACF     = ACF
+local Classes = ACF.Classes
+
+Classes.DefineClass("ACF.Missiles.Fuze.Optical", "ACF.Missiles.Fuze.Contact", function(CLASS, BASE)
+	CLASS.Name = "Optical"
+	CLASS.MinDistance = 40
+	CLASS.MaxDistance = 2500
+
+	MENU_FIELD("Number", "FuzeDistance", {Default = 0})
+
+	function CLASS:WriteDisplayConfig(State)
+		BASE.WriteDisplayConfig(self, State)
+		State:AddSubKeyValue("Distance", math.Round(self.Distance * ACF.InchToMeter, 2) .. " m")
+	end
+
+	-- Shared so the ammo menu can price missile rounds clientside.
+	function CLASS:GetCost()
+		return 1
+	end
+
+	if CLIENT then
+		CLASS.Description = "This fuze fires a beam directly ahead and detonates when the beam hits something close-by. Distance in inches."
+
+		function CLASS:AddMenuControls(Base, ToolData, ...)
+			BASE.AddMenuControls(self, Base, ToolData, ...)
+
+			local Distance = Base:AddSlider("Fuze Distance", self.MinDistance, self.MaxDistance, 2)
+			ACF.MissileMenu.FuzeSlider(Distance, "FuzeDistance")
+		end
+	else
+		local TraceData = { start = true, endpos = true, filter = true }
+		local Trace     = ACF.trace
+
+
+		function CLASS:VerifyData(Weapon)
+			BASE.VerifyData(self, Weapon)
+
+			self.FuzeDistance = math.Clamp(self.FuzeDistance or 0, self.MinDistance, self.MaxDistance)
+		end
+
+		function CLASS:OnFirst(Entity)
+			BASE.OnFirst(self, Entity)
+
+			self.Distance = self.FuzeDistance
+		end
+
+		function CLASS:GetDetonate(Missile)
+			if not self:IsArmed() then return false end
+
+			local Position = Missile:GetPos()
+
+			TraceData.start = Position
+			TraceData.endpos = Position + Missile:GetForward() * self.Distance
+			TraceData.filter = Missile.Filter or { Missile }
+
+			return Trace(TraceData).Hit
+		end
+
+		function CLASS:OnLast(Entity)
+			BASE.OnLast(self, Entity)
+
+			Entity.FuzeDistance = nil
+		end
+	end
+end)

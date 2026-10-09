@@ -87,7 +87,7 @@ do -- Menu population functions
 	ACF.AddMenuOption(102, "#acf.menu.permissions", "gun")
 	ACF.AddMenuOption(201, "#acf.menu.entities", "brick")
 	ACF.AddMenuOption(9999, "#acf.menu.fun", "bricks")
-	ACF.AddMenuOption(100000, "#acf.menu.scanner", "magnifier")
+	ACF.AddMenuOption(100000, "Tools", "wrench_orange")
 end
 
 
@@ -274,10 +274,19 @@ do -- ACF Menu context panel
 			Node.Parent.Selected = Node
 			self.Selected = Node
 
-			ACF.SetToolMode("acf_menu", "Main", "Idle")
-			ACF.SetClientData("Destiny")
+			-- Reset new-framework tool state; a new-style page's Action re-sets it below.
+			if ACF.Menu then
+				ACF.Menu.ActivePage         = nil
+				ACF.Menu.ActiveInstructions = nil
 
-			Menu:ClearPostBuildFns()
+				-- Leaving the page drops any link selection (mirrors the old linker's OnExitOp).
+				if ACF.Menu.SendLinkClear then ACF.Menu.SendLinkClear() end
+
+				-- Release the framework ghost now (before the next page's op may create its own).
+				local Tool = LocalPlayer():GetTool("acf_menu")
+				if Tool and Tool.ReleaseMenuGhost then Tool:ReleaseMenuGhost() end
+			end
+
 			Menu:ClearTemporal()
 			Menu:StartTemporal()
 
@@ -285,7 +294,6 @@ do -- ACF Menu context panel
 			xpcall(function() Node.Action(Menu) end, function(err) ErrorNoHaltWithStack(err) end)
 
 			Menu:EndTemporal()
-			Menu:ExecutePostBuildFns()
 		end
 
 		PopulateTree(Tree)

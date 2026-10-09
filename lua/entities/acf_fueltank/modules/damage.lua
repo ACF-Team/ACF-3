@@ -11,9 +11,9 @@ local HookRun = hook.Run
 function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	local HitRes    = Damage.doPropDamage(self, DmgResult, DmgInfo)
 	local Inflictor = DmgInfo:GetInflictor()
-	local NoExplode = self.FuelType == "Diesel"
 
-	if self.Exploding or NoExplode or not self.IsExplosive then return HitRes end
+	-- Non-explosive fuel types (e.g. diesel, which sets IsExplosive = false) never cook off.
+	if self.Exploding or not self.IsExplosive then return HitRes end
 
 	local Attacker  = DmgInfo:GetAttacker()
 
@@ -74,8 +74,12 @@ function ENT:Detonate()
 	Damage.createExplosion(Position, Explosive, Explosive * 0.5, { self }, DmgInfo)
 	Damage.explosionEffect(Position, nil, Explosive)
 
-	constraint.RemoveAll(self)
-	self:Remove()
+	self.Leaking = 0
+	self.ACF.Health = 0
+
+	self:SetAmount(0)
+	self:Disable()
+	self:UpdateOverlay(true)
 end
 
 --- Only runs when the tank is leaking

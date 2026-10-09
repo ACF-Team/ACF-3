@@ -18,16 +18,12 @@ AddCSLuaFile("modules_cl/camera.lua")
 AddCSLuaFile("modules_cl/hud.lua")
 
 AddCSLuaFile("modules_sh/helpers_sh.lua")
+AddCSLuaFile("modules_sh/binds_sh.lua")
 
 -- Localizations
 local ACF = ACF
-local HookRun     = hook.Run
 local Utilities   = ACF.Utilities
-local WireIO      = Utilities.WireIO
 local Contraption = ACF.Contraption
-local hook	   = hook
-local Classes	= ACF.Classes
-local Entities   = Classes.Entities
 local MaxDistance  = ACF.LinkDistance * ACF.LinkDistance
 
 util.AddNetworkString("ACF_Controller_Links")	-- Relay links to client
@@ -38,282 +34,170 @@ util.AddNetworkString("ACF_Controller_Zoom")	-- Relay camera zooms
 util.AddNetworkString("ACF_Controller_Ammo")	-- Relay ammo counts
 util.AddNetworkString("ACF_Controller_Receivers")	-- Relay LWS/RWS data
 util.AddNetworkString("ACF_Controller_Radar")	-- Relay radar data
-
--- https://wiki.facepunch.com/gmod/Enums/IN
-local IN_ENUM_TO_WIRE_OUTPUT = {
-	[IN_FORWARD] = "W",
-	[IN_MOVELEFT] = "A",
-	[IN_BACK] = "S",
-	[IN_MOVERIGHT] = "D",
-	[IN_ATTACK] = "Mouse1",
-	[IN_ATTACK2] = "Mouse2",
-
-	[IN_RELOAD] = "R",
-	[IN_JUMP] = "Space",
-	[IN_SPEED] = "Shift",
-	[IN_ZOOM] = "Zoom",
-	[IN_WALK] = "Alt",
-	[IN_DUCK] = "Duck",
-}
+util.AddNetworkString("ACF_Controller_Button")	-- Forward button presses and releases to the client, PlayerButtonDown/Up don't fire client side in singleplayer
+util.AddNetworkString("ACF_Controller_Action")	-- Receive rebound keyboard actions from the client
 
 local Clock = Utilities.Clock
 local Defaults = include("modules/defaults.lua")
 include("modules_sh/helpers_sh.lua")
+include("modules_sh/binds_sh.lua") -- Reads the helpers above, and must precede the modules that register bind handlers
 
-local RecacheBindState = ENT.RecacheBindState
-local RecacheBindOutput = ENT.RecacheBindOutput
+local ControllerLinkRegistry = {}
+function ACF.RegisterControllerLink(Class, Config)
+	ControllerLinkRegistry[Class] = Config
+end
 
-include("modules/drivetrain.lua")
-include("modules/ammo.lua")
-include("modules/camera.lua")
-include("modules/hud.lua")
-include("modules/fire_control.lua")
-include("modules/overlay.lua")
+-- https://wiki.facepunch.com/gmod/Enums/IN
+local KEY_WIRE_BINDINGS = {
+	{ IN_FORWARD,   "W" },
+	{ IN_MOVELEFT,  "A" },
+	{ IN_BACK,      "S" },
+	{ IN_MOVERIGHT, "D" },
+	{ IN_ATTACK,    "Mouse1" },
+	{ IN_ATTACK2,   "Mouse2" },
+	{ IN_RELOAD,    "R" },
+	{ IN_JUMP,      "Space" },
+	{ IN_SPEED,     "Shift" },
+	{ IN_ZOOM,      "Zoom" },
+	{ IN_WALK,      "Alt" },
+	{ IN_DUCK,      "Duck" },
+}
+ACF.ControllerKeyBindings = KEY_WIRE_BINDINGS
+
+local Inputs = {
+	"Filter (Filters out entities from the camera trace) [ARRAY]",
+	"FLIR (Enables/disables FLIR while in the baseplate seat)",
+	"ParkingBrake (Enables brakes and disables mobility when 1, releases brakes and re-enables mobility when 0)"
+}
+
+local ADDITIONAL_OUTPUTS = {
+	"HitPos (The position the driver is looking at) [VECTOR]",
+	"CamAng (The direction of the camera.) [ANGLE]",
+	"CamIndex (The currently active camera index)",
+	"IsTurretLocked (Whether the turret is locked or not.)",
+	"Active",
+	"Speed (Determined by selected unit)",
+	"Driver (The player driving the vehicle.) [ENTITY]",
+	"CamParent (The entity the camera is parented to) [ENTITY]",
+	"Entity (The controller entity itself) [ENTITY]",
+}
+
+local Outputs = {}
+for _, Binding in ipairs(KEY_WIRE_BINDINGS) do
+	Outputs[#Outputs + 1] = Binding[2]
+end
+table.Add(Outputs, ADDITIONAL_OUTPUTS)
+
+ENT.ACF_StaticWireInputs  = Inputs
+ENT.ACF_StaticWireOutputs = Outputs
+
+local ModuleInits = {}
+local function RegisterServerModule(InitFn)
+	if InitFn then ModuleInits[#ModuleInits + 1] = InitFn end
+end
+
+RegisterServerModule(include("modules/seat.lua"))
+RegisterServerModule(include("modules/camera.lua"))
+RegisterServerModule(include("modules/fire_control.lua"))
+RegisterServerModule(include("modules/drivetrain.lua"))
+RegisterServerModule(include("modules/ammo.lua"))
+RegisterServerModule(include("modules/receivers.lua"))
+RegisterServerModule(include("modules/radar.lua"))
+RegisterServerModule(include("modules/hud.lua"))
+RegisterServerModule(include("modules/overlay.lua"))
 
 do
-	local Inputs = {
-		"Filter (Filters out entities from the camera trace) [ARRAY]",
-	}
-
-	local Outputs = {
-		"W", "A", "S", "D", "Mouse1", "Mouse2",
-		"R", "Space", "Shift", "Zoom", "Alt", "Duck",
-		"HitPos (The position the driver is looking at) [VECTOR]",
-		"CamAng (The direction of the camera.) [ANGLE]",
-		"IsTurretLocked (Whether the turret is locked or not.)",
-		"Active",
-		"Speed (Determined by selected unit)",
-		"Driver (The player driving the vehicle.) [ENTITY]",
-		"Entity (The controller entity itself) [ENTITY]",
-	}
-
-	local function VerifyData(Data)
-		if Data.AIOUseDefaults then
-			Data.AIODefaults = Defaults
+	-- Menu spawn requests the default network-var config; stash it for PostUpdate to apply.
+	function ENT.ACF_OnVerifyClientData(ClientData)
+		if ClientData.AIOUseDefaults then
+			ClientData.AIODefaults = Defaults
 		end
 	end
 
-	local function UpdateController(Entity, Data)
-		-- Update model info and physics
-		-- TODO: May need to change this depending on the dproperty stuff
-		Entity.ACF = Entity.ACF or {}
-		Entity.ACF.Model = "models/hunter/plates/plate025x025.mdl"
-		Entity:SetModel("models/hunter/plates/plate025x025.mdl")
-
-		Entity:PhysicsInit(SOLID_VPHYSICS)
-		Entity:SetMoveType(MOVETYPE_VPHYSICS)
-
-		for _, V in ipairs(Entity.DataStore) do Entity[V] = Data[V] end
-
-		Entity:SetNWString("WireName", "ACF All In One Controller") -- Set overlay wire entity name
-
-		ACF.Activate(Entity, true)
-
-		local PhysObj = Entity.ACF.PhysObj
-		if IsValid(PhysObj) then Contraption.SetMass(Entity, 1) end
+	function ENT.ACF_CheckSpawnLimit(Player)
+		return Player:CheckLimit("_acf_controller")
 	end
 
-	function ACF.MakeController(Player, Pos, Ang, Data)
-		VerifyData(Data)
+	function ENT:ACF_PreSpawn(Player)
+		self.ACF          = {}
+		self.Driver       = nil
+		self.Active       = false
+		self.KeyStates    = {}
+		self.ActionStates = {}
 
-		-- Creating the entity
-		if not Player:CheckLimit("_acf_controller") then return false end
+		self.ACF.Model = "models/hunter/plates/plate025x025.mdl"
+		self:SetModel("models/hunter/plates/plate025x025.mdl")
+		self:SetPlayer(Player)
 
-		local CanSpawn	= HookRun("ACF_PreSpawnEntity", "acf_controller", Player, Data)
-		if CanSpawn == false then return false end
-
-		local Entity = ents.Create("acf_controller")
-		if not IsValid(Entity) then return end
-
-		Entity:SetPlayer(Player)
-		Entity:SetAngles(Ang)
-		Entity:SetPos(Pos)
-		Entity:Spawn()
-
-		Player:AddCleanup("acf_controller", Entity)
-		Player:AddCount("_acf_controller", Entity)
-
-		Entity.Name = "ACF AIO Controller"
-		Entity.ShortName = "ACF AIO Controller"
-		Entity.EntType = "ACF AIO Controller"
-
-		-- Determined from links
-		Entity.Seat = nil					-- The single seat
-		Entity.Gearbox = nil				-- Main gearbox of the vehicle
-		Entity.Turrets = {}					-- Turrets, both horizontal and vertical
-		Entity.Guns = {}					-- All guns
-		Entity.Racks = {}					-- All racks
-		Entity.Baseplate = nil				-- The baseplate of the vehicle
-		Entity.SteerPlates = {}				-- Steering plates, if any
-		Entity.GuidanceComputer = nil		-- The guidance computer, if any
-		Entity.TurretComputer = nil			-- The turret computer, if any
-		Entity.Receivers = {}				-- LWR/RWRs
-		Entity.Radar = nil					-- Radar, if any
-		Entity.RadarVertical = nil			-- Radar vertical turret, if any
-
-		-- Determined automatically
-		Entity.Driver = nil					-- The player driving the vehicle
-		Entity.GunsPrimary = {}				-- Primary guns (Main gun, cannon, etc)
-		Entity.GunsSecondary = {}			-- Secondary guns (Machine guns, etc)
-		Entity.GunsSmoke = {}				-- Smoke and flare launchers
-		Entity.GearboxEnds = {}				-- Gearboxes connected to a wheel
-		Entity.GearboxIntermediates = {}	-- Or otherwise
-		Entity.Wheels = {}					-- Wheels
-		Entity.Engines = {}					-- Engines
-		Entity.Fuels = {}					-- Fuel tanks
-		Entity.SteerPlatesSorted = {}		-- Steer plates sorted by their position
-		Entity.SteerPhysicsObjects = {}		-- Steering physics objects
-
-		Entity.LeftGearboxes = {}			-- Gearboxes connected to the left drive wheel
-		Entity.RightGearboxes = {}			-- Gearboxes connected to the right drive wheel
-		Entity.LeftWheels = {}				-- Wheels connected to the left drive wheel
-		Entity.RightWheels = {}				-- Wheels connected to the right drive wheel
-
-		Entity.GearboxLeft = nil			-- A Gearbox connected to the left drive wheel
-		Entity.GearboxRight = nil			-- A Gearbox connected to the right drive wheel
-		Entity.GearboxLeftDir = nil			-- Direction of that left gearbox's output
-		Entity.GearboxRightDir = nil		-- Direction of that right gearbox's output
-
-		Entity.ControllerWelds = {}			-- Keep track of the welds we created
-
-		Entity.PrimaryAmmoCountsByType = {}
-
-		-- State and meta variables
-		Entity.TurretLocked = false			-- Whether the turret is locked or not
-		Entity.LargestCaliber = 0			-- Largest caliber gun of the vehicle
-		Entity.FuelCapacity = 0				-- Total fuel capacity of the vehicle
-		Entity.Active = false				-- Whether the controller is active or not
-
-		Entity.CamMode = 0					-- Camera mode (from client)
-		Entity.CamAng = Angle(0, 0, 0)		-- Camera angle (from client)
-		Entity.CamOffset = Vector() 		-- Camera offset (from client)
-		Entity.CamOrbit = 0					-- Camera orbit (from client)
-
-		Entity.KeyStates = {} 				-- Key states for the driver
-
-		Entity.SteerAngles = {} 			-- Steering angles for the wheels
-
-		Entity.ReceiverDirections = {}			-- LWS/RWS receiver angles
-		Entity.ReceiverDetecteds = {}			-- LWS/RWS receiver detected states
-
-		Entity.RadarUpdateRate = 7			-- How often to update the radar, in ticks.
-		Entity.SelectedTargetID = nil		-- Currently selected radar target ID
-		Entity.SelectedTargetPos = Vector()	-- Position of currently selected radar target
-		Entity.SelectedTargetVel = Vector()	-- Velocity of currently selected radar target
-
-		Entity.Speed = 0
-
-		Entity.Primary = nil
-		Entity.Secondary = nil
-		Entity.Tertiary = nil
-		Entity.Smoke = nil
-
-		Entity.GearboxEndCount = 1			-- Number of endpoint gearboxes
-
-		Entity.DataStore = Entities.GetArguments("acf_controller")
-
-		UpdateController(Entity, Data)
-
-		-- Finish setting up the entity
-		HookRun("ACF_OnSpawnEntity", "acf_controller", Entity, Data)
-
-		WireIO.SetupInputs(Entity, Inputs, Data)
-		WireIO.SetupOutputs(Entity, Outputs, Data)
-
-		if Data.AIODefaults then Entity:RestoreNetworkVars(Data.AIODefaults) end
-
-		ACF.AugmentedTimer(function(_) Entity:UpdateOverlay() end, function() return IsValid(Entity) end, nil, {MinTime = 1, MaxTime = 1})
-
-		return Entity
+		for _, Init in ipairs(ModuleInits) do Init(self) end
 	end
 
-	-- Bare minimum arguments to reconstruct an all-in-one controller
-	Entities.Register("acf_controller", ACF.MakeController)
+	function ENT:ACF_PostUpdateEntityData(ClientData)
+		self.ACF = self.ACF or {}
+		self.ACF.Model = "models/hunter/plates/plate025x025.mdl"
+		self:SetModel("models/hunter/plates/plate025x025.mdl")
 
-	function ENT:Update(Data)
-		-- Called when updating the entity
-		VerifyData(Data)
+		self:PhysicsInit(SOLID_VPHYSICS)
+		self:SetMoveType(MOVETYPE_VPHYSICS)
 
-		local CanUpdate, Reason = HookRun("ACF_PreUpdateEntity", "acf_controller", self, Data)
-		if CanUpdate == false then return CanUpdate, Reason end
+		self:ACF_SetEntityName("ACF All In One Controller")
 
-		HookRun("ACF_OnEntityLast", "acf_controller", self)
+		ACF.Activate(self, true)
 
-		ACF.SaveEntity(self)
+		local PhysObj = self.ACF.PhysObj
+		if IsValid(PhysObj) then Contraption.SetMass(self, 1) end
 
-		UpdateController(self, Data)
+		if ClientData and ClientData.AIODefaults then self:RestoreNetworkVars(ClientData.AIODefaults) end
+	end
 
-		ACF.RestoreEntity(self)
-
-		HookRun("ACF_OnUpdateEntity", "acf_controller", self, Data)
-
-		return true, "All-In-One Controller updated successfully!"
+	function ENT:ACF_PostSpawn()
+		ACF.AugmentedTimer(function(_) self:UpdateOverlay() end, function() return IsValid(self) end, nil, {MinTime = 1, MaxTime = 1})
 	end
 
 	function ENT:ACF_PostMenuSpawn()
 		ACF.DropToFloor(self)
 		self:SetAngles(self:GetAngles() + Angle(0, -90, 0))
 	end
-end
 
--- Receiver related
-do
-	function ENT:ProcessReceivers(SelfTbl)
-		for Receiver, _ in pairs(SelfTbl.Receivers) do
-			if IsValid(Receiver) then
-				local Detected = Receiver.Outputs.Detected.Value
-				local Direction = Receiver.Outputs.Direction.Value
-				if (SelfTbl.ReceiverDetecteds[Receiver] ~= Detected or SelfTbl.ReceiverDirections[Receiver] ~= Direction) then
-					SelfTbl.ReceiverDirections[Receiver] = Direction
-					SelfTbl.ReceiverDetecteds[Receiver] = Detected
-					if Detected == 0 then return end
-					net.Start("ACF_Controller_Receivers")
-					net.WriteEntity(self)
-					net.WriteEntity(Receiver)
-					net.WriteVector(Direction)
-					net.Send(self.Driver)
-				end
-			end
+	function ENT:FLIR_OnEnter(Player)
+		if not IsValid(Player) then return end
+		if self.UseWireFLIR then
+			FLIR.start(Player)
 		end
 	end
-end
 
--- Radar related
-do
-	function ENT:AnalyzeRadars(Radar)
-		self.RadarVertical = Radar:GetParent()
-		self.RadarUpdateRate = math.ceil(Radar.Outputs["Think Delay"].Value / (1 / 66))
+	function ENT:FLIR_OnChange(Value)
+		local Player = self.Driver
+		if not IsValid(Player) then return end
+
+		FLIR.enable(Player, Value)
 	end
 
-	net.Receive("ACF_Controller_Radar", function()
-		local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
-		local SelectedID = net.ReadUInt(6)
-		local Entity = Entity(EntIndex)
-		if not IsValid(Entity) then return end
-		Entity.SelectedTargetID = SelectedID ~= 0 and SelectedID or nil
-	end)
-
-	function ENT:ProcessRadars(SelfTbl)
-		local Radar = SelfTbl.Radar
-		if not IsValid(Radar) then return end
-		local Count = math.min(#Radar.Outputs.IDs.Value, 15) -- Avoid spam
-
-		net.Start("ACF_Controller_Radar")
-		net.WriteEntity(self)
-		net.WriteUInt(Count, 4)
-		for i = 1, Count do
-			local ID = Radar.Outputs.IDs.Value[i] or 0
-			net.WriteUInt(ID, 6)
-			net.WriteString(Radar.Outputs.Owner.Value[i] or "")
-			net.WriteVector(Radar.Outputs.Position.Value[i] or vector_origin)
-
-			if ID == SelfTbl.SelectedTargetID then
-				SelfTbl.SelectedTargetPos = Radar.Outputs.Position.Value[i] or vector_origin
-				SelfTbl.SelectedTargetVel = Radar.Outputs.Velocity.Value[i] or vector_origin
-			end
+	function ENT:FLIR_OnExit(Player)
+		if not IsValid(Player) then return end
+		if self.UseWireFLIR then
+			FLIR.stop(Player)
 		end
-		net.WriteVector(SelfTbl.SelectedTargetVel)
-		net.Send(self.Driver)
+	end
+
+	-- Handle Inputs
+	do
+		ACF.AddInputAction("acf_controller", "Filter", function(Controller, Value)
+			if Value == nil or not istable(Value) then Controller.UsesWireFilter = false return end
+			Controller.UsesWireFilter = true
+			Controller.Filter = Value
+		end)
+
+		ACF.AddInputAction("acf_controller", "FLIR", function(Controller, Value)
+			if Value == nil or not isnumber(Value) then return end
+			Controller.UseWireFLIR = Value ~= 0
+			Controller:FLIR_OnChange(Value ~= 0)
+		end)
+
+		ACF.AddInputAction("acf_controller", "ParkingBrake", function(Controller, Value)
+			if Value == nil or not isnumber(Value) then return end
+			Controller:SetWireParkingBrake(Controller:GetTable(), Value ~= 0)
+		end)
 	end
 end
 
@@ -327,219 +211,8 @@ local function BroadcastEntity(Name, Entity, Entity2, State)
 	net.Broadcast()
 end
 
--- Handle a player entering or exiting the vehicle
-local function OnActiveChanged(Controller, Ply, Active)
-	local SelfTbl = Controller:GetTable()
-
-	-- Reset all key states and outputs when getting in or out of the vehicle
-	Controller.KeyStates = {}
-	for Key, Output in pairs(IN_ENUM_TO_WIRE_OUTPUT) do
-		RecacheBindOutput(Controller, SelfTbl, Output, 0)
-		RecacheBindState(SelfTbl, Key, false)
-	end
-
-	RecacheBindOutput(Controller, SelfTbl, "Driver", Ply)
-	RecacheBindOutput(Controller, SelfTbl, "Active", Active and 1 or 0)
-
-	Controller.FOV = Controller.FOV or 90
-	Ply:SetFOV(Active and Controller.FOV or 0, 0, nil)
-
-	Controller.Active = Active
-	Controller.Driver = Active and Ply or NULL
-	if Active then Controller:AnalyzeCams() end -- Recalculate filter for the cameras
-
-	for Turret in pairs(Controller.Turrets) do
-		if IsValid(Turret) then Turret:TriggerInput("Active", Active) end
-	end
-
-	for Engine in pairs(Controller.Engines) do
-		if IsValid(Engine) then Engine:TriggerInput("Active", Active) end
-	end
-
-	if IsValid(Controller.Gearbox) then Controller.Gearbox:TriggerInput("Gear", Active and 1 or 0) end
-
-	for Gearbox in pairs(Controller.GearboxEnds) do
-		if IsValid(Gearbox) then Gearbox:TriggerInput("Gear", Active and 1 or 0) end
-	end
-
-	for Gearbox in pairs(Controller.GearboxIntermediates) do
-		if IsValid(Gearbox) then Gearbox:TriggerInput("Gear", Active and 1 or 0) end
-	end
-
-	-- Let the player know the controller is active or not
-	net.Start("ACF_Controller_Active")
-	net.WriteUInt(Controller:EntIndex(), MAX_EDICT_BITS)
-	net.WriteBool(Active)
-	net.Send(Ply)
-
-	-- Network the camera filter to the player
-	net.Start("ACF_Controller_CamInfo")
-	net.WriteTable(Controller.Filter or {})
-	net.Send(Ply)
-end
-
-local function OnKeyChanged(Controller, Key, Down)
-	local Output = IN_ENUM_TO_WIRE_OUTPUT[Key]
-	local SelfTbl = Controller:GetTable()
-	if Output ~= nil then
-		RecacheBindOutput(Controller, SelfTbl, Output, Down and 1 or 0)
-		RecacheBindState(SelfTbl, Key, Down)
-	end
-
-	Controller:ToggleTurretLocks(SelfTbl, Key, Down)
-end
-
-local function OnButtonChanged(Controller, Button, Down)
-	if not IsFirstTimePredicted() then return end
-	if Button == MOUSE_MIDDLE and Down and IsValid(Controller.TurretComputer) then
-		-- Reset computer lase
-		if Controller.Driver:KeyDown( IN_DUCK ) then
-			Controller.Additive = vector_origin
-			Controller.LaseDist = 0
-			Controller.LasePitch = 0
-			Controller.Drop = 0
-			Controller.TravelTime = 0
-			return
-		end
-
-		-- Otherwise log metrics on lase, and use these later
-		Controller.TurretComputer.Inputs.Position.Value = Controller.HitPos
-		Controller.TurretComputer:TriggerInput("Calculate Superelevation", 1)
-
-		local Diff = (Controller.Primary:GetPos() - Controller.HitPos)
-		Controller.LasePitch = math.deg(math.asin(Diff.z / Diff:Length()))
-		Controller.LaseDist = Diff:Length()
-	end
-end
-
-local function OnLinkedSeat(Controller, Target)
-	hook.Add("PlayerEnteredVehicle", "ACFControllerSeatEnter" .. Controller:EntIndex(), function(Ply, Veh)
-		if Veh == Target then OnActiveChanged(Controller, Ply, true) end
-	end)
-
-	hook.Add("PlayerLeaveVehicle", "ACFControllerSeatExit" .. Controller:EntIndex(), function(Ply, Veh)
-		if Veh == Target then OnActiveChanged(Controller, Ply, false) end
-	end)
-
-	hook.Add("KeyPress", "ACFControllerSeatKeyPress" .. Controller:EntIndex(), function(Ply, Key)
-		if not IsValid(Controller) or not IsValid(Target) then return end
-		if Ply ~= Controller.Driver then return end
-		OnKeyChanged(Controller, Key, true)
-	end)
-
-	hook.Add("KeyRelease", "ACFControllerSeatKeyRelease" .. Controller:EntIndex(), function(Ply, Key)
-		if not IsValid(Controller) or not IsValid(Target) then return end
-		if Ply ~= Controller.Driver then return end
-		OnKeyChanged(Controller, Key, false)
-	end)
-
-	hook.Add("PlayerButtonDown", "ACFControllerSeatButtonDown" .. Controller:EntIndex(), function(Ply, Key)
-		if not IsValid(Controller) or not IsValid(Target) then return end
-		if Ply ~= Controller.Driver then return end
-		OnButtonChanged(Controller, Key, true)
-	end)
-
-	hook.Add("PlayerButtonUp", "ACFControllerSeatButtonUp" .. Controller:EntIndex(), function(Ply, Key)
-		if not IsValid(Controller) or not IsValid(Target) then return end
-		if Ply ~= Controller.Driver then return end
-		OnButtonChanged(Controller, Key, false)
-	end)
-
-	-- Remove the hooks when the controller is removed
-	Controller:CallOnRemove("ACFRemoveController", function(Ent)
-		hook.Remove("PlayerEnteredVehicle", "ACFControllerSeatEnter" .. Ent:EntIndex())
-		hook.Remove("PlayerLeaveVehicle", "ACFControllerSeatExit" .. Ent:EntIndex())
-		hook.Remove("KeyPress", "ACFControllerSeatKeyPress" .. Ent:EntIndex())
-		hook.Remove("KeyRelease", "ACFControllerSeatKeyRelease" .. Ent:EntIndex())
-	end)
-end
-
-local function OnUnlinkedSeat(Controller)
-	-- Remove the hooks when the seat is unlinked
-	hook.Remove("PlayerEnteredVehicle", "ACFControllerSeatEnter" .. Controller:EntIndex())
-	hook.Remove("PlayerLeaveVehicle", "ACFControllerSeatExit" .. Controller:EntIndex())
-	hook.Remove("KeyPress", "ACFControllerSeatKeyPress" .. Controller:EntIndex())
-	hook.Remove("KeyRelease", "ACFControllerSeatKeyRelease" .. Controller:EntIndex())
-end
-
--- Using this to auto generate the link/unlink functions
-local LinkConfigs = {
-	prop_vehicle_prisoner_pod = {
-		Field = "Seat",
-		Single = true,
-		OnLinked = function(Controller, Target)
-			OnLinkedSeat(Controller, Target)
-		end,
-		OnUnlinked = function(Controller, _)
-			OnUnlinkedSeat(Controller)
-		end,
-	},
-	acf_gearbox = {
-		Field = "Gearbox",
-		Single = true,
-		OnLinked = function(Controller, Target)
-			Controller:AnalyzeDrivetrain(Target)
-		end
-	},
-	acf_turret = {
-		Field = "Turrets",
-		Single = false
-	},
-	acf_gun = {
-		Field = "Guns",
-		Single = false,
-		OnLinked = function(Controller, Target)
-			Controller:AnalyzeGuns(Target)
-		end
-	},
-	acf_turret_computer = {
-		Field = "TurretComputer",
-		Single = true
-	},
-	acf_computer = {
-		Field = "GuidanceComputer",
-		Single = true,
-		PreLink = function(_, Target)
-			if Target.Computer ~= "CPR-LSR" and Target.Computer ~= "CPR-OPT" then return false, "Only laser/optical guidance computers are supported." end
-			return true
-		end
-	},
-	acf_receiver = {
-		Field = "Receivers",
-		Single = false
-	},
-	acf_baseplate = {
-		Field = "Baseplate",
-		Single = true,
-		OnLinked = function(Controller, Target)
-			if IsValid(Target.Pod) and not Controller.Seat then Controller:Link(Target.Pod) end
-		end,
-		OnUnlinked = function(Controller, Target)
-			if IsValid(Target.Pod) and not Controller.Seat then Controller:Unlink(Target.Pod) end
-		end
-	},
-	acf_rack = {
-		Field = "Racks",
-		Single = false,
-		OnLinked = function(Controller, Target)
-			Controller:AnalyzeRacks(Target)
-		end
-	},
-	prop_physics = {
-		Field = "SteerPlates",
-		Single = false,
-	},
-	acf_radar = {
-		Field = "Radar",
-		Single = true,
-		OnLinked = function(Controller, Target)
-			Controller:AnalyzeRadars(Target)
-		end
-	}
-}
-
 -- Register links to the controller with various classes
-for Class, Data in pairs(LinkConfigs) do
+for Class, Data in pairs(ControllerLinkRegistry) do
 	local Field = Data.Field
 	local Single = Data.Single
 	local PreLink = Data.PreLink
@@ -626,6 +299,7 @@ do
 		if iters % 7 == 0 then self:ProcessHUDs(SelfTbl) end
 
 		if iters % SelfTbl.RadarUpdateRate == 0 then self:ProcessRadars(SelfTbl) end
+		self:ProcessRadarSlaving(SelfTbl)
 
 		SelfTbl.iters = iters + 1
 		self:UpdateOverlay()
@@ -633,21 +307,13 @@ do
 		return true
 	end
 
-	-- Handle Inputs
-	do
-		ACF.AddInputAction("acf_controller", "Filter", function(Controller, Value)
-			if Value == nil or not istable(Value) then return end
-			Controller.UsesWireFilter = true
-			Controller.Filter = Value
-		end)
-	end
 end
 
 -- Adv Dupe 2 Related
 do
 	-- Hopefully we can improve this when the codebase is refactored.
 	function ENT:PreEntityCopy()
-		for _, Data in pairs(LinkConfigs) do
+		for _, Data in pairs(ControllerLinkRegistry) do
 			local Field = Data.Field
 			if Data.Single then
 				if IsValid(self[Field]) then
@@ -668,14 +334,19 @@ do
 		local Parent3 = IsValid(self:GetCam3Parent()) and self:GetCam3Parent():EntIndex() or 0
 		duplicator.StoreEntityModifier(self, "CamParents", {Parent1, Parent2, Parent3})
 
-		-- Wire dupe info
-		self.BaseClass.PreEntityCopy(self)
+		-- Handle manually linked weapon selection
+		local Gun1 = IsValid(self:GetGun1()) and self:GetGun1():EntIndex() or 0
+		local Gun2 = IsValid(self:GetGun2()) and self:GetGun2():EntIndex() or 0
+		local Gun3 = IsValid(self:GetGun3()) and self:GetGun3():EntIndex() or 0
+		duplicator.StoreEntityModifier(self, "Guns123", {Gun1, Gun2, Gun3})
+
+		-- AutoRegisterV2 wraps this as the original PreEntityCopy and handles the wire/base dupe info.
 	end
 
-	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+	function ENT:PostEntityPaste(_, Ent, CreatedEntities)
 		local EntMods = Ent.EntityMods
 
-		for _, Data in pairs(LinkConfigs) do
+		for _, Data in pairs(ControllerLinkRegistry) do
 			local Field = Data.Field
 			if EntMods[Field] then
 				if Data.Single then
@@ -696,14 +367,21 @@ do
 			EntMods.CamParents = nil
 		end
 
-		--Wire dupe info
-		self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
+		-- Handle manually linked weapon selection
+		if EntMods.Guns123 then
+			self:SetGun1(CreatedEntities[EntMods.Guns123[1]])
+			self:SetGun2(CreatedEntities[EntMods.Guns123[2]])
+			self:SetGun3(CreatedEntities[EntMods.Guns123[3]])
+			EntMods.Guns123 = nil
+		end
+
+		-- AutoRegisterV2 wraps this as the original PostEntityPaste and handles the wire/base dupe info.
 	end
 
-	function ENT:OnRemove()
-		HookRun("ACF_OnEntityLast", "acf_controller", self)
+	function ENT:OnRemove(IsFullUpdate)
+		if IsFullUpdate then return end
 
-		for _, Data in pairs(LinkConfigs) do
+		for _, Data in pairs(ControllerLinkRegistry) do
 			local Field = Data.Field
 			if Data.Single then
 				if IsValid(self[Field]) then self:Unlink(self[Field]) end
@@ -711,7 +389,5 @@ do
 				for Ent in pairs(self[Field]) do self:Unlink(Ent) end
 			end
 		end
-
-		WireLib.Remove(self)
 	end
 end

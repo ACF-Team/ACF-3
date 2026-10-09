@@ -1,0 +1,17 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "models\missiles/6pod_tubes"
+	$bumpmap "models\acfgeneric/bumbmap_low"
+	$normalmap "models\acfgeneric/bumbmap_low"
+	
+	
+	"$model" "1"
+	"$halflambert" 			1
+	$blendtintbybasealpha		1
+	$surfaceprop	metal
+
+	"$phong" "1"
+	"$phongboost" "2"
+	"$phongfresnelranges" "[.15 .5 1]"
+	$phongexponent			5			// either/or
+}

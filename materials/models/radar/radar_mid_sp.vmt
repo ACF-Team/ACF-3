@@ -1,0 +1,12 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "models\radar/radar_mid_sp"
+	"$model" "1"
+	"$halflambert" 			1
+	$blendtintbybasealpha		1
+	$surfaceprop	metal
+	"$phong" "1"
+	"$phongexponent" "40"
+	"$phongboost" "2"
+	"$phongfresnelranges" "[.05 .5 1]"
+}

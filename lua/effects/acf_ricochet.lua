@@ -31,7 +31,10 @@ function EFFECT:Init(Data)
 			local Debris = Emitter:Add("effects/fleck_tile" .. math.random(1, 2), Origin)
 
 			if Debris then
-				Debris:SetVelocity((DirVec + VectorRand()) * 150 * Radius)
+				-- Limit the z offset to keep the particles from being directed below the hit point
+				local VelOffset = Vector(math.Rand(-1, 1), math.Rand(-1, 1), math.Rand(0, 1))
+
+				Debris:SetVelocity((DirVec + VelOffset) * 150 * Radius)
 				Debris:SetLifeTime(0)
 				Debris:SetDieTime(math.Rand(0.5, 1) * Radius)
 				Debris:SetStartAlpha(255)

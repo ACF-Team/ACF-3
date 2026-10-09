@@ -12,145 +12,74 @@ local Utilities		= ACF.Utilities
 local Debug			= ACF.Debug
 local Sounds		= Utilities.Sounds
 local Clock			= Utilities.Clock
-local HookRun		= hook.Run
+
+local DefaultType = "ACF.Turrets.Computer.Direct"
 
 do	-- Spawn and Update funcs
-	local WireIO	= Utilities.WireIO
-	local Entities	= Classes.Entities
-	local Turrets	= Classes.Turrets
+	-- Appends the selected computer's item-specific wire IO (e.g. the direct
+	-- computer's superelevation in/output). Re-run from ACF_PostUpdateEntityData
+	-- once the item is known, since the generated wire setup runs pre-deserialize.
+	function ENT:ACF_SetupWireIO(Inputs, Outputs)
+		local Computer = self:ACF_GetUserVar("Computer")
+		if not Computer then return end
 
-	local Inputs	= {
-		"Calculate (Starts the simulation, continues calculating if capable while enabled.)",
-		"Position (The position to calculate a trajectory for.) [VECTOR]",
-		"Velocity (The relative velocity to include in the calculation.) [VECTOR]",
-	}
-
-	local Outputs	= {
-		"Angle (Angle the gun should point in to hit the target) [ANGLE]",
-		"Flight Time (The estimated time of arrival for the current round to hit the target.)",
-		"Status (The current status of the computer) [STRING]",
-		"Entity (The computer itself.) [ENTITY]"
-	}
-
-	local function VerifyData(Data)
-		if not Data.Computer then Data.Computer = Data.Id end
-
-		local Class = Classes.GetGroup(Turrets, Data.Computer)
-
-		if not Class then
-			Class = Turrets.Get("4-Computer")
-
-			Data.Destiny		= "Computers"
-			Data.Computer		= "DIR-BalComp"
-		end
-
-		local Computer = Turrets.GetItem(Class.ID, Data.Computer)
-
-		if not Computer then
-			Computer = Turrets.GetItem(Class.ID, "DIR-BalComp")
-		end
-
-		Data.ID		= Computer.ID
+		if Computer.SetupInputs  then Computer.SetupInputs(self, Inputs) end
+		if Computer.SetupOutputs then Computer.SetupOutputs(self, Outputs) end
 	end
 
-	------------------
+	function ENT.ACF_CheckSpawnLimit(Player)
+		return Player:CheckLimit("_acf_turret")
+	end
 
-	local function UpdateComputer(Entity, Data, Class, Computer)
-		Entity.Name			= Computer.Name
-		Entity.ShortName	= Computer.ID
-		Entity.EntType		= Class.Name
-		Entity.ClassData	= Class
-		Entity.Class		= Class.ID
-		Entity.Computer		= Data.Computer
-		Entity.Active		= true
-
-		Entity.ComputerInfo	= Computer.ComputerInfo
-		Entity.Status		= "Ready"
-
-		Entity:HaltSimulation()
-
-		Entity.NextRun		= Clock.CurTime
-
-		WireIO.SetupInputs(Entity, Inputs, Data, Class, Computer)
-		WireIO.SetupOutputs(Entity, Outputs, Data, Class, Computer)
-
-		Entity:SetNWString("WireName", "ACF " .. Entity.Name)
-		Entity:SetNWString("Class", Entity.Class)
-
-		for _, v in ipairs(Entity.DataStore) do
-			Entity[v] = Data[v]
+	function ENT:ACF_PostSpawn(Player)
+		if IsValid(Player) then
+			Player:AddCount("_acf_turret", self)
 		end
-
-		ACF.Activate(Entity, true)
-
-		Entity.DamageScale	= math.max((Entity.ACF.Health / (Entity.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
-
-		local Mass = Computer.Mass
-		Contraption.SetMass(Entity, Mass)
 	end
 
-	function ACF.MakeBallisticComputer(Player, Pos, Angle, Data)
-		VerifyData(Data)
+	function ENT:ACF_PreSpawn(_, _, _, Data)
+		self.ACF = {}
 
-		local Class = Classes.GetGroup(Turrets, Data.Computer)
-		local Limit	= Class.LimitConVar.Name
+		local Sel   = Data and Data.Computer
+		local Class = Classes.GetTypeByName(Sel and Sel.Type or DefaultType) or Classes.GetTypeByName(DefaultType)
 
-		if not Player:CheckLimit(Limit) then return end
-
-		local Computer	= Turrets.GetItem(Class.ID, Data.Computer)
-
-		local CanSpawn	= HookRun("ACF_PreSpawnEntity", "acf_turret_computer", Player, Data, Class, Computer)
-
-		if CanSpawn == false then return end
-
-		local Entity = ents.Create("acf_turret_computer")
-
-		if not IsValid(Entity) then return end
-
-		Player:AddCleanup(Class.Cleanup, Entity)
-		Player:AddCount(Limit, Entity)
-
-		Entity.ACF				= {}
-
-		Contraption.SetModel(Entity, Computer.Model)
-
-		Entity:SetAngles(Angle)
-		Entity:SetPos(Pos)
-		Entity:Spawn()
-
-		Entity.DataStore		= Entities.GetArguments("acf_turret_computer")
-
-		UpdateComputer(Entity, Data, Class, Computer)
-
-		HookRun("ACF_OnSpawnEntity", "acf_turret_computer", Entity, Data, Class, Computer)
-
-		return Entity
+		Contraption.SetModel(self, Class.Model)
 	end
 
-	Entities.Register("acf_turret_computer", ACF.MakeBallisticComputer, "Computer")
+	function ENT:ACF_PostUpdateEntityData()
+		local Computer = self:ACF_GetUserVar("Computer")
+		local Class    = Computer:GetType()
+		local Group    = Classes.GetBaseClass(Class)
 
-	function ENT:Update(Data)
-		VerifyData(Data)
+		Contraption.SetModel(self, Computer.Model)
 
-		local Class = Classes.GetGroup(Turrets, Data.Computer)
-		local Computer	= Turrets.GetItem(Class.ID, Data.Computer)
-		local OldClass	= self.ClassData
+		self:PhysicsInit(SOLID_VPHYSICS)
+		self:SetMoveType(MOVETYPE_VPHYSICS)
 
-		local CanUpdate, Reason	= HookRun("ACF_PreUpdateEntity", "acf_turret_computer", self, Data, Class, Computer)
+		self.Name         = Computer.Name
+		self.ShortName    = Computer.ID
+		self.EntType      = Group.Name
+		self.Class        = Group.ID
+		self.Computer     = Computer.ID
+		self.Active       = true
 
-		if CanUpdate == false then return CanUpdate, Reason end
+		self.ComputerInfo = Computer.ComputerInfo
+		self.Status       = "Ready"
 
-		HookRun("ACF_OnEntityLast", "acf_turret_computer", self, OldClass)
+		self:HaltSimulation()
 
-		ACF.SaveEntity(self)
+		self.NextRun      = Clock.CurTime
 
-		UpdateComputer(self, Data, Class, Computer)
+		self:ACF_SetEntityName("ACF " .. self.Name)
+		self:SetNWString("Class", self.Class)
 
-		ACF.RestoreEntity(self)
+		-- ACF.Activate(self, true) is invoked automatically by ACF_UpdateEntityData after this.
 
-		HookRun("ACF_OnUpdateEntity", "acf_turret_computer", self, Data, Class, Computer)
+		local Health    = self.ACF.Health
+		local MaxHealth = self.ACF.MaxHealth
+		self.DamageScale = (Health and MaxHealth) and math.max((Health / (MaxHealth * 0.75)) - 0.25 / 0.75, 0) or 1
 
-		return true, "Computer updated successfully!"
+		Contraption.SetMass(self, Computer.Mass)
 	end
 end
 
@@ -229,7 +158,7 @@ do	-- Metamethods and other important stuff
 			local Gun = self.Gun
 			local BD = Gun.BulletData
 
-			if BD.Type == "Empty" then return end
+			if BD.AmmoType == "Empty" then return end
 
 			self.Status = "Calculating..."
 
@@ -575,12 +504,9 @@ do	-- Metamethods and other important stuff
 			if self.Gun then
 				duplicator.StoreEntityModifier(self, "ACFGun", {self.Gun:EntIndex()})
 			end
-
-			-- Wire dupe info
-			self.BaseClass.PreEntityCopy(self)
 		end
 
-		function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+		function ENT:PostEntityPaste(_, Ent, CreatedEntities)
 			local EntMods = Ent.EntityMods
 
 			if EntMods.ACFGun then
@@ -588,8 +514,6 @@ do	-- Metamethods and other important stuff
 
 				EntMods.ACFGun = nil
 			end
-
-			self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
 		end
 	end
 

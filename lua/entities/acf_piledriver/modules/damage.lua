@@ -5,6 +5,7 @@ local Impact    = "physics/metal/metal_barrel_impact_hard%s.wav"
 -- The entity won't even attempt to shoot if this function returns false
 function ENT:AllowShoot()
     if self.Disabled then return false end
+    if self.ACF.Health <= 0 then return false end -- Destroyed
     if self.RetryShoot then return false end
 
     return self.Firing

@@ -45,7 +45,7 @@ function EFFECT:Init(Data)
 
 		if Radius > 1 and (IsValid(Entity) or Impact.HitWorld) then
 			local Size = Radius * 0.66
-			local Type = GetIndex("HE")
+			local Type = GetIndex("ACF.Ammunition.HE")
 			if Type then
 				util.DecalEx(GetDecal(Type), Entity, Impact.HitPos, HitNormal, White, Size, Size)
 			end
@@ -54,7 +54,6 @@ function EFFECT:Init(Data)
 end
 
 function EFFECT:Core(Origin, Radius)
-
 	local SoundData = Sounds.GetExplosionSoundPath(Radius)
 
 	Sounds.PlaySound(Origin, SoundData.SoundPath:format(math.random(0, 4)), SoundData.SoundVolume, SoundData.SoundPitch, 1)
@@ -164,9 +163,9 @@ function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mul
 			endpos = (Origin + (Angle:Up() * math.Rand(-2, -100) * Radius)) - (HitNormalForward * 10)
 		}
 
-		-- debugoverlay.Line(TracePoint.StartPos, TracePoint.HitPos, 2, Color(255, 0, 0), true)
-		-- debugoverlay.Cross(TracePoint.StartPos, 4, 4, Color(255, 111, 111), true)
-		-- debugoverlay.Cross(TracePoint.HitPos, 4, 4, Color(120, 255, 142), true)
+		-- Debug.Line(TracePoint.StartPos, TracePoint.HitPos, 2, Color(255, 0, 0), true)
+		-- Debug.Cross(TracePoint.StartPos, 4, 4, Color(255, 111, 111), true)
+		-- Debug.Cross(TracePoint.HitPos, 4, 4, Color(120, 255, 142), true)
 
 		if TracePoint.Hit then
 			local TraceTime = TracePoint.StartPos:Distance(TracePoint.HitPos) / 2000

@@ -1,0 +1,5 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "models\radar/radar_big_mdl_shadowmap"
+	"$model" "1"
+}

@@ -40,17 +40,13 @@ local function GenerateLinkTable(Entity, Target)
 	return Link, Angle
 end
 
-function ENT.ACF_OnVerifyClientData(ClientData)
-	ClientData.WaterjetSize = math.Clamp(ClientData.WaterjetSize or 1, 0.5, 1)
-	ClientData.Size = Vector(ClientData.WaterjetSize, ClientData.WaterjetSize, ClientData.WaterjetSize)
-end
-
 function ENT:ACF_PreSpawn()
 	self:SetScaledModel("models/maxofs2d/hover_propeller.mdl")
 end
 
-function ENT:ACF_PostUpdateEntityData(ClientData)
-	self:SetScale(ClientData.Size)
+function ENT:ACF_PostUpdateEntityData()
+	local Size = self:ACF_GetUserVar("WaterjetSize")
+	self:SetScale(Vector(Size, Size, Size))
 
 	self.SlewRatePitch = 5
 	self.SlewRateYaw = 5
@@ -64,7 +60,7 @@ function ENT:ACF_PostUpdateEntityData(ClientData)
 	self.CQ = 10 				-- Torque coefficient
 	self.CT = 0.025 			-- Force coefficient
 	self.Rho = 1000 			-- Density of water in kg/m^3
-	self.Diameter = ClientData.WaterjetSize * 10 * ACF.InchToMeter -- Convert from inches to meters (model is 10u in diameter by default)
+	self.Diameter = Size * 10 * ACF.InchToMeter -- Convert from inches to meters (model is 10u in diameter by default)
 
 	self.Gearboxes = {}
 end
@@ -141,6 +137,7 @@ function ENT:Calc(InputRPM)
 
 	if not SelfTbl.InWater then return 0 end
 	if not IsValid(SelfTbl.Ancestor) then return 0 end
+	if SelfTbl.ACF.Health <= 0 then return 0 end -- Destroyed
 
 	local HealthRatio = SelfTbl.ACF.Health / SelfTbl.ACF.MaxHealth
 	local N = InputRPM / (2 * math.pi) -- Rotation rate (Rad/s)
@@ -157,6 +154,7 @@ function ENT:Act(Torque, _, MassRatio, FlyRPM)
 
 	if not SelfTbl.InWater then return end
 	if not IsValid(SelfTbl.Ancestor) then return end
+	if SelfTbl.ACF.Health <= 0 then return end -- Destroyed
 
 	local HealthRatio = SelfTbl.ACF.Health / SelfTbl.ACF.MaxHealth
 	local N = FlyRPM / (2 * math.pi) -- Rotation rate (Rad/s)
@@ -181,7 +179,8 @@ function ENT:Think()
 
 	self:SetNW2Float("ACF_WaterjetRPM", 0)
 	local Center = self:GetPos()
-	SelfTbl.InWater = bit.band(util.PointContents(Center), CONTENTS_WATER) == CONTENTS_WATER
+	local LiquidMask = bit.bor(CONTENTS_WATER, CONTENTS_SLIME)
+	SelfTbl.InWater = bit.band(util.PointContents(Center), LiquidMask) ~= 0
 
 	SelfTbl.Pitch = math.Clamp(SelfTbl.Pitch + (SelfTbl.TargetPitch - SelfTbl.Pitch) * SelfTbl.SlewRatePitch * 0.1, -1, 1)
 	SelfTbl.Yaw = math.Clamp(SelfTbl.Yaw + (SelfTbl.TargetYaw - SelfTbl.Yaw) * SelfTbl.SlewRateYaw * 0.1, -1, 1)
@@ -198,10 +197,16 @@ function ENT:Think()
 	return true
 end
 
+function ENT:OnRemove(IsFullUpdate)
+	if IsFullUpdate then return end
+
+	for Gearbox in pairs(self.Gearboxes) do
+		self:Unlink(Gearbox)
+	end
+end
+
 function ENT:ACF_UpdateOverlayState(State)
 	State:AddNumber("Scale", self:ACF_GetUserVar("WaterjetSize"))
 	State:AddNumber("Pitch", self.Pitch)
 	State:AddNumber("Yaw", self.Yaw)
 end
-
-ACF.Classes.Entities.Register()

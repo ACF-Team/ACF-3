@@ -1,5 +1,6 @@
 
 local RecacheBindNW = ENT.RecacheBindNW
+local CountedFuels  = {} -- Reused to dedupe tanks shared between engines
 -- Hud related
 do
 	local BallCompStatusToCode = {
@@ -21,45 +22,40 @@ do
 
 	function ENT:ProcessHUDs(SelfTbl)
 		-- Network various statistics
-		if IsValid(SelfTbl.Primary) then
-			RecacheBindNW(self, SelfTbl, "AHS_Primary_SL", SelfTbl.Primary.TotalAmmo or 0, self.SetNWInt)
-			RecacheBindNW(self, SelfTbl, "AHS_Primary_AT", SelfTbl.Primary.BulletData.Type or 0, self.SetNWString)
-			RecacheBindNW(self, SelfTbl, "AHS_Primary_NF", SelfTbl.Primary.NextFire or 0, self.SetNWFloat)
-			RecacheBindNW(self, SelfTbl, "AHS_Primary_RT", SelfTbl.Primary.ReloadTime or 0, self.SetNWFloat)
-			RecacheBindNW(self, SelfTbl, "AHS_Primary_RD", SelfTbl.Primary.State == "Loaded" or false, self.SetNWBool)
-			RecacheBindNW(self, SelfTbl, "AHS_Primary", SelfTbl.Primary, self.SetNWEntity)
-			RecacheBindNW(self, SelfTbl, "AHS_Primary_MV", SelfTbl.Primary.BulletData.MuzzleVel or 0, self.SetNWFloat)
-		else
-			SelfTbl.Primary = next(self.GunsPrimary)
+		local Primary = self:GetGun1()
+		if IsValid(Primary) then
+			RecacheBindNW(self, SelfTbl, "AHS_Primary_SL", Primary.TotalAmmo or 0, self.SetNWInt)
+			RecacheBindNW(self, SelfTbl, "AHS_Primary_AT", ACF.GetLegacyStyleClassName(Primary.BulletData.AmmoType), self.SetNWString)
+			RecacheBindNW(self, SelfTbl, "AHS_Primary_NF", Primary.NextFire or 0, self.SetNWFloat)
+			RecacheBindNW(self, SelfTbl, "AHS_Primary_RT", Primary.ReloadTime or 0, self.SetNWFloat)
+			RecacheBindNW(self, SelfTbl, "AHS_Primary_RD", Primary.State == "Loaded", self.SetNWBool)
+			RecacheBindNW(self, SelfTbl, "AHS_Primary", Primary, self.SetNWEntity)
+			RecacheBindNW(self, SelfTbl, "AHS_Primary_MV", Primary.BulletData.MuzzleVel or 0, self.SetNWFloat)
 		end
 
-		if IsValid(SelfTbl.Secondary) then
-			RecacheBindNW(self, SelfTbl, "AHS_Secondary_SL", SelfTbl.Secondary.TotalAmmo or 0, self.SetNWInt)
-			RecacheBindNW(self, SelfTbl, "AHS_Secondary_AT", SelfTbl.Secondary.BulletData.Type or 0, self.SetNWInt)
-			RecacheBindNW(self, SelfTbl, "AHS_Secondary_NF", SelfTbl.Secondary.NextFire or 0, self.SetNWFloat)
-			RecacheBindNW(self, SelfTbl, "AHS_Secondary_RT", SelfTbl.Secondary.ReloadTime or 0, self.SetNWFloat)
-			RecacheBindNW(self, SelfTbl, "AHS_Secondary_RD", SelfTbl.Secondary.State == "Loaded" or false, self.SetNWBool)
-			RecacheBindNW(self, SelfTbl, "AHS_Secondary", SelfTbl.Secondary, self.SetNWEntity)
-		else
-			SelfTbl.Secondary = next(self.GunsSecondary)
+		local Secondary = self:GetGun2()
+		if IsValid(Secondary) then
+			RecacheBindNW(self, SelfTbl, "AHS_Secondary_SL", Secondary.TotalAmmo or 0, self.SetNWInt)
+			RecacheBindNW(self, SelfTbl, "AHS_Secondary_AT", ACF.GetLegacyStyleClassName(Secondary.BulletData.AmmoType), self.SetNWString)
+			RecacheBindNW(self, SelfTbl, "AHS_Secondary_NF", Secondary.NextFire or 0, self.SetNWFloat)
+			RecacheBindNW(self, SelfTbl, "AHS_Secondary_RT", Secondary.ReloadTime or 0, self.SetNWFloat)
+			RecacheBindNW(self, SelfTbl, "AHS_Secondary_RD", Secondary.State == "Loaded", self.SetNWBool)
+			RecacheBindNW(self, SelfTbl, "AHS_Secondary", Secondary, self.SetNWEntity)
 		end
 
-		if IsValid(SelfTbl.Tertiary) then
-			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_SL", SelfTbl.Tertiary.TotalAmmo or 0, self.SetNWInt)
-			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_AT", SelfTbl.Tertiary.BulletData.Type or 0, self.SetNWInt)
-			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_NF", SelfTbl.Tertiary.NextFire or 0, self.SetNWFloat)
-			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_RT", SelfTbl.Tertiary.ReloadTime or 0, self.SetNWFloat)
-			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_RD", SelfTbl.Tertiary.State == "Loaded" or false, self.SetNWBool)
-			RecacheBindNW(self, SelfTbl, "AHS_Tertiary", SelfTbl.Tertiary, self.SetNWEntity)
-		else
-			SelfTbl.Tertiary = next(self.Racks)
+		local Tertiary = self:GetGun3()
+		if IsValid(Tertiary) then
+			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_SL", Tertiary.TotalAmmo or 0, self.SetNWInt)
+			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_AT", ACF.GetLegacyStyleClassName(Tertiary.BulletData.AmmoType), self.SetNWString)
+			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_NF", Tertiary.NextFire or 0, self.SetNWFloat)
+			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_RT", Tertiary.ReloadTime or 0, self.SetNWFloat)
+			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_RD", Tertiary.State == "Loaded", self.SetNWBool)
+			RecacheBindNW(self, SelfTbl, "AHS_Tertiary", Tertiary, self.SetNWEntity)
 		end
 
 		if IsValid(SelfTbl.Smoke) then
 			RecacheBindNW(self, SelfTbl, "AHS_Smoke_SL", SelfTbl.Smoke.TotalAmmo or 0, self.SetNWInt)
 			RecacheBindNW(self, SelfTbl, "AHS_Smoke_RD", SelfTbl.Smoke.State == "Loaded" or false, self.SetNWBool)
-		else
-			SelfTbl.Smoke = next(self.GunsSmoke)
 		end
 
 		if IsValid(SelfTbl.TurretComputer) then
@@ -71,13 +67,23 @@ do
 		RecacheBindNW(self, SelfTbl, "AHS_Speed", math.Round(SelfTbl.Speed or 0), self.SetNWInt)
 		if IsValid(SelfTbl.Gearbox) then RecacheBindNW(self, SelfTbl, "AHS_Gear", SelfTbl.Gearbox.Gear, self.SetNWInt) end
 
-		local FuelLevel = 0
+		-- Read live: engines' tanks follow parenting, which can change after the drivetrain was analyzed
+		local FuelLevel, FuelCapacity = 0, 0
 		local Conv = self:GetFuelUnit() == 0 and 1 or 0.264172 -- Liters / Gallons
-		for Fuel in pairs(SelfTbl.Fuels) do
-			if IsValid(Fuel) then FuelLevel = FuelLevel + Fuel.Amount end
+		for Engine in pairs(SelfTbl.Engines) do
+			if IsValid(Engine) then
+				for Fuel in pairs(Engine.FuelTanks) do
+					if not CountedFuels[Fuel] then
+						CountedFuels[Fuel] = true
+						FuelLevel    = FuelLevel + Fuel.Amount
+						FuelCapacity = FuelCapacity + Fuel.Capacity
+					end
+				end
+			end
 		end
+		table.Empty(CountedFuels)
 		RecacheBindNW(self, SelfTbl, "AHS_Fuel", math.Round(FuelLevel * Conv), self.SetNWInt)
-		RecacheBindNW(self, SelfTbl, "AHS_FuelCap", math.Round(SelfTbl.FuelCapacity * Conv), self.SetNWInt) -- Should only run once effectively
+		RecacheBindNW(self, SelfTbl, "AHS_FuelCap", math.Round(FuelCapacity * Conv), self.SetNWInt)
 
 		local RPM = 0
 		local EngineCount = 0

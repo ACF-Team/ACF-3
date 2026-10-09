@@ -43,7 +43,7 @@ local function DisableContraption(Player, Ent, Reason)
 end
 
 local function PreCheck()
-    if not ACF.LegalChecks then return true end
+    if not ACF.LegalityDetours then return true end
 end
 
 local ATTEMPT_MESSAGE = "Attempted to use %s (a blocked usercall)."
@@ -115,8 +115,12 @@ local function IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Play
     return IfEntManipulationOnACFContraption_ThenDisableContraption(Player, Ent, Type, PostContraptionCheck)
 end
 
+-- Marks the contraption as having used applyforce-family methods, so the aircraft armor volume
+-- limit only enforces against aircraft that actually rely on them for thrust/lift, not fin aircraft
 local function PostContraptionCheck_IsNotGroundVehicle(Contraption)
-    if Contraption:ACF_IsAircraft() or Contraption:ACF_IsRecreational() then
+    if Contraption:ACF_IsRecreational() then return true end
+    if Contraption:ACF_IsAircraft() then
+        Contraption.ACF_UsedApplyForce = true
         return true
     end
 end
@@ -128,35 +132,35 @@ end
 
 -- TARGET  : SetPos
 -- METHODS : Expression 2, Starfall (Entity & Physobj bindings)
--- ON CALL : If target is an ACF entity, allow the call to go through, but disable the entire family.
+-- ON CALL : If target is an ACF entity, allow the call to go through, but disable the entire contraption.
 -- We do it this way to allow user-created building tools to work, while still
 -- providing programmatic enforcement during combat. 
 local function SetPosDetours()
     do
         local Func Func = Detours.Expression2("e:setPos(v)", function(Scope, Args, ...)
-            local CalledOnCalleeOwned = IfEntManipulationOnACFEntity_ThenDisableFamily(Scope.player, Args[1], "e:setPos(v)")
-            if CalledOnCalleeOwned then return Func(Scope, Args, ...) end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Args[1], "e:setPos(v)") then return end
+            return Func(Scope, Args, ...)
         end)
     end
     do
         local Func Func = Detours.Expression2("b:setPos(v)", function(Scope, Args, ...)
             local Ent = E2Lib.isValidBone(Args[1])
-            local CalledOnCalleeOwned = IfEntManipulationOnACFEntity_ThenDisableFamily(Scope.player, Ent, "b:setPos(v)")
-            if CalledOnCalleeOwned then return Func(Scope, Args, ...) end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Ent, "b:setPos(v)") then return end
+            return Func(Scope, Args, ...)
         end)
     end
 
     do
         local Func Func = Detours.Starfall("instance.Types.Entity.Methods.setPos", function(Instance, Ent, ...)
-            local CalledOnCalleeOwned = IfEntManipulationOnACFEntity_ThenDisableFamily(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:setPos(v)")
-            if CalledOnCalleeOwned then return Func(Instance, Ent, ...) end
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:setPos(v)") then return end
+            return Func(Instance, Ent, ...)
         end)
     end
 
     do
         local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.setPos", function(Instance, PhysObj, ...)
-            local CalledOnCalleeOwned = IfPhysObjManipulationOnACFEntity_ThenDisableFamily(Instance.player, Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setPos(v)")
-            if CalledOnCalleeOwned then return Func(Instance, PhysObj, ...) end
+            if not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setPos(v)") then return end
+            return Func(Instance, PhysObj, ...)
         end)
     end
 end
@@ -229,13 +233,13 @@ local function FreezeDetours()
     do
         local Func Func = Detours.Starfall("instance.Types.Entity.Methods.enableMotion", function(Instance, Ent, Move, ...)
             if not Move and not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:enableMotion(n)") then return end
-            return Func(Instance, Ent, ...)
+            return Func(Instance, Ent, Move, ...)
         end)
     end
     do
         local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.enableMotion", function(Instance, PhysObj, Move, ...)
             if not Move and not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:enableMotion(n)") then return end
-            return Func(Instance, PhysObj, ...)
+            return Func(Instance, PhysObj, Move, ...)
         end)
     end
     -- Wiremod freezers. They call into this hook. Very convenient compared to other entity detours we've had to do...
@@ -251,6 +255,46 @@ local function FreezeDetours()
     end
 end
 
+-- TARGET  : propDraw and equiv. NoDraw setters
+-- METHODS : Expression 2, Starfall (Entity binding)
+-- ON CALL : If target's contraption is an ACF contraption, disable the contraption and block the call.
+-- Hiding a contraption's props mid-combat has no legitimate building use.
+local function PropDrawDetours()
+    do
+        local Func Func = Detours.Expression2("e:propDraw(n)", function(Scope, Args, ...)
+            if Args[2] == 0 and not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Args[1], "e:propDraw(n)") then return end
+            return Func(Scope, Args, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.Starfall("instance.Types.Entity.Methods.setNoDraw", function(Instance, Ent, Draw, ...)
+            if Draw and not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:setNoDraw(b)") then return end
+            return Func(Instance, Ent, Draw, ...)
+        end)
+    end
+end
+
+-- TARGET  : primitiveEdit (primitive addon)
+-- METHODS : Expression 2, Starfall (Entity binding)
+-- ON CALL : If target's contraption is an ACF contraption, disable the contraption and block the call.
+-- primitiveEdit writes directly to a primitive entity's editable variables (size, mass, etc.), so we
+-- treat it the same as SetPos, block it during combat but allow the owner to keep building.
+local function PrimitiveEditDetours()
+    do
+        local Func Func = Detours.Expression2("primitiveEdit(es...)", function(Scope, Args, ...)
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Args[1], "primitiveEdit(e, s, ...)") then return end
+            return Func(Scope, Args, ...)
+        end)
+    end
+
+    do
+        local Func Func = Detours.Starfall("instance.Types.Entity.Methods.primitiveEdit", function(Instance, Ent, ...)
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:primitiveEdit(s, ...)") then return end
+            return Func(Instance, Ent, ...)
+        end)
+    end
+end
+
 -- TARGET  : Entering seats on ACF contraptions remotely
 -- METHODS : Expression 2, Starfall (Entity & Physobj bindings), Wiremod
 -- ON CALL : If target's contraption is an ACF contraption, evaluate the distance between the player, and the to-be-used entity.
@@ -259,7 +303,7 @@ end
 
 local PLAYER_USE_RADIUS = 120
 local function ApproveUseEntity(PlayerInvoker, ToBeUsedEntity, DoNotify)
-    if PreCheck() then return end
+    if PreCheck() then return true end
     if not IsValid(PlayerInvoker) then return end
     if not IsValid(ToBeUsedEntity) then return end
 
@@ -721,7 +765,7 @@ end
 
 -- TARGET  : Constraints between world <---> ACF contraptions
 local function ConstraintDetours()
-    local function DetermineValidConstraint_WorldCheck(Entity1, Entity2, Type, DoNotify)
+    local function DetermineValidConstraint_WorldCheck(Entity1, Entity2, Type, DoNotify, NoCollideState)
         if PreCheck() then return true end
         -- Early exit. This will result in these functions being called a 2nd time in the actual constraint creators,
         -- but if we dont do this check here, we'd be both wasting time and potentially get nasty side effects (this runs
@@ -749,6 +793,10 @@ local function ConstraintDetours()
         if not Contraption then return true end -- We don't care about non-contraptions.
 
         if not Contraption:ACF_IsACFContraption() then return true end -- We don't care about non-ACF contraptions.
+
+        -- Final chance: if NoCollideState is passed, then only return false if NoCollideState is true (kind of a hack)
+        -- This should probably be rewritten to use something that requires less to be passed around but w/e
+        if NoCollideState ~= nil and NoCollideState == false or NoCollideState == 0 then return true end
 
         -- Ok, something tried to use a detoured constraint an ACF contraption to the world. Block it
         if DoNotify then
@@ -808,7 +856,7 @@ local function ConstraintDetours()
 
         local Entity1, Entity2   = PhysObj1:GetEntity(), PhysObj2:GetEntity()
         if CheckAction == ONLY_CHECK_WORLD then
-            if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "", false) then
+            if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "", false, Constraint.NoCollide) then
                 -- Remove the constraint.
                 Constraint:Remove()
                 if PostAction then
@@ -863,9 +911,9 @@ local function ConstraintDetours()
     end)
 
     do
-        local Func Func = Detours.New("constraint.AdvBallsocket", function(Entity1, Entity2, ...)
-            if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "adv ballsocket", true) then return false end
-            return Func(Entity1, Entity2, ...)
+        local Func Func = Detours.New("constraint.AdvBallsocket", function(Entity1, Entity2, Bone1, Bone2, LocalPos1, LocalPos2, ForceLimit, TorqueLimit, XMin, YMin, ZMin, XMax, YMax, ZMax, XFric, YFric, ZFric, OnlyRotation, NoCollide, ...)
+            if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "adv ballsocket", true, NoCollide or false --[[important we dont pass nil here so it checks!]]) then return false end
+            return Func(Entity1, Entity2, Bone1, Bone2, LocalPos1, LocalPos2, ForceLimit, TorqueLimit, XMin, YMin, ZMin, XMax, YMax, ZMax, XFric, YFric, ZFric, OnlyRotation, NoCollide, ...)
         end)
     end
     do
@@ -907,12 +955,6 @@ local function ConstraintDetours()
     do
         local Func Func = Detours.New("constraint.NoCollide", function(Entity1, Entity2, ...)
             if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "no collide", true) then return false, nil end
-            return Func(Entity1, Entity2, ...)
-        end)
-    end
-    do
-        local Func Func = Detours.New("constraint.AdvBallsocket", function(Entity1, Entity2, ...)
-            if not DetermineValidConstraint_WorldCheck(Entity1, Entity2, "adv ballsocket", true) then return false end
             return Func(Entity1, Entity2, ...)
         end)
     end
@@ -975,6 +1017,8 @@ local function TriggerDetourRebuild()
 
     FreezeDetours()
     UseDetours()
+    PropDrawDetours()
+    PrimitiveEditDetours()
 
     AddAngleVelocityDetours()
     AddVelocityDetours()

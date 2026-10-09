@@ -7,14 +7,17 @@ Effects.MaterialColors = {
 	[MAT_CLIP]     = Color(170, 160, 144),
 	[MAT_METAL]    = Color(170, 160, 144),
 	[MAT_COMPUTER] = Color(170, 160, 144),
+	[MAT_VENT]     = Color(170, 160, 144),
 	[MAT_CONCRETE] = Color(180, 172, 158),
 	[MAT_DIRT]     = Color(95, 80, 63),
 	[MAT_GRASS]    = Color(114, 100, 80),
 	[MAT_SLOSH]    = Color(104, 90, 70),
-	[MAT_SNOW]     = Color(154, 140, 110),
 	[MAT_FOLIAGE]  = Color(104, 90, 70),
+	[MAT_SNOW]     = Color(154, 140, 110),
+	[MAT_PLASTIC]  = Color(150, 146, 141),
 	[MAT_TILE]     = Color(150, 146, 141),
 	[MAT_SAND]     = Color(180, 155, 100),
+	[MAT_FLESH]    = Color(114, 50, 50),
 }
 
 do -- Resupply effect
@@ -55,14 +58,14 @@ do -- Resupply effect
 		end
 	end
 
-	local function Add(Entity, RefilledAmmo, RefilledFuel)
+	local function Add(Entity, RefilledAmmo, RefilledFuel, RevivedCrew)
 		if not IsValid(Entity) then return end
 
 		if not next(Supplies) then
 			hook.Add("PostDrawOpaqueRenderables", "ACF_Supply", DrawSpheres)
 		end
 
-		Supplies[Entity] = { Ammo = RefilledAmmo, Fuel = RefilledFuel }
+		Supplies[Entity] = { Ammo = RefilledAmmo, Fuel = RefilledFuel, Crew = RevivedCrew }
 
 		Entity:CallOnRemove("ACF_Supply", Remove)
 	end
@@ -71,8 +74,9 @@ do -- Resupply effect
 		local Entity = net.ReadEntity()
 		local RefilledAmmo = net.ReadBool()
 		local RefilledFuel = net.ReadBool()
+		local RevivedCrew = net.ReadBool()
 
-		Add(Entity, RefilledAmmo, RefilledFuel)
+		Add(Entity, RefilledAmmo, RefilledFuel, RevivedCrew)
 	end)
 
 	net.Receive("ACF_StopSupplyEffect", function()

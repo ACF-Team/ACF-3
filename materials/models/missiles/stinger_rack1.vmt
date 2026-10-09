@@ -1,0 +1,6 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "models\missiles/stinger_rack1"
+	$halflambert 			1
+	$blendtintbybasealpha		1
+}

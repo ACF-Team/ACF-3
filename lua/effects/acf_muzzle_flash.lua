@@ -1,4 +1,4 @@
-local Weapons = ACF.Classes.Weapons
+local Classes = ACF.Classes
 local Sounds = ACF.Utilities.Sounds
 
 function EFFECT:Init(Data)
@@ -12,7 +12,7 @@ function EFFECT:Init(Data)
 	local Pitch      = Gun:GetNWFloat("SoundPitch")
 	local Volume     = Gun:GetNWFloat("SoundVolume")
 	local Class      = Gun:GetNWString("ACF_Class")
-	local ClassData  = Weapons.Get(Class)
+	local ClassData  = Classes.GetSubtypeByName("ACF.Weapons.BaseWeapon", Class)
 	if not ClassData then return end
 	local Attachment = "muzzle"
 	local LongBarrel = ClassData.LongBarrel
@@ -35,7 +35,7 @@ function EFFECT:Init(Data)
 			-- NOTE: Wiki documents level tops out at 180, but seems to fall off past 127
 			Sounds.PlaySound(GunPos, Sound, math.Clamp(SoundPressure, 75, 127), Pitch, Volume)
 
-			if not (Class == "MG" or Class == "RAC") then
+			if not (Class == "ACF.Guns.Machinegun" or Class == "ACF.Guns.RotaryAutocannon") then
 				Sounds.PlaySound(GunPos, Sound, math.Clamp(SoundPressure, 75, 127), Pitch, Volume)
 
 				if SoundPressure > 127 then

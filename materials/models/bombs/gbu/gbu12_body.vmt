@@ -1,0 +1,18 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "models\bombs\gbu/gbu12_body"
+	$bumpmap "models\bombs\gbu/gbu12_body_b"
+	$normalmap "models\bombs\gbu/gbu12_body_b"
+	
+	
+	"$model" "1"
+	"$halflambert" 			1
+	$blendtintbybasealpha		1
+	$surfaceprop	metal
+
+	"$phong" "1"
+	"$phongboost" "2"
+	"$phongfresnelranges" "[.15 .5 1]"
+	$phongexponent			5			// either/or
+
+}

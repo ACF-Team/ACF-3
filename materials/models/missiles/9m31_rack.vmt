@@ -1,0 +1,9 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "models\missiles/9m31_rack"
+	$halflambert 			1
+	$blendtintbybasealpha		1
+	$bumpmap		models\missiles/9m31_rack_normal
+	$surfaceprop	metal
+	"$model" "1"
+}

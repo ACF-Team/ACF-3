@@ -4,40 +4,9 @@ local ModelData = ACF.ModelData
 
 DEFINE_BASECLASS("Panel")
 
--- Panels don't have a CallOnRemove function
--- This roughly replicates the same behavior
-local function AddOnRemove(Panel, Parent)
-	local OldRemove = Panel.Remove
-
-	function Panel:Remove()
-		Parent:EndTemporal(self)
-		Parent:ClearTemporal(self)
-
-		Parent.Items[self] = nil
-
-		for TempParent in pairs(self.TempParents) do
-			TempParent.TempItems[self] = nil
-		end
-
-		if self == Parent.LastItem then
-			Parent.LastItem = self.PrevItem
-		end
-
-		if IsValid(self.PrevItem) then
-			self.PrevItem.NextItem = self.NextItem
-		end
-
-		if IsValid(self.NextItem) then
-			self.NextItem.PrevItem = self.PrevItem
-		end
-
-		OldRemove(self)
-	end
-end
-
 function PANEL:Init()
 	self.Items = {}
-	self.TempItems = {}
+	self.TemporalChildren = {}
 end
 
 function PANEL:ClearAll()
@@ -51,36 +20,30 @@ end
 function PANEL:ClearTemporal(Panel)
 	local Target = IsValid(Panel) and Panel or self
 
-	if not Target.TempItems then return end
+	if not Target.TemporalChildren then return end
 
-	for K in pairs(Target.TempItems) do
-		K:Remove()
+	for K in pairs(Target.TemporalChildren) do
+		if IsValid(K) then
+			K:Remove()
+		end
 	end
-end
 
-local TemporalPanels = {}
+	Target.TemporalChildren = {}
+end
 
 function PANEL:StartTemporal(Panel)
 	local Target = IsValid(Panel) and Panel or self
 
-	if not Target.TempItems then
-		Target.TempItems = {}
+	if not Target.TemporalChildren then
+		Target.TemporalChildren = {}
 	end
 
-	TemporalPanels[Target] = true
+	Target.InTemporal = true
 end
 
 function PANEL:EndTemporal(Panel)
 	local Target = IsValid(Panel) and Panel or self
-
-	TemporalPanels[Target] = nil
-end
-
-function PANEL:ClearAllTemporal()
-	for Panel in pairs(TemporalPanels) do
-		self:EndTemporal(Panel)
-		self:ClearTemporal(Panel)
-	end
+	Target.InTemporal = false
 end
 
 function PANEL:AddPanel(Name)
@@ -94,32 +57,13 @@ function PANEL:AddPanel(Name)
 	Panel:DockMargin(0, 0, 0, 10)
 	Panel:InvalidateParent()
 	Panel:InvalidateLayout()
-	Panel.TempParents = {}
 
 	self:InvalidateLayout()
 	self.Items[Panel] = true
 
-	local LastItem = self.LastItem
-
-	if IsValid(LastItem) then
-		LastItem.NextItem = Panel
-
-		Panel.PrevItem = LastItem
-
-		for Temp in pairs(LastItem.TempParents) do
-			Panel.TempParents[Temp] = true
-			Temp.TempItems[Panel] = true
-		end
+	if self.InTemporal then
+		self.TemporalChildren[Panel] = true
 	end
-
-	self.LastItem = Panel
-
-	for Temp in pairs(TemporalPanels) do
-		Panel.TempParents[Temp] = true
-		Temp.TempItems[Panel] = true
-	end
-
-	AddOnRemove(Panel, self)
 
 	return Panel
 end
@@ -138,6 +82,15 @@ function PANEL:AddButton(Text, Command, ...)
 	end
 
 	return Panel
+end
+
+--- Builds and binds a control for a field of an ACF.Menu EntityContext, dispatched from the field's
+--- class metadata (see lua/acf/menu/framework/fields_cl.lua). Delegates to the framework function so
+--- the logic lives with the rest of the menu framework.
+function PANEL:AddField(Context, FieldName, Overrides)
+	if not (ACF.Menu and ACF.Menu.AddField) then return end
+
+	return ACF.Menu.AddField(self, Context, FieldName, Overrides)
 end
 
 function PANEL:AddCheckBox(Text, ConVar)
@@ -871,6 +824,97 @@ function PANEL:AddGraph()
 	return Base
 end
 
+-- A blank canvas panel used to draw a schematic of an object (e.g. a bullet's side profile).
+-- Unlike AddGraph, there's no grid/axes -- the draw callback just gets the full canvas size and draws whatever it wants.
+function PANEL:AddVisualizer()
+	local Base = self:AddPanel("Panel")
+	Base:DockMargin(0, 5, 0, 5)
+	Base:SetMouseInputEnabled(true)
+
+	AccessorFunc(Base, "BGColor", "BGColor", FORCE_COLOR)
+	Base:SetBGColor(Color(30, 30, 30))
+
+	Base.DrawFunc = nil
+	Base.Regions  = {}
+
+	-- Sets the function called every Paint with (self, w, h) to draw the visual
+	Base.SetDrawFunc = function(self, Func) self.DrawFunc = Func end
+	Base.Clear = function(self) self.DrawFunc = nil end
+
+	-- Registers a hoverable rectangle of the canvas with a label shown in a tooltip (e.g. a material name).
+	-- Regions are checked most-recently-added first, so draw the base shape's region before any detail
+	-- drawn on top of it (e.g. a liner cavity or tracer tip) so the detail's label wins when hovered.
+	Base.AddRegion = function(self, x, y, w, h, Label)
+		local Regions = self.Regions
+		Regions[#Regions + 1] = { x = x, y = y, w = w, h = h, label = Label }
+	end
+
+	Base.Paint = function(self, w, h)
+		surface.SetDrawColor(self.BGColor)
+		surface.DrawRect(0, 0, w, h)
+
+		self.Regions = {}
+
+		if self.DrawFunc then
+			self.DrawFunc(self, w, h)
+		end
+
+		surface.SetDrawColor(0, 0, 0, 255)
+		surface.DrawOutlinedRect(0, 0, w, h)
+
+		if self:IsHovered() then
+			local PanelPosX, PanelPosY = self:LocalToScreen(0, 0)
+			local MouseX, MouseY       = input.GetCursorPos()
+			local LocalMouseX          = MouseX - PanelPosX
+			local LocalMouseY          = MouseY - PanelPosY
+			local Regions              = self.Regions
+			local Label
+
+			for I = #Regions, 1, -1 do
+				local Region = Regions[I]
+
+				if LocalMouseX >= Region.x and LocalMouseX <= Region.x + Region.w and LocalMouseY >= Region.y and LocalMouseY <= Region.y + Region.h then
+					surface.SetDrawColor(255, 255, 255, 20 + ((math.sin(SysTime() * 7) + 1) * 20))
+					surface.DrawRect(Region.x, Region.y, Region.w, Region.h)
+
+					Label = Region.label
+
+					break
+				end
+			end
+
+			if Label then
+				surface.SetFont("ACF_Label")
+
+				-- Labels may span multiple lines (e.g. a material name with its dimensions on the
+				-- line below), so the box is sized to the widest line and the full stack's height.
+				local Lines = string.Explode("\n", Label)
+				local TextW, LineH = 0, select(2, surface.GetTextSize(""))
+
+				for _, Line in ipairs(Lines) do
+					TextW = math.max(TextW, surface.GetTextSize(Line))
+				end
+
+				local TextH = LineH * #Lines
+				local PadX, PadY = 6, 4
+				local BoxX = math.Clamp(LocalMouseX + 12, 0, math.max(w - TextW - PadX * 2, 0))
+				local BoxY = math.Clamp(LocalMouseY + 12, 0, math.max(h - TextH - PadY * 2, 0))
+
+				surface.SetDrawColor(20, 20, 20, 230)
+				surface.DrawRect(BoxX, BoxY, TextW + PadX * 2, TextH + PadY * 2)
+				surface.SetDrawColor(255, 255, 255, 255)
+				surface.DrawOutlinedRect(BoxX, BoxY, TextW + PadX * 2, TextH + PadY * 2)
+
+				for I, Line in ipairs(Lines) do
+					draw.SimpleText(Line, "ACF_Label", BoxX + PadX, BoxY + PadY + (I - 1) * LineH, Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+				end
+			end
+		end
+	end
+
+	return Base
+end
+
 -- Lerps linearly between two matrices
 -- This is in no way correct, but works fine for this purpose
 -- Matrices need to be affine, shear is not preserved
@@ -1240,56 +1284,6 @@ function PANEL:AddTable(Width, Height, BorderColor, BorderWidth)
 	end
 
 	return TablePanel
-end
-
-for TypeName, TypeDef in ACF.Classes.Entities.IterateTypes() do
-	if TypeDef.CreateMenuItem then
-		PANEL["Add" .. TypeName .. "UserVar"] = function(self, Ctx, Text, VarName, ...)
-			Ctx:SetCurrentVar(VarName) -- Initialize the variable for the validation context now so
-			-- the specs calls just work in CreateMenuItem. If the consumer wants VarName, it's available
-			-- in the context...
-			local Panel = TypeDef.CreateMenuItem(self, Ctx, Text, ...)
-			return Panel
-		end
-	else
-		PANEL["Add" .. TypeName .. "UserVar"] = function() error("ACF auto-register type '" .. TypeName .. "' does not contain a CreateMenuItem method") end
-	end
-end
-
--- Called after a menu item has been fully built (ie. something in menu/items_cl)
--- Was designed because class views wait until all elements are available, but I'm trying to flesh
--- out a less annoying API with autoregister
-function PANEL:EnqueuePostBuildFn(PostBuildFn)
-	if not self.PostBuildFnQueue then
-		self.PostBuildFnQueue = {PostBuildFn}
-	else
-		self.PostBuildFnQueue[#self.PostBuildFnQueue + 1] = PostBuildFn
-	end
-end
-
-function PANEL:ClearPostBuildFns()
-	self.PostBuildFnQueue = nil
-end
-
-function PANEL:ExecutePostBuildFns()
-	local Enqueued = self.PostBuildFnQueue
-	if not Enqueued then return end
-	for _, Fn in ipairs(Enqueued) do
-		Fn(self)
-	end
-	self:ClearPostBuildFns()
-end
-
-function PANEL:SendUserVarChangedSignal(Producer, KeyChanged, Value)
-	if self == Producer and self.ACF_OnUpdate then
-		self:ACF_OnUpdate(KeyChanged, Producer, Value)
-	end
-	for _, Panel in ipairs(self:GetChildren()) do
-		if Panel ~= Producer and Panel.ACF_OnUpdate then
-			Panel.ACF_OnUpdate(Panel, KeyChanged, Producer, Value)
-		end
-		PANEL.SendUserVarChangedSignal(Panel, Producer, KeyChanged, Value)
-	end
 end
 
 derma.DefineControl("ACF_Panel", "", PANEL, "Panel")

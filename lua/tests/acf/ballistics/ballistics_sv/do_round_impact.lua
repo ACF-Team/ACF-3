@@ -6,6 +6,11 @@ return {
         State.ACF_APKill = stub( ACF, "APKill" ).returns( State.ACF_APKill_Result )
         State.ACF_KEShove = stub( ACF, "KEShove" )
 
+        -- Terminal armor interactions are exercised by their own tests; stub them out
+        -- here so DoRoundImpact's kill/knockback/ricochet logic can be tested in isolation.
+        stub( ACF.Ballistics, "DoSpall" )
+        stub( ACF.Ballistics, "DoReactiveArmor" )
+
         State.ACF_Damage_Result = { Damage = 0, Loss = 0, Kill = false }
         stub( ACF.Damage, "dealDamage" ).returns( State.ACF_Damage_Result )
 

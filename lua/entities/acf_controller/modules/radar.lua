@@ -1,0 +1,122 @@
+local function Init(Entity)
+	Entity.Radar                  = nil      -- Radar, if any
+	Entity.RadarVertical          = nil      -- Radar vertical turret, if any
+	Entity.RadarUpdateRate        = 7        -- How often to update the radar, in ticks.
+	Entity.SelectedTargetID       = nil      -- Currently selected radar target ID
+	Entity.SelectedTargetPos      = Vector() -- Position of currently selected radar target, as of the last radar update
+	Entity.SelectedTargetVel      = Vector() -- Velocity of currently selected radar target
+	Entity.SelectedTargetSampleAt = 0        -- CurTime() the above pair was sampled, for slaving extrapolation
+end
+
+-- Radar related
+do
+	function ENT:AnalyzeRadars(Radar)
+		self.RadarVertical = Radar:GetParent()
+		self.RadarUpdateRate = math.ceil(Radar.Outputs["Think Delay"].Value / (1 / 66))
+	end
+
+	net.Receive("ACF_Controller_Radar", function()
+		local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
+		local SelectedID = net.ReadUInt(6)
+		local Entity = Entity(EntIndex)
+		if not IsValid(Entity) then return end
+		Entity.SelectedTargetID = SelectedID ~= 0 and SelectedID or nil
+	end)
+
+	function ENT:ProcessRadars(SelfTbl)
+		local Radar = SelfTbl.Radar
+		if not IsValid(Radar) then return end
+
+		local IDs = Radar.Outputs.IDs.Value
+		local Types = Radar.Outputs.Type.Value
+
+		-- The driver HUD should only show contraption targets
+		local Indexes = {}
+		for i = 1, #IDs do
+			if Types[i] ~= "Contraption" then continue end
+
+			Indexes[#Indexes + 1] = i
+
+			if #Indexes >= 15 then break end
+		end
+
+		net.Start("ACF_Controller_Radar")
+		net.WriteEntity(self)
+		net.WriteUInt(#Indexes, 4)
+		for _, i in ipairs(Indexes) do
+			local ID = IDs[i] or 0
+			net.WriteUInt(ID, 6)
+			net.WriteString(Radar.Outputs.Owner.Value[i] or "")
+			net.WriteVector(Radar.Outputs.Position.Value[i] or vector_origin)
+
+			if ID == SelfTbl.SelectedTargetID then
+				SelfTbl.SelectedTargetPos      = Radar.Outputs.Position.Value[i] or vector_origin
+				SelfTbl.SelectedTargetVel      = Radar.Outputs.Velocity.Value[i] or vector_origin
+				SelfTbl.SelectedTargetSampleAt = CurTime()
+			end
+		end
+		net.WriteVector(SelfTbl.SelectedTargetVel)
+		net.Send(self.Driver)
+	end
+
+	-- Slaves the turret and guidance computers to the radar's selected target.
+	function ENT:ProcessRadarSlaving(SelfTbl)
+		local Radar = SelfTbl.Radar
+		if not IsValid(Radar) then return end
+
+		-- The IRST gimbal follows HitPos while it is non-zero, so release it once the selection clears
+		if Radar.InputHitPos and not SelfTbl.SelectedTargetID then
+			if SelfTbl.IRSTSlaved then
+				SelfTbl.IRSTSlaved = nil
+				Radar:TriggerInput("HitPos", Vector())
+			end
+
+			return
+		end
+
+		if not SelfTbl.SelectedTargetID then return end
+
+		local HasTurrets = Radar.Turrets and next(Radar.Turrets)
+		local GuideComp = SelfTbl.GuidanceComputer
+		if not HasTurrets and not Radar.InputHitPos and not IsValid(GuideComp) then return end
+
+		local Elapsed = CurTime() - SelfTbl.SelectedTargetSampleAt
+		local Pos = SelfTbl.SelectedTargetPos + SelfTbl.SelectedTargetVel * Elapsed
+
+		if Radar.InputHitPos then
+			SelfTbl.IRSTSlaved = true
+			Radar:TriggerInput("HitPos", Pos)
+		end
+
+		if HasTurrets then
+			for Turret in pairs(Radar.Turrets) do
+				if IsValid(Turret) then
+					Turret:InputDirection(Pos)
+				end
+			end
+		end
+
+		if IsValid(GuideComp) then
+			GuideComp:TriggerInput("HitPos", Pos)
+			GuideComp:TriggerInput("Coordinates", Pos)
+		end
+	end
+end
+
+ACF.RegisterControllerLink("acf_radar", {
+	Field = "Radar",
+	Single = true,
+	OnLinked = function(Controller, Target)
+		Controller:AnalyzeRadars(Target)
+	end,
+})
+
+ACF.RegisterControllerLink("acf_irst", {
+	Field = "Radar",
+	Single = true,
+	OnLinked = function(Controller, Target)
+		Controller:AnalyzeRadars(Target)
+	end,
+})
+
+return Init

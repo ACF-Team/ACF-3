@@ -1,0 +1,16 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" 	"models/bluemetaknight/Detector_D"
+	"$bumpmap" 	"models/bluemetaknight/Detector_N"
+
+	"$surfaceprop" "metal"
+	"$model" "1"
+	"$blendtintbybasealpha" "1"
+
+	"$phong" "1"
+	"$phongexponent" "4"
+	"$phongboost" "0.5"	
+	"$phongfresnelranges"	"[0.2 0.5 1]"
+	"$halflambert" "1"
+}
+

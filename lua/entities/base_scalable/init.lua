@@ -25,6 +25,15 @@ local function TransmitScaleInfo(Entity, To)
 	net.WriteFloat(Scale[1])
 	net.WriteFloat(Scale[2])
 	net.WriteFloat(Scale[3])
+	if Entity.ACF_MassCenterOverride then
+		net.WriteBool(true)
+		net.WriteFloat(Entity.ACF_MassCenterOverride[1])
+		net.WriteFloat(Entity.ACF_MassCenterOverride[2])
+		net.WriteFloat(Entity.ACF_MassCenterOverride[3])
+	else
+		net.WriteBool(false)
+	end
+
 	net.WriteString(Data.Type)
 	net.WriteString(Data.Path)
 
@@ -47,7 +56,9 @@ do -- Size and scale setter methods
 	local function ApplyScale(Entity, Data, Scale)
 		local Mesh = Data:GetMesh(Scale)
 
-		Entity:PhysicsInitMultiConvex(Mesh)
+		local Constraints = table.Copy(constraint.GetTable(Entity))
+
+		Entity:PhysicsInitMultiConvex(Mesh, nil, Entity.ACF_MassCenterOverride or nil)
 		Entity:SetMoveType(MOVETYPE_VPHYSICS)
 		Entity:SetSolid(SOLID_VPHYSICS)
 		Entity:EnableCustomCollisions(true)
@@ -59,10 +70,28 @@ do -- Size and scale setter methods
 			PhysObj:EnableMotion(false)
 		end
 
+		for _, Con in ipairs(Constraints) do
+			local Factory = duplicator.ConstraintType[Con.Type]
+			if not Factory then continue end
+
+			if IsValid(Con.Constraint) then
+				Con.Constraint:Remove()
+			end
+
+			-- MARCH: This kinda sucks, but its the only way I can think of to preserve constraints across changes to scale.
+			-- The timer.simple here will probably make things unhappy if they're unfrozen...
+			-- but without it, this doesnt even work. Very hacky, not happy with it, but whatever
+			local Args = {}
+			for i, Key in ipairs(Factory.Args) do Args[i] = Con[Key] end
+			Factory.Func(unpack(Args, 1, #Factory.Args))
+			timer.Simple(0, function() Factory.Func(unpack(Args, 1, #Factory.Args)) end)
+		end
+
 		return PhysObj
 	end
 
 	local function ResizeEntity(Entity, Scale)
+		if Entity.Scale == Scale then return end
 		local Data     = Entity.ScaleData
 		local PhysObj  = ApplyScale(Entity, Data, Scale)
 		local Size     = Data:GetSize(Scale)

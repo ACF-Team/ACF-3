@@ -37,23 +37,27 @@ local VECTOR = FindMetaTable("Vector")
 --===============================================================================================--
 local ACF 			 = ACF
 
-local HookRun     	 = hook.Run
 local Utilities   	 = ACF.Utilities
 local Notify      	 = Utilities.Notify
-local WireIO      	 = Utilities.WireIO
 
-local Compatibility  = ACF.Compatibility
 local Contraption 	 = ACF.Contraption
 local hook	   		 = hook
 local Classes		 = ACF.Classes
-local CrewTypes 	 = Classes.CrewTypes
-local CrewModels 	 = Classes.CrewModels
-local Entities   	 = Classes.Entities
 local TraceHull 	 = util.TraceHull
 local TimerSimple	 = timer.Simple
 local Damage		 = ACF.Damage
 
 local IsEntityValid  = ACF.Optimizations.IsEntityValid
+
+-- Crew classes are V2 (ACF.CrewTypes.*, ACF.CrewModels.*, ACF.CrewPoses.*); the entity addresses them
+-- by short id (the FQN suffix). Resolve via the registry.
+local function GetCrewType(ID)  return Classes.GetSubtypeByName("ACF.CrewTypes.BaseCrewType",   "ACF.CrewTypes."   .. tostring(ID)) end
+local function GetCrewModel(ID) return Classes.GetSubtypeByName("ACF.CrewModels.BaseCrewModel", "ACF.CrewModels." .. tostring(ID)) end
+local function GetCrewPose(ID)  return Classes.GetSubtypeByName("ACF.CrewPoses.BaseCrewPose",   "ACF.CrewPoses."   .. tostring(ID)) end
+
+-- Fall back to the defaults if a (legacy) id no longer maps to a class, so reconfigure/dupe never nils.
+function ENT:GetCrewType()  return GetCrewType(self:ACF_GetUserVar("CrewTypeID")) or GetCrewType("Commander") end
+function ENT:GetCrewModel() return GetCrewModel(self:ACF_GetUserVar("CrewModelID")) or GetCrewModel("Sitting") end
 
 local ENT_UpdateUltraLowFreq
 local ENT_UpdateLowFreq
@@ -245,8 +249,9 @@ do -- Random timer stuff
 
 		-- Update oxygen levels and apply drowning if necessary
 		local MouthPos = ENTITY.LocalToWorld(self, SelfTbl.CrewModel.MouthOffsetL) -- Probably well underwater at this point
-		-- debugoverlay.Cross(MouthPos, 4, 1, Red, true)
-		if bit.band(util.PointContents(MouthPos), CONTENTS_WATER) == CONTENTS_WATER then
+		-- Debug.Cross(MouthPos, 4, 1, Red, true)
+		local LiquidMask = bit.bor(CONTENTS_WATER, CONTENTS_SLIME)
+		if bit.band(util.PointContents(MouthPos), LiquidMask) ~= 0 then
 			SelfTbl.Oxygen = SelfTbl.Oxygen - DeltaTime * ACF.CrewOxygenLossRate
 		else
 			SelfTbl.Oxygen = SelfTbl.Oxygen + DeltaTime * ACF.CrewOxygenGainRate
@@ -356,7 +361,7 @@ do -- Random timer stuff
 		end
 
 		SelfTbl.OverlayErrors.ParentCheck = not IsParented and "This crew must be parented correctly!\n(parent to zero or more turret entities, ending in a baseplate)" or nil
-		SelfTbl.OverlayErrors.LinkCheck = SelfTbl.CrewTypeID ~= "Commander" and (Targets == nil or table.Count(Targets) == 0) and "This crew must be linked!" or nil
+		SelfTbl.OverlayErrors.LinkCheck = SelfTbl.CrewTypeID ~= "Commander" and SelfTbl.CrewTypeID ~= "Driver" and (Targets == nil or table.Count(Targets) == 0) and "This crew must be linked!" or nil
 
 		EnforceLimits(self)
 
@@ -373,7 +378,7 @@ do -- Random timer stuff
 		local Baseplate = Contraption and Contraption.ACF_Baseplate
 		if not IsEntityValid(Baseplate) then return end -- Why would this happen for a recent vehicle? no clue lol...
 		-- This is ACF_LiveData to try to help with performance issues (__index'ing)... ugh
-		local SampleRate = ENTITY.GetTable(Baseplate).ACF_LiveData["GForceTicks"] or 1
+		local SampleRate = ENTITY.GetTable(Baseplate).ACF_LiveData["BaseplateType"].GForceTicks or 1
 		if Contraption.IsPickedUp then return end
 
 		local SelfTbl = ENTITY.GetTable(self)
@@ -383,19 +388,30 @@ do -- Random timer stuff
 		if GForceIter % SampleRate ~= 0 then return end
 
 		local NewPos = ENTITY.LocalToWorld(self, SelfTbl.CrewModel.ScanOffsetL)
-		-- debugoverlay.Cross(NewPos, 4, 1, Red, true)
+		-- Debug.Cross(NewPos, 4, 1, Red, true)
 		local GForce = ACF.UpdateGForceTracker(SelfTbl.GForceTracker, NewPos, SampleRate)
 
-		-- If specified, affect crew ergonomics based on G forces
+		-- If specified, affect crew ergonomics based on G-forces
 		local GForceInfo = SelfTbl.CrewType.GForceInfo
 		local Effs = GForceInfo.Efficiencies
+
+		-- Commanders take Loader-accurate G-force penalties while performing Loader duty
+		if GForceInfo.LoaderEfficiencies then
+			local TargetsByType = SelfTbl.TargetsByType
+			local LinkedToGun = TargetsByType and TargetsByType.acf_gun and next(TargetsByType.acf_gun)
+			local LinkedToRack = TargetsByType and TargetsByType.acf_rack and next(TargetsByType.acf_rack)
+			if LinkedToGun or LinkedToRack then
+				Effs = GForceInfo.LoaderEfficiencies
+			end
+		end
+
 		if Effs then
 			SelfTbl.MoveEff = 1 - ACF.Normalize(GForce, Effs.Min, Effs.Max)
 			WireLib.TriggerOutput(self, "MoveEff", SelfTbl.MoveEff * 100)
 		end
 		WireLib.TriggerOutput(self, "GForce", GForce)
 
-		-- If specified, apply damage to crew based on G forces
+		-- If specified, apply damage to crew based on G-forces
 		local Damages = GForceInfo.Damages
 		if Damages and GForce > Damages.Min and SelfTbl.IsAlive then
 			local Damage = ACF.Normalize(GForce, Damages.Min, Damages.Max) * DeltaTime * SampleRate
@@ -412,65 +428,33 @@ do -- Random timer stuff
 end
 
 do
-	local Outputs = {
-		"ModelEff",
-		"LeanEff",
-		"SpaceEff",
-		"HealthEff",
-		"MoveEff",
-		"TotalEff",
-		"Oxygen (Seconds of breath left before drowning)",
-		"GForce (The strength of GForce experienced)",
-		"Stamina (The stamina of the crew member)",
-		"Entity (The crew entity itself) [ENTITY]"
-	}
-
-	local function ConvertACEData(Data)
-		-- The Id field is used by ACE to store their own crew type
-
-		if Data.CrewTypeID == nil then
-			local ACE_Id = Data.Id
-			if ACE_Id ~= nil then
-				Data.CrewTypeID = Compatibility.Crew.CheckACECrewType(ACE_Id)
-			end
+	-- Field defaults + numeric clamps are handled by the serializer.
+	function ENT.ACF_OnVerifyClientData(ClientData)
+		if ClientData.CrewTypeID ~= nil and not GetCrewType(ClientData.CrewTypeID) then
+			ClientData.CrewTypeID = "Commander"
 		end
 
-		-- The ModelType field is used by ACE to store their own crew model
-		-- TODO: this seems unused, Craftian (?)   
-		--		- march
-		--  if Data.CrewModelID == nil then
-		--  	local ACE_ModelType = Data.ModelType
-		--  	if ACE_ModelType ~= nil then
-		--  		
-		--  	end
-		--  end
-	end
-	local function VerifyData(Data)
-		ConvertACEData(Data)
-		-- Default crew is a sitting commander that can replace others and be replaced
-		if Data.CrewTypeID == nil then Data.CrewTypeID = "Commander" end
-		if Data.CrewModelID == nil then Data.CrewModelID = "Sitting" end
-		if Data.ReplaceOthers == nil then Data.ReplaceOthers = true end
-		if Data.ReplaceSelf == nil then Data.ReplaceSelf = true end
-		if Data.UseAnimation == nil then Data.UseAnimation = false end
-
-		if not isnumber(Data.CrewPriority) then -- Ammo priority is used to deliniate different stages
-			Data.CrewPriority = 1
+		if ClientData.CrewModelID ~= nil and not GetCrewModel(ClientData.CrewModelID) then
+			ClientData.CrewModelID = "Sitting"
 		end
-		Data.CrewPriority = math.Clamp(Data.CrewPriority, ACF.CrewRepPrioMin, ACF.CrewRepPrioMax)
 
-		if Data.CrewPlayerModel == nil or Data.CrewPlayerModel == "" then Data.CrewPlayerModel = "models/player/dod_german.mdl" end
-		Data.CrewPlayerModel = string.sub(Data.CrewPlayerModel or "", 1, 260)
+		if ClientData.CrewPoseID ~= nil and ClientData.CrewPoseID ~= "" and not GetCrewPose(ClientData.CrewPoseID) then
+			ClientData.CrewPoseID = ""
+		end
 
-		if Data.CrewPlayerModelBodygroups == nil then Data.CrewPlayerModelBodygroups = "" end
-		Data.CrewPlayerModelBodygroups = string.sub(Data.CrewPlayerModelBodygroups or "", 1, 63)
+		if isstring(ClientData.CrewPlayerModel) then
+			ClientData.CrewPlayerModel = string.sub(ClientData.CrewPlayerModel, 1, 260)
+		end
 
-		if Data.CrewPlayerModelSkin == nil then Data.CrewPlayerModelSkin = 0 end
-		Data.CrewPlayerModelSkin = math.Clamp(math.Round(Data.CrewPlayerModelSkin), 0, 63)
+		if isstring(ClientData.CrewPlayerModelBodygroups) then
+			ClientData.CrewPlayerModelBodygroups = string.sub(ClientData.CrewPlayerModelBodygroups, 1, 63)
+		end
 	end
 
-	local function UpdateCrew(Entity, Data, CrewModel, CrewType)
-		VerifyData(Data)
+	local function UpdateCrew(Entity)
+		local CrewModel  = Entity:GetCrewModel()
+		local CrewType   = Entity:GetCrewType()
+		local CrewTypeID = Entity:ACF_GetUserVar("CrewTypeID")
 
 		-- Update model info and physics
 		Entity.ACF = Entity.ACF or {}
@@ -481,28 +465,22 @@ do
 		Entity:PhysicsInit(SOLID_VPHYSICS)
 		Entity:SetMoveType(MOVETYPE_VPHYSICS)
 
-		-- Loads crew arguments ("CrewTypeID", "CrewModelID", "ReplaceOthers", "ReplaceSelf") into the entity from data
-		for _, V in ipairs(Entity.DataStore) do
-			Entity[V] = Data[V]
-		end
-
-		-- Update entity data
+		-- Update entity data (runtime mirrors of the serialized field set + resolved classes)
 		Entity.CrewModel = CrewModel
 		Entity.CrewType = CrewType
-		Entity.CrewTypeID = Data.CrewTypeID
-		Entity.CrewModelID = Data.CrewModelID
-		Entity.ReplaceOthers = Data.ReplaceOthers
-		Entity.ReplaceSelf = Data.ReplaceSelf
-		Entity.UseAnimation = Data.UseAnimation or false
-		Entity.CrewPriority = Data.CrewPriority
-		Entity.ReplacedOnlyLower = Data.ReplacedOnlyLower
-		Entity.Name = CrewType.ID .. " Crew Member"
-		Entity.ShortName = CrewType.ID
+		Entity.CrewTypeID = CrewTypeID
+		Entity.CrewModelID = Entity:ACF_GetUserVar("CrewModelID")
+		Entity.ReplaceOthers = Entity:ACF_GetUserVar("ReplaceOthers")
+		Entity.ReplaceSelf = Entity:ACF_GetUserVar("ReplaceSelf")
+		Entity.UseAnimation = Entity:ACF_GetUserVar("UseAnimation") or false
+		Entity.CrewPriority = Entity:ACF_GetUserVar("CrewPriority")
+		Entity.Name = CrewTypeID .. " Crew Member"
+		Entity.ShortName = CrewTypeID
 
-		Entity.CrewPoseID = Data.CrewPoseID
-		Entity.CrewPlayerModel = Data.CrewPlayerModel
-		Entity.CrewPlayerModelBodygroups = Data.CrewPlayerModelBodygroups
-		Entity.CrewPlayerModelSkin = Data.CrewPlayerModelSkin
+		Entity.CrewPoseID = Entity:ACF_GetUserVar("CrewPoseID")
+		Entity.CrewPlayerModel = Entity:ACF_GetUserVar("CrewPlayerModel")
+		Entity.CrewPlayerModelBodygroups = Entity:ACF_GetUserVar("CrewPlayerModelBodygroups")
+		Entity.CrewPlayerModelSkin = Entity:ACF_GetUserVar("CrewPlayerModelSkin")
 
 		-- Various efficiency modifiers
 		Entity.ModelEff = 1
@@ -512,9 +490,9 @@ do
 		Entity.HealthEff = 1
 		Entity.TotalEff = 1
 		Entity.Focus = 1
-		Entity.ModelEff = CrewModel.BaseErgoScores[Data.CrewTypeID] or 1
+		Entity.ModelEff = CrewModel.BaseErgoScores[CrewTypeID] or 1
 
-		Entity:SetNWString("WireName", "ACF Crew Member") -- Set overlay wire entity name
+		Entity:ACF_SetEntityName("ACF Crew Member") -- Set overlay wire entity name
 
 		Entity.ACF.Model = CrewModel.Model
 
@@ -546,126 +524,92 @@ do
 		end
 	end
 
-	function ACF.MakeCrew(Player, Pos, Angle, Data)
-		VerifyData(Data)
+	-- Spawn-only init (runs before Entity:Spawn(), so the model + gforce tracker are ready for physics).
+	function ENT:ACF_PreSpawn(_, _, _, ClientData)
+		self.EntType = "Crew"
 
-		local CrewModel = CrewModels.Get(Data.CrewModelID)
-		local CrewType = CrewTypes.Get(Data.CrewTypeID)
-
-		-- Enforcing limits
-		local Limit = "_acf_crew"
-		if not Player:CheckLimit(Limit) then return false end
-
-		-- Creating the entity
-		local CanSpawn	= HookRun("ACF_PreSpawnEntity", "acf_crew", Player, Data, CrewModel, CrewType)
-		if CanSpawn == false then return false end
-
-		local Entity = ents.Create("acf_crew")
-		if not IsValid(Entity) then return end
-
-		Entity:SetPlayer(Player)
-		Entity:SetAngles(Angle)
-		Entity:SetPos(Pos)
-		Entity:Spawn()
-
-		Player:AddCleanup("acf_crew", Entity)
-		Player:AddCount(Limit, Entity)
-		if CrewType.LimitConVar then Player:AddCount(CrewType.LimitConVar.Name, Entity) end
-
-		Entity.Name = CrewType.ID .. " Crew Member"
-		Entity.ShortName = CrewType.ID
-		Entity.EntType = "Crew"
-
-		Entity.DataStore = Entities.GetArguments("acf_crew")
-
-		-- Storing links
-		Entity.Targets = {} -- Targets linked to this crew (LUT)
-		Entity.TargetsByType = {} -- Targets linked to this crew by type (LUT)
+		-- Stored links
+		self.Targets       = {} -- Targets linked to this crew (LUT)
+		self.TargetsByType = {} -- Targets linked to this crew by type (LUT)
 
 		-- Various state variables
-		Entity.ShouldScan = false
-		Entity.Oxygen = ACF.CrewOxygen -- Time in seconds of breath left before drowning
-		Entity.GForceStrain = 0
-		Entity.IsAlive = true
+		self.ShouldScan   = false
+		self.Oxygen       = ACF.CrewOxygen -- Time in seconds of breath left before drowning
+		self.GForceStrain = 0
+		self.IsAlive      = true
 
-		Entity.GForceTracker = ACF.SetupGForceTracker(Entity:LocalToWorld(CrewModel.ScanOffsetL))
+		-- ClientData isn't verified yet here; resolve defensively for the pre-spawn model.
+		local CrewModel = GetCrewModel(ClientData.CrewModelID or "Sitting") or GetCrewModel("Sitting")
 
-		UpdateCrew(Entity, Data, CrewModel, CrewType)
+		self.ACF = {}
+		self.ACF.Model = CrewModel.Model
+		self:SetModel(CrewModel.Model)
 
-		-- Run randomized timers
-		-- TODO: Fix args
-		ACF.AugmentedTimer(function(cfg) ENT_UpdateUltraLowFreq(Entity, cfg) end, function() return IsEntityValid(Entity) end, nil, {MinTime = 3, MaxTime = 5, Delay = 0.1})
-		ACF.AugmentedTimer(function(cfg) ENT_UpdateLowFreq(Entity, cfg) end, function() return IsEntityValid(Entity) end, nil, {MinTime = 1, MaxTime = 2, Delay = 0.1})
-		ACF.AugmentedTimer(function(cfg) ENT_UpdateMedFreq(Entity, cfg) end, function() return IsEntityValid(Entity) end, nil, {MinTime = 0.5, MaxTime = 1, Delay = 0.1})
-		ACF.AugmentedTimer(function(cfg) ENT_UpdateHighFreq(Entity, cfg) end, function() return IsEntityValid(Entity) end, nil, {MinTime = 0.1, MaxTime = 0.5, Delay = 0.1})
-		ACF.AugmentedTimer(function(cfg) ENT_EnforceLimits(Entity, cfg) end, function() return IsEntityValid(Entity) end, nil, {MinTime = 1, MaxTime = 2, Delay = 0.1})
-
-		hook.Add("Tick", "GForceCalculation" .. Entity:EntIndex(), function()
-			Entity:EnforceGForces(cfg)
-		end)
-
-		Entity:CallOnRemove("GForceCalculation" .. Entity:EntIndex(), function()
-			hook.Remove("Tick", "GForceCalculation" .. Entity:EntIndex())
-		end)
-
-		-- Finish setting up the entity
-		HookRun("ACF_OnSpawnEntity", "acf_crew", Entity, Data, CrewModel, CrewType)
-
-		WireIO.SetupOutputs(Entity, Outputs, Data)
-
-		WireLib.TriggerOutput(Entity, "ModelEff", Entity.ModelEff * 100)
-
-		if Entity.CrewType.OnSpawn then Entity.CrewType.OnSpawn(Entity) end
-
-		return Entity
+		self.GForceTracker = ACF.SetupGForceTracker(self:LocalToWorld(CrewModel.ScanOffsetL))
 	end
 
-	-- Bare minimum arguments to reconstruct a crew
-	Entities.Register("acf_crew", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "CrewPoseID", "ReplaceOthers", "ReplaceSelf", "UseAnimation", "CrewPriority")
+	function ENT:ACF_OnSpawn(Player)
+		self:SetPlayer(Player)
+	end
 
-	-- Compatibility with ACE crew entities
-	Entities.Register("ace_crewseat_driver", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "CrewPoseID", "ReplaceOthers", "ReplaceSelf", "UseAnimation", "CrewPriority")
-	Entities.Register("ace_crewseat_gunner", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "CrewPoseID", "ReplaceOthers", "ReplaceSelf", "UseAnimation", "CrewPriority")
-	Entities.Register("ace_crewseat_loader", ACF.MakeCrew, "CrewTypeID", "CrewModelID", "CrewPoseID", "ReplaceOthers", "ReplaceSelf", "UseAnimation", "CrewPriority")
+	function ENT.ACF_CheckSpawnLimit(Player)
+		return Player:CheckLimit("_acf_crew")
+	end
 
-	-- Necessary for e2/sf link related functionality
-	ACF.RegisterLinkSource("acf_gun", "Crew")
-	ACF.RegisterLinkSource("acf_engine", "Crew")
+	function ENT:ACF_PostUpdateEntityData()
+		local OldType = self.CrewTypeID
 
-	function ENT:Update(Data)
-		-- Called when updating the entity
-		VerifyData(Data)
+		UpdateCrew(self)
 
-		local CrewModel = CrewModels.Get(Data.CrewModelID)
-		local CrewType = CrewTypes.Get(Data.CrewTypeID)
-
-		local CanUpdate, Reason = HookRun("ACF_PreUpdateEntity", "acf_crew", self, Data, CrewModel, CrewType)
-		if CanUpdate == false then return CanUpdate, Reason end
-
-		HookRun("ACF_OnEntityLast", "acf_crew", self)
-
-		-- Unlink crews if their type changes
-		if self.CrewTypeID ~= Data.CrewTypeID then
+		-- A crew-type change invalidates existing links (no-op on a fresh spawn).
+		if OldType and OldType ~= self.CrewTypeID then
 			Notify.EntityWarning(self, "Crew occupation has changed", "This crew member's occupation was changed. All links have been removed, please relink.")
+
 			if next(self.Targets) then
 				for Target in pairs(self.Targets) do
 					self:Unlink(Target)
 				end
 			end
+
 			self:CFW_Unindex_Crew(self:CFW_GetContraption())
 			self:CFW_Index_Crew(self:CFW_GetContraption())
 		end
-
-		ACF.SaveEntity(self)
-
-		UpdateCrew(self, Data, CrewModel, CrewType)
-
-		ACF.RestoreEntity(self)
-
-		HookRun("ACF_OnUpdateEntity", "acf_crew", self, Data, CrewModel, CrewType)
-
-		return true, "Crew updated successfully!"
 	end
+
+	function ENT:ACF_PostSpawn(Player)
+		local CrewType = self:GetCrewType()
+
+		if IsValid(Player) and CrewType.LimitConVar then
+			Player:AddCount(CrewType.LimitConVar.Name, self)
+		end
+
+		-- Registered here so self.CrewType always exists by the time this is visible
+		ACF.ActiveCrews[self] = true
+		self:StartRegenTimer()
+
+		-- Run randomized timers
+		ACF.AugmentedTimer(function(cfg) ENT_UpdateUltraLowFreq(self, cfg) end, function() return IsEntityValid(self) end, nil, {MinTime = 3, MaxTime = 5, Delay = 0.1})
+		ACF.AugmentedTimer(function(cfg) ENT_UpdateLowFreq(self, cfg) end, function() return IsEntityValid(self) end, nil, {MinTime = 1, MaxTime = 2, Delay = 0.1})
+		ACF.AugmentedTimer(function(cfg) ENT_UpdateMedFreq(self, cfg) end, function() return IsEntityValid(self) end, nil, {MinTime = 0.5, MaxTime = 1, Delay = 0.1})
+		ACF.AugmentedTimer(function(cfg) ENT_UpdateHighFreq(self, cfg) end, function() return IsEntityValid(self) end, nil, {MinTime = 0.1, MaxTime = 0.5, Delay = 0.1})
+		ACF.AugmentedTimer(function(cfg) ENT_EnforceLimits(self, cfg) end, function() return IsEntityValid(self) end, nil, {MinTime = 1, MaxTime = 2, Delay = 0.1})
+
+		hook.Add("Tick", "GForceCalculation" .. self:EntIndex(), function()
+			self:EnforceGForces()
+		end)
+
+		self:CallOnRemove("GForceCalculation" .. self:EntIndex(), function()
+			hook.Remove("Tick", "GForceCalculation" .. self:EntIndex())
+		end)
+
+		WireLib.TriggerOutput(self, "ModelEff", self.ModelEff * 100)
+
+		if CrewType.OnSpawn then CrewType.OnSpawn(self) end
+	end
+
+	-- Necessary for e2/sf link related functionality
+	ACF.RegisterLinkSource("acf_gun", "Crew")
+	ACF.RegisterLinkSource("acf_engine", "Crew")
 
 	function ENT:ACF_UpdateOverlayState(State)
 		local SelfTbl = ENTITY.GetTable(self)
@@ -702,76 +646,102 @@ end
 
 -- Entity methods
 do
-	function ENT:ACF_Activate(Recalc)
-		local PhysObj = self.ACF.PhysObj
-		-- local Mass    = PhysObj:GetMass()
-		local Area    = PhysObj:GetSurfaceArea() * ACF.InchToCmSq
-		local Armour  = ACF.CrewArmor -- Human body isn't that thick but we have to put something here
-		local Health  = ACF.CrewHealth
-		local Percent = 1
-
-		if Recalc and self.ACF.Health and self.ACF.MaxHealth then
-			Percent = self.ACF.Health / self.ACF.MaxHealth
-		end
-
-		self.ACF.Area      = Area
-		self.ACF.Health    = Health * Percent
-		self.ACF.MaxHealth = Health
-		self.ACF.Armour    = Armour * Percent
-		self.ACF.MaxArmour = Armour
-		self.ACF.Type      = "Prop"
-	end
-
 	-- If the player trips a legality check (e.g. notsolid)
 	-- You can't bring back a dead crew so there is no enable...
 	function ENT:Disable()
 		self:KillCrew("npc/zombie/zombie_voice_idle6.wav")
 	end
 
-	-- Only meant to be called by gamemodes like AAS. This function isn't called otherwise.
+	-- Fully revives a dead crew member. Called by gamemodes like AAS and by acf_supply.
 	function ENT:Restore()
-		self.ACF.Armour = self.ACF.MaxArmour
 		self.ACF.Health = self.ACF.MaxHealth
 		self.IsAlive = true
 		self:SetMaterial(self.MaterialPath or "") -- Reset to default material
+		self:SetColor(Color(255, 255, 255, 255)) -- Reset the flesh-white tint KillCrew applies
+		self:UpdateOverlay()
 	end
 
-	--- Attempts to replace self with another crew member
-	function ENT:ReplaceCrew()
+	-- Timer only runs while the crew actually needs healing; DamageCrew re-arms it. In-combat
+	-- has no discrete end event, so it stays a cheap in-body check instead of a Depends condition
+	function ENT:StartRegenTimer()
+		if self.RegenTimerActive then return end
+		self.RegenTimerActive = true
+
+		local Entity = self
+
+		ACF.AugmentedTimer(function(cfg) Entity:RegenerateHealth(cfg) end, function()
+			local Needed = IsEntityValid(Entity) and Entity.IsAlive and Entity.ACF.Health < Entity.ACF.MaxHealth
+			if not Needed then Entity.RegenTimerActive = false end
+			return Needed
+		end, nil, {MinTime = 10, MaxTime = 10, Delay = 0.1})
+	end
+
+	function ENT:RegenerateHealth()
+		if ACF.IsContraptionInCombat(self) then return end
+
+		self.ACF.Health = math.min(self.ACF.MaxHealth, self.ACF.Health + self.ACF.MaxHealth * ACF.CrewRegenFraction)
+		self:UpdateOverlay()
+	end
+
+	--- Finds the best live candidate to replace self, or nil if none exists.
+	--- The least important (highest CrewPriority number) survivor is picked.
+	function ENT:FindReplacementCandidate()
 		local Contraption = self:CFW_GetContraption()
-		if Contraption == nil then return end 				-- No Contraption to replace crew in
-		if Contraption.CrewsByPriority == nil then return end 	-- No crew to replace with
-		if not self.ToBeReplaced and self.ReplaceSelf then
-			self.ToBeReplaced = true									-- Mark self for replacement
+		if Contraption == nil then return nil end
+		if Contraption.CrewsByPriority == nil then return nil end
 
-			-- Only consider "lower" priority crews
-			local offset = self.ReplacedOnlyLower and 1 or 0
-			for i = self.CrewPriority + offset, ACF.CrewRepPrioMax do
-				local OtherCrews = Contraption.CrewsByPriority[i] or {}
-				for Other in pairs(OtherCrews) do									-- For each crew of that priority
-					local NotMe = Other ~= self and IsValid(Other) 						-- Valid crew that isn't us
-					local NotBusy = not Other.ToReplace									-- Other isn't replacing someone else
-					local Alive = Other.ACF.Health and Other.ACF.Health > 0				-- Other is alive
-					local Replaceable = Other.ReplaceOthers								-- Other can be replaced
-					if NotMe and NotBusy and Alive and Replaceable then
-						Other.ToReplace = true 											-- Other is now replacing someone (us)
-
-						-- Calculate replacement time
-						local ReplacementDist = self:GetPos():Distance(Other:GetPos())
-						local ReplacementTime = ACF.CrewRepTimeBase + ACF.CrewRepDistToTime * ReplacementDist
-						TimerSimple(ReplacementTime, function()
-							Other.ToReplace = false
-							self.ToBeReplaced = false
-
-							if IsValid(self) then
-								self:SwapCrew(Other)
-							end
-						end)
-
-						return
-					end
+		local offset = self:ACF_GetUserVar("ReplacedOnlyLower") and 1 or 0
+		for i = ACF.CrewRepPrioMax, self.CrewPriority + offset, -1 do
+			local OtherCrews = Contraption.CrewsByPriority[i] or {}
+			for Other in pairs(OtherCrews) do
+				local NotMe = Other ~= self and IsValid(Other)
+				local NotBusy = not Other.ToReplace
+				local Alive = Other.ACF.Health and Other.ACF.Health > 0
+				local Replaceable = Other.ReplaceOthers
+				if NotMe and NotBusy and Alive and Replaceable then
+					return Other
 				end
 			end
+		end
+
+		return nil
+	end
+
+	--- Attempts to replace self with another crew member. AttemptSwap re-validates the
+	--- candidate after the move delay rather than trusting it's still valid.
+	function ENT:ReplaceCrew()
+		if self.ToBeReplaced or not self.ReplaceSelf then return end
+		self.ToBeReplaced = true
+
+		local Other = self:FindReplacementCandidate()
+		if Other == nil then
+			-- No candidate found anywhere right now
+			self.ToBeReplaced = false
+			return
+		end
+
+		Other.ToReplace = true
+
+		local ReplacementDist = self:GetPos():Distance(Other:GetPos())
+		local ReplacementTime = ACF.CrewRepTimeBase + ACF.CrewRepDistToTime * ReplacementDist
+		TimerSimple(ReplacementTime, function()
+			if IsValid(self) and self.AttemptSwap then self:AttemptSwap(Other) end
+		end)
+	end
+
+	--- Runs after the move delay. Re-validates both sides in case either changed state during
+	--- the wait, restarting the search if Other no longer works.
+	function ENT:AttemptSwap(Other)
+		if IsValid(Other) then Other.ToReplace = false end
+		self.ToBeReplaced = false
+
+		if self.IsAlive then return end -- self no longer needs replacing (e.g. got healed)
+
+		local OtherStillValid = IsValid(Other) and Other.ACF.Health and Other.ACF.Health > 0
+		if OtherStillValid then
+			self:SwapCrew(Other)
+		else
+			self:ReplaceCrew()
 		end
 	end
 
@@ -785,8 +755,6 @@ do
 		Other:SetColor(Col1)
 
 		self.ACF.Health, Other.ACF.Health = Other.ACF.Health, self.ACF.Health
-		self.ACF.Armour = self.ACF.MaxArmour * (self.ACF.Health / self.ACF.MaxHealth)
-		Other.ACF.Armour = Other.ACF.MaxArmour * (Other.ACF.Health / Other.ACF.MaxHealth)
 		self.IsAlive, Other.IsAlive = Other.IsAlive, self.IsAlive
 
 		self:UpdateOverlay()
@@ -801,10 +769,11 @@ do
 		local NewHealth = math.max(0, SelfACF.Health - Damage)
 
 		SelfACF.Health = NewHealth
-		SelfACF.Armour = SelfACF.MaxArmour * (NewHealth / SelfACF.MaxHealth)
 
 		if NewHealth == 0 and SelfTbl.IsAlive then
 			self:KillCrew(sound)
+		elseif NewHealth > 0 and NewHealth < SelfACF.MaxHealth then
+			self:StartRegenTimer()
 		end
 	end
 	ENT.DamageCrew = ENT_DamageCrew
@@ -824,26 +793,22 @@ do
 		-- TODO: CLEAN THIS UP
 		-- Check how many crew remain and kill the owner if there are none left
 		local Contraption = self:CFW_GetContraption()
+		if not Contraption then return end
 		local Crews = Contraption and Contraption.Crews
-		local Alive = 0
+		local Alive, Dead = 0, 0
 		if Crews then
 			for crew, _ in pairs(Crews) do
-				if crew.IsAlive then Alive = Alive + 1 end
+				if crew.IsAlive then Alive = Alive + 1 else Dead = Dead + 1 end
 			end
 		end
 
-		-- If all crew die, kill all seated players in the contraption
-		if Alive <= 0 then
-			-- I don't like this but this only runs once per contraption
-			local ents = Contraption.ents or {}
-			for ent, _ in pairs(ents) do
-				if ent:GetClass() == "prop_vehicle_prisoner_pod" then
-					local Driver = ent:GetDriver()
-					if IsValid(Driver) then
-						ACF.KillPlayer(Driver, Contraption.ACF_LastDamageAttacker, Contraption.ACF_LastDamageInflictor)
-					end
-				end
-			end
+		-- Destroy the vehicle once all crew are dead, or after enough are dead at once to discourage spamming disposable crew.
+		if Alive <= 0 or Dead >= ACF.CrewFatalDeathCount then
+			local Baseplate = Contraption.ACF_Baseplate
+			local Position = IsValid(Baseplate) and Baseplate:GetPos() or self:GetPos()
+
+			ACF.DestroyContraption(Contraption, Position, nil, 100000)
+
 			Contraption.ACF_AllCrewKilled = true -- Flag set for other entities/block vehicle entrance/etc
 		end
 	end
@@ -872,13 +837,11 @@ do
 		return HitRes
 	end
 
-	function ENT:ACF_OnRepaired(OldArmor, OldHealth)
+	function ENT:ACF_OnRepaired(_, OldHealth)
 		-- Dead crew should not be revivable
-		if OldArmor == 0 then self.ACF.Armor = 0 end
 		if OldHealth == 0 then self.ACF.Health = 0 end
 
 		if self.ACF.Health == self.ACF.MaxHealth then EmitSound("items/medshot4.wav", self:GetPos()) end
-		self.ACF.Armour = self.ACF.MaxArmour * (self.ACF.Health / self.ACF.MaxHealth)
 		self:UpdateOverlay()
 	end
 end
@@ -992,10 +955,12 @@ do
 		if not Target.Crews then Target.Crews = {} end -- Safely make sure the link Target has a crew list
 		if Target.Crews[Crew] then return false, "This entity is already linked to this crewmate!" end
 		if Crew.Targets[Target] then return false, "This entity is already linked to this crewmate!" end
-		if Crew:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This entity is too far away from this crewmate!" end
-		if not Crew.CrewType.LinkHandlers[Target:GetClass()] then return false, "This entity cannot be linked with this occupation" end
 
 		local Handlers = Crew.CrewType.LinkHandlers[Target:GetClass()]
+		if not Handlers then return false, "This entity cannot be linked with this occupation" end
+
+		if Crew:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This entity is too far away from this crewmate!" end
+
 		if Handlers.CanLink then return Handlers.CanLink(Crew, Target) end
 		return true, "Crew linked."
 	end
@@ -1054,8 +1019,8 @@ do
 
 	-- Compactly define links between crew and other entities
 	local lt = {} -- Merge all crew whitelists
-	for CrewTypeEntries in pairs(CrewTypes.GetEntries()) do
-		local LinkHandlers = CrewTypes.Get(CrewTypeEntries).LinkHandlers
+	for _, CrewTypeClass in ipairs(Classes.GetSubtypesAsList("ACF.CrewTypes.BaseCrewType")) do
+		local LinkHandlers = CrewTypeClass.LinkHandlers
 		if LinkHandlers then for et in pairs(LinkHandlers) do
 			lt[et] = true
 		end end
@@ -1092,11 +1057,10 @@ do
 			duplicator.StoreEntityModifier(self, "CrewTargets", Entities)
 		end
 
-		-- Wire dupe info
-		self.BaseClass.PreEntityCopy(self)
+		-- AutoRegisterV2 wraps this as the original PreEntityCopy and handles the wire/base dupe info.
 	end
 
-	function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+	function ENT:PostEntityPaste(_, Ent, CreatedEntities)
 		local EntMods = Ent.EntityMods
 
 		-- Restore previous links
@@ -1112,21 +1076,19 @@ do
 			EntMods.CrewTargets = nil
 		end
 
-		--Wire dupe info
-		self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
+		-- AutoRegisterV2 wraps this as the original PostEntityPaste and handles the wire/base dupe info.
 	end
 
-	function ENT:OnRemove()
-		local CrewModel = self.CrewModel
-		local CrewType = self.CrewType
+	-- Remove-only teardown. Captured by AutoRegisterV2 as OrigOnRemove; the generated OnRemove still runs
+	-- ACF_OnEntityLast + WireLib cleanup around this.
+	function ENT:OnRemove(IsFullUpdate)
+		if IsFullUpdate then return end
 
-		HookRun("ACF_OnEntityLast", "acf_crew", self, CrewModel, CrewType)
+		ACF.ActiveCrews[self] = nil
 
 		-- Unlink Target entities
 		for v in pairs(self.Targets) do
 			if IsValid(v) then self:Unlink(v) end
 		end
-
-		WireLib.Remove(self)
 	end
 end

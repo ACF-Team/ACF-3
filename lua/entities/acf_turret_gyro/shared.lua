@@ -1,8 +1,12 @@
 DEFINE_BASECLASS("acf_base_simple")
 
-ENT.PrintName     	= "ACF Turret Gyro"
-ENT.WireDebugName 	= "ACF Turret Gyro"
-ENT.PluralName    	= "ACF Turret Gyros"
-ENT.IsACFGyro		= true
+ACF.Entities.AutoRegister(2026091001, function()
+	MENU_FIELD("ACF.Turrets.Gyro", "Gyro", {
+		InstantiateTypeForDefault = "ACF.Turrets.Gyro.Single",
+		OnlyAllowSubtypes         = true,
+	})
+end, "Turret Gyro")
 
-cleanup.Register("acf_turret_gyro")
+ENT.ACF_StaticWireOutputs = {
+	"Entity (The gyroscope itself.) [ENTITY]",
+}
