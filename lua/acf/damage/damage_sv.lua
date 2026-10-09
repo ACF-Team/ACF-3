@@ -2,8 +2,6 @@ local ACF       = ACF
 local Damage    = ACF.Damage
 local Objects   = Damage.Objects
 local Effects   = ACF.Utilities.Effects
-local DamageCoef      = ACF.DamageCoef
-local DamageBlastCoef = ACF.DamageBlastCoef
 local Queue = {} -- Queue[Entity] = { [ConvexID] = Step }; always broadcast
 local QueueTime = 0.5 -- Seconds to buffer damage updates before sending
 
@@ -273,7 +271,7 @@ end
 -- @return The output of the DamageResult object.
 function Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 	local IsBlast         = DmgInfo and DmgInfo:GetType() == DMG_BLAST
-	local Coef            = IsBlast and DamageBlastCoef or DamageCoef
+	local Coef            = IsBlast and ACF.DamageBlastCoef or ACF.DamageCoef
 	local FeatherExponent = ACF.PenetrationFeatherExponent
 
 	local Inflictor = DmgInfo and DmgInfo:GetInflictor()
