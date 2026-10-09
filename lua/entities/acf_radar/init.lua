@@ -385,8 +385,10 @@ do -- Spawning
 		end)
 	end
 
+	-- Radars share the sensor limit with the other sensors, but also have their own
+	-- (_acf_radar is counted by the entity registration, only the sensor count is added here)
 	function ENT.ACF_CheckSpawnLimit(Player)
-		return Player:CheckLimit("_acf_sensor")
+		return Player:CheckLimit("_acf_sensor") and Player:CheckLimit("_acf_radar")
 	end
 
 	function ENT:ACF_PostSpawn(Player)
