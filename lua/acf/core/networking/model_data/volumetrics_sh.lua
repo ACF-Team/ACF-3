@@ -118,10 +118,13 @@ do
                 continue
             end
 
+            -- Changing the material shouldn't repair the convex, keep however damaged it was
+            local HealthRatio  = Convex.MaxHealth > 0 and math.Clamp(Convex.Health / Convex.MaxHealth, 0, 1) or 1
+
             Convex.Material    = ArmorType.ID
             Convex.Mass        = Convex.Volume * ArmorType.Density * GCmToKgIn -- Volume is in^3, Density is g/cm^3
             Convex.MaxHealth   = Convex.Volume * ArmorType.HealthMul * ACF.HealthCoef -- HealthMul bakes in material density
-            Convex.Health      = Convex.MaxHealth
+            Convex.Health      = Convex.MaxHealth * HealthRatio
             Convex.IsExplosive = ArmorType.IsExplosive or nil -- Reactive armor; see Ballistics.DoReactiveArmor
 
             Entity.ACF_Volumetric_Materials[ConvexID] = Convex.Material
@@ -236,6 +239,24 @@ do
         -- TODO: Fix the error that forced me to do this...
         local Meshes = Mesh or {}
 
+        -- Rebuilding the mesh (updating, reclipping...) shouldn't repair it, so keep how damaged each convex was.
+        -- If the convexes changed, fall back to how damaged the entity was overall.
+        local OldRatios, OldRatio
+        local OldMesh = entity.ACF_Volumetric_Mesh
+
+        if OldMesh and OldMesh.Convexes then
+            local Health, MaxHealth = 0, 0
+            OldRatios = {}
+
+            for ConvexID, Convex in ipairs(OldMesh.Convexes) do
+                OldRatios[ConvexID] = Convex.MaxHealth > 0 and math.Clamp(Convex.Health / Convex.MaxHealth, 0, 1) or 1
+                Health    = Health + Convex.Health
+                MaxHealth = MaxHealth + Convex.MaxHealth
+            end
+
+            OldRatio = MaxHealth > 0 and math.Clamp(Health / MaxHealth, 0, 1) or 1
+        end
+
         local MeshData = { Convexes = {} }
 
         for _, Convex in ipairs(Meshes) do
@@ -298,16 +319,31 @@ do
         end
         ACF.SetConvexMaterials(entity, Materials, nil, true)
 
+        if OldRatios then
+            local SameConvexes = #OldRatios == #MeshData.Convexes
+
+            for ConvexID, Convex in ipairs(MeshData.Convexes) do
+                Convex.Health = Convex.MaxHealth * (SameConvexes and OldRatios[ConvexID] or OldRatio)
+            end
+        end
+
         -- ACF entities track their total health as the sum of their convexes' health, separately from the
         -- per-convex health that armorable props (e.g. prop_physics) take damage on directly.
         if entity.IsACFEntity and entity.ACF then
+            local EntACF      = entity.ACF
             local TotalHealth = 0
-            for _, Convex in ipairs(entity.ACF_Volumetric_Mesh.Convexes) do
-                TotalHealth = TotalHealth + Convex.Health
+            for _, Convex in ipairs(MeshData.Convexes) do
+                TotalHealth = TotalHealth + Convex.MaxHealth
             end
 
-            entity.ACF.MaxHealth = TotalHealth
-            entity.ACF.Health    = TotalHealth
+            -- Same as above, updating the entity keeps however damaged it was
+            local Ratio = 1
+            if isnumber(EntACF.Health) and isnumber(EntACF.MaxHealth) and EntACF.MaxHealth > 0 then
+                Ratio = math.Clamp(EntACF.Health / EntACF.MaxHealth, 0, 1)
+            end
+
+            EntACF.MaxHealth = TotalHealth
+            EntACF.Health    = TotalHealth * Ratio
         end
     end
     ACF.ComputeVolumetricMesh = ComputeVolumetricMesh
