@@ -242,6 +242,7 @@ do -- ACF global vars
 	-- WE WANT NO INTERACTION WITH THESE ENTITIES
 	ACF.GlobalFilter = {
 		acf_debris            = true,
+		acf_steerplate        = true,
 
 		gmod_ghost            = true,
 
