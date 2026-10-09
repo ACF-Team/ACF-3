@@ -763,9 +763,26 @@ local function WireForcerDetours()
     end)
 end
 
--- TARGET  : Constraints between world <---> ACF contraptions
+-- TARGET  : Constraints between world <---> ACF contraptions, and any constraint on steer plates
 local function ConstraintDetours()
+    -- Steer plates only ever hold the steer sockets they make themselves when linked to wheels. Those are created
+    -- directly, never through these detoured functions. This isn't a contraption legality check, so it ignores PreCheck.
+    local function DetermineValidConstraint_Steerplate(Entity1, Entity2, Type, DoNotify)
+        local Plate = (IsValid(Entity1) and Entity1.IsACFSteerplate and Entity1) or (IsValid(Entity2) and Entity2.IsACFSteerplate and Entity2)
+        if not Plate then return true end
+
+        if DoNotify then
+            local Player = Plate:CPPIGetOwner()
+            if IsValid(Player) then
+                Notify.EntityWarningToPlayer(Plate, Player, string.format("Cannot create constraint '%s'", Type), "Steer plates can't be constrained. Link wheels to them instead.")
+            end
+        end
+
+        return false
+    end
+
     local function DetermineValidConstraint_WorldCheck(Entity1, Entity2, Type, DoNotify, NoCollideState)
+        if not DetermineValidConstraint_Steerplate(Entity1, Entity2, Type, DoNotify) then return false end
         if PreCheck() then return true end
         -- Early exit. This will result in these functions being called a 2nd time in the actual constraint creators,
         -- but if we dont do this check here, we'd be both wasting time and potentially get nasty side effects (this runs
@@ -834,6 +851,8 @@ local function ConstraintDetours()
     local function PostActionUnsetUpright(Constraint) local Ent1 = Constraint.Ent1 if IsValid(Ent1) then Ent1:SetNWBool("IsUpright", false) end end
     local function GetNonWorldOwner(Entity1, Entity2) if IsValid(Entity1) then return Entity1, Entity1:CPPIGetOwner() else return Entity2, Entity2:CPPIGetOwner() end end
     local function CheckPreExistingConstraint(EntityClassName, Constraint, CheckAction)
+        if Constraint.Type == "ACF_SteerSocket" then return end -- Made by steer plates themselves, never through the detours
+
         local PhysObj1, PhysObj2 = Constraint:GetConstrainedPhysObjects()
         local PostAction
         local PhysObj1_Valid, PhysObj2_Valid = IsValid(PhysObj1), IsValid(PhysObj2)
@@ -993,6 +1012,7 @@ local function ConstraintDetours()
     do
         local Func Func = Detours.New("constraint.Keepupright", function(Entity, ...)
             if not IsValid(Entity) then return false end
+            if not DetermineValidConstraint_Steerplate(Entity, nil, "keep upright", true) then return false end
             local Contraption = Entity:CFW_GetContraption()
 
             if Contraption == nil then return Func(Entity, ...) end -- Don't care about non-contraptions
