@@ -229,12 +229,9 @@ do	-- Metamethods
 			if self.IsRemote and IsValid(self.Crew) then
 				duplicator.StoreEntityModifier(self, "ACFCrew", {self.Crew:EntIndex()})
 			end
-
-			-- Wire dupe info
-			self.BaseClass.PreEntityCopy(self)
 		end
 
-		function ENT:PostEntityPaste(Player, Ent, CreatedEntities)
+		function ENT:PostEntityPaste(_, Ent, CreatedEntities)
 			local EntMods = Ent.EntityMods
 
 			if EntMods.ACFCrew then
@@ -242,8 +239,6 @@ do	-- Metamethods
 
 				EntMods.ACFCrew = nil
 			end
-
-			self.BaseClass.PostEntityPaste(self, Player, Ent, CreatedEntities)
 		end
 	end
 end
