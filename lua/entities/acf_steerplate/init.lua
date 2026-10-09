@@ -518,9 +518,9 @@ do
 		local SelfTbl = self:GetTable()
 		local Now     = CurTime()
 
-		-- Always frozen, no matter what unfroze it
+		-- Always frozen, no matter what unfroze it, except while a player is moving it around
 		local PhysObj = self:GetPhysicsObject()
-		if IsValid(PhysObj) and PhysObj:IsMotionEnabled() then
+		if IsValid(PhysObj) and PhysObj:IsMotionEnabled() and not self:IsPlayerHolding() then
 			PhysObj:EnableMotion(false)
 		end
 
