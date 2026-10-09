@@ -4,8 +4,6 @@ local ModelData = ACF.ModelData
 -- Note: Put this in console for good luck: hook.Run("ACF_OnLoadAddon")
 
 -- TODO: Move these into the globals file
-local HealthMul = ACF.HealthCoef
-local ArmorCoef = ACF.ArmorCoef
 local GCmToKgIn = ACF.gCmToKgIn
 local Classes = ACF.Classes
 
@@ -13,7 +11,7 @@ local function GetArmorType(ID) return Classes.GetSubtypeByName("ACF.ArmorTypes.
 
 -- Networking: whenever a convex's material is set (serverside), the new material is sent straight to
 -- every client. No request/refresh cycle -- just send it the moment it changes.
-local MAX_CONVEXES  = 5 -- bits for the convex index field
+local MAX_CONVEXES  = 5 -- bits for the convex index and count fields
 local MAX_MATERIALS = 5 -- bits for the material index field
 
 local ArmorTypeByIndex   = {} -- index (1-based int) -> armor type ID string
@@ -36,9 +34,48 @@ end)
 
 if SERVER then
     util.AddNetworkString("ACF_ConvexMaterialSet")
+
+    local function SendMaterials(Entity, Materials, Player)
+        local Count = table.Count(Materials)
+        if Count == 0 then return end
+
+        net.Start("ACF_ConvexMaterialSet")
+        net.WriteUInt(Entity:EntIndex(), MAX_EDICT_BITS)
+        net.WriteUInt(Count, MAX_CONVEXES)
+
+        for ConvexID, MaterialID in pairs(Materials) do
+            net.WriteUInt(ConvexID, MAX_CONVEXES)
+            net.WriteUInt(ArmorTypeIndexByID[MaterialID] or ArmorTypeIndexByID["Default"] or 1, MAX_MATERIALS)
+        end
+
+        if Player then net.Send(Player) else net.Broadcast() end
+    end
+
+    ACF.SendConvexMaterials = SendMaterials
+
+    -- Materials are only sent when they change, so players joining later need everything set before them
+    hook.Add("ACF_OnLoadPlayer", "ACF_ConvexMaterialSync", function(Player)
+        for _, Entity in ents.Iterator() do
+            local MeshData = Entity.ACF_Volumetric_Mesh
+            if not MeshData then continue end
+
+            local Materials
+            for ConvexID, Convex in ipairs(MeshData.Convexes) do
+                if Convex.Material and Convex.Material ~= "Default" then
+                    Materials = Materials or {}
+                    Materials[ConvexID] = Convex.Material
+                end
+            end
+
+            if Materials then SendMaterials(Entity, Materials, Player) end
+        end
+    end)
 end
 
 if CLIENT then
+    -- Materials set on the same tick an entity is created can arrive before the entity exists clientside
+    local Pending = {} -- EntIndex -> { Materials = {...}, Time = CurTime() }
+
     net.Receive("ACF_ConvexMaterialSet", function()
         local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
         local Count    = net.ReadUInt(MAX_CONVEXES)
@@ -51,9 +88,33 @@ if CLIENT then
         end
 
         local Ent = Entity(EntIndex)
-        if not IsValid(Ent) then return end
+        if not IsValid(Ent) then
+            local Entry = Pending[EntIndex]
+            if not Entry then
+                Entry = { Materials = {} }
+                Pending[EntIndex] = Entry
+            end
+
+            table.Merge(Entry.Materials, Materials)
+            Entry.Time = CurTime()
+
+            return
+        end
 
         ACF.SetConvexMaterials(Ent, Materials)
+    end)
+
+    hook.Add("NetworkEntityCreated", "ACF_ConvexMaterialPending", function(Ent)
+        local EntIndex = Ent:EntIndex()
+        local Entry    = Pending[EntIndex]
+        if not Entry then return end
+
+        Pending[EntIndex] = nil
+
+        -- Anything this old was for whatever entity used this index before
+        if CurTime() - Entry.Time > 10 then return end
+
+        ACF.SetConvexMaterials(Ent, Entry.Materials)
     end)
 end
 
@@ -76,7 +137,7 @@ local ArmorableClasses = {
     primitive_shape = true,
     primitive_staircase = true,
     primitive_ladder = true,
-    primitive_rail_silder = true,
+    primitive_rail_slider = true,
     primitive_airfoil = true,
     primitive_convex_hull = true,
 }
@@ -120,10 +181,13 @@ do
                 continue
             end
 
+            -- Changing the material shouldn't repair the convex, keep however damaged it was
+            local HealthRatio  = Convex.MaxHealth > 0 and math.Clamp(Convex.Health / Convex.MaxHealth, 0, 1) or 1
+
             Convex.Material    = ArmorType.ID
             Convex.Mass        = Convex.Volume * ArmorType.Density * GCmToKgIn -- Volume is in^3, Density is g/cm^3
-            Convex.MaxHealth   = Convex.Volume * ArmorType.HealthMul * HealthMul -- HealthMul bakes in material density
-            Convex.Health      = Convex.MaxHealth
+            Convex.MaxHealth   = Convex.Volume * ArmorType.HealthMul * ACF.HealthCoef -- HealthMul bakes in material density
+            Convex.Health      = Convex.MaxHealth * HealthRatio
             Convex.IsExplosive = ArmorType.IsExplosive or nil -- Reactive armor; see Ballistics.DoReactiveArmor
 
             Entity.ACF_Volumetric_Materials[ConvexID] = Convex.Material
@@ -144,22 +208,7 @@ do
         MeshData.HasReactiveArmor  = HasReactive -- Lets ballistics skip the reactive-armor check entirely for normal entities
 
         if SERVER then
-            local Count = 0
-            for _ in pairs(Changed) do Count = Count + 1 end
-            Count = math.min(Count, 31)
-
-            net.Start("ACF_ConvexMaterialSet")
-            net.WriteUInt(Entity:EntIndex(), MAX_EDICT_BITS)
-            net.WriteUInt(Count, MAX_CONVEXES)
-
-            local Sent = 0
-            for ConvexID, MaterialID in pairs(Changed) do
-                if Sent >= Count then break end
-                net.WriteUInt(ConvexID, MAX_CONVEXES)
-                net.WriteUInt(ArmorTypeIndexByID[MaterialID] or ArmorTypeIndexByID["Default"] or 1, MAX_MATERIALS)
-                Sent = Sent + 1
-            end
-            net.Broadcast()
+            ACF.SendConvexMaterials(Entity, Changed)
 
             local HasNonDefault = false
             for _, MaterialID in pairs(Changed) do
@@ -238,6 +287,24 @@ do
         -- TODO: Fix the error that forced me to do this...
         local Meshes = Mesh or {}
 
+        -- Rebuilding the mesh (updating, reclipping...) shouldn't repair it, so keep how damaged each convex was.
+        -- If the convexes changed, fall back to how damaged the entity was overall.
+        local OldRatios, OldRatio
+        local OldMesh = entity.ACF_Volumetric_Mesh
+
+        if OldMesh and OldMesh.Convexes then
+            local Health, MaxHealth = 0, 0
+            OldRatios = {}
+
+            for ConvexID, Convex in ipairs(OldMesh.Convexes) do
+                OldRatios[ConvexID] = Convex.MaxHealth > 0 and math.Clamp(Convex.Health / Convex.MaxHealth, 0, 1) or 1
+                Health    = Health + Convex.Health
+                MaxHealth = MaxHealth + Convex.MaxHealth
+            end
+
+            OldRatio = MaxHealth > 0 and math.Clamp(Health / MaxHealth, 0, 1) or 1
+        end
+
         local MeshData = { Convexes = {} }
 
         for _, Convex in ipairs(Meshes) do
@@ -300,16 +367,31 @@ do
         end
         ACF.SetConvexMaterials(entity, Materials, nil, true)
 
+        if OldRatios then
+            local SameConvexes = #OldRatios == #MeshData.Convexes
+
+            for ConvexID, Convex in ipairs(MeshData.Convexes) do
+                Convex.Health = Convex.MaxHealth * (SameConvexes and OldRatios[ConvexID] or OldRatio)
+            end
+        end
+
         -- ACF entities track their total health as the sum of their convexes' health, separately from the
         -- per-convex health that armorable props (e.g. prop_physics) take damage on directly.
         if entity.IsACFEntity and entity.ACF then
+            local EntACF      = entity.ACF
             local TotalHealth = 0
-            for _, Convex in ipairs(entity.ACF_Volumetric_Mesh.Convexes) do
-                TotalHealth = TotalHealth + Convex.Health
+            for _, Convex in ipairs(MeshData.Convexes) do
+                TotalHealth = TotalHealth + Convex.MaxHealth
             end
 
-            entity.ACF.MaxHealth = TotalHealth
-            entity.ACF.Health    = TotalHealth
+            -- Same as above, updating the entity keeps however damaged it was
+            local Ratio = 1
+            if isnumber(EntACF.Health) and isnumber(EntACF.MaxHealth) and EntACF.MaxHealth > 0 then
+                Ratio = math.Clamp(EntACF.Health / EntACF.MaxHealth, 0, 1)
+            end
+
+            EntACF.MaxHealth = TotalHealth
+            EntACF.Health    = TotalHealth * Ratio
         end
     end
     ACF.ComputeVolumetricMesh = ComputeVolumetricMesh
@@ -478,7 +560,7 @@ local function BuildGapHit(Left, Right, Source, Direction)
     return {
         Entity      = Entity,
         ConvexID    = ConvexID,
-        GeoThick    = (Right.T - Left.T) * 25.4 * ArmorCoef, -- inches to mm
+        GeoThick    = (Right.T - Left.T) * 25.4 * ACF.ArmorCoef, -- inches to mm
         ArmorType   = ArmorType,
         HitAngle    = math.deg(math.acos(math.min(1, math.max(-1, -Direction:Dot(Left.Normal))))),
         EntryPos    = Left.Pos,

@@ -16,6 +16,9 @@ Classes.DefineClass("ACF.Sensors.Radar.Standard", "ACF.Sensors.Radar", function(
 		Text          = "Maximum amount of ACF radars a player can create."
 	}
 
+	-- Radars count against both this and the shared sensor limit, see acf_radar's ACF_CheckSpawnLimit
+	Classes.AddSboxLimit(CLASS.LimitConVar)
+
 	local Text            = "View Cone : %s degrees\nView Range : %s\nMin. Target Size (at max range) : %s\nMass : %s kg\nCost : %s\n"
 	local SizeColor       = Color(255, 0, 0)
 	local FormulaText     = "The minimum target size a radar can detect shrinks the closer a target gets. Smaller radars can only see small targets up close, while larger radars can see small targets much further out. A target smaller than the curve at its current distance won't be detected.\n\nMinimum detectable size = Min. Target Size x (Distance / View Range) ^ 2"

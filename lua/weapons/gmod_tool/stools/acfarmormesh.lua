@@ -466,7 +466,7 @@ elseif SERVER then
 		if not Entity.ACF_Volumetric_Mesh then return end
 		local Materials = {}
 		for ConvexID in ipairs(Entity.ACF_Volumetric_Mesh.Convexes) do
-			if Material then Materials[ConvexID] = "RHA" end
+			Materials[ConvexID] = "RHA"
 		end
 		ACF.SetConvexMaterials(Entity, Materials)
 	end)

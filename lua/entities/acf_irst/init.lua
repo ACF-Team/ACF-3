@@ -493,14 +493,13 @@ do -- Sensor Synchronizer interface
 	end
 end
 
+-- AutoRegister runs the ACF_OnEntityLast hook and WireLib.Remove around this
 function ENT:OnRemove()
 	local OldClass = self.ClassData
 
 	if OldClass and OldClass.OnLast then
 		OldClass.OnLast(self, OldClass)
 	end
-
-	hook.Run("ACF_OnEntityLast", "acf_irst", self, OldClass)
 
 	if IsValid(self.SyncSource) then
 		self.SyncSource:Unlink(self)
@@ -509,6 +508,4 @@ function ENT:OnRemove()
 	Sensors[self] = nil
 
 	TimerRemove("ACF IRST Switch " .. self:EntIndex())
-
-	WireLib.Remove(self)
 end

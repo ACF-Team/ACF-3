@@ -2,8 +2,6 @@ local ACF       = ACF
 local Damage    = ACF.Damage
 local Objects   = Damage.Objects
 local Effects   = ACF.Utilities.Effects
-local DamageCoef      = ACF.DamageCoef
-local DamageBlastCoef = ACF.DamageBlastCoef
 local Queue = {} -- Queue[Entity] = { [ConvexID] = Step }; always broadcast
 local QueueTime = 0.5 -- Seconds to buffer damage updates before sending
 
@@ -11,16 +9,16 @@ util.AddNetworkString("ACF_Damage")
 
 -- Writes a { {Entity, Convexes}, ... } batch in the wire format shared by SendQueue and the full-sync hook.
 local function WriteBatch(Batch)
-	net.WriteUInt(#Batch, 8)
+	net.WriteUInt(#Batch, MAX_EDICT_BITS)
 
 	for i = 1, #Batch do
 		local Entity, Convexes = Batch[i][1], Batch[i][2]
 
 		net.WriteUInt(Entity:EntIndex(), 13)
-		net.WriteUInt(table.Count(Convexes), 8)
+		net.WriteUInt(table.Count(Convexes), 12)
 
 		for ConvexID, Step in pairs(Convexes) do
-			net.WriteUInt(ConvexID, 9)
+			net.WriteUInt(ConvexID, 12) -- Same width as the convex material networking
 			net.WriteUInt(Step, 4)
 		end
 	end
@@ -273,7 +271,7 @@ end
 -- @return The output of the DamageResult object.
 function Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 	local IsBlast         = DmgInfo and DmgInfo:GetType() == DMG_BLAST
-	local Coef            = IsBlast and DamageBlastCoef or DamageCoef
+	local Coef            = IsBlast and ACF.DamageBlastCoef or ACF.DamageCoef
 	local FeatherExponent = ACF.PenetrationFeatherExponent
 
 	local Inflictor = DmgInfo and DmgInfo:GetInflictor()
