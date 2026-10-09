@@ -137,7 +137,7 @@ local ArmorableClasses = {
     primitive_shape = true,
     primitive_staircase = true,
     primitive_ladder = true,
-    primitive_rail_silder = true,
+    primitive_rail_slider = true,
     primitive_airfoil = true,
     primitive_convex_hull = true,
 }
