@@ -552,14 +552,13 @@ do -- Sensor Synchronizer interface
 	end
 end
 
+-- AutoRegister runs the ACF_OnEntityLast hook and WireLib.Remove around this
 function ENT:OnRemove()
-	local OldClass = self.ClassData
+	local OldClass = self.ClassData -- Not set if the radar was removed before it finished spawning
 
-	if OldClass.OnLast then
+	if OldClass and OldClass.OnLast then
 		OldClass.OnLast(self, OldClass)
 	end
-
-	hook.Run("ACF_OnEntityLast", "acf_radar", self, OldClass)
 
 	for Weapon in pairs(self.Weapons) do
 		self:Unlink(Weapon)
@@ -578,8 +577,6 @@ function ENT:OnRemove()
 	end
 
 	timer.Remove("ACF Radar Clock " .. self:EntIndex())
-
-	WireLib.Remove(self)
 end
 
 do	-- Overlay/networking
