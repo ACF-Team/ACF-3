@@ -304,8 +304,8 @@ function SWEP:PrimaryAttack()
 
 			Healed = true
 
-			if Entity.ACF_OnRepaired then
-				Entity:ACF_OnRepaired(_, OldHealth, _, Ent.ACF.Health)
+			if Ent.ACF_OnRepaired then
+				Ent:ACF_OnRepaired(_, OldHealth, _, Ent.ACF.Health)
 			end
 		end
 
