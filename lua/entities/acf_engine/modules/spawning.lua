@@ -69,17 +69,19 @@ do -- Spawn and Update functions
     -- Engine/engine-type classes are identified by FQN; derive the legacy short id for display by
     -- stripping the namespace prefix (FQNs like "ACF.Engines.5.7-V8" contain dots, so a plain split
     -- on "." won't work).
-    local function ShortName(Class, Prefix)
+    local function GetShortName(Class, Prefix)
         local Name = Classes.GetTypeName(Class):gsub("^" .. Prefix, "")
         return Name
     end
 
     local function UpdateEngine(Entity, Engine)
-        local EngineClass = Engine:GetType()
-        local Group       = Classes.GetBaseClass(EngineClass)
-        local Type        = Classes.GetSubtypeByName("ACF.EngineTypes.BaseEngineType", Engine.Type)
+        local EngineClass  = Engine:GetType()
+        local Group        = Classes.GetBaseClass(EngineClass)
+        local Type         = Classes.GetSubtypeByName("ACF.EngineTypes.BaseEngineType", Engine.Type)
             or Classes.GetTypeByName("ACF.EngineTypes.GenericPetrol")
-        local Mass        = Engine.Mass
+        local Mass         = Engine.Mass
+        local ShortName    = GetShortName(EngineClass, "ACF%.Engines%.")
+        local Displacement = not Engine.IsElectric and string.Split(ShortName, "-")[1] or Engine.PeakPower
 
         Entity.ACF = Entity.ACF or {}
 
@@ -89,9 +91,10 @@ do -- Spawn and Update functions
         Entity:SetMoveType(MOVETYPE_VPHYSICS)
 
         Entity.Name             = Engine.Name
-        Entity.ShortName        = ShortName(EngineClass, "ACF%.Engines%.")
+        Entity.ShortName        = ShortName
         Entity.EntType          = Group and Group.Name or Engine.Name
         Entity.ClassData        = Group
+        Entity.Displacement		= isstring(Displacement) and string.Split(Displacement, "L")[1] or Displacement -- Look at the bullshit i have to do just to get this...
         Entity.DefaultSound     = Engine.Sound
         Entity.SoundPitch       = Engine.Pitch or 1
         Entity.SoundVolume      = Engine.SoundVolume or 1
@@ -112,7 +115,7 @@ do -- Spawn and Update functions
         Entity.IsTrans          = Engine.IsTrans -- driveshaft outputs to the side
         Entity.FuelTypes        = Engine.Fuel or { ["ACF.FuelTypes.Petrol"] = true }
         Entity.FuelType         = next(Engine.Fuel)
-        Entity.EngineType       = ShortName(Type, "ACF%.EngineTypes%.")
+        Entity.EngineType       = GetShortName(Type, "ACF%.EngineTypes%.")
         Entity.Efficiency       = Type.Efficiency
         Entity.TorqueScale      = Type.TorqueScale
         Entity.HealthMult       = Type.HealthMult
@@ -143,12 +146,14 @@ do -- Spawn and Update functions
     function ENT:ACF_PreSpawn(_, _, _, ClientData)
         self.ACF               = {}
         self.Active            = false
+        self.Displacement      = 0
         self.Gearboxes         = {}
         self.FuelTanks         = {}
         self.LastThink         = 0
         self.MassRatio         = 1
         self.FuelUsage         = 0
         self.Throttle          = 0
+        self.IdleThrottle      = 0
         self.FlyRPM            = 0
         self.IsDestroyed       = false
         self.LastPitch         = 0
@@ -156,6 +161,7 @@ do -- Spawn and Update functions
         self.LastFuelUsage     = 0
         self.LastPower         = 0
         self.LastRPM           = 0
+        self.LastIdleThrottle  = 0
         self.LastTotalMass     = 0
         self.LastPhysMass      = 0
         self.revLimiterEnabled = true

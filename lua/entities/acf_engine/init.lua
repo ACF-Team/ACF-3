@@ -10,3 +10,4 @@ include("modules/cfw.lua")        -- CFW related stuff.
 include("modules/sounds.lua")     -- Sounds. 
 include("modules/networking.lua") -- Networking for the overlay.
 include("modules/damage.lua")     -- Damage handling.
+-- include("modules/thermals.lua") -- :eyes:

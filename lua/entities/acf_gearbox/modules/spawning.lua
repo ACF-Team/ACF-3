@@ -6,6 +6,7 @@ local Notify      = Utilities.Notify
 local Clamp = math.Clamp
 local Round = math.Round
 local max   = math.max
+local abs   = math.abs
 
 local IsEntityValid  = ACF.Optimizations.IsEntityValid
 local IsPhysObjValid = ACF.Optimizations.IsPhysObjValid
