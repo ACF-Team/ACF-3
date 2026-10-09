@@ -256,6 +256,11 @@ do
 		ACF.DropToFloor(self)
 	end
 
+	-- Steer plates are filtered from ballistics, this covers anything else that tries to damage them
+	function ENT:ACF_PreDamage()
+		return false
+	end
+
 	-- Dupes come back with their saved steer angle, held until the steering input changes
 	function ENT:PostEntityPaste()
 		self.HoldInput     = true

@@ -275,6 +275,7 @@ do -- ACF global vars
 	-- THESE ENTITIES ARE FILTERED BUT CAN STILL BE ARMORED, FOR BACKWARDS COMPATIBILITY
 	ACF.ArmorableGlobalFilterExceptions = {
 		sent_prop2mesh = true,
+		acf_steerplate = true, -- Needs to pass ACF.Check to be linked, it blocks its own damage
 	}
 
 	-- Ammo
