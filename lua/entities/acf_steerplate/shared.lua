@@ -3,19 +3,12 @@ DEFINE_BASECLASS("acf_base_simple")
 ENT.ACF_Limit           = 8
 ENT.ACF_PreventArmoring = true
 
-ENT.ACF_SteerplateModel         = "models/sprops/rectangles/size_2_5/rect_18x18x3.mdl"
-ENT.ACF_SteerplateFallbackModel = "models/hunter/plates/plate025x025.mdl"
+ENT.ACF_SteerplateModel = "models/hunter/plates/plate025x025.mdl"
 
 -- Valid values for the string fields below, the first entry of each list is the default
 ENT.ACF_SteerBehaviors   = { "Disable", "Neutral", "Continue", "Wire" }
 ENT.ACF_WireInputMethods = { "AD", "Steer", "Angle" }
 ENT.ACF_AIOInputMethods  = { "AD", "Aim" }
-
---- Returns the steer plate model, falling back to a stock plate when sprops isn't mounted
-function ENT:ACF_GetSteerplateModel()
-	if util.IsValidModel(self.ACF_SteerplateModel) then return self.ACF_SteerplateModel end
-	return self.ACF_SteerplateFallbackModel
-end
 
 ACF.Entities.AutoRegister(2026100801, function()
 	MENU_FIELD("Boolean", "UseAIOController",  { Default = true })

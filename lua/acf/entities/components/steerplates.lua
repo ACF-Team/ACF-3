@@ -1,9 +1,6 @@
 local ACF     = ACF
 local Classes = ACF.Classes
 
-local Model         = "models/sprops/rectangles/size_2_5/rect_18x18x3.mdl"
-local FallbackModel = "models/hunter/plates/plate025x025.mdl"
-
 local BehaviorChoices = {
 	{ "Disable steering",  "Disable" },
 	{ "Steer to neutral",  "Neutral" },
@@ -96,7 +93,7 @@ end
 Classes.DefineClass("ACF.Components.Steerplate", "ACF.Components.BaseComponent", function(CLASS)
 	CLASS.Name        = "Steer Plate"
 	CLASS.Description = "Steers the wheels linked to it by rotating relative to its linked baseplate, driven by an AIO controller or wire inputs."
-	CLASS.Model       = util.IsValidModel(Model) and Model or FallbackModel
+	CLASS.Model       = "models/hunter/plates/plate025x025.mdl"
 	CLASS.Entity      = "acf_steerplate"
 	CLASS.Preview     = { FOV = 120 }
 	CLASS.CreateMenu  = ACF.CreateSteerplateMenu

@@ -197,7 +197,7 @@ do
 	function ENT:ACF_PreSpawn()
 		self.ACF = {}
 
-		Contraption.SetModel(self, self:ACF_GetSteerplateModel())
+		Contraption.SetModel(self, self.ACF_SteerplateModel)
 
 		-- Linked entities
 		self.Baseplate = nil
@@ -217,7 +217,7 @@ do
 	end
 
 	function ENT:ACF_PostUpdateEntityData()
-		local Model = self:ACF_GetSteerplateModel()
+		local Model = self.ACF_SteerplateModel
 
 		self.ACF.Model = Model
 		Contraption.SetModel(self, Model)
