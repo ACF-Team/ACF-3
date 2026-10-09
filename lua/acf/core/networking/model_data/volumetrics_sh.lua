@@ -11,7 +11,7 @@ local function GetArmorType(ID) return Classes.GetSubtypeByName("ACF.ArmorTypes.
 
 -- Networking: whenever a convex's material is set (serverside), the new material is sent straight to
 -- every client. No request/refresh cycle -- just send it the moment it changes.
-local MAX_CONVEXES  = 12 -- bits for the convex index and count fields, curved PHX plates alone have 80 convexes
+local MAX_CONVEXES  = 5 -- bits for the convex index and count fields
 local MAX_MATERIALS = 5 -- bits for the material index field
 
 local ArmorTypeByIndex   = {} -- index (1-based int) -> armor type ID string
