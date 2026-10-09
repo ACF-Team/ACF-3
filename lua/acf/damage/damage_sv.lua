@@ -9,16 +9,16 @@ util.AddNetworkString("ACF_Damage")
 
 -- Writes a { {Entity, Convexes}, ... } batch in the wire format shared by SendQueue and the full-sync hook.
 local function WriteBatch(Batch)
-	net.WriteUInt(#Batch, 8)
+	net.WriteUInt(#Batch, MAX_EDICT_BITS)
 
 	for i = 1, #Batch do
 		local Entity, Convexes = Batch[i][1], Batch[i][2]
 
 		net.WriteUInt(Entity:EntIndex(), 13)
-		net.WriteUInt(table.Count(Convexes), 8)
+		net.WriteUInt(table.Count(Convexes), 12)
 
 		for ConvexID, Step in pairs(Convexes) do
-			net.WriteUInt(ConvexID, 9)
+			net.WriteUInt(ConvexID, 12) -- Same width as the convex material networking
 			net.WriteUInt(Step, 4)
 		end
 	end

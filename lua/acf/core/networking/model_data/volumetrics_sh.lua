@@ -11,7 +11,7 @@ local function GetArmorType(ID) return Classes.GetSubtypeByName("ACF.ArmorTypes.
 
 -- Networking: whenever a convex's material is set (serverside), the new material is sent straight to
 -- every client. No request/refresh cycle -- just send it the moment it changes.
-local MAX_CONVEXES  = 5 -- bits for the convex index field
+local MAX_CONVEXES  = 12 -- bits for the convex index and count fields, curved PHX plates alone have 80 convexes
 local MAX_MATERIALS = 5 -- bits for the material index field
 
 local ArmorTypeByIndex   = {} -- index (1-based int) -> armor type ID string
@@ -34,9 +34,48 @@ end)
 
 if SERVER then
     util.AddNetworkString("ACF_ConvexMaterialSet")
+
+    local function SendMaterials(Entity, Materials, Player)
+        local Count = table.Count(Materials)
+        if Count == 0 then return end
+
+        net.Start("ACF_ConvexMaterialSet")
+        net.WriteUInt(Entity:EntIndex(), MAX_EDICT_BITS)
+        net.WriteUInt(Count, MAX_CONVEXES)
+
+        for ConvexID, MaterialID in pairs(Materials) do
+            net.WriteUInt(ConvexID, MAX_CONVEXES)
+            net.WriteUInt(ArmorTypeIndexByID[MaterialID] or ArmorTypeIndexByID["Default"] or 1, MAX_MATERIALS)
+        end
+
+        if Player then net.Send(Player) else net.Broadcast() end
+    end
+
+    ACF.SendConvexMaterials = SendMaterials
+
+    -- Materials are only sent when they change, so players joining later need everything set before them
+    hook.Add("ACF_OnLoadPlayer", "ACF_ConvexMaterialSync", function(Player)
+        for _, Entity in ents.Iterator() do
+            local MeshData = Entity.ACF_Volumetric_Mesh
+            if not MeshData then continue end
+
+            local Materials
+            for ConvexID, Convex in ipairs(MeshData.Convexes) do
+                if Convex.Material and Convex.Material ~= "Default" then
+                    Materials = Materials or {}
+                    Materials[ConvexID] = Convex.Material
+                end
+            end
+
+            if Materials then SendMaterials(Entity, Materials, Player) end
+        end
+    end)
 end
 
 if CLIENT then
+    -- Materials set on the same tick an entity is created can arrive before the entity exists clientside
+    local Pending = {} -- EntIndex -> { Materials = {...}, Time = CurTime() }
+
     net.Receive("ACF_ConvexMaterialSet", function()
         local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
         local Count    = net.ReadUInt(MAX_CONVEXES)
@@ -49,9 +88,33 @@ if CLIENT then
         end
 
         local Ent = Entity(EntIndex)
-        if not IsValid(Ent) then return end
+        if not IsValid(Ent) then
+            local Entry = Pending[EntIndex]
+            if not Entry then
+                Entry = { Materials = {} }
+                Pending[EntIndex] = Entry
+            end
+
+            table.Merge(Entry.Materials, Materials)
+            Entry.Time = CurTime()
+
+            return
+        end
 
         ACF.SetConvexMaterials(Ent, Materials)
+    end)
+
+    hook.Add("NetworkEntityCreated", "ACF_ConvexMaterialPending", function(Ent)
+        local EntIndex = Ent:EntIndex()
+        local Entry    = Pending[EntIndex]
+        if not Entry then return end
+
+        Pending[EntIndex] = nil
+
+        -- Anything this old was for whatever entity used this index before
+        if CurTime() - Entry.Time > 10 then return end
+
+        ACF.SetConvexMaterials(Ent, Entry.Materials)
     end)
 end
 
@@ -145,22 +208,7 @@ do
         MeshData.HasReactiveArmor  = HasReactive -- Lets ballistics skip the reactive-armor check entirely for normal entities
 
         if SERVER then
-            local Count = 0
-            for _ in pairs(Changed) do Count = Count + 1 end
-            Count = math.min(Count, 31)
-
-            net.Start("ACF_ConvexMaterialSet")
-            net.WriteUInt(Entity:EntIndex(), MAX_EDICT_BITS)
-            net.WriteUInt(Count, MAX_CONVEXES)
-
-            local Sent = 0
-            for ConvexID, MaterialID in pairs(Changed) do
-                if Sent >= Count then break end
-                net.WriteUInt(ConvexID, MAX_CONVEXES)
-                net.WriteUInt(ArmorTypeIndexByID[MaterialID] or ArmorTypeIndexByID["Default"] or 1, MAX_MATERIALS)
-                Sent = Sent + 1
-            end
-            net.Broadcast()
+            ACF.SendConvexMaterials(Entity, Changed)
 
             local HasNonDefault = false
             for _, MaterialID in pairs(Changed) do
