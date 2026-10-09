@@ -7,7 +7,6 @@ local ACF         = ACF
 local Contraption = ACF.Contraption
 local Notify      = ACF.Utilities.Notify
 local Clamp       = math.Clamp
-local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 local EmptyTable  = {}
 local SpeedConv   = 0.09144 -- u/s to km/h (Assumes 1u = 1in)
 local LiquidMask  = bit.bor(CONTENTS_WATER, CONTENTS_SLIME)
@@ -283,9 +282,8 @@ end
 
 -- Links ------------------------------------------
 do
-	ACF.RegisterClassPreLinkCheck("acf_steerplate", "acf_baseplate", function(This, Baseplate)
+	ACF.RegisterClassPreLinkCheck("acf_steerplate", "acf_baseplate", function(This)
 		if IsValid(This.Baseplate) then return false, "This steer plate is already linked to a baseplate." end
-		if Baseplate:GetPos():DistToSqr(This:GetPos()) > MaxDistance then return false, "This baseplate is too far from the steer plate." end
 
 		return true
 	end)
@@ -319,7 +317,6 @@ do
 		if This.Wheels[Wheel] then return false, "This steer plate is already linked to this wheel." end
 		if IsValid(Wheel.ACF_Steerplate) and Wheel.ACF_Steerplate ~= This then return false, "This wheel is already linked to another steer plate." end
 		if IsValid(Wheel:GetParent()) then return false, "Cannot use a parented entity as a wheel." end
-		if Wheel:GetPos():DistToSqr(This:GetPos()) > MaxDistance then return false, "This wheel is too far from the steer plate." end
 
 		return true
 	end)
