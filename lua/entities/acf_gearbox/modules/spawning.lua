@@ -255,7 +255,6 @@ do -- Spawn and Update functions -----------------------
 		self.Effectors      = {}
 		self.GearboxIn      = {}
 		self.GearboxOut     = {}
-		self.TotalReqTq     = 0
 		self.TorqueOutput   = 0
 		self.LBrake         = 0
 		self.RBrake         = 0

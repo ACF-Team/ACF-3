@@ -81,7 +81,7 @@ do -- Spawn and Update functions
             or Classes.GetTypeByName("ACF.EngineTypes.GenericPetrol")
         local Mass         = Engine.Mass
         local ShortName    = GetShortName(EngineClass, "ACF%.Engines%.")
-        local Displacement = not Engine.IsElectric and string.Split(ShortName, "-")[1] or Engine.PeakPower
+        local Displacement = not Engine.IsElectric and Engine.Displacement or Engine.PeakPower
 
         Entity.ACF = Entity.ACF or {}
 
@@ -94,7 +94,7 @@ do -- Spawn and Update functions
         Entity.ShortName        = ShortName
         Entity.EntType          = Group and Group.Name or Engine.Name
         Entity.ClassData        = Group
-        Entity.Displacement		= isstring(Displacement) and string.Split(Displacement, "L")[1] or Displacement -- Look at the bullshit i have to do just to get this...
+        Entity.Displacement		= Displacement
         Entity.DefaultSound     = Engine.Sound
         Entity.SoundPitch       = Engine.Pitch or 1
         Entity.SoundVolume      = Engine.SoundVolume or 1

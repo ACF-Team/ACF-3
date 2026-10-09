@@ -453,7 +453,7 @@ do -- Movement -----------------------------------------
 			end
 
 			WireLib.TriggerOutput(self, "Output Torque", ReactTq)
-			SelfTbl.TorqueOutput = ReactTq
+			SelfTbl.TorqueOutput = ReactTq -- For the overlay
 		end
 
 		-- Chassis reaction torque: Newton's third law makes the body twist opposite to the drive direction when power is applied
