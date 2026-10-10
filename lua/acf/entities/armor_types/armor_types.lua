@@ -127,7 +127,7 @@ Classes.DefineClass("ACF.ArmorTypes.RHA", "ACF.ArmorTypes.BaseArmorType", functi
     CLASS.ShortName   = "RHA"
     CLASS.Description = "Rolled Homogeneous Armor. The standard by which all other armor types are measured."
     CLASS.Density     = 7.84 -- https://metalzenith.com/blogs/steel-properties/rha-steel-properties-and-key-applications-in-defense
-    CLASS.CostMul     = 45 -- Reference: 0.005 points/kg
+    CLASS.CostMul     = 43 -- Reference: 0.005 points/kg
     CLASS.HealthMul   = 2
     CLASS.KineticMul  = 1.0
     CLASS.ChemicalMul = 1.0
@@ -142,7 +142,7 @@ Classes.DefineClass("ACF.ArmorTypes.HHRHA", "ACF.ArmorTypes.BaseArmorType", func
     CLASS.ShortName   = "Maraging Steel"
     CLASS.Description = "Harder than RHA, but more brittle."
     CLASS.Density     = 7.85 -- https://metalzenith.com/blogs/steel-properties/rha-steel-properties-and-key-applications-in-defense
-    CLASS.CostMul     = 68
+    CLASS.CostMul     = 66
     CLASS.HealthMul   = 0.265
     CLASS.KineticMul  = 1.25
     CLASS.ChemicalMul = 1.15
@@ -232,7 +232,7 @@ Classes.DefineClass("ACF.ArmorTypes.NERA", "ACF.ArmorTypes.BaseArmorType", funct
     CLASS.ShortName   = "NERA"
     CLASS.Description = "Non-Explosive Reactive Armor, steel plates around rubber interlayers like the Abrams turret cassettes. Bulges against shaped charges and long rods, but never detonates. Weaker than ERA against HEAT, in exchange for being safe and sustained."
     CLASS.Density     = 2.58 -- 50% air, 30% RHA, 20% rubber by volume
-    CLASS.CostMul     = 38 -- Between the raw material cost (28) and Heavy ERA (47.1), for the cassette assembly
+    CLASS.CostMul     = 35 -- Between the raw material cost (28) and Heavy ERA (47.1), for the cassette assembly
     CLASS.HealthMul   = 0.25
     CLASS.KineticMul  = 0.365 -- Just above the linear steel and rubber mix (0.72), the bulging plates disrupt rods a little
     CLASS.ChemicalMul = 1-- Linear mix is 0.75, the bulge doubles it, still short of ERA's 2.0
