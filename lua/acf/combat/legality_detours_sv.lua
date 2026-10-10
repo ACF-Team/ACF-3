@@ -115,8 +115,12 @@ local function IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Play
     return IfEntManipulationOnACFContraption_ThenDisableContraption(Player, Ent, Type, PostContraptionCheck)
 end
 
+-- Marks the contraption as having used applyforce-family methods, so the aircraft armor volume
+-- limit only enforces against aircraft that actually rely on them for thrust/lift, not fin aircraft
 local function PostContraptionCheck_IsNotGroundVehicle(Contraption)
-    if Contraption:ACF_IsAircraft() or Contraption:ACF_IsRecreational() then
+    if Contraption:ACF_IsRecreational() then return true end
+    if Contraption:ACF_IsAircraft() then
+        Contraption.ACF_UsedApplyForce = true
         return true
     end
 end
@@ -247,6 +251,46 @@ local function FreezeDetours()
             then
                 return false
             end
+        end)
+    end
+end
+
+-- TARGET  : propDraw and equiv. NoDraw setters
+-- METHODS : Expression 2, Starfall (Entity binding)
+-- ON CALL : If target's contraption is an ACF contraption, disable the contraption and block the call.
+-- Hiding a contraption's props mid-combat has no legitimate building use.
+local function PropDrawDetours()
+    do
+        local Func Func = Detours.Expression2("e:propDraw(n)", function(Scope, Args, ...)
+            if Args[2] == 0 and not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Args[1], "e:propDraw(n)") then return end
+            return Func(Scope, Args, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.Starfall("instance.Types.Entity.Methods.setNoDraw", function(Instance, Ent, Draw, ...)
+            if Draw and not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:setNoDraw(b)") then return end
+            return Func(Instance, Ent, Draw, ...)
+        end)
+    end
+end
+
+-- TARGET  : primitiveEdit (primitive addon)
+-- METHODS : Expression 2, Starfall (Entity binding)
+-- ON CALL : If target's contraption is an ACF contraption, disable the contraption and block the call.
+-- primitiveEdit writes directly to a primitive entity's editable variables (size, mass, etc.), so we
+-- treat it the same as SetPos, block it during combat but allow the owner to keep building.
+local function PrimitiveEditDetours()
+    do
+        local Func Func = Detours.Expression2("primitiveEdit(es...)", function(Scope, Args, ...)
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Args[1], "primitiveEdit(e, s, ...)") then return end
+            return Func(Scope, Args, ...)
+        end)
+    end
+
+    do
+        local Func Func = Detours.Starfall("instance.Types.Entity.Methods.primitiveEdit", function(Instance, Ent, ...)
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:primitiveEdit(s, ...)") then return end
+            return Func(Instance, Ent, ...)
         end)
     end
 end
@@ -973,6 +1017,8 @@ local function TriggerDetourRebuild()
 
     FreezeDetours()
     UseDetours()
+    PropDrawDetours()
+    PrimitiveEditDetours()
 
     AddAngleVelocityDetours()
     AddVelocityDetours()

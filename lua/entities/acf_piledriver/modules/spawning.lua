@@ -70,13 +70,13 @@ do -- Updating
                 Caliber    = Caliber,
                 Destiny    = "Piledrivers",
                 AmmoType   = "ACF.Ammunition.HP",
-                Projectile = self.SpikeLength,
-                Propellant = 0,
+                RoundLength = self.SpikeLength,
+                PropRatio   = 0,
             }
 
             Ammo.Weapon      = Weapon
-            Ammo.Projectile  = self.SpikeLength
-            Ammo.Propellant  = 0
+            Ammo.RoundLength = self.SpikeLength
+            Ammo.PropRatio   = 0
             Ammo.SpikeLength = self.SpikeLength
             local BulletData  = Ammo:ServerConvert()
             BulletData.Crate  = self:EntIndex()

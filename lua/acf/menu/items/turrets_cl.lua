@@ -2,7 +2,7 @@ local ACF     = ACF
 local Classes = ACF.Classes
 local PAGE    = "acf_turret"
 
-local CTX_NAMES = { "Drive", "Motor", "Gyro", "Computer" }
+local CTX_NAMES = { "Drive", "Motor", "Gyro", "Computer", "Controller" }
 
 local function GetGroups()
 	local Groups = {}
@@ -11,6 +11,12 @@ local function GetGroups()
 
 	for _, Group in pairs(Classes.GetChildren(Root)) do
 		Groups[#Groups + 1] = Group
+	end
+
+	-- These inherit Drive, so they aren't direct children of the root
+	for _, Name in ipairs({"ACF.Turrets.Servo", "ACF.Turrets.Actuator"}) do
+		local Group = Classes.GetTypeByName(Name)
+		if Group then Groups[#Groups + 1] = Group end
 	end
 
 	return Groups
@@ -26,7 +32,7 @@ local function Build(Menu, Contexts)
 	end
 
 	Menu:AddTitle("#acf.menu.turrets.menu_title")
-	Menu:AddPonderAddonCategory("acf", "turrets")
+	Menu:AddPonderAddonCategory("acf", "tankbasics")
 	Menu:AddLabel("#acf.menu.turrets.menu_desc")
 
 	local ClassList      = Menu:AddComboBox()
@@ -48,7 +54,8 @@ local function Build(Menu, Contexts)
 		ClassDesc:SetText(Data.Description or "#acf.menu.no_description_provided")
 		Contexts.Active = ContextFor(Data)
 
-		ACF.Menu.LoadClassCombo(ComponentClass, Classes.GetChildren(Data), "Name", "Model", PAGE, "item")
+		local IsDrive = Classes.GetTypeName(Data) == "ACF.Turrets.Drive"
+		ACF.Menu.LoadClassCombo(ComponentClass, IsDrive and ACF.GetTurretDrives() or Classes.GetChildren(Data), "Name", "Model", PAGE, "item")
 	end
 
 	function ComponentClass:OnSelect(Index, _, Data)
@@ -83,10 +90,11 @@ ACF.Menu.RegisterPage({
 	Order    = 51,
 
 	Contexts = {
-		Drive    = "acf_turret",
-		Motor    = "acf_turret_motor",
-		Gyro     = "acf_turret_gyro",
-		Computer = "acf_turret_computer",
+		Drive      = "acf_turret",
+		Motor      = "acf_turret_motor",
+		Gyro       = "acf_turret_gyro",
+		Computer   = "acf_turret_computer",
+		Controller = "acf_turret_controller",
 	},
 	LinkContexts = function(Contexts) Contexts.Active = Contexts.Drive end,
 

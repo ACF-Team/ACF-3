@@ -8,14 +8,16 @@ Classes.DefineClass("ACF.Missiles.Guidance.Dumb", "ACF.Missiles.Guidance", funct
 
 	end
 
+	-- Shared so the ammo menu can price missile rounds clientside.
+	function CLASS:GetCost()
+		return 0
+	end
+
 	if CLIENT then
 		CLASS.Description = "This guidance package is empty and provides no control."
 	else
 		local Countermeasures = ACF.Countermeasures
 
-		function CLASS:GetCost()
-			return 0
-		end
 
 		function CLASS:OnLaunched() end
 

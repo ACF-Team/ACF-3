@@ -9,6 +9,7 @@ ACF.Entities.AutoRegister(2026091001, function(CLASS)
 	MENU_FIELD("Number", 					"CrateProjectilesX", 	{Min = 1, Default = 3, Decimals = 0})
 	MENU_FIELD("Number", 					"CrateProjectilesY", 	{Min = 1, Default = 3, Decimals = 0})
 	MENU_FIELD("Number", 					"CrateProjectilesZ", 	{Min = 1, Default = 3, Decimals = 0})
+	MENU_FIELD("Boolean", 					"HexPacking",        	{Default = false})
 
 	function CLASS:VerifyData()
 		self.Weapon:VerifyData()

@@ -35,8 +35,8 @@ local function Build(Menu, Contexts)
 
 		Ammo.SpikeLength = Length
 		Ammo.Weapon      = WeaponInst
-		Ammo.Projectile  = Length
-		Ammo.Propellant  = 0
+		Ammo.RoundLength = Length
+		Ammo.PropRatio   = 0
 		Ammo.Tracer      = false
 
 		local BulletData = Ammo:ClientConvert()
@@ -48,7 +48,7 @@ local function Build(Menu, Contexts)
 
 		ClassName:SetText(language.GetPhrase("acf.menu.fun.piledrivers.class_name"):format(math.Round(Cal, 2), Class.Name))
 		ClassInfo:SetText(language.GetPhrase("acf.menu.fun.piledrivers.stats"):format(Class.Mass * Scale, Class.Cyclic, Class.MagSize, Class.ChargeRate))
-		ClassStats:SetText(language.GetPhrase("acf.menu.fun.piledrivers.damage_stats"):format(math.Round(MaxPen, 2), math.Round(BulletData.MuzzleVel or 0, 2), BulletData.ProjLength or 0, ACF.GetProperMass(BulletData.ProjMass or 0)))
+		ClassStats:SetText(language.GetPhrase("acf.menu.fun.piledrivers.damage_stats"):format(math.Round(MaxPen, 2), math.Round(BulletData.MuzzleVel or 0, 2), BulletData.ProjLength or 0, ACF.FormatMass(BulletData.ProjMass or 0)))
 	end
 
 	local W        = Gun:Get("Weapon")

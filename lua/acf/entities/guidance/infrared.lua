@@ -2,12 +2,14 @@ local ACF       = ACF
 local Classes 	= ACF.Classes
 Classes.DefineClass("ACF.Missiles.Guidance.Infrared", "ACF.Missiles.Guidance.AntiRadiation", function(CLASS)
 	CLASS.Name = "Infrared"
+	-- Shared so the ammo menu can price missile rounds clientside.
+	function CLASS:GetCost()
+		return 3
+	end
+
 	if CLIENT then
 		CLASS.Description = "This guidance package will detect a contraption in front of itself and guide the munition towards it."
 	else
-		function CLASS:GetCost()
-			return 2
-		end
 
 		function CLASS:UpdateTarget(Missile)
 			local Position   = Missile.ACF_Position

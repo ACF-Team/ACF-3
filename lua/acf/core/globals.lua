@@ -1,5 +1,4 @@
 local ACF = ACF
-ACF.Countermeasures = {} -- No gloader folder for this, keeping here for now
 
 do
 	-- MARCH:
@@ -115,7 +114,7 @@ end
 do -- ACF global vars
 	ACF.AmmoCrates           = ACF.AmmoCrates or {}
 	ACF.FuelTanks            = ACF.FuelTanks or {}
-	ACF.Repositories         = ACF.Repositories or {}
+	ACF.ActiveCrews          = ACF.ActiveCrews or {}
 	ACF.ClientData           = ACF.ClientData or {}
 	ACF.ServerData           = ACF.ServerData or {}
 	ACF.ModelData            = ACF.ModelData or { Models = {} }
@@ -125,6 +124,9 @@ do -- ACF global vars
 	ACF.DefineSetting("RestrictInfo",         true,   "Entity information restrictions have been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("LegalChecks",          true,   "Legality checks for ACF entities has been %s.", ACF.BooleanDataCallback(), false)
 	ACF.DefineSetting("NameAndShame",         true,   "Console messages for failed legality checks have been %s.", ACF.BooleanDataCallback(), false)
+	ACF.DefineSetting("CostLimitGround",      500,    "Ground vehicle cost limit has been set to %s.", ACF.FloatDataCallback(0, 5000, 0), 0)
+	ACF.DefineSetting("CostLimitAir",         200,    "Aircraft cost limit has been set to %s.", ACF.FloatDataCallback(0, 2000, 0), 0)
+	ACF.DefineSetting("MaxArmorVolumeAir",    32000,  "Aircraft max armor volume has been set to %s.", ACF.FloatDataCallback(0, 100000, 0), 0)
 	ACF.DefineSetting("VehicleLegalChecks",   true,   "Legality checks for vehicles has been %s.", ACF.BooleanDataCallback(), false)
 	ACF.DefineSetting("LegalityDetours",      true,   "Legality detours have been %s.", ACF.BooleanDataCallback(), false)
 
@@ -135,22 +137,25 @@ do -- ACF global vars
 	ACF.DefineSetting("AllowBaseplateDamage", false,  "Non-ACF damage while driving baseplates has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("SquishyDamageMult",    1,      "Player/NPC damage multiplier has been set to a factor of %.2f.", ACF.FloatDataCallback(0.1, 2, 2))
 
-	ACF.Threshold = 264.7
-	ACF.DefineSetting("HealthFactor",         1,      "Health multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("Threshold", 0.01, 2, 2))
+	ACF.BlastAreaCoef = 1 / 264.7 -- Multiplier used to scale HE blast area against an entity's surface area. Kept separate from the convex armor health coefficient.
 
-	ACF.ArmorMod = 1
-	ACF.DefineSetting("ArmorFactor",          1,      "Armor multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("ArmorMod", 0.01, 2, 2))
+	ACF.DefineSetting("HealthCoef",           0.05,    "Health coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
+
+	ACF.DefineSetting("ArmorCoef",            1,      "Armor coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
+
+	ACF.DefineSetting("DamageCoef",           1,      "Damage coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 1000, 2))
+
+	ACF.DefineSetting("DamageBlastCoef",      0.1,      "Blast damage coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 1000, 2))
+
+	ACF.PenetrationFeatherExponent = 2 -- Feathers convex health loss against how much of the plate's thickness was actually traversed
 
 	ACF.FuelRate = 15 -- Multiplier for fuel usage, 1.0 is approx real world
 	ACF.DefineSetting("FuelFactor",           1,      "Fuel rate multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("FuelRate", 0.01, 2, 2))
 
-	ACF.MinimumArmor         = 0.01     -- Minimum possible armor that can be given to an entity
-	ACF.MaximumArmor         = 5000  -- Maximum possible armor that can be given to an entity
-	ACF.MinDuctility         = -80   -- The minimum amount of ductility that can be set on an entity
-	ACF.MaxDuctility         = 80    -- The maximum amount of ductility that can be set on an entity
+	ACF.MaxExplosiveConvexVolume = 10000 -- Maximum convex volume (in^3) that can be assigned an explosive armor material
+	ACF.MinExplosiveConvexVolume = 100   -- Minimum convex volume (in^3) that can be assigned an explosive armor material
 	ACF.MinimumMass          = 0.1   -- The minimum amount of mass that can be set on an entity
-	ACF.MaximumMass          = 50000 -- The maximum amount of mass that can be set on an entity
-	ACF.DefineSetting("MaxThickness",         300,    nil, ACF.FloatDataCallback(ACF.MinimumArmor, ACF.MaximumArmor, 0))
+	ACF.DefineSetting("MaxThickness",         300,    nil, ACF.FloatDataCallback(0.01, 5000, 0))
 
 	ACF.DefineSetting("SmokeWind",            20,     "Wind smoke multiplier has been set to a factor of %.2f.", ACF.FloatDataCallback(0, 1000, 2))
 
@@ -177,13 +182,34 @@ do -- ACF global vars
 
 	-- The deviation of the input direction from the shaft + the output direction from the shaft cannot exceed this
 	ACF.DefineSetting("MaxDriveshaftAngle",   85,    nil, ACF.FloatDataCallback(85, 180, 0), 360)
-	ACF.Year                 = 1945
+
+	ACF.DefineSetting("EnableKillFeedCost",   true,   "Kill feed cost display has been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("KillLogFlushInterval", 30,    "Kill log disk-write interval has been set to %s seconds.", ACF.FloatDataCallback(15, 600, 0))
+	ACF.DefineSetting("KillLogMaxSessions",   20,    "Kill log max retained sessions has been set to %s.", ACF.FloatDataCallback(1, 500, 0))
+	ACF.DefineSetting("KillLogQueryCooldown", 10,    "Kill log query cooldown has been set to %s seconds.", ACF.FloatDataCallback(0, 120, 0))
+
 	ACF.IllegalDisableTime   = 30 -- Time in seconds for an entity to be disabled when it fails ACF.IsLegal
 	ACF.Volume               = 1 -- Global volume for ACF sounds
 	ACF.MobilityLinkDistance = 650 -- Maximum distance, in inches, at which mobility-related components will remain linked with each other
 	ACF.LinkDistance         = 650 -- Maximum distance, in inches, at which components will remain linked with each other
 	ACF.KillIconColor        = Color(200, 200, 48)
-	ACF.NetMessageSizeLimit  = 13	-- Maximum size of a net message in bytes (IF SET TOO LOW, CERTAIN MODELS MAY NOT BE NETWORKED PROPERLY)
+
+	ACF.ColorArray = {
+		Color(255, 0, 0),
+		Color(0, 255, 0),
+		Color(0, 0, 255),
+		Color(255, 255, 0),
+		Color(255, 0, 255),
+		Color(0, 255, 255),
+	}
+
+	local ColorArraySize = #ACF.ColorArray
+
+	-- Returns a color from ACF.ColorArray for the given (1-based) index, wrapping around.
+	function ACF.GetIndexColor(Index)
+		return ACF.ColorArray[(Index % ColorArraySize) + 1]
+	end
+
 	ACF.FilterMakeSpherical  = true -- Whether Make Spherical entities should be filtered out of ballistics traces. Not intended to be disabled in actual gameplay
 
 	-- Unit Conversion
@@ -195,6 +221,7 @@ do -- ACF global vars
 	ACF.InchToCm             = 2.54 -- Inches to centimeters
 	ACF.InchToCmSq           = 6.45 -- in² to cm²
 	ACF.InchToCmCu           = 16.387 -- in³ to cm³
+	ACF.InchToMCu            = 1.6387e-5 -- in³ to m³
 	ACF.NmToFtLb             = 0.73756 -- Newton meters to foot-pounds
 	ACF.KwToHp               = 1.341 -- Kilowatts to horsepower
 	ACF.LToGal               = 0.264172 -- Liters to gallons
@@ -204,8 +231,8 @@ do -- ACF global vars
 
 	-- Reload Mechanics
 	ACF.BaseReload         = 1 -- Minimum reload time. Time it takes to move around a weightless projectile
-	ACF.MassToTime         = 0.25 -- Conversion of projectile mass to time be moved around
-	ACF.LengthToTime       = 0.025 -- Conversion of projectile length to time -- Emulating the added difficulty of manipulating a longer projectile
+	ACF.MassToTime         = 0.15 -- Conversion of projectile mass to time to be moved around. Length and caliber are already accounted for in mass
+	ACF.TwoPieceCount      = 2 -- Pieces a two piece round is loaded as. Each is that fraction of the round's mass, and each costs its own loading motion
 
 	-- External and Terminal Ballistics
 	ACF.DragDiv              = 80 -- Drag fudge factor
@@ -240,7 +267,6 @@ do -- ACF global vars
 		sent_prop2mesh        = true,
 
 		starfall_hologram     = true,
-		starfall_prop         = true,
 		starfall_screen       = true,
 		starfall_processor    = true,
 	}
@@ -250,17 +276,8 @@ do -- ACF global vars
 		sent_prop2mesh = true,
 	}
 
-	ACF.AmbientTemperature   = 288.15 -- Ambient temperature in kelvin (15°C @ sea level) from google search
-
-	-- Containers (Ammo, Fuel, Supply)
-	ACF.ContainerArmor       = 5 -- How many millimeters of armor all containers have
-	ACF.AmmoArmor            = ACF.ContainerArmor -- Backwards compatibility
-	ACF.FuelArmor            = ACF.ContainerArmor -- Backwards compatibility
-
 	-- Ammo
-	ACF.AmmoPadding          = 0.3 -- Ratio of wasted space to projectile case diameter
-	ACF.AmmoCaseScale        = 1 -- How much larger the diameter of the case is versus the projectile (necked cartridges, M829 is 1.4, .50 BMG is 1.6)
-	ACF.AmmoMinSize          = 6 -- Defines the shortest possible length of ammo crates for all their axises, in gmu
+	ACF.AmmoCaseScale        = 1 -- Fallback max case/projectile diameter ratio when a Round omits CaseScale
 	ACF.AmmoMaxLength        = 192 -- Defines the highest possible length of ammo crates for the X axis (length), in gmu
 	ACF.AmmoMaxWidth         = 96 -- Defines the highest possible width of ammo crates for the Y and Z axes (width/height), in gmu
 	ACF.AmmoSupplyColor      = Color(255, 255, 0, 10) -- The color to use for the ammo supply effect
@@ -283,8 +300,6 @@ do -- ACF global vars
 	ACF.MaxChargeHeadLen     = 1.2     -- Maximum shaped charge head length (in charge diameters), lengths above will incur diminishing returns
 	ACF.HEATPenMul           = 0.85 * 8    -- Linear jet penetration multiplier
 	ACF.HEATMinPenVel        = 1000    -- m/s, minimum velocity of the copper jet that contributes to penetration
-	ACF.HEATCavityMul        = 1.2     -- Size of the penetration cavity in penetrator volume expended
-	ACF.HEATSpallingArc      = 0.5     -- Cossine of the HEAT spalling angle
 	ACF.HEATBoomConvert      = 1 / 3   -- Percentage of filler that creates HE damage at detonation
 	ACF.HEATStandOffMul      = 0.11 -- Percentage of standoff to use in penetration calculation (Original was too hig)
 	ACF.HEATBreakUpMul       = 0.15 -- Percentage of breakup time to use in penetration calculation (Original was too high)
@@ -298,19 +313,19 @@ do -- ACF global vars
 
 	-- Material conversion to points, kg * modifier
 	ACF.PointConversion		 = {
-		Steel		= 0.04,	-- Projectile steel
-		Aluminum	= 0.25,	-- Sabot material
-		Copper		= 0.15,	-- Liner for HEAT cones
-		Tungsten	= 0.3,	-- Expensive
-		CompB		= 0.1,	-- Normal explosives
-		Octol		= 0.7,	-- Snowflakium, needs to be expensive as a balancing measure
+		Steel		= 0.032,	-- Projectile steel
+		Aluminum	= 0.2,	-- Sabot material
+		Copper		= 0.1,	-- Liner for HEAT cones
+		Tungsten	= 0.165,	-- Expensive
+		CompB		= 0.08,	-- Normal explosives
+		Octol		= 0.24,	-- Snowflakium, needs to be expensive as a balancing measure
 
-		WP			= 0.01,	-- White phosphorus
-		SF			= 0.02,	-- Smoke filler
+		WP			= 0.008,	-- White phosphorus
+		SF			= 0.016,	-- Smoke filler
 
-		FlareMix	= 0.025,	-- Just some generic mix of hot flammable garbage
+		FlareMix	= 0.02,	-- Just some generic mix of hot flammable garbage
 
-		Propellant	= 0.025,	-- Propellant powder
+		Propellant	= 0.02,	-- Propellant powder
 	}
 
 	-- Debris
@@ -348,10 +363,10 @@ do -- ACF global vars
 	ACF.ContainerMinSize   = 6 -- Defines the shortest possible length of containers (fuel tanks, supply crates) for all their axises, in gmu
 	ACF.ContainerMaxSize   = 96 -- Defines the highest possible length of containers (fuel tanks, supply crates) for all their axises, in gmu
 	ACF.FuelSupplyColor    = Color(76, 201, 250, 10) -- The color to use for the fuel supply effect
+	ACF.CrewSupplyColor    = Color(255, 80, 200, 10) -- The color to use for the crew revival supply effect
 	ACF.LiIonED            = 0.458 -- li-ion energy density: kw hours / liter
 	ACF.SupplyDistance     = 300 -- Distance in which supply units distribute mass to containers.
 	ACF.SupplyMassRate     = 0.007017 -- kg per second per cubic inch of supply unit volume (no distance attenuation)
-	ACF.RefuelSpeed        = 700 -- Refueling speed for fuel tanks
 
 	-- Crew
 	-- Total efficiency = clamp(CommanderEff * CommanderCoef + SelfEff * SelfCoef, FallBackCoef, 1)
@@ -359,16 +374,27 @@ do -- ACF global vars
 	ACF.CrewCommanderCoef 	= 0.3	-- Portion of a crew's efficiency the commander provides
 	ACF.CrewSelfCoef 		= 1.0	-- Portion of a crew's efficiency they provide
 
+	ACF.DriverEfficiencyThreshold = 0.3	-- Minimum TotalEff a Driver/Pilot needs to grant full gearbox torque
+	ACF.DriverMaxYawDiff = 5	-- Max yaw (Degs) between a Driver's facing and its baseplate's forward
+	ACF.GunnerEfficiencyThreshold = 0.3	-- Minimum TotalEff a Gunner/Commander/Pilot needs to render a turret controlled
+	ACF.WeaponClasses = { -- Entity classes that make a turret weaponized if directly parented to it
+		acf_gun		= true,
+		acf_rack	= true
+	}
+	ACF.LightweightTurretMassLimit = 300	-- kg. Turrets at or under this carried mass can be controlled by a shared-parent Gunner, or a Lightweight Turret Controller, without needing to be mounted on it
+	ACF.CasemateArcLimit = 30	-- Degrees of total arc (MaxDeg - MinDeg) at or under which a shared-parent Gunner controls a turret at any mass, so casemate mounts don't need the gunner parented to the ring
+
 	ACF.CrewRepTimeBase 	= 3		-- Base time to replace a crew member
 	ACF.CrewRepDistToTime 	= 0.05 	-- Time it takes for crew to move one inch during replacement
 	ACF.CrewRepPrioMin 		= 1		-- Minimum priority for crew replacement
 	ACF.CrewRepPrioMax 		= 10	-- Maximum priority for crew replacement
 
+	ACF.CrewRegenFraction	= 0.05	-- Fraction of max health a living, non-full-health crew member regenerates roughly every 10 seconds
+
+	ACF.CrewFatalDeathCount	= 4		-- Number of currently-dead crew on a contraption before the vehicle is destroyed
+
 	ACF.CrewSpaceLengthMod 	= 0.425	-- Changes contribution of shell length to ideal crew space
 	ACF.CrewSpaceCaliberMod = 1.0	-- Changes contribution of shell caliber to ideal crew space
-
-	ACF.CrewArmor 			= 5		-- How many millimeters of armor crew members have
-	ACF.CrewHealth 			= 4		-- How much health crew members have
 
 	ACF.CrewOxygen 			= 10	-- How many seconds can crew hold their breath for
 	ACF.CrewOxygenLossRate 	= 1		-- Multiplier for how fast crew regain their breath
@@ -376,6 +402,9 @@ do -- ACF global vars
 
 	ACF.AmmoStageMin 		= 1		-- Minimum stage index for ammo stowages
 	ACF.AmmoStageMax 		= 5		-- Maximum stage index for ammo stowages
+
+	ACF.FuelPriorityMin 	= 1		-- Fuel tanks with lower priority values are drained first
+	ACF.FuelPriorityMax 	= 5
 
 	ACF.LoaderBestDist 		= 100	-- Distance before which loaders are most effective
 	ACF.LoaderWorstDist 	= 300	-- Distance after which loaders are least effective
@@ -393,13 +422,13 @@ do -- ACF global vars
 	ACF.AutoloaderBestDistHorizontal = 6 -- Horizontal distance before which autoloaders are most effective
 	ACF.AutoloaderWorstDistHorizontal = 1000 -- Horizontal distance after which autoloaders are least effective
 	ACF.AutoloaderBestDistVertical = 6 -- Vertical distance before which autoloaders are most effective
-	ACF.AutoloaderWorstDistVertical = 100 -- Vertical distance after which autoloaders are least effective
+	ACF.AutoloaderWorstDistVertical = 300 -- Vertical distance after which autoloaders are least effective
 	ACF.AutoloaderBestDistAngular = 0.1 -- Angular distance (degrees) before which autoloaders are most effective
 	ACF.AutoloaderWorstDistAngular = 90 -- Angular distance (degrees) after which autoloaders are least effective
 
 	ACF.InitReloadDelay		= 10		-- Delay after spawning that belt feds are loaded
 
-	ACF.CommanderCapacity 	= 3		-- The number of crew members a commander can handle before focus reduces
+	ACF.EngineKwPerPoint = 25.5 -- Engine cost is based off of power
 
 	-- Gearboxes
 	ACF.GearboxMinSize     = 0.75 -- Defines the smallest possible multiplier for the scale of a gearbox
@@ -408,7 +437,7 @@ do -- ACF global vars
 	ACF.GearboxMassScale   = 3 -- The exponent to determine the gearbox's mass in proportion to its scale
 	ACF.GearboxTorqueScale = 3 -- The exponent to determine the gearbox's torque in proportion to its scale
 	-- The arbitrary multiplier for the final amount of torque; TODO: we should probably implement this in a better way
-	ACF.DefineSetting("TorqueMult", 5, "Arbitrary torque multiplier has been set to a factor of %.2f. Stopgap measure until a future engine update.", ACF.FloatDataCallback(1, 10, 2))
+	ACF.DefineSetting("TorqueMult", 2.5, "Arbitrary torque multiplier has been set to a factor of %.2f. Stopgap measure until a future engine update.", ACF.FloatDataCallback(0, 10, 2))
 	ACF.MinGearRatio       = -10 -- The minimum value that a gear's ratio can be set to
 	ACF.MaxGearRatio       = 10 -- The maximum value that a gear's ratio can be set to
 	ACF.MinCVTRatio        = 1 -- The minimum value that a CVT's ratio can be set to

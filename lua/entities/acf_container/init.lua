@@ -46,6 +46,7 @@ end
 
 function ENT:CanConsume()
 	if self.Disabled then return false end
+	if self.ACF.Health == 0 then return false end
 	if not self.Active then return false end
 
 	return self.Amount > 0
@@ -53,7 +54,7 @@ end
 
 function ENT:UpdateMass(Instant)
 	if Instant then
-		local NewMass = self.EmptyMass + (self.Amount * self:GetUnitMass())
+		local NewMass = math.max(ACF.MinimumMass, self.Amount * self:GetUnitMass())
 		Contraption.SetMass(self, NewMass)
 		return
 	end
@@ -64,7 +65,7 @@ function ENT:UpdateMass(Instant)
 
 	TimerCreate(ID, 0, 1, function()
 		if not IsValid(self) then return end
-		local NewMass = self.EmptyMass + (self.Amount * self:GetUnitMass())
+		local NewMass = math.max(ACF.MinimumMass, self.Amount * self:GetUnitMass())
 		Contraption.SetMass(self, NewMass)
 	end)
 end
@@ -79,45 +80,6 @@ end
 
 function ENT:OnRemove()
 	WireLib.Remove(self)
-end
-
-function ENT:ACF_Activate(Recalc)
-	local Wall  = ACF.ContainerArmor * ACF.MmToInch
-	local Shape = self:ACF_GetUserVar("Shape")
-	local ShapeCalc = Shape and Shape.ShapeCalculation
-	local Size  = self:GetSize() or (self.GetOriginalSize and self:GetOriginalSize())
-
-	if not ShapeCalc or not Size then return end
-
-	local _, SurfaceAreaIn2 = ShapeCalc(Size, Wall)
-	local Area = SurfaceAreaIn2 * ACF.InchToCmSq -- convert to cm^2 to match damage model
-
-	local Percent = 1
-	if Recalc and self.ACF and self.ACF.Health and self.ACF.MaxHealth then
-		Percent = self.ACF.Health / self.ACF.MaxHealth
-	end
-
-	self.ACF = self.ACF or {}
-
-	local Armour = ACF.ContainerArmor * ACF.ArmorMod
-	local Health = Area / ACF.Threshold
-
-	self.ACF.Area      = Area
-	self.ACF.Health    = Health * Percent
-	self.ACF.MaxHealth = Health
-	self.ACF.Armour    = Armour * (0.5 + Percent * 0.5)
-	self.ACF.MaxArmour = Armour
-	self.ACF.Type      = "Prop"
-end
-
-function ENT:OnResized(Size)
-	local Wall = ACF.ContainerArmor * ACF.MmToInch
-	local Shape = self:ACF_GetUserVar("Shape")
-	if not Shape or not Shape.ShapeCalculation then return end
-
-	local _, SurfaceArea = Shape.ShapeCalculation(Size, Wall)
-
-	self.EmptyMass = (SurfaceArea * Wall) * ACF.InchToCmCu * ACF.SteelDensity
 end
 
 function ENT:VerifySize(Data, SizeKeyX, SizeKeyY, SizeKeyZ, DefaultSize)
@@ -136,18 +98,16 @@ function ENT:VerifySize(Data, SizeKeyX, SizeKeyY, SizeKeyZ, DefaultSize)
 	return Vector(X, Y, Z)
 end
 
--- Calculate volume, capacity, and empty mass from size
--- Returns: Volume (cu in), Capacity (liters), EmptyMass (kg)
+-- Calculate volume and capacity from size
+-- Returns: Volume (cu in), Capacity (liters)
 function ENT:CalcVolumeAndCapacity(Size)
-	local Wall  = ACF.ContainerArmor * ACF.MmToInch
 	local Shape = self:ACF_GetUserVar("Shape")
 	local ShapeCalc = Shape and Shape.ShapeCalculation
-	if not ShapeCalc then return 0, 0, 0 end
+	if not ShapeCalc then return 0, 0 end
 
-	local Volume, Area = ShapeCalc(Size, Wall)
+	local Volume = ShapeCalc(Size)
 
-	local Capacity  = Volume * ACF.gCmToKgIn
-	local EmptyMass = (Area * Wall) * ACF.InchToCmCu * ACF.SteelDensity
+	local Capacity = Volume * ACF.gCmToKgIn
 
-	return Volume, Capacity, EmptyMass
+	return Volume, Capacity
 end

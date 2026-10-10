@@ -93,7 +93,7 @@ Chapter:AddInstruction("Caption", {
 Chapter:AddDelay(1)
 
 Chapter:AddInstruction("StateText", {
-    ParentTo = Crew1,
+    ParentTo = "Crew1",
     Position = Vector(0.7, 0.15, 0),
     Length = 6,
     TextFunction = function(progress)

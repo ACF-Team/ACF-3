@@ -5,15 +5,17 @@ Classes.DefineClass("ACF.Missiles.Guidance.RadioMCLOS", "ACF.Missiles.Guidance.D
 		self.Source = Missile.Launcher
 	end
 
+	-- Shared so the ammo menu can price missile rounds clientside.
+	function CLASS:GetCost()
+		return 4
+	end
+
 	if CLIENT then
 		CLASS.Description = "This guidance package allows you to manually control the direction of the missile."
 	else
 		local TraceData = { start = true, endpos = true, mask = MASK_SOLID_BRUSHONLY }
 		local Trace     = ACF.trace
 
-		function CLASS:GetCost()
-			return 3
-		end
 
 		function CLASS:OnLaunched(Missile)
 			self.InPos = Missile.MountPoint.Position

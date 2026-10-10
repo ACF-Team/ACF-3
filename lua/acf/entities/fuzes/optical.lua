@@ -13,6 +13,11 @@ Classes.DefineClass("ACF.Missiles.Fuze.Optical", "ACF.Missiles.Fuze.Contact", fu
 		State:AddSubKeyValue("Distance", math.Round(self.Distance * ACF.InchToMeter, 2) .. " m")
 	end
 
+	-- Shared so the ammo menu can price missile rounds clientside.
+	function CLASS:GetCost()
+		return 1
+	end
+
 	if CLIENT then
 		CLASS.Description = "This fuze fires a beam directly ahead and detonates when the beam hits something close-by. Distance in inches."
 
@@ -26,9 +31,6 @@ Classes.DefineClass("ACF.Missiles.Fuze.Optical", "ACF.Missiles.Fuze.Contact", fu
 		local TraceData = { start = true, endpos = true, filter = true }
 		local Trace     = ACF.trace
 
-		function CLASS:GetCost()
-			return 1
-		end
 
 		function CLASS:VerifyData(Weapon)
 			BASE.VerifyData(self, Weapon)

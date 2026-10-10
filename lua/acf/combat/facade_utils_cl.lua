@@ -10,6 +10,7 @@ local VisibleClasses = {
     ["primitive_rail_slider"] = true,
     ["primitive_ladder"] = true,
     ["primitive_staircase"] = true,
+    ["starfall_prop"] = true,
 }
 
 local IgnoreClasses = {

@@ -18,46 +18,6 @@ local IsPhysObjValid	= ACF.Optimizations.IsPhysObjValid
 -- Engine class setup
 --===============================================================================================--
 do
-	ACF.RegisterClassLink("acf_engine", "acf_fueltank", function(Engine, Target)
-		local TargetFuelType = ACF.Classes.GetTypeName(Target:ACF_GetUserVar("FuelType"):GetType())
-
-		if Engine.FuelTanks[Target] then return false, "This engine is already linked to this fuel tank!" end
-		if Target.Engines[Engine] then return false, "This engine is already linked to this fuel tank!" end
-		if not Engine.FuelTypes[TargetFuelType] then return false, "Cannot link because fuel type is incompatible." end
-		if Target.NoLinks then return false, "This fuel tank doesn't allow linking." end
-		if Engine:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This fuel tank is too far away from this engine." end
-
-		Engine.FuelTanks[Target] = true
-		Target.Engines[Engine] = true
-
-		Engine:UpdateOverlay()
-		Target:UpdateOverlay()
-
-		Target:InvalidateClientInfo()
-
-		return true, "Engine linked successfully!"
-	end)
-
-	ACF.RegisterClassUnlink("acf_engine", "acf_fueltank", function(Engine, Target)
-		if Engine.FuelTanks[Target] or Target.Engines[Engine] then
-			if Engine.FuelTank == Target then
-				Engine.FuelTank = next(Engine.FuelTanks, Target)
-			end
-
-			Engine.FuelTanks[Target] = nil
-			Target.Engines[Engine]	 = nil
-
-			Engine:UpdateOverlay()
-			Target:UpdateOverlay()
-
-			Target:InvalidateClientInfo()
-
-			return true, "Engine unlinked successfully!"
-		end
-
-		return false, "This engine is not linked to this fuel tank."
-	end)
-
 	ACF.RegisterClassLink("acf_engine", "acf_gearbox", function(Engine, Target)
 		if Engine.Gearboxes[Target] then return false, "This engine is already linked to this gearbox." end
 		if Engine:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This gearbox is too far away from this engine!" end
@@ -119,7 +79,7 @@ local Utilities    = ACF.Utilities
 local Clock        = Utilities.Clock
 local Sounds       = Utilities.Sounds
 local Contraption  = ACF.Contraption
-local UnlinkSound  = "physics/metal/metal_box_impact_bullet%s.wav"
+local Fuel         = Mobility.Fuel
 local IsValid      = IsValid
 local Clamp        = math.Clamp
 local Round        = math.Round
@@ -140,35 +100,23 @@ local function GetPitchVolume(Engine)
 	return Pitch, Volume * Engine.SoundVolume
 end
 
-local function GetNextFuelTank(Engine)
-	local FuelTanks = Engine.FuelTanks
-	if not next(FuelTanks) then return end
+-- Only called when the cached tank is unusable, so a linear scan over the (small) sibling set is fine
+local function FindFuelTank(EngineTbl)
+	local MinPriority = ACF.FuelPriorityMin
+	local Best, BestPriority
 
-	local Select = next(FuelTanks, Engine.FuelTank) or next(FuelTanks)
-	local Start = Select
+	for Tank in pairs(EngineTbl.FuelTanks) do
+		local TankTbl  = ENTITY.GetTable(Tank)
+		local Priority = TankTbl.FuelPriority
 
-	repeat
-		if Select:CanConsume() then return Select end
+		if (not Best or Priority < BestPriority) and TankTbl.CanConsume(Tank) then
+			Best, BestPriority = Tank, Priority
 
-		Select = next(FuelTanks, Select) or next(FuelTanks)
-	until Select == Start
-
-	return Select:CanConsume() and Select or nil
-end
-
-local function CheckDistantFuelTanks(Engine)
-	local EnginePos = Engine:GetPos()
-
-	for Tank in pairs(Engine.FuelTanks) do
-		if EnginePos:DistToSqr(Tank:GetPos()) > MaxDistance then
-			local Sound = UnlinkSound:format(math.random(1, 3))
-
-			Sounds.SendSound(Engine, Sound, 70, 100, 1)
-			Sounds.SendSound(Tank, Sound, 70, 100, 1)
-
-			Engine:Unlink(Tank)
+			if Priority <= MinPriority then break end
 		end
 	end
+
+	return Best
 end
 
 local function CheckGearboxes(Engine)
@@ -213,7 +161,6 @@ local function SetActive(Entity, Value, EntTbl)
 			if not IsEntityValid(Entity) then return end
 
 			CheckGearboxes(Entity)
-			CheckDistantFuelTanks(Entity)
 
 			Entity:CalcMassRatio(EntTbl)
 		end)
@@ -231,20 +178,6 @@ local function SetActive(Entity, Value, EntTbl)
 	Entity:UpdateOutputs(EntTbl)
 end
 
-do -- Random timer crew stuff
-	function ENT:FindPropagator()
-		local Temp = self:GetParent()
-		if IsValid(Temp) and Temp:GetClass() == "acf_baseplate" then return Temp end
-		return nil
-	end
-
-	function ENT:UpdateFuelMod(cfg)
-		local Propagator = self:FindPropagator(cfg)
-		local Val = Propagator and Propagator.FuelCrewMod or 0
-		self.FuelCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
-		return self.FuelCrewMod
-	end
-end
 --===============================================================================================--
 
 do -- Spawn and Update functions
@@ -373,17 +306,8 @@ do -- Spawn and Update functions
 			end
 		end
 
-		if next(self.FuelTanks) then
-			for Tank in pairs(self.FuelTanks) do
-				if not self.FuelTypes[Tank.FuelType] then
-					self:Unlink(Tank)
-				end
-			end
-		end
-	end
-
-	function ENT:ACF_PostSpawn()
-		ACF.AugmentedTimer(function(cfg) self:UpdateFuelMod(cfg) end, function() return IsEntityValid(self) end, nil, {MinTime = 0.1, MaxTime = 0.25})
+		-- Supported fuel types may have changed (no-op on a fresh spawn, which isn't parented yet)
+		if self.ACF_FuelParent then Fuel.Join(self) end
 	end
 
 	ACF.RegisterLinkSource("acf_engine", "FuelTanks")
@@ -450,6 +374,11 @@ function ENT:ACF_UpdateOverlayState(State)
 	else
 		State:AddWarning("Idle")
 	end
+
+	if ACF.RequireFuel and not next(self.FuelTanks) then
+		State:AddWarning("No compatible fuel tanks share this engine's parent")
+	end
+
 	State:AddKeyValue("Type", self.Name)
 	State:AddEnginePower("Power", self.PeakPower)
 	State:AddEngineTorque("Torque", self.PeakTorque)
@@ -465,25 +394,6 @@ ACF.AddInputAction("acf_engine", "Active", function(Entity, Value)
 	SetActive(Entity, tobool(Value), Entity:GetTable())
 end)
 
-function ENT:ACF_Activate(Recalc)
-	local PhysObj = self.ACF.PhysObj
-	local Mass    = PhysObj:GetMass()
-	local Area    = PhysObj:GetSurfaceArea() * ACF.InchToCmSq
-	local Armour  = Mass * 1000 / Area / 0.78 * ACF.ArmorMod -- Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
-	local Health  = Area / ACF.Threshold
-	local Percent = 1
-
-	if Recalc and self.ACF.Health and self.ACF.MaxHealth then
-		Percent = self.ACF.Health / self.ACF.MaxHealth
-	end
-
-	self.ACF.Area      = Area
-	self.ACF.Health    = Health * Percent * self.HealthMult
-	self.ACF.MaxHealth = Health * self.HealthMult
-	self.ACF.Armour    = Armour * (0.5 + Percent * 0.5)
-	self.ACF.MaxArmour = Armour
-	self.ACF.Type      = "Prop"
-end
 
 --This function needs to return HitRes
 function ENT:ACF_OnDamage(DmgResult, DmgInfo)
@@ -492,9 +402,14 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	-- Adjusting performance based on damage
 	local TorqueMult = Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, self.TorqueScale, 1)
 
-	self.PeakTorque = self.PeakTorqueHeld * TorqueMult
+	if self.ACF.Health <= 0 then TorqueMult = 0 end -- Destroyed engines produce no power
 
+	self.PeakTorque = self.PeakTorqueHeld * TorqueMult
 	return HitRes
+end
+
+function ENT:ACF_OnRepaired()
+	self.PeakTorque = self.PeakTorqueHeld
 end
 
 function ENT:UpdateSound(SelfTbl)
@@ -554,6 +469,11 @@ end
 function ENT:CFW_PreParentedTo(_, NewParent)
 	local ParentValid = IsValid(NewParent) and NewParent:GetClass() == "acf_baseplate"
 	self.ACF_EngineParentValid = ParentValid
+end
+
+function ENT:CFW_OnParentedTo()
+	Fuel.Join(self)
+	self:UpdateOverlay()
 end
 
 hook.Add("cfw.contraption.entityAdded", "ACF_Engine_ContraptionChecks", function(Contraption, Ent)
@@ -620,11 +540,11 @@ function ENT:GetConsumption(Throttle, RPM, FuelTank, SelfTbl)
 	FuelTank = FuelTank or SelfTbl.FuelTank
 	if not IsEntityValid(FuelTank) then return 0 end
 
-	if SelfTbl.IsElectric then
-		return Throttle * SelfTbl.FuelUse * SelfTbl.Torque * RPM * 1.05e-4 / SelfTbl.FuelCrewMod
+	if FuelTank.IsElectric then
+		return Throttle * SelfTbl.FuelUse * SelfTbl.Torque * RPM * 1.05e-4
 	else
 		local IdleConsumption = SelfTbl.PeakPower * 5e2
-		return SelfTbl.FuelUse * (IdleConsumption + Throttle * SelfTbl.Torque * RPM) / FuelTank.FuelDensity / SelfTbl.FuelCrewMod
+		return SelfTbl.FuelUse * (IdleConsumption + Throttle * SelfTbl.Torque * RPM) / FuelTank.FuelDensity
 	end
 end
 
@@ -634,6 +554,7 @@ function ENT:Think()
 
 	if not SelfTbl.Active then return end
 	if SelfTbl.Disabled then return end
+	if SelfTbl.ACF.Health <= 0 then return end
 
 	self:CalcRPM(SelfTbl)
 
@@ -655,10 +576,18 @@ function ENT:CalcRPM(SelfTbl)
 
 	local ClockTime  = Clock.CurTime
 	local DeltaTime  = ClockTime - SelfTbl.LastThink
-	local FuelTank   = GetNextFuelTank(SelfTbl)
+	local FuelTank   = SelfTbl.FuelTank
 	local IsElectric = SelfTbl.IsElectric
 	local LimitRPM   = SelfTbl.LimitRPM
 	local FlyRPM     = SelfTbl.FlyRPM
+
+	-- Re-searching in the same tick means a tank drained by another engine never stalls this one
+	if not (FuelTank and IsEntityValid(FuelTank) and ENTITY.GetTable(FuelTank).CanConsume(FuelTank)) then
+		FuelTank = FindFuelTank(SelfTbl)
+		SelfTbl.FuelTank = FuelTank
+
+		if FuelTank then SelfTbl.FuelType = FuelTank.FuelType end
+	end
 
 	-- Determine if the rev limiter will engage or disengage
 	local RevLimited = false
@@ -674,10 +603,7 @@ function ENT:CalcRPM(SelfTbl)
 	local Throttle = RevLimited and 0 or SelfTbl.Throttle
 
 	-- Calculate fuel usage
-	if IsEntityValid(FuelTank) then
-		SelfTbl.FuelTank = FuelTank
-		SelfTbl.FuelType = FuelTank.FuelType
-
+	if FuelTank then
 		local Consumption = SelfTbl.GetConsumption(self, Throttle, FlyRPM, FuelTank, SelfTbl) * DeltaTime
 
 		SelfTbl.FuelUsage = 60 * Consumption / DeltaTime
@@ -760,16 +686,6 @@ function ENT:PreEntityCopy()
 		duplicator.StoreEntityModifier(self, "ACFGearboxes", Gearboxes)
 	end
 
-	if next(self.FuelTanks) then
-		local Tanks = {}
-
-		for Tank in pairs(self.FuelTanks) do
-			Tanks[#Tanks + 1] = Tank:EntIndex()
-		end
-
-		duplicator.StoreEntityModifier(self, "ACFFuelTanks", Tanks)
-	end
-
 	-- AutoRegisterV2 wraps this as the original PreEntityCopy and handles the wire/base dupe info.
 end
 
@@ -787,16 +703,9 @@ function ENT:PostEntityPaste(_, Ent, CreatedEntities)
 		EntMods.GearLink = nil
 	end
 
-	-- Backwards compatibility
-	if EntMods.FuelLink then
-		local Entities = EntMods.FuelLink.entities
-
-		for _, EntID in ipairs(Entities) do
-			self:Link(CreatedEntities[EntID])
-		end
-
-		EntMods.FuelLink = nil
-	end
+	-- Fuel tanks are found through shared parents now; drop old link data
+	EntMods.FuelLink     = nil
+	EntMods.ACFFuelTanks = nil
 
 	if EntMods.ACFGearboxes then
 		for _, EntID in ipairs(EntMods.ACFGearboxes) do
@@ -806,21 +715,13 @@ function ENT:PostEntityPaste(_, Ent, CreatedEntities)
 		EntMods.ACFGearboxes = nil
 	end
 
-	if EntMods.ACFFuelTanks then
-		for _, EntID in ipairs(EntMods.ACFFuelTanks) do
-			self:Link(CreatedEntities[EntID])
-		end
-
-		EntMods.ACFFuelTanks = nil
-	end
-
 	-- AutoRegisterV2 wraps this as the original PostEntityPaste and handles the wire/base dupe info.
 end
 
 function ENT:GetCost()
 	local selftbl = self:GetTable()
 
-	return math.max(5, (selftbl.PeakTorque / 160) + (selftbl.PeakPower / 80))
+	return 5 + selftbl.PeakPower / ACF.EngineKwPerPoint
 end
 
 -- Remove-only teardown. Captured by AutoRegisterV2 as OrigOnRemove; the generated OnRemove still runs
@@ -840,9 +741,7 @@ function ENT:OnRemove(IsFullUpdate)
 		self:Unlink(Gearbox)
 	end
 
-	for Tank in pairs(self.FuelTanks) do
-		self:Unlink(Tank)
-	end
+	Fuel.Leave(self)
 
 	TimerRemove("ACF Engine Clock " .. self:EntIndex())
 end

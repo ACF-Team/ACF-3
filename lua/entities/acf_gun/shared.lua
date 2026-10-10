@@ -1,6 +1,7 @@
 DEFINE_BASECLASS("acf_base_scalable")
 
 ENT.IsACFWeapon = true
+ENT.ConvexMaterial = "GunSteel"
 
 function ENT:ACF_Limit()
 

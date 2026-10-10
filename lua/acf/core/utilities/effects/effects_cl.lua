@@ -58,14 +58,14 @@ do -- Resupply effect
 		end
 	end
 
-	local function Add(Entity, RefilledAmmo, RefilledFuel)
+	local function Add(Entity, RefilledAmmo, RefilledFuel, RevivedCrew)
 		if not IsValid(Entity) then return end
 
 		if not next(Supplies) then
 			hook.Add("PostDrawOpaqueRenderables", "ACF_Supply", DrawSpheres)
 		end
 
-		Supplies[Entity] = { Ammo = RefilledAmmo, Fuel = RefilledFuel }
+		Supplies[Entity] = { Ammo = RefilledAmmo, Fuel = RefilledFuel, Crew = RevivedCrew }
 
 		Entity:CallOnRemove("ACF_Supply", Remove)
 	end
@@ -74,8 +74,9 @@ do -- Resupply effect
 		local Entity = net.ReadEntity()
 		local RefilledAmmo = net.ReadBool()
 		local RefilledFuel = net.ReadBool()
+		local RevivedCrew = net.ReadBool()
 
-		Add(Entity, RefilledAmmo, RefilledFuel)
+		Add(Entity, RefilledAmmo, RefilledFuel, RevivedCrew)
 	end)
 
 	net.Receive("ACF_StopSupplyEffect", function()

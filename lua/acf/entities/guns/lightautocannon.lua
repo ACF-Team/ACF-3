@@ -13,12 +13,11 @@ ACF.Classes.DefineClass("ACF.Guns.LightAutocannon", "ACF.Guns.BaseScalableGun", 
 	CLASS.Mass        		= 301
 	CLASS.Spread      		= 0.48
 	CLASS.ScaleFactor 		= 0.81 -- Corrective factor to account for improperly scaled base models
-	CLASS.ReloadMod 		= 0.5 -- Load time multiplier. Represents the ease of manipulating the weapon's ammunition
-	CLASS.TransferMult 		= 20 -- Thermal energy transfer rate
 	CLASS.CyclicCeilMult 	= 2 -- How high above base cyclic the gun can be set to
 	CLASS.Round 			= {
 		MaxLength  = 32,
-		PropLength = 26,
+		PropLength = 20,
+		CaseScale  = 1.08, -- 30x90mm (MK 108): 32.3mm case over a 30mm projectile
 	}
 	CLASS.LongBarrel 		= {
 		Index    = 2,
@@ -32,23 +31,16 @@ ACF.Classes.DefineClass("ACF.Guns.LightAutocannon", "ACF.Guns.BaseScalableGun", 
 	CLASS.CaliberLimits		= {
 		Base = 40,
 		Min  = 20,
-		Max  = 40,
-	}
-	CLASS.MagSize 			= {
-		Min = 250,
-		Max = 100,
-	}
-	CLASS.MagReload 	= {
-		Min = 6,
-		Max = 12,
+		Max  = 57,
 	}
 	CLASS.Cyclic 		= {
 		Min = 600,
-		Max = 400,
+		Max = 230,
 	}
 	CLASS.LimitConVar 		= {
 		Name = "_acf_lightautocannon",
-		Amount = 4,
+		Amount = 2,
+		LegacyDefault = 4,
 		Text = "Maximum amount of ACF light auto cannons a player can create."
 	}
 	CLASS.CostScalar		= 0.5

@@ -24,17 +24,17 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function(CLASS, BA
 	end
 
 	function CLASS:GetDisplayData(Data)
-		local SMFiller = math.min(math.log(1 + Data.FillerMass * 8 * ACF.MeterToInch) * 43.4216, 350)
-		local WPFiller = math.min(math.log(1 + Data.WPMass * 8 * ACF.MeterToInch) * 43.4216, 350)
-		local Display  = {
-			SMFiller    = SMFiller,
-			SMLife      = math.Round(10 + SMFiller * 0.25, 2),
-			SMRadiusMin = math.Round(SMFiller * 1.25 * 0.15 * ACF.InchToMeter, 2),
-			SMRadiusMax = math.Round(SMFiller * 1.25 * 2 * ACF.InchToMeter, 2),
-			WPFiller    = WPFiller,
-			WPLife      = math.Round(5 + WPFiller * 0.1, 2),
-			WPRadiusMin = math.Round(WPFiller * 1.25 * ACF.InchToMeter, 2),
-			WPRadiusMax = math.Round(WPFiller * 1.25 * 2 * ACF.InchToMeter, 2),
+		local SMMin, SMMax, SMLife = ACF.GetSmokeCloudStats(Data.FillerMass, "Smoke")
+		local WPMin, WPMax, WPLife = ACF.GetSmokeCloudStats(Data.WPMass, "WP")
+		local Display = {
+			SMFiller    = ACF.GetSmokeFiller(Data.FillerMass),
+			SMLife      = math.Round(SMLife, 2),
+			SMRadiusMin = math.Round(SMMin * ACF.InchToMeter, 2),
+			SMRadiusMax = math.Round(SMMax * ACF.InchToMeter, 2),
+			WPFiller    = ACF.GetSmokeFiller(Data.WPMass),
+			WPLife      = math.Round(WPLife, 2),
+			WPRadiusMin = math.Round(WPMin * ACF.InchToMeter, 2),
+			WPRadiusMax = math.Round(WPMax * ACF.InchToMeter, 2),
 		}
 
 		hook.Run("ACF_OnRequestDisplayData", self, Data, Display)
@@ -96,13 +96,15 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function(CLASS, BA
 		if not isnumber(self.SmokeWPRatio) then self.SmokeWPRatio = 0.5 end
 	end
 
+	-- Shared with the client so the spawn menu can price a crate without spawning it.
+	local Conversion = ACF.PointConversion
+
+	function CLASS:GetCost(BulletData)
+		return ((BulletData.ProjMass - BulletData.FillerMass - BulletData.WPMass) * Conversion.Steel * 0.75) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.SF) + (BulletData.WPMass * Conversion.WP)
+	end
+
 	if SERVER then
 		local Ballistics = ACF.Ballistics
-		local Conversion	= ACF.PointConversion
-
-		function CLASS:GetCost(BulletData)
-			return ((BulletData.ProjMass - BulletData.FillerMass - BulletData.WPMass) * Conversion.Steel * 0.75) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.SF) + (BulletData.WPMass * Conversion.WP)
-		end
 
 		function CLASS:OnLast(Entity)
 			BASE.OnLast(self, Entity)
@@ -161,21 +163,29 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function(CLASS, BA
 		function CLASS:WorldImpact()
 			return false
 		end
+
+		function CLASS:OnFlightEnd(Bullet, Trace)
+			local Airburst = Bullet.DetByFuze
+			local Origin   = Airburst and Bullet.Pos or Trace.HitPos
+			local Crate    = Entity(Bullet.Crate or 0)
+			local Color    = IsValid(Crate) and Crate:GetColor() or nil
+
+			ACF.CreateSmokeScreen(Origin, Bullet.FillerMass or 0, Bullet.WPMass or 0, Color, Airburst and Bullet.Flight or nil)
+
+			BASE.OnFlightEnd(self, Bullet, Trace)
+		end
 	else
 		local Effects = ACF.Utilities.Effects
 
 		ACF.RegisterAmmoDecal("ACF.Ammunition.SM", "damage/he_pen", "damage/he_rico")
 
+		-- Smoke clouds themselves are created by the server and networked separately (see core/smoke)
 		function CLASS:ImpactEffect(_, Bullet)
-			local Crate = Bullet.Crate
-			local Color = IsValid(Crate) and Crate:GetColor() or Color(255, 255, 255)
-
 			local EffectTable = {
 				Origin = Bullet.SimPos,
 				Normal = Bullet.SimFlight:GetNormalized(),
 				Scale = math.max(Bullet.FillerMass * 8 * ACF.MeterToInch, 0),
 				Magnitude = math.max(Bullet.WPMass * 8 * ACF.MeterToInch, 0),
-				Start = Vector(Color.r, Color.g, Color.b),
 				Radius = Bullet.Caliber,
 			}
 
@@ -201,8 +211,8 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function(CLASS, BA
 
 				local Text		= language.GetPhrase("acf.menu.ammo.round_stats_ap")
 				local MuzzleVel	= math.Round(Data.MuzzleVel * ACF.Scale, 2)
-				local ProjMass	= ACF.GetProperMass(Data.ProjMass)
-				local PropMass	= ACF.GetProperMass(Data.PropMass)
+				local ProjMass	= ACF.FormatMass(Data.ProjMass)
+				local PropMass	= ACF.FormatMass(Data.PropMass)
 
 				RoundStats:SetText(Text:format(MuzzleVel, ProjMass, PropMass))
 			end)
@@ -218,7 +228,7 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function(CLASS, BA
 
 				if Data.FillerMass > 0 then
 					local Text		  = language.GetPhrase("acf.menu.ammo.smoke_stats")
-					local SmokeMass	  = ACF.GetProperMass(Data.FillerMass)
+					local SmokeMass	  = ACF.FormatMass(Data.FillerMass)
 					local SmokeRadius = ((GUIData.SMRadiusMin or 0) + (GUIData.SMRadiusMax or 0)) * 0.5
 
 					SMText = Text:format(SmokeMass, SmokeRadius, GUIData.SMLife or 0)
@@ -226,7 +236,7 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function(CLASS, BA
 
 				if Data.WPMass > 0 then
 					local Text	   = language.GetPhrase("acf.menu.ammo.wp_stats")
-					local WPMass   = ACF.GetProperMass(Data.WPMass)
+					local WPMass   = ACF.FormatMass(Data.WPMass)
 					local WPRadius = ((GUIData.WPRadiusMin or 0) + (GUIData.WPRadiusMax or 0)) * 0.5
 
 					WPText = Text:format(WPMass, WPRadius, GUIData.WPLife or 0)
@@ -234,6 +244,111 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function(CLASS, BA
 
 				SmokeStats:SetText(SMText .. WPText)
 			end)
+		end
+
+		-- Ammo menu visual: casing plus a body split between the smoke/WP chemical filler and the steel
+		-- shell wall around it, matching the mass split in UpdateRoundData (ProjVolume - FillerVol is
+		-- steel, the rest filler, further divided between smoke and WP by SmokeWPRatio).
+		function CLASS:DrawAmmoVisual(Panel, w, h, ToolData, BulletData)
+			local GeoPrim  = ACF.GeoPrim
+			local Margin   = 10
+			local DrawW    = w - Margin * 2
+			local Diameter = BulletData.Diameter or BulletData.Caliber
+			local Radius   = Diameter * 0.5
+
+			local Length = BulletData.ProjLength + BulletData.PropLength
+
+			if Length <= 0 then return end
+
+			-- Cap Scale by the case, the widest part, so the case/bore step survives the height budget
+			local CaseDia = BulletData.CaseDiameter
+
+			if CaseDia <= 0 then return end
+
+			local Scale      = math.min(DrawW / Length, ((h - Margin * 2) * 0.6) / CaseDia)
+			local DiameterPx = CaseDia * Scale
+			local CenterY    = h * 0.5
+
+			local FillerRatio = math.Clamp(ToolData.FillerRatio or 0, 0, 1)
+			local SmokeRatio  = math.Clamp(ToolData.SmokeWPRatio or 0.5, 0, 1)
+			local FillerLenCm = BulletData.ProjLength * FillerRatio
+			local SmokeLenCm  = FillerLenCm * SmokeRatio
+			local WPLenCm     = FillerLenCm - SmokeLenCm
+			local SteelLenCm  = BulletData.ProjLength - FillerLenCm
+
+			local Propellant = GeoPrim.New("Cylinder", { Radius = CaseDia * 0.5, Height = BulletData.PropLength })
+			Propellant:SetMaterial("Propellant")
+
+			local Smoke = GeoPrim.New("Cylinder", { Radius = Radius, Height = SmokeLenCm })
+			Smoke:SetMaterial("Smoke Filler (HC)")
+
+			local WP = GeoPrim.New("Cylinder", { Radius = Radius, Height = WPLenCm })
+			WP:SetMaterial("White Phosphorus Filler")
+
+			local ShellCasing = GeoPrim.New("Cylinder", { Radius = Radius, Height = SteelLenCm })
+			ShellCasing:SetMaterial("Steel Shell Casing")
+
+			local X = Margin
+			X = Propellant:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(180, 150, 60), Color(30, 30, 30))
+			local BodyStartX = X
+
+			if SmokeLenCm > 0 then
+				X = Smoke:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(190, 190, 195), Color(30, 30, 30))
+			end
+			if WPLenCm > 0 then
+				X = WP:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(235, 220, 120), Color(30, 30, 30))
+			end
+			ShellCasing:Draw(Panel, X, CenterY, Scale, DiameterPx, Color(120, 120, 130), Color(30, 30, 30))
+
+			-- Tracer, a colored segment at the very base of the body (against the casing), drawn last
+			-- so it takes hover priority over whatever filler/steel material happens to sit underneath it
+			if BulletData.Tracer and BulletData.Tracer > 0 then
+				local Tracer = GeoPrim.New("Cylinder", { Radius = Radius, Height = math.max(BulletData.Tracer, 2 / Scale) })
+				Tracer:SetMaterial("Tracer")
+				Tracer:Draw(Panel, BodyStartX, CenterY, Scale, DiameterPx, Color(220, 40, 30), Color(30, 30, 30))
+			end
+		end
+
+		-- Ammo menu graph: smoke and WP cloud radius over time.
+		function CLASS:PlotAmmoGraph(Panel)
+			local Colors = ACF.GraphColors
+
+			Panel:SetYLabel("#acf.menu.ammo.smoke_radius")
+			Panel:SetXLabel("#acf.menu.ammo.time")
+
+			Panel:SetYSpacing(10)
+			Panel:SetXSpacing(5)
+
+			-- Smoke timings and radii are display data, so they live on GUIData rather than the bullet
+			local GUIData = self.GUIData
+
+			local WPTime = GUIData.WPLife or 0
+			local SFTime = GUIData.SMLife or 0
+
+			local MinWP = GUIData.WPRadiusMin or 0
+			local MaxWP = GUIData.WPRadiusMax or 0
+
+			local MinSF = GUIData.SMRadiusMin or 0
+			local MaxSF = GUIData.SMRadiusMax or 0
+
+			Panel:SetXRange(0, math.max(WPTime, SFTime) * 1.1)
+			Panel:SetYRange(0, math.max(MaxWP, MaxSF) * 1.1)
+
+			if WPTime > 0 then
+				Panel:PlotLimitFunction(language.GetPhrase("acf.menu.ammo.wp_filler"), 0, WPTime, Colors.Blue, function(X)
+					return Lerp(X / WPTime, MinWP, MaxWP)
+				end)
+
+				Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.wp_max_radius"), WPTime, MaxWP, Colors.Blue)
+			end
+
+			if SFTime > 0 then
+				Panel:PlotLimitFunction(language.GetPhrase("acf.menu.ammo.smoke_filler"), 0, SFTime, Colors.Red, function(X)
+					return Lerp(X / SFTime, MinSF, MaxSF)
+				end)
+
+				Panel:PlotPoint(language.GetPhrase("acf.menu.ammo.smoke_max_radius"), SFTime, MaxSF, Colors.Red)
+			end
 		end
 	end
 end)

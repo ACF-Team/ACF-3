@@ -25,6 +25,11 @@ Classes.DefineClass("ACF.Missiles.Fuze.Contact", "ACF.Missiles.Fuze", function(C
 		State:AddSubKeyValue("Primer", math.Round(self.Primer, 2))
 	end
 
+	-- Shared so the ammo menu can price missile rounds clientside.
+	function CLASS:GetCost()
+		return 0
+	end
+
 	if CLIENT then
 		CLASS.Description = "This fuze triggers upon direct contact against solid surfaces."
 
@@ -35,9 +40,6 @@ Classes.DefineClass("ACF.Missiles.Fuze.Contact", "ACF.Missiles.Fuze", function(C
 			ACF.MissileMenu.FuzeSlider(Delay, "ArmingDelay")
 		end
 	else
-		function CLASS:GetCost()
-			return 0
-		end
 
 		function CLASS:VerifyData(Weapon)
 			local Min = (Weapon and Weapon.ArmDelay) or self.MinDelay

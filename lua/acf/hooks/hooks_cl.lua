@@ -105,6 +105,24 @@ Hooks.Add("ACF_Base_Client", function(Gamemode)
 	function Gamemode:ACF_OnCreateAmmoPreview()
 	end
 
+	--- Called before the ammo visualizer panel gets created.
+	--- @param Panel panel The base panel where all the controls are being placed.
+	--- @param ToolData table A table containing the copy of the local player's data variables.
+	--- @param AmmoType table The ammo type object to be used on the menu.
+	--- @param BulletData table A bullet object used to display the stats of the chosen ammunition type.
+	--- @return boolean # False to prevent the ammo visualizer panel from being created, true otherwise.
+	function Gamemode:ACF_PreCreateAmmoVisual()
+		return true
+	end
+
+	--- Called after the ammo visualizer panel has been created, drawing a schematic side profile of the round.
+	--- @param Panel panel The base panel where all the controls are being placed.
+	--- @param ToolData table A table containing the copy of the local player's data variables.
+	--- @param AmmoType table The ammo type object to be used on the menu.
+	--- @param BulletData table A bullet object used to display the stats of the chosen ammunition type.
+	function Gamemode:ACF_OnCreateAmmoVisual()
+	end
+
 	--- Called before the projectile and propellant length panels are created.
 	--- @param Panel panel The base panel where all the controls are being placed.
 	--- @param ToolData table A table containing the copy of the local player's data variables.

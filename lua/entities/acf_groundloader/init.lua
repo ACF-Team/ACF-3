@@ -12,6 +12,7 @@ local shouldDbg, dbg = false; dbg = shouldDbg and function(...) print(...) end o
 
 local ACF      		= ACF
 local Clock         = ACF.Utilities.Clock
+local Damage        = ACF.Damage
 local Utilities   	= ACF.Utilities
 local WireIO      	= Utilities.WireIO
 
@@ -124,7 +125,7 @@ do
 
 	function RackTrackData:IsComplete() return self.Complete end
 
-	function RackTrackData:TryLink(Crates)
+	function RackTrackData:TryLink(Crates, Efficiency)
 		local Rack = self.Rack
 		if not IsValid(Rack) then return end
 
@@ -161,7 +162,7 @@ do
 						end
 					end
 				end
-				Rack:SetLoadModOverride(1.0)
+				Rack:SetLoadModOverride(Efficiency)
 				return true
 			end
 		end
@@ -222,17 +223,35 @@ function ENT:CheckOnTrackedRacks(_)
 	if not TrackedRacks then return end
 	if not TrackData then return end
 	if not self.CanLoadRacks then return end
+	if self.ACF.Health <= 0 then return end
 
 	local Crates = self:ACF_GetUserVar("LinkedAmmoCrates")
+	local Efficiency = self.ACF.Health / self.ACF.MaxHealth
 
 	for _, State in pairs(TrackData) do
-		State:TryLink(Crates)
+		State:TryLink(Crates, Efficiency)
 	end
 end
 
 function ENT:SetStatus(Status)
 	self.Status = Status
 	self:UpdateOverlay()
+end
+
+function ENT:ACF_OnDamage(DmgResult, DmgInfo)
+	local HitRes = Damage.doPropDamage(self, DmgResult, DmgInfo)
+
+	if self.ACF.Health <= 0 then
+		for Rack in pairs(self.TrackData) do
+			if IsValid(Rack) then
+				Rack:SetLoadModOverride(nil)
+			end
+		end
+
+		self:SetStatus("Destroyed")
+	end
+
+	return HitRes
 end
 
 function ENT:ACF_UpdateOverlayState(State)
@@ -248,4 +267,4 @@ function ENT:ACF_PostMenuSpawn()
 	self:SetAngles(self:GetAngles() + Angle(0, -90, 0))
 end
 
-function ENT:GetCost() return 15 end
+function ENT:GetCost() return ACF.GroundLoaderCost end

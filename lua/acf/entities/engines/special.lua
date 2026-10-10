@@ -15,8 +15,8 @@ do -- Special Rotary Engines
 		CLASS.Sound		 = "acf_base/engines/wankel_large.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.Wankel"
-		CLASS.Mass		 = 260
-		CLASS.Torque		 = 312
+		CLASS.Mass		 = 330
+		CLASS.Torque		 = 279
 		CLASS.FlywheelMass = 0.11
 		CLASS.RPM = {
 			Idle	= 1200,
@@ -36,8 +36,8 @@ do -- Special I2 Engines
 		CLASS.Sound		 = "acf_extra/vehiclefx/engines/ponyengine.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
-		CLASS.Mass		 = 60
-		CLASS.Torque		 = 145
+		CLASS.Mass		 = 95
+		CLASS.Torque		 = 113
 		CLASS.FlywheelMass = 0.085
 		CLASS.RPM = {
 			Idle	= 750,
@@ -57,8 +57,8 @@ do -- Special I4 Engines
 		CLASS.Sound		 = "acf_extra/vehiclefx/engines/l4/mini_onhigh.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
-		CLASS.Mass		 = 78
-		CLASS.Torque		 = 85
+		CLASS.Mass		 = 120
+		CLASS.Torque		 = 68
 		CLASS.FlywheelMass = 0.031
 		CLASS.Pitch		 = 0.75
 		CLASS.RPM = {
@@ -77,8 +77,8 @@ do -- Special I4 Engines
 		CLASS.Sound		 = "acf_base/engines/i4_special.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
-		CLASS.Mass		 = 150
-		CLASS.Torque		 = 220
+		CLASS.Mass		 = 210
+		CLASS.Torque		 = 187
 		CLASS.FlywheelMass = 0.06
 		CLASS.RPM = {
 			Idle	= 950,
@@ -98,8 +98,8 @@ do -- Special V4 Engines
 		CLASS.Sound		 = "acf_extra/vehiclefx/engines/l4/elan_onlow.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
-		CLASS.Mass		 = 92
-		CLASS.Torque		 = 156
+		CLASS.Mass		 = 135
+		CLASS.Torque		 = 127
 		CLASS.FlywheelMass = 0.04
 		CLASS.RPM = {
 			Idle	= 900,
@@ -119,8 +119,8 @@ do -- Special I6 Engines
 		CLASS.Sound		 = "acf_base/engines/l6_special.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
-		CLASS.Mass		 = 180
-		CLASS.Torque		 = 280
+		CLASS.Mass		 = 240
+		CLASS.Torque		 = 242
 		CLASS.FlywheelMass = 0.1
 		CLASS.RPM = {
 			Idle	= 1100,
@@ -140,8 +140,8 @@ do -- Special V6 Engines
 		CLASS.Sound		 = "acf_extra/vehiclefx/engines/l6/capri_onmid.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
-		CLASS.Mass		 = 134
-		CLASS.Torque		 = 215
+		CLASS.Mass		 = 190
+		CLASS.Torque		 = 181
 		CLASS.FlywheelMass = 0.075
 		CLASS.RPM = {
 			Idle	= 950,
@@ -161,8 +161,8 @@ do -- Special V8 Engines
 		CLASS.Sound		 = "acf_base/engines/v8_special.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
-		CLASS.Mass		 = 180
-		CLASS.Torque		 = 250
+		CLASS.Mass		 = 240
+		CLASS.Torque		 = 216
 		CLASS.FlywheelMass = 0.075
 		CLASS.RPM = {
 			Idle	= 1000,
@@ -180,8 +180,8 @@ do -- Special V8 Engines
 		CLASS.Sound		 = "acf_base/engines/v8_special2.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
-		CLASS.Mass		 = 400
-		CLASS.Torque		 = 425
+		CLASS.Mass		 = 475
+		CLASS.Torque		 = 394
 		CLASS.FlywheelMass = 0.15
 		CLASS.RPM = {
 			Idle	= 1000,
@@ -201,8 +201,8 @@ do -- Special V10 Engines
 		CLASS.Sound		 = "acf_base/engines/v10_special.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
-		CLASS.Mass		 = 300
-		CLASS.Torque		 = 400
+		CLASS.Mass		 = 375
+		CLASS.Torque		 = 362
 		CLASS.FlywheelMass = 0.15
 		CLASS.RPM = {
 			Idle	= 1100,
@@ -222,8 +222,8 @@ do -- Special V12 Engines
 		CLASS.Sound		 = "acf_extra/vehiclefx/engines/v12/gtb4_onmid.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
-		CLASS.Mass		 = 175
-		CLASS.Torque		 = 310
+		CLASS.Mass		 = 235
+		CLASS.Torque		 = 268
 		CLASS.FlywheelMass = 0.1
 		CLASS.Pitch		 = 0.85
 		CLASS.RPM = {
