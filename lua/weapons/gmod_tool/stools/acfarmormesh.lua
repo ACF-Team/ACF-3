@@ -131,6 +131,7 @@ if CLIENT then
 		local Menu = ACF.InitMenuBase(Panel, "ArmorMeshMenu", "acf_reload_armor_mesh_menu")
 
 		local Materials = Menu:AddComboBox()
+		Materials:SetName("ArmorMeshMaterials")
 
 		Menu:AddHelp("The material that will be applied to the convex under your crosshair.")
 
