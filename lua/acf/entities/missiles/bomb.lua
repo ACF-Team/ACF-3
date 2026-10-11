@@ -30,7 +30,7 @@ Classes.DefineClass("ACF.Missiles.FreeFallingBomb.50kg", "ACF.Missiles.FreeFalli
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Optical"] = true}
 	CLASS.Agility		= 1
-	CLASS.ArmDelay		= 0.5
+	CLASS.ArmDelay		= 0.25
 	CLASS.HitDeviate	= false
 	CLASS.Round			= {
 		Model           	= "models/bombs/fab50.mdl",
@@ -72,7 +72,7 @@ Classes.DefineClass("ACF.Missiles.FreeFallingBomb.100kg", "ACF.Missiles.FreeFall
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Optical"] = true}
 	CLASS.Agility		= 1
-	CLASS.ArmDelay		= 1
+	CLASS.ArmDelay		= 0.5
 	CLASS.HitDeviate	= false
 	CLASS.Round			= {
 		Model           	= "models/bombs/fab100.mdl",
@@ -114,7 +114,7 @@ Classes.DefineClass("ACF.Missiles.FreeFallingBomb.250kg", "ACF.Missiles.FreeFall
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Optical"] = true}
 	CLASS.Agility		= 1
-	CLASS.ArmDelay		= 1
+	CLASS.ArmDelay		= 0.5
 	CLASS.HitDeviate	= false
 	CLASS.Round			= {
 		Model           	= "models/bombs/fab250.mdl",
@@ -156,7 +156,7 @@ Classes.DefineClass("ACF.Missiles.FreeFallingBomb.500kg", "ACF.Missiles.FreeFall
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Optical"] = true}
 	CLASS.Agility		= 1
-	CLASS.ArmDelay		= 2
+	CLASS.ArmDelay		= 1
 	CLASS.HitDeviate	= false
 	CLASS.Round			= {
 		Model           	= "models/bombs/fab500.mdl",
@@ -198,7 +198,7 @@ Classes.DefineClass("ACF.Missiles.FreeFallingBomb.1000kg", "ACF.Missiles.FreeFal
 	CLASS.Navigation	= "Chase"
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Optical"] = true}
 	CLASS.Agility		= 1
-	CLASS.ArmDelay		= 3
+	CLASS.ArmDelay		= 1.5
 	CLASS.HitDeviate	= false
 	CLASS.Round			= {
 		Model           	= "models/bombs/an_m66.mdl",
