@@ -385,9 +385,10 @@ do -- Movement -----------------------------------------
 
 		-- Automatic torque-converter slip penalty
 		local Slop = SelfTbl.Automatic and 0.9 or 1.0
-		-- Reflect through this stage's own ratio, same direction gearboxes already scale torque.
 		-- Capacity ceiling: this gearbox's own rated torque, a gearbox cannot transmit more than it's rated for, even if the engine sends more.
-		local StageTorque = Clamp(Torque * GearRatio * Loss * Slop, -SelfTbl.MaxTorque, SelfTbl.MaxTorque)
+		local ClampedTorque = Clamp(Torque, -SelfTbl.MaxTorque, SelfTbl.MaxTorque)
+		-- Reflect through this stage's own ratio, same direction gearboxes already scale torque.
+		local StageTorque = ClampedTorque * GearRatio * Loss * Slop
 
 		local TotalInertia = SelfTbl.DownstreamInertia
 		if TotalInertia <= 0 then return end
