@@ -86,7 +86,7 @@ Chapter:AddInstruction("ShowToolgun", {Tool = language.GetPhrase("tool.acfarmorm
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Armor on ACF entities is made of convexes, the individual pieces of their volumetric mesh."}))
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "The ACF Armor Mesh tool highlights the convex under your crosshair, and shows its material, thickness and health."}))
 
-Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "ArmorMenuCPanel", ComboBoxName = "ArmorMeshMaterials", OptionID = 12}):DelayByLength() -- RHA
+Chapter:AddInstruction("ACF.SetPanelTreeNode", {Name = "ArmorMenuCPanel", TreeName = "ArmorMeshMaterials", Select = "RHA"}):DelayByLength() -- RHA
 Chapter:AddInstruction("AddHalo", {Target = "ArmorPlate2", Color = Color(255, 210, 90), Length = 0.3}):DelayByLength()
 
 Chapter:AddInstruction("Caption", {
@@ -99,7 +99,7 @@ Chapter:AddInstruction("Caption", {
 })
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Pick a material from the menu, then left click a convex to apply it. Shift+left click applies it to the whole mesh."}))
-Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "ArmorMenuCPanel", ComboBoxName = "ArmorMeshMaterials", OptionID = 9}):DelayByLength() -- Maraging Steel
+Chapter:AddInstruction("ACF.SetPanelTreeNode", {Name = "ArmorMenuCPanel", TreeName = "ArmorMeshMaterials", Select = "Maraging Steel"}):DelayByLength() -- Maraging Steel
 Chapter:AddInstruction("ClickToolgun", {Tool = language.GetPhrase("tool.acfarmormesh.name"), Target = "ArmorPlate2"}):DelayByLength()
 Chapter:AddInstruction("AddHalo", {Target = "ArmorPlate2", Color = Color(140, 180, 255), Length = 0.3}):DelayByLength()
 
