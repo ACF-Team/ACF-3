@@ -14,7 +14,8 @@ do -- Petrol Engines
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
 		CLASS.Mass		 = 170
-		CLASS.Torque		 = 141
+		CLASS.Displacement = 2.2
+		CLASS.Torque	   = 141
 		CLASS.FlywheelMass = 0.1
 		CLASS.RPM = {
 			Idle	= 800,
@@ -52,7 +53,8 @@ do -- Petrol Engines
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
 		CLASS.Mass		 = 880
-		CLASS.Torque		 = 1738
+		CLASS.Displacement = 17.2
+		CLASS.Torque	   = 1738
 		CLASS.FlywheelMass = 2.5
 		CLASS.RPM = {
 			Idle	= 800,
@@ -73,7 +75,8 @@ do -- Diesel Engines
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
 		CLASS.Mass		 = 210
-		CLASS.Torque		 = 213
+		CLASS.Displacement = 3.0
+		CLASS.Torque	   = 213
 		CLASS.FlywheelMass = 0.5
 		CLASS.RPM = {
 			Idle	= 650,
@@ -92,7 +95,8 @@ do -- Diesel Engines
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
 		CLASS.Mass		 = 525
-		CLASS.Torque		 = 656
+		CLASS.Displacement = 6.5
+		CLASS.Torque	   = 656
 		CLASS.FlywheelMass = 1.5
 		CLASS.RPM = {
 			Idle	= 600,
@@ -111,7 +115,8 @@ do -- Diesel Engines
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
 		CLASS.Mass		 = 1200
-		CLASS.Torque		 = 2490
+		CLASS.Displacement = 20.0
+		CLASS.Torque	   = 2490
 		CLASS.FlywheelMass = 8
 		CLASS.RPM = {
 			Idle	= 400,
