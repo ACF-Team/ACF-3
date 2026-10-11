@@ -17,6 +17,20 @@ Chapter:AddDelay(Chapter:AddInstruction("PlaceModels", {
 }))
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "The IRST searches for players and contraptions passively, without emitting a signal that a warning receiver can detect."}))
+
+-- A narrow wedge flashing across the gimbal's steer range, standing in for the view cone sweeping.
+local function Beam(name, yaw)
+    local origin = Vector(0, 0, 15)
+    local p2 = origin + Angle(0, yaw - 1.25, 0):Forward() * 70
+    local p3 = origin + Angle(0, yaw + 1.25, 0):Forward() * 70
+    Chapter:AddInstruction("DebugTriangle", {Name = name, P1 = origin, P2 = p2, P3 = p3, Color = Color(255, 210, 100, 150), Lifetime = 0.3})
+end
+
+Beam("IrstBeam1", -105)
+Chapter:AddDelay(0.5)
+Beam("IrstBeam2", -90)
+Chapter:AddDelay(0.5)
+Beam("IrstBeam3", -75)
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Its range is unlimited, but its gimballed view cone is narrow: 2.5 degrees wide, able to steer up to 15 degrees off its forward axis."}))
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "You can only place 2 per contraption."}))
 
