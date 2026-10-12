@@ -84,6 +84,7 @@ function ACF.CreateSteerplateMenu(_, Menu, Ctx)
 	AddSlider(Menu, Ctx, "Min Steer Angle (top speed)", "MinSteerAngle", 0, 90, 2, 15)
 	AddSlider(Menu, Ctx, "Top Speed (km/h)", "TopSpeed", 1, 300, 1, 70)
 	AddSlider(Menu, Ctx, "Turn Rate (degrees/s)", "TurnRate", 1, 720, 1, 160)
+	AddSlider(Menu, Ctx, "Steer Ratio (negative steers opposite)", "SteerRatio", -1, 1, 2, 1)
 
 	AddChoiceCombo(Menu, Ctx, "When Inactive", "InactiveBehavior", BehaviorChoices)
 	AddChoiceCombo(Menu, Ctx, "When Braking", "BrakeBehavior", BehaviorChoices)

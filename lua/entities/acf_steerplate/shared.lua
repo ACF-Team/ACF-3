@@ -17,6 +17,7 @@ ACF.Entities.AutoRegister(2026100801, function()
 	MENU_FIELD("Number",  "MinSteerAngle",     { Min = 0, Max = 90, Default = 15, Decimals = 2 })  -- Degrees, at top speed
 	MENU_FIELD("Number",  "TopSpeed",          { Min = 1, Max = 300, Default = 70, Decimals = 1 }) -- km/h
 	MENU_FIELD("Number",  "TurnRate",          { Min = 1, Max = 720, Default = 160, Decimals = 1 }) -- Degrees per second
+	MENU_FIELD("Number",  "SteerRatio",        { Min = -1, Max = 1, Default = 1, Decimals = 2 })   -- Negative steers opposite, for rear axles
 	MENU_FIELD("String",  "InactiveBehavior",  { Default = "Disable" })
 	MENU_FIELD("String",  "BrakeBehavior",     { Default = "Disable" })
 	MENU_FIELD("String",  "WaterBehavior",     { Default = "Disable" })

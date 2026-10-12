@@ -491,6 +491,7 @@ do
 		SelfTbl.Behavior = Behavior
 
 		local Current = SelfTbl.Steer
+		local Ratio   = self:ACF_GetUserVar("SteerRatio")
 		local Target
 
 		if Behavior == "Disable" then
@@ -498,11 +499,11 @@ do
 		elseif Behavior == "Neutral" then
 			Target = 0
 		elseif Method == "AD" then
-			Target = ((Left and 1 or 0) - (Right and 1 or 0)) * Lock
+			Target = ((Left and 1 or 0) - (Right and 1 or 0)) * Lock * Ratio
 		elseif Method == "Steer" then
-			Target = -Steer * Lock
+			Target = -Steer * Lock * Ratio
 		else
-			Target = Heading and Clamp(LocalYaw(Baseplate, Heading), -Lock, Lock) or 0
+			Target = Heading and Clamp(LocalYaw(Baseplate, Heading), -Lock, Lock) * Ratio or 0
 		end
 
 		local MaxStep = self:ACF_GetUserVar("TurnRate") * DeltaTime
@@ -607,6 +608,7 @@ function ENT:ACF_UpdateOverlayState(State)
 	State:AddNumber("Linked Wheels", Count)
 	State:AddNumber("Steer Angle", math.Round(self.Steer, 2), "°")
 	State:AddNumber("Steer Lock", math.Round(self.Lock or self:ACF_GetUserVar("MaxSteerAngle"), 2), "°")
+	State:AddNumber("Steer Ratio", self:ACF_GetUserVar("SteerRatio"))
 
 	if self.HoldInput then
 		State:AddLabel("Holding the pasted steer angle until the steering input changes")
