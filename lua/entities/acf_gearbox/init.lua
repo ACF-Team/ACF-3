@@ -529,7 +529,7 @@ do -- Linking ------------------------------------------
 
 		Link:SetOrigin(OutPos)
 		Link:SetTargetPos(InPos)
-		Link:SetAxis(Target.In and Plane.Dir or Target:GetPhysicsObject():WorldToLocalVector(Entity:GetRight()))
+		Link:SetAxis(Target:GetPhysicsObject():WorldToLocalVector(Target:GetRight()))
 		Link.OutDirection = Plane.Dir
 		Link.Side = Side
 		Link.RopeLen = (OutPosWorld - InPosWorld):Length()
