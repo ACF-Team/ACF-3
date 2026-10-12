@@ -359,8 +359,6 @@ do
 			end
 		end
 
-		EntMods.SteerPlates = nil -- Prop steer plates are no longer supported, they paste as plain props
-
 		-- Handle camera parent entities
 		if EntMods.CamParents then
 			self:SetCam1Parent(CreatedEntities[EntMods.CamParents[1]])

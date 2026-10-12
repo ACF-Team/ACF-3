@@ -4,7 +4,7 @@ local GetBindState = ENT.GetBindState
 local function Init(Entity)
 	Entity.Gearbox              = nil  -- Main gearbox of the vehicle
 	Entity.Baseplate            = nil  -- The baseplate of the vehicle
-	Entity.SteerPlates          = {}   -- Steering plates, if any
+	Entity.SteerPlates          = {}   -- Steer plates, if any
 	Entity.GearboxEnds          = {}   -- Gearboxes connected to a wheel
 	Entity.GearboxIntermediates = {}   -- Or otherwise
 	Entity.Wheels               = {}   -- Wheels
@@ -26,6 +26,7 @@ end
 do
 	local CLUTCH_FLOW = 0
 	local CLUTCH_BLOCK = 1
+	local STEER_MOUSE_AIM = 1 -- Steering method, keyboard is 0
 
 	--- Finds the components of the drive train
 	--- Input is the "main" gearbox of the drivetrain
@@ -141,6 +142,36 @@ do
 		return false
 	end
 
+	--- Steer plates are driven through their wire inputs, with A/D or the camera's aim depending on the steering method
+	function ENT:ProcessSteerPlates(SelfTbl)
+		if not HasSteerPlates(SelfTbl) then return end
+
+		local Method = self:GetSteerMethod()
+
+		-- Plates follow the input that was triggered last, so a method change has to trigger them all again
+		if SelfTbl.LastSteerMethod ~= Method then
+			SelfTbl.LastSteerMethod = Method
+
+			local LastInputs = SelfTbl.LastInputs
+			if LastInputs then
+				for SteerPlate in pairs(SelfTbl.SteerPlates) do LastInputs[SteerPlate] = nil end
+			end
+		end
+
+		local IsBraking = GetBindState(SelfTbl, "Brake") or self:GetDisableMobility()
+		SetAll(SelfTbl, "SteerPlates", "Brake", IsBraking and 1 or 0)
+
+		if Method == STEER_MOUSE_AIM then
+			SetAll(SelfTbl, "SteerPlates", "Angle", SelfTbl.CamAng or angle_zero)
+		else
+			local A, D = GetBindState(SelfTbl, "TurnLeft"), GetBindState(SelfTbl, "TurnRight")
+			if self:GetFlipAD() then A, D = D, A end
+
+			SetAll(SelfTbl, "SteerPlates", "A", A and 1 or 0)
+			SetAll(SelfTbl, "SteerPlates", "D", D and 1 or 0)
+		end
+	end
+
 	--- Intentionally Supported drivetrains:
 	--- Single Transaxial gearbox with dual clutch -> basic ww2 style
 	--- Single Transaxial gearbox with transfers -> basic neutral steer style
@@ -229,6 +260,8 @@ do
 
 	--- Handles driving, gearing, clutches, latches and brakes
 	function ENT:ProcessDrivetrain(SelfTbl)
+		self:ProcessSteerPlates(SelfTbl)
+
 		-- Log speed even if drivetrain is invalid
 		if not IsValid(SelfTbl.Baseplate) then return end
 
@@ -253,7 +286,7 @@ do
 		-- Only two transfer setups can reasonably be expected to neutral steer
 		local IsNeutral = not IsLateral and IsTurning
 		local ShouldNeutral = self.CanNeutral and not self:GetForceCarSteering()
-		local ShouldSteer = HasSteerPlates(SelfTbl) or self:GetForceCarSteering() -- The steer plates steer themselves
+		local ShouldSteer = HasSteerPlates(SelfTbl) or self:GetForceCarSteering()
 
 		-- Throttle the engines
 		SetAll(SelfTbl, "Engines", "Throttle", IsMoving and 100 or self:GetThrottleIdle() or 0)
@@ -358,6 +391,27 @@ ACF.RegisterControllerLink("acf_baseplate", {
 	end,
 	OnUnlinked = function(Controller, Target)
 		if IsValid(Target.Pod) and not Controller.Seat then Controller:Unlink(Target.Pod) end
+	end,
+})
+
+ACF.RegisterControllerLink("acf_steerplate", {
+	Field = "SteerPlates",
+	Single = false,
+	OnLinked = function(Controller, Target)
+		if not IsValid(Target) then return end
+
+		Target.Controller = Controller -- The plate is only active with a driver while it has one
+		Target:TriggerInput("Active", Controller.Active and 1 or 0)
+	end,
+	OnUnlinked = function(Controller, Target)
+		if Controller.LastInputs then Controller.LastInputs[Target] = nil end
+		if not IsValid(Target) then return end
+		if Target.Controller == Controller then Target.Controller = nil end
+
+		-- Leave the plate as if nothing had driven it
+		Target:TriggerInput("Brake", 0)
+		Target:TriggerInput("A", 0)
+		Target:TriggerInput("D", 0)
 	end,
 })
 

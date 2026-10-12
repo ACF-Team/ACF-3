@@ -23,7 +23,7 @@ ACF.Entities.AutoRegister(2026100801, function()
 end, "Steer Plate")
 
 ENT.ACF_StaticWireInputs = {
-	"Active (Steering is enabled while this is non-zero, or unwired.)",
+	"Active (Steering is enabled while this is non-zero, or while nothing drives it.)",
 	"Brake (Whether the vehicle is braking.)",
 	"InWater (Whether the vehicle is in water, only read when the in water behavior is wire provided.)",
 	"A (Steers left while non-zero.)",

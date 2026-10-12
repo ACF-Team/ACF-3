@@ -394,8 +394,10 @@ do
 		return math.deg(math.atan2(-Dir:Dot(Baseplate:GetRight()), Dir:Dot(Baseplate:GetForward())))
 	end
 
-	--- Whether the wire Active input is unwired, which keeps the plate active
-	local function IsActiveUnwired(SelfTbl)
+	--- Whether nothing drives the Active input, which keeps the plate active
+	local function IsActiveUndriven(SelfTbl)
+		if IsValid(SelfTbl.Controller) then return false end -- Set by the AIO controller it's linked to
+
 		local Input = SelfTbl.Inputs and SelfTbl.Inputs.Active
 
 		return not (Input and IsValid(Input.Src))
@@ -412,7 +414,7 @@ do
 	function ENT:ProcessSteering(SelfTbl, DeltaTime)
 		local Baseplate = SelfTbl.Baseplate
 		local Method    = SelfTbl.Method
-		local Active    = IsActiveUnwired(SelfTbl) or SelfTbl.InActive
+		local Active    = IsActiveUndriven(SelfTbl) or SelfTbl.InActive
 		local Left      = SelfTbl.InA
 		local Right     = SelfTbl.InD
 		local Steer     = SelfTbl.InSteer

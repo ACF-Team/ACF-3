@@ -76,6 +76,8 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "Float", "ShiftTime", { KeyName = "shifttime", Edit = { type = "Int", order = 800, category = "Shifting Settings", min = 100, max = 3000, tooltip = "Delay between gear shifts"  } } )
 	self:NetworkVar( "Int", "ShiftMinRPM", { KeyName = "shiftminrpm", Edit = { type = "Int", order = 801, category = "Shifting Settings", min = 0, max = 10000, tooltip = "Shifts gear down at this RPM"  } } )
 	self:NetworkVar( "Int", "ShiftMaxRPM", { KeyName = "shiftmaxrpm", Edit = { type = "Int", order = 802, category = "Shifting Settings", min = 0, max = 10000, tooltip = "Shifts gear up at this RPM"  } } )
+
+	self:NetworkVar( "Int", "SteerMethod", { KeyName = "steermethod", Edit = { type = "Combo", order = 900, category = "Car Steering Settings", title = "AIO Steering Method", values = {Keyboard = 0, ["Mouse-aim"] = 1}, tooltip = "How linked steer plates are steered, with A/D or towards where the camera is aiming" } } )
 end
 
 -- Thank you march (https://github.com/marchc1/imagestickers/blob/master/lua/imagestickers/properties.lua)

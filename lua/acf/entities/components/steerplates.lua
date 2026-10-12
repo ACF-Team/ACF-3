@@ -53,6 +53,7 @@ end
 function ACF.CreateSteerplateMenu(_, Menu, Ctx)
 	Menu:AddLabel("Link the steer plate to a baseplate, then to the wheels it steers. Wheels must be pointing straight ahead of the current steer angle when linked.")
 	Menu:AddLabel("It steers with its A/D, Steer and Angle wire inputs, following whichever one was triggered last.")
+	Menu:AddLabel("Link an AIO controller to it to have the controller's driver trigger those inputs.")
 
 	AddSlider(Menu, Ctx, "Max Steer Angle (standstill)", "MaxSteerAngle", 0, 90, 2, 25)
 	AddSlider(Menu, Ctx, "Min Steer Angle (top speed)", "MinSteerAngle", 0, 90, 2, 15)
@@ -67,7 +68,7 @@ end
 
 Classes.DefineClass("ACF.Components.Steerplate", "ACF.Components.BaseComponent", function(CLASS)
 	CLASS.Name        = "Steer Plate"
-	CLASS.Description = "Steers the wheels linked to it by rotating relative to its linked baseplate, driven by its wire inputs."
+	CLASS.Description = "Steers the wheels linked to it by rotating relative to its linked baseplate, driven by its wire inputs or a linked AIO controller."
 	CLASS.Model       = "models/hunter/plates/plate025x025.mdl"
 	CLASS.Entity      = "acf_steerplate"
 	CLASS.Preview     = { FOV = 120 }

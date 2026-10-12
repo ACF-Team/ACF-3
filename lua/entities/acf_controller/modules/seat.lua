@@ -40,6 +40,12 @@ local function OnActiveChanged(Controller, Ply, Active)
 		if IsValid(Engine) then Engine:TriggerInput("Active", Active) end
 	end
 
+	for SteerPlate in pairs(Controller.SteerPlates) do
+		if IsValid(SteerPlate) then SteerPlate:TriggerInput("Active", Active and 1 or 0) end
+	end
+
+	Controller:ProcessSteerPlates(SelfTbl) -- Releases the steering keys, the controller stops thinking without a driver
+
 	if IsValid(Controller.Gearbox) then Controller.Gearbox:TriggerInput("Gear", Active and 1 or 0) end
 
 	for Gearbox in pairs(Controller.GearboxEnds) do
