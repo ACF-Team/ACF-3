@@ -5,12 +5,10 @@ ENT.ACF_PreventArmoring = true
 
 ENT.ACF_SteerplateModel = "models/hunter/plates/plate025x025.mdl"
 
--- Valid values for the string fields below, the first entry of each list is the default
+-- Valid values for the behavior fields below, the first entry is the default
 ENT.ACF_SteerBehaviors = { "Disable", "Neutral", "Continue", "Wire" }
-ENT.ACF_InputMethods   = { "AD", "Steer", "Angle" }
 
 ACF.Entities.AutoRegister(2026100801, function()
-	MENU_FIELD("String",  "InputMethod",       { Default = "AD" })
 	MENU_FIELD("Number",  "MaxSteerAngle",     { Min = 0, Max = 90, Default = 25, Decimals = 2 })  -- Degrees, at standstill
 	MENU_FIELD("Number",  "MinSteerAngle",     { Min = 0, Max = 90, Default = 15, Decimals = 2 })  -- Degrees, at top speed
 	MENU_FIELD("Number",  "TopSpeed",          { Min = 1, Max = 300, Default = 70, Decimals = 1 }) -- km/h
@@ -28,10 +26,10 @@ ENT.ACF_StaticWireInputs = {
 	"Active (Steering is enabled while this is non-zero, or unwired.)",
 	"Brake (Whether the vehicle is braking.)",
 	"InWater (Whether the vehicle is in water, only read when the in water behavior is wire provided.)",
-	"A (Steers left while non-zero, with the A/D input method.)",
-	"D (Steers right while non-zero, with the A/D input method.)",
-	"Steer (Steering amount from -1 for full left to 1 for full right, with the Steer input method.)",
-	"Angle (World heading to steer towards, with the Angle input method.) [ANGLE]",
+	"A (Steers left while non-zero.)",
+	"D (Steers right while non-zero.)",
+	"Steer (Steering amount from -1 for full left to 1 for full right.)",
+	"Angle (World heading to steer towards.) [ANGLE]",
 }
 
 ENT.ACF_StaticWireOutputs = {

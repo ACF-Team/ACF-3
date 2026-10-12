@@ -163,8 +163,7 @@ end
 
 -- Spawning and updating --------------------------
 do
-	local Behaviors    = ENT.ACF_SteerBehaviors
-	local InputMethods = ENT.ACF_InputMethods
+	local Behaviors = ENT.ACF_SteerBehaviors
 
 	local function IsOneOf(List, Value)
 		for _, Entry in ipairs(List) do
@@ -179,8 +178,6 @@ do
 		for _, Key in ipairs({ "InactiveBehavior", "BrakeBehavior", "WaterBehavior" }) do
 			if not IsOneOf(Behaviors, ClientData[Key]) then ClientData[Key] = nil end
 		end
-
-		if not IsOneOf(InputMethods, ClientData.InputMethod) then ClientData.InputMethod = nil end
 	end
 
 	function ENT:ACF_PreSpawn()
@@ -194,6 +191,7 @@ do
 
 		-- Steering state
 		self.Steer     = 0
+		self.Method    = "AD" -- The steering input that was triggered last
 		self.InA       = false
 		self.InD       = false
 		self.InSteer   = 0
@@ -249,10 +247,9 @@ do
 		return false
 	end
 
-	-- Dupes come back with their saved steer angle, held until the steering input changes
+	-- Dupes come back with their saved steer angle, held until a steering input changes
 	function ENT:PostEntityPaste()
-		self.HoldInput     = true
-		self.HoldSignature = nil
+		self.HoldInput = true
 	end
 
 	-- Steer plates are angle references, parenting them or to them would break that
@@ -351,10 +348,23 @@ do
 	ACF.AddInputAction("acf_steerplate", "Active", function(Entity, Value) Entity.InActive = Value ~= 0 end)
 	ACF.AddInputAction("acf_steerplate", "Brake", function(Entity, Value) Entity.InBrake = Value ~= 0 end)
 	ACF.AddInputAction("acf_steerplate", "InWater", function(Entity, Value) Entity.InWater = Value ~= 0 end)
-	ACF.AddInputAction("acf_steerplate", "A", function(Entity, Value) Entity.InA = Value ~= 0 end)
-	ACF.AddInputAction("acf_steerplate", "D", function(Entity, Value) Entity.InD = Value ~= 0 end)
-	ACF.AddInputAction("acf_steerplate", "Steer", function(Entity, Value) Entity.InSteer = Clamp(Value, -1, 1) end)
-	ACF.AddInputAction("acf_steerplate", "Angle", function(Entity, Value) Entity.InAngle = Value end)
+
+	-- The steering inputs are all live at once, the plate follows whichever one was triggered last
+	local function AddSteerInput(Name, Method, Key, Convert)
+		ACF.AddInputAction("acf_steerplate", Name, function(Entity, Value)
+			Value = Convert(Value)
+
+			if Entity[Key] ~= Value then Entity.HoldInput = false end
+
+			Entity[Key]   = Value
+			Entity.Method = Method
+		end)
+	end
+
+	AddSteerInput("A", "AD", "InA", function(Value) return Value ~= 0 end)
+	AddSteerInput("D", "AD", "InD", function(Value) return Value ~= 0 end)
+	AddSteerInput("Steer", "Steer", "InSteer", function(Value) return Clamp(Value, -1, 1) end)
+	AddSteerInput("Angle", "Angle", "InAngle", function(Value) return Value end)
 end
 
 -- Steering ---------------------------------------
@@ -391,14 +401,6 @@ do
 		return not (Input and IsValid(Input.Src))
 	end
 
-	-- Identifies the current steering input, a pasted plate holds its angle until this changes
-	local function InputSignature(Method, Left, Right, Steer, Heading)
-		if Method == "AD" then return (Left and 1 or 0) + (Right and 2 or 0) end
-		if Method == "Steer" then return Steer end
-
-		return Heading and math.Round(Heading.y, 1) or 0
-	end
-
 	--- Sets the plate's angle from the baseplate and its current steer angle
 	function ENT:ApplySteer(SelfTbl)
 		local Baseplate = SelfTbl.Baseplate
@@ -409,7 +411,7 @@ do
 
 	function ENT:ProcessSteering(SelfTbl, DeltaTime)
 		local Baseplate = SelfTbl.Baseplate
-		local Method    = self:ACF_GetUserVar("InputMethod")
+		local Method    = SelfTbl.Method
 		local Active    = IsActiveUnwired(SelfTbl) or SelfTbl.InActive
 		local Left      = SelfTbl.InA
 		local Right     = SelfTbl.InD
@@ -431,18 +433,8 @@ do
 		Behavior = Resolve(Behavior, self:ACF_GetUserVar("BrakeBehavior"), SelfTbl.InBrake, SelfTbl.InBrake)
 		Behavior = Resolve(Behavior, self:ACF_GetUserVar("WaterBehavior"), InWater, SelfTbl.InWater)
 
-		-- Pasted plates hold their angle until the steering input changes
-		if SelfTbl.HoldInput then
-			local Signature = InputSignature(Method, Left, Right, Steer, Heading)
-
-			if SelfTbl.HoldSignature == nil then
-				SelfTbl.HoldSignature = Signature
-			elseif SelfTbl.HoldSignature ~= Signature then
-				SelfTbl.HoldInput = false
-			end
-
-			if SelfTbl.HoldInput then Behavior = "Disable" end
-		end
+		-- Pasted plates hold their angle until a steering input changes
+		if SelfTbl.HoldInput then Behavior = "Disable" end
 
 		SelfTbl.Behavior = Behavior
 
@@ -557,7 +549,7 @@ function ENT:ACF_UpdateOverlayState(State)
 		return
 	end
 
-	State:AddKeyValue("Input Method", self:ACF_GetUserVar("InputMethod"))
+	State:AddKeyValue("Steering Input", self.Method == "AD" and "A/D" or self.Method)
 	State:AddNumber("Linked Wheels", Count)
 	State:AddNumber("Steer Angle", math.Round(self.Steer, 2), "°")
 	State:AddNumber("Steer Lock", math.Round(self.Lock or self:ACF_GetUserVar("MaxSteerAngle"), 2), "°")

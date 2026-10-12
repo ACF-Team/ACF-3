@@ -8,12 +8,6 @@ local BehaviorChoices = {
 	{ "Wire input",        "Wire" },
 }
 
-local MethodChoices = {
-	{ "A/D",             "AD" },
-	{ "Steer (-1 to 1)", "Steer" },
-	{ "World angle",     "Angle" },
-}
-
 -- Fills a combo box with choices and selects the one matching the context's current value, or the first one
 local function LoadChoices(Combo, Ctx, Key, Choices)
 	local Current  = Ctx:Get(Key)
@@ -58,8 +52,7 @@ end
 
 function ACF.CreateSteerplateMenu(_, Menu, Ctx)
 	Menu:AddLabel("Link the steer plate to a baseplate, then to the wheels it steers. Wheels must be pointing straight ahead of the current steer angle when linked.")
-
-	AddChoiceCombo(Menu, Ctx, "Input Method", "InputMethod", MethodChoices)
+	Menu:AddLabel("It steers with its A/D, Steer and Angle wire inputs, following whichever one was triggered last.")
 
 	AddSlider(Menu, Ctx, "Max Steer Angle (standstill)", "MaxSteerAngle", 0, 90, 2, 25)
 	AddSlider(Menu, Ctx, "Min Steer Angle (top speed)", "MinSteerAngle", 0, 90, 2, 15)
