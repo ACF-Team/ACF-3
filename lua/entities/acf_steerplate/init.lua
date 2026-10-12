@@ -67,7 +67,7 @@ do
 		return Found
 	end
 
-	--- Creates a steer socket between a steer plate and a wheel. Returns the existing one if there is one already.
+	--- Creates a steer socket between a steer plate and a wheel. Returns an existing one if the wheel has them all already.
 	--- @param Plate Entity The steer plate
 	--- @param Wheel Entity The wheel
 	--- @param LocalAng Angle The constraint frame relative to the steer plate, its X axis is the wheel's spin axis
@@ -161,22 +161,10 @@ local function IsConnected(Wheel, Baseplate, Plate)
 	return false
 end
 
---- Finds the AIO controller driving the given baseplate, if any
-local function FindController(Baseplate)
-	local BaseContraption = Baseplate:CFW_GetContraption()
-	local Controllers     = BaseContraption and BaseContraption.entsbyclass and BaseContraption.entsbyclass.acf_controller
-	if not Controllers then return end
-
-	for Controller in pairs(Controllers) do
-		if IsValid(Controller) and Controller.Baseplate == Baseplate then return Controller end
-	end
-end
-
 -- Spawning and updating --------------------------
 do
-	local Behaviors        = ENT.ACF_SteerBehaviors
-	local WireInputMethods = ENT.ACF_WireInputMethods
-	local AIOInputMethods  = ENT.ACF_AIOInputMethods
+	local Behaviors    = ENT.ACF_SteerBehaviors
+	local InputMethods = ENT.ACF_InputMethods
 
 	local function IsOneOf(List, Value)
 		for _, Entry in ipairs(List) do
@@ -192,10 +180,7 @@ do
 			if not IsOneOf(Behaviors, ClientData[Key]) then ClientData[Key] = nil end
 		end
 
-		local Method = ClientData.InputMethod
-		if not IsOneOf(WireInputMethods, Method) and not IsOneOf(AIOInputMethods, Method) then
-			ClientData.InputMethod = nil
-		end
+		if not IsOneOf(InputMethods, ClientData.InputMethod) then ClientData.InputMethod = nil end
 	end
 
 	function ENT:ACF_PreSpawn()
@@ -208,16 +193,15 @@ do
 		self.Wheels    = {}
 
 		-- Steering state
-		self.Steer      = 0
-		self.InA        = false
-		self.InD        = false
-		self.InSteer    = 0
-		self.InAngle    = Angle()
-		self.InActive   = true
-		self.InBrake    = false
-		self.InWater    = false
-		self.HoldInput  = false
-		self.Controller = nil
+		self.Steer     = 0
+		self.InA       = false
+		self.InD       = false
+		self.InSteer   = 0
+		self.InAngle   = Angle()
+		self.InActive  = true
+		self.InBrake   = false
+		self.InWater   = false
+		self.HoldInput = false
 	end
 
 	function ENT:ACF_PostUpdateEntityData()
@@ -296,7 +280,6 @@ do
 	ACF.RegisterClassLink("acf_steerplate", "acf_baseplate", function(This, Baseplate)
 		This.Baseplate = Baseplate
 		This.ACF_LiveData.Baseplate = Baseplate
-		This.Controller = FindController(Baseplate)
 
 		This:ApplySteer(This:GetTable())
 		This:NextThink(CurTime()) -- Unlinked plates think slowly
@@ -310,7 +293,6 @@ do
 
 		This.Baseplate = nil
 		This.ACF_LiveData.Baseplate = nil
-		This.Controller = nil
 
 		This:UpdateOverlay()
 
@@ -409,34 +391,6 @@ do
 		return not (Input and IsValid(Input.Src))
 	end
 
-	--- Reads the steering inputs from the AIO controller or the wire inputs
-	--- @return boolean UsingAIO Whether the controller provided the inputs
-	--- @return string Method The effective input method
-	--- @return boolean Active, boolean Braking, boolean Left, boolean Right, number Steer, Angle|nil Heading
-	local function ReadInputs(Entity, SelfTbl)
-		local Method     = Entity:ACF_GetUserVar("InputMethod")
-		local Controller = SelfTbl.Controller
-
-		if Entity:ACF_GetUserVar("UseAIOController") and IsValid(Controller) then
-			local States   = Controller.ActionStates or EmptyTable
-			local Disabled = Controller:GetDisableMobility()
-			local Active   = Controller.Active and IsValid(Controller.Driver) and not Disabled
-			local Braking  = States.Brake or Disabled or false
-			local Left, Right = States.TurnLeft or false, States.TurnRight or false
-
-			if Controller:GetFlipAD() then Left, Right = Right, Left end
-			if Method ~= "Aim" then Method = "AD" end
-
-			return true, Method, Active, Braking, Left, Right, 0, Controller.CamAng
-		end
-
-		if Method == "Aim" then Method = "AD" end
-
-		local Active = IsActiveUnwired(SelfTbl) or SelfTbl.InActive
-
-		return false, Method, Active, SelfTbl.InBrake, SelfTbl.InA, SelfTbl.InD, SelfTbl.InSteer, SelfTbl.InAngle
-	end
-
 	-- Identifies the current steering input, a pasted plate holds its angle until this changes
 	local function InputSignature(Method, Left, Right, Steer, Heading)
 		if Method == "AD" then return (Left and 1 or 0) + (Right and 2 or 0) end
@@ -455,10 +409,12 @@ do
 
 	function ENT:ProcessSteering(SelfTbl, DeltaTime)
 		local Baseplate = SelfTbl.Baseplate
-		local UsingAIO, Method, Active, Braking, Left, Right, Steer, Heading = ReadInputs(self, SelfTbl)
-
-		SelfTbl.UsingAIO = UsingAIO
-		SelfTbl.Method   = Method
+		local Method    = self:ACF_GetUserVar("InputMethod")
+		local Active    = IsActiveUnwired(SelfTbl) or SelfTbl.InActive
+		local Left      = SelfTbl.InA
+		local Right     = SelfTbl.InD
+		local Steer     = SelfTbl.InSteer
+		local Heading   = SelfTbl.InAngle
 
 		-- Steering lock shrinks from the max angle at standstill to the min angle at top speed
 		local Speed = Baseplate:GetVelocity():Length() * SpeedConv
@@ -471,8 +427,8 @@ do
 		local InWater = bit.band(util.PointContents(Baseplate:GetPos()), LiquidMask) ~= 0
 		local Behavior
 
-		Behavior = Resolve(Behavior, self:ACF_GetUserVar("InactiveBehavior"), not Active, not (IsActiveUnwired(SelfTbl) or SelfTbl.InActive))
-		Behavior = Resolve(Behavior, self:ACF_GetUserVar("BrakeBehavior"), Braking, SelfTbl.InBrake)
+		Behavior = Resolve(Behavior, self:ACF_GetUserVar("InactiveBehavior"), not Active, not Active)
+		Behavior = Resolve(Behavior, self:ACF_GetUserVar("BrakeBehavior"), SelfTbl.InBrake, SelfTbl.InBrake)
 		Behavior = Resolve(Behavior, self:ACF_GetUserVar("WaterBehavior"), InWater, SelfTbl.InWater)
 
 		-- Pasted plates hold their angle until the steering input changes
@@ -562,8 +518,6 @@ function ENT:CheckWheels()
 
 	if not IsValid(Baseplate) then return end
 
-	self.Controller = FindController(Baseplate)
-
 	for Wheel in pairs(self.Wheels) do
 		if not IsValid(Wheel) then
 			self.Wheels[Wheel] = nil
@@ -603,8 +557,7 @@ function ENT:ACF_UpdateOverlayState(State)
 		return
 	end
 
-	State:AddKeyValue("Input Source", self.UsingAIO and "AIO Controller" or "Wire")
-	State:AddKeyValue("Input Method", self.Method or self:ACF_GetUserVar("InputMethod"))
+	State:AddKeyValue("Input Method", self:ACF_GetUserVar("InputMethod"))
 	State:AddNumber("Linked Wheels", Count)
 	State:AddNumber("Steer Angle", math.Round(self.Steer, 2), "°")
 	State:AddNumber("Steer Lock", math.Round(self.Lock or self:ACF_GetUserVar("MaxSteerAngle"), 2), "°")
