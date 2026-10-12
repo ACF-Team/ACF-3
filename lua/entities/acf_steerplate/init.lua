@@ -21,6 +21,7 @@ local MaxSearch   = 4096 -- Most entities the connectivity check will walk throu
 -- Verified in game: freeing a swing axis (Y or Z) instead, or using limits of exactly 0, makes some wheel models
 -- drift several degrees off the steer angle or blow up. The wheel must also be the reference object.
 local SocketTolerance = 0.01 -- Degrees, limits of exactly 0 are degenerate
+local SocketCount     = 2    -- Sockets per wheel, a single one lets the wheel wobble at high angular velocities
 
 --- Returns the steer socket frame for a baseplate and steer angle, X is the axis the wheels spin around
 function ACF.GetSteerSocketFrame(Baseplate, Steer)
@@ -55,11 +56,15 @@ do
 		end
 	end
 
-	--- Returns the steer socket between a steer plate and a wheel, if any
-	function ACF.GetSteerSocket(Plate, Wheel)
+	--- Returns the steer sockets between a steer plate and a wheel
+	function ACF.GetSteerSockets(Plate, Wheel)
+		local Found = {}
+
 		for _, Const in ipairs(FindSockets(Plate, Wheel)) do
-			if Const.Type == "ACF_SteerSocket" then return Const end
+			if Const.Type == "ACF_SteerSocket" then Found[#Found + 1] = Const end
 		end
+
+		return Found
 	end
 
 	--- Creates a steer socket between a steer plate and a wheel. Returns the existing one if there is one already.
@@ -72,8 +77,8 @@ do
 		if not constraint.CanConstrain(Plate, 0) then return false end
 		if not constraint.CanConstrain(Wheel, 0) then return false end
 
-		local Existing = ACF.GetSteerSocket(Plate, Wheel)
-		if Existing then return Existing end
+		local Existing = ACF.GetSteerSockets(Plate, Wheel)
+		if #Existing >= SocketCount then return Existing[1] end
 
 		LocalAng = isangle(LocalAng) and Angle(LocalAng:Unpack()) or Angle()
 
@@ -327,8 +332,15 @@ do
 		-- Any existing socket between the two is remade, so the frame always comes from the baseplate
 		ACF.RemoveSteerSockets(This, Wheel)
 
-		local Socket = ACF.SteerSocket(This, Wheel, This:WorldToLocalAngles(Frame))
-		if not Socket then return false, "Couldn't create the steer socket on this wheel." end
+		local LocalAng = This:WorldToLocalAngles(Frame)
+
+		for _ = 1, SocketCount do
+			if not ACF.SteerSocket(This, Wheel, LocalAng) then
+				ACF.RemoveSteerSockets(This, Wheel)
+
+				return false, "Couldn't create the steer sockets on this wheel."
+			end
+		end
 
 		This.Wheels[Wheel] = true
 		Wheel.ACF_Steerplate = This
@@ -559,8 +571,8 @@ function ENT:CheckWheels()
 
 		local Reason
 
-		if not ACF.GetSteerSocket(self, Wheel) then
-			Reason = "The steer socket on this wheel was removed."
+		if #ACF.GetSteerSockets(self, Wheel) < SocketCount then
+			Reason = "A steer socket on this wheel was removed."
 		elseif not IsConnected(Wheel, Baseplate, self) then
 			Reason = "This wheel is no longer physically connected to the steer plate's baseplate."
 		end
