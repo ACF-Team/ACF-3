@@ -18,9 +18,6 @@ local function Init(Entity)
 	Entity.GearboxLeftDir       = nil  -- Direction of that left gearbox's output
 	Entity.GearboxRightDir      = nil  -- Direction of that right gearbox's output
 	Entity.ControllerWelds      = {}   -- Keep track of the welds we created
-	Entity.SteerPlatesSorted    = {}   -- Steer plates sorted by their position
-	Entity.SteerPhysicsObjects  = {}   -- Steering physics objects
-	Entity.SteerAngles          = {}   -- Steering angles for the wheels
 	Entity.GearboxEndCount      = 1    -- Number of endpoint gearboxes
 	Entity.Speed                = 0
 end
@@ -135,12 +132,13 @@ do
 		end
 	end
 
-	--- Steer a plate left or right
-	local function SetSteerPlate(SelfTbl, BasePlate, SteerPlate, TURN_ANGLE, TURN_RATE)
-		local TURN = SelfTbl.SteerAngles[SteerPlate] or 0
-		TURN = TURN + math.Clamp(TURN_ANGLE - TURN, -TURN_RATE, TURN_RATE)
-		SelfTbl.SteerAngles[SteerPlate] = TURN
-		SteerPlate:SetAngles(BasePlate:LocalToWorldAngles(Angle(0, TURN, 0)))
+	--- Whether any linked steer plate is still around
+	local function HasSteerPlates(SelfTbl)
+		for SteerPlate in pairs(SelfTbl.SteerPlates) do
+			if IsValid(SteerPlate) then return true end
+		end
+
+		return false
 	end
 
 	--- Intentionally Supported drivetrains:
@@ -203,26 +201,12 @@ do
 		self.GearboxLeft, self.GearboxLeftDir = next(LeftGearboxes)
 		self.GearboxRight, self.GearboxRightDir = next(RightGearboxes)
 
-		for v in pairs(self.SteerPlates) do
-			local PhysObj = v:GetPhysicsObject()
-			if IsValid(PhysObj) then PhysObj:EnableGravity(false) end
-			self.SteerPlatesSorted[#self.SteerPlatesSorted + 1] = v
-		end
-
-		table.sort(self.SteerPlatesSorted, function(A, B)
-			return baseplate:WorldToLocal(A:GetPos()).x > baseplate:WorldToLocal(B:GetPos()).x
-		end)
-
-		self.CanSteer = #self.SteerPlatesSorted > 0 -- Steer if there are any steer plates
-
 		-- Can't neutral steer if a gearbox is connected to both sides
 		self.HasTransfers = (next(self.LeftGearboxes) or next(self.RightGearboxes)) ~= MainGearbox
 
 		self.CanNeutral = true
 		for Gearbox in pairs(self.LeftGearboxes) do if self.RightGearboxes[Gearbox] then self.CanNeutral = false break end end
 		for Gearbox in pairs(self.RightGearboxes) do if self.LeftGearboxes[Gearbox] then self.CanNeutral = false break end end
-
-		for Wheel in pairs(self.Wheels) do self.SteerAngles[Wheel] = 0 end
 
 		-- Set default shift RPMs to one of the engine's powerbands
 		local Engine = next(self.Engines)
@@ -269,7 +253,7 @@ do
 		-- Only two transfer setups can reasonably be expected to neutral steer
 		local IsNeutral = not IsLateral and IsTurning
 		local ShouldNeutral = self.CanNeutral and not self:GetForceCarSteering()
-		local ShouldSteer = self.CanSteer or self:GetForceCarSteering()
+		local ShouldSteer = HasSteerPlates(SelfTbl) or self:GetForceCarSteering() -- The steer plates steer themselves
 
 		-- Throttle the engines
 		SetAll(SelfTbl, "Engines", "Throttle", IsMoving and 100 or self:GetThrottleIdle() or 0)
@@ -312,28 +296,6 @@ do
 
 			local TransferGear = (W and 1) or (S and 2) or (A and 1) or (D and 1) or 0
 			SetBoth(SelfTbl, "Gear", TransferGear)
-
-			-- Setang steering stuff
-			local SteerLow, SteerTop = self:GetSteerLow(), self:GetSteerTop()
-			local SteerStrength = BrakeStrength
-			if SteerLow ~= 0 or SteerTop ~= 0 then
-				SteerStrength = SteerLow
-				if MinSpeed ~= MaxSpeed then
-					SteerStrength = math.Remap(Speed, MinSpeed, MaxSpeed, SteerLow, SteerTop)
-				end
-			end
-
-			local TURN_ANGLE = A and SteerStrength or D and -SteerStrength or 0
-			local TURN_RATE = self:GetSteerRate() or 0
-			local SteerPercents = {self:GetSteerPercent1(), self:GetSteerPercent2(), self:GetSteerPercent3(), self:GetSteerPercent4()}
-			for Index, SteerPlate in ipairs(SelfTbl.SteerPlatesSorted) do
-				if IsValid(SteerPlate) then
-					SetSteerPlate(SelfTbl, SelfTbl.Baseplate, SteerPlate, TURN_ANGLE * SteerPercents[Index], TURN_RATE)
-					local PhysicsObject = SelfTbl.SteerPhysicsObjects[SteerPlate] or SteerPlate:GetPhysicsObject()
-					SelfTbl.SteerPhysicsObjects[SteerPlate] = PhysicsObject
-					PhysicsObject:EnableMotion(false)
-				end
-			end
 		end
 	end
 
@@ -397,11 +359,6 @@ ACF.RegisterControllerLink("acf_baseplate", {
 	OnUnlinked = function(Controller, Target)
 		if IsValid(Target.Pod) and not Controller.Seat then Controller:Unlink(Target.Pod) end
 	end,
-})
-
-ACF.RegisterControllerLink("prop_physics", {
-	Field = "SteerPlates",
-	Single = false,
 })
 
 return Init
