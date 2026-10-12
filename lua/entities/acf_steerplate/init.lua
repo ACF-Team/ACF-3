@@ -20,7 +20,7 @@ local MaxSearch   = 4096 -- Most entities the connectivity check will walk throu
 -- steered, and stored relative to the plate so rotated pastes rebuild it the same way.
 -- Verified in game: freeing a swing axis (Y or Z) instead, or using limits of exactly 0, makes some wheel models
 -- drift several degrees off the steer angle or blow up. The wheel must also be the reference object.
-local SocketTolerance = 0.001 -- Degrees, limits of exactly 0 are degenerate
+local SocketTolerance = 0.01 -- Degrees, limits of exactly 0 are degenerate
 
 --- Returns the steer socket frame for a baseplate and steer angle, X is the axis the wheels spin around
 function ACF.GetSteerSocketFrame(Baseplate, Steer)
