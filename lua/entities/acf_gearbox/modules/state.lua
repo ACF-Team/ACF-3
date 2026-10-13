@@ -7,6 +7,7 @@ local Clamp       	 = math.Clamp
 local abs         	 = math.abs
 local min         	 = math.min
 local max         	 = math.max
+local deg            = math.deg
 
 local ENTITY         = FindMetaTable("Entity")
 local VECTOR         = FindMetaTable("Vector")
@@ -15,7 +16,7 @@ local PHYSOBJ        = FindMetaTable("PhysObj")
 local IsEntityValid  = ACF.Optimizations.IsEntityValid
 local IsPhysObjValid = ACF.Optimizations.IsPhysObjValid
 
-local ENT_ApplyBrakes
+local BrakeDelta     = Vector()
 
 -- Get the chassis' angular velocity 
 local function GetChassisAngularVelocity(Entity)
@@ -56,110 +57,54 @@ local function CalcWheel(Entity, Link, Wheel, ChassisAngVel)
 	return RelAngVel * GearRatio / -6
 end
 
-do -- Inputs -------------------------------------------
-	local function SetCanApplyBrakes(Gearbox)
-		local CanApply = Gearbox.LBrake ~= 0 or Gearbox.RBrake ~= 0
+local function BrakeWheel(Link, Wheel, BrakeTq, MaxBrakeTq, DeltaTime, ChassisAV)
+	if BrakeTq <= 0 then Link.IsBraking = false ; return end
 
-		if CanApply ~= Gearbox.Braking then
-			Gearbox.Braking = CanApply
+	local WheelPhys = ENTITY.GetPhysicsObject(Wheel)
+	if not PHYSOBJ.IsMotionEnabled(WheelPhys) then return end -- Skipping entirely if its frozen
 
-			ENT_ApplyBrakes(Gearbox)
-		end
+	-- Don't exceed the gearbox's brake capacity
+	BrakeTq = min(BrakeTq, MaxBrakeTq)
+
+	-- Get the angular velocity of the wheel relative to the chassis or ancestor
+	local WheelAngVel  = PHYSOBJ.GetAngleVelocity(WheelPhys)
+	local WheelVelDiff = PHYSOBJ.LocalToWorldVector(WheelPhys, WheelAngVel)
+	VECTOR.Sub(WheelVelDiff, ChassisAV)
+
+	-- Get the angular velocity relative to the drive axis
+	local AxisW    = PHYSOBJ.LocalToWorldVector(WheelPhys, Link.Axis)
+	local RelOmega = VECTOR.Dot(WheelVelDiff, AxisW)
+	local AbsOmega = abs(RelOmega)
+
+	Link.LastVel = Link.Vel
+
+	-- Dead zone: stop braking when essentially stationary to prevent oscillation
+	local BRAKE_DEADZONE = 0.015
+	if abs(RelOmega) < BRAKE_DEADZONE * 6 then -- RPM equivalent * 6 = deg/s
+		Link.IsBraking = false
+		return
 	end
 
-	ACF.AddInputAction("acf_gearbox", "Gear", function(Entity, Value)
-		if Entity.Automatic then
-			Entity:ChangeDrive(Value)
-		else
-			Entity:ChangeGear(Value)
-		end
-	end)
+	-- Convert Torque -> angular impulse
+	local Impulse = min(deg(BrakeTq) * DeltaTime, 500000)
 
-	ACF.AddInputAction("acf_gearbox", "Gear Up", function(Entity, Value)
-		if not tobool(Value) then return end
+	-- Convert angular impulse -> spin change (deg/s) using the wheel's inertia along its drive axis
+	local Axis    = Link.Axis
+	local Inertia = PHYSOBJ.GetInertia(WheelPhys)
+	local I = max(Inertia.x * Axis.x * Axis.x + Inertia.y * Axis.y * Axis.y + Inertia.z * Axis.z * Axis.z, 0.001)
 
-		if Entity.Automatic then
-			Entity:ChangeDrive(Entity.Drive + 1)
-		else
-			Entity:ChangeGear(Entity.Gear + 1)
-		end
-	end)
+	-- Remove the spin the wheel actually has to stop it and avoid reversing it
+	local Remove = min(Impulse / I, AbsOmega)
+	if RelOmega > 0 then Remove = -Remove end
 
-	ACF.AddInputAction("acf_gearbox", "Gear Down", function(Entity, Value)
-		if not tobool(Value) then return end
+	-- Finally, braking at last
+	BrakeDelta.x = Axis.x * Remove
+	BrakeDelta.y = Axis.y * Remove
+	BrakeDelta.z = Axis.z * Remove
+	PHYSOBJ.AddAngleVelocity(WheelPhys, BrakeDelta)
 
-		if Entity.Automatic then
-			Entity:ChangeDrive(Entity.Drive - 1)
-		else
-			Entity:ChangeGear(Entity.Gear - 1)
-		end
-	end)
-
-	ACF.AddInputAction("acf_gearbox", "Clutch", function(Entity, Value)
-		Entity.LClutch = Clamp(1 - Value, 0, 1)
-		Entity.RClutch = Clamp(1 - Value, 0, 1)
-	end)
-
-	ACF.AddInputAction("acf_gearbox", "Left Clutch", function(Entity, Value)
-		if not Entity.DualClutch then return end
-
-		Entity.LClutch = Clamp(1 - Value, 0, 1)
-	end)
-
-	ACF.AddInputAction("acf_gearbox", "Right Clutch", function(Entity, Value)
-		if not Entity.DualClutch then return end
-
-		Entity.RClutch = Clamp(1 - Value, 0, 1)
-	end)
-
-	ACF.AddInputAction("acf_gearbox", "Brake", function(Entity, Value)
-		Entity.LBrake = Clamp(Value, 0, 10000)
-		Entity.RBrake = Clamp(Value, 0, 10000)
-
-		SetCanApplyBrakes(Entity)
-	end)
-
-	ACF.AddInputAction("acf_gearbox", "Left Brake", function(Entity, Value)
-		if not Entity.DualClutch then return end
-
-		Entity.LBrake = Clamp(Value, 0, 10000)
-
-		SetCanApplyBrakes(Entity)
-	end)
-
-	ACF.AddInputAction("acf_gearbox", "Right Brake", function(Entity, Value)
-		if not Entity.DualClutch then return end
-
-		Entity.RBrake = Clamp(Value, 0, 10000)
-
-		SetCanApplyBrakes(Entity)
-	end)
-
-	ACF.AddInputAction("acf_gearbox", "CVT Ratio", function(Entity, Value)
-		if not Entity.CVT then return end
-
-		if Entity.GearboxLegacyRatio and Value ~= 0 then Value = 1 / Value end
-		Entity.CVTRatio = Value ~= 0 and Clamp(Value, ACF.MinCVTRatio, ACF.MaxCVTRatio) or Value
-	end)
-
-	ACF.AddInputAction("acf_gearbox", "Steer Rate", function(Entity, Value)
-		if not Entity.DoubleDiff then return end
-
-		Entity.SteerRate = Clamp(Value, -1, 1)
-	end)
-
-	ACF.AddInputAction("acf_gearbox", "Hold Gear", function(Entity, Value)
-		if not Entity.Automatic then return end
-
-		Entity.Hold = tobool(Value)
-	end)
-
-	ACF.AddInputAction("acf_gearbox", "Shift Speed Scale", function(Entity, Value)
-		if not Entity.Automatic then return end
-
-		Entity.ShiftScale = Clamp(Value, 0.1, 1.5)
-	end)
-end ----------------------------------------------------
+	Link.IsBraking = true
+end
 
 do -- Gear Shifting ------------------------------------
 	local Sounds = Utilities.Sounds
@@ -522,34 +467,7 @@ do -- Movement -----------------------------------------
 end ----------------------------------------------------
 
 do -- Braking ------------------------------------------
-	local function BrakeWheel(Link, Wheel, Brake)
-		local Phys      = ENTITY.GetPhysicsObject(Wheel)
-		local AntiSpazz = 1
-
-		if not PHYSOBJ.IsMotionEnabled(Phys) then return end -- skipping entirely if its frozen
-
-		if Brake > 100 then
-			local Overshot = abs(Link.LastVel - Link.Vel) > abs(Link.LastVel) -- Overshot the brakes last tick?
-			local Rate     = Overshot and 0.2 or 0.002 -- If we overshot, cut back agressively, if we didn't, add more brakes slowly
-
-			Link.AntiSpazz = (1 - Rate) * Link.AntiSpazz + (Overshot and 0 or Rate) -- Low pass filter on the antispazz
-
-			AntiSpazz = min(Link.AntiSpazz * 10000 / Brake, 1) -- Anti-spazz relative to brake power
-		end
-
-		Link.LastVel = Link.Vel
-
-		-- creates negative copy, then performs in-place multiplication to not create as much garbage
-		local AngleVelocity = -Link.Axis
-		VECTOR.Mul(AngleVelocity, Link.Vel)
-		VECTOR.Mul(AngleVelocity, AntiSpazz)
-		VECTOR.Mul(AngleVelocity, Brake)
-		VECTOR.Mul(AngleVelocity, 0.01)
-
-		PHYSOBJ.AddAngleVelocity(Phys, AngleVelocity)
-	end
-
-	function ENT_ApplyBrakes(self) -- This is just for brakes
+	function ENT:ApplyBrakes() -- This is just for brakes
 		local SelfTbl = ENTITY.GetTable(self)
 
 		if SelfTbl.Disabled then return end -- Illegal brakes man
@@ -560,28 +478,152 @@ do -- Braking ------------------------------------------
 		local BoxPhys = ENTITY.GetPhysicsObject(ENTITY.GetAncestor(self))
 		if not IsPhysObjValid(BoxPhys) then return end -- Fixes an issue I had where deleting a contraption while driving it threw an error
 
-		local SelfWorld = PHYSOBJ.LocalToWorldVector(BoxPhys, PHYSOBJ.GetAngleVelocity(BoxPhys))
-		local DeltaTime = Clock.DeltaTime
+		local DeltaTime  = Clock.DeltaTime
+		local Loss       = SelfTbl.Loss or 1
+		local LBrake     = SelfTbl.LBrake
+		local RBrake     = SelfTbl.RBrake
+		local MaxBrakeTq = 500000 -- SelfTbl.MaxTorque * 2 -- Twice as strong as the torque rating of the gearbox
+		local ChassisAV  = GetChassisAngularVelocity(self)
+		SelfTbl.Braking  = false
 
+		-- Calculate brake power for every wheel linked to our gearbox
 		for Wheel, Link in pairs(SelfTbl.Wheels) do
-			local Brake = Link.Side == 0 and SelfTbl.LBrake or SelfTbl.RBrake
+			if not Link.IsBraking then
+				local Brake   = Link.Side == 0 and LBrake or RBrake
+				local BrakeTq = Brake * Loss -- Requested brake torque
 
-			if Brake > 0 then -- regular ol braking
-				Link.IsBraking = true
-				CalcWheel(self, Link, Wheel, SelfWorld) -- Updating the link velocity
-				BrakeWheel(Link, Wheel, Brake, DeltaTime)
-			else
-				Link.IsBraking = false
+				CalcWheel(self, Link, Wheel, ChassisAV)  -- Updating the link velocity
+				BrakeWheel(Link, Wheel, BrakeTq, MaxBrakeTq, DeltaTime, ChassisAV)
+
+				if Link.IsBraking then SelfTbl.Braking = true end
 			end
+			-- Reset so its not accidentally stuck if we stop pressing to brake. 
+			Link.IsBraking = false
 		end
 
 		SelfTbl.LastBrake = Clock.CurTime
 
+		-- Rinse and repeat as long as we're still pressing to brake
 		timer.Simple(DeltaTime, function()
 			if not IsEntityValid(self) then return end
 
-			ENT_ApplyBrakes(self)
+			self:ApplyBrakes()
 		end)
 	end
-	ENT.ApplyBrakes = ENT_ApplyBrakes
+
+	ENT.ApplyBrakes = ENT:ApplyBrakes()
+end ----------------------------------------------------
+
+do -- Inputs -------------------------------------------
+	local function ToBrakeTorque(Value)
+		Value = tonumber(Value)
+		if not Value or Value ~= Value then return 0 end
+		return Clamp(Value, 0, 500000)
+	end
+
+	local function SetCanApplyBrakes(Gearbox)
+		local CanApply = Gearbox.LBrake ~= 0 or Gearbox.RBrake ~= 0
+
+		if CanApply ~= Gearbox.Braking then
+			Gearbox.Braking = CanApply
+
+			-- ENT_ApplyBrakes(Gearbox)
+			Gearbox:ApplyBrakes()
+		end
+	end
+
+	ACF.AddInputAction("acf_gearbox", "Gear", function(Entity, Value)
+		if Entity.Automatic then
+			Entity:ChangeDrive(Value)
+		else
+			Entity:ChangeGear(Value)
+		end
+	end)
+
+	ACF.AddInputAction("acf_gearbox", "Gear Up", function(Entity, Value)
+		if not tobool(Value) then return end
+
+		if Entity.Automatic then
+			Entity:ChangeDrive(Entity.Drive + 1)
+		else
+			Entity:ChangeGear(Entity.Gear + 1)
+		end
+	end)
+
+	ACF.AddInputAction("acf_gearbox", "Gear Down", function(Entity, Value)
+		if not tobool(Value) then return end
+
+		if Entity.Automatic then
+			Entity:ChangeDrive(Entity.Drive - 1)
+		else
+			Entity:ChangeGear(Entity.Gear - 1)
+		end
+	end)
+
+	ACF.AddInputAction("acf_gearbox", "Clutch", function(Entity, Value)
+		Entity.LClutch = Clamp(1 - Value, 0, 1)
+		Entity.RClutch = Clamp(1 - Value, 0, 1)
+	end)
+
+	ACF.AddInputAction("acf_gearbox", "Left Clutch", function(Entity, Value)
+		if not Entity.DualClutch then return end
+
+		Entity.LClutch = Clamp(1 - Value, 0, 1)
+	end)
+
+	ACF.AddInputAction("acf_gearbox", "Right Clutch", function(Entity, Value)
+		if not Entity.DualClutch then return end
+
+		Entity.RClutch = Clamp(1 - Value, 0, 1)
+	end)
+
+	ACF.AddInputAction("acf_gearbox", "Brake", function(Entity, Value)
+		local Torque = ToBrakeTorque(Value)
+
+		Entity.LBrake = Torque
+		Entity.RBrake = Torque
+
+		SetCanApplyBrakes(Entity)
+	end)
+
+	ACF.AddInputAction("acf_gearbox", "Left Brake", function(Entity, Value)
+		if not Entity.DualClutch then return end
+
+		Entity.LBrake = ToBrakeTorque(Value)
+
+		SetCanApplyBrakes(Entity)
+	end)
+
+	ACF.AddInputAction("acf_gearbox", "Right Brake", function(Entity, Value)
+		if not Entity.DualClutch then return end
+
+		Entity.RBrake = ToBrakeTorque(Value)
+
+		SetCanApplyBrakes(Entity)
+	end)
+
+	ACF.AddInputAction("acf_gearbox", "CVT Ratio", function(Entity, Value)
+		if not Entity.CVT then return end
+
+		if Entity.GearboxLegacyRatio and Value ~= 0 then Value = 1 / Value end
+		Entity.CVTRatio = Value ~= 0 and Clamp(Value, ACF.MinCVTRatio, ACF.MaxCVTRatio) or Value
+	end)
+
+	ACF.AddInputAction("acf_gearbox", "Steer Rate", function(Entity, Value)
+		if not Entity.DoubleDiff then return end
+
+		Entity.SteerRate = Clamp(Value, -1, 1)
+	end)
+
+	ACF.AddInputAction("acf_gearbox", "Hold Gear", function(Entity, Value)
+		if not Entity.Automatic then return end
+
+		Entity.Hold = tobool(Value)
+	end)
+
+	ACF.AddInputAction("acf_gearbox", "Shift Speed Scale", function(Entity, Value)
+		if not Entity.Automatic then return end
+
+		Entity.ShiftScale = Clamp(Value, 0.1, 1.5)
+	end)
 end ----------------------------------------------------
