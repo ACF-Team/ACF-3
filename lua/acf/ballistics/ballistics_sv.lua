@@ -6,6 +6,7 @@ local Clock       = ACF.Utilities.Clock
 local Effects     = ACF.Utilities.Effects
 local EventViewer = ACF.EventViewer
 local GCmToKgIn    = ACF.gCmToKgIn
+local MaxPenetrations = ACF.MaxPenetrations
 
 Ballistics.Bullets         = Ballistics.Bullets or {}
 Ballistics.UnusedIndexes   = Ballistics.UnusedIndexes or {}
@@ -336,8 +337,6 @@ do -- Obstacle resolution --------------------------
 	-- this only to find what they run into next, so a projectile here is anything carrying Pos, TraceTo,
 	-- Flight and Filter.
 
-	local MaxPenetrations = 50 -- Convexes a projectile can cross in one pass before the rest of the line is left for later
-
 	-- Freezes the ray at Trace.HitPos and builds the ordered convex stack the projectile will walk.
 	-- Returns false when nothing on the line is left to hit, leaving it in flight mode.
 	function Ballistics.BeginPenetration(Projectile, Trace)
@@ -421,9 +420,15 @@ do -- Obstacle resolution --------------------------
 		-- trace reach the world, players and anything else meshless sitting behind them.
 		local Filter = Projectile.Filter
 
+		local Overflow = #Stack >= MaxPenetrations -- Layer spam hitting the cap deletes everything it passed through
+
 		for _, Spent in ipairs(Stack) do
 			if not table.HasValue(Filter, Spent.Entity) then
 				Filter[#Filter + 1] = Spent.Entity
+			end
+
+			if Overflow and IsValid(Spent.Entity) then
+				Spent.Entity:Remove()
 			end
 		end
 
