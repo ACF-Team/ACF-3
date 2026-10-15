@@ -260,8 +260,25 @@ function Ballistics.FilterConvex(Bullet, Entity, ConvexID)
 	EntFilter[ConvexID] = true
 end
 
+-- Non-ACF entities spawned or moved by chips are ignored for a while, ACF ones are never ghosted
+function ACF.IsRecentlyMutated(Entity)
+	if Entity.IsACFEntity then return false end
+
+	local Contraption = Entity:CFW_GetContraption()
+	if Contraption and Contraption:ACF_IsACFContraption() then return false end
+
+	local Now, Time = CurTime(), ACF.MutationGhostTime
+	local EntLast   = Entity.ACF_LastMutated
+	if EntLast and Now - EntLast < Time then return true end
+
+	local ContLast = Contraption and Contraption.ACF_LastMutated
+
+	return ContLast ~= nil and Now - ContLast < Time
+end
+
 function Ballistics.TestFilter(Entity, Bullet)
 	if not IsValid(Entity) then return true end
+	if ACF.IsRecentlyMutated(Entity) then return false end
 
 	if GlobalFilter[Entity:GetClass()] then return false end
 

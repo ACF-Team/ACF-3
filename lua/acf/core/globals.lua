@@ -189,6 +189,8 @@ do -- ACF global vars
 	ACF.DefineSetting("KillLogQueryCooldown", 10,    "Kill log query cooldown has been set to %s seconds.", ACF.FloatDataCallback(0, 120, 0))
 
 	ACF.IllegalDisableTime   = 30 -- Time in seconds for an entity to be disabled when it fails ACF.IsLegal
+	ACF.MutationGhostTime    = 30 -- Time in seconds that a chip-mutated non-ACF entity is ignored by ballistics and damage
+	ACF.MaxPenetrations      = 50 -- Convexes a bullet can cross in one pass, hitting it deletes every prop it crossed
 	ACF.Volume               = 1 -- Global volume for ACF sounds
 	ACF.MobilityLinkDistance = 650 -- Maximum distance, in inches, at which mobility-related components will remain linked with each other
 	ACF.LinkDistance         = 650 -- Maximum distance, in inches, at which components will remain linked with each other

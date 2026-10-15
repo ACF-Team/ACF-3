@@ -272,6 +272,13 @@ local function CalcFlight(Missile)
 	TraceData.filter = Missile.Filter
 
 	local Result = ACF.trace(TraceData)
+
+	-- Skip entities ballistics ignores, so ghosted props do not stop missiles
+	while Result.Hit and not Result.HitWorld and not Ballistics.TestFilter(Result.Entity, Missile) do
+		Missile.Filter[#Missile.Filter + 1] = Result.Entity
+		Result = ACF.trace(TraceData)
+	end
+
 	local Ghosted = Time < Missile.GhostPeriod
 	local GhostHit = Ghosted and Result.HitWorld
 	local HitSky   = Result.HitSky

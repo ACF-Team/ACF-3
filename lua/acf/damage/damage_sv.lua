@@ -338,6 +338,7 @@ function Damage.dealDamage(Entity, DmgResult, DmgInfo)
 	local HitRes = DmgResult:GetBlank()
 
 	if not Type then return HitRes end
+	if ACF.IsRecentlyMutated(Entity) then return HitRes end
 
 	local HookResult = hook.Run("ACF_PreDamageEntity", Entity, DmgResult, DmgInfo)
 
