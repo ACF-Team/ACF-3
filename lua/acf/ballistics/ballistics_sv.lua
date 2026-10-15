@@ -298,7 +298,7 @@ local function GatherMeshIntersections(Bullet, Start, Direction)
 		end
 
 		local EntConvexFilter = Bullet.ConvexFilter and Bullet.ConvexFilter[Ent]
-		local Hits            = ACF.RayIntersectMesh(Ent, Start, Direction, false, nil, EntConvexFilter, MaxDist)
+		local Hits            = ACF.RayIntersectMesh(Ent, Start, Direction, false, EntConvexFilter, MaxDist)
 
 		for _, Hit in ipairs(Hits) do
 			Intersections[#Intersections + 1] = Hit
