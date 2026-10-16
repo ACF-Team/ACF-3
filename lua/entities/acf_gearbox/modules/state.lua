@@ -147,6 +147,8 @@ do -- Gear Shifting ------------------------------------
 end ----------------------------------------------------
 
 do -- Movement -----------------------------------------
+	local Tick = Clock.DeltaTime
+
 	local function GetRotationalInertia(Link, Wheel)
 		local Phys = ENTITY.GetPhysicsObject(Wheel)
 		if not Phys then return end
@@ -223,9 +225,9 @@ do -- Movement -----------------------------------------
 		local RClutch = SelfTbl.RClutch
 		local ChassisAV = GetChassisAngularVelocity(self)
 		local GearRatio = SelfTbl.GearRatio
+		local RatioSquared = GearRatio ^ 2
 
 		if GearRatio == 0 then
-			SelfTbl.TotalRatio        = 0
 			SelfTbl.DownstreamInertia = 0
 			SelfTbl.Load              = 0
 			SelfTbl.MeasuredRPM       = 0
@@ -253,7 +255,6 @@ do -- Movement -----------------------------------------
 		local MeasuredRPMSum = 0
 		local MeasuredCount = 0
 		local DownstreamInertia = 0
-		local TotalRatioSum = 0
 		-- Per-side RPM tracking, future work for LSD/locked diffs. 
 		local LeftRPMSum, LeftCount = 0, 0
 		local RightRPMSum, RightCount = 0, 0
@@ -269,7 +270,6 @@ do -- Movement -----------------------------------------
 			MeasuredRPMSum    = MeasuredRPMSum + (EntTbl.MeasuredRPM or ScaledRPM) * GearRatio
 			MeasuredCount     = MeasuredCount + 1
 			DownstreamInertia = DownstreamInertia + (EntTbl.DownstreamInertia or 0)
-			TotalRatioSum     = TotalRatioSum + abs(GearRatio) * (EntTbl.TotalRatio or 1)
 		end
 
 		-- Wheels
@@ -302,12 +302,16 @@ do -- Movement -----------------------------------------
 			DownstreamInertia = DownstreamInertia + (EntTbl.DownstreamInertia or 0)
 		end
 
+		SelfTbl.OutputInertia = DownstreamInertia
+		SelfTbl.DownstreamInertia = DownstreamInertia / RatioSquared
+
 		SelfTbl.MeasuredRPM = MeasuredCount > 0 and (MeasuredRPMSum / MeasuredCount) or InputRPM
 		SelfTbl.LeftRPM  = LeftCount  > 0 and (LeftRPMSum  / LeftCount)  or SelfTbl.MeasuredRPM
 		SelfTbl.RightRPM = RightCount > 0 and (RightRPMSum / RightCount) or SelfTbl.MeasuredRPM
-		SelfTbl.DownstreamInertia = DownstreamInertia
-		SelfTbl.TotalRatio = abs(GearRatio) * max(TotalRatioSum, 1)
-		SelfTbl.Load = (LClutch + RClutch) * 0.5
+
+		local TargetLoad = SelfTbl.InGear and (LClutch + RClutch) * 0.5 or 0
+		local Load = SelfTbl.Load or 0
+		SelfTbl.Load = Load + Clamp(TargetLoad - Load, -1, Tick / (SelfTbl.SwitchTime or 0.15))
 
 		self:UpdateOverlay()
 
@@ -335,7 +339,7 @@ do -- Movement -----------------------------------------
 		-- Reflect through this stage's own ratio, same direction gearboxes already scale torque.
 		local StageTorque = ClampedTorque * GearRatio * Loss * Slop
 
-		local TotalInertia = SelfTbl.DownstreamInertia
+		local TotalInertia = SelfTbl.OutputInertia
 		if TotalInertia <= 0 then return end
 
 		local LClutch = SelfTbl.LClutch
@@ -384,7 +388,7 @@ do -- Movement -----------------------------------------
 
 			-- Check also that the gearbox is not braking
 			if SelfTbl.InGear and Clutch > 0 and (not Braking or not Link.IsBraking) then
-				local WheelInertia = Link.CachedInertia or GetRotationalInertia(Link, Wheel)
+				local WheelInertia = Link.CachedInertia or GetRotationalInertia(Link, Wheel) / (MassRatio * MassRatio)
 				local Share = WheelInertia / TotalInertia
 				local Multiplier = 1
 
@@ -415,7 +419,7 @@ do -- Movement -----------------------------------------
 		end
 
 		SelfTbl.BrakeTick = Clock.CurTime
-		self:ApplyBrakes()
+		self:ApplyBrakes(SelfTbl)
 		self:UpdateOverlay()
 	end
 
@@ -467,8 +471,8 @@ do -- Movement -----------------------------------------
 end ----------------------------------------------------
 
 do -- Braking ------------------------------------------
-	function ENT:ApplyBrakes() -- This is just for brakes
-		local SelfTbl = ENTITY.GetTable(self)
+	function ENT:ApplyBrakes(SelfTbl) -- This is just for brakes
+		SelfTbl = SelfTbl or ENTITY.GetTable(self)
 
 		if SelfTbl.Disabled then return end -- Illegal brakes man
 		if not SelfTbl.Braking then return end -- Kills the whole thing if its not supposed to be running
@@ -507,11 +511,9 @@ do -- Braking ------------------------------------------
 		timer.Simple(DeltaTime, function()
 			if not IsEntityValid(self) then return end
 
-			self:ApplyBrakes()
+			self:ApplyBrakes(SelfTbl)
 		end)
 	end
-
-	ENT.ApplyBrakes = ENT:ApplyBrakes()
 end ----------------------------------------------------
 
 do -- Inputs -------------------------------------------
