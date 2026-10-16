@@ -8,6 +8,9 @@ end)
 
 hook.Add("cfw.contraption.entityAdded", "ACF_CFWFuelIndex", function(contraption, ent)
 	if ent:GetClass() ~= "acf_fueltank" then return end
+	if not contraption.Fuels then
+		contraption.Fuels = {}
+	end
 
 	contraption.Fuels[ent] = true
 end)
