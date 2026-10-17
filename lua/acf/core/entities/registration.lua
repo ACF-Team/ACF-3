@@ -203,6 +203,8 @@ local function PrepareSpawnFunctions(ENT, ClassName)
     end
 
     local function DoSpawn(Player, Pos, Angle, ClientData, _, IsMenuSpawn)
+        ClientData = ClientData or {}
+
         Serialization.SanitizeClassFields(ClassDef, ClientData)
 
         if IsValid(Player) then
