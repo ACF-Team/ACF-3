@@ -234,7 +234,7 @@ Classes.DefineClass("ACF.ArmorTypes.NERA", "ACF.ArmorTypes.BaseArmorType", funct
     CLASS.Density     = 2.58 -- 50% air, 30% RHA, 20% rubber by volume
     CLASS.CostMul     = 35 -- Between the raw material cost (28) and Heavy ERA (47.1), for the cassette assembly
     CLASS.HealthMul   = 0.25
-    CLASS.KineticMul  = 0.365 -- Just above the linear steel and rubber mix (0.72), the bulging plates disrupt rods a little
+    CLASS.KineticMul  = 0.42
     CLASS.ChemicalMul = 1-- Linear mix is 0.75, the bulge doubles it, still short of ERA's 2.0
     CLASS.SpallMul    = 0.7 -- Steel plates still spall, but the rubber layers soak up some
     CLASS.Color       = Color(110, 125, 140)
