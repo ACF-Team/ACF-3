@@ -40,17 +40,15 @@ Classes.DefineClass("ACF.Components.SupplyCrate", "ACF.Components.BaseComponent"
 		local SupplySize = Vector(Ctx:Get("SupplySizeX") or 24, Ctx:Get("SupplySizeY") or 24, Ctx:Get("SupplySizeZ") or 24)
 
 		local function UpdateSupplyText()
-			local Wall    = ACF.ContainerArmor * ACF.MmToInch
 			local Current = Ctx:Get("Shape")
 			local Shape   = (Current and Current.GetType) and Current:GetType() or GetType("ACF.ContainerShapes.Box")
 
-			local Volume, Area = Shape.ShapeCalculation(SupplySize, Wall)
+			local Volume = Shape.ShapeCalculation(SupplySize)
 
 			local Capacity = Volume * ACF.gCmToKgIn
-			local EmptyMass = Area * Wall * ACF.InchToCmCu * ACF.SteelDensity
 			local TransferRate = ACF.SupplyMassRate * (Volume / 1000)
 
-			CapacityLabel:SetText(string.format("Capacity : %s kg\nEmpty Mass : %s kg\nTransfer Rate : %s kg/s", math.Round(Capacity, 2), math.Round(EmptyMass, 2), math.Round(TransferRate, 2)))
+			CapacityLabel:SetText(string.format("Capacity : %s kg\nTransfer Rate : %s kg/s\nMass (full) : %s\nCost : %s", math.Round(Capacity, 2), math.Round(TransferRate, 2), ACF.FormatMass(Capacity), ACF.FormatCost(Capacity * 0.01)))
 
 			if Menu.ComponentPreview then
 				Menu.ComponentPreview:SetModelScale(SupplySize)

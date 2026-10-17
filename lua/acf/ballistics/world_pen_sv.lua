@@ -77,13 +77,20 @@ function Ballistics.DigTrace(From, To, Filter)
     end
 end
 
-function Ballistics.PenetrateMapEntity(Bullet, Trace)
+-- Shared penetration budget setup: density-derived RHA-equivalent thickness this bullet can still punch through.
+function Ballistics.GetPenetrationSetup(Bullet, Trace)
     local Surface = util.GetSurfaceData(Trace.SurfaceProps)
     local Density = ((Surface and Surface.density * 0.5 or 500) * math.Rand(0.9, 1.1)) ^ 0.9 / 10000
     local MaxPen  = Bullet:GetPenetration() -- Base RHA penetration of the projectile
     local RHAe    = math.max(MaxPen / Density, 1) -- RHA equivalent thickness of the target material
     local Enter   = Trace.HitPos -- Impact point
     local Fwd     = Bullet.Flight:GetNormalized()
+
+    return Density, MaxPen, RHAe, Enter, Fwd
+end
+
+function Ballistics.PenetrateMapEntity(Bullet, Trace)
+    local Density, MaxPen, RHAe, Enter, Fwd = Ballistics.GetPenetrationSetup(Bullet, Trace)
 
     local PassThrough = util.TraceLine({
         start  = Enter,
@@ -128,12 +135,7 @@ function Ballistics.PenetrateMapEntity(Bullet, Trace)
 end
 
 function Ballistics.PenetrateGround(Bullet, Trace)
-    local Surface = util.GetSurfaceData(Trace.SurfaceProps)
-    local Density = ((Surface and Surface.density * 0.5 or 500) * math.Rand(0.9, 1.1)) ^ 0.9 / 10000
-    local MaxPen  = Bullet:GetPenetration() -- Base RHA penetration of the projectile
-    local RHAe    = math.max(MaxPen / Density, 1) -- RHA equivalent thickness of the target material
-    local Enter   = Trace.HitPos -- Impact point
-    local Fwd     = Bullet.Flight:GetNormalized()
+    local Density, MaxPen, RHAe, Enter, Fwd = Ballistics.GetPenetrationSetup(Bullet, Trace)
 
     local Penetrated, Exit = Ballistics.DigTrace(Enter + Fwd, Enter + Fwd * RHAe / ACF.InchToMm)
 

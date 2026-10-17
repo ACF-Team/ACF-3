@@ -2,15 +2,17 @@ local ACF       = ACF
 local Classes 	= ACF.Classes
 Classes.DefineClass("ACF.Missiles.Guidance.AntiMissile", "ACF.Missiles.Guidance.AntiRadiation", function(CLASS, BASE)
 	CLASS.Name = "Anti-missile"
+	-- Shared so the ammo menu can price missile rounds clientside.
+	function CLASS:GetCost()
+		return 3
+	end
+
 	if CLIENT then
 		CLASS.Description = "This guidance package uses a radar to detect missiles and guides the munition towards the most centered one it can find."
 	else
 		local Countermeasures = ACF.Countermeasures
 		CLASS.RadarType = "AM-Radar"
 
-		function CLASS:GetCost()
-			return 1
-		end
 
 		function CLASS:GetRadar()
 			if not IsValid(self.Source) then return end

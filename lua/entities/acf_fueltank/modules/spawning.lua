@@ -2,6 +2,7 @@ local ACF         = ACF
 local Classes     = ACF.Classes
 local WireLib     = WireLib
 local ActiveTanks = ACF.FuelTanks
+local Fuel        = ACF.Mobility.Fuel
 
 local TANK_MATERIAL = "models/props_canal/metalcrate001d"
 
@@ -57,21 +58,21 @@ do -- Updating
 		self:SetMaterial(TANK_MATERIAL)
 
 		local FuelID = FuelType.ID
-		-- Publish the fuel type FQN so engine links (keyed by FQN, see acf_engine) resolve.
+		-- Publish the fuel type FQN so engine fuel compatibility checks (keyed by FQN) resolve.
 		self.FuelType    = Classes.GetTypeName(FuelType:GetType())
 		self.FuelDensity = FuelType.Density
+		self.ConvexMaterial = FuelType.ArmorType or "RHA" -- Convex armor type defaults to this fuel's material
 		self.IsExplosive = FuelType.IsExplosive
 		self.IsElectric  = FuelType.IsElectric
-		self.NoLinks     = false
+		self.FuelPriority = self:ACF_GetUserVar("FuelPriority")
 		self.EntType     = "Fuel Tank"
 		self.Name        = FuelID .. " Tank"
 		self.ShortName   = FuelID
 		self.WireAmountName = "Fuel"
 
-		local _, Capacity, EmptyMass = self:CalcVolumeAndCapacity(Size)
+		local _, Capacity = self:CalcVolumeAndCapacity(Size)
 
-		self.Capacity  = Capacity -- Internal volume available for fuel in liters
-		self.EmptyMass = EmptyMass
+		self.Capacity = Capacity -- Internal volume available for fuel in liters
 
 		if FuelType.IsElectric then
 			self.Name     = "Electric Battery"
@@ -91,14 +92,12 @@ do -- Updating
 		WireLib.TriggerOutput(self, "Fuel", self.Amount)
 		WireLib.TriggerOutput(self, "Capacity", self.Capacity)
 
-		-- Unlink engines that can no longer use this fuel type / model.
-		if self.Engines and next(self.Engines) then
-			for Engine in pairs(self.Engines) do
-				if self.NoLinks or not Engine.FuelTypes[self.FuelType] then
-					self:Unlink(Engine)
-				end
-			end
-		end
+		-- Fuel type or priority may have changed (no-op on a fresh spawn, which isn't parented yet)
+		if self.ACF_FuelParent then Fuel.Join(self) end
+	end
+
+	function ENT:CFW_OnParentedTo()
+		Fuel.Join(self)
 	end
 end
 
@@ -109,25 +108,39 @@ ACF.AddInputAction("acf_fueltank", "Active", function(Entity, Value)
 	Entity.Active = tobool(Value)
 
 	WireLib.TriggerOutput(Entity, "Activated", Entity.Active and 1 or 0)
+
+	if Entity.Active then Fuel.Notify(Entity) end
 end)
+
+function ENT:SetAmount(Amount)
+	local WasEmpty = (self.Amount or 0) <= 0
+
+	self.BaseClass.SetAmount(self, Amount)
+
+	if WasEmpty and self.Amount > 0 then Fuel.Notify(self) end
+end
+
+function ENT:Enable()
+	self.BaseClass.Enable(self)
+
+	Fuel.Notify(self)
+end
 
 -- Remove-only teardown. Captured by AutoRegisterV2 as OrigOnRemove; the generated OnRemove still
 -- runs ACF_OnEntityLast + WireLib cleanup around this.
 function ENT:OnRemove(IsFullUpdate)
 	if IsFullUpdate then return end
 
-	if self.Engines then
-		for Engine in pairs(self.Engines) do
-			self:Unlink(Engine)
-		end
-	end
+	Fuel.Leave(self)
 
 	ActiveTanks[self] = nil
 end
 
 do -- Overlay text
 	function ENT:ACF_UpdateOverlayState(State)
-		if self:CanConsume() then
+		if self.ACF.Health == 0 then
+			State:AddError("Destroyed")
+		elseif self:CanConsume() then
 			State:AddSuccess("Active")
 		else
 			State:AddWarning("Idle")
@@ -141,6 +154,7 @@ do -- Overlay text
 		local FuelType = self:ACF_GetUserVar("FuelType")
 
 		State:AddKeyValue("Fuel Type", FuelType and FuelType.ID or self.FuelType)
+		State:AddNumber("Priority", self.FuelPriority)
 
 		if FuelType and FuelType.FuelTankOverlay then
 			FuelType.FuelTankOverlay(self.Amount, State)

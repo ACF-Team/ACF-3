@@ -27,7 +27,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.AT-3", "ACF.Missiles.AntiTankGu
 	CLASS.ExhaustPos	= Vector(-16)
 	CLASS.Racks			= { ["ACF.Racks.1xAT3RKS"] = true, ["ACF.Racks.1xAT3RK"] = true, ["ACF.Racks.1xRK_small"] = true, ["ACF.Racks.4xRK"] = true }
 	CLASS.Navigation	= "Chase"
-	CLASS.Guidances		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["Wire (MCLOS)"] = true, ["ACF.Missiles.Guidance.WireSACLOS"] = true }
+	CLASS.Guidances		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.WireMCLOS"] = true, ["ACF.Missiles.Guidance.WireSACLOS"] = true }
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true }
 	CLASS.SkinIndex		= { HEAT = 0, HE = 1 }
 	CLASS.Agility		= 0.0005
@@ -144,7 +144,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.AGM-114", "ACF.Missiles.AntiTan
 		ProjLength      	= 30,
 		PropLength      	= 56,
 		Thrust          	= 210000, -- in kg*in/s^2
-		FuelConsumption 	= 0.03, -- in g/s/f
+		FuelConsumption 	= 0.032, -- in g/s/f
 		StarterPercent  	= 0.12,
 		MaxAgilitySpeed 	= 40, -- in m/s
 		DragCoef        	= 0.005,
@@ -192,7 +192,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.Ataka", "ACF.Missiles.AntiTankG
 		Armor           	= 1,
 		ProjLength      	= 17.5,
 		PropLength      	= 68,
-		Thrust          	= 230000, -- in kg*in/s^2
+		Thrust          	= 210000, -- in kg*in/s^2
 		FuelConsumption 	= 0.03, -- in g/s/f
 		StarterPercent  	= 0.2,
 		MaxAgilitySpeed 	= 200, -- in m/s

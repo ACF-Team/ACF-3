@@ -15,11 +15,11 @@ ACF.Classes.DefineClass("ACF.Guns.GrenadeLauncher", "ACF.Guns.BaseScalableGun", 
 	CLASS.Spread      		= 0.28
 	CLASS.Cyclic      		= 250
 	CLASS.ScaleFactor 		= 0.96 -- Corrective factor to account for improperly scaled base models
-	CLASS.TransferMult 		= 20 -- Thermal energy transfer rate
 	CLASS.CyclicCeilMult 	= 2 -- How high above base cyclic the gun can be set to
 	CLASS.Round 			= {
 		MaxLength  = 10,
 		PropLength = 1,
+		CaseScale  = 1, -- Straight-walled, case diameter is roughly the projectile diameter
 	}
 	CLASS.Preview 			= {
 		FOV = 75,
@@ -29,20 +29,12 @@ ACF.Classes.DefineClass("ACF.Guns.GrenadeLauncher", "ACF.Guns.BaseScalableGun", 
 		Min  = 25,
 		Max  = 40,
 	}
-	CLASS.MagSize 			= {
-		Min = 80,
-		Max = 50,
-	}
-	CLASS.MagReload 		= {
-		Min = 7.5,
-		Max = 10,
-	}
 	CLASS.LimitConVar 		= {
 		Name = "_acf_grenadelauncher",
 		Amount = 4,
 		Text = "Maximum amount of ACF grenade launchers a player can create."
 	}
-	CLASS.CostScalar		= 0.5
+	CLASS.CostScalar		= 0.38
 end)
 
 ACF.SetCustomAttachment("models/launcher/40mmgl.mdl", "muzzle", Vector(19), Angle(0, 0, -180))

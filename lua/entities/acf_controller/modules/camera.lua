@@ -51,6 +51,7 @@ do
 		if self:GetDisableAIOCam() then return end
 		local CamAng = SelfTbl.CamAng or angle_zero
 		RecacheBindOutput(self, SelfTbl, "CamAng", CamAng)
+		RecacheBindOutput(self, SelfTbl, "CamIndex", SelfTbl.CamMode)
 
 		local CamDir = CamAng:Forward()
 		local CamOffset = SelfTbl.CamOffset or vector_origin

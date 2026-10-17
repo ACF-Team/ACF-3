@@ -24,9 +24,10 @@ Classes.DefineClass("ACF.Engines.BaseEngine", function(CLASS)
     function CLASS.__inherited(NewClass)
         if not NewClass.LimitConVar then
             NewClass.LimitConVar = {
-                Name   = "_acf_engine",
-                Amount = 16,
-                Text   = "Maximum amount of ACF engines a player can create."
+                Name          = "_acf_engine",
+                Amount        = 4,
+                LegacyDefault = 16,
+                Text          = "Maximum amount of ACF engines a player can create."
             }
         end
 

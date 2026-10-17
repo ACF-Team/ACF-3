@@ -252,6 +252,7 @@ local function Build(Menu, Contexts)
 	local Whitelist     = Base:AddLabel()
 	local Pose          = Base:AddLabel()
 	local Mass          = Base:AddLabel()
+	local Cost          = Base:AddLabel()
 	local Leans         = Base:AddLabel()
 	local GEfficiencies = Base:AddLabel()
 	local GDamages      = Base:AddLabel()
@@ -293,6 +294,7 @@ local function Build(Menu, Contexts)
 		Whitelist:SetText(language.GetPhrase("acf.menu.crew.links_to"):format(table.concat(wl, ", ")))
 
 		Mass:SetText(language.GetPhrase("acf.menu.crew.mass_text"):format(Data.Mass))
+		Cost:SetText(language.GetPhrase("acf.menu.crew.cost_text"):format(ACF.FormatCost(Data.Cost or 1)))
 
 		if not Data.LeanInfo then Leans:SetText("#acf.menu.crew.lean_no_info")
 		else Leans:SetText(language.GetPhrase("acf.menu.crew.lean_stats"):format(Data.LeanInfo.Min, Data.LeanInfo.Max)) end

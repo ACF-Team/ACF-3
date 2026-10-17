@@ -27,22 +27,24 @@ local function GetRackList(Data)
 	return Result
 end
 
-local BaseText    = "Caliber : %s\nMass : %s kg"
-local RackText    = BaseText .. "\nMunitions : %s%s\n"
+local BaseText    = "Caliber : %s\nMass : %s"
+local RackText    = BaseText .. "\nCost : %s\nMunitions : %s%s\n"
 local MissileText = BaseText .. "\nArming Delay : %ss%s%s"
 
 local function GetMissileText(Data)
 	local Seek = Data.SeekCone and ("\nSeek Cone : " .. Data.SeekCone * 2 .. " degrees") or ""
 	local View = Data.ViewCone and ("\nView Cone : " .. Data.ViewCone * 2 .. " degrees") or ""
 
-	return MissileText:format(Data.Caliber .. "mm", Data.Mass, Data.ArmDelay, Seek, View)
+	return MissileText:format(Data.Caliber .. "mm", ACF.FormatMass(Data.Mass or 10), Data.ArmDelay, Seek, View)
 end
 
 local function GetRackText(Data)
 	local Caliber = Data.Caliber and (Data.Caliber .. "mm") or "Any caliber"
 	local Protect = Data.ProtectMissile and "\n\nThis rack will protect its payload from getting destroyed." or ""
 
-	return RackText:format(Caliber, Data.Mass, Data.MagSize, Protect)
+	local Cost = Data.Cost or Data.MagSize * (Data.CostPerSlot or 1.5) -- Mirrors acf_rack's GetCost
+
+	return RackText:format(Caliber, ACF.FormatMass(Data.Mass or 0), ACF.FormatCost(Cost), Data.MagSize, Protect)
 end
 
 local function Build(Menu, Contexts)

@@ -18,6 +18,7 @@ AddCSLuaFile("modules_cl/camera.lua")
 AddCSLuaFile("modules_cl/hud.lua")
 
 AddCSLuaFile("modules_sh/helpers_sh.lua")
+AddCSLuaFile("modules_sh/binds_sh.lua")
 
 -- Localizations
 local ACF = ACF
@@ -33,10 +34,13 @@ util.AddNetworkString("ACF_Controller_Zoom")	-- Relay camera zooms
 util.AddNetworkString("ACF_Controller_Ammo")	-- Relay ammo counts
 util.AddNetworkString("ACF_Controller_Receivers")	-- Relay LWS/RWS data
 util.AddNetworkString("ACF_Controller_Radar")	-- Relay radar data
+util.AddNetworkString("ACF_Controller_Button")	-- Forward button presses and releases to the client, PlayerButtonDown/Up don't fire client side in singleplayer
+util.AddNetworkString("ACF_Controller_Action")	-- Receive rebound keyboard actions from the client
 
 local Clock = Utilities.Clock
 local Defaults = include("modules/defaults.lua")
 include("modules_sh/helpers_sh.lua")
+include("modules_sh/binds_sh.lua") -- Reads the helpers above, and must precede the modules that register bind handlers
 
 local ControllerLinkRegistry = {}
 function ACF.RegisterControllerLink(Class, Config)
@@ -62,12 +66,14 @@ ACF.ControllerKeyBindings = KEY_WIRE_BINDINGS
 
 local Inputs = {
 	"Filter (Filters out entities from the camera trace) [ARRAY]",
-	"FLIR (Enables/disables FLIR while in the baseplate seat)"
+	"FLIR (Enables/disables FLIR while in the baseplate seat)",
+	"ParkingBrake (Enables brakes and disables mobility when 1, releases brakes and re-enables mobility when 0)"
 }
 
 local ADDITIONAL_OUTPUTS = {
 	"HitPos (The position the driver is looking at) [VECTOR]",
 	"CamAng (The direction of the camera.) [ANGLE]",
+	"CamIndex (The currently active camera index)",
 	"IsTurretLocked (Whether the turret is locked or not.)",
 	"Active",
 	"Speed (Determined by selected unit)",
@@ -113,10 +119,11 @@ do
 	end
 
 	function ENT:ACF_PreSpawn(Player)
-		self.ACF       = {}
-		self.Driver    = nil
-		self.Active    = false
-		self.KeyStates = {}
+		self.ACF          = {}
+		self.Driver       = nil
+		self.Active       = false
+		self.KeyStates    = {}
+		self.ActionStates = {}
 
 		self.ACF.Model = "models/hunter/plates/plate025x025.mdl"
 		self:SetModel("models/hunter/plates/plate025x025.mdl")
@@ -185,6 +192,11 @@ do
 			if Value == nil or not isnumber(Value) then return end
 			Controller.UseWireFLIR = Value ~= 0
 			Controller:FLIR_OnChange(Value ~= 0)
+		end)
+
+		ACF.AddInputAction("acf_controller", "ParkingBrake", function(Controller, Value)
+			if Value == nil or not isnumber(Value) then return end
+			Controller:SetWireParkingBrake(Controller:GetTable(), Value ~= 0)
 		end)
 	end
 end
@@ -287,6 +299,7 @@ do
 		if iters % 7 == 0 then self:ProcessHUDs(SelfTbl) end
 
 		if iters % SelfTbl.RadarUpdateRate == 0 then self:ProcessRadars(SelfTbl) end
+		self:ProcessRadarSlaving(SelfTbl)
 
 		SelfTbl.iters = iters + 1
 		self:UpdateOverlay()
@@ -321,6 +334,12 @@ do
 		local Parent3 = IsValid(self:GetCam3Parent()) and self:GetCam3Parent():EntIndex() or 0
 		duplicator.StoreEntityModifier(self, "CamParents", {Parent1, Parent2, Parent3})
 
+		-- Handle manually linked weapon selection
+		local Gun1 = IsValid(self:GetGun1()) and self:GetGun1():EntIndex() or 0
+		local Gun2 = IsValid(self:GetGun2()) and self:GetGun2():EntIndex() or 0
+		local Gun3 = IsValid(self:GetGun3()) and self:GetGun3():EntIndex() or 0
+		duplicator.StoreEntityModifier(self, "Guns123", {Gun1, Gun2, Gun3})
+
 		-- AutoRegisterV2 wraps this as the original PreEntityCopy and handles the wire/base dupe info.
 	end
 
@@ -346,6 +365,14 @@ do
 			self:SetCam2Parent(CreatedEntities[EntMods.CamParents[2]])
 			self:SetCam3Parent(CreatedEntities[EntMods.CamParents[3]])
 			EntMods.CamParents = nil
+		end
+
+		-- Handle manually linked weapon selection
+		if EntMods.Guns123 then
+			self:SetGun1(CreatedEntities[EntMods.Guns123[1]])
+			self:SetGun2(CreatedEntities[EntMods.Guns123[2]])
+			self:SetGun3(CreatedEntities[EntMods.Guns123[3]])
+			EntMods.Guns123 = nil
 		end
 
 		-- AutoRegisterV2 wraps this as the original PostEntityPaste and handles the wire/base dupe info.
