@@ -165,7 +165,7 @@ do -- Spawn and Update functions -----------------------
 		Entity.ClassData    = Class
 		Entity.DefaultSound = Gearbox.Sound
 		Entity.SoundPath    = Entity.SoundPath or Gearbox.Sound
-		Entity.SwitchTime   = Gearbox.Switch
+		Entity.SwitchTime   = math.Clamp(Gearbox.Switch * Scale, 0.1, 1)
 		Entity.MaxTorque    = TorqueRating
 		Entity.MinGear      = Gearbox.Gears.Min
 		Entity.MaxGear      = MaxGear
