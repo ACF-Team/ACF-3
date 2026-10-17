@@ -152,6 +152,7 @@ do -- Spawn and Update functions
         self.LastThink         = 0
         self.MassRatio         = 1
         self.FuelUsage         = 0
+        self.InputThrottle     = 0
         self.Throttle          = 0
         self.IdleThrottle      = 0
         self.FlyRPM            = 0
