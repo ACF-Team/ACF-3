@@ -25,6 +25,7 @@ local BIND_COMBO = {
 }
 
 surface.CreateFont("ACF.ToolMenu.Key", { font = "Tahoma", size = 13, weight = 900 })
+surface.CreateFont("ACF.ToolMenu.Help", { font = "Roboto", size = 17, weight = 1000, extended = true })
 
 local IconCache = {}
 local function CacheIcon(Path)
@@ -96,7 +97,7 @@ function ACF.Menu.DrawInstructions(Instructions)
 
 				XO = XO + 8
 			elseif Piece.Type == IPTYPE_TEXT then
-				local TX = draw.TextShadow({ text = Phrase(Piece.Text), font = "GModToolHelp", pos = { XO - 4, YO }, color = color_white }, 1)
+				local TX = draw.TextShadow({ text = Phrase(Piece.Text), font = "ACF.ToolMenu.Help", pos = { XO - 4, YO }, color = color_white }, 1)
 				XO = XO + TX + 8
 			end
 		end
