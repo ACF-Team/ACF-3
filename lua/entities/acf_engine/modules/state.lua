@@ -263,6 +263,7 @@ function ENT:CalcRPM(SelfTbl)
 
 	-- Get the requirements for torque for the gearboxes (Max clutch rating minus any wheels currently spinning faster than the Flywheel)
 	local BoxesTbl = SelfTbl.Gearboxes
+	local MassRatio = SelfTbl.MassRatio
 
 	for Ent, _ in pairs(BoxesTbl) do
 		local EntTbl = ENTITY.GetTable(Ent)
@@ -274,7 +275,7 @@ function ENT:CalcRPM(SelfTbl)
 			GearboxLoad       = GearboxLoad + (EntTbl.Load or 0)
 			GearboxTotalRatio = GearboxTotalRatio + (EntTbl.TotalRatio or 0)
 			GearboxRPM        = GearboxRPM + (EntTbl.MeasuredRPM or FlyRPM)
-			GearboxInertia    = GearboxInertia + max(EntTbl.DownstreamInertia or 0, EntTbl.OutputInertia or 0)
+			GearboxInertia    = GearboxInertia + (EntTbl.DownstreamInertia or 0)
 		end
 	end
 
@@ -296,7 +297,6 @@ function ENT:CalcRPM(SelfTbl)
 	-- Lets accelerate the engine's flywheel based on that torque
 	FlyRPM = max(FlyRPM + EngineTorque / IncomingInertia, 0)
 
-	local MassRatio = SelfTbl.MassRatio
 	-- Net engine torque distributed to the rest of the gearboxes
 	local DriveTorque = EngineTorque - FeedbackTq
 
@@ -308,12 +308,15 @@ function ENT:CalcRPM(SelfTbl)
 			if not EntTbl.Disabled then
 				-- Split the torque fairly between the gearboxes who need it
 				local Share = (EntTbl.DownstreamInertia or 0) / max(GearboxInertia, 1e-6)
-				Link:TransferGearbox(Ent, DriveTorque * Share * (MassRatio ^ 0.6), DeltaTime, MassRatio, FlyRPM)
+				Link:TransferGearbox(Ent, DriveTorque * Share * (MassRatio ^ 0.6), DeltaTime, MassRatio, FlyRPM, CompressionBrakeTorque)
 			end
 		end
 	end
 
-	SelfTbl.FlyRPM = FlyRPM
+	-- This is the difference in RPM between the gearbox and the engine. Gives a sturdier coupling.
+	local SlipTorque = GearboxTotalRatio ~= 0 and (SlipDifference / GearboxTotalRatio / IncomingInertia) or 0
+
+	SelfTbl.FlyRPM = FlyRPM + SlipTorque
 	SelfTbl.LastThink = ClockTime
 	SelfTbl.LastGearboxLoad = GearboxLoad
 

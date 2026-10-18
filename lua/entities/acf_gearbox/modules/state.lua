@@ -225,12 +225,10 @@ do -- Movement -----------------------------------------
 		local RClutch = SelfTbl.RClutch
 		local ChassisAV = GetChassisAngularVelocity(self)
 		local GearRatio = SelfTbl.GearRatio
-		local RatioSquared = GearRatio * GearRatio
 
 		if GearRatio == 0 then
 			SelfTbl.TotalRatio        = 0
 			SelfTbl.DownstreamInertia = 0
-			SelfTbl.OutputInertia     = 0
 			SelfTbl.Load              = 0
 			SelfTbl.MeasuredRPM       = 0
 			SelfTbl.LeftRPM           = 0
@@ -306,7 +304,6 @@ do -- Movement -----------------------------------------
 			DownstreamInertia = DownstreamInertia + (EntTbl.DownstreamInertia or 0)
 		end
 
-		SelfTbl.OutputInertia = DownstreamInertia / RatioSquared -- Reflected inertia back to engines as 1/N^2.
 		SelfTbl.DownstreamInertia = DownstreamInertia -- Used for anything else.
 		SelfTbl.TotalRatio = max(TotalRatioSum, 1)
 		SelfTbl.MeasuredRPM = MeasuredCount > 0 and (MeasuredRPMSum / MeasuredCount) or InputRPM
@@ -322,7 +319,7 @@ do -- Movement -----------------------------------------
 		return SelfTbl.MeasuredRPM
 	end
 
-	function ENT:DistributeTorque(Torque, DeltaTime, MassRatio, FlyRPM)
+	function ENT:DistributeTorque(Torque, DeltaTime, MassRatio, FlyRPM, CompressionBrake)
 		local SelfTbl = ENTITY.GetTable(self)
 		if SelfTbl.Disabled or Torque == 0 then return end
 
@@ -333,15 +330,18 @@ do -- Movement -----------------------------------------
 		local Health = SelfTbl.ACF.Health
 		local MaxHP  = SelfTbl.ACF.MaxHealth
 		local Loss   = Clamp(((1 - 0.4) / 0.5) * ((Health / MaxHP) - 1) + 1, 0.4, 1) -- Internal torque loss from damage
+		local MaxTorque = SelfTbl.MaxTorque * ACF.TorqueMult
 
 		SelfTbl.Loss = Loss
 
 		-- Automatic torque-converter slip penalty
 		local Slop = SelfTbl.Automatic and 0.9 or 1.0
 		-- Capacity ceiling: this gearbox's own rated torque, a gearbox cannot transmit more than it's rated for, even if the engine sends more.
-		local ClampedTorque = Clamp(Torque, -SelfTbl.MaxTorque, SelfTbl.MaxTorque)
+		local ClampedTorque = Clamp(Torque, -MaxTorque, MaxTorque)
 		-- Reflect through this stage's own ratio, same direction gearboxes already scale torque.
 		local StageTorque = ClampedTorque * GearRatio * Loss * Slop
+
+		-- print(Torque, ClampedTorque, StageTorque)
 
 		local TotalInertia = SelfTbl.DownstreamInertia
 		if TotalInertia <= 0 then return end
@@ -369,7 +369,7 @@ do -- Movement -----------------------------------------
 				local EntTbl = ENTITY.GetTable(Ent)
 				local Share = (EntTbl.DownstreamInertia or 0) / TotalInertia
 
-				Link:TransferGearbox(Ent, StageTorque * Share * Clutch, DeltaTime, MassRatio, FlyRPM)
+				Link:TransferGearbox(Ent, StageTorque * Share * Clutch, DeltaTime, MassRatio, FlyRPM, CompressionBrake)
 			end
 		end
 
@@ -426,7 +426,7 @@ do -- Movement -----------------------------------------
 		self:UpdateOverlay()
 	end
 
-	function ENT:Act(Torque, DeltaTime, MassRatio, FlyRPM)
+	function ENT:Act(Torque, DeltaTime, MassRatio, FlyRPM, CompressionBrake)
 		local SelfTbl = ENTITY.GetTable(self)
 		if SelfTbl.Disabled then return end
 		if SelfTbl.ACF.Health <= 0 then return end -- Destroyed
@@ -441,7 +441,7 @@ do -- Movement -----------------------------------------
 
 		-- Single-engine fast path: distribute immediately, no deferred timer
 		if EngineCount + GearboxCount <= 1 then
-			self:DistributeTorque(Torque, DeltaTime, MassRatio, FlyRPM)
+			self:DistributeTorque(Torque, DeltaTime, MassRatio, FlyRPM, CompressionBrake)
 			return
 		end
 
@@ -451,6 +451,7 @@ do -- Movement -----------------------------------------
 		if SelfTbl.ActTick ~= Now then
 			SelfTbl.ActTick        = Now
 			SelfTbl.AccumTorque    = 0
+			SelfTbl.AccumBrakeTq   = 0
 			SelfTbl.ActDt          = DeltaTime
 			SelfTbl.ActMassRatio   = MassRatio
 			SelfTbl.ActFlyRPM      = FlyRPM
@@ -458,13 +459,14 @@ do -- Movement -----------------------------------------
 		end
 
 		SelfTbl.AccumTorque = SelfTbl.AccumTorque + Torque
+		SelfTbl.AccumBrakeTq = SelfTbl.AccumBrakeTq + CompressionBrake
 
 		if not SelfTbl.ActDistributed then
 			SelfTbl.ActDistributed = true
 			-- Deferred so all engines complete their Act calls before distribution
 			timer.Simple(0, function()
 				if IsEntityValid(self) then
-					self:DistributeTorque(SelfTbl.AccumTorque, SelfTbl.ActDt, SelfTbl.ActMassRatio, SelfTbl.ActFlyRPM)
+					self:DistributeTorque(SelfTbl.AccumTorque, SelfTbl.ActDt, SelfTbl.ActMassRatio, SelfTbl.ActFlyRPM, SelfTbl.AccumBrakeTq)
 				end
 			end)
 		end
