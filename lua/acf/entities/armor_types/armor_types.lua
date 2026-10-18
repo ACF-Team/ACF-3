@@ -25,8 +25,8 @@ Classes.DefineClass("ACF.ArmorTypes.Default", "ACF.ArmorTypes.BaseArmorType", fu
     CLASS.ShortName   = "Default"
     CLASS.Description = "Allows you to set a custom weight. Bad for armor."
     CLASS.Density     = 0.1
-    CLASS.CostMul     = 1.989
-    CLASS.HealthMul   = 0.0127551
+    CLASS.CostMul     = 5
+    CLASS.HealthMul   = 1e-4
     CLASS.KineticMul  = 1e-4
     CLASS.ChemicalMul = 1e-4
     CLASS.SpallMul    = 1e-4
@@ -40,7 +40,7 @@ Classes.DefineClass("ACF.ArmorTypes.Flesh", "ACF.ArmorTypes.BaseArmorType", func
     CLASS.Description = "Soft tissue, used to represent crew members. Lab-grown for your convenience."
     CLASS.Density     = 1.1 -- https://www.sciencedirect.com/topics/immunology-and-microbiology/body-density
     CLASS.CostMul     = 4.5
-    CLASS.HealthMul   = 0.01
+    CLASS.HealthMul   = 0.005
     CLASS.KineticMul  = 0.03
     CLASS.ChemicalMul = 0.03
     CLASS.SpallMul    = 0.2
@@ -55,7 +55,7 @@ Classes.DefineClass("ACF.ArmorTypes.Diesel", "ACF.ArmorTypes.BaseArmorType", fun
     CLASS.SuppressLoad = true
     CLASS.Density     = 0.745 -- lua/acf/entities/fuel_types/diesel.lua (0.745 kg/L)
     CLASS.CostMul     = 1.8
-    CLASS.HealthMul   = 0.00637755
+    CLASS.HealthMul   = 0.00318878
     CLASS.KineticMul  = 0.1
     CLASS.ChemicalMul = 0.3
     CLASS.SpallMul    = 0.1
@@ -70,7 +70,7 @@ Classes.DefineClass("ACF.ArmorTypes.Petrol", "ACF.ArmorTypes.BaseArmorType", fun
     CLASS.SuppressLoad = true
     CLASS.Density     = 0.832 -- lua/acf/entities/fuel_types/petrol.lua (0.832 kg/L)
     CLASS.CostMul     = 2.07
-    CLASS.HealthMul   = 0.00510204
+    CLASS.HealthMul   = 0.00255102
     CLASS.KineticMul  = 0.1
     CLASS.ChemicalMul = 0.1
     CLASS.SpallMul    = 0.1
@@ -85,7 +85,7 @@ Classes.DefineClass("ACF.ArmorTypes.LiIon", "ACF.ArmorTypes.BaseArmorType", func
     CLASS.SuppressLoad = true
     CLASS.Density     = 3.89 -- lua/acf/entities/fuel_types/electric.lua (3.89 kg/L)
     CLASS.CostMul     = 7.2
-    CLASS.HealthMul   = 0.00255102
+    CLASS.HealthMul   = 0.00127551
     CLASS.KineticMul  = 0.3
     CLASS.ChemicalMul = 0.3
     CLASS.SpallMul    = 0.5
@@ -98,7 +98,7 @@ Classes.DefineClass("ACF.ArmorTypes.Wing", "ACF.ArmorTypes.BaseArmorType", funct
     CLASS.Description = "For aircraft wings and similar hollow structures. Very light."
     CLASS.Density     = 1.08 -- https://en.wikipedia.org/wiki/Aluminium
     CLASS.CostMul     = 10.8
-    CLASS.HealthMul   = 0.110204
+    CLASS.HealthMul   = 0.055102
     CLASS.KineticMul  = 0.2
     CLASS.ChemicalMul = 0.24
     CLASS.SpallMul    = 0.2
@@ -113,7 +113,7 @@ Classes.DefineClass("ACF.ArmorTypes.Aluminum", "ACF.ArmorTypes.BaseArmorType", f
     CLASS.Description = "Lower resistance than RHA, but substantially lighter."
     CLASS.Density     = 2.7 -- https://en.wikipedia.org/wiki/Aluminium
     CLASS.CostMul     = 27
-    CLASS.HealthMul   = 0.5
+    CLASS.HealthMul   = 0.25
     CLASS.KineticMul  = 0.5
     CLASS.ChemicalMul = 0.3
     CLASS.SpallMul    = 0.5
@@ -128,7 +128,7 @@ Classes.DefineClass("ACF.ArmorTypes.RHA", "ACF.ArmorTypes.BaseArmorType", functi
     CLASS.Description = "Standard steel armor used mostly by WW2 and early cold war tanks."
     CLASS.Density     = 7.84 -- https://metalzenith.com/blogs/steel-properties/rha-steel-properties-and-key-applications-in-defense
     CLASS.CostMul     = 38.7 -- Reference: 0.005 points/kg
-    CLASS.HealthMul   = 2
+    CLASS.HealthMul   = 1
     CLASS.KineticMul  = 1.0
     CLASS.ChemicalMul = 1.0
     CLASS.SpallMul    = 1.0
@@ -143,7 +143,7 @@ Classes.DefineClass("ACF.ArmorTypes.HHRHA", "ACF.ArmorTypes.BaseArmorType", func
     CLASS.Description = "Higher resistance than RHA, but more expensive and less healthy."
     CLASS.Density     = 7.85 -- https://metalzenith.com/blogs/steel-properties/rha-steel-properties-and-key-applications-in-defense
     CLASS.CostMul     = 59.4
-    CLASS.HealthMul   = 0.265
+    CLASS.HealthMul   = 0.1325
     CLASS.KineticMul  = 1.25
     CLASS.ChemicalMul = 1.15
     CLASS.SpallMul    = 1.3
@@ -159,7 +159,7 @@ Classes.DefineClass("ACF.ArmorTypes.GunSteel", "ACF.ArmorTypes.BaseArmorType", f
     CLASS.SuppressLoad = true
     CLASS.Density     = 7.84 -- https://metalzenith.com/blogs/steel-properties/rha-steel-properties-and-key-applications-in-defense
     CLASS.CostMul     = 35.28
-    CLASS.HealthMul   = 2
+    CLASS.HealthMul   = 1
     CLASS.KineticMul  = 0.7
     CLASS.ChemicalMul = 0.7
     CLASS.SpallMul    = 1.0
@@ -174,7 +174,7 @@ Classes.DefineClass("ACF.ArmorTypes.Component", "ACF.ArmorTypes.BaseArmorType", 
     CLASS.SuppressLoad = true
     CLASS.Density     = 2.7 -- https://en.wikipedia.org/wiki/Aluminium
     CLASS.CostMul     = 16.11
-    CLASS.HealthMul   = 0.03
+    CLASS.HealthMul   = 0.015
     CLASS.KineticMul  = 0.1
     CLASS.ChemicalMul = 0.1
     CLASS.SpallMul    = 1
@@ -188,7 +188,7 @@ Classes.DefineClass("ACF.ArmorTypes.Rubber", "ACF.ArmorTypes.BaseArmorType", fun
     CLASS.Description = "Very cheap and light, but offers very little protection."
     CLASS.Density     = 1.5 -- * https://rubberandseal.com/what-is-the-density-of-rubber-sheets/
     CLASS.CostMul     = 13.5
-    CLASS.HealthMul   = 0.7
+    CLASS.HealthMul   = 0.35
     CLASS.KineticMul  = 0.15
     CLASS.ChemicalMul = 0.35
     CLASS.SpallMul    = 0.8
@@ -203,7 +203,7 @@ Classes.DefineClass("ACF.ArmorTypes.Textolite", "ACF.ArmorTypes.BaseArmorType", 
     CLASS.Description = "Layered fibrous laminate material. Not much protection, but is cheap and light."
     CLASS.Density     = 1.8 -- * http://www.china-anza.com/2-1-7-textolite-3025.html
     CLASS.CostMul     = 31.5
-    CLASS.HealthMul   = 0.4
+    CLASS.HealthMul   = 0.2
     CLASS.KineticMul  = 0.5
     CLASS.ChemicalMul = 0.7
     CLASS.SpallMul    = 0.3
@@ -218,7 +218,7 @@ Classes.DefineClass("ACF.ArmorTypes.Aramid", "ACF.ArmorTypes.BaseArmorType", fun
     CLASS.Description = "Very poor resistance compared to RHA, but reduces spalling."
     CLASS.Density     = 1.44 -- https://en.wikipedia.org/wiki/Kevlar
     CLASS.CostMul     = 40.5
-    CLASS.HealthMul   = 0.17
+    CLASS.HealthMul   = 0.085
     CLASS.KineticMul  = 0.32
     CLASS.ChemicalMul = 0.4
     CLASS.SpallMul    = 0.05 -- Fibres tear instead of shattering
@@ -233,7 +233,7 @@ Classes.DefineClass("ACF.ArmorTypes.NERA", "ACF.ArmorTypes.BaseArmorType", funct
     CLASS.Description = "Better chemical but worse kinetic performance compared to RHA. Light weight."
     CLASS.Density     = 2.58
     CLASS.CostMul     = 31.5
-    CLASS.HealthMul   = 0.25
+    CLASS.HealthMul   = 0.125
     CLASS.KineticMul  = 0.42
     CLASS.ChemicalMul = 1.0
     CLASS.SpallMul    = 0.7
@@ -248,7 +248,7 @@ Classes.DefineClass("ACF.ArmorTypes.DU", "ACF.ArmorTypes.BaseArmorType", functio
     CLASS.Description = "Higher resistance than RHA, but heavy and slightly expensive."
     CLASS.Density     = 19.05 -- https://en.wikipedia.org/wiki/Uranium
     CLASS.CostMul     = 62.37
-    CLASS.HealthMul   = 4.29336
+    CLASS.HealthMul   = 2.14668
     CLASS.KineticMul  = 1.8
     CLASS.ChemicalMul = 1.3
     CLASS.SpallMul    = 1.3
@@ -263,7 +263,7 @@ Classes.DefineClass("ACF.ArmorTypes.SiliconCarbide", "ACF.ArmorTypes.BaseArmorTy
     CLASS.Description = "Very high resistance compared to RHA, but very brittle and expensive."
     CLASS.Density     = 3.21 -- https://en.wikipedia.org/wiki/Silicon_carbide
     CLASS.CostMul     = 72
-    CLASS.HealthMul   = 0.05
+    CLASS.HealthMul   = 0.025
     CLASS.KineticMul  = 2.2
     CLASS.ChemicalMul = 1.6
     CLASS.SpallMul    = 1.5
@@ -278,7 +278,7 @@ Classes.DefineClass("ACF.ArmorTypes.LightERA", "ACF.ArmorTypes.BaseArmorType", f
     CLASS.Description = "Better chemical resistance than RHA at the cost of worse kinetic performance and one time use."
     CLASS.Density     = 5 -- * https://below-the-turret-ring.blogspot.com/2016/04/explosive-reactive-armor-some-history.html
     CLASS.CostMul     = 25.011
-    CLASS.HealthMul   = 0.23
+    CLASS.HealthMul   = 0.115
     CLASS.KineticMul  = 0.3
     CLASS.ChemicalMul = 2.0
     CLASS.PassiveMul  = 0.2
@@ -300,7 +300,7 @@ Classes.DefineClass("ACF.ArmorTypes.HeavyERA", "ACF.ArmorTypes.BaseArmorType", f
     CLASS.Description = "Better kinetic resistance than light ERA at the cost of being heavier and more expensive."
     CLASS.Density     = 10 -- * https://below-the-turret-ring.blogspot.com/2016/04/explosive-reactive-armor-some-history.html
     CLASS.CostMul     = 42.39
-    CLASS.HealthMul   = 0.55
+    CLASS.HealthMul   = 0.275
     CLASS.KineticMul  = 1.33
     CLASS.ChemicalMul = 2.0
     CLASS.PassiveMul  = 0.5
@@ -322,7 +322,7 @@ Classes.DefineClass("ACF.ArmorTypes.ReinforcedConcrete", "ACF.ArmorTypes.BaseArm
     CLASS.Description = "Decent protection per volume and cheap, but very heavy."
     CLASS.Density     = 2.5 -- https://www.civilengicon.com/2024/02/density-of-rcc-pcc-sand-cement.html
     CLASS.CostMul     = 5.85
-    CLASS.HealthMul   = 0.2
+    CLASS.HealthMul   = 0.1
     CLASS.KineticMul  = 0.22
     CLASS.ChemicalMul = 0.3
     CLASS.SpallMul    = 1.6
@@ -337,7 +337,7 @@ Classes.DefineClass("ACF.ArmorTypes.Wood", "ACF.ArmorTypes.BaseArmorType", funct
     CLASS.Description = "The cheapest and lightest material available. Offers almost no meaningful protection."
     CLASS.Density     = 0.9 -- https://www.engineeringtoolbox.com/wood-density-d_40.html specifically oak.
     CLASS.CostMul     = 3.6
-    CLASS.HealthMul   = 0.08
+    CLASS.HealthMul   = 0.04
     CLASS.KineticMul  = 0.06
     CLASS.ChemicalMul = 0.07
     CLASS.SpallMul    = 0.75

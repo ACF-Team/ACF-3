@@ -5,6 +5,7 @@ local ModelData = ACF.ModelData
 
 -- TODO: Move these into the globals file
 local GCmToKgIn = ACF.gCmToKgIn
+local ArmorHealthScale = ACF.ArmorHealthScale
 local Classes = ACF.Classes
 
 local function GetArmorType(ID) return Classes.GetSubtypeByName("ACF.ArmorTypes.BaseArmorType", "ACF.ArmorTypes." .. tostring(ID)) end
@@ -186,7 +187,7 @@ do
 
             Convex.Material    = ArmorType.ID
             Convex.Mass        = Convex.Volume * ArmorType.Density * GCmToKgIn -- Volume is in^3, Density is g/cm^3
-            Convex.MaxHealth   = Convex.Volume * ArmorType.HealthMul * ACF.HealthCoef -- HealthMul bakes in material density
+            Convex.MaxHealth   = Convex.Volume * ArmorType.HealthMul * ACF.HealthCoef * ArmorHealthScale -- HealthMul bakes in material density
             Convex.Health      = Convex.MaxHealth * HealthRatio
             Convex.IsExplosive = ArmorType.IsExplosive or nil -- Reactive armor; see Ballistics.DoReactiveArmor
 

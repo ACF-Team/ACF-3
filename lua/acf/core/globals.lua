@@ -139,7 +139,7 @@ do -- ACF global vars
 
 	ACF.BlastAreaCoef = 1 / 264.7 -- Multiplier used to scale HE blast area against an entity's surface area. Kept separate from the convex armor health coefficient.
 
-	ACF.DefineSetting("HealthCoef",           0.05,    "Health coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
+	ACF.DefineSetting("HealthCoef",           1,       "Health coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
 
 	ACF.DefineSetting("ArmorCoef",            1,      "Armor coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
 
@@ -235,6 +235,7 @@ do -- ACF global vars
 	ACF.BaseReload         = 1 -- Minimum reload time. Time it takes to move around a weightless projectile
 	ACF.MassToTime         = 0.15 -- Conversion of projectile mass to time to be moved around. Length and caliber are already accounted for in mass
 	ACF.TwoPieceCount      = 2 -- Pieces a two piece round is loaded as. Each is that fraction of the round's mass, and each costs its own loading motion
+	ACF.ArmorHealthScale   = 0.1 -- Fixed multiplier on armor health, applied on top of the HealthCoef server setting
 
 	-- External and Terminal Ballistics
 	ACF.DragDiv              = 80 -- Drag fudge factor
