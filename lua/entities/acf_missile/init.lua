@@ -532,7 +532,7 @@ function ENT:GetCost()
 		Cost = Cost + selftbl.FuzeData:GetCost()
 	end
 
-	return Cost
+	return Cost * 1.2
 end
 
 function ENT:UpdateModel(Model)

@@ -42,7 +42,7 @@ ACF.Classes.DefineClass("ACF.Guns.SemiautomaticCannon", "ACF.Guns.BaseScalableGu
 			{Name = "Horizontal Magazine", LPos = Vector(7.1, -6.8, 0), LAng = Angle(0, 90, 0), Width = 17.563, Height = 5.563},
 		}
 	}
-	CLASS.CostScalar	= 0.55
+	CLASS.CostScalar	= 0.66
 end)
 
 ACF.SetCustomAttachment("models/autocannon/semiautocannon_45mm.mdl", "muzzle", Vector(79.2), Angle(0, 0, 180))

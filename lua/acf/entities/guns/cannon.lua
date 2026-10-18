@@ -35,7 +35,7 @@ ACF.Classes.DefineClass("ACF.Guns.Cannon", "ACF.Guns.BaseScalableGun", function(
 			{Name = "Breech", LPos = Vector(-58.9363, 0, 0), LAng = Angle(0, 0, 0), Width = 6.6929133858268, Height = 6.6929133858268},
 		}
 	}
-	CLASS.CostScalar	= 0.4
+	CLASS.CostScalar	= 0.48
 end)
 
 ACF.SetCustomAttachment("models/tankgun_new/tankgun_100mm.mdl", "muzzle", Vector(175), Angle(0, 0, 90))

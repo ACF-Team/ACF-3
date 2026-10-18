@@ -38,7 +38,7 @@ ACF.Classes.DefineClass("ACF.Guns.Autocannon", "ACF.Guns.BaseScalableGun", funct
 		LegacyDefault = 4,
 		Text = "Maximum amount of ACF auto cannons a player can create."
 	}
-	CLASS.CostScalar		= 0.75
+	CLASS.CostScalar		= 0.9
 end)
 
 ACF.SetCustomAttachment("models/autocannon/autocannon_50mm.mdl", "muzzle", Vector(120), Angle(0, 0, 180))

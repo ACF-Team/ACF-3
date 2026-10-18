@@ -37,7 +37,7 @@ ACF.Classes.DefineClass("ACF.Guns.Machinegun", "ACF.Guns.BaseScalableGun", funct
 		Amount = 4,
 		Text = "Maximum amount of ACF machine guns a player can create."
 	}
-	CLASS.CostScalar		= 0.4
+	CLASS.CostScalar		= 0.48
 end)
 
 ACF.SetCustomAttachment("models/machinegun/machinegun_20mm.mdl", "muzzle", Vector(53.05, 0, -0.11), Angle(0, 0, 90))

@@ -32,7 +32,7 @@ ACF.Classes.DefineClass("ACF.Guns.Mortar", "ACF.Guns.BaseScalableGun", function(
 			{Name = "Barrel", LPos = Vector(37.0706, 0, 0.015625), LAng = Angle(180, 0, 0), Width = 11.023622047244, Height = 11.023622047244},
 		}
 	}
-	CLASS.CostScalar	= 0.29
+	CLASS.CostScalar	= 0.348
 end)
 
 ACF.SetCustomAttachment("models/mortar/mortar_120mm.mdl", "muzzle", Vector(24.02), Angle(0, 0, 90))

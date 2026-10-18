@@ -14,7 +14,7 @@ ACF.Classes.DefineClass("ACF.Guns.FlareLauncher", "ACF.Guns.BaseGun", function(C
 		Min  = 40,
 		Max  = 40,
 	}
-	CLASS.CostScalar  = 0.125 -- 5 points at the fixed 40mm caliber
+	CLASS.CostScalar  = 0.15 -- 6 points at the fixed 40mm caliber
 	CLASS.Sound       	= "acf_missiles/missiles/flare_launch.mp3"
 	CLASS.Cleanup     	= "acf_flarelauncher"
 	CLASS.Blacklist   	= {
