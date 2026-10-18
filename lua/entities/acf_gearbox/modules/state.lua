@@ -229,6 +229,7 @@ do -- Movement -----------------------------------------
 		if GearRatio == 0 then
 			SelfTbl.TotalRatio        = 0
 			SelfTbl.DownstreamInertia = 0
+			SelfTbl.OutputInertia     = 0
 			SelfTbl.Load              = 0
 			SelfTbl.MeasuredRPM       = 0
 			SelfTbl.LeftRPM           = 0
@@ -254,7 +255,7 @@ do -- Movement -----------------------------------------
 
 		local MeasuredRPMSum = 0
 		local MeasuredCount = 0
-		local DownstreamInertia = 0
+		local OutputInertia = 0
 		local TotalRatioSum = 0
 		-- Per-side RPM tracking, future work for LSD/locked diffs. 
 		local LeftRPMSum, LeftCount = 0, 0
@@ -270,7 +271,7 @@ do -- Movement -----------------------------------------
 
 			MeasuredRPMSum    = MeasuredRPMSum + (EntTbl.MeasuredRPM or ScaledRPM) * GearRatio
 			MeasuredCount     = MeasuredCount + 1
-			DownstreamInertia = DownstreamInertia + (EntTbl.DownstreamInertia or 0)
+			OutputInertia     = OutputInertia + (EntTbl.OutputInertia or 0)
 			TotalRatioSum     = TotalRatioSum + abs(GearRatio) * (EntTbl.TotalRatio or 1)
 		end
 
@@ -280,9 +281,9 @@ do -- Movement -----------------------------------------
 			local WheelInertia = GetRotationalInertia(Link, Wheel)
 			Link.CachedInertia = WheelInertia
 
-			MeasuredRPMSum    = MeasuredRPMSum + WheelRPM
-			MeasuredCount     = MeasuredCount + 1
-			DownstreamInertia = DownstreamInertia + WheelInertia
+			MeasuredRPMSum = MeasuredRPMSum + WheelRPM
+			MeasuredCount  = MeasuredCount + 1
+			OutputInertia  = OutputInertia + WheelInertia
 
 			if Link.Side == 0 then
 				LeftRPMSum = LeftRPMSum + WheelRPM
@@ -301,10 +302,11 @@ do -- Movement -----------------------------------------
 				Effector:Calc(ScaledRPM, ScaledInertia)
 			end
 
-			DownstreamInertia = DownstreamInertia + (EntTbl.DownstreamInertia or 0)
+			OutputInertia = OutputInertia + (EntTbl.OutputInertia or 0)
 		end
 
-		SelfTbl.DownstreamInertia = DownstreamInertia -- Used for anything else.
+		SelfTbl.OutputInertia = OutputInertia -- Output side, wheels, effectors and gearboxes receive this inertia, as torque shares are fractions of this.
+		SelfTbl.DownstreamInertia = OutputInertia / (GearRatio * GearRatio) -- On the other hand, Engines reflect inertia as 1/N^2.
 		SelfTbl.TotalRatio = max(TotalRatioSum, 1)
 		SelfTbl.MeasuredRPM = MeasuredCount > 0 and (MeasuredRPMSum / MeasuredCount) or InputRPM
 		SelfTbl.LeftRPM  = LeftCount  > 0 and (LeftRPMSum  / LeftCount)  or SelfTbl.MeasuredRPM
@@ -341,9 +343,7 @@ do -- Movement -----------------------------------------
 		-- Reflect through this stage's own ratio, same direction gearboxes already scale torque.
 		local StageTorque = ClampedTorque * GearRatio * Loss * Slop
 
-		-- print(Torque, ClampedTorque, StageTorque)
-
-		local TotalInertia = SelfTbl.DownstreamInertia
+		local TotalInertia = SelfTbl.OutputInertia
 		if TotalInertia <= 0 then return end
 
 		local LClutch = SelfTbl.LClutch
@@ -367,7 +367,7 @@ do -- Movement -----------------------------------------
 
 			if not Ent.Disabled and Clutch > 0 then
 				local EntTbl = ENTITY.GetTable(Ent)
-				local Share = (EntTbl.DownstreamInertia or 0) / TotalInertia
+				local Share = (EntTbl.OutputInertia or 0) / TotalInertia
 
 				Link:TransferGearbox(Ent, StageTorque * Share * Clutch, DeltaTime, MassRatio, FlyRPM, CompressionBrake)
 			end
@@ -379,7 +379,7 @@ do -- Movement -----------------------------------------
 
 			if not Effector.Disabled and Clutch > 0 then
 				local EntTbl = ENTITY.GetTable(Effector)
-				local Share = (EntTbl.DownstreamInertia or 0) / TotalInertia
+				local Share = (EntTbl.OutputInertia or 0) / TotalInertia
 
 				Link:TransferEffector(Effector, StageTorque * Share * Clutch * DriverCrewMod, DeltaTime, MassRatio, FlyRPM, Direction)
 			end
