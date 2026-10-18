@@ -23,7 +23,7 @@ Classes.DefineClass("ACF.ArmorTypes.Default", "ACF.ArmorTypes.BaseArmorType", fu
     CLASS.ID          = "Default"
     CLASS.Name        = "Default"
     CLASS.ShortName   = "Default"
-    CLASS.Description = "Used as a default material for entities. Not intended to provide any protection."
+    CLASS.Description = "Allows you to set a custom weight. Bad for armor."
     CLASS.Density     = 0.1
     CLASS.CostMul     = 1.989
     CLASS.HealthMul   = 0.0127551
@@ -51,7 +51,7 @@ Classes.DefineClass("ACF.ArmorTypes.Diesel", "ACF.ArmorTypes.BaseArmorType", fun
     CLASS.ID          = "Diesel"
     CLASS.Name        = "Diesel"
     CLASS.ShortName   = "Diesel"
-    CLASS.Description = "Diesel fuel, provides some protection against shaped charges. Doesn't explode, unlike petrol and Li-Ion batteries."
+    CLASS.Description = "Provides slight CE protection. Does not detonate."
     CLASS.SuppressLoad = true
     CLASS.Density     = 0.745 -- lua/acf/entities/fuel_types/diesel.lua (0.745 kg/L)
     CLASS.CostMul     = 1.8
@@ -66,7 +66,7 @@ Classes.DefineClass("ACF.ArmorTypes.Petrol", "ACF.ArmorTypes.BaseArmorType", fun
     CLASS.ID          = "Petrol"
     CLASS.Name        = "Petrol"
     CLASS.ShortName   = "Petrol"
-    CLASS.Description = "Petrol fuel, provides negligible protection. Prone to detonate when penetrated or damaged."
+    CLASS.Description = "Provides negligible protection. Prone to detonate when penetrated or damaged."
     CLASS.SuppressLoad = true
     CLASS.Density     = 0.832 -- lua/acf/entities/fuel_types/petrol.lua (0.832 kg/L)
     CLASS.CostMul     = 2.07
@@ -81,7 +81,7 @@ Classes.DefineClass("ACF.ArmorTypes.LiIon", "ACF.ArmorTypes.BaseArmorType", func
     CLASS.ID          = "LiIon"
     CLASS.Name        = "Li-Ion Battery"
     CLASS.ShortName   = "Li-Ion"
-    CLASS.Description = "Lithium-ion battery cells. Prone to detonate when penetrated or damaged."
+    CLASS.Description = "Provides slight protection. Prone to detonate when penetrated or damaged."
     CLASS.SuppressLoad = true
     CLASS.Density     = 3.89 -- lua/acf/entities/fuel_types/electric.lua (3.89 kg/L)
     CLASS.CostMul     = 7.2
@@ -110,7 +110,7 @@ Classes.DefineClass("ACF.ArmorTypes.Aluminum", "ACF.ArmorTypes.BaseArmorType", f
     CLASS.ID          = "Aluminum"
     CLASS.Name        = "Aluminum"
     CLASS.ShortName   = "Aluminum"
-    CLASS.Description = "Decent protection for its price and density."
+    CLASS.Description = "Lower resistance than RHA, but substantially lighter."
     CLASS.Density     = 2.7 -- https://en.wikipedia.org/wiki/Aluminium
     CLASS.CostMul     = 27
     CLASS.HealthMul   = 0.5
@@ -125,7 +125,7 @@ Classes.DefineClass("ACF.ArmorTypes.RHA", "ACF.ArmorTypes.BaseArmorType", functi
     CLASS.ID          = "RHA"
     CLASS.Name        = "RHA"
     CLASS.ShortName   = "RHA"
-    CLASS.Description = "Rolled Homogeneous Armor. The standard by which all other armor types are measured."
+    CLASS.Description = "Standard steel armor used mostly by WW2 and early cold war tanks."
     CLASS.Density     = 7.84 -- https://metalzenith.com/blogs/steel-properties/rha-steel-properties-and-key-applications-in-defense
     CLASS.CostMul     = 38.7 -- Reference: 0.005 points/kg
     CLASS.HealthMul   = 2
@@ -140,7 +140,7 @@ Classes.DefineClass("ACF.ArmorTypes.HHRHA", "ACF.ArmorTypes.BaseArmorType", func
     CLASS.ID          = "HHRHA"
     CLASS.Name        = "Maraging Steel"
     CLASS.ShortName   = "Maraging Steel"
-    CLASS.Description = "Harder than RHA, but more brittle."
+    CLASS.Description = "Higher resistance than RHA, but more expensive and less healthy."
     CLASS.Density     = 7.85 -- https://metalzenith.com/blogs/steel-properties/rha-steel-properties-and-key-applications-in-defense
     CLASS.CostMul     = 59.4
     CLASS.HealthMul   = 0.265
@@ -215,7 +215,7 @@ Classes.DefineClass("ACF.ArmorTypes.Aramid", "ACF.ArmorTypes.BaseArmorType", fun
     CLASS.ID          = "Aramid"
     CLASS.Name        = "Aramid"
     CLASS.ShortName   = "Aramid"
-    CLASS.Description = "Woven aramid fibre laminate, used as a spall liner. Light enough to line a crew compartment, catching the lighter fragments thrown off to the sides of a penetration."
+    CLASS.Description = "Very poor resistance compared to RHA, but reduces spalling."
     CLASS.Density     = 1.44 -- https://en.wikipedia.org/wiki/Kevlar
     CLASS.CostMul     = 40.5
     CLASS.HealthMul   = 0.17
@@ -230,13 +230,13 @@ Classes.DefineClass("ACF.ArmorTypes.NERA", "ACF.ArmorTypes.BaseArmorType", funct
     CLASS.ID          = "NERA"
     CLASS.Name        = "NERA"
     CLASS.ShortName   = "NERA"
-    CLASS.Description = "Non-Explosive Reactive Armor, steel plates around rubber interlayers like the Abrams turret cassettes. Bulges against shaped charges and long rods, but never detonates. Weaker than ERA against HEAT, in exchange for being safe and sustained."
-    CLASS.Density     = 2.58 -- 50% air, 30% RHA, 20% rubber by volume
-    CLASS.CostMul     = 31.5 -- Between the raw material cost (28) and Heavy ERA (42.39), for the cassette assembly
+    CLASS.Description = "Better chemical but worse kinetic performance compared to RHA. Light weight."
+    CLASS.Density     = 2.58
+    CLASS.CostMul     = 31.5
     CLASS.HealthMul   = 0.25
     CLASS.KineticMul  = 0.42
-    CLASS.ChemicalMul = 1-- Linear mix is 0.75, the bulge doubles it, still short of ERA's 2.0
-    CLASS.SpallMul    = 0.7 -- Steel plates still spall, but the rubber layers soak up some
+    CLASS.ChemicalMul = 1.0
+    CLASS.SpallMul    = 0.7
     CLASS.Color       = Color(110, 125, 140)
 end)
 
@@ -245,7 +245,7 @@ Classes.DefineClass("ACF.ArmorTypes.DU", "ACF.ArmorTypes.BaseArmorType", functio
     CLASS.ID          = "DU"
     CLASS.Name        = "Depleted Uranium"
     CLASS.ShortName   = "DU"
-    CLASS.Description = "Expensive and dense with high protection."
+    CLASS.Description = "Higher resistance than RHA, but heavy and slightly expensive."
     CLASS.Density     = 19.05 -- https://en.wikipedia.org/wiki/Uranium
     CLASS.CostMul     = 62.37
     CLASS.HealthMul   = 4.29336
@@ -260,7 +260,7 @@ Classes.DefineClass("ACF.ArmorTypes.SiliconCarbide", "ACF.ArmorTypes.BaseArmorTy
     CLASS.ID          = "SiliconCarbide"
     CLASS.Name        = "Silicon Carbide"
     CLASS.ShortName   = "SiC"
-    CLASS.Description = "Excellent protection, but brittle and expensive."
+    CLASS.Description = "Very high resistance compared to RHA, but very brittle and expensive."
     CLASS.Density     = 3.21 -- https://en.wikipedia.org/wiki/Silicon_carbide
     CLASS.CostMul     = 72
     CLASS.HealthMul   = 0.05
@@ -275,7 +275,7 @@ Classes.DefineClass("ACF.ArmorTypes.LightERA", "ACF.ArmorTypes.BaseArmorType", f
     CLASS.ID          = "LightERA"
     CLASS.Name        = "Light ERA"
     CLASS.ShortName   = "Light ERA"
-    CLASS.Description = "Explosive Reactive Armor. Effective primarily against shaped charges. Will explode when hit with enough energy."
+    CLASS.Description = "Better chemical resistance than RHA at the cost of worse kinetic performance and one time use."
     CLASS.Density     = 5 -- * https://below-the-turret-ring.blogspot.com/2016/04/explosive-reactive-armor-some-history.html
     CLASS.CostMul     = 25.011
     CLASS.HealthMul   = 0.23
@@ -297,7 +297,7 @@ Classes.DefineClass("ACF.ArmorTypes.HeavyERA", "ACF.ArmorTypes.BaseArmorType", f
     CLASS.ID          = "HeavyERA"
     CLASS.Name        = "Heavy ERA"
     CLASS.ShortName   = "Heavy ERA"
-    CLASS.Description = "Heavy Explosive Reactive Armor. Offers better protection against kinetic threats and takes more energy to detonate than Light ERA, but is twice as dense and more expensive."
+    CLASS.Description = "Better kinetic resistance than light ERA at the cost of being heavier and more expensive."
     CLASS.Density     = 10 -- * https://below-the-turret-ring.blogspot.com/2016/04/explosive-reactive-armor-some-history.html
     CLASS.CostMul     = 42.39
     CLASS.HealthMul   = 0.55
@@ -319,7 +319,7 @@ Classes.DefineClass("ACF.ArmorTypes.ReinforcedConcrete", "ACF.ArmorTypes.BaseArm
     CLASS.ID          = "ReinforcedConcrete"
     CLASS.Name        = "Reinforced Concrete"
     CLASS.ShortName   = "Reinforced Concrete"
-    CLASS.Description = "Cheap and weak protection per unit volume compared to RHA, but low enough cost to make up for it in large stationary structures."
+    CLASS.Description = "Decent protection per volume and cheap, but very heavy."
     CLASS.Density     = 2.5 -- https://www.civilengicon.com/2024/02/density-of-rcc-pcc-sand-cement.html
     CLASS.CostMul     = 5.85
     CLASS.HealthMul   = 0.2
@@ -334,7 +334,7 @@ Classes.DefineClass("ACF.ArmorTypes.Wood", "ACF.ArmorTypes.BaseArmorType", funct
     CLASS.ID          = "Wood"
     CLASS.Name        = "Wood"
     CLASS.ShortName   = "Wood"
-    CLASS.Description = "The cheapest and lightest material available. Offers almost no meaningful protection against anything, but its low cost and low density make it usable for early aircraft, or non-combat use as scaffolds and housing."
+    CLASS.Description = "The cheapest and lightest material available. Offers almost no meaningful protection."
     CLASS.Density     = 0.9 -- https://www.engineeringtoolbox.com/wood-density-d_40.html specifically oak.
     CLASS.CostMul     = 3.6
     CLASS.HealthMul   = 0.08
