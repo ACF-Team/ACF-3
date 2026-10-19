@@ -141,7 +141,14 @@ do -- ACF global vars
 
 	ACF.DefineSetting("HealthCoef",           1,       "Health coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
 
-	ACF.DefineSetting("ArmorCoef",            1,      "Armor coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
+	if SERVER then
+		-- Meant to be 1 by default. FCVAR_ARCHIVE and its consequences...
+		hook.Add("ACF_OnLoadPersistedData", "ACF HealthCoef Migration", function()
+			if ACF.GetServerData("HealthCoef") == 0.1 then ACF.SetServerData("HealthCoef", 1) end
+		end)
+	end
+
+	ACF.DefineSetting("ArmorCoef",           1,      "Armor coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
 
 	ACF.DefineSetting("DamageCoef",           1,      "Damage coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 1000, 2))
 
