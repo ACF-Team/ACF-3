@@ -370,6 +370,7 @@ if CLIENT then
 					render.DrawLine(A, B, EdgeColor, true)
 					render.DrawLine(B, C, EdgeColor, true)
 					render.DrawLine(C, A, EdgeColor, true)
+					render.SetColorMaterial() -- DrawLine binds its own material, which would leave the next quads unfilled
 				end
 			end
 		end
