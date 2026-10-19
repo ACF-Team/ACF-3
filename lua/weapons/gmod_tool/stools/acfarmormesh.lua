@@ -600,10 +600,13 @@ elseif SERVER then
 
 		if tobool(self:GetClientInfo("color_entity")) then
 			local ArmorType = GetArmorType(Material)
-			if ArmorType and ArmorType.Color then
-				Entity:SetColor(ArmorType.Color)
+			if ArmorType then
+				local Base  = ArmorType.Color or color_white
+				local Color = Color(Base.r, Base.g, Base.b, Base.a) -- I LOVE AD2
+
+				Entity:SetColor(Color)
 				Entity:SetRenderMode(RENDERMODE_NORMAL)
-				duplicator.StoreEntityModifier(Entity, "colour", { Color = ArmorType.Color, RenderMode = RENDERMODE_NORMAL })
+				duplicator.StoreEntityModifier(Entity, "colour", { Color = Color, RenderMode = RENDERMODE_NORMAL })
 			end
 		end
 
