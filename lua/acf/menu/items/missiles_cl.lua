@@ -42,7 +42,7 @@ local function GetRackText(Data)
 	local Caliber = Data.Caliber and (Data.Caliber .. "mm") or "Any caliber"
 	local Protect = Data.ProtectMissile and "\n\nThis rack will protect its payload from getting destroyed." or ""
 
-	local Cost = Data.Cost or Data.MagSize * (Data.CostPerSlot or 1.5) -- Mirrors acf_rack's GetCost
+	local Cost = Data.Cost or Data.MagSize * (Data.CostPerSlot or 1.8) -- Mirrors acf_rack's GetCost
 
 	return RackText:format(Caliber, ACF.FormatMass(Data.Mass or 0), ACF.FormatCost(Cost), Data.MagSize, Protect)
 end

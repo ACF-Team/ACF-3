@@ -1065,7 +1065,7 @@ do -- Misc -------------------------------------
 
 		if Class.Cost then return Class.Cost end -- Flat override for outliers
 
-		return selftbl.MagSize * (Class.CostPerSlot or 1.5)
+		return selftbl.MagSize * (Class.CostPerSlot or 1.8)
 	end
 
 	function ENT:Enable()

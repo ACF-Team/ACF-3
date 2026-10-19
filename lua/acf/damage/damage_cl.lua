@@ -113,14 +113,14 @@ local function Add(Entity, ConvexID, Percent)
 end
 
 net.Receive("ACF_Damage", function()
-	local EntityCount = net.ReadUInt(8)
+	local EntityCount = net.ReadUInt(MAX_EDICT_BITS)
 
 	for _ = 1, EntityCount do
 		local Entity      = Entity(net.ReadUInt(13))
-		local ConvexCount = net.ReadUInt(8)
+		local ConvexCount = net.ReadUInt(12)
 
 		for _ = 1, ConvexCount do
-			local ConvexID = net.ReadUInt(9)
+			local ConvexID = net.ReadUInt(12)
 			local Step      = net.ReadUInt(4)
 
 			if IsValid(Entity) then

@@ -89,12 +89,14 @@ Chapter:AddInstruction("HideToolgun", {}):DelayByLength()
 
 local Chapter = Storyboard:Chapter("Arc Limit Demonstration")
 Chapter:AddInstruction("PlaceModel", {Name = "Gun", IdentifyAs = "125mm Cannon", Model = "models/tankgun_new/tankgun_100mm.mdl", Angles = Angle(0, 0, 0), Position = Vector(0, 0, 0), ComeFrom = Vector(0, 0, 50), Scale = Vector(125 / 100, 125 / 100, 125 / 100), ParentTo = "TurretV", }):DelayByLength()
+Chapter:AddInstruction("AddHalo", {Target = "Gun", Color = Color(255, 210, 90), Length = 0.3}):DelayByLength()
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Later on when we add a gun, this means it can point 10 degrees down and 45 degrees up at most."}))
 Chapter:AddInstruction("TransformModel", {Target = "TurretV", Position = Vector(0, 48, 18), Rotation = Angle(-45, 90, 0), Length = 1}):DelayByLength()
 Chapter:AddInstruction("TransformModel", {Target = "TurretV", Position = Vector(0, 48, 18), Rotation = Angle(10, 90, 0), Length = 1}):DelayByLength()
 Chapter:AddInstruction("TransformModel", {Target = "TurretV", Position = Vector(0, 48, 18), Rotation = Angle(0, 90, 0), Length = 1}):DelayByLength()
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "This stops your gun from clipping through your vehicle, which could cause issues like poor reloads."}))
+Chapter:AddInstruction("RemoveHalo", {Target = "Gun", Length = 0.3}):DelayByLength()
 Chapter:AddInstruction("RemoveModel", {Name = "Gun"}):DelayByLength()
 
 local Chapter = Storyboard:Chapter("Parenting Turrets")

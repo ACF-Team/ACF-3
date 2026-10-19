@@ -97,6 +97,10 @@ do
 		if timer.Exists(TimerName) then return end
 
 		local function FireNext()
+			-- Think stops calling ProcessGuns once the driver leaves or the controller is removed,
+			-- so the timer has to stop itself rather than wait for a Fire release that never comes
+			if not IsValid(Entity) or not Entity.Active or Entity:GetDisableFiring() then return end
+
 			local Order = {}
 			for Gun in pairs(Guns) do Order[#Order + 1] = Gun end
 

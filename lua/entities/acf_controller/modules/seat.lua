@@ -33,7 +33,7 @@ local function OnActiveChanged(Controller, Ply, Active)
 	if Active then Controller:AnalyzeCams() end -- Recalculate filter for the cameras
 
 	for Turret in pairs(Controller.Turrets) do
-		if IsValid(Turret) then Turret:TriggerInput("Active", Active) end
+		if IsValid(Turret) then Turret:TriggerInput("Active", Active and not Controller.TurretLocked) end
 	end
 
 	for Engine in pairs(Controller.Engines) do

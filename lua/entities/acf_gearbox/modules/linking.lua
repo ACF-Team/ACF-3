@@ -54,7 +54,10 @@ do -- Linking ------------------------------------------
 
 		Link:SetOrigin(OutPos)
 		Link:SetTargetPos(InPos)
-		Link:SetAxis(Target.In and Plane.Dir or Target:GetPhysicsObject():WorldToLocalVector(Entity:GetRight()))
+		local TargetRight = Target:GetRight()
+		if TargetRight:Dot(Entity:GetRight()) < 0 then TargetRight = -TargetRight end -- Same axis, signed to match the gearbox's right
+
+		Link:SetAxis(Target:GetPhysicsObject():WorldToLocalVector(TargetRight))
 		Link.OutDirection = Plane.Dir
 		Link.Side = Side
 		Link.RopeLen = (OutPosWorld - InPosWorld):Length()

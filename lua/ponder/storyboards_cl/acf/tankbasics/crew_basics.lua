@@ -173,15 +173,13 @@ local Chapter = Storyboard:Chapter("Drivers")
 Chapter:AddDelay(1)
 
 local _, Name = Chapter:AddInstruction("Caption", {
-    Text = "Drivers let your gearboxes apply engine torque at full effect.\nLink and parent them to your baseplate.\nThey can only be linked to one entity.",
+    Text = "Drivers let your gearboxes apply engine torque at full effect. They work without linking.\nParent them to your baseplate, and make sure they face its forward direction.",
     Position = Vector(0.5, 0.15, 0),
     KeepText = true,
 })
 
 Chapter:AddDelay(Chapter:AddInstruction("FlashModel", {Reps = 2, Models = {"Driver", "Base"}}))
-Chapter:AddInstruction("ShowToolgun", {Tool = language.GetPhrase("tool.acf_menu.menu_name")}):DelayByLength()
-Chapter:AddDelay(Chapter:AddInstruction("ACF Menu", {Children = {"Driver"}, Target = "Base", Length = 2, Easing = math.ease.InOutQuad}))
-Chapter:AddInstruction("HideToolgun", {}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("FlashModel", {Reps = 2, Models = {"Driver", "Base"}}))
 Chapter:AddInstruction("HideText", {Name = Name}):DelayByLength()
 
 -------------------------------------------------------------------------------------------------

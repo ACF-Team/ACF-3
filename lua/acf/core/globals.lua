@@ -139,9 +139,16 @@ do -- ACF global vars
 
 	ACF.BlastAreaCoef = 1 / 264.7 -- Multiplier used to scale HE blast area against an entity's surface area. Kept separate from the convex armor health coefficient.
 
-	ACF.DefineSetting("HealthCoef",           0.05,    "Health coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
+	ACF.DefineSetting("HealthCoef",           1,       "Health coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
 
-	ACF.DefineSetting("ArmorCoef",            1,      "Armor coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
+	if SERVER then
+		-- Meant to be 1 by default. FCVAR_ARCHIVE and its consequences...
+		hook.Add("ACF_OnLoadPersistedData", "ACF HealthCoef Migration", function()
+			if ACF.GetServerData("HealthCoef") == 0.1 then ACF.SetServerData("HealthCoef", 1) end
+		end)
+	end
+
+	ACF.DefineSetting("ArmorCoef",           1,      "Armor coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
 
 	ACF.DefineSetting("DamageCoef",           1,      "Damage coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 1000, 2))
 
@@ -189,6 +196,8 @@ do -- ACF global vars
 	ACF.DefineSetting("KillLogQueryCooldown", 10,    "Kill log query cooldown has been set to %s seconds.", ACF.FloatDataCallback(0, 120, 0))
 
 	ACF.IllegalDisableTime   = 30 -- Time in seconds for an entity to be disabled when it fails ACF.IsLegal
+	ACF.MutationGhostTime    = 30 -- Time in seconds that a chip-mutated non-ACF entity is ignored by ballistics and damage
+	ACF.MaxPenetrations      = 50 -- Convexes a bullet can cross in one pass, hitting it deletes every prop it crossed
 	ACF.Volume               = 1 -- Global volume for ACF sounds
 	ACF.MobilityLinkDistance = 650 -- Maximum distance, in inches, at which mobility-related components will remain linked with each other
 	ACF.LinkDistance         = 650 -- Maximum distance, in inches, at which components will remain linked with each other
@@ -234,6 +243,7 @@ do -- ACF global vars
 	ACF.BaseReload         = 1 -- Minimum reload time. Time it takes to move around a weightless projectile
 	ACF.MassToTime         = 0.15 -- Conversion of projectile mass to time to be moved around. Length and caliber are already accounted for in mass
 	ACF.TwoPieceCount      = 2 -- Pieces a two piece round is loaded as. Each is that fraction of the round's mass, and each costs its own loading motion
+	ACF.ArmorHealthScale   = 0.1 -- Fixed multiplier on armor health, applied on top of the HealthCoef server setting
 
 	-- External and Terminal Ballistics
 	ACF.DragDiv              = 80 -- Drag fudge factor

@@ -130,9 +130,10 @@ if CLIENT then
 		local ArmorTypeList = Classes.GetSubtypesAsList("ACF.ArmorTypes.BaseArmorType")
 		local Menu = ACF.InitMenuBase(Panel, "ArmorMeshMenu", "acf_reload_armor_mesh_menu")
 
-		local Materials = Menu:AddComboBox()
+		local Tree = Menu:AddPanel("DTree")
+		Tree:SetName("ArmorMeshMaterials")
 
-		Menu:AddHelp("The material that will be applied to the convex under your crosshair.")
+		local CategoryHelp = Menu:AddHelp("")
 
 		local Base = Menu:AddCollapsible("Material Info", true)
 		local MatName     = Base:AddTitle()
@@ -144,17 +145,22 @@ if CLIENT then
 		local MatSpall    = Base:AddLabel()
 		local MatCost     = Base:AddLabel()
 
-		local StatsGraphBase = Base:AddCollapsible("Stats Graph", false)
+		local StatsGraphBase = Menu:AddCollapsible("Stats Graph", false)
 		BuildStatsGraph(StatsGraphBase, ArmorTypeList)
 
-		local CostBase = Base:AddCollapsible("Armor Comparison", false)
+		local CostBase = Menu:AddCollapsible("Armor Comparison", false)
 		BuildArmorComparison(CostBase, ArmorTypeList)
 
-		function Materials:OnSelect(Index, _, Data)
-			if self.Selected == Data then return end
+		local MaterialNodes = {}
 
-			self.ListData.Index = Index
-			self.Selected       = Data
+		local function SelectMaterial(Node, SkipCommand)
+			if Tree.Selected == Node then return end
+
+			Tree.Selected = Node
+
+			local Data = Node.ArmorData
+
+			CategoryHelp:SetText(Node.CategoryDescription or "")
 
 			MatName:SetText(Data.Name)
 			MatDesc:SetText(Data.Description)
@@ -165,22 +171,57 @@ if CLIENT then
 			MatSpall:SetText(string.format("Spall Multiplier: %gx", Data.SpallMul))
 			MatCost:SetText(string.format("Cost: %g points/m^3", Data.CostMul))
 
-			RunConsoleCommand("acfarmormesh_material", Data.ID)
+			if not SkipCommand then RunConsoleCommand("acfarmormesh_material", Data.ID) end
 		end
 
-		ACF.LoadSortedList(Materials, ArmorTypeList, "Name")
+		-- Tally of tree rows, used to size the tree panel to its contents.
+		local Rows = 0.5
 
-		-- Keeps the combo box and info panel in sync when the material is sampled via right-click.
-		cvars.AddChangeCallback("acfarmormesh_material", function(_, _, New)
-			local Choices = Materials.ListData and Materials.ListData.Choices
-			if not Choices then return end
+		local function AddMaterialNode(Parent, Data, CategoryDescription)
+			local Node = Parent:AddNode(Data.Name, "icon16/brick.png")
+			Node.ArmorData           = Data
+			Node.CategoryDescription = CategoryDescription
+			MaterialNodes[Data.ID]  = Node
+			Rows = Rows + 1
+			return Node
+		end
 
-			for Index, Data in ipairs(Choices) do
-				if Data.ID == New then
-					Materials:ChooseOptionID(Index)
-					break
-				end
+		for _, Category in ipairs(Classes.GetSubtypesAsList("ACF.ArmorCategories.BaseArmorCategory")) do
+			local CategoryNode = Tree:AddNode(Category.Name, "icon16/bricks.png")
+			CategoryNode:SetExpanded(true)
+			Rows = Rows + 1
+
+			for _, TypeFQN in ipairs(Category.Types) do
+				local Data = Classes.GetTypeByName(TypeFQN)
+				if Data then AddMaterialNode(CategoryNode, Data, Category.Description) end
 			end
+		end
+
+		Tree:SetHeight(Tree:GetLineHeight() * Rows)
+
+		local InitialNode = MaterialNodes[GetConVar("acfarmormesh_material"):GetString()] or MaterialNodes.RHA
+		if InitialNode then
+			Tree:SetSelectedItem(InitialNode)
+			SelectMaterial(InitialNode, true)
+		end
+
+		-- Category nodes have no ArmorData; selecting one toggles its expansion instead of double clicking.
+		function Tree:OnNodeSelected(Node)
+			if not Node.ArmorData then
+				Node:SetExpanded(not Node:GetExpanded())
+				return
+			end
+
+			SelectMaterial(Node)
+		end
+
+		-- Keeps the tree and info panel in sync when the material is sampled via right-click.
+		cvars.AddChangeCallback("acfarmormesh_material", function(_, _, New)
+			local Node = MaterialNodes[New]
+			if not Node then return end
+
+			Tree:SetSelectedItem(Node)
+			SelectMaterial(Node, true)
 		end, "ACF_ArmorMeshMenu")
 
 		local ThicknessSlider = Menu:AddSlider("Thickness", ThicknessMin, ThicknessMax, 0)
@@ -371,7 +412,7 @@ if CLIENT then
 		HiddenEntity = Entity
 
 		local Dir         = LocalPlayer():GetAimVector()
-		local ConvexHit   = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true, true)
+		local ConvexHit   = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
 		local HighlightID = ConvexHit and ConvexHit.ConvexID
 
 		DrawConvexes(Entity, HighlightID)
@@ -385,7 +426,7 @@ if CLIENT then
 			local ArmorType  = GetArmorType(Material) or GetArmorType("Default")
 			local Mass       = Volume * ArmorType.Density * GCmToKgIn -- Volume is in^3, Density is g/cm^3
 			local Cost       = Volume * CubicInchToM3 * ArmorType.CostMul -- CostMul is points per m^3
-			local NominalHit = ACF.GetConvexHit(Entity, Trace.HitPos, -Trace.HitNormal, true, true)
+			local NominalHit = ACF.GetConvexHit(Entity, Trace.HitPos, -Trace.HitNormal, true)
 			local Nominal    = NominalHit and NominalHit.GeoThick or 0
 
 			local EffKE = ConvexHit.GeoThick * ArmorType.KineticMul
@@ -466,7 +507,7 @@ elseif SERVER then
 		if not Entity.ACF_Volumetric_Mesh then return end
 		local Materials = {}
 		for ConvexID in ipairs(Entity.ACF_Volumetric_Mesh.Convexes) do
-			if Material then Materials[ConvexID] = "RHA" end
+			Materials[ConvexID] = "RHA"
 		end
 		ACF.SetConvexMaterials(Entity, Materials)
 	end)
@@ -488,7 +529,7 @@ elseif SERVER then
 			EntHealth, EntMaxHealth = ACF.GetEntityHealth(Entity)
 
 			local Dir = Player:GetAimVector()
-			ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true, true)
+			ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
 		end
 
 		Weapon:SetNWFloat("EntHealth", EntHealth)
@@ -550,7 +591,7 @@ elseif SERVER then
 			ACF.SetConvexMaterials(Entity, Materials, Player)
 		else
 			local Dir       = Player:GetAimVector()
-			local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true, true)
+			local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
 			if not ConvexHit then return false end
 
 			if ACF.SetConvexMaterial(Entity, ConvexHit.ConvexID, Material, Player) == false then return false end
@@ -588,7 +629,7 @@ elseif SERVER then
 		if not Entity.ACF_Volumetric_Mesh then return false end
 
 		local Dir       = self:GetOwner():GetAimVector()
-		local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true, true)
+		local ConvexHit = ACF.GetConvexHit(Entity, Trace.HitPos, Dir, true)
 		if not ConvexHit then return false end
 
 		local Convex = Entity.ACF_Volumetric_Mesh.Convexes[ConvexHit.ConvexID]

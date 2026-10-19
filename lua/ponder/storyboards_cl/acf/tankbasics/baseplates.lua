@@ -136,6 +136,10 @@ Chapter:AddDelay(1)
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Baseplates contain seats which are invisible to damage and view.\nPress ALT + E to sit in them."}))
 
+local AltKey = Chapter:AddInstruction("KeyPress", {Name = "AltKey", Key = "Alt", Position = Vector(0.45, 0.85, 0), Hold = 1})
+Chapter:AddInstruction("KeyPress", {Name = "EKey", Key = "E", Position = Vector(0.55, 0.85, 0), Hold = 1})
+AltKey:DelayByLength()
+
 Chapter:AddDelay(1)
 local Chapter = Storyboard:Chapter("Baseplate Seats (Wiremod)")
 Chapter:AddDelay(1)

@@ -27,7 +27,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.AT-3", "ACF.Missiles.AntiTankGu
 	CLASS.ExhaustPos	= Vector(-16)
 	CLASS.Racks			= { ["ACF.Racks.1xAT3RKS"] = true, ["ACF.Racks.1xAT3RK"] = true, ["ACF.Racks.1xRK_small"] = true, ["ACF.Racks.4xRK"] = true }
 	CLASS.Navigation	= "Chase"
-	CLASS.Guidances		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["Wire (MCLOS)"] = true, ["ACF.Missiles.Guidance.WireSACLOS"] = true }
+	CLASS.Guidances		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.WireMCLOS"] = true, ["ACF.Missiles.Guidance.WireSACLOS"] = true }
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true }
 	CLASS.SkinIndex		= { HEAT = 0, HE = 1 }
 	CLASS.Agility		= 0.0005

@@ -6,6 +6,7 @@ local Clock       = ACF.Utilities.Clock
 local Effects     = ACF.Utilities.Effects
 local EventViewer = ACF.EventViewer
 local GCmToKgIn    = ACF.gCmToKgIn
+local MaxPenetrations = ACF.MaxPenetrations
 
 Ballistics.Bullets         = Ballistics.Bullets or {}
 Ballistics.UnusedIndexes   = Ballistics.UnusedIndexes or {}
@@ -260,8 +261,25 @@ function Ballistics.FilterConvex(Bullet, Entity, ConvexID)
 	EntFilter[ConvexID] = true
 end
 
+-- Non-ACF entities spawned or moved by chips are ignored for a while, ACF ones are never ghosted
+function ACF.IsRecentlyMutated(Entity)
+	if Entity.IsACFEntity then return false end
+
+	local Contraption = Entity:CFW_GetContraption()
+	if Contraption and Contraption:ACF_IsACFContraption() then return false end
+
+	local Now, Time = CurTime(), ACF.MutationGhostTime
+	local EntLast   = Entity.ACF_LastMutated
+	if EntLast and Now - EntLast < Time then return true end
+
+	local ContLast = Contraption and Contraption.ACF_LastMutated
+
+	return ContLast ~= nil and Now - ContLast < Time
+end
+
 function Ballistics.TestFilter(Entity, Bullet)
 	if not IsValid(Entity) then return true end
+	if ACF.IsRecentlyMutated(Entity) then return false end
 
 	if GlobalFilter[Entity:GetClass()] then return false end
 
@@ -298,7 +316,7 @@ local function GatherMeshIntersections(Bullet, Start, Direction)
 		end
 
 		local EntConvexFilter = Bullet.ConvexFilter and Bullet.ConvexFilter[Ent]
-		local Hits            = ACF.RayIntersectMesh(Ent, Start, Direction, false, nil, EntConvexFilter, MaxDist)
+		local Hits            = ACF.RayIntersectMesh(Ent, Start, Direction, false, EntConvexFilter, MaxDist)
 
 		for _, Hit in ipairs(Hits) do
 			Intersections[#Intersections + 1] = Hit
@@ -318,8 +336,6 @@ do -- Obstacle resolution --------------------------
 	-- Shared by bullets and spall fragments. Both keep their own motion model and impact handling and use
 	-- this only to find what they run into next, so a projectile here is anything carrying Pos, TraceTo,
 	-- Flight and Filter.
-
-	local MaxPenetrations = 50 -- Convexes a projectile can cross in one pass before the rest of the line is left for later
 
 	-- Freezes the ray at Trace.HitPos and builds the ordered convex stack the projectile will walk.
 	-- Returns false when nothing on the line is left to hit, leaving it in flight mode.
@@ -404,9 +420,15 @@ do -- Obstacle resolution --------------------------
 		-- trace reach the world, players and anything else meshless sitting behind them.
 		local Filter = Projectile.Filter
 
+		local Overflow = #Stack >= MaxPenetrations -- Layer spam hitting the cap deletes everything it passed through
+
 		for _, Spent in ipairs(Stack) do
 			if not table.HasValue(Filter, Spent.Entity) then
 				Filter[#Filter + 1] = Spent.Entity
+			end
+
+			if Overflow and IsValid(Spent.Entity) then
+				Spent.Entity:Remove()
 			end
 		end
 

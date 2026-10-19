@@ -34,7 +34,7 @@ ACF.Classes.DefineClass("ACF.Guns.GrenadeLauncher", "ACF.Guns.BaseScalableGun", 
 		Amount = 4,
 		Text = "Maximum amount of ACF grenade launchers a player can create."
 	}
-	CLASS.CostScalar		= 0.38
+	CLASS.CostScalar		= 0.456
 end)
 
 ACF.SetCustomAttachment("models/launcher/40mmgl.mdl", "muzzle", Vector(19), Angle(0, 0, -180))

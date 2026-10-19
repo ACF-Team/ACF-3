@@ -45,7 +45,7 @@ Chapter:AddInstruction("ACF.ScrollToMenuPanel", {Name = "MainMenuCPanel", Scroll
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "The primary way to destroy other vehicles is through the use of weapons. Here we will look at guns."}))
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "For this example, use a 125mm Cannon."}))
 Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", ComboBoxName = "WeaponClassList", OptionID = 2}):DelayByLength()
-Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", ComboBoxName = "WeaponBreechIndex", OptionID = 1})
+Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", ComboBoxName = "WeaponBreechIndex", OptionID = 1}):DelayByLength()
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.caliber", Value = 125}):DelayByLength()
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Spawn the gun and place it in the center of the vertical turret ring."}))

@@ -225,8 +225,9 @@ function ACF.Activate(Entity)
 	EntTbl.ACF.PhysObj   = PhysObj
 
 	-- Backwards compatibility placeholders. To remove later.
-	EntTbl.ACF.Health    = 1
-	EntTbl.ACF.MaxHealth = 1
+	-- Only set when missing, ACF entities derive their health ratio from these when reactivated (see ComputeVolumetricMesh)
+	EntTbl.ACF.Health    = EntTbl.ACF.Health or 1
+	EntTbl.ACF.MaxHealth = EntTbl.ACF.MaxHealth or 1
 
 	ACF.UpdateArea(Entity, PhysObj)
 	ACF.ComputeVolumetricMesh(Entity)

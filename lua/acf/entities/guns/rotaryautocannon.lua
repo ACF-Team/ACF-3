@@ -37,7 +37,7 @@ ACF.Classes.DefineClass("ACF.Guns.RotaryAutocannon", "ACF.Guns.BaseScalableGun",
 		Amount = 2,
 		Text = "Maximum amount of ACF rotary auto cannons a player can create."
 	}
-	CLASS.CostScalar	= 1.4
+	CLASS.CostScalar	= 1.68
 end)
 
 ACF.SetCustomAttachment("models/rotarycannon/kw/20mmrac.mdl", "muzzle", Vector(59.6, 0, 1.74))

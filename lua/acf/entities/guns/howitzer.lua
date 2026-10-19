@@ -32,7 +32,7 @@ ACF.Classes.DefineClass("ACF.Guns.Howitzer", "ACF.Guns.BaseScalableGun", functio
 			{Name = "Breech", LPos = Vector(-47.538, 0, -1.35938), LAng = Angle(0, 0, 0), Width = 7.992125984252, Height = 7.992125984252},
 		}
 	}
-	CLASS.CostScalar	= 0.32
+	CLASS.CostScalar	= 0.384
 end)
 
 ACF.SetCustomAttachment("models/howitzer/howitzer_105mm.mdl", "muzzle", Vector(101.08, 0, -1.08))

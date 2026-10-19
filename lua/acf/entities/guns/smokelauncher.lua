@@ -40,7 +40,7 @@ ACF.Classes.DefineClass("ACF.Guns.SmokeLauncher", "ACF.Guns.BaseScalableGun", fu
 			{Name = "Barrel", LPos = Vector(9.8606, 0, -0.182617), LAng = Angle(180, 0, 0), Width = 3.1889763779528, Height = 3.1889763779528},
 		}
 	}
-	CLASS.CostScalar	= 0.02
+	CLASS.CostScalar	= 0.024
 end)
 
 ACF.SetCustomAttachment("models/launcher/40mmsl.mdl", "muzzle", Vector(5), Angle(0, 0, 180))
