@@ -846,7 +846,7 @@ do	-- Spawn and Update funcs
 			SoundPath  = Motor.SoundPath
 			SoundPitch = Motor.SoundPitch and math_Clamp(Motor.SoundPitch * 100, 0, 255) or SoundPitch
 			SoundVolume = Motor.SoundVolume or SoundVolume
-		elseif SelfTbl.IsPassthrough then -- Set by the sound replacer tool
+		else -- Motorless drives (handcrank, servos, actuators) use their own sound, set by the sound replacer tool
 			SoundPath   = SelfTbl.CustomSound or SoundPath
 			SoundPitch  = SelfTbl.CustomPitch and math_Clamp(SelfTbl.CustomPitch * 100, 0, 255) or SoundPitch
 			SoundVolume = SelfTbl.CustomVolume or SoundVolume
