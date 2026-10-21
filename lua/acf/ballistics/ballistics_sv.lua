@@ -68,6 +68,8 @@ end
 function Ballistics.CalcBulletFlight(Bullet)
 	local ClockTime = Clock.CurTime
 
+	ACF.Debug.SetTarget(Bullet.Owner)
+
 	if Bullet.KillTime and ClockTime >= Bullet.KillTime then
 		return Ballistics.RemoveBullet(Bullet)
 	end
@@ -94,7 +96,9 @@ function Ballistics.CalcBulletFlight(Bullet)
 		Bullet:PostCalcFlight()
 	end
 
-	debugoverlay.Line(Bullet.Pos, Bullet.NextPos, 15, Bullet.Color, true)
+	if ACF.Debug.SetDeveloperLevel(3) then
+		ACF.Debug.Line(Bullet.Pos, Bullet.NextPos, 15, Bullet.Color, true)
+	end
 	Bullet.Pos = Bullet.NextPos
 end
 

@@ -231,7 +231,7 @@ net.Receive("ACF_SmokeImpact", function()
 	if Burst then CreateBurst(Origin, FillerMass + WPMass) end
 end)
 
--- Draws each cloud's blocking sphere while it blocks, for acf_developer modes that include the client
+-- Draws each cloud's blocking sphere while it blocks, when acf_developer is above 0
 hook.Add("PostDrawTranslucentRenderables", "ACF Smoke Debug", function(_, Skybox)
 	if Skybox or not next(Clouds) then return end
 
@@ -239,7 +239,7 @@ hook.Add("PostDrawTranslucentRenderables", "ACF Smoke Debug", function(_, Skybox
 
 	local Mode = Developer and Developer:GetInt() or 0
 
-	if Mode ~= 1 and Mode ~= 3 then return end
+	if Mode < 1 then return end
 
 	local Time = CurTime()
 
