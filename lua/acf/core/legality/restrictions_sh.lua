@@ -8,6 +8,7 @@ end
 local COLOR_DISABLE = Color(255, 50, 50)
 local COLOR_CHAIN   = Color(255, 170, 0)
 local COLOR_CLEAR   = Color(50, 255, 50)
+local COLOR_CONVEX  = Color(255, 220, 0)
 local COLOR_PLANE   = Color(255, 50, 50, 60)
 
 -- Draws a trace green up to where it hit and red past it, through walls since these usually run inside a vehicle
@@ -209,6 +210,29 @@ do -- MARK: Weapon restrictions
 			DrawTrace(Debug, From, LerpVector(Data.Fraction or 1, From, To), To, Life)
 			Debug.EntityTextAtPosition(From, 0, "Breech at reference", Life, COLOR_CLEAR)
 			Debug.EntityTextAtPosition(To, 0, "Breech now", Life, COLOR_DISABLE)
+		end,
+	})
+end
+
+do -- MARK: Overlap restrictions
+	-- Raised by the convex sampler in overlap_check_sv.lua, Data positions are local to the entity
+	Register("overlap", {
+		Title  = "Overlapping",
+		Detail = function(Data)
+			return "Overlapping with " .. (IsValid(Data.Blocker) and tostring(Data.Blocker) or "another entity") .. "."
+		end,
+		Help   = "Move the entities apart so their armor meshes no longer overlap.",
+	}, {
+		Timeout = 30,
+		Draw    = function(Debug, Entity, Data, Life)
+			-- Drawn at the size points are sampled from, which stays inside the real convex
+			if Data.Convex then Debug.Convex(Entity, Data.Convex, Life, COLOR_CONVEX, true, ACF.OverlapShrink) end
+			if Data.BlockerConvex and IsValid(Data.Blocker) then Debug.Convex(Data.Blocker, Data.BlockerConvex, Life, COLOR_DISABLE, true) end
+			if not Data.From or not Data.To then return end
+
+			local To = Entity:LocalToWorld(Data.To)
+
+			DrawTrace(Debug, Entity:LocalToWorld(Data.From), Data.HitPos and Entity:LocalToWorld(Data.HitPos) or To, To, Life)
 		end,
 	})
 end
