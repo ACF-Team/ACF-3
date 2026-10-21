@@ -364,6 +364,8 @@ do -- Spawn/Update/Remove
 	end
 
 	function ENT:ACF_PostSpawn()
+		ACF.Hints.Set(self, "ammo_no_weapon", true)
+
 		self:TriggerInput("Load", 1)
 	end
 
@@ -475,7 +477,7 @@ do -- Spawn/Update/Remove
 			self.RoundData:OnLast(self)
 		end
 
-		if self.ACF.Health == 0 then
+		if ACF.IsDestroyed(self) then
 			timer.Remove("ACF Crate Cookoff " .. self:EntIndex())
 
 			self:Detonate()
@@ -497,8 +499,8 @@ do -- Overlay
 		local Tracer = self.BulletData.Tracer ~= 0 and "-T" or ""
 		local AmmoType = ACF.GetLegacyStyleClassName(self.BulletData.AmmoType) .. Tracer
 
-		if self.ACF.Health == 0 then
-			State:AddError("Destroyed")
+		if ACF.IsDestroyed(self) then
+			-- The destroyed line is added by the base overlay
 		elseif next(self.Weapons) then
 			if self:CanConsume() then
 				State:AddSuccess("Providing Ammo")
@@ -507,8 +509,6 @@ do -- Overlay
 			else
 				State:AddError("Empty")
 			end
-		else
-			State:AddError("Not linked to a weapon!")
 		end
 
 		local CountX = self.CrateProjectilesX

@@ -728,8 +728,7 @@ do -- Movement -----------------------------------------
 
 	function ENT:Calc(InputRPM, InputInertia)
 		local SelfTbl = self:GetTable()
-		if SelfTbl.Disabled then return 0 end
-		if SelfTbl.ACF.Health <= 0 then return 0 end -- Destroyed
+		if not ACF.IsOperational(self, SelfTbl) then return 0 end
 		if SelfTbl.LastActive == Clock.CurTime then return SelfTbl.TorqueOutput end
 
 		if SelfTbl.ChangeFinished < Clock.CurTime then
@@ -856,8 +855,7 @@ do -- Movement -----------------------------------------
 
 	function ENT:Act(Torque, DeltaTime, MassRatio, FlyRPM)
 		local SelfTbl = ENTITY.GetTable(self)
-		if SelfTbl.Disabled then return end
-		if SelfTbl.ACF.Health <= 0 then return end -- Destroyed
+		if not ACF.IsOperational(self, SelfTbl) then return end
 
 		if Torque == 0 then
 			SelfTbl.LastActive = Clock.CurTime

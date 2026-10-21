@@ -101,20 +101,20 @@ do	-- Metamethods
 			if self.Active then
 				State:AddKeyValue("Status", "Active")
 			else
-				State:AddError("Inactive: " .. self.InactiveReason)
+				State:AddError("Inactive")
 			end
 		end
 	end
 
 	do	-- ACF Funcs
 		function ENT:Enable()
-			self:SetActive(true, "")
+			self:SetActive(true)
 			self:UpdateOverlay()
 		end
 
 		function ENT:Disable()
 			self.Active	= false
-			self:SetActive(false, "")
+			self:SetActive(false)
 			self:UpdateOverlay()
 		end
 
@@ -126,17 +126,16 @@ do	-- Metamethods
 			self.DamageScale = math.max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
 		end
 
-		function ENT:SetActive(Active, Reason)
-			local Trigger = (self.Active ~= Active) or (self.InactiveReason ~= Reason)
-			if not Active then
-				self.InactiveReason = Reason
-				self.Active = false
-			else
-				self.InactiveReason = ""
-				self.Active = true
-			end
+		function ENT:SetActive(Active)
+			if self.Active == Active then return end
 
-			if Trigger then self:UpdateOverlay(true) end
+			self.Active = Active
+
+			self:UpdateOverlay(true)
+		end
+
+		function ENT:ACF_ShowRequirements()
+			return IsValid(self.IsRemote and self.Crew or self.Turret)
 		end
 
 		-- Whether this controller is currently providing its benefit
@@ -144,24 +143,25 @@ do	-- Metamethods
 			if self.Disabled then return false end
 
 			local Linked = self.IsRemote and self.Crew or self.Turret
-			if not IsValid(Linked) then self:SetActive(false, "") return false end
+			if not IsValid(Linked) then self:SetActive(false) return false end
 
-			if (self.ACF.Health / self.ACF.MaxHealth) <= 0.25 then
-				self:SetActive(false, "Too damaged!")
-				return false
-			end
+			local Healthy = self:SetRequirement("Health", (self.ACF.Health / self.ACF.MaxHealth) > 0.25, "below 25%")
+			local Light   = true
 
 			-- Overweight turrets keep the link but get no bonus, so the mass is rechecked here
 			-- every time rather than once at link time
 			if not self.IsRemote then
 				local CarriedMass = (Linked.TurretData and Linked.TurretData.TotalMass or 0) + (Linked.ACF and Linked.ACF.Mass or 0)
-				if CarriedMass > ACF.LightweightTurretMassLimit then
-					self:SetActive(false, "Turret is too heavy!")
-					return false
-				end
+
+				Light = self:SetRequirement("Turret mass", CarriedMass <= ACF.LightweightTurretMassLimit, math.Round(CarriedMass) .. " of " .. ACF.LightweightTurretMassLimit .. " kg")
 			end
 
-			if self.Active == false then self:SetActive(true, "") end
+			if not (Healthy and Light) then
+				self:SetActive(false)
+				return false
+			end
+
+			if self.Active == false then self:SetActive(true) end
 			return true
 		end
 

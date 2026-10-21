@@ -308,6 +308,8 @@ do -- Spawn and Update functions
 
 		-- Supported fuel types may have changed (no-op on a fresh spawn, which isn't parented yet)
 		if self.ACF_FuelParent then Fuel.Join(self) end
+
+		Fuel.Refresh(self)
 	end
 
 	ACF.RegisterLinkSource("acf_engine", "FuelTanks")
@@ -375,10 +377,6 @@ function ENT:ACF_UpdateOverlayState(State)
 		State:AddWarning("Idle")
 	end
 
-	if ACF.RequireFuel and not next(self.FuelTanks) then
-		State:AddWarning("No compatible fuel tanks share this engine's parent")
-	end
-
 	State:AddKeyValue("Type", self.Name)
 	State:AddEnginePower("Power", self.PeakPower)
 	State:AddEngineTorque("Torque", self.PeakTorque)
@@ -402,7 +400,7 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	-- Adjusting performance based on damage
 	local TorqueMult = Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, self.TorqueScale, 1)
 
-	if self.ACF.Health <= 0 then TorqueMult = 0 end -- Destroyed engines produce no power
+	if ACF.IsDestroyed(self) then TorqueMult = 0 end -- Destroyed engines produce no power
 
 	self.PeakTorque = self.PeakTorqueHeld * TorqueMult
 	return HitRes
@@ -447,23 +445,6 @@ function ENT:DestroySound()
 	self.LastSound  = nil
 	self.LastPitch  = 0
 	self.Sound      = nil
-end
-
-function ENT:ACF_IsLegal()
-	local AllowArbitraryParents = ACF.AllowArbitraryParents
-
-	-- MARCH: Craftian's change to ACF.CheckLegal calls caused this to break,
-	-- so this self.Active should guard against it.
-	if self.Active then
-		if not AllowArbitraryParents and not self.ACF_EngineParentValid then
-			return false, "Parenting Issue", "The engine must be parented to an ACF baseplate."
-		end
-
-		local Contraption = self:CFW_GetContraption()
-		if not AllowArbitraryParents and not Contraption then return false, "Parenting Issue", "Not part of a contraption (somehow??)" end -- Will this even be triggered?
-	end
-
-	return true
 end
 
 function ENT:CFW_PreParentedTo(_, NewParent)
@@ -553,8 +534,7 @@ function ENT:Think()
 	local SelfTbl = ENTITY.GetTable(self)
 
 	if not SelfTbl.Active then return end
-	if SelfTbl.Disabled then return end
-	if SelfTbl.ACF.Health <= 0 then return end
+	if not ACF.IsOperational(self, SelfTbl) then return end
 
 	self:CalcRPM(SelfTbl)
 

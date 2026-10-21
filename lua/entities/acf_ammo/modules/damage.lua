@@ -70,7 +70,7 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	local Inflictor, Attacker = DmgInfo.Inflictor, DmgInfo.Attacker
 
 	-- If destroyed outright: guarantee a cookoff instead of instant detonation
-	if self.ACF.Health <= 0 then
+	if ACF.IsDestroyed(self) then
 		self.Attacker  = Attacker
 		self.Inflictor = Inflictor
 

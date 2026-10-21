@@ -18,6 +18,8 @@ ACF.Entities.AutoRegister(2026091001, function(CLASS)
 end, "Crew", "Crews")
 
 ENT.ConvexMaterial = "Flesh"
+ENT.ACF_DestroyedLabel = "Dead"
+ENT.ACF_RequiresParentChain = true
 
 ENT.ACF_StaticWireOutputs = {
 	"ModelEff",

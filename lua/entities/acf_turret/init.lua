@@ -109,6 +109,10 @@ do -- Random timer crew stuff
 		end
 
 		SelfTbl.IsControlled = Controlled
+
+		-- Only weaponized turrets need someone aiming them
+		self:SetRequirement("Aim control", Controlled or not SelfTbl.IsWeaponized or SelfTbl.IsPassthrough, "needs a gunner, commander, pilot or lightweight controller")
+
 		return Controlled
 	end
 end
@@ -1030,11 +1034,7 @@ do -- Overlay
 		if not SelfTbl.IsPassthrough then -- Weapons never gate a servo or actuator
 			if SelfTbl.IsWeaponized then
 				State:AddKeyValue("Weaponized", "Yes")
-				if SelfTbl.IsControlled then
-					State:AddKeyValue("Controlled", "Yes")
-				else
-					State:AddError("Uncontrolled: not aiming")
-				end
+				State:AddKeyValue("Controlled", SelfTbl.IsControlled and "Yes" or "No")
 			else
 				State:AddKeyValue("Weaponized", "No")
 			end
@@ -1073,6 +1073,8 @@ do -- Metamethods
 			This.Motor		= Motor
 			Motor.Turret	= This
 
+			ACF.Hints.Set(Motor, "turret_motor_no_drive", false)
+
 			Motor:ValidatePlacement()
 			This:UpdateTurretSlew()
 
@@ -1089,6 +1091,8 @@ do -- Metamethods
 
 			This.Motor		= nil
 			Motor.Turret	= nil
+
+			ACF.Hints.Set(Motor, "turret_motor_no_drive", true)
 
 			Motor:ValidatePlacement()
 			This:UpdateTurretSlew()

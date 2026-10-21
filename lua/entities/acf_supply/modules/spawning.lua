@@ -78,7 +78,7 @@ end
 
 do -- Overlay
 	function ENT:ACF_UpdateOverlayState(State)
-		State:AddLabel(self.ACF.Health == 0 and "Destroyed" or self:CanConsume() and "Supplying" or "Idle")
+		State:AddLabel(ACF.IsDestroyed(self) and "Destroyed" or self:CanConsume() and "Supplying" or "Idle")
 		local SizeX, SizeY, SizeZ = self:GetSize():Unpack()
 		State:AddSize("Size", SizeX, SizeY, SizeZ)
 		State:AddProgressBar("Mass Remaining", Round(self.Amount or 0, 2), Round(self.Capacity or 0, 2), " kg", 2)

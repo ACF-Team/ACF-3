@@ -316,7 +316,10 @@ local function CalcFlight(Missile)
 	Missile.CurDir = Dir
 
 	--Missile trajectory debugging
-	Debug.Line(Pos, EndPos, 10, Color(0, 255, 0))
+	if Debug.SetDeveloperLevel(3) then
+		Debug.SetTarget(Missile:CPPIGetOwner())
+		Debug.Line(Pos, EndPos, 10, Color(0, 255, 0))
+	end
 
 	Missile:DoFlight()
 end
@@ -686,7 +689,10 @@ function ENT:Detonate(Destroyed)
 	end
 
 	if BulletData.Pos then
-		Debug.Line(BulletData.Pos, BulletData.Pos + BulletData.Flight, 10, Color(255, 128, 0))
+		if Debug.SetDeveloperLevel(1) then
+			Debug.SetTarget(self:CPPIGetOwner())
+			Debug.Line(BulletData.Pos, BulletData.Pos + BulletData.Flight, 10, Color(255, 128, 0))
+		end
 	end
 
 	BulletData.DetonatorAngle = 91

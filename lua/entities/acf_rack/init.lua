@@ -106,10 +106,13 @@ do
 		TraceConfig.filter = function(x) return not (x == Rack or x == Crew or x.noradius or x:GetOwner() ~= Rack:GetOwner() or x:IsPlayer() or x:GetClass() == "acf_missile" or ACF.GlobalFilter[x:GetClass()]) end
 		local tr = util.TraceLine(TraceConfig)
 
-		debugoverlay.Line(CrewPos, tr.HitPos, 1, Green, true)
-		debugoverlay.Line(tr.HitPos, BreechPos, 1, Red, true)
+		if ACF.Debug.SetDeveloperLevel(2) then
+			ACF.Debug.SetTarget(Rack:CPPIGetOwner())
+			ACF.Debug.Line(CrewPos, tr.HitPos, 1, Green, true)
+			ACF.Debug.Line(tr.HitPos, BreechPos, 1, Red, true)
+		end
 
-		Crew.OverlayErrors.LOSCheck = tr.Hit and "Crew cannot see the breech\nOf: " .. (tostring(Rack) or "<INVALID ENTITY???>") .. "\nBlocked by " .. (tostring(tr.Entity) or "<INVALID ENTITY???>") or nil
+		ACF.Hints.Set(Crew, "crew_breech_los", tr.Hit, tr.Hit and { Gun = Rack, Blocker = tr.Entity } or nil)
 		Crew:UpdateOverlay()
 		-- A crew member who can't reach the breech contributes nothing
 		if tr.Hit then
@@ -125,15 +128,14 @@ do
 	--- @return boolean # Whether the rack currently can't load at all, which stalls the reload
 	function ENT:UpdateLoadMod()
 		self.CrewsByType = self.CrewsByType or {}
-		local Blocked = false
-		local Reason
 
-		if IsValid(self.Autoloader) and self.Autoloader.ACF.Health > 0 and table.Count(self.MountPoints) == 1 then
-			local Sum1, AutoBlocked, AutoReason = self.Autoloader:GetReloadEffAuto(self, self.CurrentCrate)
+		if IsValid(self.Autoloader) and not ACF.IsDestroyed(self.Autoloader) and table.Count(self.MountPoints) == 1 then
+			local Sum1, AutoBlocked = self.Autoloader:GetReloadEffAuto(self, self.CurrentCrate)
 			self.LoadCrewMod = self.LoadCrewModOverride or math.Clamp(Sum1, ACF.AutoloaderFallbackCoef, ACF.AutoloaderMaxBonus)
 			self.AutoloaderFeeding = true
-			Blocked = AutoBlocked
-			Reason = AutoReason
+
+			self:SetRequirement("Autoloader ready", not AutoBlocked, "see the autoloader")
+			self:SetRequirement("Loader sight", true)
 		else
 			self.AutoloaderFeeding = false
 			BlockedCrew = 0
@@ -142,11 +144,15 @@ do
 			local Sum3, Count3 = ACF.WeightedLinkSum(self.CrewsByType.Gunner or {}, GetReloadEff, self, self.CurrentCrate or self)
 			self.LoadCrewMod = self.LoadCrewModOverride or math.Clamp(Sum1 + Sum2 + Sum3, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
 			-- A crewed rack only stalls once every last crew member has lost sight of the breech
-			Blocked = BlockedCrew > 0 and BlockedCrew == Count1 + Count2 + Count3
-			if Blocked then Reason = "Reloading is stalled, no loader can see the breech" end
+			local CrewCount = Count1 + Count2 + Count3
+
+			self:SetRequirement("Autoloader ready", true)
+			self:SetRequirement("Loader sight", BlockedCrew < CrewCount or CrewCount == 0, "no loader can see the breech")
 		end
 
 		-- Check space behind breech
+		local IsBlocked, Blocker = false, nil
+
 		if ACF.LegalChecks and self.BulletData --[[ useless? and self.BulletData.AmmoType ~= "Empty"]] and self.ClassData.BreechConfigs then
 			local IdName      = self.BulletData.WeaponType
 			local IdClass     = GetMissileClass(IdName)
@@ -163,8 +169,11 @@ do
 			TraceConfig.filter = function(x) return not (x == self or x.noradius or x.IsACFAutoloader or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or x:GetClass() == "acf_missile" or ACF.GlobalFilter[x:GetClass()]) end
 			local tr = TraceLine(TraceConfig)
 
-			debugoverlay.Line(wp1, tr.HitPos, 1, Green, true)
-			debugoverlay.Line(tr.HitPos, wp2, 1, Red, true)
+			if ACF.Debug.SetDeveloperLevel(2) then
+				ACF.Debug.SetTarget(self:CPPIGetOwner())
+				ACF.Debug.Line(wp1, tr.HitPos, 1, Green, true)
+				ACF.Debug.Line(tr.HitPos, wp2, 1, Red, true)
+			end
 
 			-- Additional Randomized check just in case
 			local tr2
@@ -179,25 +188,23 @@ do
 				TraceConfig.endpos = wrp2
 				tr2 = TraceLine(TraceConfig)
 
-				debugoverlay.Line(wrp1, tr2.HitPos, 1, Green, true)
-				debugoverlay.Line(tr2.HitPos, wrp2, 1, Red, true)
+				if ACF.Debug.SetDeveloperLevel(2) then
+					ACF.Debug.SetTarget(self:CPPIGetOwner())
+					ACF.Debug.Line(wrp1, tr2.HitPos, 1, Green, true)
+					ACF.Debug.Line(tr2.HitPos, wrp2, 1, Red, true)
+				end
 			end
 
-			local IsBlocked = (tr.Hit or (tr2 and tr2.Hit))
-			self.OverlayErrors.BreechCheck = IsBlocked and "Not enough space behind breech!\nHover with ACF menu tool" or nil
-			self:UpdateOverlay()
-			if IsBlocked then
-				Blocked = true
-				Reason = "Reloading is stalled, there is no room to work behind the breech"
-			end
+			IsBlocked = tr.Hit or (tr2 and tr2.Hit)
+			Blocker   = IsBlocked and (tr.Hit and tr or tr2).Entity
 		end
 
+		self:SetRequirement("Room behind breech", not IsBlocked, IsBlocked and "blocked by " .. tostring(Blocker))
+
 		-- A ground crew loading the rack works around whatever is in the way
-		if self.LoadCrewModOverride then Blocked = false end
+		local Blocked = not self.LoadCrewModOverride and not self:RequirementsMet()
 
 		self.LoadBlocked = Blocked
-		self.OverlayWarnings.LoadBlocked = Blocked and Reason or nil
-		self:UpdateOverlay()
 
 		return self.LoadCrewMod, Blocked
 	end
@@ -276,9 +283,6 @@ do -- Spawning and Updating --------------------
 		Entity.CurrentShot    = 0
 		Entity.Spread         = Rack.Spread or 1
 		Entity.InAirMissiles  = {}
-
-		Entity.OverlayErrors = {}
-		Entity.OverlayWarnings = {}
 
 		Entity:ACF_SetEntityName("ACF " .. Entity.Name)
 		Entity:SetNWString("ACF_Class", Entity.Class)
@@ -370,6 +374,8 @@ do -- Spawning and Updating --------------------
 	end
 
 	function ENT:ACF_PostSpawn()
+		ACF.Hints.Set(self, "weapon_no_ammo", true)
+
 		local Rack = self:GetRack()
 		if Rack.OnSpawn then Rack.OnSpawn(self, nil, Rack) end
 
@@ -537,6 +543,9 @@ do -- Entity Link/Unlink -----------------------
 		Target.Weapons[Weapon] = true
 		Weapon.Crates[Target] = true
 
+		ACF.Hints.Set(Weapon, "weapon_no_ammo", false)
+		ACF.Hints.Set(Target, "ammo_no_weapon", false)
+
 		Weapon:UpdateOverlay()
 		Target:UpdateOverlay()
 
@@ -575,6 +584,9 @@ do -- Entity Link/Unlink -----------------------
 
 			Target.Weapons[Weapon] = nil
 			Weapon.Crates[Target] = nil
+
+			ACF.Hints.Set(Weapon, "weapon_no_ammo", not next(Weapon.Crates))
+			ACF.Hints.Set(Target, "ammo_no_weapon", not next(Target.Weapons))
 
 			Weapon:UpdateOverlay()
 			Target:UpdateOverlay()
@@ -637,6 +649,17 @@ do -- Entity Inputs ----------------------------
 end ---------------------------------------------
 
 do -- Entity Overlay ----------------------------
+	-- Loading requirements are only worth listing while a mount point waits on them, ground crews bypass them
+	function ENT:ACF_ShowRequirements()
+		if self.LoadCrewModOverride then return false end
+
+		for _, Mount in ipairs(self.MountPoints) do
+			if Mount.State ~= "Loaded" then return true end
+		end
+
+		return false
+	end
+
 	function ENT:ACF_UpdateOverlayState(State)
 		local Delay  = math.Round(self.FireDelay, 2)
 		local Reload = math.Round(self.ReloadTime, 2)
@@ -648,24 +671,12 @@ do -- Entity Overlay ----------------------------
 		if self.Jammed then
 			Error = true
 			Status = "Jammed!\nRepair this rack to be able to use it again."
-		elseif not next(self.Crates) then
-			Error = true
-			Status = "Not linked to an ammo crate!"
 		end
 
 		if Error then
 			State:AddError(Status)
 		else
 			State:AddLabel(Status)
-		end
-
-		-- Compile error messages
-		for _, Error in pairs(self.OverlayErrors) do
-			State:AddError(Error)
-		end
-
-		for _, Warning in pairs(self.OverlayWarnings) do
-			State:AddWarning(Warning)
 		end
 
 		local ReadyToFire = 0
@@ -728,7 +739,7 @@ do -- Firing -----------------------------------
 		if self.RetryShoot then return false end
 		if not self.Firing then return false end
 		if not ACF.RacksCanFire then return false end
-		if self.ACF.Health <= 0 then return false end -- Destroyed
+		if ACF.IsDestroyed(self) then return false end
 
 		return true
 	end

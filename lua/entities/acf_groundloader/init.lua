@@ -223,7 +223,7 @@ function ENT:CheckOnTrackedRacks(_)
 	if not TrackedRacks then return end
 	if not TrackData then return end
 	if not self.CanLoadRacks then return end
-	if self.ACF.Health <= 0 then return end
+	if ACF.IsDestroyed(self) then return end
 
 	local Crates = self:ACF_GetUserVar("LinkedAmmoCrates")
 	local Efficiency = self.ACF.Health / self.ACF.MaxHealth
@@ -241,7 +241,7 @@ end
 function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	local HitRes = Damage.doPropDamage(self, DmgResult, DmgInfo)
 
-	if self.ACF.Health <= 0 then
+	if ACF.IsDestroyed(self) then
 		for Rack in pairs(self.TrackData) do
 			if IsValid(Rack) then
 				Rack:SetLoadModOverride(nil)

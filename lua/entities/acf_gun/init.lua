@@ -95,10 +95,15 @@ do -- Random timer crew stuff
 		TraceConfig.filter = function(x) return not (x == Gun or x.noradius or x == Crew or x == ENTITY.GetParent(Gun) or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[ENTITY.GetClass(x)]) end
 		TraceLine(TraceConfig)
 
-		-- Debug.Line(CrewPos, TraceResult.HitPos, 1, COLOR_GREEN, true)
-		-- Debug.Line(TraceResult.HitPos, BreechPos, 1, COLOR_RED, true)
+		if Debug.SetDeveloperLevel(2) then
+			Debug.SetTarget(Gun:CPPIGetOwner())
+			Debug.Line(CrewPos, TraceResult.HitPos, 1, COLOR_GREEN, true)
+			Debug.Line(TraceResult.HitPos, BreechPos, 1, COLOR_RED, true)
+		end
 
-		Crew.OverlayErrors.LOSCheck = (ACF.LegalChecks and TraceResult.Hit) and "Crew cannot see the breech\nOf: " .. (tostring(Gun) or "<INVALID ENTITY???>") .. "\nBlocked by " .. (tostring(TraceResult.Entity) or "<INVALID ENTITY???>") or nil
+		local LOSBlocked = ACF.LegalChecks and TraceResult.Hit
+
+		ACF.Hints.Set(Crew, "crew_breech_los", LOSBlocked, LOSBlocked and { Gun = Gun, Blocker = TraceResult.Entity } or nil)
 		Crew:UpdateOverlay()
 		-- A crew member who can't reach the breech contributes nothing
 		if TraceResult.Hit then
@@ -114,16 +119,15 @@ do -- Random timer crew stuff
 	--- @return boolean # Whether the gun currently can't load at all, which stalls the reload
 	function ENT_UpdateLoadMod(self)
 		local SelfTbl = ENTITY.GetTable(self)
-		local Blocked = false
-		local Reason
 
 		SelfTbl.CrewsByType = SelfTbl.CrewsByType or {}
-		if IsValid(SelfTbl.Autoloader) and ENTITY.GetTable(SelfTbl.Autoloader).ACF.Health > 0 then
-			local Sum1, AutoBlocked, AutoReason = SelfTbl.Autoloader:GetReloadEffAuto(self, SelfTbl.CurrentCrate)
+		if IsValid(SelfTbl.Autoloader) and not ACF.IsDestroyed(SelfTbl.Autoloader) then
+			local Sum1, AutoBlocked = SelfTbl.Autoloader:GetReloadEffAuto(self, SelfTbl.CurrentCrate)
 			SelfTbl.LoadCrewMod = math.Clamp(Sum1, ACF.AutoloaderFallbackCoef, ACF.AutoloaderMaxBonus)
 			SelfTbl.AutoloaderFeeding = true
-			Blocked = AutoBlocked
-			Reason = AutoReason
+
+			self:SetRequirement("Autoloader ready", not AutoBlocked, "see the autoloader")
+			self:SetRequirement("Loader sight", true)
 		else
 			SelfTbl.AutoloaderFeeding = false
 			BlockedCrew = 0
@@ -132,11 +136,15 @@ do -- Random timer crew stuff
 			local Sum3, Count3 = ACF.WeightedLinkSum(SelfTbl.CrewsByType.Gunner or {}, GetReloadEff, self, SelfTbl.CurrentCrate or self)
 			SelfTbl.LoadCrewMod = math.Clamp(Sum1 + Sum2 + Sum3, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
 			-- A crewed gun only stalls once every last crew member has lost sight of the breech
-			Blocked = BlockedCrew > 0 and BlockedCrew == Count1 + Count2 + Count3
-			if Blocked then Reason = "Reloading is stalled, no loader can see the breech" end
+			local CrewCount = Count1 + Count2 + Count3
+
+			self:SetRequirement("Autoloader ready", true)
+			self:SetRequirement("Loader sight", BlockedCrew < CrewCount or CrewCount == 0, "no loader can see the breech")
 		end
 
 		-- Check space behind breech
+		local IsBlocked, Blocker = false, nil
+
 		if ACF.LegalChecks and SelfTbl.BulletData and SelfTbl.ClassData.BreechConfigs then
 			-- Check assuming 2 piece for now.
 			local ShellLength = (SelfTbl.BulletData.RoundLength or ((SelfTbl.BulletData.PropLength or 0) + (SelfTbl.BulletData.ProjLength or 0))) / ACF.InchToCm / 2
@@ -149,8 +157,11 @@ do -- Random timer crew stuff
 			TraceConfig.filter = function(x) return not (x == self or x == ENTITY.GetParent(self) or x.noradius or x.IsACFAutoloader or ENTITY.GetOwner(x) ~= ENTITY.GetOwner(self) or x:IsPlayer() or ACF.GlobalFilter[ENTITY.GetClass(x)]) end
 			TraceLine(TraceConfig)
 
-			-- Debug.Line(wp1, TraceResult.HitPos, 1, COLOR_GREEN, true)
-			-- Debug.Line(TraceResult.HitPos, wp2, 1, COLOR_RED, true)
+			if Debug.SetDeveloperLevel(2) then
+				Debug.SetTarget(self:CPPIGetOwner())
+				Debug.Line(wp1, TraceResult.HitPos, 1, COLOR_GREEN, true)
+				Debug.Line(TraceResult.HitPos, wp2, 1, COLOR_RED, true)
+			end
 
 			-- Additional Randomized check just in case
 			local tr2
@@ -168,22 +179,22 @@ do -- Random timer crew stuff
 				TraceConfig.output = TraceResult
 				tr2 = TraceResult2
 
-				-- Debug.Line(wrp1, tr2.HitPos, 1, COLOR_GREEN, true)
-				-- Debug.Line(tr2.HitPos, wrp2, 1, COLOR_RED, true)
+				if Debug.SetDeveloperLevel(2) then
+					Debug.SetTarget(self:CPPIGetOwner())
+					Debug.Line(wrp1, tr2.HitPos, 1, COLOR_GREEN, true)
+					Debug.Line(tr2.HitPos, wrp2, 1, COLOR_RED, true)
+				end
 			end
 
-			local IsBlocked = (TraceResult.Hit or (tr2 and tr2.Hit))
-			SelfTbl.OverlayErrors.BreechCheck = IsBlocked and "Not enough space behind breech!\nHover with ACF menu tool" or nil
-			self:UpdateOverlay()
-			if IsBlocked then
-				Blocked = true
-				Reason = "Reloading is stalled, there is no room to work behind the breech"
-			end
+			IsBlocked = TraceResult.Hit or (tr2 and tr2.Hit)
+			Blocker   = IsBlocked and (TraceResult.Hit and TraceResult or tr2).Entity
 		end
 
+		self:SetRequirement("Room behind breech", not IsBlocked, IsBlocked and "blocked by " .. tostring(Blocker))
+
+		local Blocked = not self:RequirementsMet()
+
 		SelfTbl.LoadBlocked = Blocked
-		SelfTbl.OverlayWarnings.LoadBlocked = Blocked and Reason or nil
-		self:UpdateOverlay()
 
 		return SelfTbl.LoadCrewMod, Blocked
 	end
@@ -241,32 +252,40 @@ do -- Random timer crew stuff
 		SelfTbl.RotationFilter[Vertical] = true
 	end
 
+	-- Run by the breech_clipping legality restriction, returns false and the trace when the breech is obstructed
 	function ENT:CheckBreechClipping()
-		if not ACF.LegalChecks then return end
-
 		local SelfTbl  = ENTITY.GetTable(self)
 
-		if SelfTbl.IsBelted then return end -- Filter out belt feds (usually used as secondaries)
-		if SelfTbl.Weapon == "ACF.Guns.SmokeLauncher" then return end -- Skip for smoke launchers
+		if SelfTbl.IsBelted then return true end -- Filter out belt feds (usually used as secondaries)
+		if SelfTbl.Weapon == "ACF.Guns.SmokeLauncher" then return true end -- Skip for smoke launchers
 
 		local BreechRef = SelfTbl.BreechReference
-		if not IsValid(BreechRef) then return false end
+		if not IsValid(BreechRef) then return true end
+		if not SelfTbl.RotationFilter then return true end -- Filter not built yet
+
 		local ReferenceBreechPos = ENTITY.LocalToWorld(BreechRef, SelfTbl.BreechLocalToRef)
 		local CurrentBreechPos = ENTITY.LocalToWorld(self, SelfTbl.BreechPos)
 
 		TraceConfig.start = ReferenceBreechPos
 		TraceConfig.endpos = CurrentBreechPos
-		TraceConfig.filter = function(x) return not (x == self or x == ENTITY.GetParent(self) or x.noradius or ENTITY.GetOwner(x) ~= ENTITY.GetOwner(self) or x:IsPlayer() or ACF.GlobalFilter[ENTITY.GetClass(x)] or SelfTbl.RotationFilter[x]) end
+		TraceConfig.filter = function(x) return not (x == self or x == ENTITY.GetParent(self) or x.noradius or ENTITY.GetOwner(x) ~= ENTITY.GetOwner(self) or x:IsPlayer() or ACF.GlobalFilter[ENTITY.GetClass(x)] or SelfTbl.RotationFilter[x] or ACF.IsPrimitivePending(x)) end
 		TraceLine(TraceConfig)
 
-		if TraceResult.Hit then
-			SelfTbl.OverlayErrors.BreechClipping = "Breech is clipping through " .. (tostring(TraceResult.Entity) or "<INVALID ENTITY???>")
-			self:Disable()
-		else
-			SelfTbl.OverlayErrors.BreechClipping = nil
+		if Debug.SetDeveloperLevel(2) then
+			Debug.SetTarget(self:CPPIGetOwner())
+			Debug.Line(ReferenceBreechPos, CurrentBreechPos, 1, TraceResult.Hit and COLOR_RED or COLOR_GREEN, true)
 		end
 
-		Debug.Line(ReferenceBreechPos, CurrentBreechPos, 1, TraceResult.Hit and COLOR_RED or COLOR_GREEN, true)
+		if not TraceResult.Hit then return true end
+
+		-- Each end is local to the entity it moves with, so it is redrawn where the vehicle is now
+		return false, {
+			Reference = BreechRef,
+			From      = SelfTbl.BreechLocalToRef,
+			To        = SelfTbl.BreechPos,
+			Fraction  = math.Round(TraceResult.Fraction, 2),
+			Blocker   = TraceResult.Entity,
+		}
 	end
 end
 
@@ -368,9 +387,6 @@ do -- Spawn and Update functions --------------------------------
 			Entity.BreechWidth = 0
 			Entity.BreechHeight = 0
 		end
-
-		Entity.OverlayErrors = {}
-		Entity.OverlayWarnings = {}
 
 		-- Set NWvars
 		Entity:ACF_SetEntityName("ACF " .. Entity.Name)
@@ -487,13 +503,14 @@ do -- Spawn and Update functions --------------------------------
 			Player:AddCount(self:GetWeapon():GetType().LimitConVar.Name, self)
 		end
 
+		ACF.Hints.Set(self, "weapon_no_ammo", true)
+
 		WireLib.TriggerOutput(self, "Status", "Empty")
 		WireLib.TriggerOutput(self, "Ammo Type", "Empty")
 		WireLib.TriggerOutput(self, "Projectile Mass", 1000)
 		WireLib.TriggerOutput(self, "Muzzle Velocity", 1000)
 
 		ACF.AugmentedTimer(function(Config) ENT_UpdateLoadMod(self, Config) end, function() return IsValid(self) end, nil, {MinTime = 0.5, MaxTime = 1})
-		ACF.AugmentedTimer(function(Config) self:CheckBreechClipping(Config) end, function() return IsValid(self) end, nil, {MinTime = 1, MaxTime = 2})
 		ACF.AugmentedTimer(function(Config) self:UpdateRotationFilter(Config) end, function() return IsValid(self) end, nil, {MinTime = 1, MaxTime = 2})
 
 		-- TODO: Wow this is weird, but at least now the timer will clean itself up...
@@ -596,6 +613,9 @@ do -- Metamethods --------------------------------
 			This.Crates[Crate]  = true
 			Crate.Weapons[This] = true
 
+			ACF.Hints.Set(This, "weapon_no_ammo", false)
+			ACF.Hints.Set(Crate, "ammo_no_weapon", false)
+
 			This:UpdateOverlay(true)
 			Crate:UpdateOverlay(true)
 
@@ -632,6 +652,9 @@ do -- Metamethods --------------------------------
 					This.CurrentCrate = This:FindNextCrate(nil, CheckConsumable, This)
 					if IsValid(This.CurrentCrate) then This:SetNW2Int("CurCrate", This.CurrentCrate:EntIndex()) end
 				end
+
+				ACF.Hints.Set(This, "weapon_no_ammo", not next(This.Crates))
+				ACF.Hints.Set(Crate, "ammo_no_weapon", not next(Crate.Weapons))
 
 				This:UpdateOverlay(true)
 				Crate:UpdateOverlay(true)
@@ -764,8 +787,7 @@ do -- Metamethods --------------------------------
 			local SelfTbl = ENTITY.GetTable(self)
 
 			if not SelfTbl.Firing then return false end -- Nobody is holding the trigger
-			if SelfTbl.Disabled then return false end -- Disabled
-			if SelfTbl.ACF.Health <= 0 then return false end -- Destroyed
+			if not ACF.IsOperational(self, SelfTbl) then return false end
 
 			if SelfTbl.State ~= "Loaded" then -- Weapon is not loaded
 				if SelfTbl.State == "Empty" and not SelfTbl.Retry then
@@ -1235,46 +1257,26 @@ do -- Metamethods --------------------------------
 	end -----------------------------------------
 
 	do -- Overlay -------------------------------
+		-- Loading requirements are only worth listing while something is actually waiting on them
+		function ENT:ACF_ShowRequirements()
+			return self.State ~= "Loaded"
+		end
+
 		function ENT:ACF_UpdateOverlayState(State)
 			local SelfTbl = ENTITY.GetTable(self)
 			local AmmoType  = ACF.GetLegacyStyleClassName(SelfTbl.BulletData.AmmoType) .. (SelfTbl.BulletData.Tracer ~= 0 and "-T" or "")
 			local Firerate  = math.floor(60 / SelfTbl.ReloadTime)
-			local CrateAmmo = 0
-			local StageOneAmmo = false
+			local CrateAmmo, StageOneAmmo = self:TallyCrates()
 
-			for Crate in pairs(SelfTbl.Crates) do -- Tally up the amount of ammo being provided by active crates
-				if Crate:CanConsume() then
-					CrateAmmo = CrateAmmo + Crate.Ammo
-					if Crate.AmmoStage == ACF.AmmoStageMin then StageOneAmmo = true end
-				end
-			end
-
-			for _, Error in pairs(SelfTbl.OverlayErrors) do
-				State:AddError(Error)
-			end
-
-			-- Stalls are only worth mentioning while something is actually waiting on them
-			for Name, Warning in pairs(SelfTbl.OverlayWarnings) do
-				if Name ~= "LoadBlocked" or SelfTbl.State ~= "Loaded" then
-					State:AddWarning(Warning)
-				end
-			end
-
-			if not next(SelfTbl.Crates) then
-				State:AddError("Not linked to an ammo crate!")
-			elseif SelfTbl.State == "Loaded" then
+			if SelfTbl.State == "Loaded" then
 				State:AddSuccess("Loaded with " .. AmmoType)
 			else
 				State:AddWarning(SelfTbl.State)
 			end
 
 			-- Weapons only ever start a reload from a stage 1 crate, so staged ammo alone leaves them empty
-			if SelfTbl.State == "Empty" and CrateAmmo > 0 then
-				if not StageOneAmmo then
-					State:AddError("No linked crate is at ammo stage " .. ACF.AmmoStageMin .. "!\nWeapons only load from stage " .. ACF.AmmoStageMin .. " crates,\nhigher stages only restock the ones below them")
-				else
-					State:AddError("Ammo is available but the weapon is not loading!\nFire it or use the Reload input to try again")
-				end
+			if SelfTbl.State == "Empty" and CrateAmmo > 0 and not StageOneAmmo then
+				State:AddError("No linked crate is at ammo stage " .. ACF.AmmoStageMin .. "!\nWeapons only load from stage " .. ACF.AmmoStageMin .. " crates,\nhigher stages only restock the ones below them")
 			end
 
 			local BreechIndex  = SelfTbl.BreechIndex or 1
@@ -1318,6 +1320,21 @@ do -- Metamethods --------------------------------
 	end
 
 	do -- Misc ----------------------------------
+		--- @return number, boolean # Ammo provided by active crates, whether any of them is at the first ammo stage
+		function ENT:TallyCrates()
+			local CrateAmmo    = 0
+			local StageOneAmmo = false
+
+			for Crate in pairs(self.Crates) do
+				if Crate:CanConsume() then
+					CrateAmmo = CrateAmmo + Crate.Ammo
+					if Crate.AmmoStage == ACF.AmmoStageMin then StageOneAmmo = true end
+				end
+			end
+
+			return CrateAmmo, StageOneAmmo
+		end
+
 		function ENT:SetState(State)
 			self.State = State
 
@@ -1349,6 +1366,10 @@ do -- Metamethods --------------------------------
 					v:Restock()
 				end
 			end
+
+			local CrateAmmo, StageOneAmmo = self:TallyCrates()
+
+			ACF.Hints.Set(self, "weapon_not_loading", SelfTbl.State == "Empty" and CrateAmmo > 0 and StageOneAmmo)
 
 			ENTITY.NextThink(self, Clock.CurTime + 0.5 + math.random())
 

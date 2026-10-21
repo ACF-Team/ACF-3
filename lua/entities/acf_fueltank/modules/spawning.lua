@@ -138,8 +138,8 @@ end
 
 do -- Overlay text
 	function ENT:ACF_UpdateOverlayState(State)
-		if self.ACF.Health == 0 then
-			State:AddError("Destroyed")
+		if ACF.IsDestroyed(self) then
+			-- The destroyed line is added by the base overlay
 		elseif self:CanConsume() then
 			State:AddSuccess("Active")
 		else

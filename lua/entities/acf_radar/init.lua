@@ -154,7 +154,7 @@ end
 local function ScanForEntities(Entity)
 	ClearTargets(Entity)
 
-	if Entity.ACF.Health <= 0 then return end -- Destroyed
+	if ACF.IsDestroyed(Entity) then return end
 	if not Entity.GetDetected then return end
 
 	local Detected = Entity:GetDetected()

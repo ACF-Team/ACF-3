@@ -290,8 +290,10 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function(CLASS, 
 			local JetStart  = HitPos - Direction * Start
 			local JetEnd    = HitPos + Direction * End
 
-			Debug.Cross(JetStart, 15, 15, Color(0, 255, 0), true)
-			Debug.Cross(JetEnd, 15, 15, Color(255, 0, 0), true)
+			if Debug.SetDeveloperLevel(1) then
+				Debug.Cross(JetStart, 15, 15, Color(0, 255, 0), true)
+				Debug.Cross(JetEnd, 15, 15, Color(255, 0, 0), true)
+			end
 
 			local TraceData = {start = JetStart, endpos = JetEnd, filter = {}, mask = Bullet.Mask}
 			local Penetrations = 0
@@ -306,7 +308,9 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function(CLASS, 
 
 				if TraceRes.Fraction == 1 and not IsValid(Ent) then break end
 
-				Debug.Line(JetStart, PenHitPos, 15, ColorRand(100, 255))
+				if Debug.SetDeveloperLevel(1) then
+					Debug.Line(JetStart, PenHitPos, 15, ColorRand(100, 255))
+				end
 
 				if not Ballistics.TestFilter(Ent, Bullet) then TraceData.filter[#TraceData.filter + 1] = TraceRes.Entity continue end
 

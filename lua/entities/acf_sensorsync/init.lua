@@ -188,7 +188,7 @@ local function RunBatch(Entity, GroupSensors)
 	local PlayerShapes = {}
 
 	for Sensor in pairs(GroupSensors) do
-		if not IsValid(Sensor) or Sensor.ACF.Health <= 0 then continue end
+		if not IsValid(Sensor) or ACF.IsDestroyed(Sensor) then continue end
 
 		local Shape = Sensor:GetScanShape()
 
@@ -348,6 +348,8 @@ for SensorClass in pairs(ENT.ACF_SensorClasses) do
 		Sync.Sensors[Sensor] = true
 		Sensor.SyncSource = Sync
 
+		ACF.Hints.Set(Sync, "sensorsync_no_sensors", false)
+
 		Sensor:StopIndependentScanning()
 		Sync:RefreshRateGroups()
 
@@ -364,6 +366,8 @@ for SensorClass in pairs(ENT.ACF_SensorClasses) do
 
 		Sync.Sensors[Sensor] = nil
 		Sensor.SyncSource = nil
+
+		ACF.Hints.Set(Sync, "sensorsync_no_sensors", not next(Sync.Sensors))
 
 		Sensor:ResumeIndependentScanning()
 
@@ -417,6 +421,10 @@ do -- Spawning
 			CheckDistantLinks(self, "Sensors")
 		end)
 	end
+
+	function ENT:ACF_PostSpawn()
+		ACF.Hints.Set(self, "sensorsync_no_sensors", not next(self.Sensors))
+	end
 end
 
 do -- Updating
@@ -468,8 +476,6 @@ function ENT:ACF_UpdateOverlayState(State)
 
 	if self.TargetCount > 0 then
 		State:AddSuccess(self.TargetCount .. " target(s) detected")
-	elseif LinkedCount == 0 then
-		State:AddWarning("No sensors linked")
 	else
 		State:AddSuccess("Active")
 	end
