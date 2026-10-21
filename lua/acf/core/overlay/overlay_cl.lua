@@ -649,6 +649,8 @@ do
         OverlayMatrix:Translate(OverlayOffset)
         OverlayMatrix:Scale(OverlayScale)
 
+        if not StopTime and Overlay.CollectHintRects then Overlay.CollectHintRects(State, XScale, YScale, TotalW) end
+
         -- Draw background
         surface.SetDrawColor(COLOR_PRIMARY_BACKGROUND)
         local BoxX, BoxY, BoxW, BoxH = TargetX - (TotalW / (2 / XScale)), TargetY - (TotalH / (2 / YScale)), TotalW * XScale, TotalH * YScale
@@ -687,6 +689,7 @@ do
     end
 
     hook.Add("HUDPaint", "ACF_OverlayRender", function()
+        if Overlay.ResetHintRects then Overlay.ResetHintRects() end
         if HideInfoBubble() then return end
         if not next(Overlays) then return end
         if not ShouldDraw then
@@ -720,6 +723,8 @@ do
                 end
             end
         end
+
+        if Overlay.DrawHints then Overlay.DrawHints() end
     end)
 
     hook.Add("ACF_RenderContext_LookAtChanged", "ACF_Overlay_DetermineLookat", function(_, New)
