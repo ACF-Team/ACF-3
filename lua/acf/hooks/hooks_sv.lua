@@ -36,6 +36,16 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 		return true
 	end
 
+	--- Called when an entity's health reaches zero. Unrelated to legality restrictions.
+	--- @param Entity entity The entity that was destroyed.
+	function Gamemode:ACF_OnEntityDestroyed()
+	end
+
+	--- Called when a destroyed entity is repaired above zero health.
+	--- @param Entity entity The entity that was restored.
+	function Gamemode:ACF_OnEntityRestored()
+	end
+
 	--- Called when an ACF entity creates or updates its Wire inputs.  
 	--- It's recommended to just push entries into the List parameter.
 	--- @param Entity entity The entity to create or update Wire inputs on.

@@ -27,6 +27,9 @@ return function()
             OverlayState:Begin()
             local EntityName = self:ACF_GetEntityName()
             OverlayState:AddHeader(EntityName)
+
+            if ACF.IsDestroyed(self) then OverlayState:AddError(self.ACF_DestroyedLabel or "Destroyed") end
+
             self:ACF_UpdateOverlayState(OverlayState)
             OverlayState:End()
             ACF.Overlay.UpdateOverlay(self, OverlayState)
