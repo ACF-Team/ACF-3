@@ -110,6 +110,9 @@ do -- Clientside settings
 		local Hints = Base:AddCheckBox("#acf.menu.settings.legal_checks.legal_hints")
 		Hints:SetConVar("acf_legalhints")
 
+		local Visuals = Base:AddCheckBox("#acf.menu.settings.legal_checks.legal_visuals")
+		Visuals:SetConVar("acf_legalvisuals")
+
 		local ShameMsgs = Base:AddCheckBox("#acf.menu.settings.legal_checks.legal_shame")
 		ShameMsgs:SetConVar("acf_legalshame")
 		Base:AddHelp("#acf.menu.settings.legal_checks.legal_shame_desc")

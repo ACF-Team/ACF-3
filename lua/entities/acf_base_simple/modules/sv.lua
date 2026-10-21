@@ -30,6 +30,7 @@ return function()
 
             if ACF.IsDestroyed(self) then OverlayState:AddError(self.ACF_DestroyedLabel or "Destroyed") end
 
+            ACF.Legality.AddOverlayLines(self, OverlayState)
             self:ACF_UpdateOverlayState(OverlayState)
             OverlayState:End()
             ACF.Overlay.UpdateOverlay(self, OverlayState)
