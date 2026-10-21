@@ -8,6 +8,77 @@ return function()
     function ENT:Disable() end
     function ENT:ACF_UpdateOverlayState() end
 
+    local AddRequirementLines
+
+    do -- Requirements ------------------------------
+        --- Marks a requirement as met or not, the overlay lists the unmet ones. Not applicable counts as met.
+        --- @param Name string Short name of the requirement, also its key
+        --- @param Met boolean Whether the requirement is currently met
+        --- @param Detail string|nil Why it is not met
+        --- @return boolean # Met, for use in conditions
+        function ENT:SetRequirement(Name, Met, Detail)
+            local Unmet = self.ACF_UnmetRequirements
+
+            if Met then
+                if not (Unmet and Unmet[Name] ~= nil) then return true end
+
+                Unmet[Name] = nil
+
+                table.RemoveByValue(self.ACF_UnmetOrder, Name)
+                self:UpdateOverlay()
+
+                return true
+            end
+
+            if not Unmet then
+                Unmet                      = {}
+                self.ACF_UnmetRequirements = Unmet
+                self.ACF_UnmetOrder        = {}
+            end
+
+            Detail = Detail or false
+
+            local Current = Unmet[Name]
+
+            if Current == Detail then return false end
+
+            if Current == nil then
+                local Order = self.ACF_UnmetOrder
+
+                Order[#Order + 1] = Name
+            end
+
+            Unmet[Name] = Detail
+
+            self:UpdateOverlay()
+
+            return false
+        end
+
+        --- @return boolean # Whether every requirement set on this entity is met
+        function ENT:RequirementsMet()
+            local Unmet = self.ACF_UnmetRequirements
+
+            return not Unmet or next(Unmet) == nil
+        end
+
+        -- Override to hide the requirements when they are not relevant, such as a gun that is already loaded
+        function ENT:ACF_ShowRequirements()
+            return true
+        end
+
+        function AddRequirementLines(self, State)
+            local Unmet = self.ACF_UnmetRequirements
+            if not Unmet or not next(Unmet) or not self:ACF_ShowRequirements() then return end
+
+            for _, Name in ipairs(self.ACF_UnmetOrder) do
+                local Detail = Unmet[Name]
+
+                State:AddWarning(Detail and Name .. ": " .. Detail or Name)
+            end
+        end
+    end ---------------------------------------------
+
     do -- Entity Overlay ----------------------------
         local Name    = "ACF Overlay Buffer %s"
         local timer   = timer
@@ -31,6 +102,8 @@ return function()
             if ACF.IsDestroyed(self) then OverlayState:AddError(self.ACF_DestroyedLabel or "Destroyed") end
 
             ACF.Legality.AddOverlayLines(self, OverlayState)
+            ACF.Hints.AddOverlayLines(self, OverlayState)
+            AddRequirementLines(self, OverlayState)
             self:ACF_UpdateOverlayState(OverlayState)
             OverlayState:End()
             ACF.Overlay.UpdateOverlay(self, OverlayState)

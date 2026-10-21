@@ -8,12 +8,19 @@ Fuel.Groups       = Groups
 -- Engines only draw from tanks sharing their direct parent. Engine.FuelTanks and Tank.Engines are
 -- kept in sync here so link sources, E2/SF and the overlays keep working.
 
+local function Refresh(Engine)
+	ACF.Hints.Set(Engine, "engine_no_fuel", ACF.RequireFuel and not next(Engine.FuelTanks))
+end
+
+Fuel.Refresh = Refresh
+
 local function Pair(Engine, Tank)
 	if not Engine.FuelTypes[Tank.FuelType] then return end
 
 	Engine.FuelTanks[Tank] = true
 	Tank.Engines[Engine]   = true
 
+	Refresh(Engine)
 	Engine:UpdateOverlay()
 end
 
@@ -60,6 +67,7 @@ function Fuel.Leave(Entity)
 
 			if Engine.FuelTank == Entity then Engine.FuelTank = nil end
 
+			Refresh(Engine)
 			Engine:UpdateOverlay()
 		end
 
@@ -72,7 +80,12 @@ function Fuel.Join(Entity)
 	Fuel.Leave(Entity)
 
 	local Parent = Entity:GetParent()
-	if not IsValid(Parent) then return end
+
+	if not IsValid(Parent) then
+		if Entity.IsACFEngine then Refresh(Entity) end
+
+		return
+	end
 
 	local Group = Groups[Parent]
 
@@ -90,6 +103,8 @@ function Fuel.Join(Entity)
 		for Tank in pairs(Group.Tanks) do
 			Pair(Entity, Tank)
 		end
+
+		Refresh(Entity)
 	else
 		Group.Tanks[Entity] = true
 
