@@ -275,51 +275,137 @@ RegisterTest("AIO", "Drivetrain Discovery", function(Env)
 end, nil, "A gearbox is probably not linked to the rest of the drivetrain")
 
 ---------------------------------------------------------------------------------------------------------------------------
--- NETWORKING
+-- Networking + autotest function
 ---------------------------------------------------------------------------------------------------------------------------
 
 if SERVER then
     util.AddNetworkString("ACF_Baseplate_RunTest")
     util.AddNetworkString("ACF_Baseplate_TestResult")
+    util.AddNetworkString("ACF_Baseplate_AutotestReport")
+
+    -- Runs a single test (or its fix) on a baseplate. Does no permission checks or rate limiting.
+    function ACF.RunBaseplateAutotest(Baseplate, TestName, IsFix)
+        if not IsValid(Baseplate) or Baseplate:GetClass() ~= "acf_baseplate" then return false, "Not a valid baseplate" end
+        if not Baseplate:GetContraption() then return false, "Baseplate is not part of a contraption" end
+
+        local Test = TestMap[TestName]
+        if not Test then return false, "No test with that name exists" end
+
+        local Env = {Baseplate = Baseplate}
+        SetupTests(Env)
+
+        if IsFix then
+            if not Test.FixFunc then return false, "This test has no fix" end
+            Test.FixFunc(Env)
+            return true
+        end
+
+        return Test.Func(Env)
+    end
+
+    -- Runs every test on a baseplate. Returns a list of {Name, OK, Results} and the total number of faults.
+    function ACF.RunAllBaseplateAutotests(Baseplate)
+        local AllResults, FaultCount = {}, 0
+
+        for _, Category in ipairs(TestCategories) do
+            for _, Test in ipairs(Tests[Category]) do
+                -- One broken test shouldn't stop the rest from running
+                local Success, OK, Results = xpcall(ACF.RunBaseplateAutotest, function(Err)
+                    ErrorNoHaltWithStack(Err)
+                    return Err
+                end, Baseplate, Test.Name)
+
+                if not Success then Results = "Test errored: " .. tostring(OK) end
+                OK = Success and OK or false
+
+                if not OK then FaultCount = FaultCount + (istable(Results) and #Results or 1) end
+                AllResults[#AllResults + 1] = {Name = Test.Name, OK = OK, Results = Results}
+            end
+        end
+
+        return AllResults, FaultCount
+    end
+
+    -- Faults are sent as entity indices since they may not exist clientside yet (e.g. right after a paste)
+    local function WriteResult(TestName, OK, Results)
+        net.WriteString(TestName)
+        net.WriteBool(OK)
+        if not OK and istable(Results) and #Results > 0 then
+            net.WriteUInt(#Results, 16)
+            for _, Fault in ipairs(Results) do
+                net.WriteUInt(IsValid(Fault.Ent) and Fault.Ent:EntIndex() or 0, MAX_EDICT_BITS)
+                net.WriteString(Fault.Msg)
+            end
+        else
+            net.WriteUInt(0, 16)
+            net.WriteString(isstring(Results) and Results or "Success")
+        end
+    end
 
     local LastRun = {}
 
-    net.Receive("ACF_Baseplate_RunTest", function(_, ply)
-        local ent = net.ReadEntity()
-        local testName = net.ReadString()
-        local isFix = net.ReadBool()
+    net.Receive("ACF_Baseplate_RunTest", function(_, Player)
+        local Baseplate, TestName, IsFix = net.ReadEntity(), net.ReadString(), net.ReadBool()
 
-        if not IsValid(ent) or not ent.IsACFBaseplate then return end
-        local test = TestMap[testName]
-        if not test then return end
+        if not IsValid(Baseplate) or not Baseplate.IsACFBaseplate then return end
+        if not TestMap[TestName] then return end
+        if not Baseplate:CPPICanTool(Player, "") then return end
 
-        -- Rate limit: 1-second global cooldown per test
+        -- Rate limit: 2-second global cooldown per test
         local Time = CurTime()
-        if (LastRun[testName] or 0) + 2 > Time then return end
-        LastRun[testName] = Time -- Update the last run timestamp
+        if (LastRun[TestName] or 0) + 2 > Time then return end
+        LastRun[TestName] = Time
 
-        local Env = {Baseplate = ent}
-        SetupTests(Env)
-        if isFix then
-            if test.FixFunc then test.FixFunc(Env) end
-        else
-            local ok, results = test.Func(Env)
+        local OK, Results = ACF.RunBaseplateAutotest(Baseplate, TestName, IsFix)
+        if IsFix then return end
 
-            net.Start("ACF_Baseplate_TestResult")
-                net.WriteString(testName)
-                net.WriteBool(ok or false)
-                if not ok and istable(results) then
-                    net.WriteUInt(#results, 16)
-                    for _, fault in ipairs(results) do
-                        net.WriteEntity(fault.Ent)
-                        net.WriteString(fault.Msg)
-                    end
-                else
-                    net.WriteUInt(0, 16)
-                    net.WriteString(isstring(results) and results or "Success")
-                end
-            net.Send(ply)
+        net.Start("ACF_Baseplate_TestResult")
+            WriteResult(TestName, OK or false, Results)
+        net.Send(Player)
+    end)
+
+    -- Autotest baseplates in freshly pasted dupes, and tell the player if anything failed
+    local LastAutotest = setmetatable({}, {__mode = "k"})
+
+    hook.Add("AdvDupe_FinishPasting", "ACF_Autotest_CatchInitialErrors", function(DupeInfo)
+        local Dupe   = DupeInfo[1]
+        local Player = Dupe.Player
+        if not IsValid(Player) then return end
+
+        local Now = CurTime()
+        if (LastAutotest[Player] or 0) + 5 > Now then return end
+
+        local Baseplates = {}
+        for _, Entity in pairs(Dupe.CreatedEntities) do
+            if IsValid(Entity) and Entity:GetClass() == "acf_baseplate" then
+                Baseplates[#Baseplates + 1] = Entity
+            end
         end
+        if #Baseplates == 0 then return end
+
+        LastAutotest[Player] = Now
+
+        -- Give links, crew and contraptions a moment to settle before testing
+        timer.Simple(1, function()
+            if not IsValid(Player) then return end
+
+            for _, Baseplate in ipairs(Baseplates) do
+                if IsValid(Baseplate) then
+                    local AllResults, FaultCount = ACF.RunAllBaseplateAutotests(Baseplate)
+
+                    if FaultCount > 0 then
+                        net.Start("ACF_Baseplate_AutotestReport")
+                            net.WriteUInt(Baseplate:EntIndex(), MAX_EDICT_BITS)
+                            net.WriteUInt(FaultCount, 16)
+                            net.WriteUInt(#AllResults, 8)
+                            for _, Result in ipairs(AllResults) do
+                                WriteResult(Result.Name, Result.OK, Result.Results)
+                            end
+                        net.Send(Player)
+                    end
+                end
+            end
+        end)
     end)
 end
 
@@ -333,6 +419,102 @@ local function RunTest(Ent, Name, IsFix)
         net.WriteString(Name)
         net.WriteBool(IsFix)
     net.SendToServer()
+end
+
+local ApplyQueuedResults
+
+if CLIENT then
+    local QueuedResults = {} -- Paste autotest results waiting for their baseplate's autotester to be opened, by entity index
+
+    local function ReadResult()
+        local Result = {Name = net.ReadString(), OK = net.ReadBool(), Faults = {}}
+        local Count = net.ReadUInt(16)
+
+        if Count == 0 then Result.Message = net.ReadString() end
+        for I = 1, Count do
+            Result.Faults[I] = {EntIndex = net.ReadUInt(MAX_EDICT_BITS), Msg = net.ReadString()}
+        end
+
+        return Result
+    end
+
+    -- Shows a test result in the currently open autotester
+    local function ApplyResult(Result)
+        local test = TestMap[Result.Name]
+        if not test or not IsValid(test.RowCategory) then return end
+
+        local ok = Result.OK
+        test.RowCategory.Header.ResultColor = ok and Color(0, 200, 0, 150) or Color(255, 0, 0, 150)
+
+        local Content = test.RowCategory.Contents
+        Content:Clear()
+
+        if Result.Message then
+            local Lbl = Content:Add("DLabel")
+            Lbl:SetText((ok and "  PASSED: " or "  FAILED: ") .. Result.Message)
+            Lbl:Dock(TOP)
+            Lbl:SetDark(true)
+            Lbl:DockMargin(10, 5, 10, 5)
+        end
+
+        for _, Fault in ipairs(Result.Faults) do
+            local targetEnt = Entity(Fault.EntIndex)
+
+            local Btn = Content:Add("DButton")
+            Btn:SetText("[" .. (Fault.EntIndex ~= 0 and Fault.EntIndex or "NULL") .. "] " .. Fault.Msg)
+            Btn:Dock(TOP)
+            Btn:DockMargin(5, 2, 5, 2)
+            Btn:SetContentAlignment(4)
+            Btn:SetTextInset(8, 0)
+            Btn.DoClick = function()
+                if not IsValid(targetEnt) then targetEnt = Entity(Fault.EntIndex) end
+                if not IsValid(targetEnt) then return end
+                local View = render.GetViewSetup()
+                local Lookat = (targetEnt:WorldSpaceCenter() - View.origin):Angle()
+                ACF.Utilities.Notify.InterpViewAngleTo(Lookat, nil, function()
+                    ACF.Utilities.Notify.SingleEntityImpulse(targetEnt)
+                end, 0.8)
+                ACF.Utilities.Notify.SingleEntityImpulse(targetEnt)
+            end
+        end
+
+        test.RowCategory:SetExpanded(not ok)
+        test.RowCategory:InvalidateLayout(true)
+    end
+
+    net.Receive("ACF_Baseplate_TestResult", function()
+        ApplyResult(ReadResult())
+    end)
+
+    net.Receive("ACF_Baseplate_AutotestReport", function()
+        local EntIndex   = net.ReadUInt(MAX_EDICT_BITS)
+        local FaultCount = net.ReadUInt(16)
+        local Results    = {}
+
+        for I = 1, net.ReadUInt(8) do Results[I] = ReadResult() end
+        QueuedResults[EntIndex] = Results
+
+        local Key = input.LookupBinding("+menu_context")
+        Key = Key and Key:upper() or "C"
+
+        local Messages = ACF.Utilities.Messages
+        Messages.PrintChat("Info", "The contraption on baseplate #" .. EntIndex .. " failed the autotest with " .. FaultCount .. " failure(s).")
+        Messages.PrintChat("Info", "To find out why, open the Context Menu (" .. Key .. "), right click on the baseplate, and click \"Autotester\".")
+    end)
+
+    -- Don't let stale results show up on a different entity that reuses the index
+    hook.Add("EntityRemoved", "ACF_Baseplate_AutotestQueueCleanup", function(Ent, FullUpdate)
+        if FullUpdate then return end
+        QueuedResults[Ent:EntIndex()] = nil
+    end)
+
+    ApplyQueuedResults = function(Ent)
+        local Results = QueuedResults[Ent:EntIndex()]
+        if not Results then return end
+
+        QueuedResults[Ent:EntIndex()] = nil
+        for _, Result in ipairs(Results) do ApplyResult(Result) end
+    end
 end
 
 return function()
@@ -373,51 +555,6 @@ return function()
                             test.RowCategory.Header.ResultColor = nil
                         end
                         RunTest(ent, test.Name, false)
-                    end
-                end)
-
-                net.Receive("ACF_Baseplate_TestResult", function()
-                    local name = net.ReadString()
-                    local ok = net.ReadBool()
-                    local count = net.ReadUInt(16)
-
-                    local test = TestMap[name]
-                    if test and IsValid(test.RowCategory) then
-                        test.RowCategory.Header.ResultColor = ok and Color(0, 200, 0, 150) or Color(255, 0, 0, 150)
-
-                        local Content = test.RowCategory.Contents
-                        Content:Clear()
-
-                        if ok then
-                            local Lbl = Content:Add("DLabel")
-                            Lbl:SetText("  PASSED: " .. (count == 0 and net.ReadString() or "OK"))
-                            Lbl:Dock(TOP)
-                            Lbl:SetDark(true)
-                            Lbl:DockMargin(10, 5, 10, 5)
-                        else
-                            for _ = 1, count do
-                                local targetEnt = net.ReadEntity()
-                                local reason = net.ReadString()
-
-                                local Btn = Content:Add("DButton")
-                                Btn:SetText("[" .. (IsValid(targetEnt) and targetEnt:EntIndex() or "NULL") .. "] " .. reason)
-                                Btn:Dock(TOP)
-                                Btn:DockMargin(5, 2, 5, 2)
-                                Btn:SetContentAlignment(4)
-                                Btn:SetTextInset(8, 0)
-                                Btn.DoClick = function()
-                                    if not IsValid(targetEnt) then return end
-                                    local View = render.GetViewSetup()
-                                    local Lookat = (targetEnt:WorldSpaceCenter() - View.origin):Angle()
-                                    ACF.Utilities.Notify.InterpViewAngleTo(Lookat, nil, function()
-                                        ACF.Utilities.Notify.SingleEntityImpulse(targetEnt)
-                                    end, 0.8)
-                                    ACF.Utilities.Notify.SingleEntityImpulse(targetEnt)
-                                end
-                            end
-                        end
-                        test.RowCategory:SetExpanded(not ok)
-                        test.RowCategory:InvalidateLayout(true)
                     end
                 end)
 
@@ -475,6 +612,8 @@ return function()
                         end
                     end
                 end
+
+                ApplyQueuedResults(ent)
 
                 ent:CallOnRemove("ACF_Baseplate_DebugCleanup", function()
                     if IsValid(window) then window:Remove() end
