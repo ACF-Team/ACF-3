@@ -63,16 +63,22 @@ local function addItem(Item)
 		return
 	end
 
-	local Pass = Passes[Item.Def.Pass]
-	local Life = Item[Item.Def.LifeIndex] or DEFAULT_LIFE
+	local Def  = Item.Def
+	local Pass = Passes[Def.Pass]
+	local Life = Item[Def.LifeIndex] or DEFAULT_LIFE
+
+	-- Work that would otherwise be redone every frame, such as derived points, is done once here
+	if Def.Build then Def.Build(Item, unpack(Item, 1, Def.Count)) end
 
 	Item.Expire = CurTime() + Life
 	Pass[#Pass + 1] = Item
 end
 
--- Registers a debug shape, Args is a list of {Name, TypeName, Default}, Draw runs clientside with the args
-local function register(Name, Pass, Args, Draw)
-	local Def = {Name = Name, Pass = Pass, Draw = Draw, Count = #Args, Args = {}, Writers = {}, Readers = {}, ID = #Registry + 1}
+-- Registers a debug shape, Args is a list of {Name, TypeName, Default}
+-- Build (optional) runs once clientside when the item arrives, with the item and the args, and stores what Draw needs on the item
+-- Draw runs clientside every frame with the item and the args
+local function register(Name, Pass, Args, Build, Draw)
+	local Def = {Name = Name, Pass = Pass, Build = Build, Draw = Draw, Count = #Args, Args = {}, Writers = {}, Readers = {}, ID = #Registry + 1}
 
 	assert(Def.ID < 2 ^ ID_BITS, "Too many debug shapes for ID_BITS")
 
@@ -153,58 +159,91 @@ local Life	= {"Lifetime", "Life"}
 local Col	= {"Color", "Color"}
 local IgnZ	= {"IgnoreZ", "Bool"}
 
-register("Axis", "World", {Vec, {"Angle", "Angle"}, {"Size", "Number"}, Life, IgnZ}, function(Origin, Ang, Size, _, IgnoreZ)
-	render.DrawLine(Origin, Origin + Ang:Forward() * Size, Color(255, 0, 0), not IgnoreZ)
-	render.DrawLine(Origin, Origin - Ang:Right() * Size, Color(0, 255, 0), not IgnoreZ)
-	render.DrawLine(Origin, Origin + Ang:Up() * Size, Color(0, 0, 255), not IgnoreZ)
+local COLOR_X		= Color(255, 0, 0)
+local COLOR_Y		= Color(0, 255, 0)
+local COLOR_Z		= Color(0, 0, 255)
+local COLOR_GRID	= Color(255, 255, 255, 80)
+
+register("Axis", "World", {Vec, {"Angle", "Angle"}, {"Size", "Number"}, Life, IgnZ}, function(Item, Origin, Ang, Size)
+	Item.X = Origin + Ang:Forward() * Size
+	Item.Y = Origin - Ang:Right() * Size
+	Item.Z = Origin + Ang:Up() * Size
+end, function(Item, Origin, _, _, _, IgnoreZ)
+	render.DrawLine(Origin, Item.X, COLOR_X, not IgnoreZ)
+	render.DrawLine(Origin, Item.Y, COLOR_Y, not IgnoreZ)
+	render.DrawLine(Origin, Item.Z, COLOR_Z, not IgnoreZ)
 end)
 
-register("Box", "World", {Vec, {"Mins", "Vector"}, {"Maxs", "Vector"}, Life, Col}, function(Origin, Mins, Maxs, _, Color)
+register("Box", "World", {Vec, {"Mins", "Vector"}, {"Maxs", "Vector"}, Life, Col}, nil, function(_, Origin, Mins, Maxs, _, Color)
 	render.DrawWireframeBox(Origin, angle_zero, Mins, Maxs, Color, true)
 end)
 
-register("BoxAngles", "World", {Vec, {"Mins", "Vector"}, {"Maxs", "Vector"}, {"Angle", "Angle"}, Life, Col}, function(Origin, Mins, Maxs, Ang, _, Color)
+register("BoxAngles", "World", {Vec, {"Mins", "Vector"}, {"Maxs", "Vector"}, {"Angle", "Angle"}, Life, Col}, nil, function(_, Origin, Mins, Maxs, Ang, _, Color)
 	render.DrawWireframeBox(Origin, Ang, Mins, Maxs, Color, true)
 end)
 
-register("Cross", "World", {Vec, {"Size", "Number"}, Life, Col, IgnZ}, function(Origin, Size, _, Color, IgnoreZ)
-	render.DrawLine(Origin - Vector(Size, 0, 0), Origin + Vector(Size, 0, 0), Color, not IgnoreZ)
-	render.DrawLine(Origin - Vector(0, Size, 0), Origin + Vector(0, Size, 0), Color, not IgnoreZ)
-	render.DrawLine(Origin - Vector(0, 0, Size), Origin + Vector(0, 0, Size), Color, not IgnoreZ)
+-- Pairs of points, drawn as one line each
+local function drawLines(Points, Color, DepthTest)
+	for I = 1, #Points, 2 do
+		render.DrawLine(Points[I], Points[I + 1], Color, DepthTest)
+	end
+end
+
+register("Cross", "World", {Vec, {"Size", "Number"}, Life, Col, IgnZ}, function(Item, Origin, Size)
+	Item.Points = {
+		Origin - Vector(Size, 0, 0), Origin + Vector(Size, 0, 0),
+		Origin - Vector(0, Size, 0), Origin + Vector(0, Size, 0),
+		Origin - Vector(0, 0, Size), Origin + Vector(0, 0, Size),
+	}
+end, function(Item, _, _, _, Color, IgnoreZ)
+	drawLines(Item.Points, Color, not IgnoreZ)
 end)
 
-register("Grid", "World", {Vec}, function(Origin)
-	local Color = Color(255, 255, 255, 80)
+register("Grid", "World", {Vec}, function(Item, Origin)
+	local Points = {}
 
 	for I = -10, 10 do
-		render.DrawLine(Origin + Vector(I * 16, -160, 0), Origin + Vector(I * 16, 160, 0), Color, true)
-		render.DrawLine(Origin + Vector(-160, I * 16, 0), Origin + Vector(160, I * 16, 0), Color, true)
+		Points[#Points + 1] = Origin + Vector(I * 16, -160, 0)
+		Points[#Points + 1] = Origin + Vector(I * 16, 160, 0)
+		Points[#Points + 1] = Origin + Vector(-160, I * 16, 0)
+		Points[#Points + 1] = Origin + Vector(160, I * 16, 0)
 	end
+
+	Item.Points = Points
+end, function(Item)
+	drawLines(Item.Points, COLOR_GRID, true)
 end)
 
-register("Line", "World", {{"Start", "Vector"}, {"End", "Vector"}, Life, Col, IgnZ}, function(Start, End, _, Color, IgnoreZ)
+register("Line", "World", {{"Start", "Vector"}, {"End", "Vector"}, Life, Col, IgnZ}, nil, function(_, Start, End, _, Color, IgnoreZ)
 	render.DrawLine(Start, End, Color, not IgnoreZ)
 end)
 
-register("Sphere", "World", {Vec, {"Size", "Number"}, Life, Col, IgnZ}, function(Origin, Size, _, Color, IgnoreZ)
+register("Sphere", "World", {Vec, {"Size", "Number"}, Life, Col, IgnZ}, nil, function(_, Origin, Size, _, Color, IgnoreZ)
 	cam.IgnoreZ(IgnoreZ)
 	render.DrawWireframeSphere(Origin, Size, 8, 8, Color, true)
 	cam.IgnoreZ(false)
 end)
 
-register("SweptBox", "World", {{"Start", "Vector"}, {"End", "Vector"}, {"Mins", "Vector"}, {"Maxs", "Vector"}, {"Angle", "Angle"}, Life, Col}, function(Start, End, Mins, Maxs, Ang, _, Color)
-	render.DrawWireframeBox(Start, Ang, Mins, Maxs, Color, true)
-	render.DrawWireframeBox(End, Ang, Mins, Maxs, Color, true)
+register("SweptBox", "World", {{"Start", "Vector"}, {"End", "Vector"}, {"Mins", "Vector"}, {"Maxs", "Vector"}, {"Angle", "Angle"}, Life, Col}, function(Item, Start, End, Mins, Maxs, Ang)
+	local Points = {}
 
 	for I = 0, 7 do
 		local Corner = Vector(I % 2 == 0 and Mins.x or Maxs.x, I % 4 < 2 and Mins.y or Maxs.y, I < 4 and Mins.z or Maxs.z)
 		local Offset = LocalToWorld(Corner, angle_zero, vector_origin, Ang)
 
-		render.DrawLine(Start + Offset, End + Offset, Color, true)
+		Points[#Points + 1] = Start + Offset
+		Points[#Points + 1] = End + Offset
 	end
+
+	Item.Points = Points
+end, function(Item, Start, End, Mins, Maxs, Ang, _, Color)
+	render.DrawWireframeBox(Start, Ang, Mins, Maxs, Color, true)
+	render.DrawWireframeBox(End, Ang, Mins, Maxs, Color, true)
+
+	drawLines(Item.Points, Color, true)
 end)
 
-register("Triangle", "World", {{"A", "Vector"}, {"B", "Vector"}, {"C", "Vector"}, Life, Col, IgnZ}, function(A, B, C, _, Color, IgnoreZ)
+register("Triangle", "World", {{"A", "Vector"}, {"B", "Vector"}, {"C", "Vector"}, Life, Col, IgnZ}, nil, function(_, A, B, C, _, Color, IgnoreZ)
 	render.SetColorMaterial() -- Wireframe shapes drawn before this one change the material
 	cam.IgnoreZ(IgnoreZ)
 	render.DrawQuad(A, B, C, C, Color)
@@ -214,25 +253,34 @@ end)
 
 local TextFont	= "BudgetLabel"
 local LINE_HEIGHT = 14
+local ViewTrace	= {mask = MASK_OPAQUE, output = {}} -- Reused by every view check
 
-register("Text", "HUD", {Vec, {"Text", "String"}, Life, {"ViewCheck", "Bool"}}, function(Origin, Text, _, ViewCheck)
-	if ViewCheck and util.TraceLine({start = EyePos(), endpos = Origin, mask = MASK_OPAQUE}).Hit then return end
+register("Text", "HUD", {Vec, {"Text", "String"}, Life, {"ViewCheck", "Bool"}}, nil, function(_, Origin, Text, _, ViewCheck)
+	if ViewCheck then
+		ViewTrace.start  = EyePos()
+		ViewTrace.endpos = Origin
+
+		util.TraceLine(ViewTrace)
+
+		if ViewTrace.output.Hit then return end
+	end
 
 	local Pos = Origin:ToScreen()
 
 	if Pos.visible then draw.SimpleText(Text, TextFont, Pos.x, Pos.y, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER) end
 end)
 
-register("EntityTextAtPosition", "HUD", {Vec, {"Line", "Line"}, {"Text", "String"}, Life, Col}, function(Origin, Line, Text, _, Color)
+register("EntityTextAtPosition", "HUD", {Vec, {"Line", "Line"}, {"Text", "String"}, Life, Col}, nil, function(_, Origin, Line, Text, _, Color)
 	local Pos = Origin:ToScreen()
 
 	if Pos.visible then draw.SimpleText(Text, TextFont, Pos.x, Pos.y + Line * LINE_HEIGHT, Color, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER) end
 end)
 
 -- Entity shapes are drawn where the entity is now, so they follow moving vehicles between calls
+-- Their entity may not exist clientside yet when they arrive, so what depends on it is cached on the first frame it does
 local Ent = {"Entity", "Entity"}
 
-register("EntityText", "HUD", {Ent, {"Line", "Line"}, {"Text", "String"}, Life, Col}, function(Entity, Line, Text, _, Color)
+register("EntityText", "HUD", {Ent, {"Line", "Line"}, {"Text", "String"}, Life, Col}, nil, function(_, Entity, Line, Text, _, Color)
 	if not IsValid(Entity) then return end
 
 	local Pos = Entity:WorldSpaceCenter():ToScreen()
@@ -240,32 +288,53 @@ register("EntityText", "HUD", {Ent, {"Line", "Line"}, {"Text", "String"}, Life, 
 	if Pos.visible then draw.SimpleTextOutlined(Text, TextFont, Pos.x, Pos.y + Line * LINE_HEIGHT, Color, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black) end
 end)
 
-register("EntityBox", "World", {Ent, Life, Col, IgnZ}, function(Entity, _, Color, IgnoreZ)
+register("EntityBox", "World", {Ent, Life, Col, IgnZ}, nil, function(Item, Entity, _, Color, IgnoreZ)
 	if not IsValid(Entity) then return end
 
-	local Mins, Maxs = Entity:GetCollisionBounds()
+	if not Item.Mins then Item.Mins, Item.Maxs = Entity:GetCollisionBounds() end
 
-	render.DrawWireframeBox(Entity:GetPos(), Entity:GetAngles(), Mins, Maxs, Color, not IgnoreZ)
+	render.DrawWireframeBox(Entity:GetPos(), Entity:GetAngles(), Item.Mins, Item.Maxs, Color, not IgnoreZ)
 end)
 
-register("EntityLine", "World", {{"Start", "Entity"}, {"End", "Entity"}, Life, Col, IgnZ}, function(Start, End, _, Color, IgnoreZ)
+register("EntityLine", "World", {{"Start", "Entity"}, {"End", "Entity"}, Life, Col, IgnZ}, nil, function(_, Start, End, _, Color, IgnoreZ)
 	if not IsValid(Start) or not IsValid(End) then return end
 
 	render.DrawLine(Start:GetPos(), End:GetPos(), Color, not IgnoreZ)
 end)
 
--- Draws one convex of an entity's volumetric mesh, which only exists clientside, optionally scaled about its centroid
-register("Convex", "World", {Ent, {"Convex", "Number"}, Life, Col, IgnZ, {"Scale", "Number", 1}}, function(Entity, ConvexID, _, Color, IgnoreZ, Scale)
-	local MeshData = IsValid(Entity) and Entity.ACF_Volumetric_Mesh
-	local Convex   = MeshData and MeshData.Convexes[ConvexID]
-	if not Convex then return end
-
+-- Local vertices of a convex scaled about its centroid, three per triangle
+local function scaleConvex(Convex, Scale)
 	local Center = Convex.Centroid
+	local Verts  = {}
 
 	for _, Tri in ipairs(Convex.Tris) do
-		local A = Entity:LocalToWorld(Center + (Tri[1] - Center) * Scale)
-		local B = Entity:LocalToWorld(Center + (Tri[2] - Center) * Scale)
-		local C = Entity:LocalToWorld(Center + (Tri[3] - Center) * Scale)
+		for J = 1, 3 do
+			Verts[#Verts + 1] = Scale == 1 and Tri[J] or Center + (Tri[J] - Center) * Scale
+		end
+	end
+
+	return Verts
+end
+
+-- Draws one convex of an entity's volumetric mesh, which only exists clientside, optionally scaled about its centroid
+register("Convex", "World", {Ent, {"Convex", "Number"}, Life, Col, IgnZ, {"Scale", "Number", 1}}, nil, function(Item, Entity, ConvexID, _, Color, IgnoreZ, Scale)
+	local Verts = Item.Verts
+
+	if not Verts then
+		local MeshData = IsValid(Entity) and Entity.ACF_Volumetric_Mesh
+		local Convex   = MeshData and MeshData.Convexes[ConvexID]
+		if not Convex then return end
+
+		Verts      = scaleConvex(Convex, Scale)
+		Item.Verts = Verts
+	elseif not IsValid(Entity) then
+		return
+	end
+
+	for I = 1, #Verts, 3 do
+		local A = Entity:LocalToWorld(Verts[I])
+		local B = Entity:LocalToWorld(Verts[I + 1])
+		local C = Entity:LocalToWorld(Verts[I + 2])
 
 		render.DrawLine(A, B, Color, not IgnoreZ)
 		render.DrawLine(B, C, Color, not IgnoreZ)
@@ -276,23 +345,25 @@ end)
 register("Clear", "Clear", {{"Group", "Entity"}})
 
 -- Halos are batched per color, since every halo.Add call is a separate render pass
+-- Batches are kept between frames and emptied before each one, keyed by the color packed into a number
 local Halos = {}
 
-register("Halo", "Halo", {Ent, Life, Col}, function(Entity, _, Color)
+register("Halo", "Halo", {Ent, Life, Col}, function(Item, _, _, Color)
+	Item.HaloKey = ((Color.r * 256 + Color.g) * 256 + Color.b) * 256 + Color.a
+end, function(Item, Entity, _, Color)
 	if not IsValid(Entity) then return end
 
-	local Key   = string.format("%d %d %d %d", Color.r, Color.g, Color.b, Color.a)
-	local Batch = Halos[Key]
+	local Batch = Halos[Item.HaloKey]
 
 	if not Batch then
 		Batch = {Color = Color}
-		Halos[Key] = Batch
+		Halos[Item.HaloKey] = Batch
 	end
 
 	Batch[#Batch + 1] = Entity
 end)
 
-register("ScreenText", "HUD", {{"X", "Number"}, {"Y", "Number"}, {"Text", "String"}, Life, Col}, function(X, Y, Text, _, Color)
+register("ScreenText", "HUD", {{"X", "Number"}, {"Y", "Number"}, {"Text", "String"}, Life, Col}, nil, function(_, X, Y, Text, _, Color)
 	draw.SimpleText(Text, TextFont, X * ScrW(), Y * ScrH(), Color, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
 end)
 
@@ -429,7 +500,7 @@ else
 			local Item = List[I]
 			local Def = Item.Def
 
-			Def.Draw(unpack(Item, 1, Def.Count))
+			Def.Draw(Item, unpack(Item, 1, Def.Count))
 
 			if Item.Expire <= Now then
 				List[I] = List[#List]
@@ -452,12 +523,15 @@ else
 	hook.Add("PreDrawHalos", "ACF Debug Draw", function()
 		if not Passes.Halo[1] then return end
 
+		-- halo.Add only holds the batch until this frame's halos render, so it can be refilled now
+		for _, Batch in pairs(Halos) do
+			for I = #Batch, 1, -1 do Batch[I] = nil end
+		end
+
 		run(Passes.Halo)
 
-		for Key, Batch in pairs(Halos) do
-			halo.Add(Batch, Batch.Color, 3, 3, 1, true, true)
-
-			Halos[Key] = nil
+		for _, Batch in pairs(Halos) do
+			if Batch[1] then halo.Add(Batch, Batch.Color, 3, 3, 1, true, true) end
 		end
 	end)
 end
