@@ -1036,7 +1036,11 @@ do -- Overlay
 			State:AddProgressBar("Current Load", TotalMass, MaxMass, " kg")
 			State:AddKeyValue("Target Extension", math_Round(SelfTbl.DesiredExtension, 1) .. "/" .. math_Round(SelfTbl.Stroke, 1) .. " in")
 
-			if SelfTbl.Overloaded then State:AddError("Overloaded: can only retract") end
+			if SelfTbl.Overloaded then
+				local _, Detail = ACF.Diagnostics.Describe("actuator_overloaded")
+
+				State:AddError(Detail, "actuator_overloaded")
+			end
 		else
 			State:AddNumber("Max Rotation", SlewMax, " deg/s")
 			State:AddNumber("Accel", SlewAccel, " deg/s^2")
@@ -1142,6 +1146,7 @@ do -- Metamethods
 
 			This.Gyro	= Gyro
 
+			Gyro:UpdateLinkHints()
 			This:UpdateTurretSlew()
 
 			This:UpdateOverlay(true)
@@ -1167,6 +1172,7 @@ do -- Metamethods
 
 			This.Gyro	= nil
 
+			Gyro:UpdateLinkHints()
 			This:UpdateTurretSlew()
 
 			This:UpdateOverlay(true)

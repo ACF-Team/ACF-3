@@ -83,6 +83,12 @@ do	-- Spawn and Update funcs
 				end
 			end
 		end
+
+		self:UpdateLinkHints()
+	end
+
+	function ENT:UpdateLinkHints()
+		ACF.Hints.Set(self, "turret_gyro_no_drive", not (IsValid(self.Turret) or IsValid(self["Turret-H"]) or IsValid(self["Turret-V"])))
 	end
 end
 

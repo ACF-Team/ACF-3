@@ -20,10 +20,16 @@ do -- MARK: Crew hints
 		Help   = "Move the crew or the blocking entity so the crew has a clear line of sight to the breech.",
 	})
 
+	-- Data.Reason says why the links were removed, when they were removed for the player
 	Register("crew_unlinked", {
 		Title  = "Not Linked",
-		Detail = "This crew must be linked to something it can operate.",
-		Help   = "Link the crew to something it can operate, such as a weapon or a turret.",
+		Detail = function(Data)
+			if Data.Reason then return "Links removed: " .. Data.Reason .. "." end
+
+			return "This crew must be linked to something it can operate."
+		end,
+		Help   = "Link the crew to something it can operate, such as a weapon or a turret. Crew lose their links when "
+			.. "reparented, when their occupation changes, or when a link ends up out of range or on another contraption.",
 	})
 
 	Register("driver_yaw", {
@@ -80,6 +86,23 @@ do -- MARK: Ammo hints
 		Detail = "Ammo is available but the weapon is not loading. Fire it or use the Reload input to try again.",
 		Help   = "Fire the weapon or use the Reload input to start a reload.",
 	})
+
+	Register("weapon_ammo_stage", {
+		Title  = "No First Stage Ammo",
+		Detail = function(Data)
+			return "No linked crate is at ammo stage " .. (Data.Stage or "?") .. "."
+		end,
+		Help   = "Weapons only load from first stage crates, higher stages only restock the stages below them. "
+			.. "Link a first stage crate, or lower the stage of one of the linked crates.",
+	})
+end
+
+do -- MARK: Fuel hints
+	Register("fueltank_leaking", {
+		Title  = "Leaking",
+		Detail = "This tank is leaking fuel.",
+		Help   = "Damage punctured this tank. The leak seals itself over time, and faster the less fuel is left.",
+	})
 end
 
 do -- MARK: Mobility hints
@@ -115,5 +138,44 @@ do -- MARK: Turret hints
 		Title  = "No Turret Drive",
 		Detail = "This motor is not linked to a turret drive.",
 		Help   = "Link the motor to a turret drive.",
+	})
+
+	Register("turret_gyro_no_drive", {
+		Title  = "No Turret Drive",
+		Detail = "This gyro is not linked to a turret drive.",
+		Help   = "Link the gyro to a turret drive. A dual axis gyro can stabilize one horizontal and one vertical drive.",
+	})
+
+	Register("turret_controller_no_turret", {
+		Title  = "No Turret",
+		Detail = "This controller is not linked to a turret.",
+		Help   = "Link the controller to a nearby turret drive in the same contraption.",
+	})
+
+	Register("turret_controller_no_crew", {
+		Title  = "No Crew",
+		Detail = "This remote controller is not linked to a crew member.",
+		Help   = "Link the controller to a gunner, commander or pilot. It must share their parent, sit in front of them "
+			.. "and be in their line of sight.",
+	})
+end
+
+-- Problems that stop an entity from working, shown in red by the entity's own overlay rather than raised through ACF.Legality
+do -- MARK: Status errors
+	local function RegisterError(Id, Data)
+		return ACF.Diagnostics.Register("Error", Id, Data)
+	end
+
+	RegisterError("rack_jammed", {
+		Title  = "Jammed",
+		Detail = "This rack is jammed.",
+		Help   = "Damage jammed this rack. Repair it to full health to clear the jam.",
+	})
+
+	RegisterError("actuator_overloaded", {
+		Title  = "Overloaded",
+		Detail = "Overloaded, can only retract.",
+		Help   = "This actuator carries more than it can lift. Reduce the load, or use a wider bore or a shorter stroke, "
+			.. "which both raise the load limit.",
 	})
 end

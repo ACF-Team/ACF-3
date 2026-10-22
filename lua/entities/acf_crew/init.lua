@@ -178,10 +178,24 @@ function ENT:CFW_PreParentedTo(OldParent, _)
 			for Target in pairs(self.Targets) do
 				self:Unlink(Target)
 			end
+
+			self.ACF_UnlinkReason = "the crew member was reparented"
 		end
+		self:UpdateLinkHint()
 		self:CFW_Unindex_Crew(self:CFW_GetContraption())
 		self:CFW_Index_Crew(self:CFW_GetContraption())
 	end
+end
+
+--- Shows the not linked hint while a crew that needs links has none, with why its links were removed if they were.
+function ENT:UpdateLinkHint()
+	local Targets   = self.Targets
+	local Unlinked  = Targets == nil or next(Targets) == nil
+	local NeedsLink = self.CrewTypeID ~= "Commander" and self.CrewTypeID ~= "Driver"
+
+	if not Unlinked then self.ACF_UnlinkReason = nil end
+
+	ACF.Hints.Set(self, "crew_unlinked", NeedsLink and Unlinked, { Reason = self.ACF_UnlinkReason })
 end
 
 -- Checks the parent state. Must run first in the think order so we can exit early and avoid unlinks
@@ -346,13 +360,13 @@ do -- Random timer stuff
 					Reasons = string.upper(Reasons[1]) .. string.sub(Reasons, 2)
 
 					Notify.EntityWarning(self, "Crew member unlinked. ", Reasons)
+
+					SelfTbl.ACF_UnlinkReason = Reasons:lower()
 				end
 			end
 		end
 
-		local NeedsLink = SelfTbl.CrewTypeID ~= "Commander" and SelfTbl.CrewTypeID ~= "Driver"
-
-		ACF.Hints.Set(self, "crew_unlinked", NeedsLink and (Targets == nil or next(Targets) == nil))
+		self:UpdateLinkHint()
 
 		EnforceLimits(self)
 
@@ -558,8 +572,11 @@ do
 				for Target in pairs(self.Targets) do
 					self:Unlink(Target)
 				end
+
+				self.ACF_UnlinkReason = "the crew member's occupation changed"
 			end
 
+			self:UpdateLinkHint()
 			self:CFW_Unindex_Crew(self:CFW_GetContraption())
 			self:CFW_Index_Crew(self:CFW_GetContraption())
 		end

@@ -6,7 +6,7 @@ ACF.Diagnostics   = Diagnostics
 local All = {}
 
 -- Warning: a problem that is only shown, raised and cleared with ACF.Hints.Set by the code that detects it.
--- Error: a problem that disables the entity, raised through ACF.Legality.
+-- Error: a problem that disables the entity, raised through ACF.Legality or shown by the entity's own overlay.
 -- Overlay is the overlay state method that adds a line of that type.
 local Types = {
 	Warning = {Overlay = "AddWarning", Defs = {}, Order = {}},

@@ -1277,17 +1277,12 @@ do -- Metamethods --------------------------------
 			local SelfTbl = ENTITY.GetTable(self)
 			local AmmoType  = ACF.GetLegacyStyleClassName(SelfTbl.BulletData.AmmoType) .. (SelfTbl.BulletData.Tracer ~= 0 and "-T" or "")
 			local Firerate  = math.floor(60 / SelfTbl.ReloadTime)
-			local CrateAmmo, StageOneAmmo = self:TallyCrates()
+			local CrateAmmo = self:TallyCrates()
 
 			if SelfTbl.State == "Loaded" then
 				State:AddSuccess("Loaded with " .. AmmoType)
 			else
 				State:AddWarning(SelfTbl.State)
-			end
-
-			-- Weapons only ever start a reload from a stage 1 crate, so staged ammo alone leaves them empty
-			if SelfTbl.State == "Empty" and CrateAmmo > 0 and not StageOneAmmo then
-				State:AddError("No linked crate is at ammo stage " .. ACF.AmmoStageMin .. "!\nWeapons only load from stage " .. ACF.AmmoStageMin .. " crates,\nhigher stages only restock the ones below them")
 			end
 
 			local BreechIndex  = SelfTbl.BreechIndex or 1
@@ -1380,7 +1375,11 @@ do -- Metamethods --------------------------------
 
 			local CrateAmmo, StageOneAmmo = self:TallyCrates()
 
-			ACF.Hints.Set(self, "weapon_not_loading", SelfTbl.State == "Empty" and CrateAmmo > 0 and StageOneAmmo)
+			local Empty = SelfTbl.State == "Empty" and CrateAmmo > 0
+
+			ACF.Hints.Set(self, "weapon_not_loading", Empty and StageOneAmmo)
+			-- Weapons only ever start a reload from a first stage crate, so staged ammo alone leaves them empty
+			ACF.Hints.Set(self, "weapon_ammo_stage", Empty and not StageOneAmmo, { Stage = ACF.AmmoStageMin })
 
 			ENTITY.NextThink(self, Clock.CurTime + 0.5 + math.random())
 

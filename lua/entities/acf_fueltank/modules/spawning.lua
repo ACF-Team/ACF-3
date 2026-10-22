@@ -147,10 +147,6 @@ do -- Overlay text
 			end
 		end
 
-		if self.Leaking and self.Leaking > 0 then
-			State:AddWarning("WARNING: Leaking!")
-		end
-
 		-- The V2 fuel type instance lives on the entity's field set; read it straight off.
 		local FuelType = self:ACF_GetUserVar("FuelType")
 

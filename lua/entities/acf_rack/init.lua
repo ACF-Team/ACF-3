@@ -678,18 +678,12 @@ do -- Entity Overlay ----------------------------
 		local Reload = math.Round(self.ReloadTime, 2)
 		local Bullet = self.BulletData
 		local Ammo   = (Bullet.WeaponType and (ACF.GetLegacyStyleClassName(Bullet.WeaponType) .. " ") or "") .. (Bullet.AmmoType and ACF.GetLegacyStyleClassName(Bullet.AmmoType) or "Empty")
-		local Status = self.State
-
-		local Error = false
 		if self.Jammed then
-			Error = true
-			Status = "Jammed!\nRepair this rack to be able to use it again."
-		end
+			local _, Detail = ACF.Diagnostics.Describe("rack_jammed")
 
-		if Error then
-			State:AddError(Status)
+			State:AddError(Detail, "rack_jammed")
 		else
-			State:AddLabel(Status)
+			State:AddLabel(self.State)
 		end
 
 		local ReadyToFire = 0

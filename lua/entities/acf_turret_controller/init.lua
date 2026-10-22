@@ -86,6 +86,14 @@ do -- Updating
 		self.DamageScale = (Health and MaxHealth) and math.max((Health / (MaxHealth * 0.75)) - 0.25 / 0.75, 0) or 1
 
 		Contraption.SetMass(self, Class.Mass)
+
+		self:UpdateLinkHints()
+	end
+
+	-- Lightweight controllers link to a turret and remote ones to a crew member, so only the hint for this kind can apply
+	function ENT:UpdateLinkHints()
+		ACF.Hints.Set(self, "turret_controller_no_turret", not self.IsRemote and not IsValid(self.Turret))
+		ACF.Hints.Set(self, "turret_controller_no_crew", self.IsRemote and not IsValid(self.Crew))
 	end
 end
 
@@ -282,6 +290,7 @@ do	-- Lightweight Turret Controllers link to acf_turret directly, no crew involv
 		Turret.LightweightControllers = Turret.LightweightControllers or {}
 		Turret.LightweightControllers[This] = true
 
+		This:UpdateLinkHints()
 		This:UpdateOverlay(true)
 		Turret:UpdateOverlay()
 
@@ -295,6 +304,7 @@ do	-- Lightweight Turret Controllers link to acf_turret directly, no crew involv
 
 		if Turret.LightweightControllers then Turret.LightweightControllers[This] = nil end
 
+		This:UpdateLinkHints()
 		This:UpdateOverlay(true)
 		Turret:UpdateOverlay()
 
@@ -368,6 +378,7 @@ do	-- Remote Turret Controllers link to a Gunner-role crew member
 		This.Crew = Crew
 		Crew.RemoteController = This
 
+		This:UpdateLinkHints()
 		This:UpdateOverlay(true)
 		Crew:UpdateOverlay()
 
@@ -380,6 +391,7 @@ do	-- Remote Turret Controllers link to a Gunner-role crew member
 		This.Crew = nil
 		if Crew.RemoteController == This then Crew.RemoteController = nil end
 
+		This:UpdateLinkHints()
 		This:UpdateOverlay(true)
 		Crew:UpdateOverlay()
 
