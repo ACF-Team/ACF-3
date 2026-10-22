@@ -110,6 +110,11 @@ do	-- Metamethods and other important stuff
 
 			This.Gun	= Gun
 
+			-- Removing the gun does not unlink it on its own
+			Gun:CallOnRemove("ACF_TurretComputer" .. This:EntIndex(), function()
+				if IsValid(This) and This.Gun == Gun then This:Unlink(Gun) end
+			end)
+
 			ACF.Hints.Set(This, "turret_computer_no_gun", false)
 
 			This:UpdateOverlay(true)
@@ -122,6 +127,8 @@ do	-- Metamethods and other important stuff
 			if This.Gun ~= Gun then return false, "This computer isn't linked to this gun!" end
 
 			This.Gun	= nil
+
+			Gun:RemoveCallOnRemove("ACF_TurretComputer" .. This:EntIndex())
 
 			ACF.Hints.Set(This, "turret_computer_no_gun", true)
 

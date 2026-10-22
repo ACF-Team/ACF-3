@@ -10,8 +10,10 @@ local ENTITY = FindMetaTable("Entity")
 local Source, Chip
 
 local function WithSource(GetSource, Hook, Kind)
-    local function Finish(PreviousSource, PreviousChip, ...)
+    local function Finish(PreviousSource, PreviousChip, Ok, ...)
         Source, Chip = PreviousSource, PreviousChip
+
+        if not Ok then error(..., 0) end -- Rethrown unchanged, chips throw their runtime errors as tables
 
         return ...
     end
@@ -21,7 +23,7 @@ local function WithSource(GetSource, Hook, Kind)
 
         Source, Chip = GetSource(First), Kind
 
-        return Finish(PreviousSource, PreviousChip, Hook(First, ...))
+        return Finish(PreviousSource, PreviousChip, pcall(Hook, First, ...))
     end
 end
 

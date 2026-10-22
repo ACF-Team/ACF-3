@@ -51,7 +51,7 @@ local CurEnt
 local CurSkip
 
 local function traceFilter(Other)
-    if Other == CurEnt or not Other.IsACFEntity or EXEMPT[Other:GetClass()] then return false end
+    if Other == CurEnt or not Other.IsACFEntity or Other.ACF_IsNotLegalityChecked or EXEMPT[Other:GetClass()] then return false end
     if CurSkip and CurSkip[Other:GetClass()] then return false end
 
     return true
@@ -83,6 +83,8 @@ end
 local LastContraption
 
 local function sample()
+    if not ACF.LegalChecks then return end
+
     local Contr = nextKey(CFW.Contraptions, LastContraption)
     if not Contr then return end
 
@@ -95,12 +97,15 @@ local function sample()
     Contr.ACF_OverlapCursor = Ent
 
     -- Restricted entities are still sampled so a lasting overlap keeps extending its violation
-    if not IsValid(Ent) or ACF.IsDestroyed(Ent) or EXEMPT[Ent:GetClass()] then return end
+    if not IsValid(Ent) or ACF.IsDestroyed(Ent) or Ent.ACF_IsNotLegalityChecked or EXEMPT[Ent:GetClass()] then return end
 
     local MeshData = Ent.ACF_Volumetric_Mesh
     if not MeshData then return end
 
-    local ConvexID = math.random(#MeshData.Convexes)
+    local NumConvexes = #MeshData.Convexes
+    if NumConvexes == 0 then return end
+
+    local ConvexID = math.random(NumConvexes)
     local Convex   = MeshData.Convexes[ConvexID]
     if not Convex or #Convex.Tris == 0 then return end
 

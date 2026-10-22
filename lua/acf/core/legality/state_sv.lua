@@ -201,13 +201,14 @@ do -- MARK: Violation state
 
 	ACF.CheckLegal = Legality.Check -- Public name kept for entities and other addons
 
-	--- Raises a one-off violation that clears on its own once the timeout elapses.
+	--- Raises a violation caught as it happens, such as a blocked call, which cannot be re-checked so it expires after its timeout.
 	--- @param Entity entity
 	--- @param Id string A registered restriction id
 	--- @param Data table|nil Per-violation data sent to the owner
 	--- @param Timeout number|nil Overrides the restriction's timeout
 	function Legality.Report(Entity, Id, Data, Timeout)
 		if not Checks[Id] then error("Unknown legality restriction '" .. tostring(Id) .. "'") end
+		if Entity.ACF_IsNotLegalityChecked then return end -- Check never runs on these, so nothing would clear it
 
 		Data    = Data or {}
 		Timeout = ResolveTimeout(Id, Timeout)
