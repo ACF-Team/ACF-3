@@ -995,7 +995,6 @@ do -- Metamethods --------------------------------
 		function ENT:Unload(Reload)
 			local SelfTbl = ENTITY.GetTable(self)
 
-			if SelfTbl.Disabled then return end
 			if SelfTbl.State == "Unloading" then return end -- Don't unload while unloading
 			if SelfTbl.BulletData == EMPTY then return end -- If it's empty, we're already unloading, or something went wrong
 			SelfTbl.FreeCrate = self:FindNextCrate(SelfTbl.FreeCrate, CheckUnloadable, self)
@@ -1035,12 +1034,12 @@ do -- Metamethods --------------------------------
 		function ENT:Chamber(Instant)
 			local SelfTbl = ENTITY.GetTable(self)
 
-			if SelfTbl.Disabled then return end
 			if SelfTbl.State == "Unloading" then return end -- Don't chamber while unloading
 
 			local Crate = self:FindNextCrate(SelfTbl.CurrentCrate, CheckConsumable, self)
 
-			if IsValid(Crate) and not CheckCrate(self, Crate, ENTITY.GetPos(self)) then -- Have a crate, start loading
+			-- A disabled gun goes empty rather than staying mid-load, firing retries the load once it is enabled
+			if not SelfTbl.Disabled and IsValid(Crate) and not CheckCrate(self, Crate, ENTITY.GetPos(self)) then -- Have a crate, start loading
 				self:SetState("Loading") -- Set our state to loading
 				Crate:Consume() -- Take one round of ammo out of the current crate (Must be called *after* setting the state to loading)
 
@@ -1132,11 +1131,10 @@ do -- Metamethods --------------------------------
 		function ENT:Load(Instant)
 			local SelfTbl = ENTITY.GetTable(self)
 
-			if SelfTbl.Disabled then return false end
-
 			local Crate = self:FindNextCrate(SelfTbl.CurrentCrate, CheckConsumable, self)
 
-			if not IsValid(Crate) or CheckCrate(self, Crate, ENTITY.GetPos(self)) then -- Can't load without having ammo being provided
+			-- Can't load while disabled or without having ammo being provided
+			if SelfTbl.Disabled or not IsValid(Crate) or CheckCrate(self, Crate, ENTITY.GetPos(self)) then
 				self:SetState("Empty")
 				SelfTbl.MagazineReloading = false
 
