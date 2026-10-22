@@ -138,12 +138,13 @@ end
 
 do -- Overlay text
 	function ENT:ACF_UpdateOverlayState(State)
-		if ACF.IsDestroyed(self) then
-			-- The destroyed line is added by the base overlay
-		elseif self:CanConsume() then
-			State:AddSuccess("Active")
-		else
-			State:AddWarning("Idle")
+		-- The destroyed line is added by the base overlay
+		if not ACF.IsDestroyed(self) then
+			if self:CanConsume() then
+				State:AddSuccess("Active")
+			else
+				State:AddWarning("Idle")
+			end
 		end
 
 		if self.Leaking and self.Leaking > 0 then

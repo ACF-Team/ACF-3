@@ -224,7 +224,7 @@ do
     end
 
     do
-        local OpenWiki =Notify.RegisterAction("OpenWiki")
+        local OpenWiki = Notify.RegisterAction("OpenWiki")
 
         function OpenWiki.DoClickCL(_, Article)
             ACF.OpenWikiArticle(Article)

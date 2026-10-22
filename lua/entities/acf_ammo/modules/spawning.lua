@@ -499,9 +499,8 @@ do -- Overlay
 		local Tracer = self.BulletData.Tracer ~= 0 and "-T" or ""
 		local AmmoType = ACF.GetLegacyStyleClassName(self.BulletData.AmmoType) .. Tracer
 
-		if ACF.IsDestroyed(self) then
-			-- The destroyed line is added by the base overlay
-		elseif next(self.Weapons) then
+		-- The destroyed line is added by the base overlay
+		if not ACF.IsDestroyed(self) and next(self.Weapons) then
 			if self:CanConsume() then
 				State:AddSuccess("Providing Ammo")
 			elseif self.Amount ~= 0 then

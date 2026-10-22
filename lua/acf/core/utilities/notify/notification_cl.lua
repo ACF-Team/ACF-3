@@ -217,7 +217,7 @@ do
 
         Lines[#Lines + 1] = Current
 
-        for _, Line in ipairs(Lines) do Widest = math.max(Widest, (surface.GetTextSize(Line))) end
+        for _, Line in ipairs(Lines) do Widest = math.max(Widest, surface.GetTextSize(Line)) end
 
         local Text = vgui.Create("DLabel", Window)
         Text:SetFont("ACF_GModNotify_Description")

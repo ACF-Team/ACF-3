@@ -688,11 +688,9 @@ function ENT:Detonate(Destroyed)
 		return Fuze:HandleDetonation(self, BulletData)
 	end
 
-	if BulletData.Pos then
-		if Debug.SetDeveloperLevel(1) then
-			Debug.SetTarget(self:CPPIGetOwner())
-			Debug.Line(BulletData.Pos, BulletData.Pos + BulletData.Flight, 10, Color(255, 128, 0))
-		end
+	if BulletData.Pos and Debug.SetDeveloperLevel(1) then
+		Debug.SetTarget(self:CPPIGetOwner())
+		Debug.Line(BulletData.Pos, BulletData.Pos + BulletData.Flight, 10, Color(255, 128, 0))
 	end
 
 	BulletData.DetonatorAngle = 91

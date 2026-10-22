@@ -486,7 +486,7 @@ elseif CLIENT then
 	CreateClientConVar("acf_maxroundsdisplay", 16, true, false, "Maximum rounds to display before using bulk display (0 to only display bulk)", 0, 5000)
 	CreateClientConVar("acf_drawboxes", 1, true, false, "Whether or not to draw hitboxes on ACF entities", 0, 1)
 	CreateClientConVar("acf_legalhints", 1, true, true, "If enabled, ACF will throw a warning hint whenever an entity gets disabled.", 0, 1)
-	CreateClientConVar("acf_legalvisuals", 1, true, true,"If enabled, ACF will highlight your disabled entities and show what is causing it.", 0, 1)
+	CreateClientConVar("acf_legalvisuals", 1, true, true, "If enabled, ACF will highlight your disabled entities and show what is causing it.", 0, 1)
 	CreateClientConVar("acf_legalshame", 0, true, true, "If enabled, you will get a message in console from the server if someone else has an ACF entity get disabled, but only when the server has that logging enabled.", 0, 1)
 	CreateClientConVar("acf_debris", 1, true, false, "Toggles ACF Debris.", 0, 1)
 	CreateClientConVar("acf_debris_autolod", 1, true, false, "Automatically disables some effects on debris if FPS is low.", 0, 1)
