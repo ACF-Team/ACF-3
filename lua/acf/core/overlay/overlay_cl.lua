@@ -408,6 +408,11 @@ do
         return Overlay.CacheRenderCall(DrawRect, X, Y + TotalY, W, H, Color)
     end
 
+    function Overlay.DrawRoundedBox(Radius, X, Y, W, H, Color)
+        Overlay.AppendSlotSize(W, H)
+        return Overlay.CacheRenderCall(draw.RoundedBox, Radius, X, Y + TotalY, W, H, Color)
+    end
+
     function Overlay.DrawTexturedRect(X, Y, W, H, Color)
         Overlay.AppendSlotSize(W, H)
         return Overlay.CacheRenderCall(DrawTexturedRect, X, Y + TotalY, W, H, Color)
@@ -587,6 +592,8 @@ do
             Overlay.PushSlotSizeToTotal(Idx)
         end
 
+        if Overlay.RenderHelpFooter then Overlay.RenderHelpFooter() end
+
         local Clipping = DisableClipping(true)
         TotalW = TotalW + OVERALL_RECT_PADDING + HORIZONTAL_EXTERIOR_PADDING
         -- The subtraction of PER_SLOT_VERTICAL_PADDING here is to offset the last slots vertical padding.
@@ -649,8 +656,6 @@ do
         OverlayMatrix:Translate(OverlayOffset)
         OverlayMatrix:Scale(OverlayScale)
 
-        if not StopTime and Overlay.CollectHintRects then Overlay.CollectHintRects(State, XScale, YScale, TotalW) end
-
         -- Draw background
         surface.SetDrawColor(COLOR_PRIMARY_BACKGROUND)
         local BoxX, BoxY, BoxW, BoxH = TargetX - (TotalW / (2 / XScale)), TargetY - (TotalH / (2 / YScale)), TotalW * XScale, TotalH * YScale
@@ -689,7 +694,7 @@ do
     end
 
     hook.Add("HUDPaint", "ACF_OverlayRender", function()
-        if Overlay.ResetHintRects then Overlay.ResetHintRects() end
+        if Overlay.UpdateHelpExpand then Overlay.UpdateHelpExpand() end
         if HideInfoBubble() then return end
         if not next(Overlays) then return end
         if not ShouldDraw then
@@ -723,8 +728,6 @@ do
                 end
             end
         end
-
-        if Overlay.DrawHints then Overlay.DrawHints() end
     end)
 
     hook.Add("ACF_RenderContext_LookAtChanged", "ACF_Overlay_DetermineLookat", function(_, New)
@@ -755,6 +758,7 @@ function Overlay.BasicLabel(Slot, DataIndex, Color)
     end
     if X == 0 then Y = 0 end
     Overlay.AppendSlotSize(X, Y)
+    return X, Y
 end
 
 -- 1 is the primary mode. 2 is the secondary mode.

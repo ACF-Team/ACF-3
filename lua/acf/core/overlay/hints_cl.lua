@@ -1,57 +1,48 @@
--- Shows how to fix a build hint or legality restriction when its line in the overlay is hovered with the cursor, such as with the context menu open
+-- Shows how to fix a build hint or legality restriction inline under its line while the context menu is held or the chat is open
 local Overlay = ACF.Overlay or {}
 ACF.Overlay = Overlay
 
-local Rects = {}
-local Count = 0
+local INLINE_W     = 340
+local INLINE_GAP   = 2
+local EXPAND_SPEED = 6
+local FOOTER_SLOT  = 1024 -- Past any real element slot, so the footer gets its own slot cache
 
-local COLOR_IDLE  = Color(255, 255, 255, 40)
-local COLOR_HOVER = Color(255, 255, 255, 220)
-local HELP_W      = 300
-local PADDING     = 8
-local GAP         = 12
+local TAP_PERIOD   = 1.8 -- Seconds between taps of the footer key
+local TAP_DOWN     = 0.08
+local TAP_UP       = 0.16
 
-function Overlay.ResetHintRects()
-	Count = 0
+local Expand     = 0 -- 0 to 1, how far the inline help is open
+local HasHelp    = false -- Whether the overlay being rendered has a line with help, for the footer
+local Colors     = {} -- Render calls run after every slot is laid out, so each line needs its own color
+local ColorCount = 0
+local ChatOpen   = false
+
+hook.Add("StartChat", "ACF_OverlayHelp", function() ChatOpen = true end)
+hook.Add("FinishChat", "ACF_OverlayHelp", function() ChatOpen = false end)
+
+local function IsHelpOpen()
+	return ChatOpen or IsValid(g_ContextMenu) and g_ContextMenu:IsVisible()
 end
 
--- The definition of a hint or restriction, only the ones with help can be hovered
-local function GetDef(Id)
-	return ACF.Diagnostics.GetHelp(Id)
+-- Eases the inline help open while it is requested, called once per frame before the overlays render
+function Overlay.UpdateHelpExpand()
+	Expand     = math.Approach(Expand, IsHelpOpen() and 1 or 0, RealFrameTime() * EXPAND_SPEED)
+	ColorCount = 0
 end
 
--- Stores the screen rectangle of every hint warning and restriction error, called by DrawOverlay once the final scale is known
-function Overlay.CollectHintRects(State, XScale, YScale, TotalW)
-	local WarningIdx = Overlay.GetElementTypeIdx("Warning")
-	local ErrorIdx   = Overlay.GetElementTypeIdx("Error")
-	local Offset     = Overlay.GetOverlayOffset()
+local function NextColor(Base, Alpha)
+	ColorCount = ColorCount + 1
 
-	for Idx, Slot in State:IterateElementSlots() do
-		local Id = Slot:GetElementData(2)
-		if (Slot.Type ~= WarningIdx and Slot.Type ~= ErrorIdx) or not GetDef(Id) then continue end
+	local Col = Colors[ColorCount]
 
-		local Cache = Overlay.GetSlotDataCache(Idx)
-		local Rect  = Rects[Count + 1] or {}
-
-		Count = Count + 1
-		Rects[Count] = Rect
-
-		Rect.Id = Id
-		Rect.W  = TotalW * XScale
-		Rect.X  = Offset.x - Rect.W / 2
-		Rect.Y  = Offset.y + Cache.Y * YScale
-		Rect.H  = Cache.H * YScale
+	if not Col then
+		Col                = Color(0, 0, 0)
+		Colors[ColorCount] = Col
 	end
-end
 
-local function GetHovered()
-	local MX, MY = gui.MousePos()
+	Col:SetUnpacked(Base.r, Base.g, Base.b, Base.a * Alpha)
 
-	for I = 1, Count do
-		local Rect = Rects[I]
-
-		if MX >= Rect.X and MX <= Rect.X + Rect.W and MY >= Rect.Y and MY <= Rect.Y + Rect.H then return Rect end
-	end
+	return Col
 end
 
 -- Splits the text into lines no wider than the given width
@@ -77,53 +68,99 @@ local function Wrap(Text, Font, Width)
 	return Lines
 end
 
--- Draws the fix beside the overlay, on the right unless that would leave the screen
-local function DrawHelp(Rect)
-	local Def = GetDef(Rect.Id)
+-- Called by the Warning and Error elements after their label, grows the slot to fit the help under it while expanded
+function Overlay.RenderHelp(Slot, LabelW, LabelH)
+	local Def = ACF.Diagnostics.GetHelp(Slot:GetElementData(2))
 	if not Def then return end
 
-	local TitleFont = Overlay.BOLD_TEXT_FONT
-	local TextFont  = Overlay.MAIN_FONT
-	local Lines     = Wrap(Def.Help, TextFont, HELP_W - PADDING * 2)
+	HasHelp = true
 
-	surface.SetFont(TitleFont)
+	if Expand == 0 then return end
 
-	local _, TitleH = surface.GetTextSize(Def.Title)
+	local Ease     = math.ease.OutCubic(Expand)
+	local Font     = Overlay.MAIN_FONT
+	local Width    = math.max(LabelW, INLINE_W * Overlay.GetScaleMult())
+	local Lines    = Wrap(Def.Help, Font, Width)
+	local _, LineH = Overlay.GetTextSize(Font, "A")
+	local Top      = LabelH + INLINE_GAP
+	local Bottom   = LabelH + (INLINE_GAP + #Lines * LineH) * Ease
 
-	surface.SetFont(TextFont)
-
-	local _, LineH = surface.GetTextSize("A")
-	local H        = PADDING * 2 + TitleH + 4 + #Lines * LineH
-	local X        = Rect.X + Rect.W + GAP
-	local Y        = Rect.Y
-
-	if X + HELP_W > ScrW() then X = Rect.X - GAP - HELP_W end
-
-	Y = math.Clamp(Y, 0, ScrH() - H)
-
-	surface.SetDrawColor(Overlay.COLOR_PRIMARY_BACKGROUND)
-	surface.DrawRect(X, Y, HELP_W, H)
-	surface.SetDrawColor(Overlay.COLOR_BORDER_LIGHT_COLOR)
-	surface.DrawOutlinedRect(X, Y, HELP_W, H, 2)
-
-	draw.SimpleText(Def.Title, TitleFont, X + PADDING, Y + PADDING, Overlay.COLOR_WARNING_TEXT or Overlay.COLOR_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-
+	-- Each line fades in as the slot grows past it
 	for I, Line in ipairs(Lines) do
-		draw.SimpleText(Line, TextFont, X + PADDING, Y + PADDING + TitleH + 4 + (I - 1) * LineH, Overlay.COLOR_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+		local Y     = Top + (I - 1) * LineH
+		local Alpha = math.Clamp((Bottom - Y) / LineH, 0, 1)
+		if Alpha == 0 then break end
+
+		Overlay.SimpleText(Line, Font, 0, Y, NextColor(Overlay.COLOR_TEXT, 0.75 * Alpha), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
 	end
+
+	Overlay.AppendSlotSize(Width, Bottom)
 end
 
-function Overlay.DrawHints()
-	if Count == 0 or not vgui.CursorVisible() then return end
+-- How far the footer key is pushed down, 0 to 1: a short tap every TAP_PERIOD, held down while the help is open
+local function GetKeyPress()
+	local Time = RealTime() % TAP_PERIOD
+	local Tap  = 0
 
-	local Hovered = GetHovered()
-
-	for I = 1, Count do
-		local Rect = Rects[I]
-
-		surface.SetDrawColor(Rect == Hovered and COLOR_HOVER or COLOR_IDLE)
-		surface.DrawOutlinedRect(Rect.X, Rect.Y, Rect.W, Rect.H)
+	if Time < TAP_DOWN then
+		Tap = Time / TAP_DOWN
+	elseif Time < TAP_DOWN + TAP_UP then
+		Tap = 1 - (Time - TAP_DOWN) / TAP_UP
 	end
 
-	if Hovered then DrawHelp(Hovered) end
+	return math.max(math.ease.OutCubic(Tap), math.ease.OutCubic(Expand))
+end
+
+-- Called after the last element, tells the player how to expand the help when any line has some
+function Overlay.RenderHelpFooter()
+	if not HasHelp then return end
+
+	HasHelp = false
+
+	local Font  = Overlay.MAIN_FONT
+	local Text  = Overlay.COLOR_TEXT
+	local Alpha = Lerp(math.ease.OutCubic(Expand), 0.8, 0.65)
+	local Key   = input.LookupBinding("+menu_context")
+
+	if not Key then
+		Overlay.SimpleText("Hold the context menu key or open chat for more information", Font, 0, 0, NextColor(Text, Alpha), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+		Overlay.PushSlotSizeToTotal(FOOTER_SLOT)
+
+		return
+	end
+
+	-- Laid out as "Hold [key] or open chat for more information", with the key drawn as a keycap whose face sits on a darker side
+	local Scale          = Overlay.GetScaleMult()
+	local Label          = Key:upper()
+	local KeyFont        = Overlay.BOLD_TEXT_FONT
+	local Before         = "Hold"
+	local After          = "or open chat for more information"
+	local BeforeW        = Overlay.GetTextSize(Font, Before)
+	local AfterW, H      = Overlay.GetTextSize(Font, After)
+	local LabelW, LabelH = Overlay.GetTextSize(KeyFont, Label)
+	local Space          = Overlay.GetTextSize(Font, " ") + 2 * Scale
+	local Depth          = math.max(3, math.Round(4 * Scale))
+	local FaceH          = H + math.Round(3 * Scale)
+	local KeyW           = math.max(LabelW + math.Round(13 * Scale), FaceH)
+	local Radius         = math.max(2, math.Round(4 * Scale))
+	local TotalW         = BeforeW + Space + KeyW + Space + AfterW
+	local X              = -TotalW / 2
+	local TextY          = (FaceH + Depth - H) / 2
+	local FaceY          = GetKeyPress() * Depth
+	local SideColor      = NextColor(Overlay.COLOR_SECONDARY_COLOR, Alpha)
+	local FaceColor      = NextColor(Overlay.COLOR_PRIMARY_COLOR, Alpha)
+
+	Overlay.SimpleText(Before, Font, X + BeforeW / 2, TextY, NextColor(Text, Alpha), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+
+	X = X + BeforeW + Space
+
+	Overlay.DrawRoundedBox(Radius, X, Depth, KeyW, FaceH, SideColor)
+	Overlay.DrawRoundedBox(Radius, X, FaceY, KeyW, FaceH, FaceColor)
+	Overlay.SimpleText(Label, KeyFont, X + KeyW / 2, FaceY + (FaceH - LabelH) / 2, NextColor(Overlay.COLOR_TEXT_DARK, Alpha), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+
+	X = X + KeyW + Space
+
+	Overlay.SimpleText(After, Font, X + AfterW / 2, TextY, NextColor(Text, Alpha), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+	Overlay.AppendSlotSize(TotalW, FaceH + Depth)
+	Overlay.PushSlotSizeToTotal(FOOTER_SLOT)
 end
