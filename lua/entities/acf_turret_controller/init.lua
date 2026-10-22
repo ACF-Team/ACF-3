@@ -145,7 +145,8 @@ do	-- Metamethods
 			local Linked = self.IsRemote and self.Crew or self.Turret
 			if not IsValid(Linked) then self:SetActive(false) return false end
 
-			local Healthy = self:SetRequirement("Health", (self.ACF.Health / self.ACF.MaxHealth) > 0.25, "below 25%")
+			local Percent = self.ACF.Health / self.ACF.MaxHealth * 100
+			local Healthy = self:SetRequirement("component_health", Percent > 25, { Percent = math.floor(Percent) })
 			local Light   = true
 
 			-- Overweight turrets keep the link but get no bonus, so the mass is rechecked here
@@ -153,7 +154,8 @@ do	-- Metamethods
 			if not self.IsRemote then
 				local CarriedMass = (Linked.TurretData and Linked.TurretData.TotalMass or 0) + (Linked.ACF and Linked.ACF.Mass or 0)
 
-				Light = self:SetRequirement("Turret mass", CarriedMass <= ACF.LightweightTurretMassLimit, math.Round(CarriedMass) .. " of " .. ACF.LightweightTurretMassLimit .. " kg")
+				Light = self:SetRequirement("turret_controller_mass", CarriedMass <= ACF.LightweightTurretMassLimit,
+					{ Mass = math.Round(CarriedMass), Limit = ACF.LightweightTurretMassLimit, Turret = Linked })
 			end
 
 			if not (Healthy and Light) then

@@ -89,6 +89,24 @@ do -- Random timer crew stuff
 		return false
 	end
 
+	-- The crew linked to aim the turret, with why each one does not, for the aim control requirement
+	local function GetIdleAimers(Turret)
+		local Crews = {}
+
+		for _, CrewType in ipairs({"Gunner", "Commander", "Pilot"}) do
+			for Crew in pairs(Turret.CrewsByType[CrewType] or {}) do
+				if not IsValid(Crew) then continue end
+
+				local Reason = ENTITY.GetTable(Crew).TotalEff < ACF.GunnerEfficiencyThreshold and "Efficiency too low to aim"
+					or "Must ride on the turret, or share its parent"
+
+				Crews[#Crews + 1] = { Crew = Crew, Reason = Reason }
+			end
+		end
+
+		return Crews
+	end
+
 	function ENT:UpdateControlled()
 		local SelfTbl = ENTITY.GetTable(self)
 		SelfTbl.CrewsByType = SelfTbl.CrewsByType or {}
@@ -111,7 +129,9 @@ do -- Random timer crew stuff
 		SelfTbl.IsControlled = Controlled
 
 		-- Only weaponized turrets need someone aiming them
-		self:SetRequirement("Aim control", Controlled or not SelfTbl.IsWeaponized or SelfTbl.IsPassthrough, "needs a gunner, commander, pilot or lightweight controller")
+		local Met = Controlled or not SelfTbl.IsWeaponized or SelfTbl.IsPassthrough
+
+		self:SetRequirement("turret_aim_control", Met, not Met and { Crews = GetIdleAimers(self) })
 
 		return Controlled
 	end

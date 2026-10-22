@@ -11,6 +11,7 @@ local Diagnostics = ACF.Diagnostics
 function Hints.Set(Entity, Id, Active, Data)
 	local Def = Diagnostics.Get(Id)
 	if not Def or Def.Type ~= "Warning" then error("Unknown build hint '" .. tostring(Id) .. "'") end
+	if Hints.Requirements[Id] then error("'" .. Id .. "' is a requirement, set it with ENT:SetRequirement") end
 
 	local EntTbl   = Entity:GetTable()
 	local Current  = EntTbl.ACF_Hints or {}

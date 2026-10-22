@@ -141,7 +141,9 @@ do	-- Metamethods and other important stuff
 
 			if not (IsValid(self.Turret) or IsValid(self["Turret-H"]) or IsValid(self["Turret-V"])) then self:SetActive(false) return false end
 
-			if not self:SetRequirement("Health", (self.ACF.Health / self.ACF.MaxHealth) > 0.25, "below 25%") then
+			local Percent = self.ACF.Health / self.ACF.MaxHealth * 100
+
+			if not self:SetRequirement("component_health", Percent > 25, { Percent = math.floor(Percent) }) then
 				self:SetActive(false)
 				return false
 			end

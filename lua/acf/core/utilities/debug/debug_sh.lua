@@ -7,12 +7,14 @@ local NetName	= "ACF_DebugDraw"
 local LevelNet	= "ACF_DebugLevel"
 local MaxLevel	= 0
 local ID_BITS	= 5
+local CHANNEL_BITS = 3
 local MAX_BYTES	= 60000
 local LIFE_RES	= 20
 local DEFAULT_LIFE = 1
 local Level		= 1
 local Target
 local Group
+local Channel	= 0
 local Registry	= {}
 local Queue		= {}
 local QueueSize	= 0
@@ -39,6 +41,7 @@ local Types = {
 	Color	= {Write = writeColor, Read = readColor, Default = color_white},
 	Line	= {Write = function(V) net.WriteInt(V, 8) end, Read = function() return net.ReadInt(8) end},
 	Entity	= {Write = net.WriteEntity, Read = net.ReadEntity},
+	Channel	= {Write = function(V) net.WriteUInt(V, CHANNEL_BITS) end, Read = function() return net.ReadUInt(CHANNEL_BITS) end, Default = 0},
 	Life	= {
 		Write	= function(V) net.WriteUInt(math.Clamp(math.Round(V * LIFE_RES), 0, 65535), 16) end,
 		Read	= function() return net.ReadUInt(16) / LIFE_RES end,
@@ -52,11 +55,13 @@ local function isEnabled()
 end
 
 local function addItem(Item)
-	-- Clear removes everything drawn under its group before it expires
+	-- Clear removes everything drawn under its group and channel before it expires
 	if Item.Def.Pass == "Clear" then
 		for _, List in pairs(Passes) do
 			for I = #List, 1, -1 do
-				if List[I].Group == Item[1] then table.remove(List, I) end
+				local Other = List[I]
+
+				if Other.Group == Item[1] and Other.Channel == Item[2] then table.remove(List, I) end
 			end
 		end
 
@@ -102,6 +107,7 @@ local function register(Name, Pass, Args, Build, Draw)
 		Item.Level = Level
 		Item.Target = Target
 		Item.Group = Group
+		Item.Channel = Channel
 
 		for I = 1, Def.Count do
 			if Item[I] == nil then Item[I] = Def.Args[I].Default end
@@ -146,12 +152,14 @@ function ACF.Debug.GetTarget()
 end
 
 -- Tags all following calls with an entity, so ACF.Debug.Clear can remove them before they expire
-function ACF.Debug.SetGroup(NewGroup)
-	local Old = Group
+-- The channel keeps separate drawings of one entity apart, so clearing one leaves the others up
+function ACF.Debug.SetGroup(NewGroup, NewChannel)
+	local Old, OldChannel = Group, Channel
 
-	Group = NewGroup
+	Group   = NewGroup
+	Channel = NewChannel or 0
 
-	return Old
+	return Old, OldChannel
 end
 
 local Vec	= {"Origin", "Vector"}
@@ -342,7 +350,7 @@ register("Convex", "World", {Ent, {"Convex", "Number"}, Life, Col, IgnZ, {"Scale
 	end
 end)
 
-register("Clear", "Clear", {{"Group", "Entity"}})
+register("Clear", "Clear", {{"Group", "Entity"}, {"Channel", "Channel"}})
 
 -- Halos are batched per color, since every halo.Add call is a separate render pass
 -- Batches are kept between frames and emptied before each one, keyed by the color packed into a number
@@ -414,7 +422,10 @@ if SERVER then
 			net.WriteUInt(Def.ID, ID_BITS)
 			net.WriteBool(Item.Group ~= nil)
 
-			if Item.Group ~= nil then net.WriteEntity(Item.Group) end
+			if Item.Group ~= nil then
+				net.WriteEntity(Item.Group)
+				net.WriteUInt(Item.Channel, CHANNEL_BITS)
+			end
 
 			for J = 1, Def.Count do Def.Writers[J](Item[J]) end
 		end
@@ -438,7 +449,7 @@ if SERVER then
 
 	-- Calls are batched per tick, shared ones are sent once per distinct client level and targeted ones per player
 	hook.Add("Tick", "ACF Debug Draw", function()
-		Level, Target, Group = 1, nil, nil
+		Level, Target, Group, Channel = 1, nil, nil, 0
 
 		if QueueSize == 0 then return end
 
@@ -485,7 +496,12 @@ else
 	net.Receive(NetName, function()
 		while net.ReadBool() do
 			local Def = Registry[net.ReadUInt(ID_BITS)]
-			local Item = {Def = Def, Group = net.ReadBool() and net.ReadEntity() or nil}
+			local Item = {Def = Def, Channel = 0}
+
+			if net.ReadBool() then
+				Item.Group   = net.ReadEntity()
+				Item.Channel = net.ReadUInt(CHANNEL_BITS)
+			end
 
 			for I = 1, Def.Count do Item[I] = Def.Readers[I]() end
 

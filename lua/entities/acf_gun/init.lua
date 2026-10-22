@@ -126,8 +126,8 @@ do -- Random timer crew stuff
 			SelfTbl.LoadCrewMod = math.Clamp(Sum1, ACF.AutoloaderFallbackCoef, ACF.AutoloaderMaxBonus)
 			SelfTbl.AutoloaderFeeding = true
 
-			self:SetRequirement("Autoloader ready", not AutoBlocked, "see the autoloader")
-			self:SetRequirement("Loader sight", true)
+			self:SetRequirement("weapon_autoloader_ready", not AutoBlocked, { Autoloader = SelfTbl.Autoloader })
+			self:SetRequirement("weapon_loader_sight", true)
 		else
 			SelfTbl.AutoloaderFeeding = false
 			BlockedCrew = 0
@@ -138,12 +138,12 @@ do -- Random timer crew stuff
 			-- A crewed gun only stalls once every last crew member has lost sight of the breech
 			local CrewCount = Count1 + Count2 + Count3
 
-			self:SetRequirement("Autoloader ready", true)
-			self:SetRequirement("Loader sight", BlockedCrew < CrewCount or CrewCount == 0, "no loader can see the breech")
+			self:SetRequirement("weapon_autoloader_ready", true)
+			self:SetRequirement("weapon_loader_sight", BlockedCrew < CrewCount or CrewCount == 0)
 		end
 
 		-- Check space behind breech
-		local IsBlocked, Blocker = false, nil
+		local IsBlocked, Room = false, nil
 
 		if ACF.LegalChecks and SelfTbl.BulletData and SelfTbl.ClassData.BreechConfigs then
 			-- Check assuming 2 piece for now.
@@ -165,10 +165,11 @@ do -- Random timer crew stuff
 
 			-- Additional Randomized check just in case
 			local tr2
+			local rp1, rp2
 			if not TraceResult.Hit then
 				local rb = Vector(0, SelfTbl.BreechWidth or 0, SelfTbl.BreechHeight or 0) / 2 * VectorRand()
-				local rp1 = p1 + rb
-				local rp2 = p2 + rb
+				rp1 = p1 + rb
+				rp2 = p2 + rb
 				local wrp1, wrp2 = ENTITY.LocalToWorld(self, rp1), ENTITY.LocalToWorld(self, rp2)
 
 				TraceConfig.start = wrp1
@@ -187,10 +188,22 @@ do -- Random timer crew stuff
 			end
 
 			IsBlocked = TraceResult.Hit or (tr2 and tr2.Hit)
-			Blocker   = IsBlocked and (TraceResult.Hit and TraceResult or tr2).Entity
+
+			-- The blocking trace, local to the gun so the drawing follows it
+			if IsBlocked then
+				local First = TraceResult.Hit
+				local Hit   = First and TraceResult or tr2
+
+				Room = {
+					Blocker = Hit.Entity,
+					From    = First and p1 or rp1,
+					To      = First and p2 or rp2,
+					HitPos  = ENTITY.WorldToLocal(self, Hit.HitPos),
+				}
+			end
 		end
 
-		self:SetRequirement("Room behind breech", not IsBlocked, IsBlocked and "blocked by " .. tostring(Blocker))
+		self:SetRequirement("weapon_breech_room", not IsBlocked, Room)
 
 		local Blocked = not self:RequirementsMet()
 

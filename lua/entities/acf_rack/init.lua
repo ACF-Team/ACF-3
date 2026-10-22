@@ -134,8 +134,8 @@ do
 			self.LoadCrewMod = self.LoadCrewModOverride or math.Clamp(Sum1, ACF.AutoloaderFallbackCoef, ACF.AutoloaderMaxBonus)
 			self.AutoloaderFeeding = true
 
-			self:SetRequirement("Autoloader ready", not AutoBlocked, "see the autoloader")
-			self:SetRequirement("Loader sight", true)
+			self:SetRequirement("weapon_autoloader_ready", not AutoBlocked, { Autoloader = self.Autoloader })
+			self:SetRequirement("weapon_loader_sight", true)
 		else
 			self.AutoloaderFeeding = false
 			BlockedCrew = 0
@@ -146,12 +146,12 @@ do
 			-- A crewed rack only stalls once every last crew member has lost sight of the breech
 			local CrewCount = Count1 + Count2 + Count3
 
-			self:SetRequirement("Autoloader ready", true)
-			self:SetRequirement("Loader sight", BlockedCrew < CrewCount or CrewCount == 0, "no loader can see the breech")
+			self:SetRequirement("weapon_autoloader_ready", true)
+			self:SetRequirement("weapon_loader_sight", BlockedCrew < CrewCount or CrewCount == 0)
 		end
 
 		-- Check space behind breech
-		local IsBlocked, Blocker = false, nil
+		local IsBlocked, Room = false, nil
 
 		if ACF.LegalChecks and self.BulletData --[[ useless? and self.BulletData.AmmoType ~= "Empty"]] and self.ClassData.BreechConfigs then
 			local IdName      = self.BulletData.WeaponType
@@ -177,11 +177,12 @@ do
 
 			-- Additional Randomized check just in case
 			local tr2
+			local rp1, rp2
 			if not tr.Hit then
 				local Width = IdClass.Round.ActualWidth
 				local rb = Vector(0, Width, Width) / 2 * VectorRand()
-				local rp1 = p1 + rb
-				local rp2 = p2 + rb
+				rp1 = p1 + rb
+				rp2 = p2 + rb
 				local wrp1, wrp2 = self:LocalToWorld(rp1), self:LocalToWorld(rp2)
 
 				TraceConfig.start = wrp1
@@ -196,10 +197,22 @@ do
 			end
 
 			IsBlocked = tr.Hit or (tr2 and tr2.Hit)
-			Blocker   = IsBlocked and (tr.Hit and tr or tr2).Entity
+
+			-- The blocking trace, local to the rack so the drawing follows it
+			if IsBlocked then
+				local First = tr.Hit
+				local Hit   = First and tr or tr2
+
+				Room = {
+					Blocker = Hit.Entity,
+					From    = First and p1 or rp1,
+					To      = First and p2 or rp2,
+					HitPos  = self:WorldToLocal(Hit.HitPos),
+				}
+			end
 		end
 
-		self:SetRequirement("Room behind breech", not IsBlocked, IsBlocked and "blocked by " .. tostring(Blocker))
+		self:SetRequirement("weapon_breech_room", not IsBlocked, Room)
 
 		-- A ground crew loading the rack works around whatever is in the way
 		local Blocked = not self.LoadCrewModOverride and not self:RequirementsMet()

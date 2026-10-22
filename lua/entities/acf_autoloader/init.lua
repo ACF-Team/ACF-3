@@ -179,8 +179,8 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	local RamAngle = math.deg(math.acos(math.Clamp(self:GetForward():Dot(GunForward), -1, 1)))
 	local GunArmAngle = PositionAngle + RamAngle
 	local GunArmAngleAligned = GunArmAngle < ACF.AutoloaderMaxAngleDiff
-	self:SetRequirement("Breech alignment", GunArmAngleAligned, math.Round(GunArmAngle)
-		.. " degrees off, needs less than " .. ACF.AutoloaderMaxAngleDiff)
+	self:SetRequirement("autoloader_breech_alignment", GunArmAngleAligned,
+		{ Angle = math.Round(GunArmAngle), Limit = ACF.AutoloaderMaxAngleDiff, Weapon = Gun })
 
 	TraceConfig.filter = function(x) return not (x == self or x == Gun or x == Ammo or x == self:GetParent() or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or x.IsACFMissile or self.AmmoCrates[x] or ACF.GlobalFilter[x:GetClass()]) end
 
@@ -188,15 +188,15 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	TraceConfig.start = AutoloaderPos
 	TraceConfig.endpos = BreechPos
 	local TraceResult = TraceLine(TraceConfig)
-	self:SetRequirement("Path to breech", not TraceResult.Hit,
-		TraceResult.Hit and "blocked by " .. tostring(TraceResult.Entity))
+	self:SetRequirement("autoloader_path_breech", not TraceResult.Hit,
+		TraceResult.Hit and { Blocker = TraceResult.Entity, HitPos = self:WorldToLocal(TraceResult.HitPos), Target = Gun })
 
 	-- Check LOS from arm to ammo is unobstructed
 	TraceConfig.start = AutoloaderPos
 	TraceConfig.endpos = AmmoPos
 	TraceResult = TraceLine(TraceConfig)
-	self:SetRequirement("Path to ammo", not TraceResult.Hit,
-		TraceResult.Hit and "blocked by " .. tostring(TraceResult.Entity))
+	self:SetRequirement("autoloader_path_ammo", not TraceResult.Hit,
+		TraceResult.Hit and { Blocker = TraceResult.Entity, HitPos = self:WorldToLocal(TraceResult.HitPos), Target = Ammo })
 
 	ACF.Hints.Set(self, "autoloader_mount_points", Gun.IsACFRack and table.Count(Gun.MountPoints) ~= 1)
 

@@ -11,24 +11,29 @@ return function()
     local AddRequirementLines
 
     do -- Requirements ------------------------------
-        --- Marks a requirement as met or not, the overlay lists the unmet ones. Not applicable counts as met.
-        --- @param Name string Short name of the requirement, also its key
+        local Diagnostics = ACF.Diagnostics
+
+        --- Marks a requirement as met or not, the overlay lists the unmet ones with their help. Not applicable counts as met.
+        --- @param Id string A requirement registered with ACF.Hints.RegisterRequirement
         --- @param Met boolean Whether the requirement is currently met
-        --- @param Detail string|nil Why it is not met
+        --- @param Data table|nil Why it is not met, read by the requirement's detail and drawing
         --- @return boolean # Met, for use in conditions
-        function ENT:SetRequirement(Name, Met, Detail)
+        function ENT:SetRequirement(Id, Met, Data)
             local Unmet = self.ACF_UnmetRequirements
 
             if Met then
-                if not (Unmet and Unmet[Name] ~= nil) then return true end
+                if not (Unmet and Unmet[Id]) then return true end
 
-                Unmet[Name] = nil
+                Unmet[Id] = nil
 
-                table.RemoveByValue(self.ACF_UnmetOrder, Name)
+                table.RemoveByValue(self.ACF_UnmetOrder, Id)
                 self:UpdateOverlay()
+                ACF.Hints.DrawRequirements(self)
 
                 return true
             end
+
+            if not ACF.Hints.Requirements[Id] then error("Unknown requirement '" .. tostring(Id) .. "'") end
 
             if not Unmet then
                 Unmet                      = {}
@@ -36,21 +41,30 @@ return function()
                 self.ACF_UnmetOrder        = {}
             end
 
-            Detail = Detail or false
+            Data = Data or {}
 
-            local Current = Unmet[Name]
+            local Current = Unmet[Id]
 
-            if Current == Detail then return false end
+            if Current and ACF.SameData(Current, Data) then return false end
 
-            if Current == nil then
+            Unmet[Id] = Data
+
+            if not Current then
                 local Order = self.ACF_UnmetOrder
 
-                Order[#Order + 1] = Name
+                Order[#Order + 1] = Id
+
+                self:UpdateOverlay()
+                ACF.Hints.DrawRequirements(self)
+
+                return false
             end
 
-            Unmet[Name] = Detail
+            -- Only the text reaches the overlay, data such as trace positions is picked up by the next redraw
+            local _, OldDetail = Diagnostics.Describe(Id, Current)
+            local _, NewDetail = Diagnostics.Describe(Id, Data)
 
-            self:UpdateOverlay()
+            if OldDetail ~= NewDetail then self:UpdateOverlay() end
 
             return false
         end
@@ -71,10 +85,10 @@ return function()
             local Unmet = self.ACF_UnmetRequirements
             if not Unmet or not next(Unmet) or not self:ACF_ShowRequirements() then return end
 
-            for _, Name in ipairs(self.ACF_UnmetOrder) do
-                local Detail = Unmet[Name]
+            for _, Id in ipairs(self.ACF_UnmetOrder) do
+                local Title, Detail = Diagnostics.Describe(Id, Unmet[Id])
 
-                State:AddWarning(Detail and Name .. ": " .. Detail or Name)
+                State:AddWarning(Detail ~= "" and Title .. ": " .. Detail or Title, Id)
             end
         end
     end ---------------------------------------------

@@ -56,7 +56,7 @@ function Legality.Draw(Entity, Force)
 	local Due       = EntTbl.ACF_LegalDue or Now + 1
 	local OldLevel  = Debug.GetDeveloperLevel()
 	local OldTarget = Debug.SetTarget(Owner)
-	local OldGroup  = Debug.SetGroup(Entity)
+	local OldGroup, OldChannel = Debug.SetGroup(Entity)
 
 	EntTbl.ACF_RedrawAt = Due
 	EntTbl.ACF_Drawn    = Active and Owner:GetInfoNum("acf_legalvisuals", 1) ~= 0 or nil
@@ -68,5 +68,5 @@ function Legality.Draw(Entity, Force)
 
 	Debug.SetDeveloperLevel(OldLevel)
 	Debug.SetTarget(OldTarget)
-	Debug.SetGroup(OldGroup)
+	Debug.SetGroup(OldGroup, OldChannel)
 end

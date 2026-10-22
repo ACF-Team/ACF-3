@@ -156,9 +156,15 @@ do	-- Metamethods and other important stuff
 			local MaxDist    = (((Turret.TurretData.RingSize / 2) * 1.2) + 12 + self.CompSize * 7.5) ^ 2
 			local LocDist    = Vector(LocPos.x, LocPos.y, 0):Length2DSqr()
 
-			local Parented = self:SetRequirement("Parent", IsValid(Parent) and (Parent == Turret or not IsValid(RingParent) or Parent == RingParent), "parent to the ring or its parent")
-			local NearRing = self:SetRequirement("Near ring", LocDist <= MaxDist, "too far from the ring")
-			local Level    = self:SetRequirement("Ring height", math.abs(LocPos.z) <= (Turret.TurretData.RingHeight * 1.5) + 12, "too far above or below the ring")
+			local Height     = math.abs(LocPos.z)
+			local MaxHeight  = (Turret.TurretData.RingHeight * 1.5) + 12
+			-- Where LocPos is zero, in the ring's frame, for drawing the allowed area
+			local Center     = -Turret:OBBCenter()
+			local Radius     = math.sqrt(MaxDist)
+
+			local Parented = self:SetRequirement("turret_motor_parent", IsValid(Parent) and (Parent == Turret or not IsValid(RingParent) or Parent == RingParent), { Turret = Turret })
+			local NearRing = self:SetRequirement("turret_motor_near_ring", LocDist <= MaxDist, { Turret = Turret, Center = Center, Radius = Radius, Distance = math.sqrt(LocDist) })
+			local Level    = self:SetRequirement("turret_motor_ring_height", Height <= MaxHeight, { Turret = Turret, Center = Center, Radius = Radius, Height = Height, Limit = MaxHeight })
 
 			self.ValidPlacement = Parented and NearRing and Level
 
@@ -168,7 +174,8 @@ do	-- Metamethods and other important stuff
 		function ENT:IsActive()
 			if self.Disabled then return false end
 
-			local Healthy = self:SetRequirement("Health", (self.ACF.Health / self.ACF.MaxHealth) > 0.25, "below 25%")
+			local Percent = self.ACF.Health / self.ACF.MaxHealth * 100
+			local Healthy = self:SetRequirement("component_health", Percent > 25, { Percent = math.floor(Percent) })
 
 			if self.ValidPlacement == false then return false end
 
