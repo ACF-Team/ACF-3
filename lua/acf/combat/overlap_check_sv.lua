@@ -49,10 +49,12 @@ end
 
 local CurEnt
 local CurSkip
+local CurOwner
 
 local function traceFilter(Other)
     if Other == CurEnt or not Other.IsACFEntity or Other.ACF_IsNotLegalityChecked or EXEMPT[Other:GetClass()] then return false end
     if CurSkip and CurSkip[Other:GetClass()] then return false end
+    if Other:CPPIGetOwner() ~= CurOwner then return false end -- Other players' entities never block, so nobody can disable someone else's by ramming into them
 
     return true
 end
@@ -113,8 +115,9 @@ local function sample()
     local Start    = Ent:LocalToWorld(samplePoint(Convex.Tris, Centroid))
     local End      = Ent:LocalToWorld(samplePoint(Convex.Tris, Centroid))
 
-    CurEnt  = Ent
-    CurSkip = Ignored[Ent:GetClass()]
+    CurEnt   = Ent
+    CurSkip  = Ignored[Ent:GetClass()]
+    CurOwner = Ent:CPPIGetOwner()
 
     local Trace = util.TraceLine({
         start  = Start,
