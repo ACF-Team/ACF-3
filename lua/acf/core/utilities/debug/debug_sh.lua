@@ -309,8 +309,9 @@ if SERVER then
 	end
 
 	-- Clients report their own acf_developer, so the server only sends what someone will draw
+	-- Non-admins only get level 0, server drawings would otherwise show them entities through walls
 	net.Receive(LevelNet, function(_, Ply)
-		Ply.ACF_DebugLevel = math.min(net.ReadUInt(4), 9)
+		Ply.ACF_DebugLevel = Ply:IsAdmin() and math.min(net.ReadUInt(4), 9) or 0
 
 		updateMaxLevel()
 	end)

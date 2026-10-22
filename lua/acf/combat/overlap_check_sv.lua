@@ -120,6 +120,7 @@ local function sample()
         start  = Start,
         endpos = End,
         filter = traceFilter,
+        ignoreworld = true, -- The world never reaches the filter
     })
 
     if not (Trace.Hit or Trace.StartSolid) then return end

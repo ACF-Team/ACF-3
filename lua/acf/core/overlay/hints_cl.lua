@@ -27,7 +27,7 @@ function Overlay.CollectHintRects(State, XScale, YScale, TotalW)
 	local Offset     = Overlay.GetOverlayOffset()
 
 	for Idx, Slot in State:IterateElementSlots() do
-		local Id = Slot.Data[2]
+		local Id = Slot:GetElementData(2)
 		if (Slot.Type ~= WarningIdx and Slot.Type ~= ErrorIdx) or not GetDef(Id) then continue end
 
 		local Cache = Overlay.GetSlotDataCache(Idx)

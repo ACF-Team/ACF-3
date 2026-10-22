@@ -33,7 +33,7 @@ function Notify.Start()
     CurrentNotification.Sound           = ""
     CurrentNotification.Buttons         = {}
     CurrentNotification.HelpId          = ""
-    CurrentNotification.TargetEntity   = 0
+    CurrentNotification.TargetEntity    = 0
     CurrentNotification.TargetPhysObj   = -1
     if SERVER then
         CurrentNotification.Filter = CurrentNotification.Filter or RecipientFilter()
