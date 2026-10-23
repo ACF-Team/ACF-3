@@ -99,7 +99,7 @@ do -- Radar Receiver
 			end
 		end
 
-		for k in pairs(ACF.ActiveMissiles) do -- Missile entities
+		for k in ACF.Missiles.IterateActive() do -- Missile entities
 			if not k.UseGuidance then continue end -- Don't waste time on missiles that don't have functional guidance
 			if not ValidMissileRadars[k.Guidance] then continue end -- Further filter for anything without radar on the missile itself
 
