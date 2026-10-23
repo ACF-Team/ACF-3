@@ -8,8 +8,35 @@ Fuel.Groups       = Groups
 -- Engines only draw from tanks sharing their direct parent. Engine.FuelTanks and Tank.Engines are
 -- kept in sync here so link sources, E2/SF and the overlays keep working.
 
+-- Tells apart an engine with no tank on its parent from one whose sibling tanks all hold the wrong fuel
 local function Refresh(Engine)
-	ACF.Hints.Set(Engine, "engine_no_fuel", ACF.RequireFuel and not next(Engine.FuelTanks))
+	local Missing = ACF.RequireFuel and not next(Engine.FuelTanks)
+	local Wrong
+
+	if Missing then
+		local Group = Engine.ACF_FuelParent and Groups[Engine.ACF_FuelParent]
+
+		for Tank in pairs(Group and Group.Tanks or {}) do
+			if IsValid(Tank) then
+				Wrong = Wrong or {}
+				Wrong[#Wrong + 1] = Tank
+			end
+		end
+	end
+
+	if Wrong then
+		local Types = table.GetKeys(Engine.FuelTypes)
+
+		table.sort(Types)
+
+		Engine:SetRequirement("engine_no_fuel", true)
+		Engine:SetRequirement("engine_fuel_type", false, { Tanks = Wrong, Types = table.concat(Types, " or ") })
+	else
+		local Parent = Engine:GetParent()
+
+		Engine:SetRequirement("engine_fuel_type", true)
+		Engine:SetRequirement("engine_no_fuel", not Missing, Missing and { Parent = IsValid(Parent) and Parent or nil })
+	end
 end
 
 Fuel.Refresh = Refresh

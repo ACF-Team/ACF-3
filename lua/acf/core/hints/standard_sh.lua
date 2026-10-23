@@ -106,12 +106,6 @@ do -- MARK: Fuel hints
 end
 
 do -- MARK: Mobility hints
-	Register("engine_no_fuel", {
-		Title  = "No Fuel Tank",
-		Detail = "No compatible fuel tanks share this engine's parent.",
-		Help   = "Parent a fuel tank the engine can use to the same parent as the engine.",
-	})
-
 	Register("engine_no_gearbox", {
 		Title  = "No Gearbox",
 		Detail = "This engine is not linked to a gearbox.",

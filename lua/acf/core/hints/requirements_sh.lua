@@ -310,6 +310,38 @@ do -- MARK: Mobility requirements
 		end,
 	})
 
+	-- Data.Parent is the engine's parent, where a tank has to go
+	Register("engine_no_fuel", {
+		Title  = "Fuel tank",
+		Detail = function(Data)
+			if not Data.Parent then return "parent the engine and a fuel tank to the same entity" end
+
+			return "no fuel tank shares this engine's parent"
+		end,
+		Help   = "Engines only draw fuel from tanks parented to the same entity as the engine. Parent a fuel tank the engine "
+			.. "can use to the marked entity.",
+	}, {
+		Draw = function(Debug, Entity, Data, Life)
+			DrawRelated(Debug, Entity, Data.Parent, "Parent a fuel tank here", Life)
+		end,
+	})
+
+	-- Data.Tanks lists the tanks sharing the engine's parent, Data.Types names the fuels the engine takes
+	Register("engine_fuel_type", {
+		Title  = "Fuel type",
+		Detail = function(Data)
+			return "the tanks on its parent hold the wrong fuel, needs " .. (Data.Types or "another fuel")
+		end,
+		Help   = "This engine cannot burn the fuel in the marked tanks. Change their fuel type to one the engine takes, "
+			.. "or add a tank that holds it.",
+	}, {
+		Draw = function(Debug, Entity, Data, Life)
+			for _, Tank in ipairs(Data.Tanks or {}) do
+				if IsValid(Tank) then DrawRelated(Debug, Entity, Tank, tostring(Tank.FuelType), Life, COLOR_BAD) end
+			end
+		end,
+	})
+
 	-- Data.Wheels lists each linked wheel that cannot be driven, with the Reason
 	Register("gearbox_wheels_free", {
 		Title  = "Free wheels",
