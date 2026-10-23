@@ -346,6 +346,34 @@ do -- MARK: Link requirements
 		end
 	end
 
+	-- Data.Links lists each shaft close to the limit, with its Angle and both ends, each position local to its own entity
+	Register("driveshaft_angle", {
+		Title  = "Driveshaft angle",
+		Detail = function(Data)
+			local Worst = 0
+
+			for _, Entry in ipairs(Data.Links or {}) do
+				Worst = math.max(Worst, Entry.Angle)
+			end
+
+			return Worst .. " of " .. (Data.Limit or "?") .. " degrees, close to breaking"
+		end,
+		Help   = "Links break once their shaft bends past the limit, which suspension travel or a turning wheel can push it over. "
+			.. "Line the marked entities up so each output points at the input it drives.",
+	}, {
+		Draw = function(Debug, _, Data, Life)
+			for _, Entry in ipairs(Data.Links or {}) do
+				if IsValid(Entry.From) and IsValid(Entry.To) then
+					local From = Entry.From:LocalToWorld(Entry.FromPos)
+					local To   = Entry.To:LocalToWorld(Entry.ToPos)
+
+					Debug.Line(From, To, Life, COLOR_HINT, true)
+					Debug.EntityTextAtPosition(LerpVector(0.5, From, To), 0, Entry.Angle .. " of " .. Data.Limit .. " deg", Life, COLOR_HINT)
+				end
+			end
+		end,
+	})
+
 	-- Data.Links lists each lost link with its Target, Reason, From (local to the entity) and To (local to the target)
 	Register("link_broken", {
 		Title  = "Link broken",

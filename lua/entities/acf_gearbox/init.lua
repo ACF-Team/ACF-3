@@ -304,6 +304,42 @@ do -- Spawn and Update functions -----------------------
 		Entity:SetRequirement("gearbox_wheels_free", not Unusable, Unusable and { Wheels = Unusable })
 	end
 
+	local ANGLE_MARGIN = 0.8 -- Share of the driveshaft angle limit past which a link is about to break
+
+	local function AddBentShaft(Bent, Angle, From, FromPos, To, ToPos)
+		Bent[#Bent + 1] = { Angle = math.Round(Angle), From = From, FromPos = FromPos, To = To, ToPos = ToPos }
+	end
+
+	-- Covers the engines linked into this gearbox too, since engines only check their links while running
+	local function CheckAngles(Entity)
+		local Warn = ACF.MaxDriveshaftAngle * ANGLE_MARGIN
+		local Bent
+
+		for Engine in pairs(Entity.Engines) do
+			if IsEntityValid(Engine) then
+				local _, Angle = ACF.IsDriveshaftAngleExcessive(Entity, Entity.In, Engine, Engine.Out)
+
+				if Angle > Warn then
+					Bent = Bent or {}
+					AddBentShaft(Bent, Angle, Engine, Engine.Out.Pos, Entity, Entity.In.Pos)
+				end
+			end
+		end
+
+		for _, Links in ipairs({ Entity.GearboxOut, Entity.Wheels }) do
+			for Ent, Link in pairs(Links) do
+				local _, Angle = ACF.IsDriveshaftAngleExcessive(Ent, Ent.In, Link)
+
+				if Angle > Warn then
+					Bent = Bent or {}
+					AddBentShaft(Bent, Angle, Entity, Link:GetOrigin(), Ent, Ent.In and Ent.In.Pos or Vector())
+				end
+			end
+		end
+
+		Entity:SetRequirement("driveshaft_angle", not Bent, Bent and { Links = Bent, Limit = ACF.MaxDriveshaftAngle })
+	end
+
 	local LOAD_MIN_TICKS = 30 -- Driven ticks needed since the last check before the load can be judged
 	local LOAD_CAPPED    = 0.5 -- Share of those ticks spent at the torque rating that counts as overloaded
 
@@ -440,6 +476,7 @@ do -- Spawn and Update functions -----------------------
 				CheckRopes(self, "GearboxOut")
 				CheckRopes(self, "Wheels")
 				CheckWheels(self)
+				CheckAngles(self)
 				CheckLoad(self)
 				self:UpdateLinkHints()
 			else
