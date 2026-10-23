@@ -28,8 +28,8 @@ do -- MARK: Crew hints
 
 			return "This crew must be linked to something it can operate."
 		end,
-		Help   = "Link the crew to something it can operate, such as a weapon or a turret. Crew lose their links when "
-			.. "reparented, when their occupation changes, or when a link ends up out of range or on another contraption.",
+		Help   = "Link the crew to something it can operate, such as a weapon or a turret. Links are removed if the crew is "
+			.. "reparented, changes occupation or ends up out of range.",
 	})
 
 	Register("driver_yaw", {
@@ -93,8 +93,7 @@ do -- MARK: Ammo hints
 		Detail = function(Data)
 			return "No linked crate is at ammo stage " .. (Data.Stage or "?") .. "."
 		end,
-		Help   = "Weapons only load from first stage crates, higher stages only restock the stages below them. "
-			.. "Link a first stage crate, or lower the stage of one of the linked crates.",
+		Help   = "Link a first stage crate or lower the stage of a linked crate, weapons only load from first stage crates.",
 	})
 end
 
@@ -102,7 +101,7 @@ do -- MARK: Fuel hints
 	Register("fueltank_leaking", {
 		Title  = "Leaking",
 		Detail = "This tank is leaking fuel.",
-		Help   = "Damage punctured this tank. The leak seals itself over time, and faster the less fuel is left.",
+		Help   = "The leak will seal itself over time, faster the less fuel is left.",
 	})
 end
 
@@ -110,62 +109,60 @@ do -- MARK: Mobility hints
 	Register("engine_no_gearbox", {
 		Title  = "No Gearbox",
 		Detail = "This engine is not linked to a gearbox.",
-		Help   = "Link the engine to a gearbox, then link the gearbox to the wheels or to more gearboxes.",
+		Help   = "Link the engine to a gearbox.",
 		Ponder = "acf.tankbasics.drivetrain",
 	})
 
 	Register("gearbox_no_input", {
 		Title  = "No Input",
-		Detail = "Nothing drives this gearbox.",
-		Help   = "Link an engine to this gearbox, or link another gearbox to it so it receives that gearbox's output.",
+		Detail = "This gearbox is not linked to an engine or another gearbox.",
+		Help   = "Link an engine or another gearbox to this gearbox.",
 		Ponder = "acf.tankbasics.drivetrain",
 	})
 
 	Register("gearbox_no_output", {
 		Title  = "No Output",
 		Detail = "This gearbox is not linked to any wheels or gearboxes.",
-		Help   = "Link this gearbox to the wheels it should drive, or to other gearboxes that drive them.",
+		Help   = "Link this gearbox to wheels or other gearboxes.",
 		Ponder = "acf.tankbasics.drivetrain",
 	})
 
 	Register("gearbox_overloaded", {
 		Title  = "Overloaded",
 		Detail = function(Data)
-			return "At its " .. (Data.Rating or "?") .. " Nm torque rating " .. (Data.Percent or "?") .. "% of the time while driven."
+			return "This gearbox is at its " .. (Data.Rating or "?") .. " Nm torque limit " .. (Data.Percent or "?") .. "% of the time."
 		end,
-		Help   = "The wheels ask for more torque than this gearbox can pass, so the rest is lost and the vehicle accelerates "
-			.. "slower. Raise the gearbox's scale, use fewer gears, or split the load over more gearboxes.",
+		Help   = "Torque past the limit is lost, so increase the gearbox scale, use fewer gears or split the load between more gearboxes.",
 		Ponder = "acf.tankbasics.drivetrain",
 	})
 
 	Register("controller_no_baseplate", {
 		Title  = "No Baseplate",
 		Detail = "This controller is not linked to a baseplate.",
-		Help   = "Link the controller to the vehicle's baseplate, it drives, steers and seats the driver through it.",
+		Help   = "Link the controller to the vehicle's baseplate.",
 		Ponder = "acf.tankbasics.baseplates",
 	})
 
 	Register("controller_no_gearbox", {
 		Title  = "No Gearbox",
-		Detail = "This vehicle has engines but the controller is not linked to a gearbox.",
-		Help   = "Link the controller to the main gearbox, the one the engines are linked to, so it can drive the vehicle.",
+		Detail = "This controller is not linked to a gearbox.",
+		Help   = "Link the controller to the main gearbox, the one the engines are linked to.",
 		Ponder = "acf.tankbasics.baseplates",
 	})
 
 	Register("controller_shift_rpm", {
 		Title  = "No Shift RPM",
 		Detail = function(Data)
-			return "Both shift RPMs are " .. (Data.RPM or 0) .. ", so the controller never changes gears."
+			return "Shift RPMs are set to " .. (Data.RPM or 0) .. ", the controller will not shift gears."
 		end,
-		Help   = "Set the shift RPMs in the controller's Shifting Settings, from its context menu's Edit Properties, usually "
-			.. "around the engine's powerband. Or turn on Disable Auto Shifter if gears are shifted some other way.",
+		Help   = "Set the shift RPMs under Edit Properties in the context menu, or enable Disable Auto Shifter if you shift gears yourself.",
 		Ponder = "acf.tankbasics.baseplates",
 	})
 
 	Register("controller_no_reverse", {
 		Title  = "No Reverse",
-		Detail = "The main gearbox has no reverse gear, so the vehicle cannot back up.",
-		Help   = "Give the main gearbox a gear with a negative ratio, or add transfer gearboxes that reverse for it.",
+		Detail = "The main gearbox has no reverse gear.",
+		Help   = "Give the main gearbox a gear with a negative ratio, or reverse with transfer gearboxes.",
 		Ponder = "acf.tankbasics.baseplates",
 	})
 
@@ -201,7 +198,7 @@ do -- MARK: Turret hints
 	Register("turret_gyro_no_drive", {
 		Title  = "No Turret Drive",
 		Detail = "This gyro is not linked to a turret drive.",
-		Help   = "Link the gyro to a turret drive. A dual axis gyro can stabilize one horizontal and one vertical drive.",
+		Help   = "Link the gyro to a turret drive, dual axis gyros can take one horizontal and one vertical drive.",
 	})
 
 	Register("turret_controller_no_turret", {
@@ -213,8 +210,7 @@ do -- MARK: Turret hints
 	Register("turret_controller_no_crew", {
 		Title  = "No Crew",
 		Detail = "This remote controller is not linked to a crew member.",
-		Help   = "Link the controller to a gunner, commander or pilot. It must share their parent, sit in front of them "
-			.. "and be in their line of sight.",
+		Help   = "Link the controller to a gunner, commander or pilot with the same parent, placed in front of them where they can see it.",
 	})
 end
 
@@ -227,13 +223,12 @@ do -- MARK: Status errors
 	RegisterError("rack_jammed", {
 		Title  = "Jammed",
 		Detail = "This rack is jammed.",
-		Help   = "Damage jammed this rack. Repair it to full health to clear the jam.",
+		Help   = "Repair the rack to full health to clear the jam.",
 	})
 
 	RegisterError("actuator_overloaded", {
 		Title  = "Overloaded",
 		Detail = "Overloaded, can only retract.",
-		Help   = "This actuator carries more than it can lift. Reduce the load, or use a wider bore or a shorter stroke, "
-			.. "which both raise the load limit.",
+		Help   = "Reduce the load, or use a wider bore or shorter stroke to raise the load limit.",
 	})
 end

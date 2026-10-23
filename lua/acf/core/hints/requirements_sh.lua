@@ -70,7 +70,7 @@ local function DrawBlockedPath(GetTarget)
 end
 
 local function BlockedDetail(Data)
-	return "blocked by " .. Name(Data.Blocker, "another entity")
+	return "Blocked by " .. Name(Data.Blocker, "another entity")
 end
 
 do -- MARK: Autoloader requirements
@@ -79,8 +79,7 @@ do -- MARK: Autoloader requirements
 		Detail = function(Data)
 			return math.Round(Data.Angle or 0) .. " degrees off, needs less than " .. (Data.Limit or "?")
 		end,
-		Help   = "The autoloader must sit behind the breech, in line with the bore, and point the way the weapon fires. "
-			.. "Move it onto the green line and turn it to face along the green arrow.",
+		Help   = "Move the autoloader onto the green line behind the breech and face it along the green arrow.",
 	}, {
 		-- The green line runs back from the breech along the bore, the arrows compare the autoloader's facing with the weapon's
 		Draw = function(Debug, Entity, Data, Life)
@@ -108,8 +107,7 @@ do -- MARK: Autoloader requirements
 	Register("autoloader_path_breech", {
 		Title  = "Path to breech",
 		Detail = BlockedDetail,
-		Help   = "The autoloader needs a clear straight path to the breech. Move the boxed entity out of the red part of the line, "
-			.. "or move the autoloader.",
+		Help   = "Move the blocking entity or the autoloader so the autoloader has a clear path to the breech.",
 	}, {
 		Draw = DrawBlockedPath(function(Weapon) return HasBreech(Weapon) and BreechPos(Weapon) end),
 	})
@@ -118,8 +116,7 @@ do -- MARK: Autoloader requirements
 	Register("autoloader_path_ammo", {
 		Title  = "Path to ammo",
 		Detail = BlockedDetail,
-		Help   = "The autoloader needs a clear straight path to the center of its ammo crate. Move the boxed entity out of the red "
-			.. "part of the line, or move the autoloader or the crate.",
+		Help   = "Move the blocking entity, the autoloader or the crate so the autoloader has a clear path to the crate.",
 	}, {
 		Draw = DrawBlockedPath(function(Crate) return IsValid(Crate) and Crate:GetPos() end),
 	})
@@ -128,8 +125,8 @@ end
 do -- MARK: Weapon loading requirements
 	Register("weapon_autoloader_ready", {
 		Title  = "Autoloader ready",
-		Detail = "the autoloader cannot load, see its overlay",
-		Help   = "The linked autoloader has a problem of its own. Look at the marked autoloader to see what it needs.",
+		Detail = "The autoloader cannot load",
+		Help   = "Fix the problems shown on the linked autoloader's overlay.",
 	}, {
 		Draw = function(Debug, Entity, Data, Life)
 			DrawRelated(Debug, Entity, Data.Autoloader, "Check this autoloader", Life)
@@ -140,9 +137,8 @@ do -- MARK: Weapon loading requirements
 
 	Register("weapon_loader_sight", {
 		Title  = "Loader sight",
-		Detail = "no loader can see the breech",
-		Help   = "Every crew member loading this weapon has its view of the breech blocked. Clear at least one red line "
-			.. "by moving the boxed entity, the crew or the weapon.",
+		Detail = "No loader can see the breech",
+		Help   = "Move the blocking entity, the crew or the weapon so at least one loader can see the breech.",
 	}, {
 		-- Each loading crew keeps its own sight line hint, which names what blocks it
 		Draw = function(Debug, Entity, _, Life)
@@ -169,8 +165,7 @@ do -- MARK: Weapon loading requirements
 	Register("weapon_breech_room", {
 		Title  = "Room behind breech",
 		Detail = BlockedDetail,
-		Help   = "Rounds are loaded from behind the breech, so the space behind it must stay clear for about half a round's length. "
-			.. "Move the boxed entity out of the red part of the line.",
+		Help   = "Move the blocking entity out of the way, rounds need room behind the breech to be loaded.",
 	}, {
 		Draw = function(Debug, Entity, Data, Life)
 			if not (Data.From and Data.To and Data.HitPos) then return end
@@ -186,10 +181,9 @@ do -- MARK: Turret requirements
 	-- Data.Crews lists each linked crew that could aim the turret but does not, with why
 	Register("turret_aim_control", {
 		Title  = "Aim control",
-		Detail = "needs a gunner, commander, pilot or lightweight controller",
-		Help   = "A turret carrying weapons needs someone aiming it. Link a gunner, commander or pilot that rides on the turret "
-			.. "or shares its parent, or link a lightweight turret controller. A vertical drive can also be aimed by the crew "
-			.. "of the horizontal drive under it. Crew marked in red are linked but cannot aim, for the reason shown.",
+		Detail = "No gunner, commander, pilot or controller",
+		Help   = "Link a gunner, commander or pilot on the turret or sharing its parent, or a lightweight turret controller. "
+			.. "Vertical drives can also use the crew of the horizontal drive under them.",
 	}, {
 		Draw = function(Debug, Entity, Data, Life)
 			for _, Entry in ipairs(Data.Crews or {}) do
@@ -205,8 +199,8 @@ do -- MARK: Turret requirements
 
 	Register("turret_motor_parent", {
 		Title  = "Parent",
-		Detail = "parent to the ring or its parent",
-		Help   = "Parent the motor to the turret ring it drives, or to the entity that ring is parented to.",
+		Detail = "Not parented to the ring or its parent",
+		Help   = "Parent the motor to the turret ring it drives, or to the ring's parent.",
 	}, {
 		Draw = function(Debug, Entity, Data, Life)
 			local Turret = Data.Turret
@@ -233,7 +227,7 @@ do -- MARK: Turret requirements
 		Detail = function(Data)
 			return math.Round(Data.Distance or 0) .. " units from the ring, needs " .. math.Round(Data.Radius or 0) .. " or less"
 		end,
-		Help   = "The motor must sit close to the turret ring it drives. Move it inside the green circle.",
+		Help   = "Move the motor inside the green circle.",
 	}, {
 		Draw = function(Debug, Entity, Data, Life)
 			local Turret = Data.Turret
@@ -250,7 +244,7 @@ do -- MARK: Turret requirements
 		Detail = function(Data)
 			return math.Round(Data.Height or 0) .. " units above or below the ring, needs " .. math.Round(Data.Limit or 0) .. " or less"
 		end,
-		Help   = "The motor must sit level with the turret ring it drives. Move it up or down to between the green circles.",
+		Help   = "Move the motor up or down so it is between the green circles.",
 	}, {
 		Draw = function(Debug, Entity, Data, Life)
 			local Turret = Data.Turret
@@ -269,8 +263,7 @@ do -- MARK: Turret requirements
 		Detail = function(Data)
 			return math.Round(Data.Mass or 0) .. " of " .. (Data.Limit or "?") .. " kg"
 		end,
-		Help   = "A lightweight controller only aims turrets up to the mass shown, counting the ring and everything it carries. "
-			.. "Lighten the turret, or have a gunner aim it instead.",
+		Help   = "Lighten the turret or use a gunner instead, lightweight controllers can only aim turrets up to this mass.",
 	}, {
 		Draw = function(Debug, Entity, Data, Life)
 			local Turret = Data.Turret
@@ -287,11 +280,10 @@ do -- MARK: Mobility requirements
 	Register("gearbox_driver", {
 		Title  = "Driver",
 		Detail = function(Data)
-			return "wheels get " .. (Data.Percent or "?") .. "% torque, " .. (Data.Reason or "no driver")
+			return "Wheels get " .. (Data.Percent or "?") .. "% torque, " .. (Data.Reason or "no driver")
 		end,
-		Help   = "Gearboxes only pass their full torque to wheels when the vehicle's baseplate has a driver or pilot with "
-			.. "enough efficiency. A driver must face the baseplate's forward to count. Add a driver, turn the marked driver "
-			.. "to face forward, or raise its efficiency with more room, a better pose or a commander.",
+		Help   = "Add a driver facing the baseplate's forward, or fix the marked one. Wheels only get full torque with a driver "
+			.. "or pilot that has enough efficiency.",
 		Ponder = "acf.tankbasics.crew_basics",
 	}, {
 		Draw = function(Debug, Entity, Data, Life)
@@ -315,12 +307,11 @@ do -- MARK: Mobility requirements
 	Register("engine_no_fuel", {
 		Title  = "Fuel tank",
 		Detail = function(Data)
-			if not Data.Parent then return "parent the engine and a fuel tank to the same entity" end
+			if not Data.Parent then return "The engine is not parented" end
 
-			return "no fuel tank shares this engine's parent"
+			return "No fuel tank shares this engine's parent"
 		end,
-		Help   = "Engines only draw fuel from tanks parented to the same entity as the engine. Parent a fuel tank the engine "
-			.. "can use to the marked entity.",
+		Help   = "Parent a fuel tank the engine can use to the same entity as the engine.",
 		Ponder = "acf.tankbasics.drivetrain",
 	}, {
 		Draw = function(Debug, Entity, Data, Life)
@@ -332,10 +323,9 @@ do -- MARK: Mobility requirements
 	Register("engine_fuel_type", {
 		Title  = "Fuel type",
 		Detail = function(Data)
-			return "the tanks on its parent hold the wrong fuel, needs " .. (Data.Types or "another fuel")
+			return "Wrong fuel, needs " .. (Data.Types or "another fuel")
 		end,
-		Help   = "This engine cannot burn the fuel in the marked tanks. Change their fuel type to one the engine takes, "
-			.. "or add a tank that holds it.",
+		Help   = "Change the marked tanks to a fuel type this engine can use, or add a tank that has one.",
 		Ponder = "acf.tankbasics.drivetrain",
 	}, {
 		Draw = function(Debug, Entity, Data, Life)
@@ -351,11 +341,10 @@ do -- MARK: Mobility requirements
 	Register("controller_wheel_sides", {
 		Title  = "Wheel sides",
 		Detail = function(Data)
-			return Data.Reason or "the wheels are not split into a left and a right side"
+			return Data.Reason or "Wheels are not split into left and right sides"
 		end,
-		Help   = "The controller splits the driven wheels into left and right using the baseplate's forward, and steers by "
-			.. "slowing one side. The marked wheels show its split. If the baseplate faces sideways, rotate the baseplate so "
-			.. "its forward arrow points the way the vehicle drives, then relink the controller to the gearbox.",
+		Help   = "Rotate the baseplate so its forward points the way the vehicle drives, then relink the controller to the gearbox. "
+			.. "Wheels are split into left and right using the baseplate's forward.",
 		Ponder = "acf.tankbasics.baseplates",
 	}, {
 		Draw = function(Debug, _, Data, Life)
@@ -397,8 +386,7 @@ do -- MARK: Mobility requirements
 
 			return Name(First.Wheel, "a linked wheel") .. " is " .. First.Reason:lower()
 		end,
-		Help   = "Gearboxes can only turn and brake wheels that move on their own. Unparent the marked wheels and attach them "
-			.. "with axis or ballsocket constraints, and unfreeze any frozen ones.",
+		Help   = "Unparent and unfreeze the marked wheels, attach them with axis or ballsocket constraints instead.",
 		Ponder = "acf.tankbasics.suspension",
 	}, {
 		Draw = function(Debug, Entity, Data, Life)
@@ -434,8 +422,7 @@ do -- MARK: Link requirements
 
 			return Worst .. " of " .. (Data.Limit or "?") .. " degrees, close to breaking"
 		end,
-		Help   = "Links break once their shaft bends past the limit, which suspension travel or a turning wheel can push it over. "
-			.. "Line the marked entities up so each output points at the input it drives.",
+		Help   = "Line up the marked entities, links break when the driveshaft angle goes past the limit.",
 		Ponder = "acf.tankbasics.drivetrain",
 	}, {
 		Draw = function(Debug, _, Data, Life)
@@ -459,15 +446,14 @@ do -- MARK: Link requirements
 			local First = Links[1]
 			if not First then return "" end
 
-			local Text = "to " .. Name(First.Target, "an entity") .. ", " .. First.Reason:lower()
+			local Text = "To " .. Name(First.Target, "an entity") .. ", " .. First.Reason:lower()
 
 			if Links[2] then Text = Text .. ", and " .. (#Links - 1) .. " more" end
 
 			return Text
 		end,
-		Help   = "Links are removed when the entities move so far apart that the shaft stretches past one and a half times its "
-			.. "length, or bend it past the driveshaft angle limit. Move the marked entities back into line and link them again. "
-			.. "This goes away by itself after a minute.",
+		Help   = "Move the marked entities back into place and link them again. Links break when stretched too far or bent past "
+			.. "the driveshaft angle limit.",
 		Ponder = "acf.tankbasics.drivetrain",
 	}, {
 		Draw = function(Debug, Entity, Data, Life)
@@ -491,6 +477,6 @@ do -- MARK: Component requirements
 		Detail = function(Data)
 			return math.Round(Data.Percent or 0) .. "%, needs more than 25%"
 		end,
-		Help   = "This component stops working below 25% health. Repair it to bring it back into service.",
+		Help   = "Repair this component, it stops working below 25% health.",
 	})
 end

@@ -448,9 +448,9 @@ do
 			local TankSteering = not (Controller.CanSteer or Controller:GetForceCarSteering())
 
 			if GetSidewaysness(Controller) > SIDEWAYS then
-				Reason = "the baseplate faces sideways to the wheels"
+				Reason = "The baseplate faces sideways to the wheels"
 			elseif TankSteering and not (next(Controller.LeftWheels) and next(Controller.RightWheels)) then
-				Reason = "all driven wheels are on one side"
+				Reason = "All driven wheels are on one side"
 			end
 		end
 
