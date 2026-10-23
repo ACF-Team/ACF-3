@@ -2,6 +2,7 @@ local ACF      = ACF
 local Missiles = ACF.Missiles
 
 -- A launcher is any table passed as Options.Launcher to Missiles.Create. Every method is optional:
+--   GetEntity(Missile)                     -> Entity         What the missile is fired from; guidance uses its linked computer/radar
 --   GetMissileFilter(Missile)              -> { Entity... }  Entities the missile won't hit once launched
 --   GetLaunchOrigin(Missile)               -> Pos, Ang       Where command guidance steers from
 --   GetLaunchSound(Missile)                -> string         Overrides the class' motor sound
@@ -10,6 +11,10 @@ local Missiles = ACF.Missiles
 
 local RackLauncher = {}
 RackLauncher.__index = RackLauncher
+
+function RackLauncher:GetEntity()
+	return self.Rack
+end
 
 function RackLauncher:GetMissileFilter()
 	local Rack   = self.Rack

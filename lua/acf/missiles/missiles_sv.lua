@@ -316,3 +316,10 @@ function Missiles.GetLaunchOrigin(Missile)
 
 	return Missile.LaunchPos or Missile:GetPos(), Missile.LaunchAng or Missile:GetAngles()
 end
+
+--- Internal: the entity the launcher fires from, or nil.
+function Missiles.GetLauncherEntity(Missile)
+	local Entity = CallLauncher(Missile, "GetEntity")
+
+	if IsValid(Entity) then return Entity end
+end

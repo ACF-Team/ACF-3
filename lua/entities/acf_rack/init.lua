@@ -847,10 +847,6 @@ do -- Loading ----------------------------------
 		})
 		if not Missile then return end
 
-		-- Command guidance still reads the rack entity and mount point off the missile
-		Missile.Launcher   = Rack
-		Missile.MountPoint = Point
-
 		Sounds.SendSound(Rack, "acf_missiles/fx/bomb_reload.mp3", 70, math.random(99, 101), 1)
 
 		if LimitConVar and IsValid(Owner) then

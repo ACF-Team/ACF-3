@@ -20,6 +20,15 @@ return {
 
     cases = {
         {
+            name = "Fires from the rack",
+            func = function()
+                local Rack = FakeRack()
+
+                expect( ACF.Missiles.RackLauncher( Rack, Point ):GetEntity() ).to.equal( Rack )
+            end
+        },
+
+        {
             name = "Filters the rack, its loaded missiles and its missiles in flight",
             func = function()
                 local Rack = FakeRack()

@@ -261,6 +261,34 @@ return {
         },
 
         {
+            name = "GetLauncherEntity returns the launcher's entity",
+            func = function( State )
+                local Prop = ents.Create( "prop_physics" )
+                Prop:SetModel( "models/hunter/blocks/cube025x025x025.mdl" )
+                Prop:Spawn()
+                State.Prop = Prop
+
+                local Missile = NewMissile( State, { Launcher = { GetEntity = function() return Prop end } } )
+
+                expect( Missile:GetLauncherEntity() ).to.equal( Prop )
+            end,
+            cleanup = function( State )
+                RemoveMissile( State )
+                if IsValid( State.Prop ) then State.Prop:Remove() end
+            end
+        },
+
+        {
+            name = "GetLauncherEntity is nil without a launcher",
+            func = function( State )
+                local Missile = NewMissile( State )
+
+                expect( Missile:GetLauncherEntity() ).to.beNil()
+            end,
+            cleanup = RemoveMissile
+        },
+
+        {
             name = "Launch adds the launcher's filter to the missile's filter",
             func = function( State )
                 local Ignored  = game.GetWorld()

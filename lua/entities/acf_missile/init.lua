@@ -117,6 +117,11 @@ function ENT:GetLaunchOrigin()
 	return Missiles.GetLaunchOrigin(self)
 end
 
+--- The entity the missile was fired from (e.g. its rack), whose linked computer/radar guidance uses. Nil without one.
+function ENT:GetLauncherEntity()
+	return Missiles.GetLauncherEntity(self)
+end
+
 --- Worth one round from its source crate, charged here so ground reloads aren't free.
 function ENT:GetCost()
 	local selftbl = self:GetTable()
