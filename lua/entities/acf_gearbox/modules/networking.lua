@@ -45,10 +45,8 @@ net.Receive("ACF_RequestGearboxInfo", function(_, Ply)
                     local Output   = { Index = E:EntIndex(), Bent = Angle > Warn }
 
                     if L.Side == 0 then
-                        OutputL[#OutputL + 1] = E:EntIndex()
                         OutputL[#OutputL + 1] = Output
                     else
-                        OutputR[#OutputR + 1] = E:EntIndex()
                         OutputR[#OutputR + 1] = Output
                     end
                 end

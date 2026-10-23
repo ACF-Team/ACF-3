@@ -1,6 +1,7 @@
 local ACF         = ACF
 local Contraption = ACF.Contraption
 local Utilities   = ACF.Utilities
+local Mobility    = ACF.Mobility
 local Notify      = Utilities.Notify
 
 local Clamp = math.Clamp

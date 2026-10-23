@@ -306,7 +306,7 @@ function ENT:CalcRPM(SelfTbl)
 	local Limit = min(MaxTq, Capacity)
 
 	-- Drag on the flywheel when its faster than the gearbox.
-	local DragAllowance = Capacity * Clamp((FlyRPM - IdleRPM) / IdleRPM, 0, 1)
+	local DragAllowance = Capacity * Clamp(FlyRPM / IdleRPM, 0, 1)
 	local DragLimit     = min(Limit, Torque + DragAllowance)
 
 	-- The torque coming back to the engine, in the inverse direction. 
