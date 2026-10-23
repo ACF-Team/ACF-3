@@ -45,17 +45,18 @@ do
     --- @param BaseClass table The class table of the base class
     local function InitializeClass(FullyQualifiedName, NewClass, BaseClass)
         local TypeName = string.format("Type (%s)", FullyQualifiedName)
+        local OldMeta  = getmetatable(NewClass) -- Set when the class is being redefined (hot reload); its children carry over
 
         local InstantiateFields
         local ClassMeta = {
             __index = BaseClass, -- If I don't have it, check my super (inheritance)
             __tostring = function() return TypeName end,
             __CLASS_ID = FullyQualifiedName,
-            __CHILDREN = {},            -- A mapping from a child class' ID to its table
+            __CHILDREN = OldMeta and OldMeta.__CHILDREN or {},            -- A mapping from a child class' ID to its table
             -- The tables below are for optimizations...
-            __CHILDREN_FLATTENED = {},  -- The same as above but flattened hierarchy
-            __CHILDREN_FLATTENED_CONTIGUOUS = {},  -- The same as above but an array
-            __CHILDREN_NAMES_CONTIGUOUS = {},  -- The same as above but the names
+            __CHILDREN_FLATTENED = OldMeta and OldMeta.__CHILDREN_FLATTENED or {},  -- The same as above but flattened hierarchy
+            __CHILDREN_FLATTENED_CONTIGUOUS = OldMeta and OldMeta.__CHILDREN_FLATTENED_CONTIGUOUS or {},  -- The same as above but an array
+            __CHILDREN_NAMES_CONTIGUOUS = OldMeta and OldMeta.__CHILDREN_NAMES_CONTIGUOUS or {},  -- The same as above but the names
             -- Instantiation
             __call = function(self, ...)
                 local Instance    = {}
