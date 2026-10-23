@@ -640,7 +640,11 @@ do -- Linking ------------------------------------------
 
 		local OutPosWorld = Entity:LocalToWorld(OutPos)
 		local Excessive, Angle = ACF.IsDriveshaftAngleExcessive(Target, Target.In, Entity, Plane)
-		if Excessive then return nil, Angle end
+		if Excessive then
+			Mobility.LinkFailure.Angle(Entity, Plane, Target, Target.In, Angle)
+
+			return nil, Angle
+		end
 
 		local Link	= MobilityObj.Link(Entity, Target)
 
@@ -659,7 +663,11 @@ do -- Linking ------------------------------------------
 
 	local function LinkWheel(Gearbox, Wheel)
 		if Gearbox.Wheels[Wheel] then return false, "This wheel is already linked to this gearbox!" end
-		if Gearbox:GetPos():DistToSqr(Wheel:GetPos()) > MaxDistance then return false, "This wheel is too far away from this gearbox!" end
+		if Gearbox:GetPos():DistToSqr(Wheel:GetPos()) > MaxDistance then
+			Mobility.LinkFailure.Distance(Gearbox, Wheel)
+
+			return false, "This wheel is too far away from this gearbox!"
+		end
 
 		local Link, DriveshaftAngle = GenerateLinkTable(Gearbox, Wheel)
 
@@ -690,7 +698,11 @@ do -- Linking ------------------------------------------
 	local function LinkGearbox(Gearbox, Target)
 		if Gearbox.GearboxOut[Target] then return false, "These gearboxes are already linked to each other!" end
 		if Target.GearboxIn[Gearbox] then return false, "These gearboxes are already linked to each other!" end
-		if Gearbox:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "These gearboxes are too far away from each other!" end
+		if Gearbox:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then
+			Mobility.LinkFailure.Distance(Gearbox, Target)
+
+			return false, "These gearboxes are too far away from each other!"
+		end
 		if CheckLoopedGearbox(Gearbox, Target) then return false, "You cannot link gearboxes in a loop!" end
 
 		local Link, DriveshaftAngle = GenerateLinkTable(Gearbox, Target)

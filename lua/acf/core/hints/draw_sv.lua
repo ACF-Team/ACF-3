@@ -80,6 +80,32 @@ function Hints.DrawRequirements(Entity)
 	Draw(Entity)
 end
 
+local FLASH_CHANNEL = 2 -- Kept apart from the legality and requirement drawings, which redraw on their own
+
+--- Draws a short lived picture of a problem for the entity's owner, for problems that happen once, such as a refused link.
+--- Each flash replaces the last one of the same entity.
+--- @param Entity entity
+--- @param Life number Seconds the drawing stays up
+--- @param DrawFunc function Called with ACF.Debug and Life to draw it
+function Hints.Flash(Entity, Life, DrawFunc)
+	local Owner = Entity:CPPIGetOwner()
+	if not (IsValid(Owner) and Owner:IsPlayer()) or Owner:GetInfoNum("acf_legalvisuals", 1) == 0 then return end
+
+	local Debug                = ACF.Debug
+	local OldLevel             = Debug.GetDeveloperLevel()
+	local OldTarget            = Debug.SetTarget(Owner)
+	local OldGroup, OldChannel = Debug.SetGroup(Entity, FLASH_CHANNEL)
+
+	Debug.SetDeveloperLevel(0)
+	Debug.Clear(Entity, FLASH_CHANNEL)
+
+	DrawFunc(Debug, Life)
+
+	Debug.SetDeveloperLevel(OldLevel)
+	Debug.SetTarget(OldTarget)
+	Debug.SetGroup(OldGroup, OldChannel)
+end
+
 timer.Create("ACF Requirement Drawing", INTERVAL, 0, function()
 	for Entity in pairs(Tracked) do
 		if not IsValid(Entity) then

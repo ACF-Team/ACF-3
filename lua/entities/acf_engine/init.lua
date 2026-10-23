@@ -20,14 +20,21 @@ local IsPhysObjValid	= ACF.Optimizations.IsPhysObjValid
 do
 	ACF.RegisterClassLink("acf_engine", "acf_gearbox", function(Engine, Target)
 		if Engine.Gearboxes[Target] then return false, "This engine is already linked to this gearbox." end
-		if Engine:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This gearbox is too far away from this engine!" end
+		if Engine:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then
+			Mobility.LinkFailure.Distance(Engine, Target)
+
+			return false, "This gearbox is too far away from this engine!"
+		end
 
 		-- make sure the angle is not excessive
 		local InPos = Target:LocalToWorld(Target.In.Pos)
 		local OutPos = Engine:LocalToWorld(Engine.Out.Pos)
+		local Excessive, Angle = ACF.IsDriveshaftAngleExcessive(Target, Target.In, Engine, Engine.Out)
 
-		if ACF.IsDriveshaftAngleExcessive(Target, Target.In, Engine, Engine.Out) then
-			return false, "Cannot link due to excessive driveshaft angle!"
+		if Excessive then
+			Mobility.LinkFailure.Angle(Engine, Engine.Out, Target, Target.In, Angle)
+
+			return false, "Cannot link due to excessive driveshaft angle! (" .. math.Round(Angle) .. " deg)"
 		end
 
 		local Link = MobilityObj.Link(Engine, Target)

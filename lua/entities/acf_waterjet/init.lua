@@ -26,7 +26,11 @@ local function GenerateLinkTable(Entity, Target)
 
 	local OutPosWorld = Entity:LocalToWorld(OutPos)
 	local Excessive, Angle = ACF.IsDriveshaftAngleExcessive(Target, Target.In, Entity, Plane)
-	if Excessive then return nil, Angle end
+	if Excessive then
+		Mobility.LinkFailure.Angle(Entity, Plane, Target, Target.In, Angle)
+
+		return nil, Angle
+	end
 
 	local Link	= MobilityObj.Link(Entity, Target)
 
