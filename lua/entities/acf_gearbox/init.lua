@@ -430,6 +430,8 @@ do -- Spawn and Update functions -----------------------
 		if next(self.GearboxOut) then
 			for Box in pairs(self.GearboxOut) do self:Unlink(Box) self:Link(Box) end
 		end
+
+		self:UpdateLinkHints()
 	end
 
 	function ENT:ACF_PostSpawn()
@@ -439,6 +441,7 @@ do -- Spawn and Update functions -----------------------
 				CheckRopes(self, "Wheels")
 				CheckWheels(self)
 				CheckLoad(self)
+				self:UpdateLinkHints()
 			else
 				timer.Remove("ACF Gearbox Clock " .. self:EntIndex())
 			end
@@ -641,6 +644,7 @@ do -- Linking ------------------------------------------
 
 		Mobility.BrokenLinks.Clear(Gearbox, Wheel)
 
+		Gearbox:UpdateLinkHints()
 		Gearbox:InvalidateClientInfo()
 
 		return true, "Wheel linked successfully!"
@@ -661,6 +665,8 @@ do -- Linking ------------------------------------------
 
 		Mobility.BrokenLinks.Clear(Gearbox, Target)
 
+		Gearbox:UpdateLinkHints()
+		Target:UpdateLinkHints()
 		Gearbox:InvalidateClientInfo()
 
 		return true, "Gearbox linked successfully!"
@@ -684,6 +690,7 @@ do -- Unlinking ----------------------------------------
 
 			Wheel:RemoveCallOnRemove("ACF_GearboxUnlink" .. Gearbox:EntIndex())
 
+			Gearbox:UpdateLinkHints()
 			Gearbox:InvalidateClientInfo()
 
 			return true, "Wheel unlinked successfully!"
@@ -712,6 +719,8 @@ do -- Unlinking ----------------------------------------
 			Target.GearboxIn[Gearbox]  = nil
 			Target.GearboxOut[Gearbox] = nil
 
+			Gearbox:UpdateLinkHints()
+			Target:UpdateLinkHints()
 			Gearbox:InvalidateClientInfo()
 
 			return true, "Gearbox unlinked successfully!"
@@ -1239,6 +1248,11 @@ do -- Miscellaneous ------------------------------------
 		end
 
 		self:UpdateOverlay()
+	end
+
+	function ENT:UpdateLinkHints()
+		ACF.Hints.Set(self, "gearbox_no_input", not (next(self.Engines) or next(self.GearboxIn)))
+		ACF.Hints.Set(self, "gearbox_no_output", not (next(self.Wheels) or next(self.GearboxOut) or next(self.Effectors)))
 	end
 
 	-- Prevent people from changing bodygroup

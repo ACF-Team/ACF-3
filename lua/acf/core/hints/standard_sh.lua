@@ -112,6 +112,24 @@ do -- MARK: Mobility hints
 		Help   = "Parent a fuel tank the engine can use to the same parent as the engine.",
 	})
 
+	Register("engine_no_gearbox", {
+		Title  = "No Gearbox",
+		Detail = "This engine is not linked to a gearbox.",
+		Help   = "Link the engine to a gearbox, then link the gearbox to the wheels or to more gearboxes.",
+	})
+
+	Register("gearbox_no_input", {
+		Title  = "No Input",
+		Detail = "Nothing drives this gearbox.",
+		Help   = "Link an engine to this gearbox, or link another gearbox to it so it receives that gearbox's output.",
+	})
+
+	Register("gearbox_no_output", {
+		Title  = "No Output",
+		Detail = "This gearbox is not linked to any wheels or gearboxes.",
+		Help   = "Link this gearbox to the wheels it should drive, or to other gearboxes that drive them.",
+	})
+
 	Register("gearbox_overloaded", {
 		Title  = "Overloaded",
 		Detail = function(Data)

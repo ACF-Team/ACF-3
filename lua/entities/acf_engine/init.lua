@@ -43,6 +43,8 @@ do
 
 		Mobility.BrokenLinks.Clear(Engine, Target)
 
+		Engine:UpdateLinkHints()
+		Target:UpdateLinkHints()
 		Engine:UpdateOverlay()
 		Target:UpdateOverlay()
 
@@ -63,6 +65,8 @@ do
 		Engine.Gearboxes[Target] = nil
 		Target.Engines[Engine]	 = nil
 
+		Engine:UpdateLinkHints()
+		Target:UpdateLinkHints()
 		Engine:UpdateOverlay()
 		Target:UpdateOverlay()
 
@@ -322,6 +326,7 @@ do -- Spawn and Update functions
 		if self.ACF_FuelParent then Fuel.Join(self) end
 
 		Fuel.Refresh(self)
+		self:UpdateLinkHints()
 	end
 
 	ACF.RegisterLinkSource("acf_engine", "FuelTanks")
@@ -352,6 +357,10 @@ function ENT:Disable()
 	SetActive(self, false, self:GetTable()) -- Turn off the engine
 
 	self:UpdateOverlay()
+end
+
+function ENT:UpdateLinkHints()
+	ACF.Hints.Set(self, "engine_no_gearbox", not next(self.Gearboxes))
 end
 
 function ENT:UpdateOutputs(SelfTbl)

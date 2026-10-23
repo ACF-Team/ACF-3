@@ -75,6 +75,7 @@ ACF.RegisterClassLink("acf_waterjet", "acf_gearbox", function(This, Gearbox)
 	Gearbox.Effectors[This] = Link
 	This.Gearboxes[Gearbox] = Link
 
+	Gearbox:UpdateLinkHints()
 	Gearbox:InvalidateClientInfo()
 
 	return true, "Waterjet linked successfully."
@@ -85,6 +86,8 @@ ACF.RegisterClassUnlink("acf_waterjet", "acf_gearbox", function(This, Gearbox)
 
 	Gearbox.Effectors[This] = nil
 	This.Gearboxes[Gearbox] = nil
+
+	Gearbox:UpdateLinkHints()
 
 	return true, "Waterjet unlinked successfully."
 end)
