@@ -17,6 +17,7 @@ local abs         	 = math.abs
 local min         	 = math.min
 local max         	 = math.max
 local MaxDistance 	 = ACF.MobilityLinkDistance * ACF.MobilityLinkDistance
+local ANGLE_MARGIN   = 0.8 -- Share of the driveshaft angle limit past which a link is about to break
 
 local ENTITY         = FindMetaTable("Entity")
 local VECTOR         = FindMetaTable("Vector")
@@ -303,8 +304,6 @@ do -- Spawn and Update functions -----------------------
 
 		Entity:SetRequirement("gearbox_wheels_free", not Unusable, Unusable and { Wheels = Unusable })
 	end
-
-	local ANGLE_MARGIN = 0.8 -- Share of the driveshaft angle limit past which a link is about to break
 
 	local function AddBentShaft(Bent, Angle, From, FromPos, To, ToPos)
 		Bent[#Bent + 1] = { Angle = math.Round(Angle), From = From, FromPos = FromPos, To = To, ToPos = ToPos }
@@ -1229,13 +1228,19 @@ do	-- NET SURFER 2.0
 				end
 			end
 
+			-- Each output also says whether its shaft is close to the angle limit, so the client can color it
+			local Warn = ACF.MaxDriveshaftAngle * ANGLE_MARGIN
+
 			for _, Couples in ipairs(CoupleTargets) do
 				if next(Couples) then
 					for E, L in pairs(Couples) do
+						local _, Angle = ACF.IsDriveshaftAngleExcessive(E, E.In, L)
+						local Output   = { Index = E:EntIndex(), Bent = Angle > Warn }
+
 						if L.Side == 0 then
-							OutputL[#OutputL + 1] = E:EntIndex()
+							OutputL[#OutputL + 1] = Output
 						else
-							OutputR[#OutputR + 1] = E:EntIndex()
+							OutputR[#OutputR + 1] = Output
 						end
 					end
 				end
@@ -1259,16 +1264,20 @@ do	-- NET SURFER 2.0
 				end
 
 				if next(OutputL) then
-					for _, E in ipairs(OutputL) do
-						net.WriteUInt(E, MAX_EDICT_BITS)
+					for _, Output in ipairs(OutputL) do
+						net.WriteUInt(Output.Index, MAX_EDICT_BITS)
+						net.WriteBool(Output.Bent)
 					end
 				end
 
 				if next(OutputR) then
-					for _, E in ipairs(OutputR) do
-						net.WriteUInt(E, MAX_EDICT_BITS)
+					for _, Output in ipairs(OutputR) do
+						net.WriteUInt(Output.Index, MAX_EDICT_BITS)
+						net.WriteBool(Output.Bent)
 					end
 				end
+
+				net.WriteBool(Entity.ACF_Hints and Entity.ACF_Hints.gearbox_overloaded ~= nil or false)
 			net.Send(Ply)
 		end
 	end)
