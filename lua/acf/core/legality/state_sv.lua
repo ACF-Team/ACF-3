@@ -163,7 +163,7 @@ do -- MARK: Violation state
 		local EntTbl = Entity:GetTable()
 		if EntTbl.ACF_IsNotLegalityChecked then return true end
 
-		-- Destroyed entities cannot operate either way, so they are left alone until restored
+		-- Entities that are destroyed are re polled but not evaluated until they are alive again.
 		if ACF.IsDestroyed(Entity) then
 			Schedule(Entity, math.Rand(1, 3))
 
