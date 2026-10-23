@@ -13,7 +13,8 @@ do
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.Wankel"
 		CLASS.Mass		 = 80
-		CLASS.Torque		 = 74
+		CLASS.Displacement = 0.9
+		CLASS.Torque	   = 74
 		CLASS.FlywheelMass = 0.06
 		CLASS.RPM = {
 			Idle	= 950,
@@ -32,7 +33,8 @@ do
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.Wankel"
 		CLASS.Mass		 = 195
-		CLASS.Torque		 = 131
+		CLASS.Displacement = 1.3
+		CLASS.Torque	   = 131
 		CLASS.FlywheelMass = 0.06
 		CLASS.RPM = {
 			Idle	= 950,
@@ -51,7 +53,8 @@ do
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.Wankel"
 		CLASS.Mass		 = 265
-		CLASS.Torque		 = 205
+		CLASS.Displacement = 2.0
+		CLASS.Torque	   = 205
 		CLASS.FlywheelMass = 0.1
 		CLASS.RPM = {
 			Idle	= 950,

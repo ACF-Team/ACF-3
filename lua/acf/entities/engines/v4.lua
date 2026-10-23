@@ -13,7 +13,8 @@ do -- Diesel Engines
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
 		CLASS.Mass		 = 160
-		CLASS.Torque		 = 170
+		CLASS.Displacement = 1.9
+		CLASS.Torque	   = 170
 		CLASS.FlywheelMass = 0.3
 		CLASS.RPM = {
 			Idle	= 650,
@@ -32,7 +33,8 @@ do -- Diesel Engines
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
 		CLASS.Mass		 = 345
-		CLASS.Torque		 = 539
+		CLASS.Displacement = 3.3
+		CLASS.Torque	   = 539
 		CLASS.FlywheelMass = 1.05
 		CLASS.RPM = {
 			Idle	= 600,
