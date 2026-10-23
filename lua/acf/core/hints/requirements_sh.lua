@@ -311,6 +311,51 @@ do -- MARK: Mobility requirements
 	})
 end
 
+do -- MARK: Link requirements
+	local DASH = 6 -- Length of each dash of a broken link, in units
+
+	-- Dashed so it reads as a link that no longer exists
+	local function DrawDashed(Debug, From, To, Life, Color)
+		local Length = From:Distance(To)
+		local Dir    = (To - From):GetNormalized()
+
+		for Start = 0, Length, DASH * 2 do
+			Debug.Line(From + Dir * Start, From + Dir * math.min(Start + DASH, Length), Life, Color, true)
+		end
+	end
+
+	-- Data.Links lists each lost link with its Target, Reason, From (local to the entity) and To (local to the target)
+	Register("link_broken", {
+		Title  = "Link broken",
+		Detail = function(Data)
+			local Links = Data.Links or {}
+			local First = Links[1]
+			if not First then return "" end
+
+			local Text = "to " .. Name(First.Target, "an entity") .. ", " .. First.Reason:lower()
+
+			if Links[2] then Text = Text .. ", and " .. (#Links - 1) .. " more" end
+
+			return Text
+		end,
+		Help   = "Links are removed when the entities move so far apart that the shaft stretches past one and a half times its "
+			.. "length, or bend it past the driveshaft angle limit. Move the marked entities back into line and link them again. "
+			.. "This goes away by itself after a minute.",
+	}, {
+		Draw = function(Debug, Entity, Data, Life)
+			for _, Entry in ipairs(Data.Links or {}) do
+				local Target = Entry.Target
+
+				if IsValid(Target) then
+					DrawDashed(Debug, Entity:LocalToWorld(Entry.From), Target:LocalToWorld(Entry.To), Life, COLOR_BAD)
+					Debug.EntityBox(Target, Life, COLOR_BAD, true)
+					Debug.EntityText(Target, 0, Entry.Reason, Life, COLOR_BAD)
+				end
+			end
+		end,
+	})
+end
+
 do -- MARK: Component requirements
 	-- Shared by turret motors, gyros and controllers
 	Register("component_health", {

@@ -235,20 +235,26 @@ do -- Spawn and Update functions -----------------------
 		local Contraption = Entity:CFW_GetContraption()
 		local IsAircraft  = Contraption and Contraption:ACF_IsAircraft()
 
+		local function BreakLink(Ent, Link, Reason, Extra)
+			Entity:Unlink(Ent)
+			Mobility.BrokenLinks.Add(Entity, Ent, Reason, Link:GetOrigin(), Ent.In and Ent.In.Pos or Vector())
+			Notify.EntityWarning(Ent, "Gearbox to " .. NiceName .. " connection broken", Reason .. "!" .. (Extra or ""))
+		end
+
 		for Ent, Link in pairs(Ropes) do
 			local OutPos = Entity:LocalToWorld(Link:GetOrigin())
 			local InPos = Ent.In and Ent:LocalToWorld(Ent.In.Pos) or Ent:GetPos()
 
 			-- make sure it is not stretched too far
 			if OutPos:Distance(InPos) > Link.RopeLen * 1.5 then
-				Entity:Unlink(Ent)
-				Notify.EntityWarning(Ent, "Gearbox to " .. NiceName .. " connection broken", "Excessive distance!")
+				BreakLink(Ent, Link, "Excessive distance")
 				continue
 			end
 
-			if ACF.IsDriveshaftAngleExcessive(Ent, Ent.In, Link) then
-				Entity:Unlink(Ent)
-				Notify.EntityWarning(Ent, "Gearbox to " .. NiceName .. " connection broken", "Excessive driveshaft angle!")
+			local Excessive, Angle = ACF.IsDriveshaftAngleExcessive(Ent, Ent.In, Link)
+
+			if Excessive then
+				BreakLink(Ent, Link, "Excessive driveshaft angle (" .. math.Round(Angle) .. " of " .. ACF.MaxDriveshaftAngle .. " deg)")
 				continue
 			end
 
@@ -261,8 +267,7 @@ do -- Spawn and Update functions -----------------------
 				-- vehicles.
 				local Stress = math.max(WheelPhys:GetStress())
 				if Stress > 15 then
-					Entity:Unlink(Ent)
-					Notify.EntityWarning(Ent, "Gearbox to " .. NiceName .. " connection broken", "Excess stress on linked props!\n(aircraft baseplates cannot have wheel-like gearbox connections)")
+					BreakLink(Ent, Link, "Excess stress on linked props", "\n(aircraft baseplates cannot have wheel-like gearbox connections)")
 					continue
 				end
 			end
@@ -581,6 +586,8 @@ do -- Linking ------------------------------------------
 			end
 		end)
 
+		Mobility.BrokenLinks.Clear(Gearbox, Wheel)
+
 		Gearbox:InvalidateClientInfo()
 
 		return true, "Wheel linked successfully!"
@@ -598,6 +605,8 @@ do -- Linking ------------------------------------------
 
 		Gearbox.GearboxOut[Target] = Link
 		Target.GearboxIn[Gearbox]  = true
+
+		Mobility.BrokenLinks.Clear(Gearbox, Target)
 
 		Gearbox:InvalidateClientInfo()
 

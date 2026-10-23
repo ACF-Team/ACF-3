@@ -41,6 +41,8 @@ do
 		Engine.Gearboxes[Target] = Link
 		Target.Engines[Engine]   = true
 
+		Mobility.BrokenLinks.Clear(Engine, Target)
+
 		Engine:UpdateOverlay()
 		Target:UpdateOverlay()
 
@@ -80,6 +82,8 @@ local Clock        = Utilities.Clock
 local Sounds       = Utilities.Sounds
 local Contraption  = ACF.Contraption
 local Fuel         = Mobility.Fuel
+local BrokenLinks  = Mobility.BrokenLinks
+local Notify       = Utilities.Notify
 local IsValid      = IsValid
 local Clamp        = math.Clamp
 local Round        = math.Round
@@ -119,6 +123,12 @@ local function FindFuelTank(EngineTbl)
 	return Best
 end
 
+local function BreakLink(Engine, Gearbox, Reason)
+	Engine:Unlink(Gearbox)
+	BrokenLinks.Add(Engine, Gearbox, Reason, Engine.Out.Pos, Gearbox.In.Pos)
+	Notify.EntityWarning(Engine, "Engine to Gearbox connection broken", Reason .. "!")
+end
+
 local function CheckGearboxes(Engine)
 	for Ent, Link in pairs(Engine.Gearboxes) do
 		local OutPos = Engine:LocalToWorld(Engine.Out.Pos)
@@ -126,12 +136,14 @@ local function CheckGearboxes(Engine)
 
 		-- make sure it is not stretched too far
 		if OutPos:Distance(InPos) > Link.RopeLen * 1.5 then
-			Engine:Unlink(Ent)
+			BreakLink(Engine, Ent, "Excessive distance")
 			continue
 		end
 
-		if ACF.IsDriveshaftAngleExcessive(Ent, Ent.In, Engine, Engine.Out) then
-			Engine:Unlink(Ent)
+		local Excessive, Angle = ACF.IsDriveshaftAngleExcessive(Ent, Ent.In, Engine, Engine.Out)
+
+		if Excessive then
+			BreakLink(Engine, Ent, "Excessive driveshaft angle (" .. Round(Angle) .. " of " .. ACF.MaxDriveshaftAngle .. " deg)")
 		end
 	end
 end
