@@ -37,6 +37,18 @@ local function DrawCircle(Debug, Entity, Center, Radius, Life, Color)
 	end
 end
 
+-- Points the owner from the entity to another one that holds the cause, a line to it, a box around it and a label on it
+local function DrawRelated(Debug, Entity, Target, Label, Life, Color)
+	if not IsValid(Target) then return end
+
+	Color = Color or COLOR_HINT
+
+	Debug.EntityLine(Entity, Target, Life, Color, true)
+	Debug.EntityBox(Target, Life, Color, true)
+
+	if Label then Debug.EntityText(Target, 0, Label, Life, Color) end
+end
+
 local function BreechPos(Weapon)
 	return Weapon:LocalToWorld(Weapon.BreechPos)
 end
@@ -120,12 +132,7 @@ do -- MARK: Weapon loading requirements
 		Help   = "The linked autoloader has a problem of its own. Look at the marked autoloader to see what it needs.",
 	}, {
 		Draw = function(Debug, Entity, Data, Life)
-			local Autoloader = Data.Autoloader
-			if not IsValid(Autoloader) then return end
-
-			Debug.EntityLine(Entity, Autoloader, Life, COLOR_HINT, true)
-			Debug.EntityBox(Autoloader, Life, COLOR_HINT, true)
-			Debug.EntityText(Autoloader, 0, "Check this autoloader", Life, COLOR_HINT)
+			DrawRelated(Debug, Entity, Data.Autoloader, "Check this autoloader", Life)
 		end,
 	})
 
