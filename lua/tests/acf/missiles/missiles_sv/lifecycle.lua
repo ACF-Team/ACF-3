@@ -289,6 +289,28 @@ return {
         },
 
         {
+            name = "The spawn hooks get the class name, the owner or missile, and the spec",
+            func = function( State )
+                local Pre, Post = {}, {}
+
+                hook.Add( "ACF_PreSpawnEntity", "ACF Missiles Test Args", function( ... ) Pre = { ... } end )
+                hook.Add( "ACF_OnSpawnEntity", "ACF Missiles Test Args", function( ... ) Post = { ... } end )
+
+                local Spec    = NewSpec()
+                local Missile = ACF.Missiles.Create( Spec, { Owner = game.GetWorld(), Pos = Vector( 0, 0, 2000 ), Ang = Angle() } )
+                State.Missile = Missile
+
+                expect( Pre[1] ).to.equal( "acf_missile" )
+                expect( Pre[2] ).to.equal( game.GetWorld() )
+                expect( Pre[3] ).to.equal( Spec )
+                expect( Post[1] ).to.equal( "acf_missile" )
+                expect( Post[2] ).to.equal( Missile )
+                expect( Post[3] ).to.equal( Spec )
+            end,
+            cleanup = RemoveMissile
+        },
+
+        {
             name = "Launch adds the launcher's filter to the missile's filter",
             func = function( State )
                 local Ignored  = game.GetWorld()

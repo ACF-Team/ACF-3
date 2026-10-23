@@ -74,7 +74,7 @@ function Missiles.Create(Spec, Options)
 	local BulletData = Spec.BulletData
 	local Percent    = math.max(0.5, (BulletData.ProjLength + BulletData.PropLength) / Round.MaxLength)
 
-	local CanSpawn = hook.Run("ACF_PreSpawnEntity", "acf_missile", Owner, Data, Class, Spec.Crate, Spec)
+	local CanSpawn = hook.Run("ACF_PreSpawnEntity", "acf_missile", Owner, Spec)
 	if CanSpawn == false then return false, "Blocked by ACF_PreSpawnEntity" end
 
 	local Missile = ents.Create("acf_missile")
@@ -149,7 +149,7 @@ function Missiles.Create(Spec, Options)
 	Missile.Inputs          = WireLib.CreateInputs(Missile, Inputs)
 	Missile.Outputs         = WireLib.CreateOutputs(Missile, Outputs)
 
-	hook.Run("ACF_OnSpawnEntity", "acf_missile", Missile, Data, Class, Spec.Crate, Spec)
+	hook.Run("ACF_OnSpawnEntity", "acf_missile", Missile, Spec)
 
 	WireLib.TriggerOutput(Missile, "Entity", Missile)
 
