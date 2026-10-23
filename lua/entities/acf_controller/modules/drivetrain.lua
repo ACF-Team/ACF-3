@@ -380,6 +380,78 @@ do
 	end
 end
 
+-- Drivetrain hints, refreshed by the controller's clock
+do
+	local SIDEWAYS = 0.7 -- Average alignment of the wheel axles with the baseplate's forward past which it faces sideways
+
+	-- How well the driven wheels' axles line up with the baseplate's forward, 0 when they all roll forward
+	local function GetSidewaysness(Controller)
+		local Forward    = Controller.Baseplate:GetForward()
+		local Sum, Count = 0, 0
+
+		for Gearbox in pairs(Controller.GearboxEnds) do
+			if IsValid(Gearbox) then
+				for Wheel, Link in pairs(Gearbox.Wheels) do
+					local Phys = IsValid(Wheel) and Wheel:GetPhysicsObject()
+
+					if IsValid(Phys) then
+						Sum, Count = Sum + math.abs(Phys:LocalToWorldVector(Link.Axis):Dot(Forward)), Count + 1
+					end
+				end
+			end
+		end
+
+		return Count > 0 and Sum / Count or 0
+	end
+
+	-- Left and right come from the baseplate's frame, so a baseplate facing sideways splits the wheels front and back instead
+	local function UpdateWheelSides(Controller, Analyzed)
+		local Reason
+
+		if Analyzed then
+			local TankSteering = not (Controller.CanSteer or Controller:GetForceCarSteering())
+
+			if GetSidewaysness(Controller) > SIDEWAYS then
+				Reason = "the baseplate faces sideways to the wheels"
+			elseif TankSteering and not (next(Controller.LeftWheels) and next(Controller.RightWheels)) then
+				Reason = "all driven wheels are on one side"
+			end
+		end
+
+		if not Reason then return Controller:SetRequirement("controller_wheel_sides", true) end
+
+		Controller:SetRequirement("controller_wheel_sides", false, {
+			Reason    = Reason,
+			Baseplate = Controller.Baseplate,
+			Left      = table.GetKeys(Controller.LeftWheels),
+			Right     = table.GetKeys(Controller.RightWheels),
+		})
+	end
+
+	function ENT:UpdateDrivetrainHints()
+		local Gearbox      = self.Gearbox
+		local HasBaseplate = IsValid(self.Baseplate)
+		local HasGearbox   = IsValid(Gearbox)
+		local Contraption  = self:CFW_GetContraption()
+		local HasEngines   = Contraption and Contraption.Engines and next(Contraption.Engines) ~= nil
+		local Analyzed     = HasBaseplate and HasGearbox and next(self.Wheels) ~= nil
+
+		ACF.Hints.Set(self, "controller_no_baseplate", not HasBaseplate)
+		ACF.Hints.Set(self, "controller_no_gearbox", HasEngines and not HasGearbox)
+
+		-- Automatic gearboxes shift themselves, the controller only picks drive or reverse for them
+		local Manual   = Analyzed and not Gearbox.Automatic
+		local ShiftRPM = Manual and not self:GetDisableAutoShifter() and self:GetShiftMinRPM() == self:GetShiftMaxRPM()
+
+		ACF.Hints.Set(self, "controller_shift_rpm", ShiftRPM, ShiftRPM and { RPM = self:GetShiftMinRPM() } or nil)
+
+		-- With transfers, reversing is done by the transfer gearboxes rather than a reverse gear on the main one
+		ACF.Hints.Set(self, "controller_no_reverse", Manual and not self.HasTransfers and not (self.ReverseGears and self.ReverseGears[1]))
+
+		UpdateWheelSides(self, Analyzed)
+	end
+end
+
 ACF.RegisterControllerLink("acf_gearbox", {
 	Field = "Gearbox",
 	Single = true,

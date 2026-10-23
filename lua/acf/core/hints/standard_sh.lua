@@ -133,6 +133,33 @@ do -- MARK: Mobility hints
 			.. "slower. Raise the gearbox's scale, use fewer gears, or split the load over more gearboxes.",
 	})
 
+	Register("controller_no_baseplate", {
+		Title  = "No Baseplate",
+		Detail = "This controller is not linked to a baseplate.",
+		Help   = "Link the controller to the vehicle's baseplate, it drives, steers and seats the driver through it.",
+	})
+
+	Register("controller_no_gearbox", {
+		Title  = "No Gearbox",
+		Detail = "This vehicle has engines but the controller is not linked to a gearbox.",
+		Help   = "Link the controller to the main gearbox, the one the engines are linked to, so it can drive the vehicle.",
+	})
+
+	Register("controller_shift_rpm", {
+		Title  = "No Shift RPM",
+		Detail = function(Data)
+			return "Both shift RPMs are " .. (Data.RPM or 0) .. ", so the controller never changes gears."
+		end,
+		Help   = "Set the shift RPMs in the controller's Shifting Settings, from its context menu's Edit Properties, usually "
+			.. "around the engine's powerband. Or turn on Disable Auto Shifter if gears are shifted some other way.",
+	})
+
+	Register("controller_no_reverse", {
+		Title  = "No Reverse",
+		Detail = "The main gearbox has no reverse gear, so the vehicle cannot back up.",
+		Help   = "Give the main gearbox a gear with a negative ratio, or add transfer gearboxes that reverse for it.",
+	})
+
 	Register("controller_parent", {
 		Title  = "Bad Parent",
 		Detail = "This controller must be parented to the baseplate or its contraption.",

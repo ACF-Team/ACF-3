@@ -342,6 +342,45 @@ do -- MARK: Mobility requirements
 		end,
 	})
 
+	local COLOR_LEFT = Color(80, 160, 255)
+
+	-- Data.Left and Data.Right are the wheels the controller put on each side, Data.Reason says what is wrong with them
+	Register("controller_wheel_sides", {
+		Title  = "Wheel sides",
+		Detail = function(Data)
+			return Data.Reason or "the wheels are not split into a left and a right side"
+		end,
+		Help   = "The controller splits the driven wheels into left and right using the baseplate's forward, and steers by "
+			.. "slowing one side. The marked wheels show its split. If the baseplate faces sideways, rotate the baseplate so "
+			.. "its forward arrow points the way the vehicle drives, then relink the controller to the gearbox.",
+	}, {
+		Draw = function(Debug, _, Data, Life)
+			for _, Wheel in ipairs(Data.Left or {}) do
+				if IsValid(Wheel) then
+					Debug.EntityBox(Wheel, Life, COLOR_LEFT, true)
+					Debug.EntityText(Wheel, 0, "Left", Life, COLOR_LEFT)
+				end
+			end
+
+			for _, Wheel in ipairs(Data.Right or {}) do
+				if IsValid(Wheel) then
+					Debug.EntityBox(Wheel, Life, COLOR_GOOD, true)
+					Debug.EntityText(Wheel, 0, "Right", Life, COLOR_GOOD)
+				end
+			end
+
+			local Baseplate = Data.Baseplate
+			if not IsValid(Baseplate) then return end
+
+			local Center = Baseplate:WorldSpaceCenter()
+			local Tip    = Center + Baseplate:GetForward() * math.max(Baseplate:BoundingRadius(), 50)
+
+			Debug.Line(Center, Tip, Life, COLOR_HINT, true)
+			Debug.Sphere(Tip, 2, Life, COLOR_HINT, true)
+			Debug.EntityTextAtPosition(Tip, 0, "Baseplate forward", Life, COLOR_HINT)
+		end,
+	})
+
 	-- Data.Wheels lists each linked wheel that cannot be driven, with the Reason
 	Register("gearbox_wheels_free", {
 		Title  = "Free wheels",
