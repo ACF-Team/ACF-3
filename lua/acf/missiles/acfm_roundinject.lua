@@ -153,30 +153,19 @@ if CLIENT then
 		RestoreTypeCombo(FuzeList, GetTypeList(Missile:GetType().Fuzes), WeaponSub:Get("Fuze"))
 	end)
 else
-	-- Each missile needs its OWN guidance/fuze instance: Configure/OnLaunched store per-missile state
-	-- (Source/Target/TimeStarted), so multiple missiles fired from one crate must not share the crate
-	-- weapon's single configured instance. Clone it (a fresh instance of the same class with the
-	-- configured fields copied over) for every missile.
-	local function CloneConfigured(Inst)
-		local Class = Inst:GetType()
-		local Copy  = Class()
-		for _, Field in ipairs(Classes.GetTypeFields(Class)) do
-			Copy[Field.Name] = Inst[Field.Name]
-		end
-		return Copy
-	end
-
 	-- The crate's missile weapon instance already carries deserialized Guidance/Fuze V2 instances.
+	-- Missile entities get theirs from ACF.Missiles.Create, so only crates are handled here.
 	hook.Add("ACF_OnAmmoFirst", "ACF Missile Ammo", function(Ammo, Entity)
 		if Entity.IsRefill then return end
+		if Entity.IsACFMissile then return end
 		local Class = GetMissileClass(Ammo and Ammo.Weapon)
 		if not Class then return end
 
 		local Weapon = Ammo.Weapon
 		if not (Weapon.Guidance and Weapon.Fuze) then return end
 
-		local Guidance = CloneConfigured(Weapon.Guidance)
-		local Fuze     = CloneConfigured(Weapon.Fuze)
+		local Guidance = ACF.Missiles.CloneInstance(Weapon.Guidance)
+		local Fuze     = ACF.Missiles.CloneInstance(Weapon.Fuze)
 
 		if Guidance.OnFirst then Guidance:OnFirst(Entity) end
 		if Fuze.OnFirst then Fuze:OnFirst(Entity) end

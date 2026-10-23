@@ -9,6 +9,7 @@ local EMPTY       = { AmmoType = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0
 local ACF         = ACF
 local Contraption = ACF.Contraption
 local Classes     = ACF.Classes
+local Missiles    = ACF.Missiles
 local Utilities   = ACF.Utilities
 local Clock       = Utilities.Clock
 local Sounds      = Utilities.Sounds
@@ -489,7 +490,7 @@ do -- Custom ACF damage ------------------------
 				local Missile = Point.Missile
 
 				if Missile and math.random() > 0.9 * Ratio then
-					Missile:Launch(nil, true)
+					Missiles.Launch(Missile, { Velocity = self.ACF_Velocity, Misfire = true })
 
 					self:UpdateLoad(Point)
 
@@ -710,11 +711,12 @@ do -- Firing -----------------------------------
 		local ShootDir = (Ang:Forward() + Spread):GetNormalized()
 
 		local Missile = Point.Missile
-		local BulletData = Missile.BulletData
 
-		BulletData.Flight = ShootDir
-
-		Missile:Launch(Rack.LaunchDelay)
+		Missiles.Launch(Missile, {
+			Velocity   = Rack.ACF_Velocity,
+			Direction  = ShootDir,
+			MotorDelay = Rack.LaunchDelay,
+		})
 		local LimitOwner = Missile.LimitOwner
 		if Missile.LimitConVar and IsValid(LimitOwner) then
 			RemoveCount(LimitOwner, Missile.LimitConVar.Name, Missile)
@@ -827,8 +829,27 @@ do -- Loading ----------------------------------
 	end
 
 	local function AddMissile(Rack, Point, Crate, LimitConVar, Owner)
+		local Spec = Missiles.SpecFromCrate(Crate)
+		if not Spec then return end
+
 		local Pos, Ang = GetMissileAngPos(Crate.BulletData, Point)
-		local Missile = ACF.MakeMissile(Rack:CPPIGetOwner(), Pos, Ang, Rack, Point, Crate)
+		local RackOwner = Rack:CPPIGetOwner()
+		local Missile = Missiles.Create(Spec, {
+			Owner     = IsValid(RackOwner) and RackOwner or game.GetWorld(),
+			Pos       = Rack:LocalToWorld(Pos),
+			Ang       = Rack:LocalToWorldAngles(Ang),
+			Launcher  = Missiles.RackLauncher(Rack, Point),
+			Parent    = Rack,
+			Hidden    = Rack.HideMissile,
+			Protected = Rack.ProtectMissile,
+			Color     = Crate:GetColor(),
+			Model     = Rack.MissileModel,
+		})
+		if not Missile then return end
+
+		-- Command guidance still reads the rack entity and mount point off the missile
+		Missile.Launcher   = Rack
+		Missile.MountPoint = Point
 
 		Sounds.SendSound(Rack, "acf_missiles/fx/bomb_reload.mp3", 70, math.random(99, 101), 1)
 
@@ -876,6 +897,8 @@ do -- Loading ----------------------------------
 
 		if not self.Firing and Index and Crate and not CheckDistantLink(self, Crate, self:GetPos()) then
 			local Missile    = AddMissile(self, Point, Crate, LimitConVar, Owner)
+			if not Missile then return end
+
 			local IdealTime  = Missile.ReloadTime
 			local ReloadTime = IdealTime / self.LoadCrewMod
 
