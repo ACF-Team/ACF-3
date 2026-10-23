@@ -7,6 +7,7 @@ local CHECK_INTERVAL = 0.1 -- Seconds between samples
 -- Classes within the same group never block each other, a class listed alone ignores its own kind
 local IGNORE_GROUPS = {
     {"acf_gun", "acf_turret"},
+    {"acf_autoloader", "acf_turret"},
 }
 
 -- Never sampled and never counted as a blocker
