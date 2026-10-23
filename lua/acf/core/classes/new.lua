@@ -65,7 +65,7 @@ do
                     __index = self, -- Instances should use their class' static methods/variables if they dont have them set
                     __tostring = function(self) return self.ToString and self:ToString() or Stringified end, -- Avoid ambiguity/shadowing of self and the instance
                 })
-                InstantiateFields(self) -- run field instantiators first
+                InstantiateFields(Instance) -- run field instantiators first
                 if self.new then self.new(Instance, ...) end -- Constructor if applicable
                 return Instance
             end
