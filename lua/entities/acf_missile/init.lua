@@ -82,32 +82,6 @@ end)
 
 -------------------------------[[ Global Functions ]]-------------------------------
 
---- Deprecated: use ACF.Missiles.SpecFromCrate and ACF.Missiles.Create. Pos/Ang are local to the rack.
-function ACF.MakeMissile(Player, Pos, Ang, Rack, MountPoint, Crate)
-	local Spec = Missiles.SpecFromCrate(Crate)
-	if not Spec then return end
-
-	local Missile = Missiles.Create(Spec, {
-		Owner     = IsValid(Player) and Player or game.GetWorld(),
-		Pos       = Rack:LocalToWorld(Pos),
-		Ang       = Rack:LocalToWorldAngles(Ang),
-		Launcher  = Missiles.RackLauncher(Rack, MountPoint),
-		Parent    = Rack,
-		Hidden    = Rack.HideMissile,
-		Protected = Rack.ProtectMissile,
-		Color     = Crate:GetColor(),
-		Model     = Rack.MissileModel,
-	})
-
-	if not Missile then return Missile end
-
-	-- Command guidance still reads the rack entity and mount point off the missile
-	Missile.Launcher   = Rack
-	Missile.MountPoint = MountPoint
-
-	return Missile
-end
-
 function ENT:GetSpec()
 	return self.Spec
 end
@@ -172,19 +146,6 @@ function ENT:UpdateSkin()
 	if not Skins then return end
 
 	self:SetSkin(Skins[BulletData.AmmoType] or 0)
-end
-
---- Deprecated: use ACF.Missiles.Launch. Flies along BulletData.Flight, inheriting the rack's velocity.
-function ENT:Launch(Delay, IsMisfire)
-	local Rack   = self.Launcher
-	local Flight = self.BulletData.Flight
-
-	Missiles.Launch(self, {
-		Velocity   = IsValid(Rack) and Rack.ACF_Velocity or nil,
-		Direction  = isvector(Flight) and not Flight:IsZero() and Flight or nil,
-		MotorDelay = Delay,
-		Misfire    = IsMisfire,
-	})
 end
 
 function ENT:DoFlight(ToPos, ToDir)
