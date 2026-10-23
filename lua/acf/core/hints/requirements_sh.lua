@@ -282,6 +282,35 @@ do -- MARK: Turret requirements
 	})
 end
 
+do -- MARK: Mobility requirements
+	-- Data.Reason says why the baseplate's driver modifier is low, Data.Drivers and Data.Misaligned list its drivers
+	Register("gearbox_driver", {
+		Title  = "Driver",
+		Detail = function(Data)
+			return "wheels get " .. (Data.Percent or "?") .. "% torque, " .. (Data.Reason or "no driver")
+		end,
+		Help   = "Gearboxes only pass their full torque to wheels when the vehicle's baseplate has a driver or pilot with "
+			.. "enough efficiency. A driver must face the baseplate's forward to count. Add a driver, turn the marked driver "
+			.. "to face forward, or raise its efficiency with more room, a better pose or a commander.",
+	}, {
+		Draw = function(Debug, Entity, Data, Life)
+			for _, Crew in ipairs(Data.Misaligned or {}) do
+				DrawRelated(Debug, Entity, Crew, "Face the baseplate's forward", Life, COLOR_BAD)
+			end
+
+			for _, Crew in ipairs(Data.Drivers or {}) do
+				local Eff = IsValid(Crew) and Crew.TotalEff
+
+				if Eff then DrawRelated(Debug, Entity, Crew, math.floor(Eff * 100) .. "% efficiency", Life) end
+			end
+
+			if not (Data.Drivers and Data.Drivers[1]) and not (Data.Misaligned and Data.Misaligned[1]) then
+				DrawRelated(Debug, Entity, Data.Baseplate, "Add a driver to this vehicle", Life)
+			end
+		end,
+	})
+end
+
 do -- MARK: Component requirements
 	-- Shared by turret motors, gyros and controllers
 	Register("component_health", {

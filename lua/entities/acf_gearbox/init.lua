@@ -202,8 +202,27 @@ do -- Spawn and Update functions -----------------------
 	function ENT:UpdateDriverMod()
 		local Contraption = self:CFW_GetContraption()
 		local Baseplate = Contraption and Contraption.ACF_Baseplate
-		local Val = IsEntityValid(Baseplate) and Baseplate.DriverCrewMod or ACF.CrewFallbackCoef
+		local HasBaseplate = IsEntityValid(Baseplate)
+		local Val = HasBaseplate and Baseplate.DriverCrewMod or ACF.CrewFallbackCoef
 		self.DriverCrewMod = Clamp(Val, ACF.CrewFallbackCoef, 1)
+
+		-- Only the torque sent to wheels and effectors is cut, so gearboxes feeding other gearboxes are left alone
+		local Penalized = self.DriverCrewMod < 1 and (next(self.Wheels) or next(self.Effectors))
+
+		if Penalized then
+			local Penalty = HasBaseplate and Baseplate.DriverPenalty
+
+			self:SetRequirement("gearbox_driver", false, {
+				Percent    = math.Round(self.DriverCrewMod * 100),
+				Reason     = Penalty and Penalty.Reason or "not part of a baseplate's contraption",
+				Baseplate  = HasBaseplate and Baseplate or nil,
+				Drivers    = Penalty and Penalty.Drivers,
+				Misaligned = Penalty and Penalty.Misaligned,
+			})
+		else
+			self:SetRequirement("gearbox_driver", true)
+		end
+
 		return self.DriverCrewMod
 	end
 
