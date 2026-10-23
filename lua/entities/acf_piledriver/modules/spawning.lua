@@ -112,7 +112,7 @@ do -- Updating
                 Ammo:OnFirst(self)
             end
 
-            hook.Run("ACF_OnAmmoFirst", Ammo, self, RoundData, Class)
+            hook.Run("ACF_OnAmmoFirst", Ammo, self)
 
             Ammo:Network(self, self.BulletData)
 

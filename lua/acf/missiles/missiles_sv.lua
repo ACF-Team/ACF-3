@@ -35,7 +35,7 @@ local function SetupRound(Missile, Spec)
 		Ammo:OnFirst(Missile)
 	end
 
-	hook.Run("ACF_OnAmmoFirst", Ammo, Missile, {})
+	hook.Run("ACF_OnAmmoFirst", Ammo, Missile)
 
 	Ammo:Network(Missile, BulletData)
 
