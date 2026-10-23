@@ -310,6 +310,25 @@ do -- MARK: Mobility requirements
 		end,
 	})
 
+	-- Data.Side names the output with nothing linked, Data.Pos is that output, local to the gearbox
+	Register("gearbox_both_sides", {
+		Title  = "Both sides",
+		Detail = function(Data)
+			return "nothing linked on the " .. (Data.Side or "other") .. " output"
+		end,
+		Help   = "A dual clutch gearbox steers by holding back one of its two outputs, so it needs something linked on each. "
+			.. "Link the wheels or gearboxes of the other side to the marked output, or turn off the dual clutch.",
+	}, {
+		Draw = function(Debug, Entity, Data, Life)
+			if not Data.Pos then return end
+
+			local Pos = Entity:LocalToWorld(Data.Pos)
+
+			Debug.Sphere(Pos, 3, Life, COLOR_BAD, true)
+			Debug.EntityTextAtPosition(Pos, 0, "Link this side", Life, COLOR_BAD)
+		end,
+	})
+
 	-- Data.Wheels lists each linked wheel that cannot be driven, with the Reason
 	Register("gearbox_wheels_free", {
 		Title  = "Free wheels",
