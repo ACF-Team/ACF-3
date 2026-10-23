@@ -154,8 +154,12 @@ do
 		local baseplate = self.Baseplate
 		if not baseplate then return end
 
+		-- What this analysis was made from, so RefreshDrivetrain can tell when it goes stale
+		self.AnalyzedGearbox, self.AnalyzedBaseplate, self.AnalyzedGears = MainGearbox, baseplate, MainGearbox.Gears
+
 		-- Recalculate the drive train components
 		self.Wheels, self.Engines, self.GearboxEnds, self.GearboxIntermediates = DiscoverDriveTrain(MainGearbox)
+		self.SteerPlatesSorted = {}
 
 		self.GearboxEndCount = table.Count(self.GearboxEnds)
 		-- PrintTable({Wheels = self.Wheels, Engines = self.Engines, GearboxEnds = self.GearboxEnds, GearboxIntermediates = self.GearboxIntermediates})
@@ -234,6 +238,38 @@ do
 		self.LastInputs = {}
 		self.LastGear = 0
 		self.LastTrueGear = 0
+	end
+
+	local function SameKeys(A, B)
+		for Key in pairs(A) do if not B[Key] then return false end end
+		for Key in pairs(B) do if not A[Key] then return false end end
+
+		return true
+	end
+
+	--- Analyzes the drivetrain again when it changed since the last analysis, such as wheels or steer plates linked later,
+	--- a baseplate linked after the gearbox or a reconfigured main gearbox
+	function ENT:RefreshDrivetrain()
+		local Gearbox = self.Gearbox
+		if not (IsValid(Gearbox) and IsValid(self.Baseplate)) then return end
+
+		if self.AnalyzedGearbox == Gearbox and self.AnalyzedBaseplate == self.Baseplate and self.AnalyzedGears == Gearbox.Gears then
+			local Wheels, Engines, Ends, Intermediates = DiscoverDriveTrain(Gearbox)
+
+			if SameKeys(Wheels, self.Wheels) and SameKeys(Engines, self.Engines) and SameKeys(Ends, self.GearboxEnds)
+				and SameKeys(Intermediates, self.GearboxIntermediates) and table.Count(self.SteerPlates) == #self.SteerPlatesSorted then
+				return
+			end
+		end
+
+		-- Welds of wheels that leave the drivetrain would never be released otherwise
+		for Wheel, Weld in pairs(self.ControllerWelds) do
+			if IsValid(Weld) then Weld:Remove() end
+
+			self.ControllerWelds[Wheel] = nil
+		end
+
+		self:AnalyzeDrivetrain(Gearbox)
 	end
 
 	--- Applies or releases the wire parking brake, and toggles mobility control accordingly
