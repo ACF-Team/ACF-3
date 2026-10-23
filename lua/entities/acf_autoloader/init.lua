@@ -26,9 +26,6 @@ function ENT:ACF_PreSpawn()
 	-- State variables
 	self.AutoloaderGunBaseReloadTime = nil
 	self.AutoloaderAmmoBaseReloadTime = {}
-
-	self.OverlayErrors = {}
-	self.OverlayWarnings = {}
 end
 
 function ENT:ACF_PostUpdateEntityData()
@@ -161,14 +158,11 @@ local TraceConfig = {start = Vector(), endpos = Vector(), filter = nil}
 --- Calculates the reload efficiency of this autoloader for a gun and an ammo crate
 --- @return number # The reload efficiency, always a usable value
 --- @return boolean # Whether the autoloader currently can't load at all, which stalls the reload
---- @return string # Why the autoloader is blocked, nil when it isn't
 function ENT:GetReloadEffAuto(Gun, Ammo)
-	if not IsValid(Gun) then return ACF.AutoloaderFallbackCoef, true, "Reloading is stalled, the autoloader has no weapon to feed" end
+	if not IsValid(Gun) then return ACF.AutoloaderFallbackCoef, true end -- The no weapon hint explains this
 	-- A weapon that has never loaded has no crate to measure against, which is not a blockage
 	if not IsValid(Ammo) then return ACF.AutoloaderFallbackCoef, false end
 
-	local Blocked = false
-	local Reason
 	local BreechPos = Gun:LocalToWorld(Gun.BreechPos)
 	local BreechAng = Gun:LocalToWorldAngles(Gun.BreechAng)
 	local GunForward = Gun:GetForward()
@@ -185,12 +179,8 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	local RamAngle = math.deg(math.acos(math.Clamp(self:GetForward():Dot(GunForward), -1, 1)))
 	local GunArmAngle = PositionAngle + RamAngle
 	local GunArmAngleAligned = GunArmAngle < ACF.AutoloaderMaxAngleDiff
-	self.OverlayErrors.GunArmAlignment = not GunArmAngleAligned and "Autoloader is not aligned\nWith the breech of: " .. (tostring(Gun) or "<INVALID ENTITY???>") .. "\nDeviation: " .. math.Round(GunArmAngle, 2) .. ", Acceptable: " .. ACF.AutoloaderMaxAngleDiff or nil
-	self:UpdateOverlay()
-	if not GunArmAngleAligned then
-		Blocked = true
-		Reason = "Reloading is stalled, the autoloader is not aligned with the breech"
-	end
+	self:SetRequirement("autoloader_breech_alignment", GunArmAngleAligned,
+		{ Angle = math.Round(GunArmAngle), Limit = ACF.AutoloaderMaxAngleDiff, Weapon = Gun })
 
 	TraceConfig.filter = function(x) return not (x == self or x == Gun or x == Ammo or x == self:GetParent() or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or x.IsACFMissile or self.AmmoCrates[x] or ACF.GlobalFilter[x:GetClass()]) end
 
@@ -198,25 +188,17 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	TraceConfig.start = AutoloaderPos
 	TraceConfig.endpos = BreechPos
 	local TraceResult = TraceLine(TraceConfig)
-	self.OverlayErrors.ArmBreechLOS = TraceResult.Hit and "Autoloader cannot see the breech\nOf: " .. (tostring(Gun) or "<INVALID ENTITY???>") .. "\nBlocked by " .. (tostring(TraceResult.Entity) or "<INVALID ENTITY???>") or nil
-	self:UpdateOverlay()
-	if TraceResult.Hit then
-		Blocked = true
-		Reason = "Reloading is stalled, the autoloader cannot reach the breech"
-	end
+	self:SetRequirement("autoloader_path_breech", not TraceResult.Hit,
+		TraceResult.Hit and { Blocker = TraceResult.Entity, HitPos = self:WorldToLocal(TraceResult.HitPos), Target = Gun })
 
 	-- Check LOS from arm to ammo is unobstructed
 	TraceConfig.start = AutoloaderPos
 	TraceConfig.endpos = AmmoPos
 	TraceResult = TraceLine(TraceConfig)
-	self.OverlayErrors.ArmAmmoLOS = TraceResult.Hit and "Autoloader cannot see the ammo\nOf: " .. (tostring(Ammo) or "<INVALID ENTITY???>") .. "\nBlocked by " .. (tostring(TraceResult.Entity) or "<INVALID ENTITY???>") or nil
-	self:UpdateOverlay()
-	if TraceResult.Hit then
-		Blocked = true
-		Reason = "Reloading is stalled, the autoloader cannot reach the ammo"
-	end
+	self:SetRequirement("autoloader_path_ammo", not TraceResult.Hit,
+		TraceResult.Hit and { Blocker = TraceResult.Entity, HitPos = self:WorldToLocal(TraceResult.HitPos), Target = Ammo })
 
-	self.OverlayErrors.MountPoint = Gun.IsACFRack and table.Count(Gun.MountPoints) ~= 1 and "Autoloader is linked to a rack with\nMultiple mount points, which is unsupported." or nil
+	ACF.Hints.Set(self, "autoloader_mount_points", Gun.IsACFRack and table.Count(Gun.MountPoints) ~= 1)
 
 	-- Gun to arm
 	local GunMoveOffset = self:WorldToLocal(BreechPos)
@@ -230,10 +212,10 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	local VerticalScore = ACF.Normalize(math.abs(GunMoveOffset.z) + math.abs(AmmoMoveOffset.z), ACF.AutoloaderWorstDistVertical, ACF.AutoloaderBestDistVertical)
 	local AngularScore = ACF.Normalize(AmmoAngleDiff, ACF.AutoloaderWorstDistAngular, ACF.AutoloaderBestDistAngular)
 
-	self.OverlayWarnings.AngularScore = AngularScore <= 0 and "Autoloader or ammo are probably backwards or greatly misaligned." or nil
+	ACF.Hints.Set(self, "autoloader_misaligned", AngularScore <= 0)
 
 	local HealthScore = self.ACF.Health / self.ACF.MaxHealth
-	return 1 * HorizontalScore * VerticalScore * AngularScore * HealthScore, Blocked, Reason
+	return 1 * HorizontalScore * VerticalScore * AngularScore * HealthScore, not self:RequirementsMet()
 end
 
 --- Plays the autoloader's sound once per reload, when loading actually begins
@@ -269,19 +251,21 @@ function ENT:Think()
 	local LinkedToCrate = AmmoCrate and IsValid(AmmoCrate)
 
 	if LinkedToGun and LinkedToCrate then
-		local Efficiency, Blocked, Reason = self:GetReloadEffAuto(Gun, AmmoCrate)
+		local Efficiency, Blocked = self:GetReloadEffAuto(Gun, AmmoCrate)
 
 		-- Clamped like the gun does, so the estimate matches what the weapon will do
 		self.EstimatedEfficiency = math.Clamp(Efficiency, ACF.AutoloaderFallbackCoef, ACF.AutoloaderMaxBonus)
 		self.LoadBlocked = Blocked
-		self.OverlayWarnings.LoadBlocked = Blocked and Reason or nil
 		self.EstimatedReload = ACF.CalcReloadTime(Gun.Caliber, Gun.ClassData, Gun.WeaponData, AmmoCrate.BulletData, Gun) / self.EstimatedEfficiency
 		-- Only guns with a magazine have a meaningful magazine reload
 		self.EstimatedReloadMag = Gun.MagReload and ACF.CalcReloadTimeMag(Gun.Caliber, Gun.ClassData, Gun.WeaponData, AmmoCrate.BulletData, Gun) / self.EstimatedEfficiency or nil
 	end
 
-	self.OverlayErrors.LinkedToGun = not LinkedToGun and "Not linked to a weapon!" or nil
-	self.OverlayErrors.LinkedToCrate = not LinkedToCrate and "Not linked to an ammo crate!" or nil
+	ACF.Hints.Set(self, "autoloader_no_weapon", not LinkedToGun)
+	ACF.Hints.Set(self, "autoloader_no_ammo", not LinkedToCrate)
+
+	if not (LinkedToGun and LinkedToCrate) then ACF.Hints.Set(self, "autoloader_misaligned", false) end
+
 	self:UpdateOverlay()
 
 	self:NextThink(CurTime() + 5)
@@ -289,13 +273,12 @@ function ENT:Think()
 	return true
 end
 
+-- Requirements only mean something while linked, the link hints explain the rest
+function ENT:ACF_ShowRequirements()
+	return IsValid(self.Gun) and next(self.AmmoCrates) ~= nil
+end
+
 function ENT:ACF_UpdateOverlayState(State)
-	if next(self.OverlayErrors) then
-		for _, Error in pairs(self.OverlayErrors) do State:AddError(Error) end
-	end
-	if next(self.OverlayWarnings) then
-		for _, Warning in pairs(self.OverlayWarnings) do State:AddWarning(Warning) end
-	end
 	State:AddNumber("Max Shell Caliber (mm)", self:ACF_GetUserVar("AutoloaderCaliber"))
 	State:AddNumber("Max Shell Length (cm)", self:ACF_GetUserVar("AutoloaderLength"))
 	State:AddNumber("Estimated Reload (s)", math.Round(self.EstimatedReload or 0, 4))

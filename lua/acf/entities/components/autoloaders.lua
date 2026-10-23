@@ -64,6 +64,7 @@ end
 Classes.DefineClass("ACF.Components.Autoloader", "ACF.Components.BaseComponent", function(CLASS)
     CLASS.Name        = "Autoloader"
     CLASS.Description  = "An automatic ammunition loading system."
+    CLASS.Icon         = "icon16/arrow_refresh.png"
     CLASS.Model        = "models/acf/autoloader_tractorbeam.mdl"
     CLASS.Entity       = "acf_autoloader"
     CLASS.TutorialURL  = "docs/acf_tutorials/autoloaders.html"

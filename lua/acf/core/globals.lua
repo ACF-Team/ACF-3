@@ -195,7 +195,8 @@ do -- ACF global vars
 	ACF.DefineSetting("KillLogMaxSessions",   20,    "Kill log max retained sessions has been set to %s.", ACF.FloatDataCallback(1, 500, 0))
 	ACF.DefineSetting("KillLogQueryCooldown", 10,    "Kill log query cooldown has been set to %s seconds.", ACF.FloatDataCallback(0, 120, 0))
 
-	ACF.IllegalDisableTime   = 30 -- Time in seconds for an entity to be disabled when it fails ACF.IsLegal
+	ACF.IllegalDisableTime   = 30 -- Time in seconds for an entity to be disabled when it fails a legality check
+	ACF.OverlapShrink        = 0.95 -- Fraction of a convex, scaled about its centroid, that the overlap check samples points from
 	ACF.MutationGhostTime    = 30 -- Time in seconds that a chip-mutated non-ACF entity is ignored by ballistics and damage
 	ACF.MaxPenetrations      = 50 -- Convexes a bullet can cross in one pass, hitting it deletes every prop it crossed
 	ACF.Volume               = 1 -- Global volume for ACF sounds
@@ -486,6 +487,7 @@ elseif CLIENT then
 	CreateClientConVar("acf_maxroundsdisplay", 16, true, false, "Maximum rounds to display before using bulk display (0 to only display bulk)", 0, 5000)
 	CreateClientConVar("acf_drawboxes", 1, true, false, "Whether or not to draw hitboxes on ACF entities", 0, 1)
 	CreateClientConVar("acf_legalhints", 1, true, true, "If enabled, ACF will throw a warning hint whenever an entity gets disabled.", 0, 1)
+	CreateClientConVar("acf_legalvisuals", 1, true, true, "If enabled, ACF will highlight your disabled entities, and the unmet requirements of your entities, and show what is causing it.", 0, 1)
 	CreateClientConVar("acf_legalshame", 0, true, true, "If enabled, you will get a message in console from the server if someone else has an ACF entity get disabled, but only when the server has that logging enabled.", 0, 1)
 	CreateClientConVar("acf_debris", 1, true, false, "Toggles ACF Debris.", 0, 1)
 	CreateClientConVar("acf_debris_autolod", 1, true, false, "Automatically disables some effects on debris if FPS is low.", 0, 1)

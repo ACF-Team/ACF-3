@@ -14,6 +14,9 @@ local IsPhysObjValid = ACF.Optimizations.IsPhysObjValid
 local Utilities    = ACF.Utilities
 local Clock        = Utilities.Clock
 local Contraption  = ACF.Contraption
+local Mobility     = ACF.Mobility
+local BrokenLinks  = Mobility.BrokenLinks
+local Notify       = Utilities.Notify
 
 local Round        = math.Round
 local Remap        = math.Remap
@@ -44,6 +47,12 @@ local function FindFuelTank(EngineTbl)
 	return Best
 end
 
+local function BreakLink(Engine, Gearbox, Reason)
+	Engine:Unlink(Gearbox)
+	BrokenLinks.Add(Engine, Gearbox, Reason, Engine.Out.Pos, Gearbox.In.Pos)
+	Notify.EntityWarning(Engine, "Engine to Gearbox connection broken", Reason .. "!", ACF.Diagnostics.Get("link_broken").Ponder)
+end
+
 -- Checks for any gearbox that has moved too far away or its angle relative to this engine's output shaft is now excessive.
 local function CheckGearboxes(Engine)
 	for Ent, Link in pairs(Engine.Gearboxes) do
@@ -52,12 +61,14 @@ local function CheckGearboxes(Engine)
 
 		-- make sure it is not stretched too far
 		if OutPos:Distance(InPos) > Link.RopeLen * 1.5 then
-			Engine:Unlink(Ent)
+			BreakLink(Engine, Ent, "Excessive distance")
 			continue
 		end
 
-		if ACF.IsDriveshaftAngleExcessive(Ent, Ent.In, Engine, Engine.Out) then
-			Engine:Unlink(Ent)
+		local Excessive, Angle = ACF.IsDriveshaftAngleExcessive(Ent, Ent.In, Engine, Engine.Out)
+
+		if Excessive then
+			BreakLink(Engine, Ent, "Excessive driveshaft angle (" .. Round(Angle) .. " of " .. ACF.MaxDriveshaftAngle .. " deg)")
 		end
 	end
 end
@@ -161,8 +172,7 @@ function ENT:Think()
 	local SelfTbl = ENTITY.GetTable(self)
 
 	if not SelfTbl.Active then return end
-	if SelfTbl.Disabled then return end
-	if SelfTbl.IsDestroyed then return end
+	if not ACF.IsOperational(self, SelfTbl) then return end -- Not operational, either was destroyed or disabled by legality checks.
 
 	self:CalcRPM(SelfTbl)
 
@@ -361,6 +371,10 @@ function ENT:Disable()
 	self:UpdateOverlay()
 end
 
+function ENT:UpdateLinkHints()
+	ACF.Hints.Set(self, "engine_no_gearbox", not next(self.Gearboxes))
+end
+
 function ENT:UpdateOutputs(SelfTbl)
 	SelfTbl = SelfTbl or self:GetTable()
 	local FuelUsage = Round(SelfTbl.FuelUsage)
@@ -390,20 +404,10 @@ function ENT:UpdateOutputs(SelfTbl)
 end
 
 function ENT:ACF_UpdateOverlayState(State)
-	if self.IsDestroyed then
-		State:AddError("Destroyed")
-	elseif self.Disabled then
-		State:AddError("Disabled!")
+	if self.Active then
+		State:AddSuccess("Active")
 	else
-		if self.Active then
-			State:AddSuccess("Active")
-		else
-			State:AddWarning("Idle")
-		end
-	end
-
-	if ACF.RequireFuel and not next(self.FuelTanks) then
-		State:AddWarning("No compatible fuel tanks share this engine's parent")
+		State:AddLabel("Off") -- Not a warning, being switched off is normal and warnings are for things to fix
 	end
 
 	State:AddKeyValue("Type", self.Name)

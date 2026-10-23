@@ -160,8 +160,7 @@ do -- Movement -----------------------------------------
 
 	function ENT:Calc(InputRPM, InputInertia)
 		local SelfTbl = self:GetTable()
-		if SelfTbl.Disabled then return 0 end
-		if SelfTbl.ACF.Health <= 0 then return 0 end -- Destroyed
+		if not ACF.IsOperational(self, SelfTbl) then return 0 end -- Not operational, either was destroyed or disabled by legality checks.
 
 		local Now = Clock.CurTime
 
@@ -412,6 +411,11 @@ do -- Movement -----------------------------------------
 				ReactTq = ReactTq + WheelTorque
 			end
 
+			-- Sampled by the clock to tell when the torque rating keeps holding the vehicle back
+			-- TODO: Check if this works correctly once again!
+			SelfTbl.LoadTicks = (SelfTbl.LoadTicks or 0) + 1
+			if ReactTq > SelfTbl.MaxTorque then SelfTbl.CappedTicks = (SelfTbl.CappedTicks or 0) + 1 end
+
 			WireLib.TriggerOutput(self, "Output Torque", ReactTq)
 			SelfTbl.TorqueOutput = ReactTq -- For the overlay
 		end
@@ -435,8 +439,7 @@ do -- Movement -----------------------------------------
 
 	function ENT:Act(Torque, DeltaTime, MassRatio, FlyRPM, CompressionBrake)
 		local SelfTbl = ENTITY.GetTable(self)
-		if SelfTbl.Disabled then return end
-		if SelfTbl.ACF.Health <= 0 then return end -- Destroyed
+		if not ACF.IsOperational(self, SelfTbl) then return 0 end -- Not operational, either was destroyed or disabled by legality checks.
 
 		if Torque == 0 then
 			SelfTbl.LastActive = Clock.CurTime

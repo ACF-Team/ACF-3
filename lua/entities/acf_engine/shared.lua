@@ -9,6 +9,8 @@ ACF.Entities.AutoRegister(2026091001, function(CLASS)
 	end
 end, "Engine", "Engines")
 
+ENT.IsACFEngine = true -- Used by the engine legality restrictions
+
 ENT.ACF_StaticWireInputs = {
 	"Active (If set to a non-zero value, it'll attempt to start the engine.)",
 	"Throttle (On a range from 0 to 100, defines how much power will be given to the engine.)",

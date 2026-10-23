@@ -173,7 +173,9 @@ Classes.DefineClass("ACF.Ammunition.APHE", "ACF.Ammunition.AP", function(CLASS, 
 
 			Bullet.PenFuzeArmed = true
 
-			Debug.Cross(ExitPos, 4, 10, Color(150, 0, 255), true) -- DEBUG: fuze arm location
+			if Debug.SetDeveloperLevel(1) then
+				Debug.Cross(ExitPos, 4, 10, Color(150, 0, 255), true) -- DEBUG: fuze arm location
+			end
 
 			Bullet.NextPos = ExitPos
 
@@ -224,7 +226,9 @@ Classes.DefineClass("ACF.Ammunition.APHE", "ACF.Ammunition.AP", function(CLASS, 
 				Bullet.Pos = Trace.HitPos - Bullet.Flight:GetNormalized() * Offset
 			end
 
-			Debug.Cross(Bullet.Pos, 4, 10, Color(0, 255, 255), true) -- DEBUG: detonation location
+			if Debug.SetDeveloperLevel(1) then
+				Debug.Cross(Bullet.Pos, 4, 10, Color(0, 255, 255), true) -- DEBUG: detonation location
+			end
 
 			local Position = Bullet.Pos
 			local Filler   = Bullet.FillerMass

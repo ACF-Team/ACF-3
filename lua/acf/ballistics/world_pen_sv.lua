@@ -9,7 +9,9 @@ function Ballistics.DigTrace(From, To, Filter)
         mask   = MASK_NPCSOLID_BRUSHONLY, -- Map and brushes only
     })
 
-    Debug.Line(From, Dig.StartPos, 30, ColorRand(100, 255), true)
+    if Debug.SetDeveloperLevel(1) then
+        Debug.Line(From, Dig.StartPos, 30, ColorRand(100, 255), true)
+    end
 
     if Dig.StartSolid then -- Started inside solid map volume
         if Dig.FractionLeftSolid == 0 then -- Trace could not move inside

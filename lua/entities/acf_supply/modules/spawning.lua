@@ -78,7 +78,7 @@ end
 
 do -- Overlay
 	function ENT:ACF_UpdateOverlayState(State)
-		State:AddLabel(self.ACF.Health == 0 and "Destroyed" or self:CanConsume() and "Supplying" or "Idle")
+		if not ACF.IsDestroyed(self) then State:AddLabel(self:CanConsume() and "Supplying" or "Idle") end -- The destroyed line is added by the base overlay
 		local SizeX, SizeY, SizeZ = self:GetSize():Unpack()
 		State:AddSize("Size", SizeX, SizeY, SizeZ)
 		State:AddProgressBar("Mass Remaining", Round(self.Amount or 0, 2), Round(self.Capacity or 0, 2), " kg", 2)

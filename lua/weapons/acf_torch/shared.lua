@@ -307,6 +307,8 @@ function SWEP:PrimaryAttack()
 			if Ent.ACF_OnRepaired then
 				Ent:ACF_OnRepaired(_, OldHealth, _, Ent.ACF.Health)
 			end
+
+			ACF.RefreshCondition(Ent)
 		end
 
 		if not Healed then return end

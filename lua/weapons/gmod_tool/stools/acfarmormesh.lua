@@ -370,6 +370,7 @@ if CLIENT then
 					render.DrawLine(A, B, EdgeColor, true)
 					render.DrawLine(B, C, EdgeColor, true)
 					render.DrawLine(C, A, EdgeColor, true)
+					render.SetColorMaterial() -- DrawLine binds its own material, which would leave the next quads unfilled
 				end
 			end
 		end
@@ -599,10 +600,13 @@ elseif SERVER then
 
 		if tobool(self:GetClientInfo("color_entity")) then
 			local ArmorType = GetArmorType(Material)
-			if ArmorType and ArmorType.Color then
-				Entity:SetColor(ArmorType.Color)
+			if ArmorType then
+				local Base  = ArmorType.Color or color_white
+				local Color = Color(Base.r, Base.g, Base.b, Base.a) -- I LOVE AD2
+
+				Entity:SetColor(Color)
 				Entity:SetRenderMode(RENDERMODE_NORMAL)
-				duplicator.StoreEntityModifier(Entity, "colour", { Color = ArmorType.Color, RenderMode = RENDERMODE_NORMAL })
+				duplicator.StoreEntityModifier(Entity, "colour", { Color = Color, RenderMode = RENDERMODE_NORMAL })
 			end
 		end
 

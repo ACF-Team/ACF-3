@@ -63,7 +63,7 @@ do
 					for ent in pairs(entlist) do
 						if not IsValid(ent) then continue end
 
-						C = op(ent)
+						C = op(ent, Breakdown)
 
 						local BulkCostAmt = Breakdown[BulkCostAmtID] or 0
 

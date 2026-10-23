@@ -154,7 +154,7 @@ end
 local function ScanForEntities(Entity)
 	ClearTargets(Entity)
 
-	if Entity.ACF.Health <= 0 then return end -- Destroyed
+	if ACF.IsDestroyed(Entity) then return end
 	if not Entity.GetDetected then return end
 
 	local Detected = Entity:GetDetected()
@@ -560,12 +560,16 @@ function ENT:OnRemove()
 		OldClass.OnLast(self, OldClass)
 	end
 
-	for Weapon in pairs(self.Weapons) do
-		self:Unlink(Weapon)
+	if self.Weapons then
+		for Weapon in pairs(self.Weapons) do
+			self:Unlink(Weapon)
+		end
 	end
 
-	for Turret in pairs(self.Turrets) do
-		self:Unlink(Turret)
+	if self.Turrets then
+		for Turret in pairs(self.Turrets) do
+			self:Unlink(Turret)
+		end
 	end
 
 	if IsValid(self.SyncSource) then

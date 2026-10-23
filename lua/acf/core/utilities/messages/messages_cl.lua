@@ -14,7 +14,7 @@ function Messages.PrintChat(Type, ...)
 	-- This is needed to properly make sure that localized strings are translated...because nothing is allowed to be easy in this game...
 	for Key, String in ipairs(Strings) do
 		if string.StartsWith(String, "#") then
-			Strings[Key] = language.GetPhrase(String)
+			Strings[Key] = language.GetPhrase(String) .. " "
 		else
 			Strings[Key] = String .. " "
 		end

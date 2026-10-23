@@ -312,6 +312,7 @@ do
             local Tris   = {}
             local Volume = 0
             local Area   = 0
+            local Sum    = Vector()
             local Mins   = Vector(math.huge, math.huge, math.huge)
             local Maxs   = -Mins
 
@@ -322,6 +323,7 @@ do
 
                 Volume = Volume + A:Dot(B:Cross(C)) -- Scalar triple product gives 6 times the volume
                 Area   = Area + (B - A):Cross(C - A):Length() -- Cross product length gives twice the triangle's area
+                Sum    = Sum + (A + B + C) / 3
 
                 -- Local-space bounds, so a ray can reject the whole convex without touching its triangles
                 Mins.x = math.min(Mins.x, A.x, B.x, C.x)
@@ -336,6 +338,7 @@ do
 
             Volume = math.abs(Volume) / 6
             Area   = Area / 2
+            Sum    = #Tris > 0 and Sum / #Tris or Sum
 
             -- Material-independent characteristics; material-dependent ones (Material, Mass, Health, MaxHealth)
             -- are filled in below by ACF.SetConvexMaterial.
@@ -343,6 +346,7 @@ do
                 Tris      = Tris,
                 Mins      = Mins,
                 Maxs      = Maxs,
+                Centroid  = Sum,
                 Volume    = Volume,
                 MinWidth  = Area > 0 and 2 * Volume / Area or 0, -- Minimum width is empirically atleast half the mean chord length
                 Mass      = 0,
@@ -696,10 +700,13 @@ local function TestTrace( ply )
 
     for Index, Hit in ipairs(Hits) do
         local Col = ACF.GetIndexColor(Index)
-        debugoverlay.Line(Hit.EntryPos, Hit.ExitPos, 10, Col, true)
-        debugoverlay.EntityTextAtPosition((Hit.EntryPos + Hit.ExitPos) / 2, 0, Hit.ArmorType.Name, 10, Col)
-        debugoverlay.EntityTextAtPosition((Hit.EntryPos + Hit.ExitPos) / 2, 1, "CID: " .. Hit.ConvexID, 10, Col)
-        debugoverlay.EntityTextAtPosition((Hit.EntryPos + Hit.ExitPos) / 2, 2, "RHAe: " .. math.Round(Hit.GeoThick * Hit.ArmorType.KineticMul), 10, Col)
+        if ACF.Debug.SetDeveloperLevel(1) then
+            ACF.Debug.SetTarget(ply)
+            ACF.Debug.Line(Hit.EntryPos, Hit.ExitPos, 10, Col, true)
+            ACF.Debug.EntityTextAtPosition((Hit.EntryPos + Hit.ExitPos) / 2, 0, Hit.ArmorType.Name, 10, Col)
+            ACF.Debug.EntityTextAtPosition((Hit.EntryPos + Hit.ExitPos) / 2, 1, "CID: " .. Hit.ConvexID, 10, Col)
+            ACF.Debug.EntityTextAtPosition((Hit.EntryPos + Hit.ExitPos) / 2, 2, "RHAe: " .. math.Round(Hit.GeoThick * Hit.ArmorType.KineticMul), 10, Col)
+        end
     end
 end
 
@@ -724,18 +731,27 @@ local function DrawConvexes( ply )
             local B = Ent:LocalToWorld(Tri[2])
             local C = Ent:LocalToWorld(Tri[3])
 
-            debugoverlay.Triangle(A, B, C, 10, FillCol, true)
-            debugoverlay.Line(A, B, 10, color_white, true)
-            debugoverlay.Line(B, C, 10, color_white, true)
-            debugoverlay.Line(C, A, 10, color_white, true)
+            if ACF.Debug.SetDeveloperLevel(1) then
+                ACF.Debug.SetTarget(ply)
+                ACF.Debug.Triangle(A, B, C, 10, FillCol, true)
+                ACF.Debug.Line(A, B, 10, color_white, true)
+                ACF.Debug.Line(B, C, 10, color_white, true)
+                ACF.Debug.Line(C, A, 10, color_white, true)
+            end
 
             local Center = (A + B + C) / 3
             local Normal = (C - A):Cross(B - A):GetNormalized()
-            debugoverlay.Line(Center, Center + Normal * 5, 10, Col, true)
+            if ACF.Debug.SetDeveloperLevel(1) then
+                ACF.Debug.SetTarget(ply)
+                ACF.Debug.Line(Center, Center + Normal * 5, 10, Col, true)
+            end
         end
 
         local Center = Ent:LocalToWorld(Convex.Tris[1][1])
-        debugoverlay.EntityTextAtPosition(Center, 0, "CID: " .. ConvexID, 10, Col)
+        if ACF.Debug.SetDeveloperLevel(1) then
+            ACF.Debug.SetTarget(ply)
+            ACF.Debug.EntityTextAtPosition(Center, 0, "CID: " .. ConvexID, 10, Col)
+        end
     end
 end
 
@@ -763,18 +779,27 @@ local function DrawMeshConvexes( ply )
             local B = Ent:LocalToWorld(Hull[I + 1].pos)
             local C = Ent:LocalToWorld(Hull[I + 2].pos)
 
-            debugoverlay.Triangle(A, B, C, 10, FillCol, true)
-            debugoverlay.Line(A, B, 10, color_white, true)
-            debugoverlay.Line(B, C, 10, color_white, true)
-            debugoverlay.Line(C, A, 10, color_white, true)
+            if ACF.Debug.SetDeveloperLevel(1) then
+                ACF.Debug.SetTarget(ply)
+                ACF.Debug.Triangle(A, B, C, 10, FillCol, true)
+                ACF.Debug.Line(A, B, 10, color_white, true)
+                ACF.Debug.Line(B, C, 10, color_white, true)
+                ACF.Debug.Line(C, A, 10, color_white, true)
+            end
 
             local Center = (A + B + C) / 3
             local Normal = (C - A):Cross(B - A):GetNormalized()
-            debugoverlay.Line(Center, Center + Normal * 5, 10, Col, true)
+            if ACF.Debug.SetDeveloperLevel(1) then
+                ACF.Debug.SetTarget(ply)
+                ACF.Debug.Line(Center, Center + Normal * 5, 10, Col, true)
+            end
         end
 
         local Center = Ent:LocalToWorld(Hull[1].pos)
-        debugoverlay.EntityTextAtPosition(Center, 0, "CID: " .. ConvexID, 10, Col)
+        if ACF.Debug.SetDeveloperLevel(1) then
+            ACF.Debug.SetTarget(ply)
+            ACF.Debug.EntityTextAtPosition(Center, 0, "CID: " .. ConvexID, 10, Col)
+        end
     end
 end
 

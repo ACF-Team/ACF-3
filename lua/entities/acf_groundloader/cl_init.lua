@@ -27,12 +27,13 @@ OneScale:Identity()
 OneScale:Scale(Vector(1, 1, 1))
 
 function ENT:Draw()
-    -- Partial from base_wire_entity, need the tooltip but without the model drawing since we're drawing our own
-    local LocalPlayer = LocalPlayer()
-    local Weapon      = LocalPlayer:GetActiveWeapon()
-    local LookedAt    = self:BeingLookedAtByLocalPlayer()
+    -- The info bubble is drawn by ACF's overlay system, so only the outline and gizmos are handled here
+    local RenderContext = ACF.RenderContext
+    local LocalPlayer   = LocalPlayer()
+    local Weapon        = LocalPlayer:GetActiveWeapon()
+    local LookedAt      = RenderContext.LookAt == self and not HideInfo()
 
-    if LookedAt then
+    if LookedAt and RenderContext.ShouldDrawOutline then
         self:DrawEntityOutline()
     end
 
@@ -40,10 +41,6 @@ function ENT:Draw()
     self:DrawModel()
 
     if not LookedAt then return end
-    if HideInfo() then return end
-
-    self:AddWorldTip()
-
     if LocalPlayer:InVehicle() then return end
     if not IsValid(Weapon) then return end
 

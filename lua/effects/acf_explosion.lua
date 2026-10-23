@@ -22,7 +22,9 @@ function EFFECT:Init(Data)
 
 	self.Radius = Radius
 
-	Debug.Cross(Origin, 15, 15, Yellow, true)
+	if Debug.SetDeveloperLevel(1) then
+		Debug.Cross(Origin, 15, 15, Yellow, true)
+	end
 	--Debug.Sphere(Origin, Size, 15, Yellow, true)
 
 	TraceData.start  = Origin - Normal * 5

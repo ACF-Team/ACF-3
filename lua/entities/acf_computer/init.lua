@@ -249,14 +249,15 @@ function ENT:Disable()
 end
 
 function ENT:ACF_UpdateOverlayState(State)
-	local Title = self.ACF.Health <= 0 and "Destroyed" or self.OverlayTitle and self:OverlayTitle()
+	local Title = ACF.IsDestroyed(self) and "Destroyed" or self.OverlayTitle and self:OverlayTitle()
 
-	if Title == "Destroyed" then
-		State:AddError(Title)
-	elseif Title then
-		State:AddSuccess(Title)
-	else
-		State:AddSuccess("Idle")
+	-- The destroyed line is added by the base overlay
+	if Title ~= "Destroyed" then
+		if Title then
+			State:AddSuccess(Title)
+		else
+			State:AddSuccess("Idle")
+		end
 	end
 
 	if self.OverlayBody then

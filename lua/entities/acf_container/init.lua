@@ -45,8 +45,7 @@ function ENT:Consume(Amount)
 end
 
 function ENT:CanConsume()
-	if self.Disabled then return false end
-	if self.ACF.Health == 0 then return false end
+	if not ACF.IsOperational(self) then return false end
 	if not self.Active then return false end
 
 	return self.Amount > 0

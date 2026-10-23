@@ -7,6 +7,7 @@ local Classes   = ACF.Classes
 Classes.DefineClass("ACF.Components.SupplyCrate", "ACF.Components.BaseComponent", function(CLASS)
 	CLASS.Name        = "Supply Crate"
 	CLASS.Description = "A scalable container that supplies fuel and ammo."
+	CLASS.Icon        = "icon16/package.png"
 	CLASS.Model       = "models/acf/core/s_fuel.mdl"
 	CLASS.Material    = "phoenix_storms/future_vents"
 	CLASS.Preview = {FOV = 120}

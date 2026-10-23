@@ -6,24 +6,6 @@ local IsValid     = IsValid
 --===============================================================================================--
 -- CFW meta 
 --===============================================================================================--
-
-function ENT:ACF_IsLegal()
-	local AllowArbitraryParents = ACF.AllowArbitraryParents
-
-	-- MARCH: Craftian's change to ACF.CheckLegal calls caused this to break,
-	-- so this self.Active should guard against it.
-	if self.Active then
-		if not AllowArbitraryParents and not self.ACF_EngineParentValid then
-			return false, "Parenting Issue", "The engine must be parented to an ACF baseplate."
-		end
-
-		local Contraption = self:CFW_GetContraption()
-		if not AllowArbitraryParents and not Contraption then return false, "Parenting Issue", "Not part of a contraption (somehow??)" end -- Will this even be triggered?
-	end
-
-	return true
-end
-
 function ENT:CFW_PreParentedTo(_, NewParent)
 	local ParentValid = IsValid(NewParent) and NewParent:GetClass() == "acf_baseplate"
 	self.ACF_EngineParentValid = ParentValid

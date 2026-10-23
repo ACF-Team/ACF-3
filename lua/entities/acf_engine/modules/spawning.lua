@@ -13,14 +13,20 @@ local TimerRemove  = timer.Remove
 do
     ACF.RegisterClassLink("acf_engine", "acf_gearbox", function(Engine, Target)
         if Engine.Gearboxes[Target] then return false, "This engine is already linked to this gearbox." end
-        if Engine:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This gearbox is too far away from this engine!" end
+        if Engine:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then
+            Mobility.LinkFailure.Distance(Engine, Target)
+
+            return false, "This gearbox is too far away from this engine!"
+        end
 
         -- make sure the angle is not excessive
         local InPos = Target:LocalToWorld(Target.In.Pos)
         local OutPos = Engine:LocalToWorld(Engine.Out.Pos)
+        local Excessive, Angle = ACF.IsDriveshaftAngleExcessive(Target, Target.In, Engine, Engine.Out)
 
-        if ACF.IsDriveshaftAngleExcessive(Target, Target.In, Engine, Engine.Out) then
-            return false, "Cannot link due to excessive driveshaft angle!"
+        if Excessive then
+            Mobility.LinkFailure.Angle(Engine, Engine.Out, Target, Target.In, Angle)
+            return false, "Cannot link due to excessive driveshaft angle! (" .. math.Round(Angle) .. " deg)"
         end
 
         local Link = MobilityObj.Link(Engine, Target)
@@ -34,6 +40,10 @@ do
         Engine.Gearboxes[Target] = Link
         Target.Engines[Engine]   = true
 
+        Mobility.BrokenLinks.Clear(Engine, Target)
+
+        Engine:UpdateLinkHints()
+        Target:UpdateLinkHints()
         Engine:UpdateOverlay()
         Target:UpdateOverlay()
 
@@ -54,6 +64,8 @@ do
         Engine.Gearboxes[Target] = nil
         Target.Engines[Engine]	 = nil
 
+        Engine:UpdateLinkHints()
+        Target:UpdateLinkHints()
         Engine:UpdateOverlay()
         Target:UpdateOverlay()
 
@@ -199,6 +211,9 @@ do -- Spawn and Update functions
 
         -- Supported fuel types may have changed (no-op on a fresh spawn, which isn't parented yet)
         if self.ACF_FuelParent then Fuel.Join(self) end
+
+        Fuel.Refresh(self)
+        self:UpdateLinkHints()
     end
 
     function ENT:PreEntityCopy()

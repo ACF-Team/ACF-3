@@ -151,7 +151,7 @@ do
 	end
 
 	function ENT:ACF_PostSpawn()
-		ACF.AugmentedTimer(function(_) self:UpdateOverlay() end, function() return IsValid(self) end, nil, {MinTime = 1, MaxTime = 1})
+		ACF.AugmentedTimer(function(_) self:UpdateParentHint() self:RefreshDrivetrain() self:UpdateDrivetrainHints() self:UpdateOverlay() end, function() return IsValid(self) end, nil, {MinTime = 1, MaxTime = 1})
 	end
 
 	function ENT:ACF_PostMenuSpawn()

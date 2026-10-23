@@ -108,18 +108,30 @@ function TOOL:GetContraptionReadout(Trace, UseCostBreakdown)
 		local Player = self:GetOwner()
 
 		local NiceBreakdown = {}
+		local ArmorBreakdown = {}
 		for item, cost in pairs(Breakdown) do
-			table.insert(NiceBreakdown, {name = item, cost = cost})
+			local Target = string.StartWith(item, "armor: ") and ArmorBreakdown or NiceBreakdown
+
+			table.insert(Target, {name = item, cost = cost})
 		end
 
-		table.sort(NiceBreakdown, function(a, b)
+		local function SortByCost(a, b)
 			return a.cost > b.cost
-		end)
+		end
+
+		table.sort(NiceBreakdown, SortByCost)
+		table.sort(ArmorBreakdown, SortByCost)
 
 		Messages.SendChat(Player, nil, "--- Contraption Cost Breakdown ---")
 
 		for _, Item in ipairs(NiceBreakdown) do
 			Messages.SendChat(Player, nil, "| " .. Item.name .. ": " .. math.Round(Item.cost, 2))
+
+			if Item.name == "**ARMOR" then
+				for _, Armor in ipairs(ArmorBreakdown) do
+					Messages.SendChat(Player, nil, "| * " .. string.sub(Armor.name, 8) .. ": " .. math.Round(Armor.cost, 2))
+				end
+			end
 		end
 
 		Messages.SendChat(Player, nil, "TOTAL COST: ", math.Round(Cost, 2))
