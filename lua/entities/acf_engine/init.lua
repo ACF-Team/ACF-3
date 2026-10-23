@@ -20,14 +20,21 @@ local IsPhysObjValid	= ACF.Optimizations.IsPhysObjValid
 do
 	ACF.RegisterClassLink("acf_engine", "acf_gearbox", function(Engine, Target)
 		if Engine.Gearboxes[Target] then return false, "This engine is already linked to this gearbox." end
-		if Engine:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "This gearbox is too far away from this engine!" end
+		if Engine:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then
+			Mobility.LinkFailure.Distance(Engine, Target)
+
+			return false, "This gearbox is too far away from this engine!"
+		end
 
 		-- make sure the angle is not excessive
 		local InPos = Target:LocalToWorld(Target.In.Pos)
 		local OutPos = Engine:LocalToWorld(Engine.Out.Pos)
+		local Excessive, Angle = ACF.IsDriveshaftAngleExcessive(Target, Target.In, Engine, Engine.Out)
 
-		if ACF.IsDriveshaftAngleExcessive(Target, Target.In, Engine, Engine.Out) then
-			return false, "Cannot link due to excessive driveshaft angle!"
+		if Excessive then
+			Mobility.LinkFailure.Angle(Engine, Engine.Out, Target, Target.In, Angle)
+
+			return false, "Cannot link due to excessive driveshaft angle! (" .. math.Round(Angle) .. " deg)"
 		end
 
 		local Link = MobilityObj.Link(Engine, Target)
@@ -41,6 +48,10 @@ do
 		Engine.Gearboxes[Target] = Link
 		Target.Engines[Engine]   = true
 
+		Mobility.BrokenLinks.Clear(Engine, Target)
+
+		Engine:UpdateLinkHints()
+		Target:UpdateLinkHints()
 		Engine:UpdateOverlay()
 		Target:UpdateOverlay()
 
@@ -61,6 +72,8 @@ do
 		Engine.Gearboxes[Target] = nil
 		Target.Engines[Engine]	 = nil
 
+		Engine:UpdateLinkHints()
+		Target:UpdateLinkHints()
 		Engine:UpdateOverlay()
 		Target:UpdateOverlay()
 
@@ -80,6 +93,8 @@ local Clock        = Utilities.Clock
 local Sounds       = Utilities.Sounds
 local Contraption  = ACF.Contraption
 local Fuel         = Mobility.Fuel
+local BrokenLinks  = Mobility.BrokenLinks
+local Notify       = Utilities.Notify
 local IsValid      = IsValid
 local Clamp        = math.Clamp
 local Round        = math.Round
@@ -119,6 +134,12 @@ local function FindFuelTank(EngineTbl)
 	return Best
 end
 
+local function BreakLink(Engine, Gearbox, Reason)
+	Engine:Unlink(Gearbox)
+	BrokenLinks.Add(Engine, Gearbox, Reason, Engine.Out.Pos, Gearbox.In.Pos)
+	Notify.EntityWarning(Engine, "Engine to Gearbox connection broken", Reason .. "!", ACF.Diagnostics.Get("link_broken").Ponder)
+end
+
 local function CheckGearboxes(Engine)
 	for Ent, Link in pairs(Engine.Gearboxes) do
 		local OutPos = Engine:LocalToWorld(Engine.Out.Pos)
@@ -126,12 +147,14 @@ local function CheckGearboxes(Engine)
 
 		-- make sure it is not stretched too far
 		if OutPos:Distance(InPos) > Link.RopeLen * 1.5 then
-			Engine:Unlink(Ent)
+			BreakLink(Engine, Ent, "Excessive distance")
 			continue
 		end
 
-		if ACF.IsDriveshaftAngleExcessive(Ent, Ent.In, Engine, Engine.Out) then
-			Engine:Unlink(Ent)
+		local Excessive, Angle = ACF.IsDriveshaftAngleExcessive(Ent, Ent.In, Engine, Engine.Out)
+
+		if Excessive then
+			BreakLink(Engine, Ent, "Excessive driveshaft angle (" .. Round(Angle) .. " of " .. ACF.MaxDriveshaftAngle .. " deg)")
 		end
 	end
 end
@@ -308,6 +331,9 @@ do -- Spawn and Update functions
 
 		-- Supported fuel types may have changed (no-op on a fresh spawn, which isn't parented yet)
 		if self.ACF_FuelParent then Fuel.Join(self) end
+
+		Fuel.Refresh(self)
+		self:UpdateLinkHints()
 	end
 
 	ACF.RegisterLinkSource("acf_engine", "FuelTanks")
@@ -338,6 +364,10 @@ function ENT:Disable()
 	SetActive(self, false, self:GetTable()) -- Turn off the engine
 
 	self:UpdateOverlay()
+end
+
+function ENT:UpdateLinkHints()
+	ACF.Hints.Set(self, "engine_no_gearbox", not next(self.Gearboxes))
 end
 
 function ENT:UpdateOutputs(SelfTbl)
@@ -372,11 +402,7 @@ function ENT:ACF_UpdateOverlayState(State)
 	if self.Active then
 		State:AddSuccess("Active")
 	else
-		State:AddWarning("Idle")
-	end
-
-	if ACF.RequireFuel and not next(self.FuelTanks) then
-		State:AddWarning("No compatible fuel tanks share this engine's parent")
+		State:AddLabel("Off") -- Not a warning, being switched off is normal and warnings are for things to fix
 	end
 
 	State:AddKeyValue("Type", self.Name)
@@ -402,7 +428,7 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	-- Adjusting performance based on damage
 	local TorqueMult = Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, self.TorqueScale, 1)
 
-	if self.ACF.Health <= 0 then TorqueMult = 0 end -- Destroyed engines produce no power
+	if ACF.IsDestroyed(self) then TorqueMult = 0 end -- Destroyed engines produce no power
 
 	self.PeakTorque = self.PeakTorqueHeld * TorqueMult
 	return HitRes
@@ -447,23 +473,6 @@ function ENT:DestroySound()
 	self.LastSound  = nil
 	self.LastPitch  = 0
 	self.Sound      = nil
-end
-
-function ENT:ACF_IsLegal()
-	local AllowArbitraryParents = ACF.AllowArbitraryParents
-
-	-- MARCH: Craftian's change to ACF.CheckLegal calls caused this to break,
-	-- so this self.Active should guard against it.
-	if self.Active then
-		if not AllowArbitraryParents and not self.ACF_EngineParentValid then
-			return false, "Parenting Issue", "The engine must be parented to an ACF baseplate."
-		end
-
-		local Contraption = self:CFW_GetContraption()
-		if not AllowArbitraryParents and not Contraption then return false, "Parenting Issue", "Not part of a contraption (somehow??)" end -- Will this even be triggered?
-	end
-
-	return true
 end
 
 function ENT:CFW_PreParentedTo(_, NewParent)
@@ -553,8 +562,7 @@ function ENT:Think()
 	local SelfTbl = ENTITY.GetTable(self)
 
 	if not SelfTbl.Active then return end
-	if SelfTbl.Disabled then return end
-	if SelfTbl.ACF.Health <= 0 then return end
+	if not ACF.IsOperational(self, SelfTbl) then return end
 
 	self:CalcRPM(SelfTbl)
 

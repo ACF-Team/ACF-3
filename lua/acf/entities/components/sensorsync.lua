@@ -3,6 +3,7 @@ local Classes = ACF.Classes
 
 Classes.DefineClass("ACF.Components.SensorSync", "ACF.Components.BaseComponent", function(CLASS)
 	CLASS.Name        = "Sensor Synchronizer"
+	CLASS.Icon        = "icon16/transmit_blue.png"
 	CLASS.ID          = "SensorSync"
 	CLASS.Description = "Links to multiple sensors and performs one combined detection pass in their place, merging their detection zones into a single set of outputs."
 	CLASS.Model       = "models/props_lab/reciever01d.mdl"

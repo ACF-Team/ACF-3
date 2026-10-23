@@ -368,6 +368,8 @@ function Damage.dealDamage(Entity, DmgResult, DmgInfo)
 		Entity:ACF_PostDamage(DmgResult, DmgInfo)
 	end
 
+	ACF.RefreshCondition(Entity)
+
 	return HitRes or DmgResult:GetBlank()
 end
 

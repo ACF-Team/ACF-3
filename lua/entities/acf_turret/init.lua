@@ -89,6 +89,24 @@ do -- Random timer crew stuff
 		return false
 	end
 
+	-- The crew linked to aim the turret, with why each one does not, for the aim control requirement
+	local function GetIdleAimers(Turret)
+		local Crews = {}
+
+		for _, CrewType in ipairs({"Gunner", "Commander", "Pilot"}) do
+			for Crew in pairs(Turret.CrewsByType[CrewType] or {}) do
+				if not IsValid(Crew) then continue end
+
+				local Reason = ENTITY.GetTable(Crew).TotalEff < ACF.GunnerEfficiencyThreshold and "Efficiency too low to aim"
+					or "Must ride on the turret, or share its parent"
+
+				Crews[#Crews + 1] = { Crew = Crew, Reason = Reason }
+			end
+		end
+
+		return Crews
+	end
+
 	function ENT:UpdateControlled()
 		local SelfTbl = ENTITY.GetTable(self)
 		SelfTbl.CrewsByType = SelfTbl.CrewsByType or {}
@@ -109,6 +127,12 @@ do -- Random timer crew stuff
 		end
 
 		SelfTbl.IsControlled = Controlled
+
+		-- Only weaponized turrets need someone aiming them
+		local Met = Controlled or not SelfTbl.IsWeaponized or SelfTbl.IsPassthrough
+
+		self:SetRequirement("turret_aim_control", Met, not Met and { Crews = GetIdleAimers(self) })
+
 		return Controlled
 	end
 end
@@ -1012,7 +1036,11 @@ do -- Overlay
 			State:AddProgressBar("Current Load", TotalMass, MaxMass, " kg")
 			State:AddKeyValue("Target Extension", math_Round(SelfTbl.DesiredExtension, 1) .. "/" .. math_Round(SelfTbl.Stroke, 1) .. " in")
 
-			if SelfTbl.Overloaded then State:AddError("Overloaded: can only retract") end
+			if SelfTbl.Overloaded then
+				local _, Detail = ACF.Diagnostics.Describe("actuator_overloaded")
+
+				State:AddError(Detail, "actuator_overloaded")
+			end
 		else
 			State:AddNumber("Max Rotation", SlewMax, " deg/s")
 			State:AddNumber("Accel", SlewAccel, " deg/s^2")
@@ -1030,11 +1058,7 @@ do -- Overlay
 		if not SelfTbl.IsPassthrough then -- Weapons never gate a servo or actuator
 			if SelfTbl.IsWeaponized then
 				State:AddKeyValue("Weaponized", "Yes")
-				if SelfTbl.IsControlled then
-					State:AddKeyValue("Controlled", "Yes")
-				else
-					State:AddError("Uncontrolled: not aiming")
-				end
+				State:AddKeyValue("Controlled", SelfTbl.IsControlled and "Yes" or "No")
 			else
 				State:AddKeyValue("Weaponized", "No")
 			end
@@ -1073,6 +1097,8 @@ do -- Metamethods
 			This.Motor		= Motor
 			Motor.Turret	= This
 
+			ACF.Hints.Set(Motor, "turret_motor_no_drive", false)
+
 			Motor:ValidatePlacement()
 			This:UpdateTurretSlew()
 
@@ -1089,6 +1115,8 @@ do -- Metamethods
 
 			This.Motor		= nil
 			Motor.Turret	= nil
+
+			ACF.Hints.Set(Motor, "turret_motor_no_drive", true)
 
 			Motor:ValidatePlacement()
 			This:UpdateTurretSlew()
@@ -1118,6 +1146,7 @@ do -- Metamethods
 
 			This.Gyro	= Gyro
 
+			Gyro:UpdateLinkHints()
 			This:UpdateTurretSlew()
 
 			This:UpdateOverlay(true)
@@ -1143,6 +1172,7 @@ do -- Metamethods
 
 			This.Gyro	= nil
 
+			Gyro:UpdateLinkHints()
 			This:UpdateTurretSlew()
 
 			This:UpdateOverlay(true)

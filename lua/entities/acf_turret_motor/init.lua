@@ -25,6 +25,8 @@ do	-- Spawn and Update funcs
 		if IsValid(Player) then
 			Player:AddCount("_acf_turret", self)
 		end
+
+		ACF.Hints.Set(self, "turret_motor_no_drive", true)
 	end
 
 	function ENT:ACF_PreSpawn(_, _, _, Data)
@@ -92,11 +94,11 @@ do	-- Metamethods and other important stuff
 				if self.Active then
 					State:AddKeyValue("Status", "Active")
 				else
-					State:AddError("Status: " .. self.InactiveReason)
+					State:AddError("Inactive")
 				end
 				State:AddKeyValue("Linked to", tostring(self.Turret))
 			else
-				State:AddError("Inactive: Not linked to a turret drive!")
+				State:AddError("Inactive")
 			end
 
 			State:AddKeyValue("Torque", ("%G Nm"):format(self.Torque))
@@ -106,13 +108,13 @@ do	-- Metamethods and other important stuff
 
 	do	-- ACF Funcs
 		function ENT:Enable()
-			self:SetActive(true, "")
+			self:SetActive(true)
 			self:UpdateOverlay()
 		end
 
 		function ENT:Disable()
 			self.Active	= false
-			self:SetActive(false, "")
+			self:SetActive(false)
 			self:UpdateOverlay()
 		end
 
@@ -128,11 +130,15 @@ do	-- Metamethods and other important stuff
 			if self.Turret then self.Turret:UpdateTurretSlew() end
 		end
 
-		function ENT:SetActive(Active, Reason)
+		function ENT:SetActive(Active)
 			self.Active = Active
-			self.InactiveReason = Reason
 
 			self:UpdateOverlay(true)
+		end
+
+		-- Placement only matters once the motor drives a turret
+		function ENT:ACF_ShowRequirements()
+			return IsValid(self.Turret)
 		end
 
 		function ENT:CFW_OnParentedTo(_, _)
@@ -140,50 +146,45 @@ do	-- Metamethods and other important stuff
 		end
 
 		function ENT:ValidatePlacement()
-			self.ValidPlacement = true
-
-			if not IsValid(self.Turret) then self.ValidPlacement = false self:SetActive(false, "") return end
-
-			if not IsValid(self:GetParent()) then
-				self.ValidPlacement = false
-				self:SetActive(false, "Must be parented!")
-				return
-			end
-
 			local Turret = self.Turret
-			local LocPos	= Turret:OBBCenter() + Turret:WorldToLocal(self:LocalToWorld(self:OBBCenter()))
-			local MaxDist	= (((Turret.TurretData.RingSize / 2) * 1.2) + 12 + self.CompSize * 7.5) ^ 2
-			local LocDist	= Vector(LocPos.x, LocPos.y, 0):Length2DSqr()
 
-			if LocDist > MaxDist then
-				self.ValidPlacement = false
-				self:SetActive(false, "Too far from ring!")
-				return
-			end
+			if not IsValid(Turret) then self.ValidPlacement = false self:SetActive(false) return end
 
-			if math.abs(LocPos.z) > ((Turret.TurretData.RingHeight * 1.5) + 12) then
-				self.ValidPlacement = false
-				self:SetActive(false, "Too far above/below ring!")
-				return
-			end
+			local Parent     = self:GetParent()
+			local RingParent = Turret:GetParent()
+			local LocPos     = Turret:OBBCenter() + Turret:WorldToLocal(self:LocalToWorld(self:OBBCenter()))
+			local MaxDist    = (((Turret.TurretData.RingSize / 2) * 1.2) + 12 + self.CompSize * 7.5) ^ 2
+			local LocDist    = Vector(LocPos.x, LocPos.y, 0):Length2DSqr()
 
-			if (IsValid(Turret:GetParent()) and self:GetParent() ~= Turret:GetParent()) and (self:GetParent() ~= Turret) then
-				self.ValidPlacement = false
-				self:SetActive(false, "Must be parented to (or share parent with) the ring!")
-				return
-			end
+			local Height     = math.abs(LocPos.z)
+			local MaxHeight  = (Turret.TurretData.RingHeight * 1.5) + 12
+			-- Where LocPos is zero, in the ring's frame, for drawing the allowed area
+			local Center     = -Turret:OBBCenter()
+			local Radius     = math.sqrt(MaxDist)
+
+			local Parented = self:SetRequirement("turret_motor_parent", IsValid(Parent) and (Parent == Turret or not IsValid(RingParent) or Parent == RingParent), { Turret = Turret })
+			local NearRing = self:SetRequirement("turret_motor_near_ring", LocDist <= MaxDist, { Turret = Turret, Center = Center, Radius = Radius, Distance = math.sqrt(LocDist) })
+			local Level    = self:SetRequirement("turret_motor_ring_height", Height <= MaxHeight, { Turret = Turret, Center = Center, Radius = Radius, Height = Height, Limit = MaxHeight })
+
+			self.ValidPlacement = Parented and NearRing and Level
+
+			if not self.ValidPlacement then self:SetActive(false) end
 		end
 
 		function ENT:IsActive()
 			if self.Disabled then return false end
+
+			local Percent = self.ACF.Health / self.ACF.MaxHealth * 100
+			local Healthy = self:SetRequirement("component_health", Percent > 25, { Percent = math.floor(Percent) })
+
 			if self.ValidPlacement == false then return false end
 
-			if (self.ACF.Health / self.ACF.MaxHealth) <= 0.25 then
-				self:SetActive(false, "Too damaged!")
+			if not Healthy then
+				self:SetActive(false)
 				return false
 			end
 
-			if self.Active == false then self:SetActive(true, "") end
+			if self.Active == false then self:SetActive(true) end
 			return true
 		end
 

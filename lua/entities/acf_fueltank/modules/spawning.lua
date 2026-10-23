@@ -138,16 +138,13 @@ end
 
 do -- Overlay text
 	function ENT:ACF_UpdateOverlayState(State)
-		if self.ACF.Health == 0 then
-			State:AddError("Destroyed")
-		elseif self:CanConsume() then
-			State:AddSuccess("Active")
-		else
-			State:AddWarning("Idle")
-		end
-
-		if self.Leaking and self.Leaking > 0 then
-			State:AddWarning("WARNING: Leaking!")
+		-- The destroyed line is added by the base overlay
+		if not ACF.IsDestroyed(self) then
+			if self:CanConsume() then
+				State:AddSuccess("Active")
+			else
+				State:AddWarning("Idle")
+			end
 		end
 
 		-- The V2 fuel type instance lives on the entity's field set; read it straight off.

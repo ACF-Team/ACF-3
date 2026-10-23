@@ -134,7 +134,10 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 	local Radius      = Damage.getBlastRadius(FillerMass)
 	local RadiusScale = Damage.getRadiusScale(Radius)
 
-	Debug.Sphere(Position, Radius, 15, BlastColor, true)
+	if Debug.SetDeveloperLevel(1) then
+		Debug.SetTarget(DmgInfo and DmgInfo:GetAttacker())
+		Debug.Sphere(Position, Radius, 15, BlastColor, true)
+	end
 
 	local Found       = ents.FindInSphere(Position, Radius)
 
@@ -154,7 +157,10 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 	TraceData.start  = Position
 	TraceData.filter = Filter
 
-	Debug.Cross(Position, 15, 15, White, true)
+	if Debug.SetDeveloperLevel(1) then
+		Debug.SetTarget(DmgInfo and DmgInfo:GetAttacker())
+		Debug.Cross(Position, 15, 15, White, true)
+	end
 
 	DmgInfo:SetOrigin(Position)
 
@@ -220,7 +226,10 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 		local Entity = Data.Entity
 
-		Debug.Cross(Data.RandomPos, 8, 15, Yellow, true)
+		if Debug.SetDeveloperLevel(1) then
+			Debug.SetTarget(DmgInfo and DmgInfo:GetAttacker())
+			Debug.Cross(Data.RandomPos, 8, 15, Yellow, true)
+		end
 
 		TraceData.endpos = Data.TraceEndPos
 
@@ -229,7 +238,10 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		if TraceResult.HitWorld then
 			-- Hit world - this entity is permanently blocked from this angle
 			-- Don't mark as processed - give another chance if we happen to hit it while tracing towards another target
-			Debug.Line(Position, TraceResult.HitPos, 15, Green, true)
+			if Debug.SetDeveloperLevel(1) then
+				Debug.SetTarget(DmgInfo and DmgInfo:GetAttacker())
+				Debug.Line(Position, TraceResult.HitPos, 15, Green, true)
+			end
 
 			continue
 		end
@@ -317,8 +329,11 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		local BlastArea     = EntArea * BlastAreaCoef * Falloff * RadiusScale
 		local BlastResult, FragResult, Losses, Penetration
 
-		Debug.Line(Position, Data.RandomPos, 15, Red, true)
-		Debug.Line(Data.RandomPos, Data.TraceEndPos, 15, Red, true)
+		if Debug.SetDeveloperLevel(1) then
+			Debug.SetTarget(DmgInfo and DmgInfo:GetAttacker())
+			Debug.Line(Position, Data.RandomPos, 15, Red, true)
+			Debug.Line(Data.RandomPos, Data.TraceEndPos, 15, Red, true)
+		end
 
 		DmgInfo:SetHitPos(HitPos)
 		DmgInfo:SetHitGroup(TraceResult.HitGroup)

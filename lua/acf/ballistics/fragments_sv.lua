@@ -44,12 +44,18 @@ function Ballistics.CreateFragment(Data)
 		local Trace, ConvexHit = Ballistics.ResolveNextObstacle(Fragment)
 
 		if not Trace.Hit then
-			debugoverlay.Line(Fragment.Pos, Fragment.TraceTo, 15, Fragment.Color, true)
+			if ACF.Debug.SetDeveloperLevel(1) then
+				ACF.Debug.SetTarget(Fragment.Owner)
+				ACF.Debug.Line(Fragment.Pos, Fragment.TraceTo, 15, Fragment.Color, true)
+			end
 
 			return -- Spent itself in open air
 		end
 
-		debugoverlay.Line(Fragment.Pos, Trace.HitPos, 15, Fragment.Color, true)
+		if ACF.Debug.SetDeveloperLevel(1) then
+			ACF.Debug.SetTarget(Fragment.Owner)
+			ACF.Debug.Line(Fragment.Pos, Trace.HitPos, 15, Fragment.Color, true)
+		end
 
 		Fragment.ConvexHit = ConvexHit
 

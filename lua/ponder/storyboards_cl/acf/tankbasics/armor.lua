@@ -162,7 +162,7 @@ Chapter:AddInstruction("DebugLine", {Name = "Spall3", Start = Vector(-180, 100, 
 Chapter:AddInstruction("DebugLine", {Name = "Spall4", Start = Vector(-180, 100, 0), End = Vector(-210, 100, 30), Color = Color(255, 60, 10), Lifetime = 2, IgnoreZ = true})
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "This is spalling. These are real fragments with their own paths, and they can still injure crew behind stopped armor."}))
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "To see fragment paths in-game, set developer 1 and acf_developer 1."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "To see fragment paths in-game, set acf_developer 1."}))
 
 Chapter:AddDelay(2)
 Chapter:AddInstruction("RemoveModel", {Name = "Gun3"})

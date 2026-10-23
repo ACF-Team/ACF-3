@@ -41,9 +41,11 @@ function ENT:DrawOverlay()
 			-- Visualize the orientation the ammo would feed towards
 			local AmmoPos = Ammo:GetPos()
 			local AmmoAng = Ammo:LocalToWorldAngles(Ammo.LocalAng)
-			debugoverlay.Line(AmmoPos, AmmoPos + AmmoAng:Forward() * 20, 0.1, Color(255, 0, 0), true)
-			debugoverlay.Line(AmmoPos, AmmoPos + AmmoAng:Right() * 20, 0.1, Color(0, 255, 0), true)
-			debugoverlay.Line(AmmoPos, AmmoPos + AmmoAng:Up() * 20, 0.1, Color(0, 0, 255), true)
+			if ACF.Debug.SetDeveloperLevel(2) then
+				ACF.Debug.Line(AmmoPos, AmmoPos + AmmoAng:Forward() * 20, 0.1, Color(255, 0, 0), true)
+				ACF.Debug.Line(AmmoPos, AmmoPos + AmmoAng:Right() * 20, 0.1, Color(0, 255, 0), true)
+				ACF.Debug.Line(AmmoPos, AmmoPos + AmmoAng:Up() * 20, 0.1, Color(0, 0, 255), true)
+			end
 		end
 	end
 end

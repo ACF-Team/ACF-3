@@ -20,6 +20,7 @@ end
 Classes.DefineClass("ACF.Components.Waterjet", "ACF.Components.BaseComponent", function(CLASS)
     CLASS.Name        = "Water Jet"
     CLASS.Description  = "Entity capable of aiding with movement in water."
+    CLASS.Icon         = "icon16/water.png"
     CLASS.Model        = "models/maxofs2d/hover_propeller.mdl"
     CLASS.Entity       = "acf_waterjet"
     CLASS.TutorialURL  = "docs/acf_tutorials/waterjets.html"

@@ -8,6 +8,91 @@ return function()
     function ENT:Disable() end
     function ENT:ACF_UpdateOverlayState() end
 
+    local AddRequirementLines
+
+    do -- Requirements ------------------------------
+        local Diagnostics = ACF.Diagnostics
+
+        --- Marks a requirement as met or not, the overlay lists the unmet ones with their help. Not applicable counts as met.
+        --- @param Id string A requirement registered with ACF.Hints.RegisterRequirement
+        --- @param Met boolean Whether the requirement is currently met
+        --- @param Data table|nil Why it is not met, read by the requirement's detail and drawing
+        --- @return boolean # Met, for use in conditions
+        function ENT:SetRequirement(Id, Met, Data)
+            local Unmet = self.ACF_UnmetRequirements
+
+            if Met then
+                if not (Unmet and Unmet[Id]) then return true end
+
+                Unmet[Id] = nil
+
+                table.RemoveByValue(self.ACF_UnmetOrder, Id)
+                self:UpdateOverlay()
+                ACF.Hints.DrawRequirements(self)
+
+                return true
+            end
+
+            if not ACF.Hints.Requirements[Id] then error("Unknown requirement '" .. tostring(Id) .. "'") end
+
+            if not Unmet then
+                Unmet                      = {}
+                self.ACF_UnmetRequirements = Unmet
+                self.ACF_UnmetOrder        = {}
+            end
+
+            Data = Data or {}
+
+            local Current = Unmet[Id]
+
+            if Current and ACF.SameData(Current, Data) then return false end
+
+            Unmet[Id] = Data
+
+            if not Current then
+                local Order = self.ACF_UnmetOrder
+
+                Order[#Order + 1] = Id
+
+                self:UpdateOverlay()
+                ACF.Hints.DrawRequirements(self)
+
+                return false
+            end
+
+            -- Only the text reaches the overlay, data such as trace positions is picked up by the next redraw
+            local _, OldDetail = Diagnostics.Describe(Id, Current)
+            local _, NewDetail = Diagnostics.Describe(Id, Data)
+
+            if OldDetail ~= NewDetail then self:UpdateOverlay() end
+
+            return false
+        end
+
+        --- @return boolean # Whether every requirement set on this entity is met
+        function ENT:RequirementsMet()
+            local Unmet = self.ACF_UnmetRequirements
+
+            return not Unmet or next(Unmet) == nil
+        end
+
+        -- Override to hide the requirements when they are not relevant, such as a gun that is already loaded
+        function ENT:ACF_ShowRequirements()
+            return true
+        end
+
+        function AddRequirementLines(self, State)
+            local Unmet = self.ACF_UnmetRequirements
+            if not Unmet or not next(Unmet) or not self:ACF_ShowRequirements() then return end
+
+            for _, Id in ipairs(self.ACF_UnmetOrder) do
+                local Title, Detail = Diagnostics.Describe(Id, Unmet[Id])
+
+                State:AddWarning(Detail ~= "" and Title .. ": " .. Detail or Title, Id)
+            end
+        end
+    end ---------------------------------------------
+
     do -- Entity Overlay ----------------------------
         local Name    = "ACF Overlay Buffer %s"
         local timer   = timer
@@ -27,6 +112,12 @@ return function()
             OverlayState:Begin()
             local EntityName = self:ACF_GetEntityName()
             OverlayState:AddHeader(EntityName)
+
+            if ACF.IsDestroyed(self) then OverlayState:AddError(self.ACF_DestroyedLabel or "Destroyed") end
+
+            ACF.Legality.AddOverlayLines(self, OverlayState)
+            ACF.Hints.AddOverlayLines(self, OverlayState)
+            AddRequirementLines(self, OverlayState)
             self:ACF_UpdateOverlayState(OverlayState)
             OverlayState:End()
             ACF.Overlay.UpdateOverlay(self, OverlayState)

@@ -5,6 +5,7 @@ do
     -- Maintain a record in the contraption of its current baseplate
     hook.Add("cfw.contraption.created", "ACF_CFW_Indexing", function(contraption)
         contraption.ACF_EntitiesCount = 0
+        contraption.ACF_Entities      = {}
     end)
 
     hook.Add("cfw.contraption.entityAdded", "ACF_CFW_Indexing", function(contraption, ent)
@@ -27,6 +28,7 @@ do
 
         if ent.IsACFEntity then
             contraption.ACF_EntitiesCount = math.max(0, contraption.ACF_EntitiesCount + 1)
+            contraption.ACF_Entities[ent] = true
             hook.Run("ACF_OnPostACFEntityAddedToContraption", contraption, ent)
         end
     end)
@@ -40,6 +42,7 @@ do
 
         if ent.IsACFEntity then
             contraption.ACF_EntitiesCount = math.max(0, contraption.ACF_EntitiesCount - 1)
+            contraption.ACF_Entities[ent] = nil
         end
     end)
 end

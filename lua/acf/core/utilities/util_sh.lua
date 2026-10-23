@@ -331,7 +331,10 @@ do
 
 		-- For the entity sending power, this is the direction of a "straight" shaft
 		local OP, OutputWorldDir = Output:ApplyTo(OutputEntity)
-		debugoverlay.Line(OP, OP + (OutputWorldDir * 200), 5, Color(20, 255, 20))
+		-- if ACF.Debug.SetDeveloperLevel(2) then
+			-- ACF.Debug.SetTarget(SERVER and OutputEntity:CPPIGetOwner() or nil)
+			-- ACF.Debug.Line(OP, OP + (OutputWorldDir * 200), 5, Color(20, 255, 20))
+		-- end
 
 		-- Gearbox -> prop connections mean that Input will be nil, because props don't have a power input
 		-- like gearboxes do. So this just switches back to the old way of checking in one direction.
@@ -349,7 +352,10 @@ do
 
 		-- For the entity receiving power, this is the direction of a "straight" shaft
 		local IP, InputWorldDir = Input:ApplyTo(InputEntity)
-		debugoverlay.Line(IP, IP + (InputWorldDir * 200), 5, Color(255, 20, 20))
+		-- if ACF.Debug.SetDeveloperLevel(2) then
+			-- ACF.Debug.SetTarget(SERVER and InputEntity:CPPIGetOwner() or nil)
+			-- ACF.Debug.Line(IP, IP + (InputWorldDir * 200), 5, Color(255, 20, 20))
+		-- end
 
 		-- For the entity sending power, the deviation between the shaft and what it considers "straight"
 		local OutToIn = math.deg(math.acos((OP - IP):GetNormalized():Dot(InputWorldDir)))

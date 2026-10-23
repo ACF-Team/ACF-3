@@ -3,6 +3,7 @@ local Classes   = ACF.Classes
 
 Classes.DefineClass("ACF.Components.GuidanceComputer", "ACF.Components.BaseComponent", function(CLASS)
 	CLASS.Name   = "Guidance Computer"
+	CLASS.Icon   = "icon16/computer.png"
 	CLASS.Entity = "acf_computer"
 	CLASS.LimitConVar = {
 		Name   = "_acf_computer",
@@ -43,7 +44,7 @@ if SERVER then
 
 	ACF.AddInputAction("acf_computer", "Lase", function(Entity, Value)
 		if Entity.Lasing == nil then return end
-		if Entity.ACF.Health <= 0 then return end -- Destroyed
+		if ACF.IsDestroyed(Entity) then return end
 
 		Value = tobool(Value)
 
@@ -167,7 +168,7 @@ do -- Joystick
 			Entity:TriggerInput("Yaw", 0)
 		end
 		CLASS.OnThink = function(Entity)
-			if Entity.ACF.Health <= 0 then return end -- Destroyed
+			if ACF.IsDestroyed(Entity) then return end
 
 			local Speed = Entity.MoveSpeed * engine.TickInterval()
 
@@ -417,7 +418,7 @@ do -- Optical guidance computer
 			Entity:TriggerInput("Yaw", 0)
 		end
 		CLASS.OnThink = function(Entity)
-			if Entity.ACF.Health <= 0 then -- Destroyed
+			if ACF.IsDestroyed(Entity) then
 				if Entity.Distance ~= 0 or Entity.HitPos ~= vector_origin then
 					Entity.Distance  = 0
 					Entity.HitPos    = Vector()
@@ -647,7 +648,7 @@ do -- Laser guidance computer
 			Entity:TriggerInput("Yaw", 0)
 		end
 		CLASS.OnThink = function(Entity)
-			if Entity.ACF.Health <= 0 then -- Destroyed
+			if ACF.IsDestroyed(Entity) then
 				if Entity.Lasing then
 					Entity.Lasing = false
 

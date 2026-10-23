@@ -5,9 +5,15 @@ function ENT:UpdateDriverMod()
     local CrewsByType = Contraption.CrewsByType or {}
     self.CrewsByType = self.CrewsByType or {}
     local Sum1, Count1 = 0, 0
+    local Drivers, Misaligned = {}, {}
     for Crew in pairs(CrewsByType.Driver or {}) do
-        if IsValid(Crew) and Crew.DriverAligned then -- Misaligned drivers are ignored rather than dragging the average down
-            Sum1, Count1 = Sum1 + Crew.TotalEff, Count1 + 1
+        if IsValid(Crew) then
+            if Crew.DriverAligned then -- Misaligned drivers are ignored rather than dragging the average down
+                Sum1, Count1 = Sum1 + Crew.TotalEff, Count1 + 1
+                Drivers[#Drivers + 1] = Crew
+            else
+                Misaligned[#Misaligned + 1] = Crew
+            end
         end
     end
     local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Pilot or {}, function(Crew) return Crew.TotalEff end)
@@ -17,6 +23,23 @@ function ENT:UpdateDriverMod()
     if self:ACF_GetUserVar("BaseplateType"):GetType() == ACF.Classes.GetTypeByName("ACF.Baseplates.Recreational") then
         self.DriverCrewMod = 1 -- Recreational baseplates are meant to not require crew
     end
+
+    -- Why the gearboxes of this vehicle only pass part of their torque, read by their driver requirement
+    if self.DriverCrewMod < 1 then
+        local Reason
+        if Count > 0 then
+            Reason = "driver efficiency " .. math.floor(Val * 100) .. "%, needs " .. math.Round(ACF.DriverEfficiencyThreshold * 100) .. "%"
+        elseif Misaligned[1] then
+            Reason = "the driver is misaligned"
+        else
+            Reason = "no driver"
+        end
+
+        self.DriverPenalty = { Reason = Reason, Drivers = Drivers, Misaligned = Misaligned }
+    else
+        self.DriverPenalty = nil
+    end
+
     return self.DriverCrewMod
 end
 

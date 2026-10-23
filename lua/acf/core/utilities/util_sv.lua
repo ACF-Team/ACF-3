@@ -14,6 +14,18 @@ do -- Combat state
 	end
 end
 
+do -- Primitives
+	--- Primitives keep the combine bomb's physics until their shape is built, so traces should skip them until then.
+	--- @param Entity entity
+	--- @return boolean # Whether the entity is a primitive with a rebuild pending or in progress
+	function ACF.IsPrimitivePending(Entity)
+		local Primitive = Entity.primitive
+		if not istable(Primitive) then return false end
+
+		return Primitive.init ~= nil or Primitive.thread ~= nil
+	end
+end
+
 -- 16 Segments font created by ThorType
 -- Huge thanks to LiddulBOFH to help me get it working
 -- Source: https://www.dafont.com/16-segments.font

@@ -178,24 +178,29 @@ function ENT:CFW_PreParentedTo(OldParent, _)
 			for Target in pairs(self.Targets) do
 				self:Unlink(Target)
 			end
+
+			self.ACF_UnlinkReason = "the crew member was reparented"
 		end
+		self:UpdateLinkHint()
 		self:CFW_Unindex_Crew(self:CFW_GetContraption())
 		self:CFW_Index_Crew(self:CFW_GetContraption())
 	end
 end
 
+--- Shows the not linked hint while a crew that needs links has none, with why its links were removed if they were.
+function ENT:UpdateLinkHint()
+	local Targets   = self.Targets
+	local Unlinked  = Targets == nil or next(Targets) == nil
+	local NeedsLink = self.CrewTypeID ~= "Commander" and self.CrewTypeID ~= "Driver"
+
+	if not Unlinked then self.ACF_UnlinkReason = nil end
+
+	ACF.Hints.Set(self, "crew_unlinked", NeedsLink and Unlinked, { Reason = self.ACF_UnlinkReason })
+end
+
 -- Checks the parent state. Must run first in the think order so we can exit early and avoid unlinks
 local function CheckParentState(crew)
-	if not ACF.IsParentChainStateOK(crew) then
-		crew.Disabled = {
-			Reason = "Bad Parent",
-			Message = "Must be parented correctly!"
-		}
-		crew.TotalEff = 0
-		return false
-	end
-
-	return true
+	return ACF.IsParentChainStateOK(crew)
 end
 
 --- Check other crews of the same type and enforce convar limits
@@ -219,7 +224,6 @@ local function EnforceLimits(crew)
 	end
 
 	if CrewType.EnforceLimits then CrewType.EnforceLimits(crew) end
-	CrewTable.Disabled = nil
 end
 
 local Vector0  = Vector(0, 0, 0)
@@ -356,12 +360,13 @@ do -- Random timer stuff
 					Reasons = string.upper(Reasons[1]) .. string.sub(Reasons, 2)
 
 					Notify.EntityWarning(self, "Crew member unlinked. ", Reasons)
+
+					SelfTbl.ACF_UnlinkReason = Reasons:lower()
 				end
 			end
 		end
 
-		SelfTbl.OverlayErrors.ParentCheck = not IsParented and "This crew must be parented correctly!\n(parent to zero or more turret entities, ending in a baseplate)" or nil
-		SelfTbl.OverlayErrors.LinkCheck = SelfTbl.CrewTypeID ~= "Commander" and SelfTbl.CrewTypeID ~= "Driver" and (Targets == nil or table.Count(Targets) == 0) and "This crew must be linked!" or nil
+		self:UpdateLinkHint()
 
 		EnforceLimits(self)
 
@@ -496,8 +501,6 @@ do
 
 		Entity.ACF.Model = CrewModel.Model
 
-		Entity.OverlayErrors = {}
-
 		ACF.Activate(Entity, true)
 
 		local PhysObj = Entity.ACF.PhysObj
@@ -569,8 +572,11 @@ do
 				for Target in pairs(self.Targets) do
 					self:Unlink(Target)
 				end
+
+				self.ACF_UnlinkReason = "the crew member's occupation changed"
 			end
 
+			self:UpdateLinkHint()
 			self:CFW_Unindex_Crew(self:CFW_GetContraption())
 			self:CFW_Index_Crew(self:CFW_GetContraption())
 		end
@@ -614,15 +620,7 @@ do
 	function ENT:ACF_UpdateOverlayState(State)
 		local SelfTbl = ENTITY.GetTable(self)
 
-		if SelfTbl.IsAlive then
-			State:AddSuccess("Alive")
-		else
-			State:AddError("Dead")
-		end
-
-		for _, Error in pairs(SelfTbl.OverlayErrors) do
-			State:AddError(Error)
-		end
+		if SelfTbl.IsAlive then State:AddSuccess("Alive") end
 
 		State:AddWidthBreak()
 		State:AddKeyValue("Role", SelfTbl.CrewTypeID)
@@ -646,10 +644,12 @@ end
 
 -- Entity methods
 do
-	-- If the player trips a legality check (e.g. notsolid)
-	-- You can't bring back a dead crew so there is no enable...
+	-- Restrictions suspend the crew instead of killing it, efficiency recovers on the next update once enabled
 	function ENT:Disable()
-		self:KillCrew("npc/zombie/zombie_voice_idle6.wav")
+		self.TotalEff = 0
+
+		WireLib.TriggerOutput(self, "TotalEff", 0)
+		self:UpdateOverlay()
 	end
 
 	-- Fully revives a dead crew member. Called by gamemodes like AAS and by acf_supply.
@@ -659,6 +659,8 @@ do
 		self:SetMaterial(self.MaterialPath or "") -- Reset to default material
 		self:SetColor(Color(255, 255, 255, 255)) -- Reset the flesh-white tint KillCrew applies
 		self:UpdateOverlay()
+
+		ACF.RefreshCondition(self)
 	end
 
 	-- Timer only runs while the crew actually needs healing; DamageCrew re-arms it. In-combat
@@ -789,6 +791,8 @@ do
 
 		self:UpdateOverlay()
 		self:ReplaceCrew()
+
+		ACF.RefreshCondition(self)
 
 		-- TODO: CLEAN THIS UP
 		-- Check how many crew remain and kill the owner if there are none left
