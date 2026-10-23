@@ -112,6 +112,15 @@ do -- MARK: Mobility hints
 		Help   = "Parent a fuel tank the engine can use to the same parent as the engine.",
 	})
 
+	Register("gearbox_overloaded", {
+		Title  = "Overloaded",
+		Detail = function(Data)
+			return "At its " .. (Data.Rating or "?") .. " Nm torque rating " .. (Data.Percent or "?") .. "% of the time while driven."
+		end,
+		Help   = "The wheels ask for more torque than this gearbox can pass, so the rest is lost and the vehicle accelerates "
+			.. "slower. Raise the gearbox's scale, use fewer gears, or split the load over more gearboxes.",
+	})
+
 	Register("controller_parent", {
 		Title  = "Bad Parent",
 		Detail = "This controller must be parented to the baseplate or its contraption.",

@@ -304,6 +304,25 @@ do -- Spawn and Update functions -----------------------
 		Entity:SetRequirement("gearbox_wheels_free", not Unusable, Unusable and { Wheels = Unusable })
 	end
 
+	local LOAD_MIN_TICKS = 30 -- Driven ticks needed since the last check before the load can be judged
+	local LOAD_CAPPED    = 0.5 -- Share of those ticks spent at the torque rating that counts as overloaded
+
+	-- Only judged after enough driving, so the hint stays up while the vehicle sits still and the owner reads it
+	local function CheckLoad(Entity)
+		local Ticks, Capped = Entity.LoadTicks or 0, Entity.CappedTicks or 0
+
+		Entity.LoadTicks, Entity.CappedTicks = 0, 0
+
+		if Ticks < LOAD_MIN_TICKS then return end
+
+		local Share = Capped / Ticks
+
+		ACF.Hints.Set(Entity, "gearbox_overloaded", Share >= LOAD_CAPPED, {
+			Percent = math.floor(Share * 10) * 10,
+			Rating  = math.Round(Entity.MaxTorque * ACF.TorqueMult),
+		})
+	end
+
 	function ENT:ACF_SetupWireIO(Inputs, Outputs)
 		local Gearbox = self:GetGearbox()
 
@@ -344,6 +363,8 @@ do -- Spawn and Update functions -----------------------
 		self.GearboxOut     = {}
 		self.TotalReqTq     = 0
 		self.TorqueOutput   = 0
+		self.LoadTicks      = 0
+		self.CappedTicks    = 0
 		self.LBrake         = 0
 		self.RBrake         = 0
 		self.ChangeFinished = 0
@@ -417,6 +438,7 @@ do -- Spawn and Update functions -----------------------
 				CheckRopes(self, "GearboxOut")
 				CheckRopes(self, "Wheels")
 				CheckWheels(self)
+				CheckLoad(self)
 			else
 				timer.Remove("ACF Gearbox Clock " .. self:EntIndex())
 			end
@@ -905,6 +927,10 @@ do -- Movement -----------------------------------------
 
 		SelfTbl.TotalReqTq = TotalReqTq
 		TorqueOutput = min(TotalReqTq, SelfTbl.MaxTorque)
+
+		-- Sampled by the clock to tell when the torque rating keeps holding the vehicle back
+		SelfTbl.LoadTicks = (SelfTbl.LoadTicks or 0) + 1
+		if TotalReqTq > SelfTbl.MaxTorque then SelfTbl.CappedTicks = (SelfTbl.CappedTicks or 0) + 1 end
 		SelfTbl.TorqueOutput = TorqueOutput
 
 		self:UpdateOverlay()
