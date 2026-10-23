@@ -223,6 +223,7 @@ do -- Movement -----------------------------------------
 
 		local LClutch = SelfTbl.LClutch
 		local RClutch = SelfTbl.RClutch
+		-- TODO: Optimize this func!
 		local ChassisAV = GetChassisAngularVelocity(self)
 		local GearRatio = SelfTbl.GearRatio
 
@@ -369,7 +370,10 @@ do -- Movement -----------------------------------------
 				local EntTbl = ENTITY.GetTable(Ent)
 				local Share = (EntTbl.OutputInertia or 0) / TotalInertia
 
-				Link:TransferGearbox(Ent, StageTorque * Share * Clutch, DeltaTime, MassRatio, FlyRPM, CompressionBrake)
+				local GearTorque = StageTorque * Share * Clutch
+
+				Link:TransferGearbox(Ent, GearTorque, DeltaTime, MassRatio, FlyRPM, CompressionBrake)
+				ReactTq = ReactTq + GearTorque
 			end
 		end
 
@@ -381,7 +385,10 @@ do -- Movement -----------------------------------------
 				local EntTbl = ENTITY.GetTable(Effector)
 				local Share = (EntTbl.OutputInertia or 0) / TotalInertia
 
-				Link:TransferEffector(Effector, StageTorque * Share * Clutch * DriverCrewMod, DeltaTime, MassRatio, FlyRPM, Direction)
+				local EffectorTorque = StageTorque * Share * Clutch * DriverCrewMod
+
+				Link:TransferEffector(Effector, EffectorTorque, DeltaTime, MassRatio, FlyRPM, Direction)
+				ReactTq = ReactTq + EffectorTorque
 			end
 		end
 

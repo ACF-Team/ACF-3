@@ -305,6 +305,10 @@ do -- Spawn and Update functions -----------------------
 
 		CleanupData(self)
 
+		-- Ugly hack just to get these to show properly
+		WireLib.TriggerOutput(self, "Min Target RPM", self.MinRPM)
+		WireLib.TriggerOutput(self, "Max Target RPM", self.MaxRPM)
+
 		-- A reconfigure can invalidate existing links (no-op on a fresh spawn).
 		if next(self.Engines) then
 			for Engine in pairs(self.Engines) do self:Unlink(Engine) self:Link(Engine) end
