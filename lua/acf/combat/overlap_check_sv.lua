@@ -14,6 +14,7 @@ local IGNORE_GROUPS = {
 local EXEMPT = {
     acf_baseplate = true,
     acf_waterjet = true,
+    acf_controller = true,
 }
 
 local Ignored = {}
