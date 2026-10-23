@@ -28,7 +28,6 @@ local function SetupRound(Missile, Spec)
 	BulletData.Gun    = Missile
 	BulletData.Filter = Missile.Filter
 
-	Missile.ToolData   = {}
 	Missile.RoundData  = Ammo
 	Missile.BulletData = BulletData
 
@@ -36,7 +35,7 @@ local function SetupRound(Missile, Spec)
 		Ammo:OnFirst(Missile)
 	end
 
-	hook.Run("ACF_OnAmmoFirst", Ammo, Missile, Missile.ToolData)
+	hook.Run("ACF_OnAmmoFirst", Ammo, Missile, {})
 
 	Ammo:Network(Missile, BulletData)
 
