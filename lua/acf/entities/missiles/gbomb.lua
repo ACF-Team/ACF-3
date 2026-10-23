@@ -26,7 +26,7 @@ Classes.DefineClass("ACF.Missiles.GlidingBomb.100kg", "ACF.Missiles.GlidingBomb"
 	CLASS.ReloadTime	= 15
 	CLASS.Racks			= { ["ACF.Racks.1xRK_small"] = true, ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true, ["ACF.Racks.3xRK"] = true, ["ACF.Racks.4xRK"] = true }
 	CLASS.Guidances		= { ["ACF.Missiles.Guidance.Dumb"] = true }
-	CLASS.Navigation	= "Chase"
+	CLASS.Navigation	= "ACF.Missiles.Navigation.Chase"
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Optical"] = true}
 	CLASS.ArmDelay		= 1
 	CLASS.HitDeviate	= false
@@ -66,7 +66,7 @@ Classes.DefineClass("ACF.Missiles.GlidingBomb.250kg", "ACF.Missiles.GlidingBomb"
 	CLASS.ReloadTime	= 25
 	CLASS.Racks			= { ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true, ["3xRK"] = true, ["ACF.Racks.4xRK"] = true }
 	CLASS.Guidances		= { ["ACF.Missiles.Guidance.Dumb"] = true }
-	CLASS.Navigation	= "Chase"
+	CLASS.Navigation	= "ACF.Missiles.Navigation.Chase"
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Optical"] = true}
 	CLASS.ArmDelay		= 1
 	CLASS.HitDeviate	= false
