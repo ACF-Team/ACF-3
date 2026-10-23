@@ -86,6 +86,16 @@ return {
         },
 
         {
+            name = "Fails on a navigation given by short name",
+            func = function()
+                local Spec, Err = ACF.Missiles.CreateSpec( { Missile = "AT-3", AmmoType = "ACF.Ammunition.HEAT", Navigation = { Type = "APN" } } )
+
+                expect( Spec ).to.beNil()
+                expect( Err ).to.equal( "Navigation type 'APN' is not a ACF.Missiles.Navigation" )
+            end
+        },
+
+        {
             name = "Copies a guidance given as an instance instead of keeping it",
             func = function()
                 local Guidance = ACF.Classes.GetTypeByName( "ACF.Missiles.Guidance.WireMCLOS" )()

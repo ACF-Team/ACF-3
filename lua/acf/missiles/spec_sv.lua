@@ -22,11 +22,8 @@ local function GetMissileClass(ID)
 	end
 end
 
--- Navigation is addressed by FQN; the short names ("Chase", "PN", "APN") are still accepted for addon classes.
 local function GetNavigationClass(ID)
-	if not isstring(ID) then return end
-
-	return Classes.GetSubtypeByName(NavBase, ID) or Classes.GetSubtypeByName(NavBase, NavBase .. "." .. ID)
+	return isstring(ID) and Classes.GetSubtypeByName(NavBase, ID) or nil
 end
 
 -- True if the ammo type blacklists the missile, or any of the groups it belongs to.
@@ -62,7 +59,7 @@ end
 
 -- Accepts an instance, or { Type = FQN, Data = {...} }, or nil for the default.
 -- Allowed is the missile class' allow-list (CLASS.Guidances/CLASS.Fuzes), nil means anything assignable.
-local function ResolveSubInstance(Value, BaseFQN, DefaultFQN, Allowed, Label, Resolve)
+local function ResolveSubInstance(Value, BaseFQN, DefaultFQN, Allowed, Label)
 	local BaseType = Classes.GetTypeByName(BaseFQN)
 	local Class, Instance
 
@@ -72,7 +69,7 @@ local function ResolveSubInstance(Value, BaseFQN, DefaultFQN, Allowed, Label, Re
 		Class    = Value:GetType()
 		Instance = Value
 	elseif istable(Value) then
-		Class = (Resolve or Classes.GetTypeByName)(Value.Type)
+		Class = Classes.GetTypeByName(Value.Type)
 	else
 		return nil, ("%s must be an instance or { Type, Data }, got %s"):format(Label, type(Value))
 	end
@@ -133,7 +130,7 @@ function Missiles.CreateSpec(Params)
 
 	local ClassNav = GetNavigationClass(MissileClass.Navigation)
 	local Navigation
-	Navigation, Err = ResolveSubInstance(Params.Navigation, NavBase, ClassNav and Classes.GetTypeName(ClassNav) or DefaultNav, nil, "Navigation", GetNavigationClass)
+	Navigation, Err = ResolveSubInstance(Params.Navigation, NavBase, ClassNav and Classes.GetTypeName(ClassNav) or DefaultNav, nil, "Navigation")
 	if not Navigation then return nil, Err end
 
 	local Ammo  = AmmoClass()
