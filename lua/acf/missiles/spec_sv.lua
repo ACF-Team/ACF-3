@@ -119,21 +119,17 @@ function Missiles.CreateSpec(Params)
 		return nil, ("Ammo type '%s' can't be used on '%s'"):format(Params.AmmoType, Classes.GetTypeName(MissileClass))
 	end
 
-	-- Resolved into locals: a nil written to the weapon instance would read back the class' default instance
-	local Guidance, GuidanceErr = ResolveSubInstance(Params.Guidance, GuidanceBase, DefaultGuide, MissileClass.Guidances, "Guidance")
-	if not Guidance then return nil, GuidanceErr end
-
-	local Fuze, FuzeErr = ResolveSubInstance(Params.Fuze, FuzeBase, DefaultFuze, MissileClass.Fuzes, "Fuze")
-	if not Fuze then return nil, FuzeErr end
-
 	local Weapon = MissileClass()
 	local Err
 
-	Weapon.Guidance = Guidance
-	Weapon.Fuze     = Fuze
+	Weapon.Guidance, Err = ResolveSubInstance(Params.Guidance, GuidanceBase, DefaultGuide, MissileClass.Guidances, "Guidance")
+	if not Weapon.Guidance then return nil, Err end
 
-	if Guidance.VerifyData then Guidance:VerifyData(Weapon) end
-	if Fuze.VerifyData then Fuze:VerifyData(Weapon) end
+	Weapon.Fuze, Err = ResolveSubInstance(Params.Fuze, FuzeBase, DefaultFuze, MissileClass.Fuzes, "Fuze")
+	if not Weapon.Fuze then return nil, Err end
+
+	if Weapon.Guidance.VerifyData then Weapon.Guidance:VerifyData(Weapon) end
+	if Weapon.Fuze.VerifyData then Weapon.Fuze:VerifyData(Weapon) end
 
 	local ClassNav = GetNavigationClass(MissileClass.Navigation)
 	local Navigation
