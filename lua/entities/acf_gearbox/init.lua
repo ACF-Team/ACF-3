@@ -1250,39 +1250,9 @@ do -- Miscellaneous ------------------------------------
 		self:UpdateOverlay()
 	end
 
-	local function AddSides(Sides, Links)
-		for _, Link in pairs(Links) do
-			Sides[Link.Side] = true
-		end
-	end
-
 	function ENT:UpdateLinkHints()
 		ACF.Hints.Set(self, "gearbox_no_input", not (next(self.Engines) or next(self.GearboxIn)))
 		ACF.Hints.Set(self, "gearbox_no_output", not (next(self.Wheels) or next(self.GearboxOut) or next(self.Effectors)))
-
-		-- A dual clutch steers by holding back one side, which does nothing while everything sits on the other one
-		local OneSided = false
-
-		if self.DualClutch and self.OutL.Pos:DistToSqr(self.OutR.Pos) > 1 then
-			local Sides = {}
-
-			AddSides(Sides, self.Wheels)
-			AddSides(Sides, self.GearboxOut)
-			AddSides(Sides, self.Effectors)
-
-			OneSided = Sides[0] ~= Sides[1]
-
-			if OneSided then
-				local Left = not Sides[0]
-
-				self:SetRequirement("gearbox_both_sides", false, {
-					Side = Left and "left" or "right",
-					Pos  = Left and self.OutL.Pos or self.OutR.Pos,
-				})
-			end
-		end
-
-		if not OneSided then self:SetRequirement("gearbox_both_sides", true) end
 	end
 
 	-- Prevent people from changing bodygroup
