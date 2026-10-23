@@ -309,6 +309,28 @@ do -- MARK: Mobility requirements
 			end
 		end,
 	})
+
+	-- Data.Wheels lists each linked wheel that cannot be driven, with the Reason
+	Register("gearbox_wheels_free", {
+		Title  = "Free wheels",
+		Detail = function(Data)
+			local Wheels = Data.Wheels or {}
+			local First  = Wheels[1]
+			if not First then return "" end
+
+			if Wheels[2] then return #Wheels .. " linked wheels cannot turn" end
+
+			return Name(First.Wheel, "a linked wheel") .. " is " .. First.Reason:lower()
+		end,
+		Help   = "Gearboxes can only turn and brake wheels that move on their own. Unparent the marked wheels and attach them "
+			.. "with axis or ballsocket constraints, and unfreeze any frozen ones.",
+	}, {
+		Draw = function(Debug, Entity, Data, Life)
+			for _, Entry in ipairs(Data.Wheels or {}) do
+				DrawRelated(Debug, Entity, Entry.Wheel, Entry.Reason, Life, COLOR_BAD)
+			end
+		end,
+	})
 end
 
 do -- MARK: Link requirements

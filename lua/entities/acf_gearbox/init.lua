@@ -274,6 +274,36 @@ do -- Spawn and Update functions -----------------------
 		end
 	end
 
+	-- Torque and brakes skip parented wheels and frozen ones, frozen wheels only count while the vehicle itself moves,
+	-- since whole vehicles are usually frozen while they are built
+	local function CheckWheels(Entity)
+		local Unusable
+
+		if next(Entity.Wheels) then
+			local BoxPhys = Entity:GetAncestor():GetPhysicsObject()
+			local Moving  = IsPhysObjValid(BoxPhys) and BoxPhys:IsMotionEnabled()
+
+			for Wheel in pairs(Entity.Wheels) do
+				local Reason
+
+				if IsValid(Wheel:GetParent()) then
+					Reason = "Parented"
+				elseif Moving then
+					local Phys = Wheel:GetPhysicsObject()
+
+					if IsPhysObjValid(Phys) and not Phys:IsMotionEnabled() then Reason = "Frozen" end
+				end
+
+				if Reason then
+					Unusable = Unusable or {}
+					Unusable[#Unusable + 1] = { Wheel = Wheel, Reason = Reason }
+				end
+			end
+		end
+
+		Entity:SetRequirement("gearbox_wheels_free", not Unusable, Unusable and { Wheels = Unusable })
+	end
+
 	function ENT:ACF_SetupWireIO(Inputs, Outputs)
 		local Gearbox = self:GetGearbox()
 
@@ -386,6 +416,7 @@ do -- Spawn and Update functions -----------------------
 			if IsEntityValid(self) then
 				CheckRopes(self, "GearboxOut")
 				CheckRopes(self, "Wheels")
+				CheckWheels(self)
 			else
 				timer.Remove("ACF Gearbox Clock " .. self:EntIndex())
 			end
