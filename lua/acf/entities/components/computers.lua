@@ -3,6 +3,7 @@ local Classes   = ACF.Classes
 
 Classes.DefineClass("ACF.Components.GuidanceComputer", "ACF.Components.BaseComponent", function(CLASS)
 	CLASS.Name   = "Guidance Computer"
+	CLASS.Icon   = "icon16/computer.png"
 	CLASS.Entity = "acf_computer"
 	CLASS.LimitConVar = {
 		Name   = "_acf_computer",

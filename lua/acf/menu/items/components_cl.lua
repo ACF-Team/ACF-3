@@ -94,7 +94,7 @@ local function Build(Menu, Contexts)
 		Menu:EndTemporal(Base)
 	end
 
-	ACF.Menu.LoadClassCombo(ComponentClass, Entries, "Name", nil, PAGE, "group")
+	ACF.Menu.LoadClassCombo(ComponentClass, Entries, "Name", "Icon", PAGE, "group")
 end
 
 ACF.Menu.RegisterPage({
