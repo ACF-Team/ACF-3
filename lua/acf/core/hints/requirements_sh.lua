@@ -292,6 +292,7 @@ do -- MARK: Mobility requirements
 		Help   = "Gearboxes only pass their full torque to wheels when the vehicle's baseplate has a driver or pilot with "
 			.. "enough efficiency. A driver must face the baseplate's forward to count. Add a driver, turn the marked driver "
 			.. "to face forward, or raise its efficiency with more room, a better pose or a commander.",
+		Ponder = "acf.tankbasics.crew_basics",
 	}, {
 		Draw = function(Debug, Entity, Data, Life)
 			for _, Crew in ipairs(Data.Misaligned or {}) do
@@ -320,6 +321,7 @@ do -- MARK: Mobility requirements
 		end,
 		Help   = "Engines only draw fuel from tanks parented to the same entity as the engine. Parent a fuel tank the engine "
 			.. "can use to the marked entity.",
+		Ponder = "acf.tankbasics.drivetrain",
 	}, {
 		Draw = function(Debug, Entity, Data, Life)
 			DrawRelated(Debug, Entity, Data.Parent, "Parent a fuel tank here", Life)
@@ -334,6 +336,7 @@ do -- MARK: Mobility requirements
 		end,
 		Help   = "This engine cannot burn the fuel in the marked tanks. Change their fuel type to one the engine takes, "
 			.. "or add a tank that holds it.",
+		Ponder = "acf.tankbasics.drivetrain",
 	}, {
 		Draw = function(Debug, Entity, Data, Life)
 			for _, Tank in ipairs(Data.Tanks or {}) do
@@ -353,6 +356,7 @@ do -- MARK: Mobility requirements
 		Help   = "The controller splits the driven wheels into left and right using the baseplate's forward, and steers by "
 			.. "slowing one side. The marked wheels show its split. If the baseplate faces sideways, rotate the baseplate so "
 			.. "its forward arrow points the way the vehicle drives, then relink the controller to the gearbox.",
+		Ponder = "acf.tankbasics.baseplates",
 	}, {
 		Draw = function(Debug, _, Data, Life)
 			for _, Wheel in ipairs(Data.Left or {}) do
@@ -395,6 +399,7 @@ do -- MARK: Mobility requirements
 		end,
 		Help   = "Gearboxes can only turn and brake wheels that move on their own. Unparent the marked wheels and attach them "
 			.. "with axis or ballsocket constraints, and unfreeze any frozen ones.",
+		Ponder = "acf.tankbasics.suspension",
 	}, {
 		Draw = function(Debug, Entity, Data, Life)
 			for _, Entry in ipairs(Data.Wheels or {}) do
@@ -431,6 +436,7 @@ do -- MARK: Link requirements
 		end,
 		Help   = "Links break once their shaft bends past the limit, which suspension travel or a turning wheel can push it over. "
 			.. "Line the marked entities up so each output points at the input it drives.",
+		Ponder = "acf.tankbasics.drivetrain",
 	}, {
 		Draw = function(Debug, _, Data, Life)
 			for _, Entry in ipairs(Data.Links or {}) do
@@ -462,6 +468,7 @@ do -- MARK: Link requirements
 		Help   = "Links are removed when the entities move so far apart that the shaft stretches past one and a half times its "
 			.. "length, or bend it past the driveshaft angle limit. Move the marked entities back into line and link them again. "
 			.. "This goes away by itself after a minute.",
+		Ponder = "acf.tankbasics.drivetrain",
 	}, {
 		Draw = function(Debug, Entity, Data, Life)
 			for _, Entry in ipairs(Data.Links or {}) do

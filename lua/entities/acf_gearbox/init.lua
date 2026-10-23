@@ -239,7 +239,8 @@ do -- Spawn and Update functions -----------------------
 		local function BreakLink(Ent, Link, Reason, Extra)
 			Entity:Unlink(Ent)
 			Mobility.BrokenLinks.Add(Entity, Ent, Reason, Link:GetOrigin(), Ent.In and Ent.In.Pos or Vector())
-			Notify.EntityWarning(Ent, "Gearbox to " .. NiceName .. " connection broken", Reason .. "!" .. (Extra or ""))
+			Notify.EntityWarning(Ent, "Gearbox to " .. NiceName .. " connection broken", Reason .. "!" .. (Extra or ""),
+				ACF.Diagnostics.Get("link_broken").Ponder)
 		end
 
 		for Ent, Link in pairs(Ropes) do

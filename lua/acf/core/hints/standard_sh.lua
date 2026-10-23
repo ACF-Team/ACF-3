@@ -39,6 +39,7 @@ do -- MARK: Crew hints
 				.. ", acceptable: " .. (Data.Limit or "?") .. "."
 		end,
 		Help   = "Rotate the driver so it faces the baseplate's forward direction, within the shown limit.",
+		Ponder = "acf.tankbasics.crew_basics",
 	})
 end
 
@@ -110,18 +111,21 @@ do -- MARK: Mobility hints
 		Title  = "No Gearbox",
 		Detail = "This engine is not linked to a gearbox.",
 		Help   = "Link the engine to a gearbox, then link the gearbox to the wheels or to more gearboxes.",
+		Ponder = "acf.tankbasics.drivetrain",
 	})
 
 	Register("gearbox_no_input", {
 		Title  = "No Input",
 		Detail = "Nothing drives this gearbox.",
 		Help   = "Link an engine to this gearbox, or link another gearbox to it so it receives that gearbox's output.",
+		Ponder = "acf.tankbasics.drivetrain",
 	})
 
 	Register("gearbox_no_output", {
 		Title  = "No Output",
 		Detail = "This gearbox is not linked to any wheels or gearboxes.",
 		Help   = "Link this gearbox to the wheels it should drive, or to other gearboxes that drive them.",
+		Ponder = "acf.tankbasics.drivetrain",
 	})
 
 	Register("gearbox_overloaded", {
@@ -131,18 +135,21 @@ do -- MARK: Mobility hints
 		end,
 		Help   = "The wheels ask for more torque than this gearbox can pass, so the rest is lost and the vehicle accelerates "
 			.. "slower. Raise the gearbox's scale, use fewer gears, or split the load over more gearboxes.",
+		Ponder = "acf.tankbasics.drivetrain",
 	})
 
 	Register("controller_no_baseplate", {
 		Title  = "No Baseplate",
 		Detail = "This controller is not linked to a baseplate.",
 		Help   = "Link the controller to the vehicle's baseplate, it drives, steers and seats the driver through it.",
+		Ponder = "acf.tankbasics.baseplates",
 	})
 
 	Register("controller_no_gearbox", {
 		Title  = "No Gearbox",
 		Detail = "This vehicle has engines but the controller is not linked to a gearbox.",
 		Help   = "Link the controller to the main gearbox, the one the engines are linked to, so it can drive the vehicle.",
+		Ponder = "acf.tankbasics.baseplates",
 	})
 
 	Register("controller_shift_rpm", {
@@ -152,18 +159,21 @@ do -- MARK: Mobility hints
 		end,
 		Help   = "Set the shift RPMs in the controller's Shifting Settings, from its context menu's Edit Properties, usually "
 			.. "around the engine's powerband. Or turn on Disable Auto Shifter if gears are shifted some other way.",
+		Ponder = "acf.tankbasics.baseplates",
 	})
 
 	Register("controller_no_reverse", {
 		Title  = "No Reverse",
 		Detail = "The main gearbox has no reverse gear, so the vehicle cannot back up.",
 		Help   = "Give the main gearbox a gear with a negative ratio, or add transfer gearboxes that reverse for it.",
+		Ponder = "acf.tankbasics.baseplates",
 	})
 
 	Register("controller_parent", {
 		Title  = "Bad Parent",
 		Detail = "This controller must be parented to the baseplate or its contraption.",
 		Help   = "Parent the controller to the baseplate or to something in its contraption.",
+		Ponder = "acf.tankbasics.baseplates",
 	})
 end
 

@@ -68,6 +68,14 @@ local function Wrap(Text, Font, Width)
 	return Lines
 end
 
+-- Names where to read more about a diagnostic, its Ponder storyboard when Ponder is installed or its wiki article
+local function GetPointer(Def)
+	local Storyboard = Def.Ponder and Ponder and Ponder.API.RegisteredStoryboards[Def.Ponder]
+
+	if Storyboard then return "More in the \"" .. Storyboard.Name .. "\" Ponder." end
+	if Def.Wiki then return "More in the wiki: " .. Def.Wiki .. "." end
+end
+
 -- Called by the Warning and Error elements after their label, grows the slot to fit the help under it while expanded
 function Overlay.RenderHelp(Slot, LabelW, LabelH)
 	local Def = ACF.Diagnostics.GetHelp(Slot:GetElementData(2))
@@ -80,7 +88,8 @@ function Overlay.RenderHelp(Slot, LabelW, LabelH)
 	local Ease     = math.ease.OutCubic(Expand)
 	local Font     = Overlay.MAIN_FONT
 	local Width    = math.max(LabelW, INLINE_W * Overlay.GetScaleMult())
-	local Lines    = Wrap(Def.Help, Font, Width)
+	local Pointer  = GetPointer(Def)
+	local Lines    = Wrap(Pointer and Def.Help .. " " .. Pointer or Def.Help, Font, Width)
 	local _, LineH = Overlay.GetTextSize(Font, "A")
 	local Top      = LabelH + INLINE_GAP
 	local Bottom   = LabelH + (INLINE_GAP + #Lines * LineH) * Ease

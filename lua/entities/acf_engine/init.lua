@@ -137,7 +137,7 @@ end
 local function BreakLink(Engine, Gearbox, Reason)
 	Engine:Unlink(Gearbox)
 	BrokenLinks.Add(Engine, Gearbox, Reason, Engine.Out.Pos, Gearbox.In.Pos)
-	Notify.EntityWarning(Engine, "Engine to Gearbox connection broken", Reason .. "!")
+	Notify.EntityWarning(Engine, "Engine to Gearbox connection broken", Reason .. "!", ACF.Diagnostics.Get("link_broken").Ponder)
 end
 
 local function CheckGearboxes(Engine)
