@@ -58,10 +58,7 @@ do -- Linking ------------------------------------------
 
 		Link:SetOrigin(OutPos)
 		Link:SetTargetPos(InPos)
-		local TargetRight = Target:GetRight()
-		if TargetRight:Dot(Entity:GetRight()) < 0 then TargetRight = -TargetRight end -- Same axis, signed to match the gearbox's right
-
-		Link:SetAxis(Target:GetPhysicsObject():WorldToLocalVector(TargetRight))
+		Link:SetAxis(Target.In and Plane.Dir or Target:GetPhysicsObject():WorldToLocalVector(Entity:GetRight()))
 		Link.OutDirection = Plane.Dir
 		Link.Side = Side
 		Link.RopeLen = (OutPosWorld - InPosWorld):Length()
@@ -147,7 +144,6 @@ do -- Unlinking ----------------------------------------
 
 			Wheel:RemoveCallOnRemove("ACF_GearboxUnlink" .. Gearbox:EntIndex())
 
-			Gearbox:UpdateLinkHints()
 			Gearbox:InvalidateClientInfo()
 
 			return true, "Wheel unlinked successfully!"
@@ -176,8 +172,6 @@ do -- Unlinking ----------------------------------------
 			Target.GearboxIn[Gearbox]  = nil
 			Target.GearboxOut[Gearbox] = nil
 
-			Gearbox:UpdateLinkHints()
-			Target:UpdateLinkHints()
 			Gearbox:InvalidateClientInfo()
 
 			return true, "Gearbox unlinked successfully!"
