@@ -402,7 +402,7 @@ function ENT:ACF_UpdateOverlayState(State)
 	if self.Active then
 		State:AddSuccess("Active")
 	else
-		State:AddWarning("Idle")
+		State:AddLabel("Off") -- Not a warning, being switched off is normal and warnings are for things to fix
 	end
 
 	State:AddKeyValue("Type", self.Name)
