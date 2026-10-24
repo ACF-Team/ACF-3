@@ -72,42 +72,7 @@ local function UpdateGimbal(Entity)
 end
 
 local function ScanForEntities(Entity)
-	local Detections = {}
-
-	if ACF.IsDestroyed(Entity) then return RadarHelpers.PublishTargets(Entity, Detections, false) end
-
-	local Shape     = Entity:GetScanShape()
-	local Origin    = Shape.Position
-	local Own       = Entity:CFW_GetContraption()
-	local EntDamage = Entity.Damage
-	local Spread    = ACF.MaxDamageInaccuracy * EntDamage
-	local Detected  = ACF.GetEntitiesInCone(Origin, Shape.Direction, Shape.Degrees, Own)
-
-	for Ply in pairs(RadarHelpers.GetPlayersInShapes({ Shape }, Own)) do
-		Detected[Ply] = true
-	end
-
-	for Ent in pairs(Detected) do
-		local EntPos = RadarHelpers.GetTargetPos(Ent)
-
-		if not Entity:CheckTargetLOS(Origin, Ent, EntPos) then continue end
-		if math.Rand(0, 1) < (EntDamage / 10) then continue end
-
-		local EntDist          = Origin:Distance(EntPos)
-		local EntSize, EntType = RadarHelpers.GetEntSizeAndType(Ent)
-		local EntSpread        = VectorRand(-Spread, Spread)
-
-		Detections[Ent] = {
-			Owner    = RadarHelpers.GetEntityOwner(Entity.Owner, Ent),
-			Position = EntPos + EntSpread,
-			Velocity = (Ent.ACF_Velocity or Ent:GetVelocity()) + EntSpread,
-			Distance = EntDist,
-			Size     = EntSize,
-			Type     = EntType,
-			Spread   = EntSpread,
-			Sensor   = Entity,
-		}
-	end
+	local Detections = RadarHelpers.DetectTargets(Entity, { [Entity] = true })
 
 	RadarHelpers.PublishTargets(Entity, Detections, next(Detections) ~= nil)
 end

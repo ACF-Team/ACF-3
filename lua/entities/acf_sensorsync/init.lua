@@ -20,10 +20,6 @@ local hook        = hook
 -- rate-group counters; mirrors the ACF.ActiveRadars pattern used for standalone radars
 local ActiveSyncs = {}
 
-local function SortByDamage(A, B)
-	return (A.Damage or 0) < (B.Damage or 0)
-end
-
 -- Publishes the combined BatchResults, safe to call with none. Clk only bumps when the calling batch
 -- itself confirmed a detection this cycle
 local function RefreshOutputs(Entity, BatchDetected)
@@ -36,105 +32,23 @@ local function RefreshOutputs(Entity, BatchDetected)
 	RadarHelpers.PublishTargets(Entity, Entity.BatchResults, BatchDetected)
 end
 
-local function MergeMatches(Matches, Found)
-	for Ent, MatchedSensors in pairs(Found) do
-		local List = Matches[Ent]
-
-		if not List then
-			Matches[Ent] = MatchedSensors
-		else
-			for _, Sensor in ipairs(MatchedSensors) do
-				List[#List + 1] = Sensor
-			end
-		end
-	end
-end
-
--- Runs one rate-group batch: gathers all its sensors' geometry into one pass per candidate pool
--- (contraptions, missiles, players) instead of one pass per sensor, then attributes each candidate to the
--- healthiest matching sensor that has line of sight to it. Sensors are only added to the pools they're
--- set to detect, so e.g. a missile-only radar never contributes to contraption detection here
+-- Runs one rate-group batch and replaces the results that group owns, without touching results still
+-- being reported by other rate-groups
 local function RunBatch(Entity, GroupSensors)
-	local ContraptionShapes = {}
-	local MissileShapes = {}
-	local PlayerShapes = {}
+	local BatchResults = Entity.BatchResults
+	local Detections   = RadarHelpers.DetectTargets(Entity, GroupSensors)
 
-	for Sensor in pairs(GroupSensors) do
-		if not IsValid(Sensor) or ACF.IsDestroyed(Sensor) then continue end
-
-		local Shape = Sensor:GetScanShape()
-
-		if Sensor.DetectContraptions then ContraptionShapes[#ContraptionShapes + 1] = Shape end
-		if Sensor.DetectMissiles then MissileShapes[#MissileShapes + 1] = Shape end
-		if Sensor.DetectPlayers then PlayerShapes[#PlayerShapes + 1] = Shape end
-	end
-
-	if #ContraptionShapes == 0 and #MissileShapes == 0 and #PlayerShapes == 0 then return RefreshOutputs(Entity, false) end
-
-	local OwnContraption = Entity:CFW_GetContraption()
-	local Matches = {}
-
-	if #ContraptionShapes > 0 then MergeMatches(Matches, ACF.GetEntitiesInShapes(ContraptionShapes, OwnContraption)) end
-	if #MissileShapes > 0 then MergeMatches(Matches, ACF.Countermeasures.GetMissilesInShapes(MissileShapes)) end
-	if #PlayerShapes > 0 then MergeMatches(Matches, RadarHelpers.GetPlayersInShapes(PlayerShapes, OwnContraption)) end
-
-	local Confirmed = {}
-
-	for Ent, MatchedSensors in pairs(Matches) do
-		local EntPos = RadarHelpers.GetTargetPos(Ent)
-		local Sensor, Origin
-
-		table.sort(MatchedSensors, SortByDamage)
-
-		for _, Candidate in ipairs(MatchedSensors) do
-			local CandidateOrigin = Candidate:LocalToWorld(Candidate.Origin)
-
-			if Candidate:CheckTargetLOS(CandidateOrigin, Ent, EntPos) then
-				Sensor = Candidate
-				Origin = CandidateOrigin
-
-				break
-			end
-		end
-
-		if not Sensor then continue end
-
-		local EntDamage = Sensor.Damage or 0
-		if math.Rand(0, 1) < (EntDamage / 10) then continue end
-
-		local EntDist = Origin:Distance(EntPos)
-		local EntSize, EntType = RadarHelpers.GetEntSizeAndType(Ent)
-
-		if EntSize < RadarHelpers.GetMinDetectableSize(Sensor, EntDist) then continue end
-
-		local Spread = ACF.MaxDamageInaccuracy * EntDamage
-		local EntSpread = VectorRand(-Spread, Spread)
-		local EntVel = Ent.ACF_Velocity or Ent:GetVelocity()
-
-		Confirmed[Ent] = true
-
-		Entity.BatchResults[Ent] = {
-			Owner      = RadarHelpers.GetEntityOwner(Entity.Owner, Ent),
-			Position   = EntPos + EntSpread,
-			Velocity   = EntVel + EntSpread,
-			Distance   = EntDist,
-			Size       = EntSize,
-			Type       = EntType,
-			Spread     = EntSpread,
-			Sensor     = Sensor,
-		}
-	end
-
-	-- Drop stale results this rate-group no longer confirms (failed LOS/damage-roll/min-size this cycle,
-	-- or moved out of every linked sensor's zone), without touching results still being reported by other
-	-- rate-groups
-	for Ent, Data in pairs(Entity.BatchResults) do
-		if GroupSensors[Data.Sensor] and not Confirmed[Ent] then
-			Entity.BatchResults[Ent] = nil
+	for Ent, Data in pairs(BatchResults) do
+		if GroupSensors[Data.Sensor] and not Detections[Ent] then
+			BatchResults[Ent] = nil
 		end
 	end
 
-	RefreshOutputs(Entity, next(Confirmed) ~= nil)
+	for Ent, Data in pairs(Detections) do
+		BatchResults[Ent] = Data
+	end
+
+	RefreshOutputs(Entity, next(Detections) ~= nil)
 end
 
 -- Regroups this Synchronizer's linked sensors by their exact ThinkTicks, so sensors are never sped up or

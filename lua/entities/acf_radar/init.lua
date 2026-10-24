@@ -89,43 +89,7 @@ local function SetSequence(Entity, Active)
 end
 
 local function ScanForEntities(Entity)
-	local Detections = {}
-
-	if ACF.IsDestroyed(Entity) or not Entity.GetDetected then
-		return RadarHelpers.PublishTargets(Entity, Detections, false)
-	end
-
-	local Detected = Entity:GetDetected()
-
-	local Origin = Entity:LocalToWorld(Entity.Origin)
-
-	local EntDamage = Entity.Damage
-	local Spread = ACF.MaxDamageInaccuracy * EntDamage
-
-	for Ent in pairs(Detected) do
-		local EntPos = Ent.ACF_Position or Ent:GetPos()
-
-		if RadarHelpers.CheckLOS(Origin, EntPos) and (math.Rand(0, 1) >= (EntDamage / 10)) then
-			local EntDist = Origin:Distance(EntPos)
-			local EntSize, EntType = RadarHelpers.GetEntSizeAndType(Ent)
-
-			if EntSize < RadarHelpers.GetMinDetectableSize(Entity, EntDist) then continue end
-
-			local EntSpread = VectorRand(-Spread, Spread)
-			local EntVel = Ent.ACF_Velocity or Ent:GetVelocity()
-
-			Detections[Ent] = {
-				Owner    = RadarHelpers.GetEntityOwner(Entity.Owner, Ent),
-				Position = EntPos + EntSpread,
-				Velocity = EntVel + EntSpread,
-				Distance = EntDist,
-				Size     = EntSize,
-				Type     = EntType,
-				Spread   = EntSpread,
-				Sensor   = Entity,
-			}
-		end
-	end
+	local Detections = RadarHelpers.DetectTargets(Entity, { [Entity] = true })
 
 	RadarHelpers.PublishTargets(Entity, Detections, next(Detections) ~= nil)
 end
@@ -324,7 +288,6 @@ do -- Updating
 		self.BaseCost       = Sensor.Cost
 		self.ThinkTicks     = Sensor.ThinkTicks -- Number of ticks between scans
 		self.TickCounter    = self.TickCounter or 0
-		self.GetDetected    = Sensor.Detect or Group.Detect
 		self.Origin         = AttachData and self:WorldToLocal(AttachData.Pos) or Vector()
 
 		self:ACF_SetEntityName("ACF " .. self.Name)

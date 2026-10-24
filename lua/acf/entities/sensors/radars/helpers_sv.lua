@@ -217,3 +217,94 @@ do -- MARK: Target publishing
 		RadarHelpers.PublishTargets(Entity, {}, false)
 	end
 end
+
+do -- MARK: Target detection
+	local function SortByDamage(A, B)
+		return (A.Damage or 0) < (B.Damage or 0)
+	end
+
+	local function MergeMatches(Matches, Found)
+		for Ent, MatchedSensors in pairs(Found) do
+			local List = Matches[Ent]
+
+			if not List then
+				Matches[Ent] = MatchedSensors
+			else
+				for _, Sensor in ipairs(MatchedSensors) do
+					List[#List + 1] = Sensor
+				end
+			end
+		end
+	end
+
+	-- Scans for every sensor in Sensors at once, one pass per candidate pool instead of one per sensor
+	-- Each target goes to the least damaged sensor that sees it, Entity is the owner of the results
+	function RadarHelpers.DetectTargets(Entity, Sensors)
+		local ContraptionShapes = {}
+		local MissileShapes     = {}
+		local PlayerShapes      = {}
+		local Detections        = {}
+
+		for Sensor in pairs(Sensors) do
+			if not IsValid(Sensor) or ACF.IsDestroyed(Sensor) then continue end
+
+			local Shape = Sensor:GetScanShape()
+
+			if Sensor.DetectContraptions then ContraptionShapes[#ContraptionShapes + 1] = Shape end
+			if Sensor.DetectMissiles then MissileShapes[#MissileShapes + 1] = Shape end
+			if Sensor.DetectPlayers then PlayerShapes[#PlayerShapes + 1] = Shape end
+		end
+
+		local OwnContraption = Entity:CFW_GetContraption()
+		local Matches        = {}
+
+		if ContraptionShapes[1] then MergeMatches(Matches, ACF.GetEntitiesInShapes(ContraptionShapes, OwnContraption)) end
+		if MissileShapes[1] then MergeMatches(Matches, ACF.Countermeasures.GetMissilesInShapes(MissileShapes)) end
+		if PlayerShapes[1] then MergeMatches(Matches, RadarHelpers.GetPlayersInShapes(PlayerShapes, OwnContraption)) end
+
+		for Ent, MatchedSensors in pairs(Matches) do
+			local EntPos = RadarHelpers.GetTargetPos(Ent)
+			local Sensor, Origin
+
+			table.sort(MatchedSensors, SortByDamage)
+
+			for _, Candidate in ipairs(MatchedSensors) do
+				local CandidateOrigin = Candidate:LocalToWorld(Candidate.Origin)
+
+				if Candidate:CheckTargetLOS(CandidateOrigin, Ent, EntPos) then
+					Sensor = Candidate
+					Origin = CandidateOrigin
+
+					break
+				end
+			end
+
+			if not Sensor then continue end
+
+			local EntDamage = Sensor.Damage or 0
+			if math.Rand(0, 1) < (EntDamage / 10) then continue end
+
+			local EntDist          = Origin:Distance(EntPos)
+			local EntSize, EntType = RadarHelpers.GetEntSizeAndType(Ent)
+
+			if EntSize < RadarHelpers.GetMinDetectableSize(Sensor, EntDist) then continue end
+
+			local Spread    = ACF.MaxDamageInaccuracy * EntDamage
+			local EntSpread = VectorRand(-Spread, Spread)
+			local EntVel    = Ent.ACF_Velocity or Ent:GetVelocity()
+
+			Detections[Ent] = {
+				Owner    = RadarHelpers.GetEntityOwner(Entity.Owner, Ent),
+				Position = EntPos + EntSpread,
+				Velocity = EntVel + EntSpread,
+				Distance = EntDist,
+				Size     = EntSize,
+				Type     = EntType,
+				Spread   = EntSpread,
+				Sensor   = Sensor,
+			}
+		end
+
+		return Detections
+	end
+end
