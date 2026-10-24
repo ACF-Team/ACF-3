@@ -19,11 +19,12 @@ Classes.DefineClass("ACF.Missiles.Guidance.SemiActiveRadar", "ACF.Missiles.Guida
 		end
 
 		function CLASS:UpdateTarget(Missile, Radar)
-			if not Radar or Radar.TargetCount == 0 then
-				return self:SeekTarget(Missile)
-			end
+			if not Radar then return self:SeekTarget(Missile) end
 
-			local Targets    = Radar.Targets
+			local Targets, TargetCount = Radar:GetTargets()
+
+			if TargetCount == 0 then return self:SeekTarget(Missile) end
+
 			local Position   = Missile.ACF_Position
 			local HighestDot = 0
 			local Target, TargetPos

@@ -484,6 +484,13 @@ function ENT:ResumeIndependentScanning()
 	end
 end
 
+-- Linked racks read the Synchronizer's combined targets while this radar is synced
+function ENT:GetTargets()
+	local Source = IsValid(self.SyncSource) and self.SyncSource or self
+
+	return Source.Targets, Source.TargetCount
+end
+
 function ENT:GetCost()
 	local selftbl = self:GetTable()
 	local Cost = selftbl.BaseCost or 0

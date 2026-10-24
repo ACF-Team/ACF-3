@@ -152,16 +152,6 @@ local function RefreshOutputs(Entity, BatchDetected)
 
 		Entity:UpdateOverlay()
 	end
-
-	-- Guidance packages read a rack-linked radar's own .Targets/.TargetCount directly; mirror this
-	-- Synchronizer's combined results back onto every currently-linked radar so a rack linked to any one
-	-- of them transparently sees the aggregated picture with no guidance-side changes needed
-	for Linked in pairs(Entity.Sensors) do
-		if not IsValid(Linked) or Linked:GetClass() ~= "acf_radar" then continue end
-
-		Linked.Targets = Targets
-		Linked.TargetCount = Count
-	end
 end
 
 local function MergeMatches(Matches, Found)
