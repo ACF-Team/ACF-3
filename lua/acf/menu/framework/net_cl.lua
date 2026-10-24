@@ -50,6 +50,40 @@ function ACF.Menu.SendLinkClear()
 	net.SendToServer()
 end
 
+local LinkView    = { Entity = NULL, Links = {} } -- Last links received, Linked -> whether the link is implicit
+local Requested   = NULL
+local RequestTime = 0
+
+--- Returns the links of an entity for the link view, asking the server once per new entity. Nil until the answer arrives.
+function ACF.Menu.GetLinkView(Entity)
+	local Now = RealTime()
+
+	-- The server skips requests sent too quickly, so an unanswered one is sent again
+	if Entity ~= Requested or (LinkView.Entity ~= Entity and Now - RequestTime > 0.5) then
+		Requested, RequestTime = Entity, Now
+
+		net.Start("ACF_MenuLinkView")
+			net.WriteEntity(Entity)
+		net.SendToServer()
+	end
+
+	if LinkView.Entity == Entity then return LinkView.Links end
+end
+
+net.Receive("ACF_MenuLinkView", function()
+	local Entity = net.ReadEntity()
+	local Links  = {}
+
+	for _ = 1, net.ReadUInt(12) do
+		local Linked, Implicit = net.ReadEntity(), net.ReadBool()
+
+		if IsValid(Linked) then Links[Linked] = Implicit end
+	end
+
+	LinkView.Entity = Entity
+	LinkView.Links  = Links
+end)
+
 -- Server -> client entity config push, used to hydrate a page's context from an existing entity
 -- (the future "copy" feature). Scaffolded now; the request UX is a follow-up.
 net.Receive("ACF_MenuCopy", function()

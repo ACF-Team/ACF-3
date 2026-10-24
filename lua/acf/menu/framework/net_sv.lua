@@ -6,6 +6,7 @@ util.AddNetworkString("ACF_MenuCommit")
 util.AddNetworkString("ACF_MenuCopy")
 util.AddNetworkString("ACF_MenuLinkState")
 util.AddNetworkString("ACF_MenuLinkClear")
+util.AddNetworkString("ACF_MenuLinkView")
 
 ACF.Menu = ACF.Menu or {}
 
@@ -161,7 +162,10 @@ local function LinkEntities(Player, Target)
 		local Result, Message = false, nil
 
 		if OnKey then
-			if Source.Unlink then Result, Message = Source:Unlink(Target)
+			local Allowed, Reason = ACF.CanPlayerUnlink(Source, Target)
+
+			if not Allowed then Message = Reason
+			elseif Source.Unlink then Result, Message = Source:Unlink(Target)
 			elseif Target.Unlink then Result, Message = Target:Unlink(Source) end
 		else
 			if Source.Link then Result, Message = Source:Link(Target)
@@ -219,6 +223,69 @@ local function DoLink(Player, Trace)
 	LinkEntities(Player, Entity)
 	SendLinkState(Player)
 end
+
+-- =============================================================================================
+-- Link view
+-- =============================================================================================
+
+local NextView = {} -- [Player] = next allowed CurTime
+
+--- Returns the entities an entity records links to, from its link sources and the fields it links implicitly through.
+local function GetRecordedLinks(Entity)
+	local Links = ACF.GetLinkedEntities(Entity)
+
+	-- Not every link field is a registered link source, but every implicitly linkable one is known here
+	for Field in pairs(ACF.GetImplicitLinkFields(Entity:GetClass())) do
+		for Linked in pairs(ACF.GetFieldLinkEntities(Entity[Field])) do Links[Linked] = true end
+	end
+
+	return Links
+end
+
+--- Returns every entity linked to the given one, including links only recorded on the other entity.
+local function GetViewLinks(Entity)
+	local Links       = GetRecordedLinks(Entity)
+	local Contraption = Entity:CFW_GetContraption()
+
+	for Linked in pairs(ACF.GetImplicitLinks(Entity)) do Links[Linked] = true end
+
+	for Other in pairs(Contraption and Contraption.ents or {}) do
+		if not Links[Other] and IsValid(Other) and GetRecordedLinks(Other)[Entity] then Links[Other] = true end
+	end
+
+	return Links
+end
+
+-- Sends the links of the entity a player looks at while holding the link view key, the client asks again if this is skipped
+net.Receive("ACF_MenuLinkView", function(_, Player)
+	local Entity = net.ReadEntity()
+
+	if not IsValid(Player) or not IsValid(Entity) then return end
+
+	local Now = CurTime()
+
+	if (NextView[Player] or 0) > Now then return end
+
+	NextView[Player] = Now + 0.05
+
+	-- Same restriction E2 and Starfall apply to other players' entities, answered with no links so the client stops asking
+	local Links = (ACF.RestrictInfo and Entity:CPPIGetOwner() ~= Player) and {} or GetViewLinks(Entity)
+	local List  = {}
+
+	for Linked in pairs(Links) do
+		if IsValid(Linked) then List[#List + 1] = Linked end
+	end
+
+	net.Start("ACF_MenuLinkView")
+		net.WriteEntity(Entity)
+		net.WriteUInt(#List, 12)
+
+		for _, Linked in ipairs(List) do
+			net.WriteEntity(Linked)
+			net.WriteBool(ACF.IsImplicitLink(Entity, Linked))
+		end
+	net.Send(Player)
+end)
 
 -- =============================================================================================
 -- Page functions
@@ -293,6 +360,7 @@ end)
 
 hook.Add("PlayerDisconnected", "ACF_Menu_Commit", function(Player)
 	NextCommit[Player] = nil
+	NextView[Player]   = nil
 	PlayerEnts[Player] = nil
 end)
 
