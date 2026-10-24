@@ -206,7 +206,7 @@ function Missiles.Launch(Missile, Options)
 
 	Missile.Launched     = true
 	Missile.ThinkDelay   = DeltaTime
-	Missile.GhostPeriod  = Clock.CurTime + ACF.GhostPeriod
+	Missile.GhostPeriod  = Clock.CurTime + (Missile.RoundDef.GhostingPeriod or ACF.GhostPeriod)
 	Missile.NoDamage     = nil
 	Missile.LastThink    = Clock.CurTime - DeltaTime
 	Missile.ACF_Position = Position
