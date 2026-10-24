@@ -236,9 +236,7 @@ do	-- Metamethods
 		-- a periodic Check gate that could reject a paste-time relink before contraption/mass
 		-- data has settled
 		function ENT:PreEntityCopy()
-			if self.IsRemote and IsValid(self.Crew) then
-				duplicator.StoreEntityModifier(self, "ACFCrew", {self.Crew:EntIndex()})
-			end
+			ACF.StoreLinks(self, "ACFCrew", self.IsRemote and self.Crew or nil)
 		end
 
 		function ENT:PostEntityPaste(_, Ent, CreatedEntities)
@@ -256,7 +254,15 @@ end
 do	-- Lightweight Turret Controllers link to acf_turret directly, no crew involved
 	local MaxDistance = 24 * 24 -- Only close-proximity linking is allowed, tighter than standard ACF.LinkDistance
 
-	ACF.RegisterLinkSource("acf_turret_controller", "Turret")
+	ACF.RegisterLinkSource("acf_turret_controller", "Turret", true)
+
+	-- The closest turret within reach
+	ACF.RegisterClassImplicitLink("acf_turret_controller", "acf_turret", {
+		Field  = "Turret",
+		Single = true,
+		Filter = function(This, Turret) return not This.IsRemote and This:GetPos():DistToSqr(Turret:GetPos()) <= MaxDistance end,
+		Rank   = function(This, Turret) return -This:GetPos():DistToSqr(Turret:GetPos()) end,
+	})
 
 	ACF.RegisterClassPreLinkCheck("acf_turret_controller", "acf_turret", function(This)
 		if This.IsRemote then return false, "Remote Turret Controllers link to crew, not turrets. Link the crew member instead." end
@@ -346,7 +352,21 @@ do	-- Remote Turret Controllers link to a Gunner-role crew member
 		return ToController:Dot(CrewForward) >= math.cos(math.rad(MaxViewAngle))
 	end
 
-	ACF.RegisterLinkSource("acf_turret_controller", "Crew")
+	ACF.RegisterLinkSource("acf_turret_controller", "Crew", true)
+
+	local Operators = { Gunner = true, Commander = true, Pilot = true }
+
+	-- The closest crew member able to use it, sharing its parent and facing it with a clear view
+	ACF.RegisterClassImplicitLink("acf_turret_controller", "acf_crew", {
+		Field  = "Crew",
+		Single = true,
+		Filter = function(This, Crew)
+			if not This.IsRemote or not Operators[Crew.CrewTypeID] or This:GetParent() ~= Crew:GetParent() then return false end
+			if This:GetPos():DistToSqr(GetCrewBodyPos(Crew)) > MaxDistance then return false end
+			return IsInFront(This, Crew) and HasLineOfSight(This, Crew)
+		end,
+		Rank = function(This, Crew) return -This:GetPos():DistToSqr(GetCrewBodyPos(Crew)) end,
+	})
 
 	-- Distance/facing/LOS only need checking once, at link time: a shared parent means the
 	-- controller and crew move together afterwards, so their relative position never changes

@@ -539,6 +539,7 @@ do -- Spawn and Update functions --------------------------------
 	end
 
 	ACF.RegisterLinkSource("acf_gun", "Crates")
+	ACF.RegisterClassImplicitLink("acf_gun", "acf_ammo", { Field = "Crates" })
 end ---------------------------------------------
 
 do -- Metamethods --------------------------------
@@ -1220,15 +1221,7 @@ do -- Metamethods --------------------------------
 
 	do -- Duplicator Support --------------------
 		function ENT:PreEntityCopy()
-			if next(self.Crates) then
-				local Entities = {}
-
-				for Crate in pairs(self.Crates) do
-					Entities[#Entities + 1] = Crate:EntIndex()
-				end
-
-				duplicator.StoreEntityModifier(self, "ACFCrates", Entities)
-			end
+			ACF.StoreLinks(self, "ACFCrates", self.Crates)
 
 			if IsValid(self.Turret) then
 				duplicator.StoreEntityModifier(self, "ACFTurret", {self.Turret:EntIndex()})

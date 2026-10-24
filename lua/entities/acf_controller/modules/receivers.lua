@@ -29,6 +29,7 @@ end
 ACF.RegisterControllerLink("acf_receiver", {
 	Field = "Receivers",
 	Single = false,
+	Implicit = true,
 })
 
 return Init

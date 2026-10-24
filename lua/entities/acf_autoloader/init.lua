@@ -84,6 +84,17 @@ ACF.RegisterClassUnlink("acf_autoloader", "acf_gun", function(This, Gun)
 	return true, "Autoloader unlinked successfully."
 end)
 
+-- The largest free unbelted gun on the same turret, racks share the field and are only linked by hand
+ACF.RegisterClassImplicitLink("acf_autoloader", "acf_gun", {
+	Field  = "Gun",
+	Single = true,
+	Filter = function(This, Gun)
+		return not Gun.IsBelted and (not IsValid(Gun.Autoloader) or Gun.Autoloader == This) and ACF.SameTurret(This, Gun)
+	end,
+	Rank = function(_, Gun) return Gun.Caliber or 0 end,
+	Shared = { "acf_rack" },
+})
+
 -- Arm to rack links (missile compatibility)
 ACF.RegisterClassPreLinkCheck("acf_autoloader", "acf_rack", function(This, Rack)
 	if IsValid(This.Gun) or Rack.Autoloader then return false, "Autoloader is already linked to that rack." end
@@ -152,6 +163,12 @@ ACF.RegisterClassUnlink("acf_autoloader", "acf_ammo", function(This, Ammo)
 	BroadcastEntity("ACF_Autoloader_AmmoLinks", This, Ammo, false)
 	return true, "Autoloader unlinked successfully."
 end)
+
+-- Crates feeding the linked gun, the link check still requires a shared parent and a round that fits
+ACF.RegisterClassImplicitLink("acf_autoloader", "acf_ammo", {
+	Field  = "AmmoCrates",
+	Filter = function(This, Ammo) return IsValid(This.Gun) and (This.Gun.Crates or {})[Ammo] == true end,
+})
 
 local TraceConfig = {start = Vector(), endpos = Vector(), filter = nil}
 

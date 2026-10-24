@@ -145,11 +145,8 @@ do	-- Metamethods and other important stuff
 			self:ValidatePlacement()
 		end
 
-		function ENT:ValidatePlacement()
-			local Turret = self.Turret
-
-			if not IsValid(Turret) then self.ValidPlacement = false self:SetActive(false) return end
-
+		--- Returns whether this motor is parented, near the ring and level with it for driving the turret, plus the measurements.
+		function ENT:CheckPlacement(Turret)
 			local Parent     = self:GetParent()
 			local RingParent = Turret:GetParent()
 			local LocPos     = Turret:OBBCenter() + Turret:WorldToLocal(self:LocalToWorld(self:OBBCenter()))
@@ -162,9 +159,27 @@ do	-- Metamethods and other important stuff
 			local Center     = -Turret:OBBCenter()
 			local Radius     = math.sqrt(MaxDist)
 
-			local Parented = self:SetRequirement("turret_motor_parent", IsValid(Parent) and (Parent == Turret or not IsValid(RingParent) or Parent == RingParent), { Turret = Turret })
-			local NearRing = self:SetRequirement("turret_motor_near_ring", LocDist <= MaxDist, { Turret = Turret, Center = Center, Radius = Radius, Distance = math.sqrt(LocDist) })
-			local Level    = self:SetRequirement("turret_motor_ring_height", Height <= MaxHeight, { Turret = Turret, Center = Center, Radius = Radius, Height = Height, Limit = MaxHeight })
+			local Parented = IsValid(Parent) and (Parent == Turret or not IsValid(RingParent) or Parent == RingParent)
+
+			return Parented, LocDist <= MaxDist, Height <= MaxHeight, {
+				Center   = Center,
+				Radius   = Radius,
+				Distance = math.sqrt(LocDist),
+				Height   = Height,
+				Limit    = MaxHeight,
+			}
+		end
+
+		function ENT:ValidatePlacement()
+			local Turret = self.Turret
+
+			if not IsValid(Turret) then self.ValidPlacement = false self:SetActive(false) return end
+
+			local Parented, NearRing, Level, Info = self:CheckPlacement(Turret)
+
+			Parented = self:SetRequirement("turret_motor_parent", Parented, { Turret = Turret })
+			NearRing = self:SetRequirement("turret_motor_near_ring", NearRing, { Turret = Turret, Center = Info.Center, Radius = Info.Radius, Distance = Info.Distance })
+			Level    = self:SetRequirement("turret_motor_ring_height", Level, { Turret = Turret, Center = Info.Center, Radius = Info.Radius, Height = Info.Height, Limit = Info.Limit })
 
 			self.ValidPlacement = Parented and NearRing and Level
 
