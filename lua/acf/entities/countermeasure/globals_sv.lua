@@ -91,23 +91,6 @@ function Countermeasures.GetMissilesInCone(Position, Direction, Degrees)
 	return Result
 end
 
-function Countermeasures.GetMissilesInSphere(Position, Radius)
-	local Result = {}
-	local RadiusSqr = Radius * Radius
-
-	for Missile in Missiles.IterateActive() do
-		if not IsValid(Missile) or Missile.Broken then
-			continue
-		end
-
-		if Position:DistToSqr(Missile:GetPos()) <= RadiusSqr then
-			Result[Missile] = true
-		end
-	end
-
-	return Result
-end
-
 --- Tests every active missile against a list of shapes (cones and/or spheres) in a single pass, instead of
 --- iterating the active missile pool once per shape. See ACF.GetEntitiesInShapes for the contraption side
 --- equivalent and the batching use case (e.g. a Sensor Synchronizer batching same-rate-group sensors).

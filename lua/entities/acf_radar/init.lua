@@ -68,12 +68,9 @@ end)
 
 local Radars	  = ACF.ActiveRadars
 local Damage      = ACF.Damage
-local Sounds      = ACF.Utilities.Sounds
 local RadarHelpers = ACF.RadarHelpers
-local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 local SwitchDelay = 2 -- Seconds between activation and the first scan
-local TimerCreate = timer.Create
 local hook        = hook
 
 local function SetSequence(Entity, Active)
@@ -93,20 +90,15 @@ hook.Add("ACF_OnTick", "ACF Radar Scan", function()
 	end
 end)
 
-local function CheckDistantLinks(Entity, Source)
-	local Position = Entity:GetPos()
+-- Watched by the link system, which unlinks and warns the owner once out of range
+local function CheckLinkDistance(Radar, Target)
+	if Radar:GetPos():DistToSqr(Target:GetPos()) <= MaxDistance then return true end
 
-	for Link in pairs(Entity[Source]) do
-		if Position:DistToSqr(Link:GetPos()) > MaxDistance then
-			local Sound = UnlinkSound:format(math.random(1, 3))
-
-			Sounds.SendSound(Entity, Sound, 70, 100, 1)
-			Sounds.SendSound(Link, Sound, 70, 100, 1)
-
-			Entity:Unlink(Link)
-		end
-	end
+	return false, "The radar is too far from this entity."
 end
+
+ACF.RegisterClassLinkCheck("acf_radar", "acf_rack", CheckLinkDistance)
+ACF.RegisterClassLinkCheck("acf_radar", "acf_turret", CheckLinkDistance)
 
 ACF.AddInputAction("acf_radar", "Active", function(Entity, Value)
 	RadarHelpers.SetActive(Entity, tobool(Value))
@@ -159,13 +151,6 @@ do -- Spawning
 			Size = {},
 			Type = {}
 		}
-
-		TimerCreate("ACF Radar Clock " .. self:EntIndex(), 3, 0, function()
-			if not IsValid(self) then return end
-
-			CheckDistantLinks(self, "Weapons")
-			CheckDistantLinks(self, "Turrets")
-		end)
 	end
 
 	-- Radars share the sensor limit with the other sensors, but also have their own
@@ -364,8 +349,6 @@ function ENT:OnRemove()
 	end
 
 	RadarHelpers.CancelSwitch(self)
-
-	timer.Remove("ACF Radar Clock " .. self:EntIndex())
 end
 
 do	-- Overlay/networking

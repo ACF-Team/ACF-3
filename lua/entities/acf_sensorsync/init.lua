@@ -7,12 +7,8 @@ local ACF         = ACF
 local Classes     = ACF.Classes
 local Contraption = ACF.Contraption
 local Damage      = ACF.Damage
-local Sounds      = ACF.Utilities.Sounds
 local RadarHelpers = ACF.RadarHelpers
-local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
-local TimerCreate = timer.Create
-local TimerRemove = timer.Remove
 local hook        = hook
 
 
@@ -58,7 +54,7 @@ local function RebuildRateGroups(Entity)
 	local Groups = {}
 
 	for Sensor in pairs(Entity.Sensors) do
-		if not IsValid(Sensor) or not Sensor.Active then continue end
+		if not IsValid(Sensor) or not Sensor.Scanning then continue end
 
 		local Ticks = Sensor.ThinkTicks
 		Groups[Ticks] = Groups[Ticks] or { Sensors = {}, Counter = 0, ThinkTicks = Ticks }
@@ -108,19 +104,11 @@ hook.Add("ACF_OnTick", "ACF SensorSync Scan", function()
 	end
 end)
 
-local function CheckDistantLinks(Entity, Source)
-	local Position = Entity:GetPos()
+-- Watched by the link system, which unlinks and warns the owner once out of range
+local function CheckLinkDistance(Sync, Sensor)
+	if Sync:GetPos():DistToSqr(Sensor:GetPos()) <= MaxDistance then return true end
 
-	for Link in pairs(Entity[Source]) do
-		if Position:DistToSqr(Link:GetPos()) > MaxDistance then
-			local Sound = UnlinkSound:format(math.random(1, 3))
-
-			Sounds.SendSound(Entity, Sound, 70, 100, 1)
-			Sounds.SendSound(Link, Sound, 70, 100, 1)
-
-			Entity:Unlink(Link)
-		end
-	end
+	return false, "The synchronizer is too far from this sensor."
 end
 
 --===============================================================================================--
@@ -128,6 +116,8 @@ end
 -- When linked, a sensor stops running its own scan and outputs, and instead becomes a passive
 -- reference point for the Synchronizer's aggregated scan
 for SensorClass in pairs(ENT.ACF_SensorClasses) do
+	ACF.RegisterClassLinkCheck("acf_sensorsync", SensorClass, CheckLinkDistance)
+
 	ACF.RegisterClassLink("acf_sensorsync", SensorClass, function(Sync, Sensor)
 		if IsValid(Sensor.SyncSource) then return false, "This sensor is already linked to a synchronizer!" end
 
@@ -200,12 +190,6 @@ do -- Spawning
 		}
 
 		ActiveSyncs[self] = true
-
-		TimerCreate("ACF SensorSync Clock " .. self:EntIndex(), 3, 0, function()
-			if not IsValid(self) then return end
-
-			CheckDistantLinks(self, "Sensors")
-		end)
 	end
 
 	function ENT:ACF_PostSpawn()
@@ -269,7 +253,7 @@ function ENT:ACF_UpdateOverlayState(State)
 	State:AddKeyValue("Linked sensors", LinkedCount)
 end
 
--- Called by a linked sensor whenever its own ThinkTicks or Active state changes so this Synchronizer's
+-- Called by a linked sensor whenever its own ThinkTicks or Scanning state changes so this Synchronizer's
 -- rate groups stay in sync
 function ENT:RefreshRateGroups()
 	RebuildRateGroups(self)
@@ -281,8 +265,6 @@ function ENT:OnRemove()
 	end
 
 	ActiveSyncs[self] = nil
-
-	TimerRemove("ACF SensorSync Clock " .. self:EntIndex())
 
 	WireLib.Remove(self)
 end
