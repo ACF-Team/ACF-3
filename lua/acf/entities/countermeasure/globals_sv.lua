@@ -132,9 +132,10 @@ end
 
 function Countermeasures.ConeContainsPos(ConePos, ConeDir, Degrees, Position)
 	local MinimumDot = math.cos(math.rad(Degrees))
-	local Direction = (Position - ConePos):GetNormalized()
+	local Delta      = Position - ConePos
 
-	return ConeDir:Dot(Direction) >= MinimumDot
+	-- Same as dotting the normalized direction, without allocating it
+	return ConeDir:Dot(Delta) >= MinimumDot * Delta:Length()
 end
 
 --- Tests a single position against one shape (cone or sphere).

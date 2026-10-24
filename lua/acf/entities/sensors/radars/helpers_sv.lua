@@ -47,6 +47,11 @@ function RadarHelpers.GetEntityOwner(Owner, Entity)
 	return EntOwner:GetName()
 end
 
+-- Measuring a contraption walks all its entities, so every sensor shares one size per contraption for a while
+local SizeCacheTime = 0.5
+local SizeCache     = setmetatable({}, { __mode = "k" }) -- Contraption -> size cache
+local SizeExpiry    = setmetatable({}, { __mode = "k" }) -- Contraption -> cache expiry time
+
 -- Classifies a detected candidate and measures its size. Missiles are sized by caliber, contraptions and
 -- players by their bounding box diagonal. Returns 0, nil for anything else
 function RadarHelpers.GetEntSizeAndType(Ent)
@@ -63,9 +68,16 @@ function RadarHelpers.GetEntSizeAndType(Ent)
 	local EntContraption = Ent:CFW_GetContraption()
 
 	if EntContraption then
-		local Mins, Maxs = EntContraption:GetAABB()
+		local Now = CurTime()
 
-		return math.Round((Maxs - Mins):Length()), "Contraption"
+		if Now >= (SizeExpiry[EntContraption] or 0) then
+			local Mins, Maxs = EntContraption:GetAABB()
+
+			SizeCache[EntContraption]  = math.Round((Maxs - Mins):Length())
+			SizeExpiry[EntContraption] = Now + SizeCacheTime
+		end
+
+		return SizeCache[EntContraption], "Contraption"
 	end
 
 	return 0, nil
