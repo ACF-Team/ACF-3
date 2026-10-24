@@ -2,7 +2,7 @@ local ACF             = ACF
 local Classes         = ACF.Classes
 local Countermeasures = ACF.Countermeasures
 local Bullets         = ACF.Ballistics.Bullets
-local Missiles        = ACF.ActiveMissiles
+local Missiles        = ACF.Missiles
 
 local Flares = {}
 local FlareUID = 0
@@ -77,7 +77,7 @@ end
 function Countermeasures.GetMissilesInCone(Position, Direction, Degrees)
 	local Result = {}
 
-	for Missile in pairs(Missiles) do
+	for Missile in Missiles.IterateActive() do
 		if not IsValid(Missile) or Missile.Broken then
 			continue
 		end
@@ -95,7 +95,7 @@ function Countermeasures.GetMissilesInSphere(Position, Radius)
 	local Result = {}
 	local RadiusSqr = Radius * Radius
 
-	for Missile in pairs(Missiles) do
+	for Missile in Missiles.IterateActive() do
 		if not IsValid(Missile) or Missile.Broken then
 			continue
 		end
@@ -116,7 +116,7 @@ end
 function Countermeasures.GetMissilesInShapes(Shapes)
 	local Result = {}
 
-	for Missile in pairs(Missiles) do
+	for Missile in Missiles.IterateActive() do
 		if not IsValid(Missile) or Missile.Broken then
 			continue
 		end
@@ -132,7 +132,7 @@ end
 function Countermeasures.GetAllMissilesWhichCanSee(Position)
 	local Result = {}
 
-	for Missile in pairs(Missiles) do
+	for Missile in Missiles.IterateActive() do
 		local Guidance = Missile.GuidanceData
 
 		if not Guidance or Guidance.Override or not Guidance.ViewCone then

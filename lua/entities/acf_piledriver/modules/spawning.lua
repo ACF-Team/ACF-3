@@ -63,18 +63,7 @@ do -- Updating
         do -- Updating bulletdata
             local Ammo = self.RoundData
 
-            -- The round pipeline resolves specs from the weapon class' name (see GetWeaponSpecs),
-            -- so we hand it a flat, legacy-shaped tool data table rather than the entity's nested data.
-            local RoundData = {
-                Weapon     = Classes.GetTypeName(Class),
-                Caliber    = Caliber,
-                Destiny    = "Piledrivers",
-                AmmoType   = "ACF.Ammunition.HP",
-                RoundLength = self.SpikeLength,
-                PropRatio   = 0,
-            }
-
-            Ammo.Weapon      = Weapon
+            Ammo.Weapon     = Weapon
             Ammo.RoundLength = self.SpikeLength
             Ammo.PropRatio   = 0
             Ammo.SpikeLength = self.SpikeLength
@@ -112,7 +101,7 @@ do -- Updating
                 Ammo:OnFirst(self)
             end
 
-            hook.Run("ACF_OnAmmoFirst", Ammo, self, RoundData, Class)
+            hook.Run("ACF_OnAmmoFirst", Ammo, self)
 
             Ammo:Network(self, self.BulletData)
 

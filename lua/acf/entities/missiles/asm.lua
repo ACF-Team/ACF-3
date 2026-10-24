@@ -26,7 +26,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.AT-3", "ACF.Missiles.AntiTankGu
 	CLASS.ReloadTime	= 10
 	CLASS.ExhaustPos	= Vector(-16)
 	CLASS.Racks			= { ["ACF.Racks.1xAT3RKS"] = true, ["ACF.Racks.1xAT3RK"] = true, ["ACF.Racks.1xRK_small"] = true, ["ACF.Racks.4xRK"] = true }
-	CLASS.Navigation	= "Chase"
+	CLASS.Navigation	= "ACF.Missiles.Navigation.Chase"
 	CLASS.Guidances		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.WireMCLOS"] = true, ["ACF.Missiles.Guidance.WireSACLOS"] = true }
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true }
 	CLASS.SkinIndex		= { HEAT = 0, HE = 1 }
@@ -72,7 +72,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.BGM-71E", "ACF.Missiles.AntiTan
 	CLASS.Offset		= Vector(-17.5, 0, 0)
 	CLASS.Racks			= { ["ACF.Racks.1xBGM-71E"] = true, ["ACF.Racks.2xBGM-71E"] = true, ["ACF.Racks.4xBGM-71E"] = true }
 	CLASS.Guidances		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.WireSACLOS"] = true }
-	CLASS.Navigation	= "Chase"
+	CLASS.Navigation	= "ACF.Missiles.Navigation.Chase"
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true }
 	CLASS.Agility		= 0.00024
 	CLASS.ArmDelay		= 0.1
@@ -117,7 +117,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.AGM-114", "ACF.Missiles.AntiTan
 	CLASS.ExhaustPos	= Vector(-29)
 	CLASS.Racks			= { ["ACF.Racks.1xRK"] = true, ["ACF.Racks.1xRK_small"] = true, ["ACF.Racks.2xAGM-114"] = true, ["ACF.Racks.4xAGM-114"] = true }
 	CLASS.Guidances		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.Laser"] = true }
-	CLASS.Navigation	= "PN"
+	CLASS.Navigation	= "ACF.Missiles.Navigation.PN"
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true }
 	CLASS.ViewCone		= 40
 	CLASS.SeekCone		= 10
@@ -178,7 +178,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.Ataka", "ACF.Missiles.AntiTankG
 	CLASS.ExhaustPos	= Vector(-40)
 	CLASS.Racks			= { ["ACF.Racks.1xAtaka"] = true, ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true, ["ACF.Racks.4xRK"] = true }
 	CLASS.Guidances		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.RadioSACLOS"] = true }
-	CLASS.Navigation	= "Chase"
+	CLASS.Navigation	= "ACF.Missiles.Navigation.Chase"
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true }
 	CLASS.ViewCone		= 45
 	CLASS.Agility		= 0.00072
@@ -225,7 +225,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.9M133", "ACF.Missiles.AntiTankG
 	CLASS.ExhaustPos	= Vector(-29.1, 0, 0)
 	CLASS.Racks			= { ["ACF.Racks.1xKornet"] = true }
 	CLASS.Guidances		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.Laser"] = true }
-	CLASS.Navigation	= "PN"
+	CLASS.Navigation	= "ACF.Missiles.Navigation.PN"
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true }
 	CLASS.ViewCone		= 20
 	CLASS.Agility		= 0.0004
@@ -283,7 +283,7 @@ Classes.DefineClass("ACF.Missiles.AntiTankGuided.AT-2", "ACF.Missiles.AntiTankGu
 	CLASS.ExhaustPos	= Vector(-22)
 	CLASS.Racks			= { ["ACF.Racks.1xRK_small"] = true, ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true }
 	CLASS.Guidances		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.RadioMCLOS"] = true, ["ACF.Missiles.Guidance.RadioSACLOS"] = true }
-	CLASS.Navigation	= "Chase"
+	CLASS.Navigation	= "ACF.Missiles.Navigation.Chase"
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true }
 	CLASS.ViewCone		= 90
 	CLASS.Agility		= 0.00035
