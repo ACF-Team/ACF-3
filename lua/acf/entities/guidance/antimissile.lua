@@ -69,6 +69,7 @@ Classes.DefineClass("ACF.Missiles.Guidance.AntiMissile", "ACF.Missiles.Guidance.
 			local Target, TargetPos
 
 			for Entity, Data in pairs(Targets) do
+				if Data.Type ~= "Missile" then continue end
 				if Missile == Entity then continue end
 				if Entity.IsAntiMissile then continue end
 

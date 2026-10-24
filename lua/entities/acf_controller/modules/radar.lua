@@ -17,7 +17,7 @@ do
 
 	net.Receive("ACF_Controller_Radar", function()
 		local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
-		local SelectedID = net.ReadUInt(6)
+		local SelectedID = net.ReadUInt(16)
 		local Entity = Entity(EntIndex)
 		if not IsValid(Entity) then return end
 		Entity.SelectedTargetID = SelectedID ~= 0 and SelectedID or nil
@@ -27,8 +27,10 @@ do
 		local Radar = SelfTbl.Radar
 		if not IsValid(Radar) then return end
 
-		local IDs = Radar.Outputs.IDs.Value
-		local Types = Radar.Outputs.Type.Value
+		-- A synced sensor's own outputs stay empty, the Synchronizer reports for it
+		local Outputs = IsValid(Radar.SyncSource) and Radar.SyncSource.Outputs or Radar.Outputs
+		local IDs = Outputs.IDs.Value
+		local Types = Outputs.Type.Value
 
 		-- The driver HUD should only show contraption targets
 		local Indexes = {}
@@ -45,13 +47,13 @@ do
 		net.WriteUInt(#Indexes, 4)
 		for _, i in ipairs(Indexes) do
 			local ID = IDs[i] or 0
-			net.WriteUInt(ID, 6)
-			net.WriteString(Radar.Outputs.Owner.Value[i] or "")
-			net.WriteVector(Radar.Outputs.Position.Value[i] or vector_origin)
+			net.WriteUInt(ID, 16)
+			net.WriteString(Outputs.Owner.Value[i] or "")
+			net.WriteVector(Outputs.Position.Value[i] or vector_origin)
 
 			if ID == SelfTbl.SelectedTargetID then
-				SelfTbl.SelectedTargetPos      = Radar.Outputs.Position.Value[i] or vector_origin
-				SelfTbl.SelectedTargetVel      = Radar.Outputs.Velocity.Value[i] or vector_origin
+				SelfTbl.SelectedTargetPos      = Outputs.Position.Value[i] or vector_origin
+				SelfTbl.SelectedTargetVel      = Outputs.Velocity.Value[i] or vector_origin
 				SelfTbl.SelectedTargetSampleAt = CurTime()
 			end
 		end

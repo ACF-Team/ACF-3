@@ -30,6 +30,8 @@ Classes.DefineClass("ACF.Missiles.Guidance.SemiActiveRadar", "ACF.Missiles.Guida
 			local Target, TargetPos
 
 			for Entity, Data in pairs(Targets) do
+				if Data.Type ~= "Contraption" then continue end
+
 				local EntPos   = Data.Position
 				local Distance = Position:DistToSqr(EntPos)
 
