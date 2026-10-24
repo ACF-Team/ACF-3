@@ -110,5 +110,5 @@ function ModelData.GetEntityScale(Entity)
 		end
 	end
 
-	return Entity:GetModelScale()
+	return Entity:GetModelScale() or 1 -- Returns nothing on non-animating entities (e.g. brushes)
 end
