@@ -32,10 +32,19 @@ end
 
 -- How many entities the player currently has selected for linking (0 = not in linking mode). Kept in
 -- sync by the server; drives which instruction set the tool HUD shows.
-ACF.Menu.LinkSelected = ACF.Menu.LinkSelected or 0
+ACF.Menu.LinkSelected   = ACF.Menu.LinkSelected or 0
+ACF.Menu.LinkGearboxes  = ACF.Menu.LinkGearboxes or {}
 
 net.Receive("ACF_MenuLinkState", function()
+	local Gearboxes = {}
+
 	ACF.Menu.LinkSelected = net.ReadUInt(16)
+
+	for I = 1, net.ReadUInt(8) do
+		Gearboxes[I] = net.ReadEntity()
+	end
+
+	ACF.Menu.LinkGearboxes = Gearboxes
 end)
 
 --- Clears the player's link selection server-side (used when leaving the linking context: holstering
@@ -44,7 +53,8 @@ end)
 function ACF.Menu.SendLinkClear()
 	if (ACF.Menu.LinkSelected or 0) == 0 then return end
 
-	ACF.Menu.LinkSelected = 0
+	ACF.Menu.LinkSelected  = 0
+	ACF.Menu.LinkGearboxes = {}
 
 	net.Start("ACF_MenuLinkClear")
 	net.SendToServer()

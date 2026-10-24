@@ -102,19 +102,33 @@ end
 
 -- Tells the client how many entities it currently has selected, so the tool's instruction HUD can
 -- switch between "spawn" and "link" guidance. Sent whenever the selection changes.
-local function HasGearboxSelected(Player)
+local function GetSelectedGearboxes(Player)
+	local Gearboxes = {}
+
 	for Entity in pairs(GetPlayerEnts(Player)) do
-		if IsValid(Entity) and Entity.IsACFGearbox then return true end
+		if IsValid(Entity) and Entity.IsACFGearbox then Gearboxes[#Gearboxes + 1] = Entity end
 	end
 
-	return false
+	return Gearboxes
+end
+
+local function HasGearboxSelected(Player)
+	return next(GetSelectedGearboxes(Player)) ~= nil
 end
 
 local function SendLinkState(Player)
 	if not IsValid(Player) then return end
 
+	local Gearboxes = GetSelectedGearboxes(Player)
+	local Count     = math.min(#Gearboxes, 255)
+
 	net.Start("ACF_MenuLinkState")
 		net.WriteUInt(CountSelected(Player), 16)
+		net.WriteUInt(Count, 8) -- The client's torque axis preview needs the gearboxes themselves
+
+		for I = 1, Count do
+			net.WriteEntity(Gearboxes[I])
+		end
 	net.Send(Player)
 end
 

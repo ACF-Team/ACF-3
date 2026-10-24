@@ -61,9 +61,8 @@ function ACF.Menu.DrawInstructions(Instructions)
 			elseif Piece.Type == IPTYPE_INPUT then
 				for I2, Key in ipairs(Piece.Combo) do
 					if I2 ~= 1 then
-						XO = XO - 44
-						draw.TextShadow({ text = "+", font = "ACF.ToolMenu.Key", pos = { XO, YO }, xalign = TEXT_ALIGN_CENTER, yalign = TEXT_ALIGN_TOP, color = color_white }, 1, 50)
-						XO = XO + 4
+						draw.TextShadow({ text = "+", font = "ACF.ToolMenu.Key", pos = { XO + 5, YO }, xalign = TEXT_ALIGN_CENTER, yalign = TEXT_ALIGN_TOP, color = color_white }, 1, 50)
+						XO = XO + 10
 					end
 
 					if MOUSE_BUTTONS[Key] then
@@ -74,23 +73,23 @@ function ACF.Menu.DrawInstructions(Instructions)
 					else
 						surface.SetFont("ACF.ToolMenu.Key")
 						local TSX, TSY = surface.GetTextSize(Key)
-						TSX = TSX + 8
+						local Width    = math.max(16, TSX + 8)
 
 						surface.SetMaterial(CacheIcon("gui/key.png"))
 						surface.SetDrawColor(255, 255, 255)
 
-						if TSX <= 16 then
+						if Width <= 16 then
 							surface.DrawTexturedRect(XO, YO, 16, 16)
 						else
 							-- Stretch the keycap while keeping its edges intact (9-slice on X).
-							surface.DrawTexturedRectUV(XO - TSX - 8, YO, 8, 16, 0, 0, 0.5, 1)
-							surface.DrawTexturedRectUV(XO - TSX, YO, TSX - 16, 16, 0.5, 0, 0.5, 1)
-							surface.DrawTexturedRectUV(XO - 16, YO, 8, 16, 0.5, 0, 1, 1)
-
-							draw.TextShadow({ text = Key, font = "ACF.ToolMenu.Key", pos = { XO - (TSX / 2) - 8, YO + (TSY / 2) }, xalign = TEXT_ALIGN_CENTER, yalign = TEXT_ALIGN_CENTER, color = Color(45, 45, 45) }, 1, 50)
+							surface.DrawTexturedRectUV(XO, YO, 8, 16, 0, 0, 0.5, 1)
+							surface.DrawTexturedRectUV(XO + 8, YO, Width - 16, 16, 0.5, 0, 0.5, 1)
+							surface.DrawTexturedRectUV(XO + Width - 8, YO, 8, 16, 0.5, 0, 1, 1)
 						end
 
-						XO = XO + TSX
+						draw.TextShadow({ text = Key, font = "ACF.ToolMenu.Key", pos = { XO + (Width / 2), YO + (TSY / 2) }, xalign = TEXT_ALIGN_CENTER, yalign = TEXT_ALIGN_CENTER, color = Color(45, 45, 45) }, 1, 50)
+
+						XO = XO + Width
 					end
 				end
 
@@ -124,15 +123,20 @@ end
 
 --- Instruction lines shown while the player has entities selected for linking (linking mode). These
 --- replace the page's normal lines so the HUD reflects the select-then-link hand-off.
-function ACF.Menu.BuildLinkInstructions(Count)
+function ACF.Menu.BuildLinkInstructions(Count, HasGearbox)
 	local Noun = Count == 1 and "entity" or "entities"
 
-	return {
+	local Lines = {
 		{ { Type = IPTYPE_INPUT, Combo = { "rmb" } },          { Type = IPTYPE_TEXT, Text = ("Link the %d selected %s to the entity you're aiming at"):format(Count, Noun) } },
 		{ { Type = IPTYPE_INPUT, Combo = { "R", "rmb" } },     { Type = IPTYPE_TEXT, Text = "Unlink entities" } },
 		{ { Type = IPTYPE_INPUT, Combo = { "SHIFT", "rmb" } }, { Type = IPTYPE_TEXT, Text = "Select or deselect another entity" } },
 		{ { Type = IPTYPE_ICON, Icon = "cancel" },             { Type = IPTYPE_TEXT, Text = "Aim at the world to clear the selection" } },
 	}
+
+	if HasGearbox then
+		table.insert(Lines, 2, { { Type = IPTYPE_INPUT, Combo = { "ALT", "rmb" } }, { Type = IPTYPE_TEXT, Text = "Link a wheel along the direction you're facing (hold ALT to preview)" } })	end
+
+	return Lines
 end
 
 local function PageSupportsLink(Page)
@@ -151,7 +155,7 @@ function ACF.Menu.GetHUDInstructions()
 
 	local Count = ACF.Menu.LinkSelected or 0
 	if Count > 0 and PageSupportsLink(Page) then
-		return ACF.Menu.BuildLinkInstructions(Count)
+		return ACF.Menu.BuildLinkInstructions(Count, next(ACF.Menu.LinkGearboxes) ~= nil)
 	end
 
 	return ACF.Menu.ActiveInstructions

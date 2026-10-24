@@ -599,13 +599,20 @@ end ----------------------------------------------------
 local UpdateWheelAxes
 
 do -- Wheel torque axes ---------------------------------
+	local function StoreAxis(Wheel, Axis, Sign)
+		Wheel.ACF_TorqueAxis = Axis
+		Wheel.ACF_TorqueSign = Axis and (Sign == -1 and -1 or 1) or nil
+
+		-- The tool's link preview reads these client-side
+		Wheel:SetNWInt("ACF_TorqueAxis", Axis or 0)
+		Wheel:SetNWInt("ACF_TorqueSign", Wheel.ACF_TorqueSign or 1)
+	end
+
 	-- A paste can run this before or after the gearboxes relink, so links built first get redone
 	duplicator.RegisterEntityModifier("ACF_TorqueAxis", function(_, Wheel, Data)
 		if not IsValid(Wheel) or not ACF.Menu.WheelAxes[Data.Axis] then return end
 
-		Wheel.ACF_TorqueAxis = Data.Axis
-		Wheel.ACF_TorqueSign = Data.Sign == -1 and -1 or 1
-
+		StoreAxis(Wheel, Data.Axis, Data.Sign)
 		UpdateWheelAxes(Wheel)
 	end)
 
@@ -643,8 +650,7 @@ do -- Wheel torque axes ---------------------------------
 
 	--- Defines (1-3, Sign +-1) or clears (nil) a wheel's torque axis and reapplies it to its links.
 	function Mobility.SetWheelTorqueAxis(Wheel, Axis, Sign)
-		Wheel.ACF_TorqueAxis = Axis
-		Wheel.ACF_TorqueSign = Axis and (Sign == -1 and -1 or 1) or nil
+		StoreAxis(Wheel, Axis, Sign)
 
 		if Axis then
 			duplicator.StoreEntityModifier(Wheel, "ACF_TorqueAxis", { Axis = Axis, Sign = Wheel.ACF_TorqueSign })
