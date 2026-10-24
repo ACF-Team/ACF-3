@@ -1,46 +1,6 @@
 local ACF = ACF
 ACF.Menu = ACF.Menu or {}
 
-ACF.Menu.WheelAxes     = { Vector(1, 0, 0), Vector(0, 1, 0), Vector(0, 0, 1) }
-ACF.Menu.WheelAxisName = { "X", "Y", "Z" }
-
--- The classes a gearbox links wheels as
-function ACF.Menu.CanSetWheelAxis(Entity)
-	if not IsValid(Entity) then return false end
-
-	local Class = Entity:GetClass()
-
-	return Class == "prop_physics" or Class == "tire"
-end
-
-local AMBIGUOUS = 0.3 -- Below this alignment with the gearbox's right the dot's sign is noise a paste can flip
-
---- Direction (+-1) a wheel axis is applied in: along the gearbox's right, unless a defined axis is too
---- perpendicular to it to tell, where the stored direction is used instead.
-function ACF.Menu.GetAxisSign(WorldAxis, GearboxRight, Stored)
-	local Dot = WorldAxis:Dot(GearboxRight)
-
-	if Stored and math.abs(Dot) < AMBIGUOUS then return Stored end
-
-	return Dot < 0 and -1 or 1
-end
-
---- Index (1-3 for local X/Y/Z) of the wheel's axis closest to a world direction, and which way (+-1) it runs.
-function ACF.Menu.GetWheelAxis(Entity, WorldDir)
-	-- Link axes are applied in the physics frame, which the client may not have a physobj for
-	local Phys  = Entity:GetPhysicsObject()
-	local Local = IsValid(Phys) and Phys:WorldToLocalVector(WorldDir) or Entity:WorldToLocal(Entity:GetPos() + WorldDir)
-	local Best, BestDot = 1, -1
-
-	for I = 1, 3 do
-		local Dot = math.abs(Local[I])
-
-		if Dot > BestDot then Best, BestDot = I, Dot end
-	end
-
-	return Best, Local[Best] < 0 and -1 or 1
-end
-
 -- Resolves the modifier-qualified bind for a base mouse button from the local player's held keys.
 local function ResolveBind(Button)
 	local Player = LocalPlayer()

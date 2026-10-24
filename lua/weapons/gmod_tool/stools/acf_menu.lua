@@ -37,14 +37,14 @@ if CLIENT then
 		local Index, Stored, Defined = Wheel:GetNWInt("ACF_TorqueAxis", 0), Wheel:GetNWInt("ACF_TorqueSign", 1), true
 
 		if Alt then
-			Index, Stored = ACF.Menu.GetWheelAxis(Wheel, Aim)
+			Index, Stored = ACF.GetWheelAxis(Wheel, Aim)
 		elseif Index == 0 then
-			Index, Defined = ACF.Menu.GetWheelAxis(Wheel, Sum:IsZero() and Right or Sum), false
+			Index, Defined = ACF.GetWheelAxis(Wheel, Sum:IsZero() and Right or Sum), false
 		end
 
-		local Dir = Wheel:LocalToWorld(ACF.Menu.WheelAxes[Index]) - Wheel:GetPos()
+		local Dir = Wheel:LocalToWorld(ACF.WheelAxes[Index]) - Wheel:GetPos()
 
-		return Index, Dir * ACF.Menu.GetAxisSign(Dir, Right, Defined and Stored), Defined
+		return Index, Dir * ACF.GetAxisSign(Dir, Right, Defined and Stored), Defined
 	end
 
 	-- Arrows circle Axis (right-handed), so it's passed as the negative of the link axis: the way the wheel turns driving forward
@@ -92,7 +92,7 @@ if CLIENT then
 		cam.Start3D()
 		render.SetColorMaterialIgnoreZ()
 
-		for I, Local in ipairs(ACF.Menu.WheelAxes) do
+		for I, Local in ipairs(ACF.WheelAxes) do
 			if I ~= Chosen then
 				local Other = Wheel:LocalToWorld(Local) - Origin
 
@@ -111,9 +111,9 @@ if CLIENT then
 
 		if not Screen.visible then return end
 
-		local Sign = Dir:Dot(Wheel:LocalToWorld(ACF.Menu.WheelAxes[Chosen]) - Origin) < 0 and "-" or "+"
+		local Sign = Dir:Dot(Wheel:LocalToWorld(ACF.WheelAxes[Chosen]) - Origin) < 0 and "-" or "+"
 
-		draw.SimpleTextOutlined(("Torque axis: %s%s (%s)"):format(Sign, ACF.Menu.WheelAxisName[Chosen], Defined and "defined" or "auto"), "GModToolHelp", Screen.x, Screen.y, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM, 1, color_black)
+		draw.SimpleTextOutlined(("Torque axis: %s%s (%s)"):format(Sign, ACF.WheelAxisName[Chosen], Defined and "defined" or "auto"), "GModToolHelp", Screen.x, Screen.y, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM, 1, color_black)
 	end
 
 	function TOOL:DrawHUD()
@@ -130,7 +130,7 @@ if CLIENT then
 		local Entity = Trace.Entity
 
 		-- Unlinking (R) doesn't use the axis, so there's nothing to preview then
-		if next(ACF.Menu.LinkGearboxes) and not LocalPlayer():KeyDown(IN_RELOAD) and ACF.Menu.CanSetWheelAxis(Entity) then
+		if next(ACF.Menu.LinkGearboxes) and not LocalPlayer():KeyDown(IN_RELOAD) and ACF.CanSetWheelAxis(Entity) then
 			DrawWheelAxis(Entity, LocalPlayer():GetAimVector(), LocalPlayer():KeyDown(IN_WALK))
 		end
 

@@ -180,11 +180,11 @@ local function LinkEntities(Player, Target)
 	-- Alt defines the wheel's torque axis from where the player faces, before linking so the link is built with it
 	local Axis, Sign, PrevAxis, PrevSign
 
-	if not OnKey and AltKey and ACF.Menu.CanSetWheelAxis(Target) and HasGearboxSelected(Player) then
+	if not OnKey and AltKey and ACF.CanSetWheelAxis(Target) and HasGearboxSelected(Player) then
 		PrevAxis, PrevSign = Target.ACF_TorqueAxis, Target.ACF_TorqueSign
-		Axis, Sign         = ACF.Menu.GetWheelAxis(Target, Player:GetAimVector())
+		Axis, Sign         = ACF.GetWheelAxis(Target, Player:GetAimVector())
 
-		ACF.Mobility.SetWheelTorqueAxis(Target, Axis, Sign)
+		ACF.SetWheelTorqueAxis(Target, Axis, Sign)
 	end
 
 	for Source in pairs(Ents) do
@@ -224,18 +224,18 @@ local function LinkEntities(Player, Target)
 
 	-- No gearbox took the link, so the wheel keeps the axis it had
 	if Axis and GearboxDone == 0 then
-		ACF.Mobility.SetWheelTorqueAxis(Target, PrevAxis, PrevSign)
+		ACF.SetWheelTorqueAxis(Target, PrevAxis, PrevSign)
 
 		Axis = nil
 	end
 
 	-- Here and not in the gearbox's unlink, since a gearbox reconfigure unlinks and relinks its wheels
-	local Cleared = OnKey and GearboxDone > 0 and ACF.Menu.CanSetWheelAxis(Target) and Target.ACF_TorqueAxis ~= nil and not next(Target.ACF_Gearboxes or {})
+	local Cleared = OnKey and GearboxDone > 0 and ACF.CanSetWheelAxis(Target) and Target.ACF_TorqueAxis ~= nil and not next(Target.ACF_Gearboxes or {})
 
-	if Cleared then ACF.Mobility.SetWheelTorqueAxis(Target, nil) end
+	if Cleared then ACF.SetWheelTorqueAxis(Target, nil) end
 
 	if Done > 0 then
-		local Suffix = Axis and (" Torque axis: " .. (Sign < 0 and "-" or "+") .. ACF.Menu.WheelAxisName[Axis] .. ".") or ""
+		local Suffix = Axis and (" Torque axis: " .. (Sign < 0 and "-" or "+") .. ACF.WheelAxisName[Axis] .. ".") or ""
 
 
 		Messages.SendChat(Player, "Info", ("Successfully %sed %d entit%s to %s.%s"):format(Action, Done, Done == 1 and "y" or "ies", GetName(Target), Suffix))
