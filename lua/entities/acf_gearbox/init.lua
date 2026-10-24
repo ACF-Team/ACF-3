@@ -650,10 +650,6 @@ do -- Linking ------------------------------------------
 
 		Link:SetOrigin(OutPos)
 		Link:SetTargetPos(InPos)
-		local TargetRight = Target:GetRight()
-		if TargetRight:Dot(Entity:GetRight()) < 0 then TargetRight = -TargetRight end -- Same axis, signed to match the gearbox's right
-
-		Link:SetAxis(Target:GetPhysicsObject():WorldToLocalVector(TargetRight))
 		Link.OutDirection = Plane.Dir
 		Link.Side = Side
 		Link.RopeLen = (OutPosWorld - InPosWorld):Length()
@@ -688,6 +684,8 @@ do -- Linking ------------------------------------------
 		end)
 
 		Mobility.BrokenLinks.Clear(Gearbox, Wheel)
+
+		ACF.UpdateWheelAxes(Wheel)
 
 		Gearbox:UpdateLinkHints()
 		Gearbox:InvalidateClientInfo()
@@ -737,7 +735,12 @@ do -- Unlinking ----------------------------------------
 
 			Gearbox.Wheels[Wheel] = nil
 
+			-- The axis is derived from this table
+			if Wheel.ACF_Gearboxes then Wheel.ACF_Gearboxes[Gearbox] = nil end
+
 			Wheel:RemoveCallOnRemove("ACF_GearboxUnlink" .. Gearbox:EntIndex())
+
+			ACF.UpdateWheelAxes(Wheel)
 
 			Gearbox:UpdateLinkHints()
 			Gearbox:InvalidateClientInfo()
@@ -1330,6 +1333,11 @@ do -- Miscellaneous ------------------------------------
 
 		for Wheel in pairs(self.Wheels) do
 			self:Unlink(Wheel)
+
+			-- Only when no other gearbox drives it, since a defined axis is shared by all of a wheel's gearboxes
+			if IsValid(Wheel) and Wheel.ACF_TorqueAxis and not next(Wheel.ACF_Gearboxes or {}) then
+				ACF.SetWheelTorqueAxis(Wheel, nil)
+			end
 		end
 
 		for Gearbox in pairs(self.GearboxIn) do

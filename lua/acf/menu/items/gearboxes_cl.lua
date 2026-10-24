@@ -177,7 +177,7 @@ ACF.Menu.RegisterPage({
 
 	Actions = {
 		{ Bind = "left",  Context = "Gearbox", Preview = true, Desc = "Spawn a new gearbox, or update the one you're aiming at." },
-		{ Bind = "right", Commit = "link", Desc = "Select entities, then a gearbox, to link them (hold R to unlink)." },
+		{ Bind = "right", Commit = "link", Desc = "Select a gearbox, then entities, to link them (hold R to unlink)." },
 	},
 
 	Build = Build,
