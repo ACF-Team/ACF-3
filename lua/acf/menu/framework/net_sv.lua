@@ -176,6 +176,7 @@ local function LinkEntities(Player, Target)
 	local Action = OnKey and "unlink" or "link"
 	local Done, Failed = 0, {}
 	local GearboxDone  = 0 -- Only gearboxes care about the wheel's torque axis
+	local LinkedBox, Unlinked -- The first gearbox that took the link, and the wheels that lost a gearbox
 
 	-- Alt defines the wheel's torque axis from where the player faces, before linking so the link is built with it
 	local Axis, Sign, PrevAxis, PrevSign
@@ -192,7 +193,7 @@ local function LinkEntities(Player, Target)
 
 		-- Already linked, so setting the axis was all there was to do
 		if Axis and Source.Wheels and Source.Wheels[Target] then
-			Done, GearboxDone = Done + 1, GearboxDone + 1
+			Done, GearboxDone, LinkedBox = Done + 1, GearboxDone + 1, LinkedBox or Source
 
 			UnselectEntity(Source, Player)
 
@@ -214,7 +215,17 @@ local function LinkEntities(Player, Target)
 		if Result then
 			Done = Done + 1
 
-			if Source.IsACFGearbox then GearboxDone = GearboxDone + 1 end
+			if Source.IsACFGearbox then
+				GearboxDone, LinkedBox = GearboxDone + 1, LinkedBox or Source
+			end
+
+			-- Either of the pair can be the wheel, depending on which was selected first
+			local Wheel = (Source.IsACFGearbox and Target) or (Target.IsACFGearbox and Source)
+
+			if OnKey and Wheel and ACF.CanSetWheelAxis(Wheel) then
+				Unlinked = Unlinked or {}
+				Unlinked[Wheel] = true
+			end
 		else
 			Failed[#Failed + 1] = GetName(Source) .. ": " .. (Message or "No reason given.")
 		end
@@ -230,13 +241,20 @@ local function LinkEntities(Player, Target)
 	end
 
 	-- Here and not in the gearbox's unlink, since a gearbox reconfigure unlinks and relinks its wheels
-	local Cleared = OnKey and GearboxDone > 0 and ACF.CanSetWheelAxis(Target) and Target.ACF_TorqueAxis ~= nil and not next(Target.ACF_Gearboxes or {})
-
-	if Cleared then ACF.SetWheelTorqueAxis(Target, nil) end
+	for Wheel in pairs(Unlinked or {}) do
+		if Wheel.ACF_TorqueAxis and not next(Wheel.ACF_Gearboxes or {}) then ACF.SetWheelTorqueAxis(Wheel, nil) end
+	end
 
 	if Done > 0 then
-		local Suffix = Axis and (" Torque axis: " .. (Sign < 0 and "-" or "+") .. ACF.WheelAxisName[Axis] .. ".") or ""
+		local Suffix = ""
 
+		if Axis then
+			-- The link applies its own sign, which only follows the facing direction when the axle is too perpendicular to tell
+			local Link = LinkedBox.Wheels[Target]
+			local Applied = Link and (Link.Axis[Axis] < 0 and -1 or 1) or Sign
+
+			Suffix = " Torque axis: " .. (Applied < 0 and "-" or "+") .. ACF.WheelAxisName[Axis] .. "."
+		end
 
 		Messages.SendChat(Player, "Info", ("Successfully %sed %d entit%s to %s.%s"):format(Action, Done, Done == 1 and "y" or "ies", GetName(Target), Suffix))
 	end

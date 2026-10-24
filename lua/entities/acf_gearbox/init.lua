@@ -1333,6 +1333,11 @@ do -- Miscellaneous ------------------------------------
 
 		for Wheel in pairs(self.Wheels) do
 			self:Unlink(Wheel)
+
+			-- Only when no other gearbox drives it, since a defined axis is shared by all of a wheel's gearboxes
+			if IsValid(Wheel) and Wheel.ACF_TorqueAxis and not next(Wheel.ACF_Gearboxes or {}) then
+				ACF.SetWheelTorqueAxis(Wheel, nil)
+			end
 		end
 
 		for Gearbox in pairs(self.GearboxIn) do

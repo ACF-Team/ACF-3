@@ -231,7 +231,7 @@ do -- Mobility functions
 	ACF.WheelAxes     = { Vector(1, 0, 0), Vector(0, 1, 0), Vector(0, 0, 1) }
 	ACF.WheelAxisName = { "X", "Y", "Z" }
 
-	local AMBIGUOUS = 0.3 -- Below this alignment with the gearbox's right the dot's sign is noise a paste can flip
+	local AMBIGUOUS = 0.05 -- Below this alignment with the gearbox's right the dot's sign is noise a paste can flip
 
 	-- The classes a gearbox links wheels as
 	function ACF.CanSetWheelAxis(Entity)
