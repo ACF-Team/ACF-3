@@ -8,7 +8,7 @@ ENT.IsACFSensorSync = true
 ENT.ACF_Limit       = 2
 
 -- Sensor entities a Synchronizer can link to. Each must implement the sensor interface used in init.lua:
--- Active, ThinkTicks, Damage, SyncSource, DetectContraptions/DetectMissiles/DetectPlayers,
+-- Scanning, ThinkTicks, Damage, SyncSource, DetectContraptions/DetectMissiles/DetectPlayers,
 -- GetScanShape, CheckTargetLOS, StopIndependentScanning and ResumeIndependentScanning
 ENT.ACF_SensorClasses = { acf_radar = true, acf_irst = true }
 

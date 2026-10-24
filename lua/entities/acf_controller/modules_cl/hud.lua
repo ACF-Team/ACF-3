@@ -75,7 +75,7 @@ return function(State)
 
         local RadarData = {}
         for _ = 1, Count do
-            local ID = net.ReadUInt(6)
+            local ID = net.ReadUInt(16)
             local Name = net.ReadString()
             local Pos = net.ReadVector()
             RadarData[ID] = {Pos, Name}
@@ -108,7 +108,7 @@ return function(State)
         State.SelectedTargetID = State.CurrentTargetID
         net.Start("ACF_Controller_Radar")
         net.WriteUInt(State.MyController:EntIndex(), MAX_EDICT_BITS)
-        net.WriteUInt(State.SelectedTargetID or 0, 6)
+        net.WriteUInt(State.SelectedTargetID or 0, 16)
         net.SendToServer()
     end
 
