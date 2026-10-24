@@ -9,7 +9,7 @@ Classes.DefineClass("ACF.Missiles.Guidance.SemiActiveRadar", "ACF.Missiles.Guida
 	if CLIENT then
 		CLASS.Description = "This guidance package uses a radar to detect contraptions and guides the munition towards the most centered one it can find."
 	else
-		CLASS.RadarType = "TGT-Radar"
+		CLASS.RadarDetects = "DetectContraptions"
 
 
 		-- Semi-actives can't seek targets by themselves

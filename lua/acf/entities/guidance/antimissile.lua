@@ -11,7 +11,7 @@ Classes.DefineClass("ACF.Missiles.Guidance.AntiMissile", "ACF.Missiles.Guidance.
 		CLASS.Description = "This guidance package uses a radar to detect missiles and guides the munition towards the most centered one it can find."
 	else
 		local Countermeasures = ACF.Countermeasures
-		CLASS.RadarType = "AM-Radar"
+		CLASS.RadarDetects = "DetectMissiles" -- Radar flag this guidance needs set
 
 
 		function CLASS:GetRadar()
@@ -21,7 +21,7 @@ Classes.DefineClass("ACF.Missiles.Guidance.AntiMissile", "ACF.Missiles.Guidance.
 
 			if not IsValid(Radar) then return end
 			if not Radar.Scanning then return end
-			if Radar.ClassType ~= self.RadarType then return end
+			if not Radar[self.RadarDetects] then return end
 
 			return Radar
 		end
