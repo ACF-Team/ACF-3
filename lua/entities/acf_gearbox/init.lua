@@ -596,6 +596,66 @@ do -- Inputs -------------------------------------------
 	end)
 end ----------------------------------------------------
 
+local UpdateWheelAxes
+
+do -- Wheel torque axes ---------------------------------
+	-- A paste can run this before or after the gearboxes relink, so links built first get redone
+	duplicator.RegisterEntityModifier("ACF_TorqueAxis", function(_, Wheel, Data)
+		if not IsValid(Wheel) or not ACF.Menu.WheelAxes[Data.Axis] then return end
+
+		Wheel.ACF_TorqueAxis = Data.Axis
+		Wheel.ACF_TorqueSign = Data.Sign == -1 and -1 or 1
+
+		UpdateWheelAxes(Wheel)
+	end)
+
+	-- Wheel.ACF_TorqueAxis (1-3 for local X/Y/Z) overrides snapping the gearbox's right, which all its wheels share
+	function UpdateWheelAxes(Wheel)
+		local Phys = Wheel:GetPhysicsObject()
+
+		if not IsValid(Phys) or not Wheel.ACF_Gearboxes then return end
+
+		local Axis = Wheel.ACF_TorqueAxis
+
+		if not Axis then
+			local Sum, First = Vector()
+
+			for Box in pairs(Wheel.ACF_Gearboxes) do
+				Sum   = Sum + Box:GetRight()
+				First = First or Box
+			end
+
+			if not First then return end
+			if Sum:IsZero() then Sum = First:GetRight() end -- Gearboxes facing opposite ways cancel out
+
+			Axis = ACF.Menu.GetWheelAxis(Wheel, Sum)
+		end
+
+		Axis = ACF.Menu.WheelAxes[Axis]
+
+		local World = Phys:LocalToWorldVector(Axis)
+
+		for Box, Link in pairs(Wheel.ACF_Gearboxes) do
+			-- Signed per gearbox so positive torque rolls the same way whichever way the wheel faces
+			Link:SetAxis(Axis * ACF.Menu.GetAxisSign(World, Box:GetRight(), Wheel.ACF_TorqueAxis and Wheel.ACF_TorqueSign))
+		end
+	end
+
+	--- Defines (1-3, Sign +-1) or clears (nil) a wheel's torque axis and reapplies it to its links.
+	function Mobility.SetWheelTorqueAxis(Wheel, Axis, Sign)
+		Wheel.ACF_TorqueAxis = Axis
+		Wheel.ACF_TorqueSign = Axis and (Sign == -1 and -1 or 1) or nil
+
+		if Axis then
+			duplicator.StoreEntityModifier(Wheel, "ACF_TorqueAxis", { Axis = Axis, Sign = Wheel.ACF_TorqueSign })
+		else
+			duplicator.ClearEntityModifier(Wheel, "ACF_TorqueAxis")
+		end
+
+		UpdateWheelAxes(Wheel)
+	end
+end ----------------------------------------------------
+
 do -- Linking ------------------------------------------
 	local function CheckLoopedGearbox(This, Target)
 		local Queued = { [Target] = true }
@@ -650,10 +710,6 @@ do -- Linking ------------------------------------------
 
 		Link:SetOrigin(OutPos)
 		Link:SetTargetPos(InPos)
-		local TargetRight = Target:GetRight()
-		if TargetRight:Dot(Entity:GetRight()) < 0 then TargetRight = -TargetRight end -- Same axis, signed to match the gearbox's right
-
-		Link:SetAxis(Target:GetPhysicsObject():WorldToLocalVector(TargetRight))
 		Link.OutDirection = Plane.Dir
 		Link.Side = Side
 		Link.RopeLen = (OutPosWorld - InPosWorld):Length()
@@ -688,6 +744,8 @@ do -- Linking ------------------------------------------
 		end)
 
 		Mobility.BrokenLinks.Clear(Gearbox, Wheel)
+
+		UpdateWheelAxes(Wheel)
 
 		Gearbox:UpdateLinkHints()
 		Gearbox:InvalidateClientInfo()
@@ -737,7 +795,12 @@ do -- Unlinking ----------------------------------------
 
 			Gearbox.Wheels[Wheel] = nil
 
+			-- The axis is derived from this table
+			if Wheel.ACF_Gearboxes then Wheel.ACF_Gearboxes[Gearbox] = nil end
+
 			Wheel:RemoveCallOnRemove("ACF_GearboxUnlink" .. Gearbox:EntIndex())
+
+			UpdateWheelAxes(Wheel)
 
 			Gearbox:UpdateLinkHints()
 			Gearbox:InvalidateClientInfo()
