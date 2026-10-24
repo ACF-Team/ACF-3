@@ -95,6 +95,8 @@ function Contraption.GetEnts(Ent)
 	local Dtch     = {}
 
 	for K in pairs(ConEnts) do
+		if not IsValid(K) then continue end
+
 		if Children[K] then
 			Pare[K] = true
 		else
