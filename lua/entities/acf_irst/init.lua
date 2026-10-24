@@ -7,78 +7,16 @@ local ACF          = ACF
 local Classes      = ACF.Classes
 local Contraption  = ACF.Contraption
 local Damage       = ACF.Damage
-local Sounds       = ACF.Utilities.Sounds
 local RadarHelpers = ACF.RadarHelpers
 local TimerExists  = timer.Exists
 local TimerCreate  = timer.Create
 local TimerRemove  = timer.Remove
 local Forward      = Vector(1, 0, 0)
 local Sensors      = {}
-local Indexes      = {}
-local Unused       = {}
-local IndexCount   = 0
 
 --===============================================================================================--
 -- Local Funcs and Vars
 --===============================================================================================--
-
-local function GetEntityIndex(Entity)
-	if Indexes[Entity] then return Indexes[Entity] end
-
-	if next(Unused) then
-		local Index = next(Unused)
-
-		Indexes[Entity] = Index
-		Unused[Index] = nil
-	else
-		IndexCount = IndexCount + 1
-
-		Indexes[Entity] = IndexCount
-	end
-
-	local EntID = Indexes[Entity]
-
-	Entity:CallOnRemove("IRST Index", function()
-		Indexes[Entity] = nil
-		Unused[EntID] = true
-	end)
-
-	return EntID
-end
-
-local function ClearTargets(Entity)
-	local Targets = Entity.Targets
-
-	for Target in pairs(Targets) do
-		Targets[Target] = nil
-	end
-
-	for _, List in pairs(Entity.TargetInfo) do
-		for Index in ipairs(List) do
-			List[Index] = nil
-		end
-	end
-end
-
-local function ResetOutputs(Entity)
-	if Entity.TargetCount == 0 then return end
-
-	local TargetInfo = Entity.TargetInfo
-
-	ClearTargets(Entity)
-
-	Entity.TargetCount = 0
-
-	WireLib.TriggerOutput(Entity, "Detected", 0)
-	WireLib.TriggerOutput(Entity, "ClosestDistance", 0)
-	WireLib.TriggerOutput(Entity, "IDs", TargetInfo.ID)
-	WireLib.TriggerOutput(Entity, "Owner", TargetInfo.Owner)
-	WireLib.TriggerOutput(Entity, "Position", TargetInfo.Position)
-	WireLib.TriggerOutput(Entity, "Velocity", TargetInfo.Velocity)
-	WireLib.TriggerOutput(Entity, "Distance", TargetInfo.Distance)
-	WireLib.TriggerOutput(Entity, "Size", TargetInfo.Size)
-	WireLib.TriggerOutput(Entity, "Type", TargetInfo.Type)
-end
 
 local function ClampToGimbal(Dir, Gimbal)
 	local Limit = math.cos(math.rad(Gimbal))
@@ -134,20 +72,16 @@ local function UpdateGimbal(Entity)
 end
 
 local function ScanForEntities(Entity)
-	ClearTargets(Entity)
+	local Detections = {}
 
-	if ACF.IsDestroyed(Entity) then return end
+	if ACF.IsDestroyed(Entity) then return RadarHelpers.PublishTargets(Entity, Detections, false) end
 
-	local Shape      = Entity:GetScanShape()
-	local Origin     = Shape.Position
-	local Own        = Entity:CFW_GetContraption()
-	local TargetInfo = Entity.TargetInfo
-	local Targets    = Entity.Targets
-	local EntDamage  = Entity.Damage
-	local Spread     = ACF.MaxDamageInaccuracy * EntDamage
-	local Closest    = math.huge
-	local Count      = 0
-	local Detected   = ACF.GetEntitiesInCone(Origin, Shape.Direction, Shape.Degrees, Own)
+	local Shape     = Entity:GetScanShape()
+	local Origin    = Shape.Position
+	local Own       = Entity:CFW_GetContraption()
+	local EntDamage = Entity.Damage
+	local Spread    = ACF.MaxDamageInaccuracy * EntDamage
+	local Detected  = ACF.GetEntitiesInCone(Origin, Shape.Direction, Shape.Degrees, Own)
 
 	for Ply in pairs(RadarHelpers.GetPlayersInShapes({ Shape }, Own)) do
 		Detected[Ply] = true
@@ -162,66 +96,27 @@ local function ScanForEntities(Entity)
 		local EntDist          = Origin:Distance(EntPos)
 		local EntSize, EntType = RadarHelpers.GetEntSizeAndType(Ent)
 		local EntSpread        = VectorRand(-Spread, Spread)
-		local EntVel           = (Ent.ACF_Velocity or Ent:GetVelocity()) + EntSpread
-		local Owner            = RadarHelpers.GetEntityOwner(Entity.Owner, Ent)
-		local Index            = GetEntityIndex(Ent)
 
-		EntPos = EntPos + EntSpread
-		Count  = Count + 1
-
-		Targets[Ent] = {
-			Index    = Index,
-			Owner    = Owner,
-			Position = EntPos,
-			Velocity = EntVel,
+		Detections[Ent] = {
+			Owner    = RadarHelpers.GetEntityOwner(Entity.Owner, Ent),
+			Position = EntPos + EntSpread,
+			Velocity = (Ent.ACF_Velocity or Ent:GetVelocity()) + EntSpread,
 			Distance = EntDist,
-			Spread   = EntSpread,
+			Size     = EntSize,
 			Type     = EntType,
+			Spread   = EntSpread,
+			Sensor   = Entity,
 		}
-
-		TargetInfo.ID[Count]       = Index
-		TargetInfo.Owner[Count]    = Owner
-		TargetInfo.Position[Count] = EntPos
-		TargetInfo.Velocity[Count] = EntVel
-		TargetInfo.Distance[Count] = EntDist
-		TargetInfo.Size[Count]     = EntSize
-		TargetInfo.Type[Count]     = EntType
-
-		if EntDist < Closest then
-			Closest = EntDist
-		end
 	end
 
-	WireLib.TriggerOutput(Entity, "ClosestDistance", Closest < math.huge and Closest or 0)
-	WireLib.TriggerOutput(Entity, "IDs", TargetInfo.ID)
-	WireLib.TriggerOutput(Entity, "Owner", TargetInfo.Owner)
-	WireLib.TriggerOutput(Entity, "Position", TargetInfo.Position)
-	WireLib.TriggerOutput(Entity, "Velocity", TargetInfo.Velocity)
-	WireLib.TriggerOutput(Entity, "Distance", TargetInfo.Distance)
-	WireLib.TriggerOutput(Entity, "Detected", Count)
-	WireLib.TriggerOutput(Entity, "Size", TargetInfo.Size)
-	WireLib.TriggerOutput(Entity, "Type", TargetInfo.Type)
-
-	if Count > 0 then
-		WireLib.TriggerOutput(Entity, "Clk", engine.TickCount())
-	end
-
-	if Count ~= Entity.TargetCount then
-		if Count > Entity.TargetCount then
-			Sounds.SendSound(Entity, Entity.SoundPath, 70, 100, 1)
-		end
-
-		Entity.TargetCount = Count
-
-		Entity:UpdateOverlay()
-	end
+	RadarHelpers.PublishTargets(Entity, Detections, next(Detections) ~= nil)
 end
 
 local function SetScanning(Entity, Active)
 	Entity.Scanning    = Active
 	Entity.TickCounter = 0
 
-	ResetOutputs(Entity)
+	RadarHelpers.ResetTargets(Entity)
 
 	WireLib.TriggerOutput(Entity, "Scanning", Active and 1 or 0)
 
@@ -485,7 +380,7 @@ do -- Sensor Synchronizer interface
 	end
 
 	function ENT:StopIndependentScanning()
-		ResetOutputs(self)
+		RadarHelpers.ResetTargets(self)
 	end
 
 	function ENT:ResumeIndependentScanning()

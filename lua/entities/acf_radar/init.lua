@@ -73,49 +73,10 @@ local RadarHelpers = ACF.RadarHelpers
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 local SwitchDelay = 2 -- Seconds between activation and the first scan
-local Indexes	  = {}
-local Unused	  = {}
-local IndexCount  = 0
 local TimerExists = timer.Exists
 local TimerCreate = timer.Create
 local TimerRemove = timer.Remove
 local hook        = hook
-
--- TODO: Optimize this so the entries are only cleared when the target is no longer detected by the radar
-local function ClearTargets(Entity)
-	local TargetInfo = Entity.TargetInfo
-	local Targets = Entity.Targets
-
-	for Target in pairs(Targets) do
-		Targets[Target] = nil
-	end
-
-	for _, List in pairs(TargetInfo) do
-		for Index in ipairs(List) do
-			List[Index] = nil
-		end
-	end
-end
-
-local function ResetOutputs(Entity)
-	if Entity.TargetCount == 0 then return end
-
-	local TargetInfo = Entity.TargetInfo
-
-	ClearTargets(Entity)
-
-	Entity.TargetCount = 0
-
-	WireLib.TriggerOutput(Entity, "Detected", 0)
-	WireLib.TriggerOutput(Entity, "ClosestDistance", 0)
-	WireLib.TriggerOutput(Entity, "IDs", TargetInfo.ID)
-	WireLib.TriggerOutput(Entity, "Owner", TargetInfo.Owner)
-	WireLib.TriggerOutput(Entity, "Position", TargetInfo.Position)
-	WireLib.TriggerOutput(Entity, "Velocity", TargetInfo.Velocity)
-	WireLib.TriggerOutput(Entity, "Distance", TargetInfo.Distance)
-	WireLib.TriggerOutput(Entity, "Size", TargetInfo.Size)
-	WireLib.TriggerOutput(Entity, "Type", TargetInfo.Type)
-end
 
 local function SetSequence(Entity, Active)
 	local Sequence = Entity:LookupSequence("idle")
@@ -127,51 +88,16 @@ local function SetSequence(Entity, Active)
 	Entity:SetNW2Bool("ACF_RadarSpin", Active) -- Clients spin the dish bone themselves, see cl_init.lua
 end
 
-local function GetEntityIndex(Entity)
-	if Indexes[Entity] then return Indexes[Entity] end
-
-	if next(Unused) then
-		local Index = next(Unused)
-
-		Indexes[Entity] = Index
-		Unused[Index] = nil
-	else
-		IndexCount = IndexCount + 1
-
-		Indexes[Entity] = IndexCount
-	end
-
-	local EntID = Indexes[Entity]
-
-	Entity:CallOnRemove("Radar Index", function()
-		Indexes[Entity] = nil
-		Unused[EntID] = true
-	end)
-
-	return EntID
-end
-
 local function ScanForEntities(Entity)
-	ClearTargets(Entity)
+	local Detections = {}
 
-	if ACF.IsDestroyed(Entity) then return end
-	if not Entity.GetDetected then return end
+	if ACF.IsDestroyed(Entity) or not Entity.GetDetected then
+		return RadarHelpers.PublishTargets(Entity, Detections, false)
+	end
 
 	local Detected = Entity:GetDetected()
 
 	local Origin = Entity:LocalToWorld(Entity.Origin)
-	local TargetInfo = Entity.TargetInfo
-	local Targets = Entity.Targets
-	local Closest = math.huge
-	local Count = 0
-
-	local IDs = TargetInfo.ID
-	local Own = TargetInfo.Owner
-	local Position = TargetInfo.Position
-	local Velocity = TargetInfo.Velocity
-	local Distance = TargetInfo.Distance
-	local Size = TargetInfo.Size
-	local Type = TargetInfo.Type
 
 	local EntDamage = Entity.Damage
 	local Spread = ACF.MaxDamageInaccuracy * EntDamage
@@ -187,63 +113,21 @@ local function ScanForEntities(Entity)
 
 			local EntSpread = VectorRand(-Spread, Spread)
 			local EntVel = Ent.ACF_Velocity or Ent:GetVelocity()
-			local Owner = RadarHelpers.GetEntityOwner(Entity.Owner, Ent)
-			local Index = GetEntityIndex(Ent)
 
-			EntPos = EntPos + EntSpread
-			EntVel = EntVel + EntSpread
-			Count = Count + 1
-
-			Targets[Ent] = {
-				Index = Index,
-				Owner = Owner,
-				Position = EntPos,
-				Velocity = EntVel,
+			Detections[Ent] = {
+				Owner    = RadarHelpers.GetEntityOwner(Entity.Owner, Ent),
+				Position = EntPos + EntSpread,
+				Velocity = EntVel + EntSpread,
 				Distance = EntDist,
-				Spread   = EntSpread,
+				Size     = EntSize,
 				Type     = EntType,
+				Spread   = EntSpread,
+				Sensor   = Entity,
 			}
-
-			IDs[Count] = Index
-			Own[Count] = Owner
-			Position[Count] = EntPos
-			Velocity[Count] = EntVel
-			Distance[Count] = EntDist
-			Size[Count] = EntSize
-			Type[Count] = EntType
-
-			if EntDist < Closest then
-				Closest = EntDist
-			end
 		end
 	end
 
-	Closest = Closest < math.huge and Closest or 0
-
-	WireLib.TriggerOutput(Entity, "ClosestDistance", Closest)
-	WireLib.TriggerOutput(Entity, "IDs", IDs)
-	WireLib.TriggerOutput(Entity, "Owner", Own)
-	WireLib.TriggerOutput(Entity, "Position", Position)
-	WireLib.TriggerOutput(Entity, "Velocity", Velocity)
-	WireLib.TriggerOutput(Entity, "Distance", Distance)
-	WireLib.TriggerOutput(Entity, "Detected", Count)
-	WireLib.TriggerOutput(Entity, "Size", Size)
-	WireLib.TriggerOutput(Entity, "Type", Type)
-
-	-- Only bump Clk on scans that actually found something
-	if Count > 0 then
-		WireLib.TriggerOutput(Entity, "Clk", engine.TickCount())
-	end
-
-	if Count ~= Entity.TargetCount then
-		if Count > Entity.TargetCount then
-			Sounds.SendSound(Entity, Entity.SoundPath, 70, 100, 1)
-		end
-
-		Entity.TargetCount = Count
-
-		Entity:UpdateOverlay()
-	end
+	RadarHelpers.PublishTargets(Entity, Detections, next(Detections) ~= nil)
 end
 
 local function SetScanning(Entity, Active)
@@ -252,7 +136,7 @@ local function SetScanning(Entity, Active)
 
 	Entity:UpdateOverlay()
 
-	ResetOutputs(Entity)
+	RadarHelpers.ResetTargets(Entity)
 	SetSequence(Entity, Active)
 
 	Radars[Entity] = Active or nil
@@ -473,7 +357,7 @@ end
 -- ACF_OnTick scan hook already skips any radar with a valid SyncSource, so no scan cycle needs stopping
 -- here; Active/Scanning stay meaningful for the Synchronizer to read.
 function ENT:StopIndependentScanning()
-	ResetOutputs(self)
+	RadarHelpers.ResetTargets(self)
 end
 
 -- Called when this radar gets unlinked from a Sensor Synchronizer: resumes independent scanning exactly

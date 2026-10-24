@@ -90,3 +90,130 @@ function RadarHelpers.GetPlayersInShapes(Shapes, Contraption)
 
 	return Result
 end
+
+do -- MARK: Target publishing
+	local Indexes    = {}
+	local Unused     = {}
+	local IndexCount = 0
+
+	-- Stable integer ID per target, shared by every sensor so one target has one ID everywhere
+	function RadarHelpers.GetTargetIndex(Ent)
+		if Indexes[Ent] then return Indexes[Ent] end
+
+		local Index = next(Unused)
+
+		if Index then
+			Unused[Index] = nil
+		else
+			IndexCount = IndexCount + 1
+			Index      = IndexCount
+		end
+
+		Indexes[Ent] = Index
+
+		Ent:CallOnRemove("ACF Sensor Index", function()
+			Indexes[Ent] = nil
+			Unused[Index] = true
+		end)
+
+		return Index
+	end
+
+	local function ClearTargets(Entity)
+		local Targets = Entity.Targets
+
+		for Target in pairs(Targets) do
+			Targets[Target] = nil
+		end
+
+		for _, List in pairs(Entity.TargetInfo) do
+			for Index in ipairs(List) do
+				List[Index] = nil
+			end
+		end
+	end
+
+	local function TriggerTargetOutputs(Entity, Count, Closest)
+		local TargetInfo = Entity.TargetInfo
+
+		WireLib.TriggerOutput(Entity, "ClosestDistance", Closest)
+		WireLib.TriggerOutput(Entity, "IDs", TargetInfo.ID)
+		WireLib.TriggerOutput(Entity, "Owner", TargetInfo.Owner)
+		WireLib.TriggerOutput(Entity, "Position", TargetInfo.Position)
+		WireLib.TriggerOutput(Entity, "Velocity", TargetInfo.Velocity)
+		WireLib.TriggerOutput(Entity, "Distance", TargetInfo.Distance)
+		WireLib.TriggerOutput(Entity, "Detected", Count)
+		WireLib.TriggerOutput(Entity, "Size", TargetInfo.Size)
+		WireLib.TriggerOutput(Entity, "Type", TargetInfo.Type)
+
+		if TargetInfo.Sensor then
+			WireLib.TriggerOutput(Entity, "Sensor", TargetInfo.Sensor)
+		end
+	end
+
+	-- Rewrites Targets/TargetInfo from Detections (target -> detection data) and fires the wire outputs
+	-- Clk only bumps when Bump is true, the detection sound only plays when the count goes up
+	function RadarHelpers.PublishTargets(Entity, Detections, Bump)
+		ClearTargets(Entity)
+
+		local TargetInfo = Entity.TargetInfo
+		local Targets    = Entity.Targets
+		local Sensors    = TargetInfo.Sensor
+		local Closest    = math.huge
+		local Count      = 0
+
+		for Ent, Data in pairs(Detections) do
+			local Index = RadarHelpers.GetTargetIndex(Ent)
+
+			Count = Count + 1
+
+			Targets[Ent] = {
+				Index    = Index,
+				Owner    = Data.Owner,
+				Position = Data.Position,
+				Velocity = Data.Velocity,
+				Distance = Data.Distance,
+				Spread   = Data.Spread,
+				Type     = Data.Type,
+				Sensor   = Data.Sensor,
+			}
+
+			TargetInfo.ID[Count]       = Index
+			TargetInfo.Owner[Count]    = Data.Owner
+			TargetInfo.Position[Count] = Data.Position
+			TargetInfo.Velocity[Count] = Data.Velocity
+			TargetInfo.Distance[Count] = Data.Distance
+			TargetInfo.Size[Count]     = Data.Size
+			TargetInfo.Type[Count]     = Data.Type
+
+			if Sensors then Sensors[Count] = Data.Sensor end
+
+			if Data.Distance < Closest then
+				Closest = Data.Distance
+			end
+		end
+
+		TriggerTargetOutputs(Entity, Count, Closest < math.huge and Closest or 0)
+
+		if Bump then
+			WireLib.TriggerOutput(Entity, "Clk", engine.TickCount())
+		end
+
+		if Count == Entity.TargetCount then return end
+
+		if Count > Entity.TargetCount then
+			ACF.Utilities.Sounds.SendSound(Entity, Entity.SoundPath, 70, 100, 1)
+		end
+
+		Entity.TargetCount = Count
+
+		Entity:UpdateOverlay()
+	end
+
+	-- Clears every target and zeroes the outputs, skipped if there was nothing to clear
+	function RadarHelpers.ResetTargets(Entity)
+		if Entity.TargetCount == 0 then return end
+
+		RadarHelpers.PublishTargets(Entity, {}, false)
+	end
+end

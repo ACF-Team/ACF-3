@@ -20,138 +20,20 @@ local hook        = hook
 -- rate-group counters; mirrors the ACF.ActiveRadars pattern used for standalone radars
 local ActiveSyncs = {}
 
--- Uses the same stable per-target integer ID scheme as acf_radar (own pool, not shared), so IDs stay
--- consistent for a target across scans within this synchronizer
-local Indexes = {}
-local Unused  = {}
-local IndexCount = 0
-
-local function GetEntityIndex(Entity)
-	if Indexes[Entity] then return Indexes[Entity] end
-
-	if next(Unused) then
-		local Index = next(Unused)
-
-		Indexes[Entity] = Index
-		Unused[Index] = nil
-	else
-		IndexCount = IndexCount + 1
-
-		Indexes[Entity] = IndexCount
-	end
-
-	local EntID = Indexes[Entity]
-
-	Entity:CallOnRemove("SensorSync Index", function()
-		Indexes[Entity] = nil
-		Unused[EntID] = true
-	end)
-
-	return EntID
-end
-
-local function ClearTargets(Entity)
-	local TargetInfo = Entity.TargetInfo
-	local Targets = Entity.Targets
-
-	for Target in pairs(Targets) do
-		Targets[Target] = nil
-	end
-
-	for _, List in pairs(TargetInfo) do
-		for Index in ipairs(List) do
-			List[Index] = nil
-		end
-	end
-end
-
 local function SortByDamage(A, B)
 	return (A.Damage or 0) < (B.Damage or 0)
 end
 
--- Rewrites this Synchronizer's combined Targets/TargetInfo from the current BatchResults snapshot and
--- re-fires wire outputs. Safe to call with an empty BatchResults (e.g. all sensors unlinked). Clk only
--- bumps when the calling batch itself confirmed a detection this cycle
+-- Publishes the combined BatchResults, safe to call with none. Clk only bumps when the calling batch
+-- itself confirmed a detection this cycle
 local function RefreshOutputs(Entity, BatchDetected)
-	local TargetInfo = Entity.TargetInfo
-	local Targets = Entity.Targets
-
-	ClearTargets(Entity)
-
-	local IDs = TargetInfo.ID
-	local Own = TargetInfo.Owner
-	local Position = TargetInfo.Position
-	local Velocity = TargetInfo.Velocity
-	local Distance = TargetInfo.Distance
-	local Size = TargetInfo.Size
-	local Type = TargetInfo.Type
-	local Sensor = TargetInfo.Sensor
-	local Closest = math.huge
-	local Count = 0
-
-	for Ent, Data in pairs(Entity.BatchResults) do
-		local Index = GetEntityIndex(Ent)
-
-		Count = Count + 1
-
-		Targets[Ent] = {
-			Index    = Index,
-			Owner    = Data.Owner,
-			Position = Data.Position,
-			Velocity = Data.Velocity,
-			Distance = Data.Distance,
-			Spread   = Data.Spread,
-			Type     = Data.Type,
-			Sensor   = Data.FromSensor,
-		}
-
-		IDs[Count] = Index
-		Own[Count] = Data.Owner
-		Position[Count] = Data.Position
-		Velocity[Count] = Data.Velocity
-		Distance[Count] = Data.Distance
-		Size[Count] = Data.Size
-		Type[Count] = Data.Type
-		Sensor[Count] = Data.FromSensor
-
-		if Data.Distance < Closest then
-			Closest = Data.Distance
-		end
-	end
-
-	Closest = Closest < math.huge and Closest or 0
-
-	WireLib.TriggerOutput(Entity, "ClosestDistance", Closest)
-	WireLib.TriggerOutput(Entity, "IDs", IDs)
-	WireLib.TriggerOutput(Entity, "Owner", Own)
-	WireLib.TriggerOutput(Entity, "Position", Position)
-	WireLib.TriggerOutput(Entity, "Velocity", Velocity)
-	WireLib.TriggerOutput(Entity, "Distance", Distance)
-	WireLib.TriggerOutput(Entity, "Detected", Count)
-	WireLib.TriggerOutput(Entity, "Size", Size)
-	WireLib.TriggerOutput(Entity, "Type", Type)
-	WireLib.TriggerOutput(Entity, "Sensor", Sensor)
-
 	local LinkedCount = 0
 	for Linked in pairs(Entity.Sensors) do
 		if IsValid(Linked) then LinkedCount = LinkedCount + 1 end
 	end
 	WireLib.TriggerOutput(Entity, "Linked Sensors", LinkedCount)
 
-	-- Only bump Clk when this specific batch confirmed a detection
-	if BatchDetected then
-		WireLib.TriggerOutput(Entity, "Clk", engine.TickCount())
-	end
-
-	if Count ~= Entity.TargetCount then
-		if Count > Entity.TargetCount then
-			Sounds.SendSound(Entity, Entity.SoundPath, 70, 100, 1)
-		end
-
-		Entity.TargetCount = Count
-
-		Entity:UpdateOverlay()
-	end
+	RadarHelpers.PublishTargets(Entity, Entity.BatchResults, BatchDetected)
 end
 
 local function MergeMatches(Matches, Found)
@@ -239,7 +121,7 @@ local function RunBatch(Entity, GroupSensors)
 			Size       = EntSize,
 			Type       = EntType,
 			Spread     = EntSpread,
-			FromSensor = Sensor,
+			Sensor     = Sensor,
 		}
 	end
 
@@ -247,7 +129,7 @@ local function RunBatch(Entity, GroupSensors)
 	-- or moved out of every linked sensor's zone), without touching results still being reported by other
 	-- rate-groups
 	for Ent, Data in pairs(Entity.BatchResults) do
-		if GroupSensors[Data.FromSensor] and not Confirmed[Ent] then
+		if GroupSensors[Data.Sensor] and not Confirmed[Ent] then
 			Entity.BatchResults[Ent] = nil
 		end
 	end
@@ -273,8 +155,8 @@ local function RebuildRateGroups(Entity)
 
 	-- Prune results attributed to a sensor that's no longer linked/active in any current group
 	for Ent, Data in pairs(Entity.BatchResults) do
-		local Group = Data.FromSensor and Groups[Data.FromSensor.ThinkTicks]
-		local StillGrouped = Group and Group.Sensors[Data.FromSensor]
+		local Group = Data.Sensor and Groups[Data.Sensor.ThinkTicks]
+		local StillGrouped = Group and Group.Sensors[Data.Sensor]
 
 		if not StillGrouped then
 			Entity.BatchResults[Ent] = nil
