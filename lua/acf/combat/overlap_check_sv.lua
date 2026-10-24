@@ -37,7 +37,7 @@ local function nextKey(Set, Last)
 end
 
 -- Random point inside the convex: a random surface point scaled towards the centroid, which is inside since convexes are star-shaped from it
-local function samplePoint(Tris, Centroid)
+local function samplePoint(Tris, Centroid, Scale)
     local Tri  = Tris[math.random(#Tris)]
     local U, V = math.random(), math.random()
 
@@ -45,8 +45,8 @@ local function samplePoint(Tris, Centroid)
 
     local Surface = Tri[1] + (Tri[2] - Tri[1]) * U + (Tri[3] - Tri[1]) * V
 
-    -- Cube root evens out the density by volume, ACF.OverlapShrink keeps the point off the surface
-    return Centroid + (Surface - Centroid) * ACF.OverlapShrink * math.random() ^ (1 / 3)
+    -- Cube root evens out the density by volume, Scale keeps the point off the surface
+    return Centroid + (Surface - Centroid) * Scale * math.random() ^ (1 / 3)
 end
 
 local CurEnt
@@ -113,9 +113,11 @@ local function sample()
     local Convex   = MeshData.Convexes[ConvexID]
     if not Convex or #Convex.Tris == 0 then return end
 
+    -- Sampling the shrunk convex lets entities clip into each other by about ACF.OverlapInset
+    local Scale    = ACF.ConvexInsetScale(Convex, ACF.OverlapInset)
     local Centroid = Convex.Centroid
-    local Start    = Ent:LocalToWorld(samplePoint(Convex.Tris, Centroid))
-    local End      = Ent:LocalToWorld(samplePoint(Convex.Tris, Centroid))
+    local Start    = Ent:LocalToWorld(samplePoint(Convex.Tris, Centroid, Scale))
+    local End      = Ent:LocalToWorld(samplePoint(Convex.Tris, Centroid, Scale))
 
     CurEnt   = Ent
     CurSkip  = Ignored[Ent:GetClass()]
