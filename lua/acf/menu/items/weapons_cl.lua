@@ -1,6 +1,5 @@
 local ACF       = ACF
 local Classes   = ACF.Classes
-local ModelData = ACF.ModelData
 local PAGE      = "acf_gun"
 
 local Current = {}
@@ -171,16 +170,16 @@ local function GetMagazineText(Caliber, Class, Weapon)
 end
 
 local function GetMass(Caliber, Class, Weapon)
-	if Weapon then return Weapon.Mass end
+	if Weapon then return Weapon.Mass or 0 end
 
-	local Model = Class.Model
-	local Base  = ModelData.GetModelVolume(Model)
-	if not Base then return 0 end
+	local Factor = Caliber / Class.CaliberLimits.Base
 
-	local Scale  = Caliber / Class.CaliberLimits.Base
-	local Scaled = ModelData.GetModelVolume(Model, Scale)
+	return math.Round((Class.Mass or 0) * Factor ^ 3) -- 3d space so scaling has a cubing effect
+end
 
-	return math.Round(Class.Mass * Scaled / Base)
+---Returns the point cost of a weapon, mirroring acf_gun's GetCost.
+local function GetCost(Caliber, Class)
+	return (Class.CostScalar or 1) * Caliber
 end
 
 local function Build(Menu, Contexts)
@@ -269,13 +268,14 @@ local function Build(Menu, Contexts)
 		if not Caliber then return "" end
 
 		local Weapon   = Current.Weapon
-		local Mass     = ACF.GetProperMass(GetMass(Caliber, Class, Weapon))
+		local Mass     = ACF.FormatMass(GetMass(Caliber, Class, Weapon))
+		local Cost     = ACF.FormatCost(GetCost(Caliber, Class))
 		local FireDelay = GetReloadTime(Caliber, Class, Weapon)
 		local FireRate = 60 / FireDelay
 		local Spread   = ACF.GetWeaponValue("Spread", Caliber, Class, Weapon)
 		local Magazine = GetMagazineText(Caliber, Class, Weapon)
 
-		return language.GetPhrase("acf.menu.weapons.weapon_stats"):format(Mass, math.Round(FireRate), math.Round(FireDelay, 3), Spread, Magazine)
+		return language.GetPhrase("acf.menu.weapons.weapon_stats"):format(Mass, Cost, math.Round(FireRate), math.Round(FireDelay, 3), Spread, Magazine)
 	end
 	local function RefreshStats() if IsValid(EntData) then EntData:SetText(UpdateStats()) end end
 	Ammo:OnChange(EntData, nil, RefreshStats)

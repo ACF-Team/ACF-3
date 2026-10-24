@@ -120,6 +120,53 @@ Sounds.acf_turret_motor = {
 	end
 }
 
+-- A linked motor's sound overrides this; it only applies while the turret is motorless
+Sounds.acf_turret = {
+	GetSound = function(Ent)
+		local Default = Ent.PowerData or Ent.HandGear
+
+		return {
+			Sound  = Ent.CustomSound or (Default and Default.Sound) or "",
+			Pitch  = Ent.CustomPitch or 0.7,
+			Volume = Ent.CustomVolume or 0.1,
+		}
+	end,
+	SetSound = function(Ent, SoundData)
+		Ent.CustomSound  = SoundData.Sound:Trim():lower()
+		Ent.CustomPitch  = SoundData.Pitch
+		Ent.CustomVolume = SoundData.Volume
+
+		Ent:UpdateSound()
+	end,
+	ResetSound = function(Ent)
+		Ent.CustomSound  = nil
+		Ent.CustomPitch  = nil
+		Ent.CustomVolume = nil
+
+		Ent:UpdateSound()
+	end
+}
+
+Sounds.acf_autoloader = {
+	GetSound = function(Ent)
+		return {
+			Sound  = Ent:ACF_GetUserVar("SoundPath"),
+			Pitch  = Ent:ACF_GetUserVar("SoundPitch"),
+			Volume = Ent:ACF_GetUserVar("SoundVolume"),
+		}
+	end,
+	SetSound = function(Ent, SoundData)
+		Ent:ACF_SetUserVar("SoundPath", SoundData.Sound:Trim():lower())
+		Ent:ACF_SetUserVar("SoundPitch", SoundData.Pitch)
+		Ent:ACF_SetUserVar("SoundVolume", SoundData.Volume)
+	end,
+	ResetSound = function(Ent)
+		Ent:ACF_SetUserVar("SoundPath", "")
+		Ent:ACF_SetUserVar("SoundPitch", 1)
+		Ent:ACF_SetUserVar("SoundVolume", 1)
+	end
+}
+
 Sounds.acf_waterjet = {
 	GetSound = function(Ent)
 		return {

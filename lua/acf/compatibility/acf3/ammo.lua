@@ -77,8 +77,9 @@ local WeaponFQNTable = {
 -- Round inputs ammo types used to store flat on the dupe/tool data. They now live on the AmmoType
 -- instance; the serializer keeps only the fields the chosen ammo type actually declares.
 local RoundFields = {
-	"Projectile", "Propellant", "FillerRatio", "Flechettes",
-	"HollowRatio", "LinerAngle", "SmokeWPRatio", "Spread", "StandoffRatio",
+	"FillerRatio", "Flechettes", "HollowRatio", "LinerAngle", "SmokeWPRatio",
+	"Spread", "StandoffRatio", "RoundLength", "PropRatio", "CaseScale",
+	"TwoPiece", "TelescopeRatio", "PenFuze", "FuzeDelay", "LinerAngleRatio",
 }
 
 local WeaponFields = {}
@@ -197,6 +198,19 @@ ACF.Entities.RegisterCompatPatch("acf_ammo", 2026062101, function(Data)
 	local AmmoData = { Tracer = tobool(Data.Tracer) }
 	for _, K in ipairs(RoundFields) do AmmoData[K] = Data[K] end
 
+	-- Rounds are stored as a total length plus the propellant's share of it. Dupes older than that
+	-- carry the two lengths separately, so fold them here: the serializer only keeps fields the ammo
+	-- type declares, and Projectile/Propellant are no longer among them.
+	-- tonumber, not isnumber: dupes can store these as strings.
+	if (tonumber(AmmoData.RoundLength) or 0) <= 0 then
+		local Projectile = tonumber(Data.Projectile) or tonumber(Data.RoundProjectile) or 0
+		local Propellant = tonumber(Data.Propellant) or tonumber(Data.RoundPropellant) or 0
+		local Total      = Projectile + Propellant
+
+		AmmoData.RoundLength = Total
+		AmmoData.PropRatio   = Total > 0 and (Propellant / Total) or 0
+	end
+
 	local WeaponData = { Caliber = Caliber }
 	for K, V in pairs(WeaponFields) do WeaponData[K] = V(Data[K], Data) end
 
@@ -224,4 +238,63 @@ ACF.Entities.RegisterCompatPatch("acf_ammo", 2026062101, function(Data)
 		CrateProjectilesY = CrateY,
 		CrateProjectilesZ = CrateZ,
 	}
+end)
+
+-- HEAT rounds now store the liner angle as a ratio between the round's minimum cone angle and 90 degrees.
+-- The minimum depends on the round's geometry (not on the liner), so build the round once to get it.
+local function DeriveLinerAngleRatio(UserData, AmmoTypeFQN, AmmoData, LinerAngle)
+	local WeaponInfo  = istable(UserData.Weapon) and UserData.Weapon or {}
+	local WeaponClass = GetType(WeaponInfo.Type)
+	local AmmoClass   = GetType(AmmoTypeFQN)
+	if not (WeaponClass and AmmoClass) then return end
+
+	local Caliber = UserData.Caliber or (istable(WeaponInfo.Data) and WeaponInfo.Data.Caliber)
+
+	local ok, Ratio = pcall(function()
+		local Weapon = DeserializePartial(WeaponClass, {Caliber = Caliber})
+		if Weapon.VerifyData then Weapon:VerifyData() end
+
+		local Ammo  = DeserializePartial(AmmoClass, AmmoData)
+		Ammo.Weapon = Weapon
+
+		local Bullet     = Ammo:ServerConvert()
+		local MinConeAng = Bullet.MinConeAng
+		if not isnumber(MinConeAng) or MinConeAng >= 90 then return end
+
+		return math.Remap(math.Clamp(LinerAngle, MinConeAng, 90), MinConeAng, 90, 0, 1)
+	end)
+
+	if ok and isnumber(Ratio) then return Ratio end
+end
+
+-- Dupes saved before rounds were stored as a total length plus propellant ratio already have ACF_UserData,
+-- but with the old Projectile/Propellant lengths and absolute LinerAngle on the ammo type data. The serializer
+-- drops fields the ammo type no longer declares, so fold them into the current ones here.
+-- Also catches the LinerAngle the patch above copies from even older flat dupes.
+ACF.Entities.RegisterCompatPatch("acf_ammo", 2026100801, function(Data)
+	local UserData = Data.ACF_UserData
+	local AmmoType = istable(UserData) and UserData.AmmoType
+	local AmmoData = istable(AmmoType) and AmmoType.Data
+	if not istable(AmmoData) then return end
+
+	if (tonumber(AmmoData.RoundLength) or 0) <= 0 then
+		local Projectile = tonumber(AmmoData.Projectile) or 0
+		local Propellant = tonumber(AmmoData.Propellant) or 0
+		local Total      = Projectile + Propellant
+
+		if Total > 0 then
+			AmmoData.RoundLength = Total
+			AmmoData.PropRatio   = Propellant / Total
+		end
+	end
+
+	AmmoData.Projectile = nil
+	AmmoData.Propellant = nil
+
+	local LinerAngle = tonumber(AmmoData.LinerAngle)
+	AmmoData.LinerAngle = nil
+
+	if LinerAngle and not tonumber(AmmoData.LinerAngleRatio) then
+		AmmoData.LinerAngleRatio = DeriveLinerAngleRatio(UserData, AmmoType.Type, AmmoData, LinerAngle)
+	end
 end)

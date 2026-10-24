@@ -52,6 +52,7 @@ function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 		self.Leaking = self.Leaking + self.Amount * ((HitRes.Damage / self.ACF.Health) ^ 1.5) * 0.25
 
 		WireLib.TriggerOutput(self, "Leaking", self.Leaking > 0 and 1 or 0)
+		ACF.Hints.Set(self, "fueltank_leaking", self.Leaking > 0)
 
 		self:NextThink(Clock.CurTime + 0.1)
 	end
@@ -74,8 +75,14 @@ function ENT:Detonate()
 	Damage.createExplosion(Position, Explosive, Explosive * 0.5, { self }, DmgInfo)
 	Damage.explosionEffect(Position, nil, Explosive)
 
-	constraint.RemoveAll(self)
-	self:Remove()
+	self.Leaking = 0
+	self.ACF.Health = 0
+
+	ACF.Hints.Set(self, "fueltank_leaking", false)
+
+	self:SetAmount(0)
+	self:Disable()
+	self:UpdateOverlay(true)
 end
 
 --- Only runs when the tank is leaking
@@ -92,6 +99,7 @@ function ENT:Think()
 		self.Leaking = Leaking
 
 		WireLib.TriggerOutput(self, "Leaking", Leaking > 0 and 1 or 0)
+		ACF.Hints.Set(self, "fueltank_leaking", Leaking > 0)
 
 		self.LastThink = Clock.CurTime
 

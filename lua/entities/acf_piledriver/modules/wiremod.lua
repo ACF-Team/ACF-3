@@ -18,7 +18,7 @@ function ENT:ACF_UpdateOverlayState(State)
     local Bullet  = self.BulletData
     local Display = self.RoundData:GetDisplayData(Bullet)
     local MaxPen  = math.Round(Display.MaxPen, 2)
-    local Mass    = ACF.GetProperMass(Bullet.ProjMass)
+    local Mass    = ACF.FormatMass(Bullet.ProjMass)
     local MuzVel  = math.Round(Bullet.MuzzleVel, 2)
     local Length  = Bullet.ProjLength
 

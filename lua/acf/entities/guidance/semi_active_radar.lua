@@ -1,14 +1,16 @@
 local Classes 	= ACF.Classes
 Classes.DefineClass("ACF.Missiles.Guidance.SemiActiveRadar", "ACF.Missiles.Guidance.AntiMissile", function(CLASS)
 	CLASS.Name = "Semi-active Radar"
+	-- Shared so the ammo menu can price missile rounds clientside.
+	function CLASS:GetCost()
+		return 5
+	end
+
 	if CLIENT then
 		CLASS.Description = "This guidance package uses a radar to detect contraptions and guides the munition towards the most centered one it can find."
 	else
 		CLASS.RadarType = "TGT-Radar"
 
-		function CLASS:GetCost()
-			return 2
-		end
 
 		-- Semi-actives can't seek targets by themselves
 		function CLASS:SeekTarget()

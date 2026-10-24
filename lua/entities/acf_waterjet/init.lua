@@ -26,7 +26,11 @@ local function GenerateLinkTable(Entity, Target)
 
 	local OutPosWorld = Entity:LocalToWorld(OutPos)
 	local Excessive, Angle = ACF.IsDriveshaftAngleExcessive(Target, Target.In, Entity, Plane)
-	if Excessive then return nil, Angle end
+	if Excessive then
+		Mobility.LinkFailure.Angle(Entity, Plane, Target, Target.In, Angle)
+
+		return nil, Angle
+	end
 
 	local Link	= MobilityObj.Link(Entity, Target)
 
@@ -75,6 +79,7 @@ ACF.RegisterClassLink("acf_waterjet", "acf_gearbox", function(This, Gearbox)
 	Gearbox.Effectors[This] = Link
 	This.Gearboxes[Gearbox] = Link
 
+	Gearbox:UpdateLinkHints()
 	Gearbox:InvalidateClientInfo()
 
 	return true, "Waterjet linked successfully."
@@ -85,6 +90,8 @@ ACF.RegisterClassUnlink("acf_waterjet", "acf_gearbox", function(This, Gearbox)
 
 	Gearbox.Effectors[This] = nil
 	This.Gearboxes[Gearbox] = nil
+
+	Gearbox:UpdateLinkHints()
 
 	return true, "Waterjet unlinked successfully."
 end)
@@ -137,6 +144,7 @@ function ENT:Calc(InputRPM)
 
 	if not SelfTbl.InWater then return 0 end
 	if not IsValid(SelfTbl.Ancestor) then return 0 end
+	if ACF.IsDestroyed(self, SelfTbl) then return 0 end
 
 	local HealthRatio = SelfTbl.ACF.Health / SelfTbl.ACF.MaxHealth
 	local N = InputRPM / (2 * math.pi) -- Rotation rate (Rad/s)
@@ -153,6 +161,7 @@ function ENT:Act(Torque, _, MassRatio, FlyRPM)
 
 	if not SelfTbl.InWater then return end
 	if not IsValid(SelfTbl.Ancestor) then return end
+	if ACF.IsDestroyed(self, SelfTbl) then return end
 
 	local HealthRatio = SelfTbl.ACF.Health / SelfTbl.ACF.MaxHealth
 	local N = FlyRPM / (2 * math.pi) -- Rotation rate (Rad/s)
@@ -177,7 +186,8 @@ function ENT:Think()
 
 	self:SetNW2Float("ACF_WaterjetRPM", 0)
 	local Center = self:GetPos()
-	SelfTbl.InWater = bit.band(util.PointContents(Center), CONTENTS_WATER) == CONTENTS_WATER
+	local LiquidMask = bit.bor(CONTENTS_WATER, CONTENTS_SLIME)
+	SelfTbl.InWater = bit.band(util.PointContents(Center), LiquidMask) ~= 0
 
 	SelfTbl.Pitch = math.Clamp(SelfTbl.Pitch + (SelfTbl.TargetPitch - SelfTbl.Pitch) * SelfTbl.SlewRatePitch * 0.1, -1, 1)
 	SelfTbl.Yaw = math.Clamp(SelfTbl.Yaw + (SelfTbl.TargetYaw - SelfTbl.Yaw) * SelfTbl.SlewRateYaw * 0.1, -1, 1)
@@ -192,6 +202,14 @@ function ENT:Think()
 	self:NextThink(CurTime() + 0.1)
 
 	return true
+end
+
+function ENT:OnRemove(IsFullUpdate)
+	if IsFullUpdate then return end
+
+	for Gearbox in pairs(self.Gearboxes) do
+		self:Unlink(Gearbox)
+	end
 end
 
 function ENT:ACF_UpdateOverlayState(State)

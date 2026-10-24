@@ -14,6 +14,11 @@ Classes.DefineClass("ACF.Missiles.Guidance.WireMCLOS", "ACF.Missiles.Guidance.Ra
 		State:AddSubKeyValue("Wire Length", math.Round(self.WireLength ^ 0.5 * ACF.InchToMeter, 2) .. " meters")
 	end
 
+	-- Shared so the ammo menu can price missile rounds clientside.
+	function CLASS:GetCost()
+		return 4
+	end
+
 	if CLIENT then
 		CLASS.Description = "This guidance package allows you to manually control the direction of the missile."
 	else
@@ -21,20 +26,21 @@ Classes.DefineClass("ACF.Missiles.Guidance.WireMCLOS", "ACF.Missiles.Guidance.Ra
 
 		CLASS.IsWire = true
 
-		function CLASS:GetCost()
-			return 3
-		end
 
 		function CLASS:OnLaunched(Missile)
 			BASE.OnLaunched(self, Missile)
 
-			local LastFired = self.Source.LastFired
+			local Source = self.Source
+
+			if not IsValid(Source) then return end
+
+			local LastFired = Source.LastFired
 
 			if IsValid(LastFired) and LastFired.GuidanceData.IsWire then
 				LastFired.GuidanceData:SnapRope(LastFired)
 			end
 
-			self.Rope = constraint.CreateKeyframeRope(Vector(), 0.1, "acf/core/wire", nil, self.Source, self.InPos, 0, Missile, self.OutPos, 0)
+			self.Rope = constraint.CreateKeyframeRope(Vector(), 0.1, "acf/core/wire", nil, Source, self.InPos, 0, Missile, self.OutPos, 0)
 			self.Rope:SetKeyValue("Width", 0.1)
 		end
 

@@ -1,0 +1,7 @@
+-- Insert pack
+INSERT INTO PackData (packid, packname, author, contact)
+VALUES ('bathroom_pass', 'Bathroom Pass', 'Plab', '');
+
+-- Insert dupes using the string packid
+INSERT INTO DupeData (path, name, cost, weight, type, mobility, packid, description) VALUES
+('ur_inal', 'Ur Inal', 316.7, 36.8, 'MBT', 'Tracked', 'bathroom_pass', 'A tank for the people. A competitive, cheap, and effective MBT and a canvas for modifications.');

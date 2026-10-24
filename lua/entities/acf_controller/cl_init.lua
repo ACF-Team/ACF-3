@@ -26,6 +26,7 @@ end
 RegisterClientModule(include("modules_cl/overlay.lua")(State))
 RegisterClientModule(include("modules_cl/camera.lua")(State))
 RegisterClientModule(include("modules_cl/hud.lua")(State))
+RegisterClientModule(include("modules_sh/binds_sh.lua")(State))
 
 -- Maintain a record of links to the entity from the server
 net.Receive("ACF_Controller_Links", function()

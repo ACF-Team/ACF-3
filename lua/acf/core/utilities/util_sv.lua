@@ -1,6 +1,31 @@
 local ACF = ACF
 local Notify = ACF.Utilities.Notify
 
+do -- Combat state
+	local CombatTimeout = 30 / engine.TickInterval() -- 30 seconds
+
+	--- Whether an entity's contraption has fired a weapon or taken prop damage recently.
+	--- Shared by anything that should pause while a vehicle is actively fighting (crew health
+	--- regen, supply crate resupplying).
+	--- @param Entity table Any entity belonging to the contraption to check
+	function ACF.IsContraptionInCombat(Entity)
+		local Contraption = Entity:CFW_GetContraption()
+		return Contraption and Contraption.InCombat and (engine.TickCount() - Contraption.InCombat) < CombatTimeout
+	end
+end
+
+do -- Primitives
+	--- Primitives keep the combine bomb's physics until their shape is built, so traces should skip them until then.
+	--- @param Entity entity
+	--- @return boolean # Whether the entity is a primitive with a rebuild pending or in progress
+	function ACF.IsPrimitivePending(Entity)
+		local Primitive = Entity.primitive
+		if not istable(Primitive) then return false end
+
+		return Primitive.init ~= nil or Primitive.thread ~= nil
+	end
+end
+
 -- 16 Segments font created by ThorType
 -- Huge thanks to LiddulBOFH to help me get it working
 -- Source: https://www.dafont.com/16-segments.font

@@ -17,6 +17,7 @@ local abs         	 = math.abs
 local min         	 = math.min
 local max         	 = math.max
 local MaxDistance 	 = ACF.MobilityLinkDistance * ACF.MobilityLinkDistance
+local ANGLE_MARGIN   = 0.8 -- Share of the driveshaft angle limit past which a link is about to break
 
 local ENTITY         = FindMetaTable("Entity")
 local VECTOR         = FindMetaTable("Vector")
@@ -165,7 +166,7 @@ do -- Spawn and Update functions -----------------------
 		Entity.ClassData    = Class
 		Entity.DefaultSound = Gearbox.Sound
 		Entity.SoundPath    = Entity.SoundPath or Gearbox.Sound
-		Entity.SwitchTime   = Gearbox.Switch
+		Entity.SwitchTime   = math.Clamp(Gearbox.Switch * Scale, 0.1, 1)
 		Entity.MaxTorque    = TorqueRating
 		Entity.MinGear      = Gearbox.Gears.Min
 		Entity.MaxGear      = MaxGear
@@ -199,6 +200,33 @@ do -- Spawn and Update functions -----------------------
 		Entity.GearRatio = Entity.Gears[1] * Entity.FinalDrive
 	end
 
+	function ENT:UpdateDriverMod()
+		local Contraption = self:CFW_GetContraption()
+		local Baseplate = Contraption and Contraption.ACF_Baseplate
+		local HasBaseplate = IsEntityValid(Baseplate)
+		local Val = HasBaseplate and Baseplate.DriverCrewMod or ACF.CrewFallbackCoef
+		self.DriverCrewMod = Clamp(Val, ACF.CrewFallbackCoef, 1)
+
+		-- Only the torque sent to wheels and effectors is cut, so gearboxes feeding other gearboxes are left alone
+		local Penalized = self.DriverCrewMod < 1 and (next(self.Wheels) or next(self.Effectors))
+
+		if Penalized then
+			local Penalty = HasBaseplate and Baseplate.DriverPenalty
+
+			self:SetRequirement("gearbox_driver", false, {
+				Percent    = math.Round(self.DriverCrewMod * 100),
+				Reason     = Penalty and Penalty.Reason or "not part of a baseplate's contraption",
+				Baseplate  = HasBaseplate and Baseplate or nil,
+				Drivers    = Penalty and Penalty.Drivers,
+				Misaligned = Penalty and Penalty.Misaligned,
+			})
+		else
+			self:SetRequirement("gearbox_driver", true)
+		end
+
+		return self.DriverCrewMod
+	end
+
 	local function CheckRopes(Entity, Target)
 		local NiceName = Target == "Wheels" and "Prop" or "Gearbox"
 		local Ropes = Entity[Target]
@@ -208,20 +236,27 @@ do -- Spawn and Update functions -----------------------
 		local Contraption = Entity:CFW_GetContraption()
 		local IsAircraft  = Contraption and Contraption:ACF_IsAircraft()
 
+		local function BreakLink(Ent, Link, Reason, Extra)
+			Entity:Unlink(Ent)
+			Mobility.BrokenLinks.Add(Entity, Ent, Reason, Link:GetOrigin(), Ent.In and Ent.In.Pos or Vector())
+			Notify.EntityWarning(Ent, "Gearbox to " .. NiceName .. " connection broken", Reason .. "!" .. (Extra or ""),
+				ACF.Diagnostics.Get("link_broken").Ponder)
+		end
+
 		for Ent, Link in pairs(Ropes) do
 			local OutPos = Entity:LocalToWorld(Link:GetOrigin())
 			local InPos = Ent.In and Ent:LocalToWorld(Ent.In.Pos) or Ent:GetPos()
 
 			-- make sure it is not stretched too far
 			if OutPos:Distance(InPos) > Link.RopeLen * 1.5 then
-				Entity:Unlink(Ent)
-				Notify.EntityWarning(Ent, "Gearbox to " .. NiceName .. " connection broken", "Excessive distance!")
+				BreakLink(Ent, Link, "Excessive distance")
 				continue
 			end
 
-			if ACF.IsDriveshaftAngleExcessive(Ent, Ent.In, Link) then
-				Entity:Unlink(Ent)
-				Notify.EntityWarning(Ent, "Gearbox to " .. NiceName .. " connection broken", "Excessive driveshaft angle!")
+			local Excessive, Angle = ACF.IsDriveshaftAngleExcessive(Ent, Ent.In, Link)
+
+			if Excessive then
+				BreakLink(Ent, Link, "Excessive driveshaft angle (" .. math.Round(Angle) .. " of " .. ACF.MaxDriveshaftAngle .. " deg)")
 				continue
 			end
 
@@ -234,12 +269,94 @@ do -- Spawn and Update functions -----------------------
 				-- vehicles.
 				local Stress = math.max(WheelPhys:GetStress())
 				if Stress > 15 then
-					Entity:Unlink(Ent)
-					Notify.EntityWarning(Ent, "Gearbox to " .. NiceName .. " connection broken", "Excess stress on linked props!\n(aircraft baseplates cannot have wheel-like gearbox connections)")
+					BreakLink(Ent, Link, "Excess stress on linked props", "\n(aircraft baseplates cannot have wheel-like gearbox connections)")
 					continue
 				end
 			end
 		end
+	end
+
+	-- Torque and brakes skip parented wheels and frozen ones, frozen wheels only count while the vehicle itself moves,
+	-- since whole vehicles are usually frozen while they are built
+	local function CheckWheels(Entity)
+		local Unusable
+
+		if next(Entity.Wheels) then
+			local BoxPhys = Entity:GetAncestor():GetPhysicsObject()
+			local Moving  = IsPhysObjValid(BoxPhys) and BoxPhys:IsMotionEnabled()
+
+			for Wheel in pairs(Entity.Wheels) do
+				local Reason
+
+				if IsValid(Wheel:GetParent()) then
+					Reason = "Parented"
+				elseif Moving then
+					local Phys = Wheel:GetPhysicsObject()
+
+					if IsPhysObjValid(Phys) and not Phys:IsMotionEnabled() then Reason = "Frozen" end
+				end
+
+				if Reason then
+					Unusable = Unusable or {}
+					Unusable[#Unusable + 1] = { Wheel = Wheel, Reason = Reason }
+				end
+			end
+		end
+
+		Entity:SetRequirement("gearbox_wheels_free", not Unusable, Unusable and { Wheels = Unusable })
+	end
+
+	local function AddBentShaft(Bent, Angle, From, FromPos, To, ToPos)
+		Bent[#Bent + 1] = { Angle = math.Round(Angle), From = From, FromPos = FromPos, To = To, ToPos = ToPos }
+	end
+
+	-- Covers the engines linked into this gearbox too, since engines only check their links while running
+	local function CheckAngles(Entity)
+		local Warn = ACF.MaxDriveshaftAngle * ANGLE_MARGIN
+		local Bent
+
+		for Engine in pairs(Entity.Engines) do
+			if IsEntityValid(Engine) then
+				local _, Angle = ACF.IsDriveshaftAngleExcessive(Entity, Entity.In, Engine, Engine.Out)
+
+				if Angle > Warn then
+					Bent = Bent or {}
+					AddBentShaft(Bent, Angle, Engine, Engine.Out.Pos, Entity, Entity.In.Pos)
+				end
+			end
+		end
+
+		for _, Links in ipairs({ Entity.GearboxOut, Entity.Wheels }) do
+			for Ent, Link in pairs(Links) do
+				local _, Angle = ACF.IsDriveshaftAngleExcessive(Ent, Ent.In, Link)
+
+				if Angle > Warn then
+					Bent = Bent or {}
+					AddBentShaft(Bent, Angle, Entity, Link:GetOrigin(), Ent, Ent.In and Ent.In.Pos or Vector())
+				end
+			end
+		end
+
+		Entity:SetRequirement("driveshaft_angle", not Bent, Bent and { Links = Bent, Limit = ACF.MaxDriveshaftAngle })
+	end
+
+	local LOAD_MIN_TICKS = 30 -- Driven ticks needed since the last check before the load can be judged
+	local LOAD_CAPPED    = 0.5 -- Share of those ticks spent at the torque rating that counts as overloaded
+
+	-- Only judged after enough driving, so the hint stays up while the vehicle sits still and the owner reads it
+	local function CheckLoad(Entity)
+		local Ticks, Capped = Entity.LoadTicks or 0, Entity.CappedTicks or 0
+
+		Entity.LoadTicks, Entity.CappedTicks = 0, 0
+
+		if Ticks < LOAD_MIN_TICKS then return end
+
+		local Share = Capped / Ticks
+
+		ACF.Hints.Set(Entity, "gearbox_overloaded", Share >= LOAD_CAPPED, {
+			Percent = math.floor(Share * 10) * 10,
+			Rating  = math.Round(Entity.MaxTorque * ACF.TorqueMult),
+		})
 	end
 
 	function ENT:ACF_SetupWireIO(Inputs, Outputs)
@@ -282,6 +399,8 @@ do -- Spawn and Update functions -----------------------
 		self.GearboxOut     = {}
 		self.TotalReqTq     = 0
 		self.TorqueOutput   = 0
+		self.LoadTicks      = 0
+		self.CappedTicks    = 0
 		self.LBrake         = 0
 		self.RBrake         = 0
 		self.ChangeFinished = 0
@@ -303,6 +422,10 @@ do -- Spawn and Update functions -----------------------
 		self:SetScaledModel(Gearbox.Model)
 
 		duplicator.ClearEntityModifier(self, "mass")
+		self.DriverCrewMod = ACF.CrewFallbackCoef
+
+		-- Drivers let gearboxes apply full torque to wheels; poll the baseplate's driver crew.
+		ACF.AugmentedTimer(function(cfg) self:UpdateDriverMod(cfg) end, function() return IsEntityValid(self) end, nil, {MinTime = 0.1, MaxTime = 0.25})
 	end
 
 	function ENT.ACF_CheckSpawnLimit(Player)
@@ -343,6 +466,8 @@ do -- Spawn and Update functions -----------------------
 		if next(self.GearboxOut) then
 			for Box in pairs(self.GearboxOut) do self:Unlink(Box) self:Link(Box) end
 		end
+
+		self:UpdateLinkHints()
 	end
 
 	function ENT:ACF_PostSpawn()
@@ -350,6 +475,10 @@ do -- Spawn and Update functions -----------------------
 			if IsEntityValid(self) then
 				CheckRopes(self, "GearboxOut")
 				CheckRopes(self, "Wheels")
+				CheckWheels(self)
+				CheckAngles(self)
+				CheckLoad(self)
+				self:UpdateLinkHints()
 			else
 				timer.Remove("ACF Gearbox Clock " .. self:EntIndex())
 			end
@@ -511,13 +640,20 @@ do -- Linking ------------------------------------------
 
 		local OutPosWorld = Entity:LocalToWorld(OutPos)
 		local Excessive, Angle = ACF.IsDriveshaftAngleExcessive(Target, Target.In, Entity, Plane)
-		if Excessive then return nil, Angle end
+		if Excessive then
+			Mobility.LinkFailure.Angle(Entity, Plane, Target, Target.In, Angle)
+
+			return nil, Angle
+		end
 
 		local Link	= MobilityObj.Link(Entity, Target)
 
 		Link:SetOrigin(OutPos)
 		Link:SetTargetPos(InPos)
-		Link:SetAxis(Target.In and Plane.Dir or Target:GetPhysicsObject():WorldToLocalVector(Entity:GetRight()))
+		local TargetRight = Target:GetRight()
+		if TargetRight:Dot(Entity:GetRight()) < 0 then TargetRight = -TargetRight end -- Same axis, signed to match the gearbox's right
+
+		Link:SetAxis(Target:GetPhysicsObject():WorldToLocalVector(TargetRight))
 		Link.OutDirection = Plane.Dir
 		Link.Side = Side
 		Link.RopeLen = (OutPosWorld - InPosWorld):Length()
@@ -527,7 +663,11 @@ do -- Linking ------------------------------------------
 
 	local function LinkWheel(Gearbox, Wheel)
 		if Gearbox.Wheels[Wheel] then return false, "This wheel is already linked to this gearbox!" end
-		if Gearbox:GetPos():DistToSqr(Wheel:GetPos()) > MaxDistance then return false, "This wheel is too far away from this gearbox!" end
+		if Gearbox:GetPos():DistToSqr(Wheel:GetPos()) > MaxDistance then
+			Mobility.LinkFailure.Distance(Gearbox, Wheel)
+
+			return false, "This wheel is too far away from this gearbox!"
+		end
 
 		local Link, DriveshaftAngle = GenerateLinkTable(Gearbox, Wheel)
 
@@ -547,6 +687,9 @@ do -- Linking ------------------------------------------
 			end
 		end)
 
+		Mobility.BrokenLinks.Clear(Gearbox, Wheel)
+
+		Gearbox:UpdateLinkHints()
 		Gearbox:InvalidateClientInfo()
 
 		return true, "Wheel linked successfully!"
@@ -555,7 +698,11 @@ do -- Linking ------------------------------------------
 	local function LinkGearbox(Gearbox, Target)
 		if Gearbox.GearboxOut[Target] then return false, "These gearboxes are already linked to each other!" end
 		if Target.GearboxIn[Gearbox] then return false, "These gearboxes are already linked to each other!" end
-		if Gearbox:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "These gearboxes are too far away from each other!" end
+		if Gearbox:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then
+			Mobility.LinkFailure.Distance(Gearbox, Target)
+
+			return false, "These gearboxes are too far away from each other!"
+		end
 		if CheckLoopedGearbox(Gearbox, Target) then return false, "You cannot link gearboxes in a loop!" end
 
 		local Link, DriveshaftAngle = GenerateLinkTable(Gearbox, Target)
@@ -565,6 +712,10 @@ do -- Linking ------------------------------------------
 		Gearbox.GearboxOut[Target] = Link
 		Target.GearboxIn[Gearbox]  = true
 
+		Mobility.BrokenLinks.Clear(Gearbox, Target)
+
+		Gearbox:UpdateLinkHints()
+		Target:UpdateLinkHints()
 		Gearbox:InvalidateClientInfo()
 
 		return true, "Gearbox linked successfully!"
@@ -588,6 +739,7 @@ do -- Unlinking ----------------------------------------
 
 			Wheel:RemoveCallOnRemove("ACF_GearboxUnlink" .. Gearbox:EntIndex())
 
+			Gearbox:UpdateLinkHints()
 			Gearbox:InvalidateClientInfo()
 
 			return true, "Wheel unlinked successfully!"
@@ -616,6 +768,8 @@ do -- Unlinking ----------------------------------------
 			Target.GearboxIn[Gearbox]  = nil
 			Target.GearboxOut[Gearbox] = nil
 
+			Gearbox:UpdateLinkHints()
+			Target:UpdateLinkHints()
 			Gearbox:InvalidateClientInfo()
 
 			return true, "Gearbox unlinked successfully!"
@@ -713,7 +867,7 @@ do -- Movement -----------------------------------------
 
 	function ENT:Calc(InputRPM, InputInertia)
 		local SelfTbl = self:GetTable()
-		if SelfTbl.Disabled then return 0 end
+		if not ACF.IsOperational(self, SelfTbl) then return 0 end
 		if SelfTbl.LastActive == Clock.CurTime then return SelfTbl.TorqueOutput end
 
 		if SelfTbl.ChangeFinished < Clock.CurTime then
@@ -831,6 +985,10 @@ do -- Movement -----------------------------------------
 
 		SelfTbl.TotalReqTq = TotalReqTq
 		TorqueOutput = min(TotalReqTq, SelfTbl.MaxTorque)
+
+		-- Sampled by the clock to tell when the torque rating keeps holding the vehicle back
+		SelfTbl.LoadTicks = (SelfTbl.LoadTicks or 0) + 1
+		if TotalReqTq > SelfTbl.MaxTorque then SelfTbl.CappedTicks = (SelfTbl.CappedTicks or 0) + 1 end
 		SelfTbl.TorqueOutput = TorqueOutput
 
 		self:UpdateOverlay()
@@ -840,7 +998,7 @@ do -- Movement -----------------------------------------
 
 	function ENT:Act(Torque, DeltaTime, MassRatio, FlyRPM)
 		local SelfTbl = ENTITY.GetTable(self)
-		if SelfTbl.Disabled then return end
+		if not ACF.IsOperational(self, SelfTbl) then return end
 
 		if Torque == 0 then
 			SelfTbl.LastActive = Clock.CurTime
@@ -864,11 +1022,13 @@ do -- Movement -----------------------------------------
 		end
 
 		local Braking = SelfTbl.Braking
+		local DriverCrewMod = SelfTbl.DriverCrewMod or 1
 
 		for Ent, Link in pairs(SelfTbl.Wheels) do
 			-- If the gearbox is braking, always
 			if not Braking or not Link.IsBraking then
-				local WheelTorque = Link.ReqTq * AvailTq
+				-- Applied here, not to AvailTq, so gearbox-to-gearbox transfer stays unaffected
+				local WheelTorque = Link.ReqTq * AvailTq * DriverCrewMod
 				ReactTq = ReactTq + WheelTorque
 
 				Link:TransferWheel(Ent, WheelTorque, DeltaTime)
@@ -887,7 +1047,7 @@ do -- Movement -----------------------------------------
 		end
 
 		for Effector, Link in pairs(SelfTbl.Effectors) do
-			Link:TransferEffector(Effector, Link.ReqTq * AvailTq, DeltaTime, MassRatio, FlyRPM)
+			Link:TransferEffector(Effector, Link.ReqTq * AvailTq * DriverCrewMod, DeltaTime, MassRatio, FlyRPM)
 		end
 
 		SelfTbl.LastActive = Clock.CurTime
@@ -1069,13 +1229,19 @@ do	-- NET SURFER 2.0
 				end
 			end
 
+			-- Each output also says whether its shaft is close to the angle limit, so the client can color it
+			local Warn = ACF.MaxDriveshaftAngle * ANGLE_MARGIN
+
 			for _, Couples in ipairs(CoupleTargets) do
 				if next(Couples) then
 					for E, L in pairs(Couples) do
+						local _, Angle = ACF.IsDriveshaftAngleExcessive(E, E.In, L)
+						local Output   = { Index = E:EntIndex(), Bent = Angle > Warn }
+
 						if L.Side == 0 then
-							OutputL[#OutputL + 1] = E:EntIndex()
+							OutputL[#OutputL + 1] = Output
 						else
-							OutputR[#OutputR + 1] = E:EntIndex()
+							OutputR[#OutputR + 1] = Output
 						end
 					end
 				end
@@ -1099,16 +1265,20 @@ do	-- NET SURFER 2.0
 				end
 
 				if next(OutputL) then
-					for _, E in ipairs(OutputL) do
-						net.WriteUInt(E, MAX_EDICT_BITS)
+					for _, Output in ipairs(OutputL) do
+						net.WriteUInt(Output.Index, MAX_EDICT_BITS)
+						net.WriteBool(Output.Bent)
 					end
 				end
 
 				if next(OutputR) then
-					for _, E in ipairs(OutputR) do
-						net.WriteUInt(E, MAX_EDICT_BITS)
+					for _, Output in ipairs(OutputR) do
+						net.WriteUInt(Output.Index, MAX_EDICT_BITS)
+						net.WriteBool(Output.Bent)
 					end
 				end
+
+				net.WriteBool(Entity.ACF_Hints and Entity.ACF_Hints.gearbox_overloaded ~= nil or false)
 			net.Send(Ply)
 		end
 	end)
@@ -1137,6 +1307,11 @@ do -- Miscellaneous ------------------------------------
 		end
 
 		self:UpdateOverlay()
+	end
+
+	function ENT:UpdateLinkHints()
+		ACF.Hints.Set(self, "gearbox_no_input", not (next(self.Engines) or next(self.GearboxIn)))
+		ACF.Hints.Set(self, "gearbox_no_output", not (next(self.Wheels) or next(self.GearboxOut) or next(self.Effectors)))
 	end
 
 	-- Prevent people from changing bodygroup

@@ -8,6 +8,11 @@ do
         Contraption.ACF_LastDamageTime = CurTime()
         Contraption.ACF_LastDamageAttacker = DmgInfo:GetAttacker()
         Contraption.ACF_LastDamageInflictor = DmgInfo:GetInflictor()
+
+        -- Cost cached on the first damage event
+        if not Contraption.ACF_LastCost then
+            Contraption.ACF_LastCost = (ACF.Contraption.CostSystem.CalcCostsFromContraption(Contraption))
+        end
     end)
 
 
@@ -19,5 +24,6 @@ do
         Split.ACF_LastDamageTime = Previous.ACF_LastDamageTime
         Split.ACF_LastDamageAttacker = Previous.ACF_LastDamageAttacker
         Split.ACF_LastDamageInflictor = Previous.ACF_LastDamageInflictor
+        Split.ACF_LastCost = Previous.ACF_LastCost
     end)
 end
