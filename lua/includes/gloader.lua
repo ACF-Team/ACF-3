@@ -185,7 +185,8 @@ function Load(name, folder)
 
 	loadAddon(name, folder)
 
-	concommand.Add(name:lower() .. "_reload", function()
+	concommand.Add(name:lower() .. "_reload", function(Ply)
+		if IsValid(Ply) and not Ply:IsSuperAdmin() then return end
 		loadAddon(name, folder)
 	end)
 end

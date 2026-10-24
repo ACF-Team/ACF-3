@@ -66,7 +66,7 @@ do
 		self.Guns[Gun] = true
 		self.Weapons[Gun] = true
 
-		if Gun.Weapon == "ACF.Guns.SmokeLauncher" then
+		if Gun.Weapon == "ACF.Guns.SmokeLauncher" or Gun.Weapon == "ACF.Guns.40mmFlareLauncher" then
 			self.GunsSmoke[Gun] = true
 			if not IsValid(self.Smoke) then self.Smoke = Gun end
 			local Fuse = self:GetSmokeFuse() or 0

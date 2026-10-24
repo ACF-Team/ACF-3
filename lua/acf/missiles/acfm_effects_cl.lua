@@ -3,7 +3,7 @@ local Clock = ACF.Utilities.Clock
 
 local Overrides =
 {
-	FLR = function(Effect, Bullet)
+	["ACF.Ammunition.FLR"] = function(Effect, Bullet)
 		local Position = Bullet.SimPos
 
 		if math.abs(Position.x) > 16000 or math.abs(Position.y) > 16000 or Position.z < -16000 then
