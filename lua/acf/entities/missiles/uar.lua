@@ -140,19 +140,20 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.SPG-9", "ACF.Missiles.UnguidedR
 		MaxLength       	= 128.18,
 		Armor           	= 1,
 		ProjLength      	= 20.07,
-		PropLength      	= 67.8,
+		PropLength      	= 28.5,
 		Thrust          	= 115000, -- in kg*in/s^2
-		FuelConsumption 	= 0.042, -- in g/s/f
-		StarterPercent  	= 0.3,
+		FuelConsumption 	= 0.02, -- in g/s/f
+		StarterPercent  	= 0.75,
 		MaxAgilitySpeed 	= 1, -- in m/s
 		DragCoef        	= 0.008,
 		FinMul          	= 0,
 		GLimit          	= 1,
 		TailFinMul      	= 0.06,
-		PenMul          	= 2.273,
-		FillerMul       	= 1.06,
-		LinerMassMul    	= 2.8,
+		PenMul          	= 1.02,
+		FillerMul       	= 2.25,
+		LinerMassMul    	= 4.6,
 		Standoff        	= 33.3,
+		GhostingPeriod  	= 0.0125, -- in s, overrides the global missile ghost period; omit to use the global
 		ActualLength    	= 39,
 		ActualWidth     	= 3
 	}
