@@ -75,7 +75,6 @@ Classes.DefineClass("ACF.Ammunition.FLR", "ACF.Ammunition.AP", function(CLASS, B
 	if SERVER then
 		local Ballistics      = ACF.Ballistics
 		local Clock           = ACF.Utilities.Clock
-		local Countermeasures = ACF.Countermeasures
 		local Conversion	  = ACF.PointConversion
 
 		function CLASS:GetCost(BulletData)
@@ -87,7 +86,7 @@ Classes.DefineClass("ACF.Ammunition.FLR", "ACF.Ammunition.AP", function(CLASS, B
 
 			Bullet.CreateTime = Clock.CurTime
 
-			Countermeasures.RegisterFlare(Bullet)
+			ACF.Countermeasures.RegisterFlare(Bullet)
 		end
 
 		function CLASS:Network(Entity, BulletData)
