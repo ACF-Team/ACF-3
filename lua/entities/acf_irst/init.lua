@@ -8,9 +8,6 @@ local Classes      = ACF.Classes
 local Contraption  = ACF.Contraption
 local Damage       = ACF.Damage
 local RadarHelpers = ACF.RadarHelpers
-local TimerExists  = timer.Exists
-local TimerCreate  = timer.Create
-local TimerRemove  = timer.Remove
 local Forward      = Vector(1, 0, 0)
 local Sensors      = {}
 
@@ -71,49 +68,6 @@ local function UpdateGimbal(Entity)
 	Entity:SetNW2Vector("ACF_IRSTDir", Entity.LookDir)
 end
 
-local function ScanForEntities(Entity)
-	local Detections = RadarHelpers.DetectTargets(Entity, { [Entity] = true })
-
-	RadarHelpers.PublishTargets(Entity, Detections, next(Detections) ~= nil)
-end
-
-local function SetScanning(Entity, Active)
-	Entity.Scanning    = Active
-	Entity.TickCounter = 0
-
-	RadarHelpers.ResetTargets(Entity)
-
-	WireLib.TriggerOutput(Entity, "Scanning", Active and 1 or 0)
-
-	if IsValid(Entity.SyncSource) then
-		Entity.SyncSource:RefreshRateGroups()
-	end
-
-	Entity:UpdateOverlay()
-end
-
-local function SetActive(Entity, Active)
-	if Entity.Active == Active then return end
-
-	local TimerName = "ACF IRST Switch " .. Entity:EntIndex()
-
-	Entity.Active = Active
-
-	if TimerExists(TimerName) then
-		TimerRemove(TimerName)
-	end
-
-	if not Active then return SetScanning(Entity, false) end
-
-	Entity:UpdateOverlay()
-
-	TimerCreate(TimerName, Entity.SwitchDelay, 1, function()
-		if IsValid(Entity) then
-			SetScanning(Entity, true)
-		end
-	end)
-end
-
 hook.Add("ACF_OnTick", "ACF IRST Scan", function()
 	for Entity in pairs(Sensors) do
 		if not IsValid(Entity) then continue end
@@ -122,20 +76,12 @@ hook.Add("ACF_OnTick", "ACF IRST Scan", function()
 
 		UpdateGimbal(Entity)
 
-		if not Entity.Scanning or IsValid(Entity.SyncSource) then continue end
-
-		Entity.TickCounter = Entity.TickCounter + 1
-
-		if Entity.TickCounter >= Entity.ThinkTicks then
-			Entity.TickCounter = 0
-
-			ScanForEntities(Entity)
-		end
+		RadarHelpers.TickScan(Entity)
 	end
 end)
 
 ACF.AddInputAction("acf_irst", "Active", function(Entity, Value)
-	SetActive(Entity, tobool(Value))
+	RadarHelpers.SetActive(Entity, tobool(Value))
 end)
 
 ACF.AddInputAction("acf_irst", "Pitch", function(Entity, Value)
@@ -258,13 +204,13 @@ end
 function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	local HitRes = Damage.doPropDamage(self, DmgResult, DmgInfo)
 
-	self.Damage = 1 - math.Round(self.ACF.Health / self.ACF.MaxHealth, 2)
+	RadarHelpers.UpdateDamage(self)
 
 	return HitRes
 end
 
 function ENT:ACF_OnRepaired() -- OldArmor, OldHealth, Armor, Health
-	self.Damage = 1 - math.Round(self.ACF.Health / self.ACF.MaxHealth, 2)
+	RadarHelpers.UpdateDamage(self)
 end
 
 function ENT:GetCost()
@@ -286,15 +232,7 @@ function ENT:Disable()
 end
 
 function ENT:ACF_UpdateOverlayState(State)
-	if self.TargetCount > 0 then
-		State:AddSuccess(self.TargetCount .. " target(s) detected")
-	elseif not self.Active then
-		State:AddWarning("Idle")
-	elseif self.Scanning then
-		State:AddSuccess("Active")
-	else
-		State:AddWarning("Activating")
-	end
+	RadarHelpers.AddScanState(self, State)
 
 	State:AddKeyValue("View cone", self.ConeDegs * 2 .. " degrees")
 	State:AddKeyValue("Gimbal range", self.GimbalCone * 2 .. " degrees")
@@ -367,5 +305,5 @@ function ENT:OnRemove()
 
 	Sensors[self] = nil
 
-	TimerRemove("ACF IRST Switch " .. self:EntIndex())
+	RadarHelpers.CancelSwitch(self)
 end

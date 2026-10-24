@@ -308,3 +308,86 @@ do -- MARK: Target detection
 		return Detections
 	end
 end
+
+do -- MARK: Sensor lifecycle
+	local function SwitchTimer(Entity)
+		return "ACF Sensor Switch " .. Entity:EntIndex()
+	end
+
+	-- Entities can define OnScanningChanged(Active) for their own side effects
+	function RadarHelpers.SetScanning(Entity, Active)
+		Entity.Scanning    = Active
+		Entity.TickCounter = 0
+
+		RadarHelpers.ResetTargets(Entity)
+
+		WireLib.TriggerOutput(Entity, "Scanning", Active and 1 or 0)
+
+		if Entity.OnScanningChanged then
+			Entity:OnScanningChanged(Active)
+		end
+
+		if IsValid(Entity.SyncSource) then
+			Entity.SyncSource:RefreshRateGroups()
+		end
+
+		Entity:UpdateOverlay()
+	end
+
+	-- Scanning starts Entity.SwitchDelay seconds after activation and stops as soon as it's deactivated
+	function RadarHelpers.SetActive(Entity, Active)
+		if Entity.Active == Active then return end
+
+		local TimerName = SwitchTimer(Entity)
+
+		Entity.Active = Active
+
+		timer.Remove(TimerName)
+
+		if not Active then return RadarHelpers.SetScanning(Entity, false) end
+
+		Entity:UpdateOverlay()
+
+		timer.Create(TimerName, Entity.SwitchDelay, 1, function()
+			if IsValid(Entity) then
+				RadarHelpers.SetScanning(Entity, true)
+			end
+		end)
+	end
+
+	function RadarHelpers.CancelSwitch(Entity)
+		timer.Remove(SwitchTimer(Entity))
+	end
+
+	-- Called every tick, scans every Entity.ThinkTicks ticks unless a Synchronizer is scanning for it
+	function RadarHelpers.TickScan(Entity)
+		if not Entity.Scanning or IsValid(Entity.SyncSource) then return end
+
+		Entity.TickCounter = Entity.TickCounter + 1
+
+		if Entity.TickCounter < Entity.ThinkTicks then return end
+
+		local Detections = RadarHelpers.DetectTargets(Entity, { [Entity] = true })
+
+		Entity.TickCounter = 0
+
+		RadarHelpers.PublishTargets(Entity, Detections, next(Detections) ~= nil)
+	end
+
+	-- Damage fraction that drives the detection miss chance and target spread
+	function RadarHelpers.UpdateDamage(Entity)
+		Entity.Damage = 1 - math.Round(Entity.ACF.Health / Entity.ACF.MaxHealth, 2)
+	end
+
+	function RadarHelpers.AddScanState(Entity, State)
+		if Entity.TargetCount > 0 then
+			State:AddSuccess(Entity.TargetCount .. " target(s) detected")
+		elseif not Entity.Active then
+			State:AddWarning("Idle")
+		elseif Entity.Scanning then
+			State:AddSuccess("Active")
+		else
+			State:AddWarning("Activating")
+		end
+	end
+end

@@ -73,9 +73,7 @@ local RadarHelpers = ACF.RadarHelpers
 local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 local SwitchDelay = 2 -- Seconds between activation and the first scan
-local TimerExists = timer.Exists
 local TimerCreate = timer.Create
-local TimerRemove = timer.Remove
 local hook        = hook
 
 local function SetSequence(Entity, Active)
@@ -88,76 +86,12 @@ local function SetSequence(Entity, Active)
 	Entity:SetNW2Bool("ACF_RadarSpin", Active) -- Clients spin the dish bone themselves, see cl_init.lua
 end
 
-local function ScanForEntities(Entity)
-	local Detections = RadarHelpers.DetectTargets(Entity, { [Entity] = true })
-
-	RadarHelpers.PublishTargets(Entity, Detections, next(Detections) ~= nil)
-end
-
-local function SetScanning(Entity, Active)
-	Entity.Scanning = Active
-	Entity.TickCounter = 0
-
-	Entity:UpdateOverlay()
-
-	RadarHelpers.ResetTargets(Entity)
-	SetSequence(Entity, Active)
-
-	Radars[Entity] = Active or nil
-
-	WireLib.TriggerOutput(Entity, "Scanning", Active and 1 or 0)
-
-	-- When linked to a Sensor Synchronizer, this radar is used as a passive reference point for the 
-	-- Synchronizer's own aggregated scan; it does not run its own scan cycle or populate its own
-	-- outputs. Its Scanning/Active state is still used (a synced radar can still be turned off, which
-	-- excludes it from the Synchronizer's aggregation), only the independent scan loop is skipped
-	if IsValid(Entity.SyncSource) then
-		Entity.SyncSource:RefreshRateGroups()
-	end
-
-	-- Actual scanning (both standalone and Synchronizer-driven) happens on the shared ACF_OnTick tick
-	-- counter below, not here. This just flips Scanning and resets the counter so the next tick starts clean
-end
-
--- Deterministic, tick-counted scan rate: one shared hook advances every currently-scanning, standalone
--- radar's own tick counter each tick, and runs a scan exactly every Entity.ThinkTicks ticks- as opposed 
--- to a timer, which may not be precise. Radars linked to a Sensor Synchronizer are skipped 
--- here; their scanning is driven by the Synchronizer's own batching logic instead 
--- (see lua/entities/acf_sensorsync/init.lua)
+-- Synced radars are skipped, the Synchronizer scans for them (see lua/entities/acf_sensorsync/init.lua)
 hook.Add("ACF_OnTick", "ACF Radar Scan", function()
 	for Entity in pairs(Radars) do
-		if not IsValid(Entity) or not Entity.Scanning then continue end
-		if IsValid(Entity.SyncSource) then continue end
-
-		Entity.TickCounter = Entity.TickCounter + 1
-
-		if Entity.TickCounter >= Entity.ThinkTicks then
-			Entity.TickCounter = 0
-
-			ScanForEntities(Entity)
-		end
+		if IsValid(Entity) then RadarHelpers.TickScan(Entity) end
 	end
 end)
-
-local function SetActive(Entity, Active)
-	if Entity.Active == Active then return end
-
-	Entity.Active = Active
-
-	Entity:UpdateOverlay()
-
-	if TimerExists("ACF Radar Switch " .. Entity:EntIndex()) then
-		TimerRemove("ACF Radar Switch " .. Entity:EntIndex())
-	end
-
-	if not Active then return SetScanning(Entity, Active) end
-
-	TimerCreate("ACF Radar Switch " .. Entity:EntIndex(), SwitchDelay, 1, function()
-		if IsValid(Entity) then
-			return SetScanning(Entity, Active)
-		end
-	end)
-end
 
 local function CheckDistantLinks(Entity, Source)
 	local Position = Entity:GetPos()
@@ -175,7 +109,7 @@ local function CheckDistantLinks(Entity, Source)
 end
 
 ACF.AddInputAction("acf_radar", "Active", function(Entity, Value)
-	SetActive(Entity, tobool(Value))
+	RadarHelpers.SetActive(Entity, tobool(Value))
 end)
 
 --===============================================================================================--
@@ -210,6 +144,7 @@ do -- Spawning
 		self.Scanning    = false
 		self.TargetCount = 0
 		self.Damage      = 0
+		self.SwitchDelay = SwitchDelay
 		self.Weapons     = {}
 		self.Turrets     = {}
 		self.Targets     = {}
@@ -307,13 +242,20 @@ end
 function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	local HitRes = Damage.doPropDamage(self, DmgResult, DmgInfo)
 
-	self.Damage = (1 - math.Round(self.ACF.Health / self.ACF.MaxHealth, 2))
+	RadarHelpers.UpdateDamage(self)
 
 	return HitRes
 end
 
 function ENT:ACF_OnRepaired() -- OldArmor, OldHealth, Armor, Health
-	self.Damage = (1 - math.Round(self.ACF.Health / self.ACF.MaxHealth, 2))
+	RadarHelpers.UpdateDamage(self)
+end
+
+-- Spins the dish and registers the radar as emitting, see the antiradiation guidance
+function ENT:OnScanningChanged(Active)
+	SetSequence(self, Active)
+
+	Radars[self] = Active or nil
 end
 
 -- Called when this radar gets linked to a Sensor Synchronizer: zeroes this radar's own outputs. The shared
@@ -323,12 +265,9 @@ function ENT:StopIndependentScanning()
 	RadarHelpers.ResetTargets(self)
 end
 
--- Called when this radar gets unlinked from a Sensor Synchronizer: resumes independent scanning exactly
--- as if freshly spawned, if it's still meant to be active.
+-- Called when this radar gets unlinked from a Sensor Synchronizer, its own scan cycle restarts
 function ENT:ResumeIndependentScanning()
-	if self.Active and self.Scanning then
-		SetScanning(self, true)
-	end
+	self.TickCounter = 0
 end
 
 -- Linked racks read the Synchronizer's combined targets while this radar is synced
@@ -364,17 +303,7 @@ function ENT:Disable()
 end
 
 function ENT:ACF_UpdateOverlayState(State)
-	if self.TargetCount > 0 then
-		State:AddSuccess(self.TargetCount .. " target(s) detected")
-	elseif not self.Active then
-		State:AddWarning("Idle")
-	else
-		if self.Scanning then
-			State:AddSuccess("Active")
-		else
-			State:AddWarning("Activating")
-		end
-	end
+	RadarHelpers.AddScanState(self, State)
 
 	State:AddKeyValue("Detection range", math.Round(self.Range / ACF.MeterToInch) .. " meters")
 	State:AddNumber("Scanning angle", self.ConeDegs and math.Round(self.ConeDegs, 2) or 360)
@@ -433,6 +362,8 @@ function ENT:OnRemove()
 	if Radars[self] then
 		Radars[self] = nil
 	end
+
+	RadarHelpers.CancelSwitch(self)
 
 	timer.Remove("ACF Radar Clock " .. self:EntIndex())
 end
