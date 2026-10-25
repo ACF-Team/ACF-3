@@ -256,11 +256,14 @@ do	-- Lightweight Turret Controllers link to acf_turret directly, no crew involv
 
 	ACF.RegisterLinkSource("acf_turret_controller", "Turret", true)
 
-	-- The closest turret within reach
+	-- The closest turret within reach, servos and actuators are left to the player
 	ACF.RegisterClassImplicitLink("acf_turret_controller", "acf_turret", {
 		Field  = "Turret",
 		Single = true,
-		Filter = function(This, Turret) return not This.IsRemote and This:GetPos():DistToSqr(Turret:GetPos()) <= MaxDistance end,
+		Filter = function(This, Turret)
+			if This.IsRemote or Turret.IsPassthrough then return false end
+			return This:GetPos():DistToSqr(Turret:GetPos()) <= MaxDistance
+		end,
 		Rank   = function(This, Turret) return -This:GetPos():DistToSqr(Turret:GetPos()) end,
 	})
 

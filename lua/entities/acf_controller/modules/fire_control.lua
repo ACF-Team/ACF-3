@@ -256,7 +256,7 @@ end
 ACF.RegisterControllerLink("acf_turret", {
 	Field = "Turrets",
 	Single = false,
-	Implicit = function(_, Turret) return not Turret.IsActuator end, -- Actuators don't aim
+	Implicit = function(_, Turret) return not Turret.IsPassthrough end, -- Servos and actuators are left to the player
 })
 
 ACF.RegisterControllerLink("acf_gun", {
