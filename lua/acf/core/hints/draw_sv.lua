@@ -45,7 +45,7 @@ local function DrawRequirements(Debug, Entity, Life)
 	end
 end
 
--- Replaces the drawing of the entity's unmet requirements as level 0 ACF.Debug calls, or clears it
+-- Replaces the drawing of the entity's unmet requirements as level 1 ACF.Debug calls, or clears it
 local function Draw(Entity)
 	local EntTbl = Entity:GetTable()
 	local Owner  = Entity:CPPIGetOwner()
@@ -62,7 +62,7 @@ local function Draw(Entity)
 
 	EntTbl.ACF_RequirementsDrawn = Show or nil
 
-	Debug.SetDeveloperLevel(0)
+	Debug.SetDeveloperLevel(1)
 	Debug.Clear(Entity, CHANNEL)
 
 	if Show then DrawRequirements(Debug, Entity, INTERVAL + OVERLAP) end
@@ -96,7 +96,7 @@ function Hints.Flash(Entity, Life, DrawFunc)
 	local OldTarget            = Debug.SetTarget(Owner)
 	local OldGroup, OldChannel = Debug.SetGroup(Entity, FLASH_CHANNEL)
 
-	Debug.SetDeveloperLevel(0)
+	Debug.SetDeveloperLevel(1)
 	Debug.Clear(Entity, FLASH_CHANNEL)
 
 	DrawFunc(Debug, Life)
