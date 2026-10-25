@@ -153,12 +153,6 @@ ACF.RegisterClassUnlink("acf_autoloader", "acf_ammo", function(This, Ammo)
 	return true, "Autoloader unlinked successfully."
 end)
 
--- Crates feeding the gun or rack linked by hand, the link check still requires a shared parent and a round that fits
-ACF.RegisterClassImplicitLink("acf_autoloader", "acf_ammo", {
-	Field  = "AmmoCrates",
-	Filter = function(This, Ammo) return IsValid(This.Gun) and (This.Gun.Crates or {})[Ammo] == true end,
-})
-
 local TraceConfig = {start = Vector(), endpos = Vector(), filter = nil}
 
 --- Calculates the reload efficiency of this autoloader for a gun and an ammo crate

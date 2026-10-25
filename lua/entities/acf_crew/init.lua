@@ -170,24 +170,14 @@ local function iterScan(crew, reps)
 	return sum / count
 end
 
---- Unlinks every target of a crew member and returns whether any of those links were explicit.
-local function UnlinkAll(Crew)
-	local HadExplicit = false
-
-	for Target in pairs(Crew.Targets) do
-		HadExplicit = HadExplicit or not ACF.IsImplicitLink(Crew, Target)
-
-		Crew:Unlink(Target)
-	end
-
-	return HadExplicit
-end
-
 function ENT:CFW_PreParentedTo(OldParent, _)
-	-- Force unlinks if OldParent is valid, implicit links are redone for the new parent on their own
+	-- Force unlinks if OldParent is valid
 	if IsValid(OldParent) and not self:IsMarkedForDeletion() then
-		if UnlinkAll(self) then
-			Notify.EntityWarning(self, "Crew parent has changed", "This crew member was reparented. All links have been removed, please relink.")
+		Notify.EntityWarning(self, "Crew parent has changed", "This crew member was reparented. All links have been removed, please relink.")
+		if next(self.Targets) then
+			for Target in pairs(self.Targets) do
+				self:Unlink(Target)
+			end
 
 			self.ACF_UnlinkReason = "the crew member was reparented"
 		end
@@ -357,17 +347,11 @@ do -- Random timer stuff
 				local OutOfRange      = VECTOR.DistToSqr(Pos, ENTITY.GetPos(Link)) > MaxDistance			-- Check distance limit
 				local DiffAncestors   = SelfContraption ~= nil and SelfContraption ~= ENTITY.CFW_GetContraption(Link)	-- Check same Contraption
 				if OutOfRange or DiffAncestors then
-					local Implicit = ACF.IsImplicitLink(self, Link)
-
-					self:Unlink(Link)
-					Link:Unlink(self)
-
-					-- The player never made implicit links, so they are dropped quietly
-					if Implicit then continue end
-
 					local Sound = UnlinkSound:format(math.random(1, 3))
 					ENTITY.EmitSound(Link, Sound, 70, 100, ACF.Volume)
 					ENTITY.EmitSound(self, Sound, 70, 100, ACF.Volume)
+					self:Unlink(Link)
+					Link:Unlink(self)
 
 					local Reasons = {}
 					if OutOfRange then Reasons[#Reasons + 1] = "the two crews are out of range" end
@@ -575,27 +559,25 @@ do
 		return Player:CheckLimit("_acf_crew")
 	end
 
-	-- A crew-type change invalidates existing links, cleared while the old type's handlers and index entries still apply
-	function ENT:ACF_PreUpdateEntityData(ClientData)
-		if not self.CrewTypeID or ClientData.CrewTypeID == nil or ClientData.CrewTypeID == self.CrewTypeID then return end
-
-		if UnlinkAll(self) then
-			Notify.EntityWarning(self, "Crew occupation has changed", "This crew member's occupation was changed. All links have been removed, please relink.")
-
-			self.ACF_UnlinkReason = "the crew member's occupation changed"
-		end
-
-		self:CFW_Unindex_Crew(self:CFW_GetContraption())
-		self.ACF_TypeChanged = true
-	end
-
 	function ENT:ACF_PostUpdateEntityData()
+		local OldType = self.CrewTypeID
+
 		UpdateCrew(self)
 
-		if self.ACF_TypeChanged then
-			self.ACF_TypeChanged = nil
+		-- A crew-type change invalidates existing links (no-op on a fresh spawn).
+		if OldType and OldType ~= self.CrewTypeID then
+			Notify.EntityWarning(self, "Crew occupation has changed", "This crew member's occupation was changed. All links have been removed, please relink.")
+
+			if next(self.Targets) then
+				for Target in pairs(self.Targets) do
+					self:Unlink(Target)
+				end
+
+				self.ACF_UnlinkReason = "the crew member's occupation changed"
+			end
 
 			self:UpdateLinkHint()
+			self:CFW_Unindex_Crew(self:CFW_GetContraption())
 			self:CFW_Index_Crew(self:CFW_GetContraption())
 		end
 	end
@@ -904,11 +886,60 @@ do
 
 	-- All this is leveraging CFW to get O(1)/O(#crew) operations for crew.
 	hook.Add("cfw.contraption.entityAdded", "ACF_CFWCrewIndex", function(Contraption, Ent)
-		if Ent:GetClass() == "acf_crew" then Ent:CFW_Index_Crew(Contraption) end
+		Contraption.RemainingLinks = Contraption.RemainingLinks or {}
+		if Ent:GetClass() == "acf_crew" then
+			-- Index crew
+			Ent:CFW_Index_Crew(Contraption, Ent)
+
+			-- Propagate links waiting on CFW from crew to Contraption
+			if Ent.RemainingLinks then
+				for Target in pairs(Ent.RemainingLinks) do
+					Contraption.RemainingLinks[Target] = Contraption.RemainingLinks[Target] or {}
+					Contraption.RemainingLinks[Target][Ent] = true
+				end
+			end
+
+			-- If this crew is parented into a new Contraption, try linking them to their Targets.
+			if Ent.RemainingLinks then
+				for Target in pairs(Ent.RemainingLinks) do
+					Ent:Link(Target)
+				end
+			end
+		else
+			if Contraption.RemainingLinks and Contraption.RemainingLinks[Ent] ~= nil then
+				-- This runs if the entity is a Target of some crew(s)
+				local waiters = Contraption.RemainingLinks[Ent] or {}
+				for waiter in pairs(waiters) do
+					waiter:Link(Ent)
+				end
+				Contraption.RemainingLinks[Ent] = nil
+			end
+		end
 	end)
 
 	hook.Add("cfw.contraption.entityRemoved", "ACF_CFWCrewUnIndex", function(Contraption, Ent)
-		if Ent:GetClass() == "acf_crew" then Ent:CFW_Unindex_Crew(Contraption) end
+		Contraption.RemainingLinks = Contraption.RemainingLinks or {}
+		if Ent:GetClass() == "acf_crew" then
+			-- Unindex crew
+			Ent:CFW_Unindex_Crew(Contraption)
+
+			-- Unpropagate links waiting on CFW from crew to Contraption
+			if Ent.RemainingLinks then
+				for Target in pairs(Ent.RemainingLinks) do
+					Contraption.RemainingLinks[Target] = Contraption.RemainingLinks[Target] or {}
+					Contraption.RemainingLinks[Target][Ent] = nil
+				end
+			end
+		else
+			if Contraption.RemainingLinks and Contraption.RemainingLinks[Ent] then
+				-- This runs if the entity is a Target of some crew(s)
+				local waiters = Contraption.RemainingLinks[Ent] or {}
+				for waiter in pairs(waiters) do
+					waiter:Unlink(Ent)
+				end
+				Contraption.RemainingLinks[Ent] = nil
+			end
+		end
 	end)
 end
 
@@ -958,6 +989,10 @@ do
 		local Handlers = Crew.CrewType.LinkHandlers[TargetClass]
 		if Handlers.OnLink then Handlers.OnLink(Crew, Target, TargetClass) end
 
+		-- No longer waiting on this link
+		Crew.RemainingLinks = Crew.RemainingLinks or {}
+		Crew.RemainingLinks[Target] = nil
+
 		BroadcastEntity("ACF_Crew_Links", Crew, Target, true)
 
 		if Target.UpdateOverlay then Target:UpdateOverlay() end
@@ -978,7 +1013,7 @@ do
 		Target.CrewsByType[Crew.CrewTypeID][Crew] = nil
 
 		local Handlers = Crew.CrewType.LinkHandlers[TargetClass]
-		if Handlers.OnUnlink then Handlers.OnUnlink(Crew, Target, TargetClass) end
+		if Handlers.OnUnLink then Handlers.OnUnLink(Crew, Target, TargetClass) end
 
 		BroadcastEntity("ACF_Crew_Links", Crew, Target, false)
 
@@ -988,27 +1023,11 @@ do
 
 	-- Compactly define links between crew and other entities
 	local lt = {} -- Merge all crew whitelists
-	local ImplicitTargets = {} -- Target classes some crew type links to on its own
 	for _, CrewTypeClass in ipairs(Classes.GetSubtypesAsList("ACF.CrewTypes.BaseCrewType")) do
 		local LinkHandlers = CrewTypeClass.LinkHandlers
-		if LinkHandlers then for et, Handlers in pairs(LinkHandlers) do
+		if LinkHandlers then for et in pairs(LinkHandlers) do
 			lt[et] = true
-
-			if Handlers.Implicit then ImplicitTargets[et] = true end
 		end end
-	end
-
-	local SingleTargets = { acf_turret = true, acf_baseplate = true } -- Crew only ever take one of these
-
-	for Class in pairs(ImplicitTargets) do
-		ACF.RegisterClassImplicitLink("acf_crew", Class, {
-			Field  = "Targets",
-			Single = SingleTargets[Class],
-			Filter = function(Crew, Target)
-				local Handlers = Crew.CrewType and Crew.CrewType.LinkHandlers[Class]
-				return Handlers ~= nil and Handlers.Implicit ~= nil and Handlers.Implicit(Crew, Target)
-			end,
-		})
 	end
 
 	for v in pairs(lt) do
@@ -1034,7 +1053,13 @@ end
 -- Adv Dupe 2 Related
 do
 	function ENT:PreEntityCopy()
-		ACF.StoreLinks(self, "CrewTargets", self.Targets)
+		if next(self.Targets) then
+			local Entities = {}
+			for Ent in pairs(self.Targets) do
+				Entities[#Entities + 1] = Ent:EntIndex()
+			end
+			duplicator.StoreEntityModifier(self, "CrewTargets", Entities)
+		end
 
 		-- AutoRegisterV2 wraps this as the original PreEntityCopy and handles the wire/base dupe info.
 	end
@@ -1049,6 +1074,8 @@ do
 				local result, err = self:Link(ActualEnt)
 				if not result then Notify.EntityWarning(Ent, "ACF Crew:PostEntityPaste failure", err) end
 			end
+
+			self.RemainingLinks = RLs
 
 			EntMods.CrewTargets = nil
 		end

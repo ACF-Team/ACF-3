@@ -26,31 +26,6 @@ do -- Primitives
 	end
 end
 
-do -- Turrets
-	--- Returns the horizontal turret an entity rides on, which is the entity itself for a horizontal turret.
-	--- @param Entity table The entity to check
-	--- @return table? # The turret, or nil when the entity sits on the hull
-	function ACF.GetHorizontalTurret(Entity)
-		local Current = Entity
-
-		while IsValid(Current) do
-			local Data = Current:GetTable()
-
-			if Data.IsACFTurret and Data.Turret == "Turret-H" and not Data.IsPassthrough then return Current end
-
-			Current = Current:GetParent()
-		end
-	end
-
-	--- Returns whether two entities ride on the same horizontal turret, or both on the hull.
-	--- @param A table One entity
-	--- @param B table The other entity
-	--- @return boolean
-	function ACF.SameTurret(A, B)
-		return ACF.GetHorizontalTurret(A) == ACF.GetHorizontalTurret(B)
-	end
-end
-
 -- 16 Segments font created by ThorType
 -- Huge thanks to LiddulBOFH to help me get it working
 -- Source: https://www.dafont.com/16-segments.font
@@ -549,110 +524,13 @@ do -- Entity linking
 	local LinkWatchers = ACF.ClassLinkWatchers or WeakKeyLUT()
 	ACF.ClassLinkWatchers = LinkWatchers
 
-	-- Links made by the system rather than a player, stored both ways round
-	local ImplicitLinks = ACF.ImplicitLinks or WeakKeyLUT()
-	ACF.ImplicitLinks = ImplicitLinks
-
-	local function SetImplicit(A, B, Value)
-		for _, Pair in ipairs({ { A, B }, { B, A } }) do
-			local From, To = Pair[1], Pair[2]
-			local Links    = ImplicitLinks[From]
-
-			if Value then
-				if not Links then
-					Links = WeakKeyLUT()
-					ImplicitLinks[From] = Links
-				end
-
-				Links[To] = true
-			elseif Links then
-				Links[To] = nil
-
-				if not next(Links) then ImplicitLinks[From] = nil end
-			end
-		end
-	end
-
-	--- Returns whether the link between two entities was made implicitly. Implicit links are not saved to dupes.
-	--- @param A table One entity of the link
-	--- @param B table The other entity of the link
-	--- @return boolean # True if the link exists and was made implicitly
-	function ACF.IsImplicitLink(A, B)
-		local Links = ImplicitLinks[A]
-
-		return Links ~= nil and Links[B] == true
-	end
-
-	--- Returns whether a player, or a chip acting for one, may unlink two entities. Implicit links are left to the system.
-	--- @param Source table One entity of the link
-	--- @param Target table The other entity of the link
-	--- @return boolean # True if the unlink may go ahead
-	--- @return string? # Why the unlink was refused
-	function ACF.CanPlayerUnlink(Source, Target)
-		if ACF.IsImplicitLink(Source, Target) then return false, "This link was made automatically, link another entity by hand to replace it." end
-
-		return true
-	end
-
-	--- Returns the entities implicitly linked to the given entity.
-	--- @param Entity table The entity to check
-	--- @return table<table, true> # A copy, safe to unlink from while iterating
-	function ACF.GetImplicitLinks(Entity)
-		local Result = {}
-
-		for Linked in pairs(ImplicitLinks[Entity] or {}) do
-			Result[Linked] = true
-		end
-
-		return Result
-	end
-
-	--- Returns the valid entities held by a link field, whether it holds a single entity or a set of them.
-	--- @param Links table<table, true> | table | nil A set of linked entities, or a single linked entity
-	--- @return table<table, true> # A new set, safe to unlink from while iterating
-	function ACF.GetFieldLinkEntities(Links)
-		local Result = {}
-
-		if isentity(Links) then
-			if IsValid(Links) then Result[Links] = true end
-		else
-			for Linked in pairs(Links or {}) do
-				if IsValid(Linked) then Result[Linked] = true end
-			end
-		end
-
-		return Result
-	end
-
-	--- Saves the explicit links of an entity to dupes, replacing what was stored under that name before.
-	--- @param Entity table The entity being copied
-	--- @param Name string The entity modifier name
-	--- @param Links table<table, true> | table | nil A set of linked entities, or a single linked entity
-	function ACF.StoreLinks(Entity, Name, Links)
-		-- StoreEntityModifier merges, so links removed since the last copy would otherwise stay saved
-		duplicator.ClearEntityModifier(Entity, Name)
-
-		local Indices = {}
-
-		for Linked in pairs(ACF.GetFieldLinkEntities(Links)) do
-			if not ACF.IsImplicitLink(Entity, Linked) then
-				Indices[#Indices + 1] = Linked:EntIndex()
-			end
-		end
-
-		if Indices[1] then duplicator.StoreEntityModifier(Entity, Name, Indices) end
-	end
-
 	function ACF.StartWatchingLink(Source, Target)
 		LinkWatchers[Source] = LinkWatchers[Source] or WeakKeyLUT()
 		LinkWatchers[Target] = LinkWatchers[Target] or WeakKeyLUT()
 		local Timer = ACF.AugmentedTimer(
 			function()
-				local Implicit        = ACF.IsImplicitLink(Source, Target)
 				local Status, Message = ACF.PerformClassLinkCheck(Source, Target)
-
-				-- The player never made implicit links, so telling them one broke would only confuse
-				if not Status and not Implicit then
+				if not Status then
 					Notify.EntityWarningToPlayer(Source, Source:CPPIGetOwner(), "A link has been automatically removed.", Message or "No additional info was provided")
 				end
 			end,
@@ -693,23 +571,11 @@ do -- Entity linking
 	--- @param Class1 Entity The source
 	--- @param Class2 Entity The target
 	--- @param FromChip boolean Was this link done by a chip (such as E2, Starfall)
-	--- @param Implicit boolean? Was this link made by the system rather than a player
 	--- @return boolean OK Was this link successful
 	--- @return Msg? Link message
-	function ACF.PerformClassLink(Source, Target, FromChip, Implicit)
-		-- Linking an implicit pair by hand makes it explicit
-		if not Implicit and ACF.IsImplicitLink(Source, Target) then
-			SetImplicit(Source, Target, nil)
-			hook.Run("ACF_OnClassLink", Source, Target)
-
-			return true, "Link is now explicit."
-		end
-
+	function ACF.PerformClassLink(Source, Target, FromChip)
 		local OK, Msg, SourceToTarget, TargetToSource = ValidateSourceTarget(Source, Target)
 		if not OK then return false, Msg end
-
-		-- Lets implicit links in the way of a player link be removed first, they would otherwise fail checks such as "already linked"
-		if not Implicit then hook.Run("ACF_PreClassLink", Source, Target) end
 
 		local HasCheck
 		OK, Msg, HasCheck = PerformClassMethod(Source, Target, SourceToTarget, TargetToSource, "Check", nil, true)
@@ -728,13 +594,9 @@ do -- Entity linking
 		OK, Msg = PerformClassMethod(Source, Target, SourceToTarget, TargetToSource, "Link", LinkText)
 		if not OK then return false, Msg end
 
-		if Implicit then SetImplicit(Source, Target, true) end
-
 		if HasCheck then
 			ACF.StartWatchingLink(Source, Target)
 		end
-
-		hook.Run("ACF_OnClassLink", Source, Target)
 
 		return true, Msg
 	end
@@ -752,10 +614,7 @@ do -- Entity linking
 		OK, Msg = PerformClassMethod(Source, Target, SourceToTarget, TargetToSource, "Unlink", UnlinkText)
 		if not OK then return false, Msg end
 
-		SetImplicit(Source, Target, nil)
 		ACF.StopWatchingLink(Source, Target)
-
-		hook.Run("ACF_OnClassUnlink", Source, Target)
 
 		return true, Msg
 	end

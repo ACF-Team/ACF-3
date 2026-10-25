@@ -13,41 +13,6 @@ if CLIENT then
 	local Sensitive      = Color(255, 0, 0, 50)
 	local NotSoSensitive = Color(255, 255, 0, 50)
 
-	-- Link view colors
-	local Explicit = Color(0, 200, 255)
-	local Implicit = Color(255, 170, 0)
-
-	-- Draws a line from the entity to each entity linked to it, colored by whether the player or the system made the link
-	local function DrawLinks(Entity)
-		local Links = ACF.Menu.GetLinkView(Entity)
-
-		if not Links then return end
-
-		local Start = Entity:WorldSpaceCenter()
-
-		cam.Start3D()
-		render.SetColorMaterialIgnoreZ()
-
-		for Linked, IsImplicit in pairs(Links) do
-			if IsValid(Linked) then render.DrawBeam(Start, Linked:WorldSpaceCenter(), 1, 0, 1, IsImplicit and Implicit or Explicit) end
-		end
-
-		cam.End3D()
-
-		-- Labels each line at its midpoint
-		for Linked, IsImplicit in pairs(Links) do
-			if not IsValid(Linked) then continue end
-
-			local Screen = ((Start + Linked:WorldSpaceCenter()) * 0.5):ToScreen()
-			local Label  = IsImplicit and "Implicit link" or "Explicit link"
-			local Tint   = IsImplicit and Implicit or Explicit
-
-			if Screen.visible then
-				draw.SimpleTextOutlined(Label, "GModToolHelp", Screen.x, Screen.y, Tint, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
-			end
-		end
-	end
-
 	local AxisDefined = Color(0, 255, 0)
 	local AxisAuto    = Color(80, 200, 255)
 	local AxisOther   = Color(255, 255, 255, 60)
@@ -170,7 +135,6 @@ if CLIENT then
 		end
 
 		if not IsValid(Entity) then return end
-		if LocalPlayer():KeyDown(IN_DUCK) then DrawLinks(Entity) end
 		if not Entity.DrawOverlay then return end
 		if Entity.CanDrawOverlay and not Entity:CanDrawOverlay() then return end
 

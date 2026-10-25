@@ -101,15 +101,7 @@ do	-- Metamethods and other important stuff
 	end
 
 	do	-- Link/unlink
-		ACF.RegisterLinkSource("acf_turret_computer", "Gun", true)
-
-		-- The largest gun on the computer's turret, or on the whole vehicle from the hull
-		ACF.RegisterClassImplicitLink("acf_turret_computer", "acf_gun", {
-			Field  = "Gun",
-			Single = true,
-			Filter = function(This, Gun) return ACF.GetHorizontalTurret(This) == nil or ACF.SameTurret(This, Gun) end,
-			Rank = function(_, Gun) return Gun.Caliber or 0 end,
-		})
+		ACF.RegisterLinkSource("acf_turret_computer", "Guns")
 
 		-- Gun links
 
@@ -544,7 +536,9 @@ do	-- Metamethods and other important stuff
 
 	do	-- Dupe support
 		function ENT:PreEntityCopy()
-			ACF.StoreLinks(self, "ACFGun", self.Gun)
+			if self.Gun then
+				duplicator.StoreEntityModifier(self, "ACFGun", {self.Gun:EntIndex()})
+			end
 		end
 
 		function ENT:PostEntityPaste(_, Ent, CreatedEntities)

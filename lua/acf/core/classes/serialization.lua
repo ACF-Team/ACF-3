@@ -247,8 +247,8 @@ local function ScalarDefault(ElemType, Options)
     return nil
 end
 
--- Serialize a LiveData class instance into a flat table (ACF_UserData), KeepLink optionally filters linked entity fields
-function Serialization.Serialize(Class, Instance, KeepLink)
+-- Serialize a LiveData class instance into a flat table (ACF_UserData)
+function Serialization.Serialize(Class, Instance)
     local Out = {}
 
     if not Instance then return Out end
@@ -262,7 +262,7 @@ function Serialization.Serialize(Class, Instance, KeepLink)
             if type(Value) == "table" then
                 if Field.Linked then
                     for Ent in pairs(Value) do
-                        if IsValid(Ent) and (not KeepLink or KeepLink(Ent)) then Arr[#Arr + 1] = SerializeValue(ElemType, Ent) end
+                        if IsValid(Ent) then Arr[#Arr + 1] = SerializeValue(ElemType, Ent) end
                     end
                 else
                     for I, V in ipairs(Value) do Arr[I] = SerializeValue(ElemType, V) end
@@ -270,8 +270,6 @@ function Serialization.Serialize(Class, Instance, KeepLink)
             end
             Out[Field.Name] = Arr
         else
-            if Field.Linked and KeepLink and IsValid(Value) and not KeepLink(Value) then Value = nil end
-
             Out[Field.Name] = SerializeValue(ElemType, Value)
         end
     end

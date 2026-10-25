@@ -271,13 +271,11 @@ end
 ACF.RegisterControllerLink("acf_turret", {
 	Field = "Turrets",
 	Single = false,
-	Implicit = function(_, Turret) return not Turret.IsPassthrough end, -- Servos and actuators are left to the player
 })
 
 ACF.RegisterControllerLink("acf_gun", {
 	Field = "Guns",
 	Single = false,
-	Implicit = true,
 	OnLinked = function(Controller, Target)
 		Controller:AnalyzeGuns(Target)
 	end,
@@ -286,13 +284,11 @@ ACF.RegisterControllerLink("acf_gun", {
 ACF.RegisterControllerLink("acf_turret_computer", {
 	Field = "TurretComputer",
 	Single = true,
-	Implicit = true,
 })
 
 ACF.RegisterControllerLink("acf_computer", {
 	Field = "GuidanceComputer",
 	Single = true,
-	Implicit = function(_, Target) return Target.InputHitPos ~= nil or Target.InputCoords ~= nil end, -- Same rule as PreLink
 	PreLink = function(_, Target)
 		if Target.InputHitPos == nil and Target.InputCoords == nil then
 			return false, "This guidance computer has no vector input to aim."
@@ -304,7 +300,6 @@ ACF.RegisterControllerLink("acf_computer", {
 ACF.RegisterControllerLink("acf_rack", {
 	Field = "Racks",
 	Single = false,
-	Implicit = true,
 	OnLinked = function(Controller, Target)
 		Controller:AnalyzeRacks(Target)
 	end,

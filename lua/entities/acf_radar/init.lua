@@ -34,12 +34,6 @@ ACF.RegisterClassUnlink("acf_radar", "acf_rack", function(Radar, Target)
 	return false, "This rack is not linked to this radar."
 end)
 
--- Racks take the contraption's only radar, turrets are left to the player since linking slaves them
-ACF.RegisterClassImplicitLink("acf_rack", "acf_radar", {
-	Field  = "Radar",
-	Single = true,
-})
-
 -- Linked turrets are slaved to this radar's locked target (see acf_controller/modules/radar.lua)
 ACF.RegisterClassLink("acf_radar", "acf_turret", function(Radar, Turret)
 	if Radar.Turrets[Turret] then return false, "This turret is already linked to this radar!" end

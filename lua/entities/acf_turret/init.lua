@@ -1082,35 +1082,8 @@ end
 
 do -- Metamethods
 	do	-- Links
-		ACF.RegisterLinkSource("acf_turret", "Motor", true)
-		ACF.RegisterLinkSource("acf_turret", "Gyro", true)
-
-		local function Closest(This, Other) return -This:GetPos():DistToSqr(Other:GetPos()) end
-
-		-- The closest free motor placed where it could drive this turret
-		ACF.RegisterClassImplicitLink("acf_turret", "acf_turret_motor", {
-			Field  = "Motor",
-			Single = true,
-			Filter = function(This, Motor)
-				if This.IsPassthrough then return false end
-				if IsValid(Motor.Turret) and Motor.Turret ~= This then return false end
-				local Parented, NearRing, Level = Motor:CheckPlacement(This)
-				return Parented and NearRing and Level
-			end,
-			Rank = Closest,
-		})
-
-		-- Only dual gyros, which stabilize both drives of the turret they ride in
-		ACF.RegisterClassImplicitLink("acf_turret", "acf_turret_gyro", {
-			Field  = "Gyro",
-			Single = true,
-			Filter = function(This, Gyro)
-				if This.IsPassthrough or not Gyro.IsDual then return false end
-				if IsValid(Gyro[This.ID]) and Gyro[This.ID] ~= This then return false end
-				return ACF.SameTurret(This, Gyro) and This:GetPos():DistToSqr(Gyro:GetPos()) <= MaxLinkDistance
-			end,
-			Rank = Closest,
-		})
+		ACF.RegisterLinkSource("acf_turret", "Motors")
+		ACF.RegisterLinkSource("acf_turret", "Gyros")
 
 		-- Motor links
 
@@ -1213,8 +1186,14 @@ do -- Metamethods
 		function ENT:PreEntityCopy()
 			local SelfTbl = ENTITY.GetTable(self)
 
-			ACF.StoreLinks(self, "ACFMotor", SelfTbl.Motor)
-			ACF.StoreLinks(self, "ACFGyro", SelfTbl.Gyro)
+			if IsValid(SelfTbl.Motor) then
+				duplicator.StoreEntityModifier(self, "ACFMotor", {SelfTbl.Motor:EntIndex()})
+			end
+
+			-- Gyros!
+			if IsValid(SelfTbl.Gyro) then
+				duplicator.StoreEntityModifier(self, "ACFGyro", {SelfTbl.Gyro:EntIndex()})
+			end
 
 			if IsValid(SelfTbl.Radar) then
 				duplicator.StoreEntityModifier(self, "ACFRadar", {SelfTbl.Radar:EntIndex()})
@@ -1222,7 +1201,15 @@ do -- Metamethods
 
 			-- Stored turret-side since the controller's periodic link Check would otherwise
 			-- gate the very first paste-time relink before contraption/mass data has settled
-			ACF.StoreLinks(self, "ACFLightweightControllers", SelfTbl.LightweightControllers)
+			if SelfTbl.LightweightControllers and next(SelfTbl.LightweightControllers) then
+				local Indices = {}
+				for Controller in pairs(SelfTbl.LightweightControllers) do
+					if IsValid(Controller) then Indices[#Indices + 1] = Controller:EntIndex() end
+				end
+				if #Indices > 0 then
+					duplicator.StoreEntityModifier(self, "ACFLightweightControllers", Indices)
+				end
+			end
 		end
 
 		function ENT:PostEntityPaste(_, Ent, CreatedEntities)

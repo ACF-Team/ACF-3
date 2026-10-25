@@ -420,7 +420,6 @@ do -- Spawning and Updating --------------------
 	end
 
 	ACF.RegisterLinkSource("acf_rack", "Crates")
-	ACF.RegisterClassImplicitLink("acf_rack", "acf_ammo", { Field = "Crates" })
 	ACF.RegisterLinkSource("acf_rack", "Computer", true)
 	ACF.RegisterLinkSource("acf_rack", "Radar", true)
 
@@ -982,9 +981,23 @@ end ---------------------------------------------
 
 do -- Duplicator Support -----------------------
 	function ENT:PreEntityCopy()
-		ACF.StoreLinks(self, "ACFRadar", self.Radar)
-		ACF.StoreLinks(self, "ACFComputer", self.Computer)
-		ACF.StoreLinks(self, "ACFCrates", self.Crates)
+		if IsValid(self.Radar) then
+			duplicator.StoreEntityModifier(self, "ACFRadar", { self.Radar:EntIndex() })
+		end
+
+		if IsValid(self.Computer) then
+			duplicator.StoreEntityModifier(self, "ACFComputer", { self.Computer:EntIndex() })
+		end
+
+		if next(self.Crates) then
+			local Entities = {}
+
+			for Crate in pairs(self.Crates) do
+				Entities[#Entities + 1] = Crate:EntIndex()
+			end
+
+			duplicator.StoreEntityModifier(self, "ACFCrates", Entities)
+		end
 
 		-- AutoRegisterV2 wraps this as the original PreEntityCopy and handles the wire/base dupe info.
 	end

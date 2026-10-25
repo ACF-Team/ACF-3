@@ -158,14 +158,6 @@ end
 
 ACF.RegisterLinkSource("acf_sensorsync", "Sensors")
 
--- Every sensor not already feeding another synchronizer
-for SensorClass in pairs(ENT.ACF_SensorClasses) do
-	ACF.RegisterClassImplicitLink("acf_sensorsync", SensorClass, {
-		Field  = "Sensors",
-		Filter = function(Sync, Sensor) return not IsValid(Sensor.SyncSource) or Sensor.SyncSource == Sync end,
-	})
-end
-
 --===============================================================================================--
 -- Spawning and Updating
 --===============================================================================================--

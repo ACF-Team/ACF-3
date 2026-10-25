@@ -435,9 +435,7 @@ e2function number entity:acfUnlinkFrom(entity Target, number Notify)
 		return 0
 	end
 
-	local Success, Message = ACF.CanPlayerUnlink(this, Target)
-
-	if Success then Success, Message = this:Unlink(Target) end
+	local Success, Message = this:Unlink(Target)
 
 	if Notify > 0 then
 		if Success then

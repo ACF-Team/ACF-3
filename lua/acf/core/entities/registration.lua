@@ -262,10 +262,7 @@ local function PrepareSerializationFunctions(ENT, ClassName)
         -- otherwise re-serialize with the base's (smaller) ClassDef and clobber ACF_UserData down to just
         -- the base's own fields. We still chain into the base for any hand-written base PreEntityCopy.
         if self:GetClass() == ClassName and self.ACF_LiveData then
-            -- Implicit links are rebuilt on paste, so only explicit ones are saved
-            self.ACF_UserData = ACF.Classes.Serialization.Serialize(ClassDef, self.ACF_LiveData, function(Linked)
-                return not ACF.IsImplicitLink(self, Linked)
-            end)
+            self.ACF_UserData = ACF.Classes.Serialization.Serialize(ClassDef, self.ACF_LiveData)
         end
         if OrigPreEntityCopy then OrigPreEntityCopy(self) end
 

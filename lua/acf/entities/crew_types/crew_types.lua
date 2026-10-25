@@ -16,11 +16,6 @@ local function CanLinkGun(_, Gun)
 	return true, "Crew linked."
 end
 
---- Loaders serve the unbelted guns riding on the same turret as them, or on the hull with them
-local function ImplicitLoad(Crew, Weapon)
-	return not Weapon.IsBelted and ACF.SameTurret(Crew, Weapon)
-end
-
 --- Checks if the number of targets of the class for the crew exceeds the count
 --- Default count is 1
 local function CheckCount(Crew, Class, Count)
@@ -107,12 +102,10 @@ Classes.DefineClass("ACF.CrewTypes.Loader", "ACF.CrewTypes.BaseCrewType", functi
 			CanLink = CanLinkGun,
 			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
 			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_gun") end,
-			Implicit = ImplicitLoad, -- Links on its own to targets passing this, until the player links it by hand
 		},
 		acf_rack = {
 			OnLink = function(Crew)	Crew.ShouldScan = CheckCount(Crew, "acf_rack") end,
 			OnUnlink = function(Crew) Crew.ShouldScan = CheckCount(Crew, "acf_rack") end,
-			Implicit = ImplicitLoad,
 		},
 	}
 	CLASS.UpdateLowFreq = FindLongestBullet
@@ -169,12 +162,7 @@ Classes.DefineClass("ACF.CrewTypes.Gunner", "ACF.CrewTypes.BaseCrewType", functi
 				if CheckCount(Crew, "acf_turret") then return false, "Gunners can only link to one turret." end
 				if Target.Turret == "Turret-V" or Target.IsPassthrough then return false, "Gunners cannot link to vertical drives, servos or actuators." end
 				return true, "Crew linked."
-			end,
-			Implicit = function(Crew, Target) -- The turret they ride in, or from the hull the only one sharing their parent
-				if ACF.GetHorizontalTurret(Target) ~= Target then return false end
-				local Own = ACF.GetHorizontalTurret(Crew)
-				return Own == Target or (Own == nil and Target:GetParent() == Crew:GetParent())
-			end,
+			end
 		},
 		acf_gun = {
 			CanLink = CanLinkGun,
@@ -347,15 +335,13 @@ Classes.DefineClass("ACF.CrewTypes.Pilot", "ACF.CrewTypes.BaseCrewType", functio
 				if CheckCount(Crew) then return false, "Pilot can only link to one entity." end
 				if Target.Turret == "Turret-V" or Target.IsPassthrough then return false, "Pilot cannot link to vertical drives, servos or actuators." end
 				return true, "Crew linked."
-			end,
-			Implicit = function(Crew, Target) return ACF.GetHorizontalTurret(Crew) == Target end, -- Gunner duty when riding in the turret
+			end
 		},
 		acf_baseplate = {
 			CanLink = function(Crew) -- Called when a crew member tries to link to an entity
 				if CheckCount(Crew) then return false, "Pilot can only link to one entity." end
 				return true, "Crew linked."
-			end,
-			Implicit = function(Crew) return ACF.GetHorizontalTurret(Crew) == nil end, -- Driver duty when sitting in the hull
+			end
 		}
 	}
 	CLASS.UpdateEfficiency = function(Crew)

@@ -64,14 +64,6 @@ ACF.RegisterClassUnlink("acf_computer", "acf_gun", function(Computer, Target)
 	return false, "This computer is not linked to this weapon."
 end)
 
--- Weapons take the contraption's only guidance computer
-for _, Class in ipairs({ "acf_rack", "acf_gun" }) do
-	ACF.RegisterClassImplicitLink(Class, "acf_computer", {
-		Field  = "Computer",
-		Single = true,
-	})
-end
-
 --===============================================================================================--
 -- Local Funcs and Vars
 --===============================================================================================--
@@ -271,7 +263,15 @@ function ENT:Think()
 end
 
 function ENT:PreEntityCopy()
-	ACF.StoreLinks(self, "ACFWeapons", self.Weapons)
+	if next(self.Weapons) then
+		local Entities = {}
+
+		for Weapon in pairs(self.Weapons) do
+			Entities[#Entities + 1] = Weapon:EntIndex()
+		end
+
+		duplicator.StoreEntityModifier(self, "ACFWeapons", Entities)
+	end
 
 	-- AutoRegisterV2 wraps this as the original PreEntityCopy and handles the wire/base dupe info.
 end

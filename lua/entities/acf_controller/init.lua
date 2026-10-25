@@ -219,29 +219,19 @@ for Class, Data in pairs(ControllerLinkRegistry) do
 	local OnLinked = Data.OnLinked
 	local OnUnlinked = Data.OnUnlinked
 
-	-- Implicit is true, or a filter limiting which entities on the contraption are linked on their own
-	if Data.Implicit then
-		ACF.RegisterClassImplicitLink("acf_controller", Class, {
-			Field  = Field,
-			Single = Single,
-			Filter = isfunction(Data.Implicit) and Data.Implicit or nil,
-		})
-	end
-
 	-- Register the link/unlink functions for each class
 	ACF.RegisterClassLink("acf_controller", Class, function(Controller, Target)
 		if Controller:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "The controller is too far from this entity." end
 		if Single and IsValid(Controller[Field]) then return false, "This controller is already linked to another entity of this type." end
 		if not Single and Controller[Field][Target] then return false, "This controller is already linked to this entity." end
 
-		-- Checked before linking, a failed PreLink would otherwise leave the field set
+		if Single then Controller[Field] = Target
+		else Controller[Field][Target] = true end
+
 		if PreLink then
 			local PreLinkResult, PreLinkMsg = PreLink(Controller, Target)
 			if not PreLinkResult then return false, PreLinkMsg end
 		end
-
-		if Single then Controller[Field] = Target
-		else Controller[Field][Target] = true end
 
 		-- Alot of things initialize in the first tick, so wait for them to be available
 		timer.Simple(0, function()
@@ -324,7 +314,18 @@ do
 	-- Hopefully we can improve this when the codebase is refactored.
 	function ENT:PreEntityCopy()
 		for _, Data in pairs(ControllerLinkRegistry) do
-			ACF.StoreLinks(self, Data.Field, self[Data.Field])
+			local Field = Data.Field
+			if Data.Single then
+				if IsValid(self[Field]) then
+					duplicator.StoreEntityModifier(self, Field, {self[Field]:EntIndex()})
+				end
+			else
+				if next(self[Field]) then
+					local Entities = {}
+					for Ent in pairs(self[Field]) do Entities[#Entities + 1] = Ent:EntIndex() end
+					duplicator.StoreEntityModifier(self, Field, Entities)
+				end
+			end
 		end
 
 		-- Handle camera entity selection

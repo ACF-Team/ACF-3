@@ -491,7 +491,6 @@ end
 ACF.RegisterControllerLink("acf_gearbox", {
 	Field = "Gearbox",
 	Single = true,
-	Implicit = function(_, Gearbox) return Gearbox.Engines ~= nil and next(Gearbox.Engines) ~= nil end, -- The main gearbox is the one engines feed
 	OnLinked = function(Controller, Target)
 		Controller:AnalyzeDrivetrain(Target)
 	end,
@@ -500,7 +499,6 @@ ACF.RegisterControllerLink("acf_gearbox", {
 ACF.RegisterControllerLink("acf_baseplate", {
 	Field = "Baseplate",
 	Single = true,
-	Implicit = true,
 	OnLinked = function(Controller, Target)
 		if IsValid(Target.Pod) and not Controller.Seat then Controller:Link(Target.Pod) end
 	end,
