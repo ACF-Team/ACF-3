@@ -460,6 +460,7 @@ end
 
 do -- ACF Particles
 	game.AddParticles("particles/acf_muzzleflashes.pcf")
+	game.AddParticles("particles/acf_explosions.pcf")
 	game.AddParticles("particles/explosion1.pcf")
 	game.AddParticles("particles/rocket_motor.pcf")
 end
