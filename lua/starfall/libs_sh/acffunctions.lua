@@ -988,7 +988,9 @@ if SERVER then
 		CheckPerms(instance, This, "entities.acf")
 		CheckPerms(instance, Target, "entities.acf")
 
-		local Success, Message = This:Unlink(Target)
+		local Success, Message = ACF.CanPlayerUnlink(This, Target)
+
+		if Success then Success, Message = This:Unlink(Target) end
 
 		if notify then
 			if Success then

@@ -108,6 +108,7 @@ end
 ACF.RegisterControllerLink("acf_radar", {
 	Field = "Radar",
 	Single = true,
+	Implicit = true,
 	OnLinked = function(Controller, Target)
 		Controller:AnalyzeRadars(Target)
 	end,
@@ -116,6 +117,7 @@ ACF.RegisterControllerLink("acf_radar", {
 ACF.RegisterControllerLink("acf_irst", {
 	Field = "Radar",
 	Single = true,
+	Implicit = true,
 	OnLinked = function(Controller, Target)
 		Controller:AnalyzeRadars(Target)
 	end,

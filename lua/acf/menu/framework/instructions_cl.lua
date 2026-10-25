@@ -131,6 +131,7 @@ function ACF.Menu.BuildLinkInstructions(Count, HasGearbox)
 		{ { Type = IPTYPE_INPUT, Combo = { "R", "rmb" } },     { Type = IPTYPE_TEXT, Text = "Unlink entities" } },
 		{ { Type = IPTYPE_INPUT, Combo = { "SHIFT", "rmb" } }, { Type = IPTYPE_TEXT, Text = "Select or deselect another entity" } },
 		{ { Type = IPTYPE_ICON, Icon = "cancel" },             { Type = IPTYPE_TEXT, Text = "Aim at the world to clear the selection" } },
+		{ { Type = IPTYPE_INPUT, Combo = { "CTRL" } },         { Type = IPTYPE_TEXT, Text = "Hold to show the links of the entity you're aiming at" } },
 	}
 
 	if HasGearbox then
