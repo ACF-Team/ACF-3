@@ -175,13 +175,13 @@ function EFFECT:Init(Data)
 
 		if Light then
 			local Radius   = 500 * Size
-			local Duration = 0.15 * Life
+			local Duration = 0.07 * Life -- Only the first moments of the fireball, a longer light washes it out
 
 			Light.pos        = MuzzlePos + Forward * 100 * Size -- Middle of the fireball
 			Light.r          = 255
 			Light.g          = 180
 			Light.b          = 100
-			Light.brightness = 5 + Size * 2.5
+			Light.brightness = 2 + Size
 			Light.Size       = Radius
 			Light.Decay      = Radius * 0.7 / Duration -- Shrinks away as the fireball dies
 			Light.DieTime    = CurTime() + Duration
