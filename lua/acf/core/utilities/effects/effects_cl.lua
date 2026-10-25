@@ -20,6 +20,41 @@ Effects.MaterialColors = {
 	[MAT_FLESH]    = Color(114, 50, 50),
 }
 
+-- How much dust each surface throws up, anything missing barely makes any
+Effects.DustAmount = {
+	[MAT_DIRT]     = 1,
+	[MAT_SAND]     = 1,
+	[MAT_GRASS]    = 0.8,
+	[MAT_SNOW]     = 0.9,
+	[MAT_SLOSH]    = 0.9,
+	[MAT_FOLIAGE]  = 0.7,
+	[MAT_CONCRETE] = 0.45,
+	[MAT_TILE]     = 0.35,
+}
+
+do -- Lighting for particle effects
+	-- The light is linear, the world is drawn with overbright and gamma on top, so match that or smoke comes out far darker than the walls around it
+	local function GetBrightness(Light)
+		return math.Clamp((Light * 2) ^ (1 / 2.2), 0.05, 1)
+	end
+
+	--- Returns a tint as a 0-255 vector, darkened by the light at a position.
+	-- Unlit sprites glow in the dark, so particle effects tint themselves with this.
+	-- ComputeLighting picks up dynamic lights such as muzzle flashes and lights smoke for seconds after they're gone, so only static light is used.
+	-- @param Tint The colour in full light.
+	-- @param Pos The position to sample the light at.
+	-- @return The lit colour, ready to be passed as a control point.
+	function Effects.GetLitColor(Tint, Pos)
+		local Light = render.GetLightColor(Pos) + render.GetAmbientLightColor()
+
+		return Vector(
+			Tint.r * GetBrightness(Light.x),
+			Tint.g * GetBrightness(Light.y),
+			Tint.b * GetBrightness(Light.z)
+		)
+	end
+end
+
 do -- Resupply effect
 	local render   = render
 	local Distance = ACF.SupplyDistance

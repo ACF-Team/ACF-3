@@ -1,40 +1,14 @@
-local Classes   = ACF.Classes
-local Sounds    = ACF.Utilities.Sounds
-local Colors    = ACF.Utilities.Effects.MaterialColors
-local TraceLine = util.TraceLine
-local TraceData = { start = true, endpos = true, mask = MASK_SOLID_BRUSHONLY + MASK_WATER }
-local SmokeTint = Color(238, 237, 234)
-local WaterTint = Color(220, 225, 228)
-local Up        = Vector(0, 0, 1)
-
--- How much dust each surface throws up, anything missing barely makes any
-local DustAmount = {
-	[MAT_DIRT]     = 1,
-	[MAT_SAND]     = 1,
-	[MAT_GRASS]    = 0.8,
-	[MAT_SNOW]     = 0.9,
-	[MAT_SLOSH]    = 0.9,
-	[MAT_FOLIAGE]  = 0.7,
-	[MAT_CONCRETE] = 0.45,
-	[MAT_TILE]     = 0.35,
-}
-
--- Unlit sprites glow in the dark, so tint them by the light where they are
--- ComputeLighting picks up the flash's own dynamic light and lights the smoke for seconds after it's gone, so only static light is used
--- The light is linear, the world is drawn with overbright and gamma on top, so match that or smoke comes out far darker than the walls around it
-local function GetBrightness(Light)
-	return math.Clamp((Light * 2) ^ (1 / 2.2), 0.05, 1)
-end
-
-local function GetLitColor(Tint, Pos)
-	local Light = render.GetLightColor(Pos) + render.GetAmbientLightColor()
-
-	return Vector(
-		Tint.r * GetBrightness(Light.x),
-		Tint.g * GetBrightness(Light.y),
-		Tint.b * GetBrightness(Light.z)
-	)
-end
+local Classes     = ACF.Classes
+local Sounds      = ACF.Utilities.Sounds
+local Effects     = ACF.Utilities.Effects
+local Colors      = Effects.MaterialColors
+local DustAmount  = Effects.DustAmount
+local GetLitColor = Effects.GetLitColor
+local TraceLine   = util.TraceLine
+local TraceData   = { start = true, endpos = true, mask = MASK_SOLID_BRUSHONLY + MASK_WATER }
+local SmokeTint   = Color(238, 237, 234)
+local WaterTint   = Color(220, 225, 228)
+local Up          = Vector(0, 0, 1)
 
 -- Parented entities report no velocity on the client, the root of the parent chain does
 local function GetVelocity(Entity)
