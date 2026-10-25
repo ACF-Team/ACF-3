@@ -19,7 +19,6 @@ do -- MARK: Registration
 	--- @field Single boolean? Only one entity is linked, and only when one candidate stands out
 	--- @field Filter (fun(Source: table, Candidate: table): boolean)? Candidates failing this are never considered
 	--- @field Rank (fun(Source: table, Candidate: table): number)? Single links go to the unique highest ranked candidate
-	--- @field Shared string[]? Other classes only linked by hand into the same field
 
 	local function Replace(Index, Class, Data)
 		local List = Index[Class] or {}
@@ -68,10 +67,6 @@ do -- MARK: Registration
 		Fields[Data.Source]      = SourceFields
 		SourceFields[Data.Field] = Classes
 		Classes[Data.Target]     = true
-
-		for _, Class in ipairs(Data.Shared or {}) do
-			Classes[Class] = true
-		end
 	end
 
 	--- Returns the fields a class holds implicit links in. Explicit links to the same classes go in them too.
