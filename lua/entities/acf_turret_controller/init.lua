@@ -146,17 +146,19 @@ do	-- Metamethods
 			return IsValid(self.IsRemote and self.Crew or self.Turret)
 		end
 
-		-- Whether a turret or any sub-turret it carries has a missile rack mounted on it
-		local function HasMissileRack(Turret)
+		-- Highest caliber among the weapons on a turret and any sub-turrets it carries
+		local function GetTurretMaxCaliber(Turret)
+			local Caliber = 0
+
 			for Weapon in pairs(Turret.DirectWeapons or {}) do
-				if IsValid(Weapon) and Weapon:GetClass() == "acf_rack" then return true end
+				if IsValid(Weapon) then Caliber = math.max(Caliber, Weapon.Caliber or 0) end
 			end
 
 			for SubTurret in pairs(Turret.SubTurrets or {}) do
-				if IsValid(SubTurret) and HasMissileRack(SubTurret) then return true end
+				if IsValid(SubTurret) then Caliber = math.max(Caliber, GetTurretMaxCaliber(SubTurret)) end
 			end
 
-			return false
+			return Caliber
 		end
 
 		-- Whether this controller is currently providing its benefit

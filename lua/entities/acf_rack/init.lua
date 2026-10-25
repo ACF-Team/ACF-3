@@ -1167,7 +1167,7 @@ do -- Misc -------------------------------------
 		local Reload     = IsValid(Missile) and Missile.ReloadTime or 1
 
 		self.BulletData = BulletData
-		self.Caliber    = BulletData.Caliber
+		self.Caliber    = BulletData.Caliber and BulletData.Caliber * 10 or self.Caliber -- mm like guns, kept while reloading
 		self.NextFire   = Point.NextFire
 		self.Jammed     = Point.Disabled
 

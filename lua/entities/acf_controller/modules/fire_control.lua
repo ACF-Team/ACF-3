@@ -45,7 +45,6 @@ do
 			local Reps = {}
 			for _, Group in pairs(self.WeaponGroups) do Reps[#Reps + 1] = next(Group) end
 			-- Equal calibers across types are expected, so break ties by key to keep slots stable
-			-- A rack's Caliber can still be nil if it hasn't been given ammo yet
 			table.sort(Reps, function(A, B)
 				local CaliberA, CaliberB = A.Caliber or 0, B.Caliber or 0
 				if CaliberA == CaliberB then return A.Name < B.Name end
