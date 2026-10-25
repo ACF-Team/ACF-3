@@ -9,7 +9,6 @@ local Contraption	= ACF.Contraption
 local Damage    = ACF.Damage
 local Utilities = ACF.Utilities
 local Clock     = Utilities.Clock
-local Sounds    = Utilities.Sounds
 
 ACF.RegisterClassLink("acf_computer", "acf_rack", function(Computer, Target)
 	if Computer.Weapons[Target] then return false, "This rack is already linked to this computer!" end
@@ -77,23 +76,17 @@ end
 -- Local Funcs and Vars
 --===============================================================================================--
 
-local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
 
-local function CheckDistantLinks(Entity, Source)
-	local Position = Entity:GetPos()
+-- Watched by the link system, which unlinks and warns the owner once out of range
+local function CheckLinkDistance(Computer, Weapon)
+	if Computer:GetPos():DistToSqr(Weapon:GetPos()) <= MaxDistance then return true end
 
-	for Link in pairs(Entity[Source]) do
-		if Position:DistToSqr(Link:GetPos()) > MaxDistance then
-			local Sound = UnlinkSound:format(math.random(1, 3))
-
-			Sounds.SendSound(Entity, Sound, 70, 100, 1)
-			Sounds.SendSound(Link, Sound, 70, 100, 1)
-
-			Entity:Unlink(Link)
-		end
-	end
+	return false, "The computer is too far from this weapon."
 end
+
+ACF.RegisterClassLinkCheck("acf_computer", "acf_rack", CheckLinkDistance)
+ACF.RegisterClassLinkCheck("acf_computer", "acf_gun", CheckLinkDistance)
 
 --===============================================================================================--
 
@@ -213,12 +206,6 @@ do -- Spawn and update function
 		local Class    = Classes.GetBaseClass(Computer:GetType())
 
 		if Class and Class.OnSpawn then Class.OnSpawn(self, nil, Class, Computer) end
-
-		timer.Create("ACF Computer Clock " .. self:EntIndex(), 3, 0, function()
-			if not IsValid(self) then return end
-
-			CheckDistantLinks(self, "Weapons")
-		end)
 	end
 
 	ACF.RegisterLinkSource("acf_computer", "Weapons")
@@ -311,6 +298,4 @@ function ENT:OnRemove(IsFullUpdate)
 	for Weapon in pairs(self.Weapons) do
 		self:Unlink(Weapon)
 	end
-
-	timer.Remove("ACF Computer Clock " .. self:EntIndex())
 end

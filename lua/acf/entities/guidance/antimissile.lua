@@ -11,7 +11,7 @@ Classes.DefineClass("ACF.Missiles.Guidance.AntiMissile", "ACF.Missiles.Guidance.
 		CLASS.Description = "This guidance package uses a radar to detect missiles and guides the munition towards the most centered one it can find."
 	else
 		local Countermeasures = ACF.Countermeasures
-		CLASS.RadarType = "AM-Radar"
+		CLASS.RadarDetects = "DetectMissiles" -- Radar flag this guidance needs set
 
 
 		function CLASS:GetRadar()
@@ -21,7 +21,7 @@ Classes.DefineClass("ACF.Missiles.Guidance.AntiMissile", "ACF.Missiles.Guidance.
 
 			if not IsValid(Radar) then return end
 			if not Radar.Scanning then return end
-			if Radar.ClassType ~= self.RadarType then return end
+			if not Radar[self.RadarDetects] then return end
 
 			return Radar
 		end
@@ -58,16 +58,18 @@ Classes.DefineClass("ACF.Missiles.Guidance.AntiMissile", "ACF.Missiles.Guidance.
 		end
 
 		function CLASS:UpdateTarget(Missile, Radar)
-			if not Radar or Radar.TargetCount == 0 then
-				return self:SeekTarget(Missile)
-			end
+			if not Radar then return self:SeekTarget(Missile) end
 
-			local Targets    = Radar.Targets
+			local Targets, TargetCount = Radar:GetTargets()
+
+			if TargetCount == 0 then return self:SeekTarget(Missile) end
+
 			local Position   = Missile.ACF_Position
 			local HighestDot = 0
 			local Target, TargetPos
 
 			for Entity, Data in pairs(Targets) do
+				if Data.Type ~= "Missile" then continue end
 				if Missile == Entity then continue end
 				if Entity.IsAntiMissile then continue end
 
@@ -108,7 +110,7 @@ Classes.DefineClass("ACF.Missiles.Guidance.AntiMissile", "ACF.Missiles.Guidance.
 			if self.OnRadar then
 				if not Radar then return end
 
-				local Data = Radar.Targets[Target]
+				local Data = Radar:GetTargets()[Target]
 
 				if not Data then return end
 

@@ -1,6 +1,5 @@
-local ACF             = ACF
-local Classes         = ACF.Classes
-local Countermeasures = ACF.Countermeasures
+local ACF     = ACF
+local Classes = ACF.Classes
 
 -- Missile and targeting radars are one group. What a radar detects is per entity, driven by the
 -- DetectMissiles and DetectContraptions flags, rather than baked into a separate class tree.
@@ -112,27 +111,6 @@ Classes.DefineClass("ACF.Sensors.Radar.Standard", "ACF.Sensors.Radar", function(
 end)
 
 do -- Directional radars
-	local function DetectEntities(Radar)
-		local Origin = Radar:LocalToWorld(Radar.Origin)
-		local Forward = Radar:GetForward()
-		local Cone = Radar.ConeDegs
-		local Result = {}
-
-		if Radar.DetectContraptions then
-			for Ent in pairs(ACF.GetEntitiesInCone(Origin, Forward, Cone, Radar:CFW_GetContraption())) do
-				Result[Ent] = true
-			end
-		end
-
-		if Radar.DetectMissiles then
-			for Missile in pairs(Countermeasures.GetMissilesInCone(Origin, Forward, Cone)) do
-				Result[Missile] = true
-			end
-		end
-
-		return Result
-	end
-
 	Classes.DefineClass("ACF.Sensors.Radar.Standard.SmallDirectional", "ACF.Sensors.Radar.Standard", function(CLASS)
 		CLASS.Name           = "Small Directional Radar"
 		CLASS.ID             = "SmallDIR"
@@ -146,7 +124,6 @@ do -- Directional radars
 		CLASS.Origin         = "radar"
 		CLASS.ThinkTicks     = 3
 		CLASS.Preview        = { FOV = 105 }
-		CLASS.Detect         = DetectEntities
 	end)
 
 	Classes.DefineClass("ACF.Sensors.Radar.Standard.MediumDirectional", "ACF.Sensors.Radar.Standard", function(CLASS)
@@ -162,7 +139,6 @@ do -- Directional radars
 		CLASS.Origin         = "radar"
 		CLASS.ThinkTicks     = 3
 		CLASS.Preview        = { FOV = 110 }
-		CLASS.Detect         = DetectEntities
 	end)
 
 	Classes.DefineClass("ACF.Sensors.Radar.Standard.LargeDirectional", "ACF.Sensors.Radar.Standard", function(CLASS)
@@ -178,7 +154,6 @@ do -- Directional radars
 		CLASS.Origin         = "radar"
 		CLASS.ThinkTicks     = 3
 		CLASS.Preview        = { FOV = 110 }
-		CLASS.Detect         = DetectEntities
 	end)
 
 	ACF.SetCustomAttachment("models/radar/radar_sml.mdl", "radar", Vector(5.5, 0, 6.1), Angle(0, 0, 0))
@@ -187,26 +162,6 @@ do -- Directional radars
 end
 
 do -- Spherical radars
-	local function DetectEntities(Radar)
-		local Origin = Radar:LocalToWorld(Radar.Origin)
-		local Range = Radar.Range
-		local Result = {}
-
-		if Radar.DetectContraptions then
-			for Ent in pairs(ACF.GetEntitiesInSphere(Origin, Range, Radar:CFW_GetContraption())) do
-				Result[Ent] = true
-			end
-		end
-
-		if Radar.DetectMissiles then
-			for Missile in pairs(Countermeasures.GetMissilesInSphere(Origin, Range)) do
-				Result[Missile] = true
-			end
-		end
-
-		return Result
-	end
-
 	Classes.DefineClass("ACF.Sensors.Radar.Standard.SmallSpherical", "ACF.Sensors.Radar.Standard", function(CLASS)
 		CLASS.Name           = "Small Spherical Radar"
 		CLASS.ID             = "SmallOMNI"
@@ -219,7 +174,6 @@ do -- Spherical radars
 		CLASS.Origin         = "radar"
 		CLASS.ThinkTicks     = 10
 		CLASS.Preview        = { FOV = 120 }
-		CLASS.Detect         = DetectEntities
 	end)
 
 	Classes.DefineClass("ACF.Sensors.Radar.Standard.MediumSpherical", "ACF.Sensors.Radar.Standard", function(CLASS)
@@ -234,7 +188,6 @@ do -- Spherical radars
 		CLASS.Origin         = "radar"
 		CLASS.ThinkTicks     = 10
 		CLASS.Preview        = { FOV = 120 }
-		CLASS.Detect         = DetectEntities
 	end)
 
 	Classes.DefineClass("ACF.Sensors.Radar.Standard.LargeSpherical", "ACF.Sensors.Radar.Standard", function(CLASS)
@@ -249,7 +202,6 @@ do -- Spherical radars
 		CLASS.Origin         = "radar"
 		CLASS.ThinkTicks     = 10
 		CLASS.Preview        = { FOV = 120 }
-		CLASS.Detect         = DetectEntities
 	end)
 
 	ACF.SetCustomAttachment("models/radar/radar_sp_sml.mdl", "radar", Vector(0, 0, 23.5), Angle(0, 0, 0))
