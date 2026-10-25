@@ -101,7 +101,7 @@ do	-- Metamethods and other important stuff
 	end
 
 	do	-- Link/unlink
-		ACF.RegisterLinkSource("acf_turret_computer", "Guns")
+		ACF.RegisterLinkSource("acf_turret_computer", "Gun", true)
 
 		-- Gun links
 

@@ -1082,8 +1082,8 @@ end
 
 do -- Metamethods
 	do	-- Links
-		ACF.RegisterLinkSource("acf_turret", "Motors")
-		ACF.RegisterLinkSource("acf_turret", "Gyros")
+		ACF.RegisterLinkSource("acf_turret", "Motor", true)
+		ACF.RegisterLinkSource("acf_turret", "Gyro", true)
 
 		-- Motor links
 
