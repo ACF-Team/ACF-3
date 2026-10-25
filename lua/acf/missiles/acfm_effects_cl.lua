@@ -17,8 +17,9 @@ local Overrides =
 			Effect:SetAngles(Bullet.SimFlight:Angle())
 		end
 
-		if IsValid(Bullet.Tracer) then
-			Bullet.Tracer:Finish()
+		if Bullet.Tracer and Bullet.Tracer:IsValid() then
+			Bullet.Tracer:StopEmissionAndDestroyImmediately()
+			Bullet.Tracer = nil
 		end
 
 		local Time = Clock.CurTime

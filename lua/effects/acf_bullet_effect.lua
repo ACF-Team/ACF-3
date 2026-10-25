@@ -4,6 +4,47 @@ local Classes   = ACF.Classes
 local Bullets   = ACF.BulletEffect
 local Clock     = ACF.Utilities.Clock
 
+local function CreateTracer(Pos, Color, Caliber)
+	local Effect = CreateParticleSystemNoEntity("acf_tracer", Pos)
+
+	if not Effect then return end
+
+	local Size = math.Clamp(Caliber * 2.5, 3, 25)
+
+	Effect:SetControlPoint(0, Pos)
+	Effect:SetControlPoint(1, Pos)
+	Effect:SetControlPoint(2, Vector(Size, 0, 0))
+	Effect:SetControlPoint(3, Vector(Color.r, Color.g, Color.b))
+	Effect:SetControlPoint(4, Vector(Color.r + (255 - Color.r) * 0.35, Color.g + (255 - Color.g) * 0.35, Color.b + (255 - Color.b) * 0.35)) -- The head burns a bit whiter
+
+	return Effect
+end
+
+-- The round only moves once per tick, so the tracer is pushed ahead of it every frame to keep it smooth
+local function UpdateTracer(Bullet)
+	local Tracer = Bullet.Tracer
+
+	if not Tracer or not Tracer:IsValid() then return end
+
+	local Velocity = Bullet.SimFlight * ACF.Scale
+	local Since    = math.min(CurTime() - Bullet.TracerTime, engine.TickInterval() * 2)
+	local Head     = Bullet.SimPos + Velocity * Since
+	local Length   = math.min(Bullet.TracerLength, Velocity:Length() * 0.004) -- Slow rounds don't streak as far
+
+	Tracer:SetControlPoint(0, Head)
+	Tracer:SetControlPoint(1, Head - Velocity:GetNormalized() * Length)
+end
+
+local function RemoveTracer(Bullet)
+	local Tracer = Bullet.Tracer
+
+	if Tracer and Tracer:IsValid() then
+		Tracer:StopEmissionAndDestroyImmediately()
+	end
+
+	Bullet.Tracer = nil
+end
+
 function EFFECT:Init(Data)
 	self.Index = Data:GetDamageType()
 
@@ -82,15 +123,23 @@ function EFFECT:Init(Data)
 			WPMass        = Crate:GetNW2Float("WPMass"),
 			DragCoef      = Crate:GetNW2Float("DragCoef", 1),
 			AmmoType      = Crate:GetNW2String("AmmoType", "ACF.Ammunition.AP"),
-			Tracer        = Tracer and ParticleEmitter(Origin) or nil,
+			Tracer        = Tracer and CreateTracer(Origin, Crate:GetColor(), Caliber) or nil,
+			TracerTime    = CurTime(),
+			TracerLength  = math.Clamp(Caliber * 40, 60, 250),
 			Color         = Tracer and Crate:GetColor() or nil,
 			Accel         = Crate:GetNW2Vector("Accel", ACF.Gravity),
 			LastThink     = Clock.CurTime,
 			Effect        = self,
 		}
 
+		-- The index can be reused before we're told the old bullet is gone, so its tracer has to go with it
+		if Bullet then
+			RemoveTracer(Bullet)
+		end
+
 		--Add all that data to the bullet table, overwriting if needed
 		Bullets[self.Index] = BulletData
+		self.Bullet = BulletData
 
 		-- Set model and bodygroup based on ammo type
 		local FlightModel = Crate:GetNW2String("FlightModel", "")
@@ -110,21 +159,31 @@ function EFFECT:Init(Data)
 end
 
 function EFFECT:Think()
-	local Bullet = Bullets[self.Index]
+	local Bullet = self.Bullet
 
-	if Bullet and not self.Kill and self.CreateTime > Clock.CurTime - 45 then return true end
+	if Bullet and not self.Kill and Bullets[self.Index] == Bullet and self.CreateTime > Clock.CurTime - 45 then
+		UpdateTracer(Bullet)
+
+		return true
+	end
 
 	if Bullet then
-		if IsValid(Bullet.Tracer) then
-			Bullet.Tracer:Finish()
-		end
+		RemoveTracer(Bullet)
 
 		Bullet.Removed = true
 
-		Bullets[self.Index] = nil
+		if Bullets[self.Index] == Bullet then
+			Bullets[self.Index] = nil
+		end
 	end
 
 	return false
+end
+
+function EFFECT:OnRemove()
+	if self.Bullet then
+		RemoveTracer(self.Bullet)
+	end
 end
 
 function EFFECT:ApplyMovement(Bullet)
@@ -140,46 +199,13 @@ function EFFECT:ApplyMovement(Bullet)
 		self:SetAngles(Bullet.SimFlight:Angle())
 	end
 
-	if not self.DrawEffect then return end
+	local Tracer = Bullet.Tracer
 
-	if Bullet.Tracer and IsValid(Bullet.Tracer) then
-		local DeltaPos = Position - Bullet.SimPosLast
-		local Length = math.max(DeltaPos:Length() * 2, 1)
-		local MaxSprites = 2
-		local Light = Bullet.Tracer:Add("sprites/acf_tracer.vmt", Bullet.SimPosLast)
+	if Tracer and Tracer:IsValid() then
+		Bullet.TracerTime = CurTime()
 
-		if Light then
-			local Color = Bullet.Color
-
-			Light:SetAngles(Bullet.SimFlight:Angle())
-			Light:SetVelocity(Bullet.SimFlight:GetNormalized())
-			Light:SetColor(Color.r, Color.g, Color.b)
-			Light:SetDieTime(0.075)
-			Light:SetStartAlpha(255)
-			Light:SetEndAlpha(0)
-			Light:SetStartSize(Bullet.Caliber * 15)
-			Light:SetEndSize(Bullet.Caliber * 15)
-			Light:SetStartLength(Length)
-			Light:SetEndLength(Length)
-		end
-
-		for i = 1, MaxSprites do
-			local Smoke = Bullet.Tracer:Add("particle/smokesprites_000" .. math.random(1, 9), Position - (DeltaPos * i / MaxSprites))
-
-			if Smoke then
-				Smoke:SetAngles(Bullet.SimFlight:Angle())
-				Smoke:SetVelocity(Bullet.SimFlight * 0.05)
-				Smoke:SetColor(200, 200, 200)
-				Smoke:SetDieTime(0.6)
-				Smoke:SetStartAlpha(10)
-				Smoke:SetEndAlpha(0)
-				Smoke:SetStartSize(1)
-				Smoke:SetEndSize(Length * Bullet.Caliber * 0.0025)
-				Smoke:SetRollDelta(0.1)
-				Smoke:SetAirResistance(150)
-				Smoke:SetGravity(Vector(0, 0, 20))
-			end
-		end
+		Tracer:SetShouldDraw(self.DrawEffect)
+		UpdateTracer(Bullet)
 	end
 end
 
