@@ -20,13 +20,19 @@ local DustAmount = {
 }
 
 -- Unlit sprites glow in the dark, so tint them by the light where they are
+-- ComputeLighting picks up the flash's own dynamic light and lights the smoke for seconds after it's gone, so only static light is used
+-- The light is linear, the world is drawn with overbright and gamma on top, so match that or smoke comes out far darker than the walls around it
+local function GetBrightness(Light)
+	return math.Clamp((Light * 2) ^ (1 / 2.2), 0.05, 1)
+end
+
 local function GetLitColor(Tint, Pos)
-	local Light = render.ComputeLighting(Pos, Up) + render.GetAmbientLightColor()
+	local Light = render.GetLightColor(Pos) + render.GetAmbientLightColor()
 
 	return Vector(
-		math.min(Tint.r * math.Clamp(Light.x, 0.12, 1), 255),
-		math.min(Tint.g * math.Clamp(Light.y, 0.12, 1), 255),
-		math.min(Tint.b * math.Clamp(Light.z, 0.12, 1), 255)
+		Tint.r * GetBrightness(Light.x),
+		Tint.g * GetBrightness(Light.y),
+		Tint.b * GetBrightness(Light.z)
 	)
 end
 
