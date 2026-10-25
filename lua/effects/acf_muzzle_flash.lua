@@ -3,7 +3,7 @@ local Sounds    = ACF.Utilities.Sounds
 local Colors    = ACF.Utilities.Effects.MaterialColors
 local TraceLine = util.TraceLine
 local TraceData = { start = true, endpos = true, mask = MASK_SOLID_BRUSHONLY + MASK_WATER }
-local SmokeTint = Color(205, 202, 196)
+local SmokeTint = Color(222, 220, 215)
 local WaterTint = Color(220, 225, 228)
 local Up        = Vector(0, 0, 1)
 
