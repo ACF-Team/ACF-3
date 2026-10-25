@@ -111,7 +111,8 @@ function EFFECT:Init(Data)
 		end
 	end
 
-	if Fire > 0.25 then
+	-- On dirt the fireball is buried in dust, the ground effect's own glow is all that shows through
+	if Fire > 0.5 then
 		-- Bursts on a surface are pushed off it so the fireball isn't half buried in it
 		local Pos    = Height == 0 and Ground.HitPos + Ground.HitNormal * 90 * Size or Origin
 		local Effect = CreateParticleSystemNoEntity("acf_he_air", Pos, angle_zero)
