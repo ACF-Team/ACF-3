@@ -27,6 +27,17 @@ local function GetRackList(Data)
 	return Result
 end
 
+-- MenuHidden classes are spawned by other code (e.g. SWEPs), not mounted on racks
+local function GetListed(List)
+	local Result = {}
+
+	for ID, Class in pairs(List) do
+		if not Class.MenuHidden then Result[ID] = Class end
+	end
+
+	return Result
+end
+
 local BaseText    = "Caliber : %s\nMass : %s"
 local RackText    = BaseText .. "\nCost : %s\nMunitions : %s%s\n"
 local MissileText = BaseText .. "\nArming Delay : %ss%s%s"
@@ -51,7 +62,7 @@ local function Build(Menu, Contexts)
 	local Rack = Contexts.Rack
 	local Ammo = Contexts.Ammo
 
-	local Entries = Classes.GetChildren(Classes.GetTypeByName(MISSILE_BASE))
+	local Entries = GetListed(Classes.GetChildren(Classes.GetTypeByName(MISSILE_BASE)))
 
 	Menu:AddTitle("Missile Settings")
 
@@ -87,7 +98,7 @@ local function Build(Menu, Contexts)
 		MissileClass:SetText(Data.Description)
 
 		AmmoList:LoadEntries(Data:GetType())
-		ACF.Menu.LoadClassCombo(MissileList, Classes.GetChildren(Data), "Caliber", "Model", PAGE, "missile")
+		ACF.Menu.LoadClassCombo(MissileList, GetListed(Classes.GetChildren(Data)), "Caliber", "Model", PAGE, "missile")
 	end
 
 	function MissileList:OnSelect(Index, _, Data)
