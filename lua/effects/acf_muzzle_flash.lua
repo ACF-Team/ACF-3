@@ -164,17 +164,21 @@ function EFFECT:Init(Data)
 			SetControlPoints(Effect, Size, Life, Count, 1, GetLitColor(SmokeTint, MuzzlePos), GetVelocity(Gun))
 		end
 
-		local Light = DynamicLight(Gun:EntIndex())
+		-- Only the bigger guns light up their surroundings, small arms fire too often for it to be worth it
+		local Light = Size >= 0.5 and DynamicLight(Gun:EntIndex())
 
 		if Light then
-			Light.pos        = MuzzlePos + Forward * 60 * Size
+			local Radius   = 500 * Size
+			local Duration = 0.15 * Life
+
+			Light.pos        = MuzzlePos + Forward * 100 * Size -- Middle of the fireball
 			Light.r          = 255
-			Light.g          = 190
-			Light.b          = 120
-			Light.brightness = 2 + Size
-			Light.Size       = 300 * Size
-			Light.Decay      = 2400 * Size
-			Light.DieTime    = CurTime() + 0.1 * Life
+			Light.g          = 180
+			Light.b          = 100
+			Light.brightness = 5 + Size * 2.5
+			Light.Size       = Radius
+			Light.Decay      = Radius * 0.7 / Duration -- Shrinks away as the fireball dies
+			Light.DieTime    = CurTime() + Duration
 		end
 
 		GroundEffect(Gun, MuzzlePos, Forward, Size, Life, Count)
