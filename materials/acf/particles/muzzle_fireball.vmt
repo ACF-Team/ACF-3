@@ -1,0 +1,9 @@
+"SpriteCard"
+{
+	"$basetexture" "acf/particles/muzzle_fireball"
+	"$vertexcolor" "1"
+	"$vertexalpha" "1"
+	"$additive" "1"
+	"$depthblend" "1"
+	"$depthblendscale" "50"
+}

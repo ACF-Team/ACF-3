@@ -943,6 +943,7 @@ do -- Metamethods --------------------------------
 			local EffectTable = {
 				Entity    = self,
 				Scale     = SelfTbl.BulletData.PropMass,
+				Radius    = SelfTbl.BulletData.Caliber,
 				Magnitude = SelfTbl.ReloadTime,
 			}
 
