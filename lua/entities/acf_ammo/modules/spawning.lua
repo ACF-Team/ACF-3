@@ -47,7 +47,7 @@ end
 -- Box crates use a thin hologram cube; drums use the cylinder shape model.
 local function GetAmmoModel(ShapeClass)
 	if ShapeClass and ShapeClass.IsDrum then
-		return ShapeClass.Model or "models/acf/core/s_fuel_cyl.mdl"
+		return ShapeClass.Model or "models/acf/core/s_ammo_cyl.mdl"
 	end
 
 	return "models/holograms/hq_rcube_thin.mdl"
