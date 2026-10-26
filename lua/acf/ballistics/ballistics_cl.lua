@@ -87,8 +87,6 @@ net.Receive("ACF_PredictedBullet", function()
 	local Old = Bullets[Index]
 
 	if Old and Old ~= Bullet then
-		if IsValid(Old.Tracer) then Old.Tracer:Finish() end
-
 		Old.Removed = true
 
 		if IsValid(Old.Effect) then

@@ -47,6 +47,13 @@ local function UpdateTracer(Bullet)
 
 	if not Tracer or not Tracer:IsValid() then return end
 
+	-- A predicted round that hit the map waits there for the server hidden, its tracer would lie on the ground otherwise
+	local Draw = not Bullet.Stopped and Bullet.Effect.DrawEffect
+
+	Tracer:SetShouldDraw(Draw)
+
+	if not Draw then return end
+
 	local Velocity = Bullet.SimFlight * ACF.Scale
 	local Since    = math.min(CurTime() - Bullet.TracerTime, engine.TickInterval() * 2)
 	local Head     = Bullet.SimPos + Velocity * Since
