@@ -1,0 +1,9 @@
+-- Insert pack
+INSERT INTO PackData (packid, packname, author, contact)
+VALUES ('aflooridafazel2', 'AflooridaFazel2', 'juls', 'julshno');
+
+-- Insert dupes using the string packid
+INSERT INTO DupeData (path, name, cost, weight, type, mobility, packid, description) VALUES
+('didididldoboombarolla_latuz1', 'DidiDidldoBoombaRolla LATUZ1', 97.06, 5.79, 'SPG', 'Tracked', 'aflooridafazel2', 'A very lightly armored 155mm mortar carrier with a 7.62mm bow machine gun. It appears to be commanded by a group of alien beings from another planet who have yet to discover proper armor.'),
+
+('bandidisonikgynaeboomba_latuz1', 'BandidiSonikGynaeBoomba LATUZ1', 71.17, 1.85, 'Fighter', 'Aircraft', 'aflooridafazel2', 'A scrap utility helicopter outfitted with two 12.7mm mini-guns and two 7x40mm FFAR Pods. Piloted by two green interplanetary pilots.');
