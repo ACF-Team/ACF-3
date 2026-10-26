@@ -1,8 +1,8 @@
 ACF.Classes.DefineClass("ACF.ContainerShapes.Cylinder", "ACF.ContainerShapes.BaseContainerShape", function(CLASS)
     CLASS.ID     = "Cylinder"
     CLASS.Name   = "Cylinder"
-    CLASS.Model  = "models/acf/core/s_fuel_cyl.mdl"
-    CLASS.Icon   = "models/acf/core/s_fuel_cyl.mdl"
+    CLASS.Model  = "models/acf/core/s_ammo_cyl.mdl"
+    CLASS.Icon   = "models/acf/core/s_ammo_cyl.mdl"
     CLASS.IsDrum = true
 
     function CLASS.ShapeCalculation(Size)
