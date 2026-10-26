@@ -9,6 +9,153 @@ local ChargeModelPath    = "models/acf/munitions/charge.mdl"    -- propellant ba
 local ChargeBodygroup    = 0
 local CartridgeModelPath = "models/acf/munitions/cartridge.mdl" -- last-resort fallback; the server normally names the model
 
+do --MARK: Cookoff
+	-- The server only flips the crate's "Cookoff" value on and off, everything else is a particle system
+	-- that runs on its own, a looping sound and one flickering light per fire, so a burning tank costs next to nothing
+	local Effects     = ACF.Utilities.Effects
+	local SmokeTint   = Color( 60, 56, 52 )
+	local Fires       = {} -- Burning crates and the fires they leave behind, for the lights
+	local MaxLights   = 4
+	local LightRange  = 5000 ^ 2
+
+	-- Total propellant mass in kg to effect size, from a few machinegun belts (~0.3) up to a full tank rack (~2.5)
+	local function GetScale( Propellant )
+		return math.Clamp( Propellant ^ ( 1 / 3 ) / 3, 0.3, 2.5 )
+	end
+
+	local function SetControlPoints( Effect, Scale, Pos )
+		Effect:SetControlPoint( 1, Vector( Scale, Scale, Scale ) )
+		Effect:SetControlPoint( 2, Vector( 1, LocalPlayer():GetInfoNum( "acf_cl_particlemul", 1 ), 1 ) )
+		Effect:SetControlPoint( 3, Effects.GetLitColor( SmokeTint, Pos + Vector( 0, 0, 100 ) ) )
+	end
+
+	local function UpdateLights()
+		local Now    = CurTime()
+		local Eye    = EyePos()
+		local Lights = 0
+
+		for Fire in pairs( Fires ) do
+			local Pos = Fire.Entity and ( IsValid( Fire.Entity ) and Fire.Entity:LocalToWorld( Fire.Entity:OBBCenter() ) ) or Fire.Pos
+
+			if not Pos or ( Fire.Until and Fire.Until < Now ) then
+				Fires[Fire] = nil
+			elseif Lights < MaxLights and Pos:DistToSqr( Eye ) < LightRange then
+				local Light = DynamicLight( 0x7100 + Lights ) -- One slot per light, refreshed in place
+
+				Lights = Lights + 1
+
+				if Light then
+					Light.pos        = Pos + Vector( 0, 0, 40 * Fire.Scale )
+					Light.r          = 255
+					Light.g          = 140
+					Light.b          = 60
+					Light.brightness = Fire.Brightness * math.Rand( 0.7, 1.2 )
+					Light.Size       = 350 * Fire.Scale * math.Rand( 0.9, 1.1 )
+					Light.Decay      = 0
+					Light.DieTime    = Now + 0.1
+				end
+			end
+		end
+
+		if not next( Fires ) then
+			timer.Remove( "ACF Cookoff Lights" )
+		end
+	end
+
+	local function AddFire( Fire )
+		Fires[Fire] = true
+
+		if not timer.Exists( "ACF Cookoff Lights" ) then
+			timer.Create( "ACF Cookoff Lights", 0.05, 0, UpdateLights )
+		end
+	end
+
+	-- Whatever is left of the crate keeps burning for a while
+	local function CreateLingeringFire( Pos, Scale )
+		local Effect = CreateParticleSystemNoEntity( "acf_cookoff_linger", Pos )
+
+		if not Effect then return end
+
+		local Duration = math.Rand( 10, 20 )
+
+		SetControlPoints( Effect, Scale * 0.8, Pos )
+		AddFire( { Pos = Pos, Scale = Scale * 0.6, Brightness = 1.5, Until = CurTime() + Duration } )
+
+		local Channel
+
+		sound.PlayFile( "sound/ambient/fire/fire_small_loop2.wav", "3d noblock", function( Sound )
+			if not IsValid( Sound ) then return end
+
+			Channel = Sound
+
+			Sound:SetPos( Pos )
+			Sound:EnableLooping( true )
+			Sound:Set3DFadeDistance( 200, 0 )
+			Sound:Play()
+		end )
+
+		timer.Simple( Duration, function()
+			if Effect:IsValid() then Effect:StopEmission() end
+			if IsValid( Channel ) then Channel:Stop() end
+		end )
+	end
+
+	function ENT:StartCookoff( Propellant )
+		local Scale = GetScale( Propellant )
+
+		self.CookoffScale = Scale
+
+		if self.CookoffEffect and self.CookoffEffect:IsValid() then return end
+
+		local Effect = CreateParticleSystem( self, "acf_cookoff", PATTACH_ABSORIGIN_FOLLOW, 0, self:OBBCenter() )
+
+		if Effect then
+			SetControlPoints( Effect, Scale, self:LocalToWorld( self:OBBCenter() ) )
+		end
+
+		self.CookoffEffect = Effect
+		self.CookoffFire   = { Entity = self, Scale = Scale, Brightness = 3 }
+		self.CookoffSound  = CreateSound( self, "ambient/fire/fire_big_loop1.wav" )
+
+		self.CookoffSound:PlayEx( math.Clamp( 0.5 + Scale * 0.25, 0.5, 1 ), 100 )
+
+		AddFire( self.CookoffFire )
+	end
+
+	function ENT:StopCookoff( Linger )
+		if not self.CookoffScale then return end
+
+		if self.CookoffEffect and self.CookoffEffect:IsValid() then
+			self.CookoffEffect:StopEmission()
+		end
+
+		if self.CookoffSound then
+			self.CookoffSound:Stop()
+		end
+
+		if self.CookoffFire then
+			Fires[self.CookoffFire] = nil
+		end
+
+		if Linger then
+			CreateLingeringFire( self:LocalToWorld( self:OBBCenter() ), self.CookoffScale )
+		end
+
+		self.CookoffScale  = nil
+		self.CookoffEffect = nil
+		self.CookoffFire   = nil
+		self.CookoffSound  = nil
+	end
+
+	function ENT:OnCookoffChanged( Propellant )
+		if Propellant > 0 then
+			self:StartCookoff( Propellant )
+		else
+			self:StopCookoff( true )
+		end
+	end
+end
+
 do --MARK: Networking
 	local MaxRounds = GetConVar( "acf_maxroundsdisplay" )
 	local Queued    = {}
@@ -174,6 +321,17 @@ do --MARK: Networking
 		self:SetNWVarProxy( "Ammo", function( _, _, _, ammo )
 			updateAmmoCount( self, ammo )
 		end )
+
+		self:SetNWVarProxy( "Cookoff", function( _, _, _, propellant )
+			self:OnCookoffChanged( propellant )
+		end )
+
+		-- Crates that were already burning when they came into view
+		local cookoff = self:GetNWFloat( "Cookoff", 0 )
+
+		if cookoff > 0 then
+			self:StartCookoff( cookoff )
+		end
 
 		cvars.AddChangeCallback( "acf_maxroundsdisplay", function()
 			updateAmmoCount( self )
@@ -416,8 +574,9 @@ do --MARK: Ammo rendering
 		cleanupRoundModels(self)
 	end
 
-	function ENT:OnRemove()
+	function ENT:OnRemove( fullUpdate )
 		cleanupRoundModels( self )
+		self:StopCookoff( not fullUpdate ) -- Crates destroyed while burning leave a fire behind
 		cvars.RemoveChangeCallback( "acf_maxroundsdisplay", "Ammo Crate " .. self:EntIndex() )
 	end
 

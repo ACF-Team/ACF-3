@@ -19,6 +19,8 @@ local function StartCookoff(Entity, BurnTime)
 
 	Entity.Burning = Clock.CurTime + BurnTime
 
+	Entity:SetNWFloat("Cookoff", math.max(Entity.BulletData.PropMass * Entity.Ammo, 0.01)) -- How much propellant is burning, the clients scale the fire by it
+
 	local Interval = 0.01 + Entity.BulletData.RoundVolume ^ 0.5 / 100
 
 	TimerCreate("ACF Crate Cookoff " .. Entity:EntIndex(), Interval, 0, function()
@@ -34,6 +36,7 @@ function CookoffCrate(Entity)
 
 		Entity.Burning = nil
 
+		Entity:SetNWFloat("Cookoff", 0)
 		Entity:Detonate()
 	elseif Entity.RoundData then -- Spew bullets out everywhere
 		local BulletData = Entity.BulletData
