@@ -11,10 +11,18 @@ local LateAfter = 0.25 -- Clouds older than this when they reach us are created 
 local Pull      = 1e6 -- Strength of the drift pull, must match PULL in the particle system's generator
 local MaxPull   = 1e9 -- Distance to the drift target of clouds that don't drift, far enough to do nothing
 local Systems   = { Smoke = "acf_smoke", WP = "acf_smoke_wp" }
--- White phosphorus streamers: how many (acf_smoke_wp_streak0 and up, each its own shape), how far the pellets would fly
--- with no gravity (bloom radii), their drag (1/s), gravity, flight time, share of the cloud's carried velocity they keep
--- and the lowest they're thrown (degrees above the surface for grounded bursts, the horizon for airbursts)
+-- White phosphorus streamers: how many shapes there are (acf_smoke_wp_streak0 and up), how many a burst throws up close,
+-- down to how few far away (StreakNear to StreakFar units from the camera), how many may be alive at once across every
+-- burst and how long one lasts, how far the pellets would fly with no gravity (bloom radii), their drag (1/s), gravity,
+-- flight time, share of the cloud's carried velocity they keep and the lowest they're thrown (degrees above the surface
+-- for grounded bursts, the horizon for airbursts). Every streamer is its own effect, so they're kept few
 local Streaks       = 24
+local StreakMax     = 12
+local StreakMin     = 3
+local StreakNear    = 2500
+local StreakFar     = 12000
+local StreakBudget  = 96
+local StreakLife    = 8
 local StreakReach   = 2.6
 local StreakDrag    = 2.2
 local StreakGravity = 1100
@@ -22,6 +30,7 @@ local StreakTime    = 1.5
 local StreakInherit = 1
 local StreakLow     = { Ground = 3, Air = -60 }
 local StreakHigh    = 88
+local StreakAlive   = 0
 
 local function GetSurfaceAngles(Normal)
 	local Side = math.abs(Normal.z) < 0.9 and Up or Vector(1, 0, 0)
@@ -33,6 +42,17 @@ end
 -- pellet ends up, bowed toward the way it was thrown. Every trail is its own effect placed in its middle, so it's drawn
 -- in front of or behind the cloud depending on where it is, the cloud being one effect too
 local function CreateStreamers(Cloud, Center, Angles, Tint, Target)
+	-- Fewer the further away and the more are already alive, so every burst of a salvo still throws a few
+	local Far   = math.Clamp((EyePos():Distance(Center) - StreakNear) / (StreakFar - StreakNear), 0, 1)
+	local Room  = StreakBudget - StreakAlive
+	local Count = math.min(math.max(math.Round(Lerp(Far, StreakMax, StreakMin) * Room / StreakBudget), StreakMin), Room)
+
+	if Count <= 0 then return end
+
+	StreakAlive = StreakAlive + Count
+
+	timer.Simple(StreakLife, function() StreakAlive = StreakAlive - Count end)
+
 	local Phase = math.Rand(0, 360)
 	local Floor = (Cloud.Grounded and Cloud.Center.z or Cloud.FloorZ) + 4
 	local Low   = StreakLow[Cloud.Grounded and "Ground" or "Air"]
@@ -44,10 +64,10 @@ local function CreateStreamers(Cloud, Center, Angles, Tint, Target)
 
 	table.Shuffle(Shape)
 
-	for I = 1, Streaks do
+	for I = 1, Count do
 		-- Most are thrown in a fountain, a few skim low or go almost straight up
 		local Elevation = Low + (StreakHigh - Low) * math.Rand(0, 1) ^ 0.8
-		local Yaw       = Phase + (I + math.Rand(-0.5, 0.5)) * 360 / Streaks
+		local Yaw       = Phase + (I + math.Rand(-0.5, 0.5)) * 360 / Count
 		local _, Throw  = LocalToWorld(vector_origin, Angle(-Elevation, Yaw, 0), vector_origin, Angles)
 		local Drag      = StreakDrag * math.Rand(0.6, 1.3) -- Pellets of all sizes, the big ones fly far and high
 		local Velocity  = Throw:Forward() * (Cloud.BloomRadius * StreakReach * StreakDrag * math.Rand(0.4, 1.4)) + Carry
