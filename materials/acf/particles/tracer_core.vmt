@@ -5,6 +5,6 @@
 	"$vertexalpha" "1"
 	"$additive" "1"
 	"$overbrightfactor" "2"
-	"$minsize" "0.0035"
+	"$minsize" "0"
 	"$nofog" "1"
 }

@@ -4,18 +4,39 @@ local Classes   = ACF.Classes
 local Bullets   = ACF.BulletEffect
 local Clock     = ACF.Utilities.Clock
 
-local function CreateTracer(Pos, Color, Caliber)
+local White = Vector(255, 255, 255)
+
+-- Tracers burn at full brightness whatever the crate is painted, so only the hue is kept (black just burns white)
+local function GetTracerColors(Color)
+	local Max = math.max(Color.r, Color.g, Color.b)
+
+	if Max < 8 then return White, White end
+
+	local Glow = Vector(Color.r, Color.g, Color.b) * (255 / Max)
+
+	return Glow, LerpVector(0.75, Glow, White) -- The core burns close to white
+end
+
+-- Control points are explained in the generator, acf_tracers.py
+local function CreateTracer(Bullet, Pos, Color)
 	local Effect = CreateParticleSystemNoEntity("acf_tracer", Pos)
 
 	if not Effect then return end
 
-	local Size = math.Clamp(Caliber * 2.5, 3, 25)
+	local Glow, Core = GetTracerColors(Color)
+
+	Bullet.TracerSize = math.Clamp(Bullet.Caliber * 2.5, 3, 25)
+	Bullet.TracerGlow = Glow
+	Bullet.TracerCore = Core
 
 	Effect:SetControlPoint(0, Pos)
 	Effect:SetControlPoint(1, Pos)
-	Effect:SetControlPoint(2, Vector(Size, 0, 0))
-	Effect:SetControlPoint(3, Vector(Color.r, Color.g, Color.b))
-	Effect:SetControlPoint(4, Vector(Color.r + (255 - Color.r) * 0.35, Color.g + (255 - Color.g) * 0.35, Color.b + (255 - Color.b) * 0.35)) -- The head burns a bit whiter
+	Effect:SetControlPoint(2, Vector(Bullet.TracerSize, 0, 0))
+	Effect:SetControlPoint(3, Glow)
+	Effect:SetControlPoint(4, Core)
+	Effect:SetControlPoint(5, Glow)
+	Effect:SetControlPoint(6, Core)
+	Effect:SetControlPoint(7, Vector(1, 0, 0))
 
 	return Effect
 end
@@ -33,6 +54,17 @@ local function UpdateTracer(Bullet)
 
 	Tracer:SetControlPoint(0, Head)
 	Tracer:SetControlPoint(1, Head - Velocity:GetNormalized() * Length)
+
+	-- How far away it looks, zooming in brings it closer
+	local Distance = EyePos():Distance(Head) * math.tan(math.rad(LocalPlayer():GetFOV() * 0.5))
+
+	-- Far away the streak fades out and the head grows so it stays a glowing dot instead of vanishing
+	local Fade = 1 - math.Clamp((Distance - 2000) / 6000, 0, 0.85)
+	local HeadScale = math.Clamp(Distance * 0.012 / (Bullet.TracerSize * 1.1), 1, 12)
+
+	Tracer:SetControlPoint(3, Bullet.TracerGlow * Fade)
+	Tracer:SetControlPoint(4, Bullet.TracerCore * Fade)
+	Tracer:SetControlPoint(7, Vector(HeadScale, 0, 0))
 end
 
 local function RemoveTracer(Bullet)
@@ -123,7 +155,6 @@ function EFFECT:Init(Data)
 			WPMass        = Crate:GetNW2Float("WPMass"),
 			DragCoef      = Crate:GetNW2Float("DragCoef", 1),
 			AmmoType      = Crate:GetNW2String("AmmoType", "ACF.Ammunition.AP"),
-			Tracer        = Tracer and CreateTracer(Origin, Crate:GetColor(), Caliber) or nil,
 			TracerTime    = CurTime(),
 			TracerLength  = math.Clamp(Caliber * 40, 60, 250),
 			Color         = Tracer and Crate:GetColor() or nil,
@@ -131,6 +162,10 @@ function EFFECT:Init(Data)
 			LastThink     = Clock.CurTime,
 			Effect        = self,
 		}
+
+		if Tracer then
+			BulletData.Tracer = CreateTracer(BulletData, Origin, BulletData.Color)
+		end
 
 		-- The index can be reused before we're told the old bullet is gone, so its tracer has to go with it
 		if Bullet then
