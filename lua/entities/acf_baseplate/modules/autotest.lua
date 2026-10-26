@@ -71,12 +71,22 @@ local ParentedVisibilityWhitelist = {
     primitive_shape = true,
 }
 
+local ParentedVisibilityModelPrefixWhitelist = {
+    antenna_ = true,
+    light_ = true,
+}
+
+local function IsModelVisibilityWhitelisted(Model)
+    local FileName = string.match(Model, "([^/]+)%.mdl$") or ""
+    return ParentedVisibilityModelPrefixWhitelist[string.match(FileName, "^(%a+_)")] or false
+end
+
 ---------------------------------------------------------------------------------------------------------------------------
 -- TEST DEFINITIONS
 ---------------------------------------------------------------------------------------------------------------------------
 
 RegisterTest("Optimization", "Physical Entity Constraints", "Optimization/PhysicalConstraints", function(Env)
-    local Max = 8
+    local Max = 9
     local Faults = {}
     for _, v in pairs(Env.Physical) do
         if v ~= Env.Baseplate then
@@ -126,14 +136,14 @@ end, "Physical props should be invisible")
 RegisterTest("Optimization", "Parented Prop Visibility", "Optimization/ParentedVisibility", function(Env)
     local Faults = {}
     for v in pairs(Env.Contraption.ents) do
-        if IsValid(v:GetParent()) and ParentedVisibilityWhitelist[v:GetClass()] and v:GetColor().a ~= 0 and not v:GetNoDraw() then
+        if IsValid(v:GetParent()) and ParentedVisibilityWhitelist[v:GetClass()] and not IsModelVisibilityWhitelisted(v:GetModel()) and v:GetColor().a ~= 0 and not v:GetNoDraw() then
             table.insert(Faults, {Ent = v, Msg = "Parented prop should be alpha 0 or NoDraw"})
         end
     end
     return #Faults == 0, Faults
 end, function(Env)
     for v in pairs(Env.Contraption.ents) do
-        if IsValid(v:GetParent()) and ParentedVisibilityWhitelist[v:GetClass()] and v:GetColor().a ~= 0 then
+        if IsValid(v:GetParent()) and ParentedVisibilityWhitelist[v:GetClass()] and not IsModelVisibilityWhitelisted(v:GetModel()) and v:GetColor().a ~= 0 then
             v:SetColor(Color(255, 255, 255, 0))
             v:SetRenderMode(RENDERMODE_TRANSCOLOR)
         end
