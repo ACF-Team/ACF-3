@@ -45,7 +45,6 @@ do
 			local Reps = {}
 			for _, Group in pairs(self.WeaponGroups) do Reps[#Reps + 1] = next(Group) end
 			-- Equal calibers across types are expected, so break ties by key to keep slots stable
-			-- A rack's Caliber can still be nil if it hasn't been given ammo yet
 			table.sort(Reps, function(A, B)
 				local CaliberA, CaliberB = A.Caliber or 0, B.Caliber or 0
 				if CaliberA == CaliberB then return A.Name < B.Name end
@@ -66,7 +65,7 @@ do
 		self.Guns[Gun] = true
 		self.Weapons[Gun] = true
 
-		if Gun.Weapon == "ACF.Guns.SmokeLauncher" then
+		if Gun.Weapon == "ACF.Guns.SmokeLauncher" or Gun.Weapon == "ACF.Guns.40mmFlareLauncher" then
 			self.GunsSmoke[Gun] = true
 			if not IsValid(self.Smoke) then self.Smoke = Gun end
 			local Fuse = self:GetSmokeFuse() or 0
@@ -185,8 +184,10 @@ do
 		local BreechReference = IsValid(Primary) and Primary.BreechReference
 		local ReloadAngle = self:GetReloadAngle()
 		local ReloadAngleHorizontal = self:GetReloadAngleHorizontal()
+		local PrimaryInAir = IsValid(Primary) and Primary.Outputs["In Air"] and Primary.Outputs["In Air"].Value > 0
 		-- Mag-fed guns chamber a fresh round between shots too, only level for the actual magazine reload
-		local ShouldLevel = ReloadAngle ~= 0 and IsValid(Primary) and Primary.State ~= "Loaded" and (not Primary.MagSize or Primary.MagazineReloading)
+		-- A missile still guiding isn't actually reloading yet, so don't level the turret out from under it
+		local ShouldLevel = ReloadAngle ~= 0 and IsValid(Primary) and not PrimaryInAir and Primary.State ~= "Loaded" and (not Primary.MagSize or Primary.MagazineReloading)
 
 		local AntiDrop, AntiDrift = vector_origin, vector_origin
 		local TurretComputer = self.TurretComputer
@@ -219,11 +220,24 @@ do
 			end
 		end
 
+		local PrimaryLoaded = IsValid(Primary) and (Primary.State == "Loaded" or PrimaryInAir)
+
+		-- Don't aim until the actuators/servos are done extending, since the weapon isn't in position yet
+		local ActuatorsExtended = true
+		for Turret in pairs(Turrets) do
+			if IsValid(Turret) and PrimaryLoaded then
+				if Turret.IsActuator and math.abs(Turret.CurrentAngle - Turret.Stroke) > 1 then ActuatorsExtended = false
+				elseif Turret.IsServo and math.abs(Turret.CurrentAngle + Turret.OnAngle) > 1 then ActuatorsExtended = false end
+			end
+		end
+
 		for Turret, _ in pairs(Turrets) do
 			if IsValid(Turret) then
-				if Turret == BreechReference and ShouldLevel then Turret:InputDirection(ReloadAngle)
+				if Turret.IsActuator then Turret:InputExtension(PrimaryLoaded and 1 or 0)
+				elseif Turret.IsServo then Turret:InputState(PrimaryLoaded)
+				elseif Turret == BreechReference and ShouldLevel then Turret:InputDirection(ReloadAngle)
 				elseif BreechReference and Turret == BreechReference:GetParent() and ShouldLevel and ReloadAngleHorizontal ~= 0 then Turret:InputDirection(ReloadAngleHorizontal)
-				else Turret:InputDirection(HitPos + AntiDrop + AntiDrift) end
+				elseif ActuatorsExtended then Turret:InputDirection(HitPos + AntiDrop + AntiDrift) end
 			end
 		end
 	end

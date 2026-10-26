@@ -2,7 +2,7 @@ local ACF             = ACF
 local Classes         = ACF.Classes
 local Countermeasures = ACF.Countermeasures
 local Bullets         = ACF.Ballistics.Bullets
-local Missiles        = ACF.ActiveMissiles
+local Missiles        = ACF.Missiles
 
 local Flares = {}
 local FlareUID = 0
@@ -77,7 +77,7 @@ end
 function Countermeasures.GetMissilesInCone(Position, Direction, Degrees)
 	local Result = {}
 
-	for Missile in pairs(Missiles) do
+	for Missile in Missiles.IterateActive() do
 		if not IsValid(Missile) or Missile.Broken then
 			continue
 		end
@@ -91,23 +91,6 @@ function Countermeasures.GetMissilesInCone(Position, Direction, Degrees)
 	return Result
 end
 
-function Countermeasures.GetMissilesInSphere(Position, Radius)
-	local Result = {}
-	local RadiusSqr = Radius * Radius
-
-	for Missile in pairs(Missiles) do
-		if not IsValid(Missile) or Missile.Broken then
-			continue
-		end
-
-		if Position:DistToSqr(Missile:GetPos()) <= RadiusSqr then
-			Result[Missile] = true
-		end
-	end
-
-	return Result
-end
-
 --- Tests every active missile against a list of shapes (cones and/or spheres) in a single pass, instead of
 --- iterating the active missile pool once per shape. See ACF.GetEntitiesInShapes for the contraption side
 --- equivalent and the batching use case (e.g. a Sensor Synchronizer batching same-rate-group sensors).
@@ -116,7 +99,7 @@ end
 function Countermeasures.GetMissilesInShapes(Shapes)
 	local Result = {}
 
-	for Missile in pairs(Missiles) do
+	for Missile in Missiles.IterateActive() do
 		if not IsValid(Missile) or Missile.Broken then
 			continue
 		end
@@ -132,7 +115,7 @@ end
 function Countermeasures.GetAllMissilesWhichCanSee(Position)
 	local Result = {}
 
-	for Missile in pairs(Missiles) do
+	for Missile in Missiles.IterateActive() do
 		local Guidance = Missile.GuidanceData
 
 		if not Guidance or Guidance.Override or not Guidance.ViewCone then
@@ -149,9 +132,10 @@ end
 
 function Countermeasures.ConeContainsPos(ConePos, ConeDir, Degrees, Position)
 	local MinimumDot = math.cos(math.rad(Degrees))
-	local Direction = (Position - ConePos):GetNormalized()
+	local Delta      = Position - ConePos
 
-	return ConeDir:Dot(Direction) >= MinimumDot
+	-- Same as dotting the normalized direction, without allocating it
+	return ConeDir:Dot(Delta) >= MinimumDot * Delta:Length()
 end
 
 --- Tests a single position against one shape (cone or sphere).

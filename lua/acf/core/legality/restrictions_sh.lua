@@ -226,7 +226,8 @@ do -- MARK: Overlap restrictions
 		Timeout = 30,
 		Draw    = function(Debug, Entity, Data, Life)
 			-- Drawn at the size points are sampled from, which stays inside the real convex
-			if Data.Convex then Debug.Convex(Entity, Data.Convex, Life, COLOR_CONVEX, true, ACF.OverlapShrink) end
+			local Convex = Data.Convex and Entity.ACF_Volumetric_Mesh and Entity.ACF_Volumetric_Mesh.Convexes[Data.Convex]
+			if Convex then Debug.Convex(Entity, Data.Convex, Life, COLOR_CONVEX, true, ACF.ConvexInsetScale(Convex, ACF.OverlapInset)) end
 			if Data.BlockerConvex and IsValid(Data.Blocker) then Debug.Convex(Data.Blocker, Data.BlockerConvex, Life, COLOR_DISABLE, true) end
 			if not Data.From or not Data.To then return end
 

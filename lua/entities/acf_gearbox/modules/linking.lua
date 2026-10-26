@@ -58,7 +58,6 @@ do -- Linking ------------------------------------------
 
 		Link:SetOrigin(OutPos)
 		Link:SetTargetPos(InPos)
-		Link:SetAxis(Target.In and Plane.Dir or Target:GetPhysicsObject():WorldToLocalVector(Entity:GetRight()))
 		Link.OutDirection = Plane.Dir
 		Link.Side = Side
 		Link.RopeLen = (OutPosWorld - InPosWorld):Length()
@@ -93,6 +92,8 @@ do -- Linking ------------------------------------------
 		end)
 
 		Mobility.BrokenLinks.Clear(Gearbox, Wheel)
+
+		ACF.UpdateWheelAxes(Wheel)
 
 		Gearbox:UpdateLinkHints()
 		Gearbox:InvalidateClientInfo()
@@ -142,7 +143,12 @@ do -- Unlinking ----------------------------------------
 
 			Gearbox.Wheels[Wheel] = nil
 
+			-- The axis is derived from this table
+			if Wheel.ACF_Gearboxes then Wheel.ACF_Gearboxes[Gearbox] = nil end
+
 			Wheel:RemoveCallOnRemove("ACF_GearboxUnlink" .. Gearbox:EntIndex())
+
+			ACF.UpdateWheelAxes(Wheel)
 
 			Gearbox:InvalidateClientInfo()
 

@@ -273,6 +273,22 @@ do -- MARK: Turret requirements
 			Debug.EntityText(Turret, 0, "Carries " .. math.Round(Data.Mass or 0) .. " kg", Life, COLOR_BAD)
 		end,
 	})
+
+	Register("turret_controller_caliber", {
+		Title  = "Turret caliber",
+		Detail = function(Data)
+			return math.Round(Data.Caliber or 0) .. " of " .. (Data.Limit or "?") .. " mm"
+		end,
+		Help   = "Use a smaller weapon or a gunner instead, lightweight controllers can only aim turrets up to this caliber.",
+	}, {
+		Draw = function(Debug, Entity, Data, Life)
+			local Turret = Data.Turret
+			if not IsValid(Turret) then return end
+
+			Debug.EntityLine(Entity, Turret, Life, COLOR_BAD, true)
+			Debug.EntityText(Turret, 0, "Carries " .. math.Round(Data.Caliber or 0) .. " mm", Life, COLOR_BAD)
+		end,
+	})
 end
 
 do -- MARK: Mobility requirements

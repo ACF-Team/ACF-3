@@ -102,11 +102,33 @@ end
 
 -- Tells the client how many entities it currently has selected, so the tool's instruction HUD can
 -- switch between "spawn" and "link" guidance. Sent whenever the selection changes.
+local function GetSelectedGearboxes(Player)
+	local Gearboxes = {}
+
+	for Entity in pairs(GetPlayerEnts(Player)) do
+		if IsValid(Entity) and Entity.IsACFGearbox then Gearboxes[#Gearboxes + 1] = Entity end
+	end
+
+	return Gearboxes
+end
+
+local function HasGearboxSelected(Player)
+	return next(GetSelectedGearboxes(Player)) ~= nil
+end
+
 local function SendLinkState(Player)
 	if not IsValid(Player) then return end
 
+	local Gearboxes = GetSelectedGearboxes(Player)
+	local Count     = math.min(#Gearboxes, 255)
+
 	net.Start("ACF_MenuLinkState")
 		net.WriteUInt(CountSelected(Player), 16)
+		net.WriteUInt(Count, 8) -- The client's torque axis preview needs the gearboxes themselves
+
+		for I = 1, Count do
+			net.WriteEntity(Gearboxes[I])
+		end
 	net.Send(Player)
 end
 
@@ -150,11 +172,33 @@ end
 local function LinkEntities(Player, Target)
 	local Ents   = GetPlayerEnts(Player)
 	local OnKey  = Player:KeyDown(IN_RELOAD)
+	local AltKey = Player:KeyDown(IN_WALK)
 	local Action = OnKey and "unlink" or "link"
 	local Done, Failed = 0, {}
+	local GearboxDone  = 0 -- Only gearboxes care about the wheel's torque axis
+	local LinkedBox, Unlinked -- The first gearbox that took the link, and the wheels that lost a gearbox
+
+	-- Alt defines the wheel's torque axis from where the player faces, before linking so the link is built with it
+	local Axis, Sign, PrevAxis, PrevSign
+
+	if not OnKey and AltKey and ACF.CanSetWheelAxis(Target) and HasGearboxSelected(Player) then
+		PrevAxis, PrevSign = Target.ACF_TorqueAxis, Target.ACF_TorqueSign
+		Axis, Sign         = ACF.GetWheelAxis(Target, Player:GetAimVector())
+
+		ACF.SetWheelTorqueAxis(Target, Axis, Sign)
+	end
 
 	for Source in pairs(Ents) do
 		if not ACF.Check(Source) then continue end
+
+		-- Already linked, so setting the axis was all there was to do
+		if Axis and Source.Wheels and Source.Wheels[Target] then
+			Done, GearboxDone, LinkedBox = Done + 1, GearboxDone + 1, LinkedBox or Source
+
+			UnselectEntity(Source, Player)
+
+			continue
+		end
 
 		-- Prefer the selected entity's own Link/Unlink (called Source:Link(Target)); fall back to the
 		-- target's method (Target:Link(Source)). Mirrors the old linker's dispatch.
@@ -170,6 +214,18 @@ local function LinkEntities(Player, Target)
 
 		if Result then
 			Done = Done + 1
+
+			if Source.IsACFGearbox then
+				GearboxDone, LinkedBox = GearboxDone + 1, LinkedBox or Source
+			end
+
+			-- Either of the pair can be the wheel, depending on which was selected first
+			local Wheel = (Source.IsACFGearbox and Target) or (Target.IsACFGearbox and Source)
+
+			if OnKey and Wheel and ACF.CanSetWheelAxis(Wheel) then
+				Unlinked = Unlinked or {}
+				Unlinked[Wheel] = true
+			end
 		else
 			Failed[#Failed + 1] = GetName(Source) .. ": " .. (Message or "No reason given.")
 		end
@@ -177,8 +233,30 @@ local function LinkEntities(Player, Target)
 		UnselectEntity(Source, Player)
 	end
 
+	-- No gearbox took the link, so the wheel keeps the axis it had
+	if Axis and GearboxDone == 0 then
+		ACF.SetWheelTorqueAxis(Target, PrevAxis, PrevSign)
+
+		Axis = nil
+	end
+
+	-- Here and not in the gearbox's unlink, since a gearbox reconfigure unlinks and relinks its wheels
+	for Wheel in pairs(Unlinked or {}) do
+		if Wheel.ACF_TorqueAxis and not next(Wheel.ACF_Gearboxes or {}) then ACF.SetWheelTorqueAxis(Wheel, nil) end
+	end
+
 	if Done > 0 then
-		Messages.SendChat(Player, "Info", ("Successfully %sed %d entit%s to %s."):format(Action, Done, Done == 1 and "y" or "ies", GetName(Target)))
+		local Suffix = ""
+
+		if Axis then
+			-- The link applies its own sign, which only follows the facing direction when the axle is too perpendicular to tell
+			local Link = LinkedBox.Wheels[Target]
+			local Applied = Link and (Link.Axis[Axis] < 0 and -1 or 1) or Sign
+
+			Suffix = " Torque axis: " .. (Applied < 0 and "-" or "+") .. ACF.WheelAxisName[Axis] .. "."
+		end
+
+		Messages.SendChat(Player, "Info", ("Successfully %sed %d entit%s to %s.%s"):format(Action, Done, Done == 1 and "y" or "ies", GetName(Target), Suffix))
 	end
 
 	if #Failed > 0 then

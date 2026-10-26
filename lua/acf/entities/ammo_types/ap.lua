@@ -282,7 +282,11 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 				if Overkill > 0 then
 					table.insert(Filter, Target) -- "Penetrate" (Ignoring the prop for the retry trace)
 
-					Bullet.Flight = Bullet.Flight:GetNormalized() * (Energy.Kinetic * (1 - HitRes.Loss) * 2000 / Bullet.ProjMass) ^ 0.5 * ACF.MeterToInch
+					-- Remaining penetration capacity after the hit, converted back to speed to keep multi-layer penetration consistent
+					local RemainingPen = Bullet:GetPenetration() * (1 - HitRes.Loss)
+					local NewSpeed = self:CalcSpeed(Bullet, RemainingPen)
+
+					Bullet.Flight = Bullet.Flight:GetNormalized() * NewSpeed * ACF.MeterToInch
 
 					return "Penetrated"
 				elseif HitRes.Ricochet then

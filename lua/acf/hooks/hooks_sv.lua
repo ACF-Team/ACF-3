@@ -154,8 +154,6 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 	--- Called when an entity is set to store or use ammo type information.
 	--- @param AmmoType table The ammo type class that's about to be used.
 	--- @param Entity entity The entity that will be using the ammo type.
-	--- @param Data table The table of entity information that was used on the entity.
-	--- @param ... any One or many tables or objects that are related to the entity, these will vary on every class.
 	function Gamemode:ACF_OnAmmoFirst()
 	end
 

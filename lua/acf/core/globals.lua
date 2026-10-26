@@ -196,7 +196,7 @@ do -- ACF global vars
 	ACF.DefineSetting("KillLogQueryCooldown", 10,    "Kill log query cooldown has been set to %s seconds.", ACF.FloatDataCallback(0, 120, 0))
 
 	ACF.IllegalDisableTime   = 30 -- Time in seconds for an entity to be disabled when it fails a legality check
-	ACF.OverlapShrink        = 0.95 -- Fraction of a convex, scaled about its centroid, that the overlap check samples points from
+	ACF.OverlapInset         = 0.5 -- Distance in units below a convex's surface that the overlap check ignores, so slight clipping is allowed
 	ACF.MutationGhostTime    = 30 -- Time in seconds that a chip-mutated non-ACF entity is ignored by ballistics and damage
 	ACF.MaxPenetrations      = 50 -- Convexes a bullet can cross in one pass, hitting it deletes every prop it crossed
 	ACF.Volume               = 1 -- Global volume for ACF sounds
@@ -394,6 +394,7 @@ do -- ACF global vars
 		acf_rack	= true
 	}
 	ACF.LightweightTurretMassLimit = 300	-- kg. Turrets at or under this carried mass can be controlled by a shared-parent Gunner, or a Lightweight Turret Controller, without needing to be mounted on it
+	ACF.LightweightTurretCaliberLimit = 90	-- mm. Turrets with weapons at or under this caliber can be controlled by a Lightweight Turret Controller
 	ACF.CasemateArcLimit = 30	-- Degrees of total arc (MaxDeg - MinDeg) at or under which a shared-parent Gunner controls a turret at any mass, so casemate mounts don't need the gunner parented to the ring
 
 	ACF.CrewRepTimeBase 	= 3		-- Base time to replace a crew member

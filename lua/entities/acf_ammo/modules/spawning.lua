@@ -281,7 +281,7 @@ do -- Spawn/Update/Remove
 			Ammo:OnFirst(Entity)
 		end
 
-		HookRun("ACF_OnAmmoFirst", Ammo, Entity, Data, Class, Weapon)
+		HookRun("ACF_OnAmmoFirst", Ammo, Entity)
 
 		Ammo:Network(Entity, Entity.BulletData)
 

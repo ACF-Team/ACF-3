@@ -346,6 +346,7 @@ do
                 Tris      = Tris,
                 Mins      = Mins,
                 Maxs      = Maxs,
+                Thinnest  = math.min(Maxs.x - Mins.x, Maxs.y - Mins.y, Maxs.z - Mins.z), -- Smallest local bounds size, for the overlap check
                 Centroid  = Sum,
                 Volume    = Volume,
                 MinWidth  = Area > 0 and 2 * Volume / Area or 0, -- Minimum width is empirically atleast half the mean chord length
@@ -442,6 +443,17 @@ do
             end)
         end)
     end)
+end
+
+--- Returns the scale about a convex's centroid that moves each side of its thinnest local axis inwards by about Inset.
+--- Clamped to half, so convexes thinner than four times the inset keep a core around their centroid.
+--- @param Convex table A convex from ACF_Volumetric_Mesh
+--- @param Inset number Distance in units to move each side inwards
+--- @return number Scale
+function ACF.ConvexInsetScale(Convex, Inset)
+    local Width = Convex.Thinnest
+
+    return math.Clamp((Width - 2 * Inset) / Width, 0.5, 1)
 end
 
 if not util.IntersectRayWithTriangle then

@@ -146,6 +146,21 @@ do	-- Metamethods
 			return IsValid(self.IsRemote and self.Crew or self.Turret)
 		end
 
+		-- Highest caliber among the weapons on a turret and any sub-turrets it carries
+		local function GetTurretMaxCaliber(Turret)
+			local Caliber = 0
+
+			for Weapon in pairs(Turret.DirectWeapons or {}) do
+				if IsValid(Weapon) then Caliber = math.max(Caliber, Weapon.Caliber or 0) end
+			end
+
+			for SubTurret in pairs(Turret.SubTurrets or {}) do
+				if IsValid(SubTurret) then Caliber = math.max(Caliber, GetTurretMaxCaliber(SubTurret)) end
+			end
+
+			return Caliber
+		end
+
 		-- Whether this controller is currently providing its benefit
 		function ENT:IsActive()
 			if self.Disabled then return false end
@@ -157,13 +172,20 @@ do	-- Metamethods
 			local Healthy = self:SetRequirement("component_health", Percent > 25, { Percent = math.floor(Percent) })
 			local Light   = true
 
-			-- Overweight turrets keep the link but get no bonus, so the mass is rechecked here
-			-- every time rather than once at link time
+			-- Overweight or over-caliber turrets keep the link but get no bonus, so both are rechecked
+			-- here every time rather than once at link time
 			if not self.IsRemote then
 				local CarriedMass = (Linked.TurretData and Linked.TurretData.TotalMass or 0) + (Linked.ACF and Linked.ACF.Mass or 0)
 
-				Light = self:SetRequirement("turret_controller_mass", CarriedMass <= ACF.LightweightTurretMassLimit,
+				local MassOK = self:SetRequirement("turret_controller_mass", CarriedMass <= ACF.LightweightTurretMassLimit,
 					{ Mass = math.Round(CarriedMass), Limit = ACF.LightweightTurretMassLimit, Turret = Linked })
+
+				local MaxCaliber = GetTurretMaxCaliber(Linked)
+
+				local CaliberOK = self:SetRequirement("turret_controller_caliber", MaxCaliber <= ACF.LightweightTurretCaliberLimit,
+					{ Caliber = MaxCaliber, Limit = ACF.LightweightTurretCaliberLimit, Turret = Linked })
+
+				Light = MassOK and CaliberOK
 			end
 
 			if not (Healthy and Light) then

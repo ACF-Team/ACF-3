@@ -559,25 +559,31 @@ do
 		return Player:CheckLimit("_acf_crew")
 	end
 
-	function ENT:ACF_PostUpdateEntityData()
-		local OldType = self.CrewTypeID
+	-- A crew-type change invalidates existing links, cleared while the old type's handlers and index entries still apply
+	function ENT:ACF_PreUpdateEntityData(ClientData)
+		if not self.CrewTypeID or ClientData.CrewTypeID == nil or ClientData.CrewTypeID == self.CrewTypeID then return end
 
-		UpdateCrew(self)
+		Notify.EntityWarning(self, "Crew occupation has changed", "This crew member's occupation was changed. All links have been removed, please relink.")
 
-		-- A crew-type change invalidates existing links (no-op on a fresh spawn).
-		if OldType and OldType ~= self.CrewTypeID then
-			Notify.EntityWarning(self, "Crew occupation has changed", "This crew member's occupation was changed. All links have been removed, please relink.")
-
-			if next(self.Targets) then
-				for Target in pairs(self.Targets) do
-					self:Unlink(Target)
-				end
-
-				self.ACF_UnlinkReason = "the crew member's occupation changed"
+		if next(self.Targets) then
+			for Target in pairs(self.Targets) do
+				self:Unlink(Target)
 			end
 
+			self.ACF_UnlinkReason = "the crew member's occupation changed"
+		end
+
+		self:CFW_Unindex_Crew(self:CFW_GetContraption())
+		self.ACF_TypeChanged = true
+	end
+
+	function ENT:ACF_PostUpdateEntityData()
+		UpdateCrew(self)
+
+		if self.ACF_TypeChanged then
+			self.ACF_TypeChanged = nil
+
 			self:UpdateLinkHint()
-			self:CFW_Unindex_Crew(self:CFW_GetContraption())
 			self:CFW_Index_Crew(self:CFW_GetContraption())
 		end
 	end

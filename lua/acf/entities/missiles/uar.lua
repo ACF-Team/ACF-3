@@ -28,7 +28,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.RS82", "ACF.Missiles.UnguidedRo
 	CLASS.ExhaustPos	= Vector(-12)
 	CLASS.Racks			= { ["ACF.Racks.1xRK_small"] = true, ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true, ["ACF.Racks.4xRK"] = true }
 	CLASS.Guidances		= { ["ACF.Missiles.Guidance.Dumb"] = true }
-	CLASS.Navigation	= "Chase"
+	CLASS.Navigation	= "ACF.Missiles.Navigation.Chase"
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Timed"] = true }
 	CLASS.Agility		= 1
 	CLASS.ArmDelay		= 0.3
@@ -84,7 +84,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.HVAR", "ACF.Missiles.UnguidedRo
 	CLASS.ExhaustPos	= Vector(-33)
 	CLASS.Racks			= { ["ACF.Racks.1xRK_small"] = true, ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true, ["ACF.Racks.3xUARRK"] = true, ["ACF.Racks.4xRK"] = true }
 	CLASS.Guidances		= { ["ACF.Missiles.Guidance.Dumb"] = true }
-	CLASS.Navigation	= "Chase"
+	CLASS.Navigation	= "ACF.Missiles.Navigation.Chase"
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Timed"] = true }
 	CLASS.Agility		= 1
 	CLASS.ArmDelay		= 0.3
@@ -129,7 +129,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.SPG-9", "ACF.Missiles.UnguidedR
 	CLASS.ExhaustPos	= Vector(-1)
 	CLASS.Racks			= { ["ACF.Racks.1xSPG9"] = true }
 	CLASS.Guidances		= { ["ACF.Missiles.Guidance.Dumb"] = true }
-	CLASS.Navigation	= "Chase"
+	CLASS.Navigation	= "ACF.Missiles.Navigation.Chase"
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true }
 	CLASS.Agility		= 1
 	CLASS.ArmDelay		= 0
@@ -140,19 +140,20 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.SPG-9", "ACF.Missiles.UnguidedR
 		MaxLength       	= 128.18,
 		Armor           	= 1,
 		ProjLength      	= 20.07,
-		PropLength      	= 67.8,
+		PropLength      	= 28.5,
 		Thrust          	= 115000, -- in kg*in/s^2
-		FuelConsumption 	= 0.042, -- in g/s/f
-		StarterPercent  	= 0.3,
+		FuelConsumption 	= 0.02, -- in g/s/f
+		StarterPercent  	= 0.75,
 		MaxAgilitySpeed 	= 1, -- in m/s
 		DragCoef        	= 0.008,
 		FinMul          	= 0,
 		GLimit          	= 1,
 		TailFinMul      	= 0.06,
-		PenMul          	= 2.273,
-		FillerMul       	= 1.06,
-		LinerMassMul    	= 2.8,
+		PenMul          	= 1.02,
+		FillerMul       	= 2.25,
+		LinerMassMul    	= 4.6,
 		Standoff        	= 33.3,
+		GhostingPeriod  	= 0.0125, -- in s, overrides the global missile ghost period; omit to use the global
 		ActualLength    	= 39,
 		ActualWidth     	= 3
 	}
@@ -174,7 +175,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.S-24", "ACF.Missiles.UnguidedRo
 	CLASS.ExhaustPos	= Vector(-43)
 	CLASS.Racks			= { ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true, ["ACF.Racks.4xRK"] = true }
 	CLASS.Guidances		= { ["ACF.Missiles.Guidance.Dumb"] = true }
-	CLASS.Navigation	= "Chase"
+	CLASS.Navigation	= "ACF.Missiles.Navigation.Chase"
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Timed"] = true }
 	CLASS.SkinIndex		= { HEAT = 0, HE = 1 }
 	CLASS.Agility		= 1
@@ -216,7 +217,7 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.RW61", "ACF.Missiles.UnguidedRo
 	CLASS.ExhaustPos	= Vector(-32.5)
 	CLASS.Racks			= { ["ACF.Racks.380mmRW61"] = true }
 	CLASS.Guidances		= { ["ACF.Missiles.Guidance.Dumb"] = true }
-	CLASS.Navigation	= "Chase"
+	CLASS.Navigation	= "ACF.Missiles.Navigation.Chase"
 	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Optical"] = true }
 	CLASS.Agility		= 1
 	CLASS.ArmDelay		= 0.2
