@@ -1,5 +1,6 @@
 local Baddies	   = ACF.GlobalFilter
 local BaddiesLess  = ACF.ArmorableGlobalFilterExceptions
+local StringFind   = string.find
 
 -- Clientside ACF.Check. Not as through, but good enough for what's needed
 function ACF.Check(Entity) -- IsValid but for ACF

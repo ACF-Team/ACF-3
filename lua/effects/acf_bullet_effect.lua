@@ -25,12 +25,22 @@ function EFFECT:Init(Data)
 
 	-- Scale encodes the hit type, so if it's 0 it's a new bullet, else it's an update so we need to remove the effect
 	if Bullet and not Bullet.Removed and Hit > 0 then
+		-- Our own predicted bullet already showed this hit and moved on, see ballistics_cl.lua
+		if ACF.Ballistics.MatchPrediction(Bullet, Hit, Origin) then
+			if Hit == 1 then Bullet.Effect.Kill = true end
+
+			self:Remove()
+
+			return
+		end
+
 		local RoundData = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", Bullet.AmmoType)
 
 		-- Updating old effect with new values
 		Bullet.Effect.DrawEffect = CanDraw
 		Bullet.SimFlight = Flight
 		Bullet.SimPos = Origin
+		Bullet.Stopped = nil -- A predicted bullet waiting at a wall carries on from here
 
 		if Hit == 1 then
 			-- Bullet has reached end of flight, remove old effect

@@ -76,6 +76,8 @@ function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 	ACF.ActiveBaseplatesTable[self] = true
 	table.insert(ACF.ActiveBaseplatesArray, self)
 
+	self:SetLagCompensated(ACF.BaseplateLagCompensation) -- See ACF.SetBaseplateLagCompensation
+
 	self:CallOnRemove("ACF_RemoveBaseplateTableIndex", function(ent)
 		ACF.ActiveBaseplatesTable[ent] = nil
 		table.RemoveByValue(ACF.ActiveBaseplatesArray, ent)
