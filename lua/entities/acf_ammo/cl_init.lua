@@ -70,34 +70,35 @@ do --MARK: Cookoff
 		end
 	end
 
-	-- Whatever is left of the crate keeps burning for a while
-	local function CreateLingeringFire( Pos, Scale )
-		local Effect = CreateParticleSystemNoEntity( "acf_cookoff_linger", Pos )
+	-- A particle system on the crate with its sound and light
+	local function StartFire( Entity, Name, Scale, SoundPath, Volume, Brightness )
+		local Center = Entity:OBBCenter()
+		local Effect = CreateParticleSystem( Entity, Name, PATTACH_ABSORIGIN_FOLLOW, 0, Center )
 
-		if not Effect then return end
+		if Effect then
+			SetControlPoints( Effect, Scale, Entity:LocalToWorld( Center ) )
+		end
 
-		local Duration = math.Rand( 10, 20 )
+		local Fire = { Entity = Entity, Effect = Effect, Scale = Scale, Brightness = Brightness, Sound = CreateSound( Entity, SoundPath ) }
 
-		SetControlPoints( Effect, Scale * 0.8, Pos )
-		AddFire( { Pos = Pos, Scale = Scale * 0.6, Brightness = 1.5, Until = CurTime() + Duration } )
+		Fire.Sound:PlayEx( Volume, 100 )
 
-		local Channel
+		AddFire( Fire )
 
-		sound.PlayFile( "sound/ambient/fire/fire_small_loop2.wav", "3d noblock", function( Sound )
-			if not IsValid( Sound ) then return end
+		return Fire
+	end
 
-			Channel = Sound
+	-- No more flames come out, the ones already burning are left to die out
+	local function StopFire( Fire )
+		if not Fire then return end
 
-			Sound:SetPos( Pos )
-			Sound:EnableLooping( true )
-			Sound:Set3DFadeDistance( 200, 0 )
-			Sound:Play()
-		end )
+		if Fire.Effect and Fire.Effect:IsValid() then
+			Fire.Effect:StopEmission()
+		end
 
-		timer.Simple( Duration, function()
-			if Effect:IsValid() then Effect:StopEmission() end
-			if IsValid( Channel ) then Channel:Stop() end
-		end )
+		Fire.Sound:Stop()
+
+		Fires[Fire] = nil
 	end
 
 	function ENT:StartCookoff( Propellant )
@@ -105,46 +106,44 @@ do --MARK: Cookoff
 
 		self.CookoffScale = Scale
 
-		if self.CookoffEffect and self.CookoffEffect:IsValid() then return end
+		if self.CookoffFire then return end
 
-		local Effect = CreateParticleSystem( self, "acf_cookoff", PATTACH_ABSORIGIN_FOLLOW, 0, self:OBBCenter() )
+		StopFire( self.LingeringFire )
 
-		if Effect then
-			SetControlPoints( Effect, Scale, self:LocalToWorld( self:OBBCenter() ) )
-		end
-
-		self.CookoffEffect = Effect
-		self.CookoffFire   = { Entity = self, Scale = Scale, Brightness = 3 }
-		self.CookoffSound  = CreateSound( self, "ambient/fire/fire_big_loop1.wav" )
-
-		self.CookoffSound:PlayEx( math.Clamp( 0.5 + Scale * 0.25, 0.5, 1 ), 100 )
-
-		AddFire( self.CookoffFire )
+		self.LingeringFire = nil
+		self.CookoffFire   = StartFire( self, "acf_cookoff", Scale, "ambient/fire/fire_big_loop1.wav", math.Clamp( 0.5 + Scale * 0.25, 0.5, 1 ), 3 )
 	end
 
 	function ENT:StopCookoff( Linger )
-		if not self.CookoffScale then return end
+		if not self.CookoffFire then return end
 
-		if self.CookoffEffect and self.CookoffEffect:IsValid() then
-			self.CookoffEffect:StopEmission()
-		end
+		StopFire( self.CookoffFire )
 
-		if self.CookoffSound then
-			self.CookoffSound:Stop()
-		end
+		self.CookoffFire = nil
 
-		if self.CookoffFire then
-			Fires[self.CookoffFire] = nil
-		end
+		if not Linger then return end
 
-		if Linger then
-			CreateLingeringFire( self:LocalToWorld( self:OBBCenter() ), self.CookoffScale )
-		end
+		-- Whatever is left of the crate keeps burning for a while
+		local Fire = StartFire( self, "acf_cookoff_linger", self.CookoffScale * 0.8, "ambient/fire/fire_small_loop2.wav", 0.6, 1.5 )
 
-		self.CookoffScale  = nil
-		self.CookoffEffect = nil
-		self.CookoffFire   = nil
-		self.CookoffSound  = nil
+		self.LingeringFire = Fire
+
+		timer.Simple( math.Rand( 10, 20 ), function()
+			StopFire( Fire )
+
+			if IsValid( self ) and self.LingeringFire == Fire then
+				self.LingeringFire = nil
+			end
+		end )
+	end
+
+	-- The crate is gone, so are its fires
+	function ENT:RemoveFires()
+		self:StopCookoff( false )
+
+		StopFire( self.LingeringFire )
+
+		self.LingeringFire = nil
 	end
 
 	function ENT:OnCookoffChanged( Propellant )
@@ -574,9 +573,9 @@ do --MARK: Ammo rendering
 		cleanupRoundModels(self)
 	end
 
-	function ENT:OnRemove( fullUpdate )
+	function ENT:OnRemove()
 		cleanupRoundModels( self )
-		self:StopCookoff( not fullUpdate ) -- Crates destroyed while burning leave a fire behind
+		self:RemoveFires()
 		cvars.RemoveChangeCallback( "acf_maxroundsdisplay", "Ammo Crate " .. self:EntIndex() )
 	end
 
