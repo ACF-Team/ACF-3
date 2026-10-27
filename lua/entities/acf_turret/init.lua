@@ -29,7 +29,8 @@ local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 
 do -- Random timer crew stuff
 	--- Whether Crew renders Turret controlled, and whether that cascades to vertical drives.
-	local function CrewGrantsControl(Turret, Crew)
+	-- HeightRef is the vertical drive the cascade would reach, used for the above-it check; defaults to Turret.
+	local function CrewGrantsControl(Turret, Crew, HeightRef)
 		if ENTITY.GetTable(Crew).TotalEff < ACF.GunnerEfficiencyThreshold then return false, false end
 
 		local CrewParent = Crew:GetParent()
@@ -50,8 +51,13 @@ do -- Random timer crew stuff
 			local CarriedMass = (Turret.TurretData.TotalMass or 0) + (Turret.ACF.Mass or 0)
 			if CarriedMass <= ACF.LightweightTurretMassLimit then return true, true end
 
-			-- Casemates traverse too little to need a dedicated gunner station, so they cascade at any mass
-			if (Turret.MaxDeg - Turret.MinDeg) <= ACF.CasemateArcLimit then return true, true end
+			-- Casemates traverse too little to need a dedicated gunner station, so they cascade at any mass,
+			-- as long as the gunner sits above the vertical drive itself rather than beside or below it
+			if (Turret.MaxDeg - Turret.MinDeg) <= ACF.CasemateArcLimit then
+				local Center = Crew:OBBCenter()
+				local CrewTop = Crew:LocalToWorld(Vector(Center.x, Center.y, Crew:OBBMaxs().z))
+				if CrewTop.z >= (HeightRef or Turret):GetPos().z then return true, true end
+			end
 
 			return true, false -- Controls, but no cascade to vertical drives
 		end
@@ -69,8 +75,9 @@ do -- Random timer crew stuff
 	end
 
 	-- Whether any Gunner/Commander/Pilot crew linked to Turret grants control, or a Lightweight
-	-- Controller does. Cascade checks the cascade-to-vertical-drives result instead of self-control
-	local function IsGrantedControl(Turret, Cascade)
+	-- Controller does. Cascade checks the cascade-to-vertical-drives result instead of self-control,
+	-- and HeightRef is the vertical drive the cascade would reach
+	local function IsGrantedControl(Turret, Cascade, HeightRef)
 		if HasActiveLightweightController(Turret) then return true end
 
 		local CrewsByType = Turret.CrewsByType
@@ -80,7 +87,7 @@ do -- Random timer crew stuff
 			for Crew in pairs(CrewsByType[CrewType] or {}) do
 				if not IsValid(Crew) then continue end
 
-				local Controls, Cascades = CrewGrantsControl(Turret, Crew)
+				local Controls, Cascades = CrewGrantsControl(Turret, Crew, HeightRef)
 				if Cascade and Cascades then return true end
 				if not Cascade and Controls then return true end
 			end
@@ -89,16 +96,28 @@ do -- Random timer crew stuff
 		return false
 	end
 
-	-- The crew linked to aim the turret, with why each one does not, for the aim control requirement
-	local function GetIdleAimers(Turret)
+	-- The crew linked to aim the turret, with why each one does not, for the aim control requirement.
+	-- Cascade means Turret is the ancestor horizontal drive, and we're explaining a failed cascade to a sub-turret.
+	local function GetIdleAimers(Turret, Cascade)
 		local Crews = {}
 
 		for _, CrewType in ipairs({"Gunner", "Commander", "Pilot"}) do
 			for Crew in pairs(Turret.CrewsByType[CrewType] or {}) do
 				if not IsValid(Crew) then continue end
 
-				local Reason = ENTITY.GetTable(Crew).TotalEff < ACF.GunnerEfficiencyThreshold and "Efficiency too low to aim"
-					or "Must ride on the turret, or share its parent"
+				local Reason
+
+				if ENTITY.GetTable(Crew).TotalEff < ACF.GunnerEfficiencyThreshold then
+					Reason = "Efficiency too low to aim"
+				elseif Cascade and Crew:GetParent() == Turret:GetParent() then
+					if (Turret.MaxDeg - Turret.MinDeg) > ACF.CasemateArcLimit then
+						Reason = "Turret too heavy, and its arc too wide, to cascade control from here"
+					else
+						Reason = "Top of gunner's head must be above the vertical drive to cascade control to it"
+					end
+				else
+					Reason = "Gunner must ride on the turret, or share its parent"
+				end
 
 				Crews[#Crews + 1] = { Crew = Crew, Reason = Reason }
 			end
@@ -112,6 +131,7 @@ do -- Random timer crew stuff
 		SelfTbl.CrewsByType = SelfTbl.CrewsByType or {}
 
 		local Controlled = IsGrantedControl(self, false)
+		local Cascade, CascadeFrom = false, self
 
 		if not Controlled and SelfTbl.Turret == "Turret-V" then
 			local Ancestor = SelfTbl.ACF_TurretAncestor
@@ -122,7 +142,8 @@ do -- Random timer crew stuff
 			end
 
 			if IsValid(Ancestor) and Ancestor.Turret == "Turret-H" then
-				Controlled = IsGrantedControl(Ancestor, true)
+				Controlled = IsGrantedControl(Ancestor, true, self)
+				Cascade, CascadeFrom = true, Ancestor
 			end
 		end
 
@@ -131,7 +152,7 @@ do -- Random timer crew stuff
 		-- Only weaponized turrets need someone aiming them
 		local Met = Controlled or not SelfTbl.IsWeaponized or SelfTbl.IsPassthrough
 
-		self:SetRequirement("turret_aim_control", Met, not Met and { Crews = GetIdleAimers(self) })
+		self:SetRequirement("turret_aim_control", Met, not Met and { Crews = GetIdleAimers(CascadeFrom, Cascade) })
 
 		return Controlled
 	end
