@@ -21,7 +21,7 @@ ACF.Classes.DefineClass("ACF.Guns.RotaryAutocannon", "ACF.Guns.BaseScalableGun",
 	CLASS.Round 		= {
 		MaxLength  = 16,
 		PropLength = 10,
-		CaseScale  = 1.46, -- 37x219mm (T250 rotary): 54mm case over a 37mm projectile
+		CaseScale  = 1.46, -- 20x102/110mm family: ~29-29.5mm base over a 20mm projectile
 	}
 	CLASS.Preview 		= {
 		Height = 90,

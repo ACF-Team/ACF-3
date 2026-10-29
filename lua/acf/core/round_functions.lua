@@ -105,8 +105,9 @@ function ACF.VerifyRoundLengthData(ToolData)
 	ToolData.PropRatio   = Total > 0 and (Propellant / Total) or 0
 end
 
---- Total round length (RoundLength) and the fraction of it taken up by the propellant (PropRatio,
---- 0-1) are the authoritative state -- ProjLength/PropLength below are derived from them, and are
+--- Total round length (RoundLength) and where the propellant sits between the least and most that length
+--- allows (PropellantScale, 0-1) are the authoritative state; PropRatio, the real share, is derived from
+--- them. ProjLength/PropLength below are derived too, and are
 --- the hook point for future mechanics (e.g. telescoping projectiles) that need ProjLength/PropLength
 --- to diverge from a simple RoundLength*(1-PropRatio)/RoundLength*PropRatio split.
 function ACF.UpdateRoundSpecs(Ammo)
@@ -116,28 +117,35 @@ function ACF.UpdateRoundSpecs(Ammo)
 	Data.Tracer   = Ammo.Tracer and math.Round(Data.Caliber * 0.15, 2) or 0
 	Data.TwoPiece = Ammo.TwoPiece or false
 
-	-- Defaults to 1 so pre-slider dupes aren't silently buffed, matching where AddSlider seeds the var
+	-- Ammo.CaseScale runs 0 to 1, from an unnecked case to the class's widest; 0 keeps pre-slider dupes unbuffed
 	local MaxCaseScale = Data.MaxCaseScale or ACF.AmmoCaseScale
-	local CaseScale    = math.Clamp(Ammo.CaseScale or 1, 1, MaxCaseScale)
+	local CaseScale    = 1 + math.Clamp(Ammo.CaseScale or 0, 0, 1) * (MaxCaseScale - 1)
 
 	Data.CaseScale    = CaseScale
 	Data.CaseDiameter = Data.Caliber * CaseScale -- Widest point of the round, cased or not
 
 	-- Recomputed from the base, not scaled in place, so repeated slider updates don't compound
 	if Data.PropAreaBase then
-		Data.PropArea = Data.PropAreaBase * CaseScale * CaseScale
+		Data.PropArea = Data.PropAreaBase * (1 + (CaseScale * CaseScale - 1) * ACF.AmmoCaseFill)
 	end
 
 	local MinLength   = GUIData.MinProjLength + GUIData.MinPropLength
 	local RoundLength = math.Clamp(Ammo.RoundLength or 0, MinLength, GUIData.MaxRoundLength)
 
-	-- RatioMax is measured against MaxRoundLength, not RoundLength, so the propellant fraction is a
-	-- per-class constant rather than one that climbs as the round is shortened. Dividing the class's
-	-- fixed MaxPropLength by a shrinking RoundLength let any sub-maximum round reach a ratio of 1,
-	-- leaving a zero-length projectile and a zero ProjMass for MuzzleVelocity and DragCoef to divide by.
+	-- Capped by length so short projectiles still take the full charge; MinProjLength keeps ProjMass above zero
 	local RatioMin = math.max(0, 1 - GUIData.MaxProjLength / RoundLength)
-	local RatioMax = math.min(1, GUIData.MaxPropLength / GUIData.MaxRoundLength)
-	local PropRatio = math.Clamp(Ammo.PropRatio or 0, RatioMin, RatioMax)
+	local RatioMax = math.min(1, GUIData.MaxPropLength / RoundLength, 1 - GUIData.MinProjLength / RoundLength)
+	-- Ammo.PropellantScale runs 0 to 1 between the least and most propellant this length allows.
+	-- Unset (negative) on rounds saved before it existed, so it's derived once from their real PropRatio.
+	if (Ammo.PropellantScale or -1) < 0 then
+		local Span = RatioMax - RatioMin
+
+		Ammo.PropellantScale = Span > 0 and math.Clamp(((Ammo.PropRatio or 0) - RatioMin) / Span, 0, 1) or 0
+	end
+
+	local PropRatio = Lerp(math.Clamp(Ammo.PropellantScale, 0, 1), RatioMin, RatioMax)
+
+	Ammo.PropRatio = PropRatio -- Kept in sync for anything still reading the real share
 
 	local PropLength = math.Round(RoundLength * PropRatio, 2)
 

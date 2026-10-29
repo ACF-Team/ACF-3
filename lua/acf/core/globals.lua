@@ -289,11 +289,12 @@ do -- ACF global vars
 
 	-- Ammo
 	ACF.AmmoCaseScale        = 1 -- Fallback max case/projectile diameter ratio when a Round omits CaseScale
+	ACF.AmmoCaseFill         = 0.75 -- Share of the case's extra area over the bore that holds propellant, taper and walls take the rest (120x570mm: 10.2L)
 	ACF.AmmoMaxLength        = 192 -- Defines the highest possible length of ammo crates for the X axis (length), in gmu
 	ACF.AmmoMaxWidth         = 96 -- Defines the highest possible width of ammo crates for the Y and Z axes (width/height), in gmu
 	ACF.AmmoSupplyColor      = Color(255, 255, 0, 10) -- The color to use for the ammo supply effect
-	ACF.PropImpetus          = 1075 -- Energy in KJ produced by 1kg of propellant, based off M30A1 propellant
-	ACF.PDensity             = 0.95 -- Propellant loading density (Density of propellant + volume lost due to packing density)
+	ACF.PropImpetus          = 1300 -- Muzzle energy in KJ per kg of propellant at full efficiency (120mm M829/M829A1/DM13/DM33: 1220 to 1350)
+	ACF.PDensity             = 0.75 -- Propellant loading density in g/cm^3 (real 90mm and 120mm chambers: 0.68 to 0.79)
 
 	-- HE
 	ACF.HEPower              = 8000 -- HE Filler power per KG in KJ
@@ -321,6 +322,12 @@ do -- ACF global vars
 	ACF.AluminumDensity      = 2.7e-3 	-- kg/cm^3
 	ACF.CopperDensity        = 8.96e-3	-- kg/cm^3
 	ACF.TungstenDensity		 = 19.25e-3	-- kg/cm^3
+	ACF.TungstenCarbideDensity = 12.5e-3 -- kg/cm^3, effective for real penetrator cores (17pdr 12.1, 20pdr 12.2, Pzgr.40 13.2)
+	ACF.CarbideCorePenFactor   = 1.69 -- Carbide core penetration over ACF.Penetration's steel AP fit, from real APCR and APDS
+
+	-- Bare AP shot's pointed nose makes a full-diameter cylinder overstate its mass. Factor fitted against
+	-- real uncapped 75-90mm AP shells (M72, M77), averaging their real-to-cylinder mass ratio.
+	ACF.APNoseFactor         = 0.84
 
 	-- Material conversion to points, kg * modifier
 	ACF.PointConversion		 = {

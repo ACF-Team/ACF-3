@@ -14,7 +14,9 @@ ACF.Classes.DefineClass("ACF.Guns.Howitzer", "ACF.Guns.BaseScalableGun", functio
 	CLASS.ScaleFactor 	= 0.84 -- Corrective factor to account for improperly scaled base models
 	CLASS.Round 		= {
 		MaxLength  = 90,
-		PropLength = 69.2308,
+		-- 0.471 of MaxLength: 105mm M1 semi-fixed ammunition's real brass case (holding the bagged charge)
+		-- is 372mm out of a 790mm complete round, well under the old 0.769 ratio this replaces.
+		PropLength = 42.39,
 		Efficiency = 0.65,
 		CaseScale  = 1, -- Bagged charges rather than a case, so nothing wider than the projectile
 	}

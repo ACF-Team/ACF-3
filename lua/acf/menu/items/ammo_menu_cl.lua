@@ -498,14 +498,16 @@ local function AddControls(Base, ToolData)
 	local RoundLength = Base:AddLabel()
 	local function UpdateRoundLength()
 		local Text = language.GetPhrase("acf.menu.ammo.round_length")
-		return Text:format(BulletData.ProjLength + BulletData.PropLength, Ammo.GUIData.MaxRoundLength)
+		-- Not ProjLength + PropLength: those overlap for telescoped rounds (the rod bores back into the
+		-- propellant span), so summing them double-counts the overlap. RoundLength is the real physical length.
+		return Text:format(BulletData.RoundLength, Ammo.GUIData.MaxRoundLength)
 	end
 	RoundLength:SetText(UpdateRoundLength())
 	AmmoCtx:OnChange(RoundLength, nil, function() if IsValid(RoundLength) then RoundLength:SetText(UpdateRoundLength()) end end)
 	BindCleanup(RoundLength, AmmoCtx)
 
-	-- RoundLength and PropRatio are the stored round dimensions (see ACF.UpdateRoundSpecs);
-	-- ProjLength/PropLength are derived from them. UpdateRoundSpecs clamps each against the other,
+	-- RoundLength and PropellantScale are the stored round dimensions (see ACF.UpdateRoundSpecs);
+	-- ProjLength/PropLength are derived from them. PropellantScale spans whatever the length allows,
 	-- so the sliders are independent and need no cross-pushback.
 	local Bounds = Ammo.GUIData
 	local Total  = Base:AddSlider("#acf.menu.ammo.total_length", Bounds.MinProjLength + Bounds.MinPropLength, Bounds.MaxRoundLength, 2)
@@ -526,39 +528,29 @@ local function AddControls(Base, ToolData)
 		UpdateProjectileCountLimits(BuildToolData(), true)
 	end
 
-	local PropRatio = Base:AddSlider("#acf.menu.ammo.propellant_ratio", 0, 1, 3)
+	-- 0 to 1 between the least and most propellant the current length allows, see ACF.UpdateRoundSpecs
+	local PropScale = Base:AddSlider("#acf.menu.ammo.propellant_ratio", 0, 1, 3)
 
-	PropRatio:SetValue(Ammo.PropRatio or BulletData.PropRatio)
-	function PropRatio:OnValueChanged(Value)
-		if self._Suppress then return end
-
-		Ammo.PropRatio = Value
+	PropScale:SetValue(Ammo.PropellantScale or 0)
+	function PropScale:OnValueChanged(Value)
+		Ammo.PropellantScale = Value
 		Ammo:UpdateRoundData()
 
-		self._Suppress = true
-		self:SetValue(BulletData.PropRatio)
-		self._Suppress = false
-
+		Sub:Set("PropellantScale", Value)
 		Sub:Set("PropRatio", BulletData.PropRatio)
 
 		UpdateProjectileCountLimits(BuildToolData(), true)
 	end
 
-	-- Classes allowing no necking cap at 1, leaving DNumSlider a degenerate min == max range
-	local CaseScale = Base:AddSlider("#acf.menu.ammo.case_scale", 1, BulletData.MaxCaseScale or 1, 2)
+	-- 0 to 1 from an unnecked case to the class's widest, see ACF.UpdateRoundSpecs
+	local CaseScale = Base:AddSlider("#acf.menu.ammo.case_scale", 0, 1, 2)
 
-	CaseScale:SetValue(Ammo.CaseScale or BulletData.CaseScale)
+	CaseScale:SetValue(Ammo.CaseScale or 0)
 	function CaseScale:OnValueChanged(Value)
-		if self._Suppress then return end
-
 		Ammo.CaseScale = Value
 		Ammo:UpdateRoundData()
 
-		self._Suppress = true
-		self:SetValue(BulletData.CaseScale)
-		self._Suppress = false
-
-		Sub:Set("CaseScale", BulletData.CaseScale)
+		Sub:Set("CaseScale", Value)
 
 		-- A wider case is a wider round, so the crate's projectile counts have to be refit
 		UpdateProjectileCountLimits(BuildToolData(), true)

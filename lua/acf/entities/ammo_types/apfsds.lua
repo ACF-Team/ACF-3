@@ -10,6 +10,53 @@ Classes.DefineClass("ACF.Ammunition.APFSDS", "ACF.Ammunition.AP", function(CLASS
 	CLASS.CanTelescope = true
 
 	MENU_FIELD("Number", "TelescopeRatio", {Default = 0})
+	-- TelescopeRatio bores the rod back into the propellant to shorten the overall round; real telescoped
+	-- designs do this a lot. A real M829A1 cross-section shows the rod running nearly the entire case,
+	-- propellant packed in the annular space around it, not a rod mostly exposed ahead of a separate
+	-- propellant-only zone. Matching the real geometry (120x570mm NATO: 984mm overall round length, 570mm
+	-- case, against the 684mm rod) needs TelescopeRatio = 0.474 to reproduce the real 684mm rod length
+	-- exactly when RoundLength/PropRatio are also dialed to the real round's own 984mm/57.9% instead of
+	-- this class's max slider settings; at M829A1's own real diameter ratio (0.202-0.225, see RodScale
+	-- below) that predicts 728-763mm penetration, inside M829A1's own (uncertain) 670-820mm range. Capped
+	-- there, not padded past it. (984mm OAL and 570mm case are
+	-- moderate confidence, the case figure is the generic 120x570mm NATO family designation, not confirmed
+	-- M829A1-specific.) A thin rod barely displaces propellant volume while boring in, so this model's
+	-- velocity cost for telescoping is small relative to the length gained; the worst case across the
+	-- class's full slider range, now that RodScale/MaxLengthToDiameter are both Cold War-bounded too, is
+	-- ~809mm, down from 923mm when those two bounds mixed modern-era figures, and well under the 1126mm
+	-- an unbounded 0-1 range let through.
+	local MaxTelescopeRatio = 0.474
+
+	-- Real long-rod penetrators are monobloc, one dense material (tungsten alloy or DU) end to end, not a
+	-- dense core embedded in a separate lighter shaft; an earlier version of this file modeled the latter
+	-- with a CoreLength field, removed, it didn't match how these rounds are actually built, and on top of
+	-- TelescopeRatio and RodScale it made for too many sliders. The full rod (ProjLength) is dense material.
+
+	-- Rod diameter from 0 (thinnest real rod for this caliber and length) to 1 (thickest), defaulting to the thickest
+	MENU_FIELD("Number", "RodScale", {Default = 1})
+
+	-- Rod over bore diameter, Cold War rounds only (to ~1991): 3BM9 0.352, DM23 0.267, 3BM42 0.248, DM33 0.233.
+	-- Modern 3BM42M (0.176) is left out, pairing it with a modern L/D gave rods slimmer than any real round.
+	local RealMinDiameterRatio, RealMaxDiameterRatio = 0.233, 0.352
+
+	-- Small bores carry relatively thicker rods (30mm Mk258 9mm, 3UBR11 10mm), so the thin end rises below 105mm (M833 0.234)
+	local SmallMinDiameterRatio = 0.30
+
+	local function GetMinDiameterRatio(Caliber)
+		return math.Remap(math.Clamp(Caliber * 10, 30, 105), 30, 105, SmallMinDiameterRatio, RealMinDiameterRatio)
+	end
+
+	-- Real Cold War-era APFSDS L/D: German DM13 (1979) ~8:1, DM23 ~12-15:1, DM33 ~18-26:1 (two sources
+	-- disagree, 26 is the upper figure, used here). DM43's ~32:1 estimate and DM53's directly-published
+	-- 38:1 are post-Cold War and excluded, same reasoning as the diameter bound above. A rod can't be
+	-- arbitrarily thin for its length and still survive sabot-discard and launch loads; that structural
+	-- limit, not a pressure model, is what bounds this. Capped at DM33's upper estimate, the highest
+	-- Cold War figure found.
+	local MaxLengthToDiameter = 26
+
+	local RodDensity      = 17.5e-3 -- kg/cm^3, tungsten heavy alloy (DM33 17.2, DM53 17.6, M829A1 about 18 from real rod mass)
+	local SabotCalibers   = 0.65 -- Sabot mass as a full-bore aluminium slug this many calibers long,
+	local SabotRodShare   = 0.048 -- plus this share of the rod length (120mm sabots 2.8 to 3.6kg for 360 to 685mm rods, M735 2.1kg)
 
 	CLASS.Blacklist = ACF.GetWeaponBlacklist({
 		["ACF.Guns.Cannon"] = true,
@@ -33,12 +80,11 @@ Classes.DefineClass("ACF.Ammunition.APFSDS", "ACF.Ammunition.AP", function(CLASS
 
 		local RoundLength   = Bullet.ProjLength * 10 -- From cm to mm
 		local RoundCaliber  = Bullet.Diameter * 10 -- From cm to mm
-		local RoundBrinell  = 294
-		local RoundDensity  = 19250 -- in kg/m3
+		local RoundDensity  = RodDensity * 1e6 -- From kg/cm3 to kg/m3
 		local TargetBrinell = 237 -- Assuming we're hitting RHA
 		local TargetDensity = 7840 -- Assuming we're hitting RHA
-		local Constant      = 1.104 -- Steel specific constant
-		local S2            = 9874 * TargetBrinell ^ 0.3598 * RoundBrinell ^ -0.2342 / RoundDensity
+		local Constant      = 0.994 -- Tungsten rod perforation coefficients, from longrods.ch's calculator
+		local S2            = (134.5 - 0.148 * TargetBrinell) * TargetBrinell / RoundDensity
 
 		local FirstChunk    = 1 / math.tanh(0.283 + 0.0656 * RoundLength / RoundCaliber)
 		local SecondChunk   = (RoundDensity / TargetDensity) ^ 0.5
@@ -51,12 +97,11 @@ Classes.DefineClass("ACF.Ammunition.APFSDS", "ACF.Ammunition.AP", function(CLASS
 	function CLASS:CalcSpeed(Bullet, Penetration)
 		local RoundLength   = Bullet.ProjLength * 10 -- From cm to mm
 		local RoundCaliber  = Bullet.Diameter * 10 -- From cm to mm
-		local RoundBrinell  = 294
-		local RoundDensity  = 19250 -- in kg/m3
+		local RoundDensity  = RodDensity * 1e6 -- From kg/cm3 to kg/m3
 		local TargetBrinell = 237 -- Assuming we're hitting RHA
 		local TargetDensity = 7840 -- Assuming we're hitting RHA
-		local Constant      = 1.104 -- Steel specific constant
-		local S2            = 9874 * TargetBrinell ^ 0.3598 * RoundBrinell ^ -0.2342 / RoundDensity
+		local Constant      = 0.994 -- Tungsten rod perforation coefficients, from longrods.ch's calculator
+		local S2            = (134.5 - 0.148 * TargetBrinell) * TargetBrinell / RoundDensity
 
 		local FirstChunk  = 1 / math.tanh(0.283 + 0.0656 * RoundLength / RoundCaliber)
 		local SecondChunk = (RoundDensity / TargetDensity) ^ 0.5
@@ -75,11 +120,18 @@ Classes.DefineClass("ACF.Ammunition.APFSDS", "ACF.Ammunition.AP", function(CLASS
 
 		ACF.UpdateRoundSpecs(self)
 
-		local Cylinder  = (math.pi * (Data.Caliber * 0.5) ^ 2) * Data.ProjLength * 0.25 -- A cylinder 1/4 the length of the projectile
-		local Hole		= Data.ProjArea * Data.ProjLength * 0.25 -- Volume removed by the hole the dart passes through
-		local SabotMass = (Cylinder - Hole) * ACF.AluminumDensity -- A cylinder with a hole the size of the dart in it and im no math wizard so we're just going to take off 3/4 of the mass for the cutout since sabots are shaped like this: ][
+		-- ProjLength is final here, so the thin end can also rise with it to keep the rod under MaxLengthToDiameter
+		local LengthFloor      = Data.ProjLength / (MaxLengthToDiameter * Data.Caliber)
+		local MinDiameterRatio = math.Clamp(math.max(LengthFloor, GetMinDiameterRatio(Data.Caliber)), RealMinDiameterRatio, RealMaxDiameterRatio)
 
-		Data.ProjMass  = Data.ProjArea * Data.ProjLength * ACF.TungstenDensity -- Volume of the projectile as a cylinder * density of steel
+		Data.Diameter = Data.Caliber * Lerp(math.Clamp(self.RodScale or 1, 0, 1), MinDiameterRatio, RealMaxDiameterRatio)
+		Data.ProjArea = math.pi * (Data.Diameter * 0.5) ^ 2
+
+		-- Real sabots barely grow with rod length or thinness, so the sabot is sized off the bore
+		local SabotLength = SabotCalibers * Data.Caliber + SabotRodShare * Data.ProjLength
+		local SabotMass   = math.pi * (Data.Caliber * 0.5) ^ 2 * SabotLength * ACF.AluminumDensity
+
+		Data.ProjMass  = Data.ProjArea * Data.ProjLength * RodDensity
 		Data.MuzzleVel = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass + SabotMass, Data.Efficiency)
 		Data.DragCoef  = Data.ProjArea * 0.0001 / Data.ProjMass
 		Data.CartMass  = Data.PropMass + Data.ProjMass + SabotMass
@@ -97,10 +149,22 @@ Classes.DefineClass("ACF.Ammunition.APFSDS", "ACF.Ammunition.AP", function(CLASS
 		if not isnumber(self.TelescopeRatio) then
 			self.TelescopeRatio = 0
 		end
+
+		self.TelescopeRatio = math.Clamp(self.TelescopeRatio, 0, MaxTelescopeRatio)
+
+		if not isnumber(self.RodScale) then
+			self.RodScale = 1
+		end
+
+		self.RodScale = math.Clamp(self.RodScale, 0, 1)
 	end
 
 	function CLASS:BaseConvert()
-		self.BulletData = { ProjScale = 0.35 }
+		-- Mutated in place, not replaced: the ammo menu's preview captures this table once and redraws
+		-- from that same reference on every slider change (see apcr.lua's CoreScale for the full story).
+		self.BulletData = self.BulletData or {}
+		-- Provisional diameter for UpdateRoundSpecs's telescope hole, UpdateRoundData corrects it once ProjLength is known
+		self.BulletData.ProjScale = Lerp(math.Clamp(self.RodScale or 1, 0, 1), RealMinDiameterRatio, RealMaxDiameterRatio)
 
 		local Data = ACF.RoundBaseGunpowder(self)
 
@@ -127,6 +191,7 @@ Classes.DefineClass("ACF.Ammunition.APFSDS", "ACF.Ammunition.AP", function(CLASS
 			BASE.OnLast(self, Entity)
 
 			Entity.TelescopeRatio = nil
+			Entity.RodScale = nil
 		end
 
 		function CLASS:Network(Entity, BulletData)
@@ -138,13 +203,20 @@ Classes.DefineClass("ACF.Ammunition.APFSDS", "ACF.Ammunition.AP", function(CLASS
 		ACF.RegisterAmmoDecal("ACF.Ammunition.APFSDS", "damage/apcr_pen", "damage/apcr_rico")
 
 		function CLASS:OnCreateAmmoControls(Base)
-			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.telescope_ratio", 0, 1, 3, "TelescopeRatio", function(Value)
+			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.telescope_ratio", 0, MaxTelescopeRatio, 3, "TelescopeRatio", function(Value)
 				self.TelescopeRatio = Value
+				self:UpdateRoundData()
+			end, function(Panel)
+				Panel:SetValue(math.Clamp(self.TelescopeRatio or 0, 0, MaxTelescopeRatio))
+			end)
+
+			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.rod_scale", 0, 1, 2, "RodScale", function(Value)
+				self.RodScale = Value
 				self:UpdateRoundData()
 			end)
 		end
 
-		-- Ammo menu visual: a long-rod penetrator (BulletData.Diameter, already scaled down to 35% of bore)
+		-- Ammo menu visual: a long-rod penetrator (BulletData.Diameter, already scaled down by RodScale)
 		-- riding inside a full-bore sabot (BulletData.Caliber) that only covers part of the dart's length.
 		function CLASS:DrawAmmoVisual(Panel, w, h, _, BulletData)
 			local GeoPrim = ACF.GeoPrim
@@ -154,9 +226,7 @@ Classes.DefineClass("ACF.Ammunition.APFSDS", "ACF.Ammunition.AP", function(CLASS
 			local TelescopeLengthCm = BulletData.TelescopeLength or 0
 			local ExposedProjLength = BulletData.ProjLength - TelescopeLengthCm
 
-			-- Sabot mass/volume in UpdateRoundData is sized off the full rod (BulletData.ProjLength), not
-			-- just its exposed portion -- but the sabot can only be drawn over the exposed rod (the part
-			-- not buried back in the propellant), so the drawn length is still capped to what's visible.
+			-- Illustrative only, UpdateRoundData sizes the sabot by mass. Capped to the rod left exposed past the propellant.
 			local SabotLenCm = math.min(BulletData.ProjLength * 0.25, ExposedProjLength)
 
 			-- ProjLength already includes the telescoped overlap into the propellant, so laying it out
@@ -183,9 +253,9 @@ Classes.DefineClass("ACF.Ammunition.APFSDS", "ACF.Ammunition.AP", function(CLASS
 			local Sabot = GeoPrim.New("Cylinder", { Radius = BulletData.Caliber * 0.5, Height = SabotLenCm })
 			Sabot:SetMaterial("Aluminum Sabot (Discarding)")
 
-			-- Long-rod penetrator, running the full length of the projectile. Drawn after the sabot,
-			-- starting at RodX (behind SabotX when telescoped) so it's the on-top, narrower shape
-			-- within the overlap.
+			-- Long-rod penetrator, monobloc tungsten, running the full length of the projectile. Drawn
+			-- after the sabot, starting at RodX (behind SabotX when telescoped) so it's the on-top,
+			-- narrower shape within the overlap.
 			local Penetrator = GeoPrim.New("Cylinder", { Radius = BulletData.Diameter * 0.5, Height = BulletData.ProjLength })
 			Penetrator:SetMaterial("Tungsten Penetrator")
 

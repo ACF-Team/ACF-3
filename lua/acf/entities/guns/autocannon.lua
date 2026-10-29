@@ -15,8 +15,8 @@ ACF.Classes.DefineClass("ACF.Guns.Autocannon", "ACF.Guns.BaseScalableGun", funct
 	CLASS.ScaleFactor 		= 0.86 -- Corrective factor to account for improperly scaled base models
 	CLASS.CyclicCeilMult 	= 2 -- How high above base cyclic the gun can be set to
 	CLASS.Round 			= {
-		MaxLength  = 40, -- Relative to the Base caliber, in cm
-		PropLength = 25, -- Relative to the Base caliber, in cm
+		MaxLength  = 55, -- Relative to the Base caliber, in cm. 35x228mm rounds run 387mm, 11 calibers
+		PropLength = 35, -- Relative to the Base caliber, in cm. Reaches real energy of 25x137 M792, 30x173 Mk258 and 35x228 HEI
 		CaseScale  = 1.37, -- 35x228mm (Bushmaster III): 48mm case over a 35mm projectile
 	}
 	CLASS.Preview			= {

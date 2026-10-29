@@ -21,7 +21,8 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 
 	MENU_FIELD("Number",  "RoundLength", {Default = 0})
 	MENU_FIELD("Number",  "PropRatio",   {Default = 0})
-	MENU_FIELD("Number",  "CaseScale",   {Default = 1})
+	MENU_FIELD("Number",  "PropellantScale", {Default = -1}) -- Negative until derived from PropRatio, see ACF.UpdateRoundSpecs
+	MENU_FIELD("Number",  "CaseScale",   {Default = 0})
 	MENU_FIELD("Boolean", "TwoPiece",    {Default = false})
 	MENU_FIELD("Boolean", "Tracer", 	 {Default = false})
 
@@ -142,17 +143,28 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 		}
 	end
 
+	-- Rounds with a carbide core (CoreMass) penetrate with the core alone, not everything that was launched
+	local function GetPenetratorMass(Bullet)
+		if Bullet.CoreMass then return Bullet.CoreMass, ACF.CarbideCorePenFactor end
+
+		return Bullet.ProjMass, 1
+	end
+
 	function CLASS:GetPenetration(Bullet, Speed)
 		if not isnumber(Speed) then
 			Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * ACF.InchToMeter or Bullet.MuzzleVel
 		end
 
-		return ACF.Penetration(Speed, Bullet.ProjMass, Bullet.Diameter * 10)
+		local Mass, Factor = GetPenetratorMass(Bullet)
+
+		return ACF.Penetration(Speed, Mass, Bullet.Diameter * 10) * Factor
 	end
 
 	--- Inverse of GetPenetration, solved for Speed; override alongside GetPenetration for other formulas.
 	function CLASS:CalcSpeed(Bullet, Penetration)
-		return ACF.CalcSpeed(Penetration, Bullet.ProjMass, Bullet.Diameter * 10)
+		local Mass, Factor = GetPenetratorMass(Bullet)
+
+		return ACF.CalcSpeed(Penetration / Factor, Mass, Bullet.Diameter * 10)
 	end
 
 	--- Mass and speed used to report the round's kinetic energy; override for ammo types that deal damage
@@ -177,7 +189,9 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 
 		ACF.UpdateRoundSpecs(self)
 
-		Data.ProjMass   = Data.ProjArea * Data.ProjLength * ACF.SteelDensity --Volume of the projectile as a cylinder * density of steel
+		-- Bare AP shot tapers to a point, so a full-diameter cylinder overstates its mass. ACF.APNoseFactor
+		-- corrects for that nose volume, fitted against real uncapped AP shells, not for capped APC/APBC rounds.
+		Data.ProjMass   = Data.ProjArea * Data.ProjLength * ACF.SteelDensity * ACF.APNoseFactor
 		Data.MuzzleVel  = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
 		Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
 		Data.CartMass   = Data.PropMass + Data.ProjMass
@@ -206,7 +220,8 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 	function CLASS:VerifyData()
 		ACF.VerifyRoundLengthData(self)
 
-		if not isnumber(self.CaseScale) then self.CaseScale = 1 end
+		if not isnumber(self.CaseScale) then self.CaseScale = 0 end
+		if not isnumber(self.PropellantScale) then self.PropellantScale = -1 end
 		if self.TwoPiece == nil then self.TwoPiece = false end
 		if self.Tracer == nil then self.Tracer = false end
 	end
@@ -224,6 +239,7 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 		function CLASS:OnLast(Entity)
 			Entity.RoundLength = nil
 			Entity.PropRatio = nil
+			Entity.PropellantScale = nil
 			Entity.CaseScale = nil
 			Entity.TwoPiece = nil
 			Entity.Tracer = nil
