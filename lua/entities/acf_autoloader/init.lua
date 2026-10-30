@@ -114,6 +114,7 @@ end)
 ACF.RegisterClassPreLinkCheck("acf_autoloader", "acf_ammo", function(This, Ammo)
 	Ammo.Autoloaders = Ammo.Autoloaders or {}
 	if This.AmmoCrates[Ammo] or Ammo.Autoloaders[This] then return false, "Autoloader is already linked to that ammo." end
+	if not Ammo.IsMechanized then return false, "Autoloaders can only feed from drums, carousels and cassettes." end
 
 	return true
 end)
@@ -125,7 +126,6 @@ ACF.RegisterClassLinkCheck("acf_autoloader", "acf_ammo", function(This, Ammo)
 	local BulletData = Ammo.BulletData
 	local Caliber = BulletData.CaseDiameter -- Necked cases are wider than their bore, so the case is what has to fit
 	local Length = BulletData.RoundLength or (BulletData.ProjLength + BulletData.PropLength)
-	if BulletData.TwoPiece then Length = Length * 0.5 end
 	if Ammo.IsMissileAmmo then
 		local Weapon    = Classes.GetSubtypeByName("ACF.Missiles.BaseMissile", BulletData.WeaponType)
 		local Round 	= Weapon and Weapon.Round
@@ -133,6 +133,12 @@ ACF.RegisterClassLinkCheck("acf_autoloader", "acf_ammo", function(This, Ammo)
 	end
 
 	if BulletData and (Caliber - 0.01) > This:ACF_GetUserVar("AutoloaderCaliber") / 10 then return false, "Ammo is too wide for this autoloader." end
+
+	-- An autoloader handles one piece of a two piece round, and only part of a round its crate carries to the breech
+	local Shape = Ammo:ACF_GetUserVar("Shape")
+
+	Length = Length * (Shape and Shape.AutoloaderMinLengthFrac or 1) * (BulletData.TwoPiece and 1 / ACF.TwoPieceCount or 1)
+
 	if BulletData and (Length - 0.01) > This:ACF_GetUserVar("AutoloaderLength") then return false, "Ammo is too long for this autoloader." end
 	return true
 end)

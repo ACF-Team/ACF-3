@@ -75,6 +75,13 @@ do --MARK: Networking
 
 		entity.IsTwoPiece  = net.ReadBool()
 		entity.IsHexPacked = net.ReadBool()
+		entity.IsCassette  = net.ReadBool()
+
+		-- Cassette counts are stacks and conveyor size; render from the full grid they wrap into
+		if entity.IsCassette then
+			entity.CassetteCounts   = entity.ProjectileCounts
+			entity.ProjectileCounts = ACF.GetCassetteGrid( entity.ProjectileCounts:Unpack() )
+		end
 
 		-- Bodygroups of the rounds overriding the crate's own, by slot
 		local slotBodygroups = {}
@@ -333,6 +340,8 @@ do --MARK: Ammo rendering
 			-- MARK: Box
 			local fits          = self.ProjectileCounts
 			local localStartPos = self.CachedLocalStartPos
+			local isCassette    = self.IsCassette
+			local cassette      = self.CassetteCounts
 
 			-- WorldAngle must be recalculated as entity orientation can change
 			local worldAngle = self:LocalToWorldAngles( localAngle )
@@ -342,8 +351,11 @@ do --MARK: Ammo rendering
 			for x = 1, fits.x do
 				for y = 1, fits.y do
 					for z = 1, fits.z do
+						-- The cassette's conveyor runs through these cells, so they hold no rounds
+						local isVoid = isCassette and ACF.IsCassetteVoid( y, z, cassette:Unpack() )
+
 						-- Only create models we don't have yet
-						if index > previousSlots and index <= countSlots then
+						if not isVoid and index > previousSlots and index <= countSlots then
 							local localGridPos  = getRoundOffset( x, y, z, roundSize, self.IsHexPacked )
 							local localModelPos = localStartPos + localGridPos + modelOffset
 
@@ -364,7 +376,7 @@ do --MARK: Ammo rendering
 							end
 						end
 
-						index = index + 1
+						if not isVoid then index = index + 1 end
 						if index > countSlots then return end
 					end
 				end

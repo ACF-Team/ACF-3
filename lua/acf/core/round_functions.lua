@@ -462,6 +462,22 @@ do -- MARK: Ammo capacity
 
 			return countX, max(1, countY), max(1, countZ)
 		end
+
+		--- Cassettes wrap `stacks` layers of rounds around a conveyor `width` by `height` rounds across.
+		function ACF.GetCassetteGrid(stacks, width, height)
+			return Vector(1, width + 2 * stacks, height + 2 * stacks)
+		end
+
+		--- True for grid cells inside the conveyor, which hold no rounds.
+		function ACF.IsCassetteVoid(y, z, stacks, width, height)
+			return y > stacks and y <= stacks + width and z > stacks and z <= stacks + height
+		end
+
+		function ACF.GetCassetteCapacity(stacks, width, height)
+			local grid = ACF.GetCassetteGrid(stacks, width, height)
+
+			return grid.y * grid.z - width * height
+		end
 	end
 
 	do -- MARK: Drums

@@ -68,14 +68,23 @@ function ENT:PrepareAmmo(Ammo, Data)
 	end
 end
 
+-- Shapes with a fixed lattice ignore the hex packing setting
+function ENT:IsHexPacked()
+	local Shape = self:ACF_GetUserVar("Shape")
+
+	return self:ACF_GetUserVar("HexPacking") and Shape and Shape.CanHexPack or false
+end
+
 do -- Spawn/Update/Remove
 	local function UpdateCrateSize(Entity, Data, Class, _, Ammo)
 		-- Convert the ammo instance once to get projectile geometry
 		local Bullet = Ammo:ServerConvert()
 
 		-- The shape picks the drum layout; nil means this is a plain box crate
-		local Layout     = ACF.GetDrumLayout(Entity:ACF_GetUserVar("Shape"))
-		local HexPacking = Entity:ACF_GetUserVar("HexPacking")
+		local Shape      = Entity:ACF_GetUserVar("Shape")
+		local Layout     = ACF.GetDrumLayout(Shape)
+		local IsCassette = Shape and Shape.IsCassette or false
+		local HexPacking = Entity:IsHexPacked()
 
 		if Layout then
 			local roundSize = ACF.GetRoundProperties(Class, Data, Bullet)
@@ -95,6 +104,26 @@ do -- Spawn/Update/Remove
 			Entity:SetSize(Data.Size)
 
 			local Rounds = Layout.GetPerDisk(primary) * numStacks
+			-- Floored with no minimum: an odd cell out holds half a round, and half a round is nothing
+			if Bullet.TwoPiece then Rounds = Floor(Rounds * 0.5) end
+
+			return Rounds
+		elseif IsCassette then
+			-- X is the stacks around the conveyor, Y and Z the conveyor's width and height
+			local roundSize        = ACF.GetRoundProperties(Class, Data, Bullet)
+			local _, maxY, maxZ    = ACF.GetMaxCounts(roundSize, ACF.AmmoMaxLength, ACF.AmmoMaxWidth, false)
+			local stacks           = Clamp(Floor(tonumber(Data.CrateProjectilesX) or 1), 1, 2)
+			local width            = Clamp(Floor(tonumber(Data.CrateProjectilesY) or 1), 1, math.max(1, maxY - 2 * stacks))
+			local height           = Clamp(Floor(tonumber(Data.CrateProjectilesZ) or 1), 1, math.max(1, maxZ - 2 * stacks))
+
+			Data.CrateProjectilesX = stacks
+			Data.CrateProjectilesY = width
+			Data.CrateProjectilesZ = height
+			Data.Size              = ACF.GetCrateDimensions(ACF.GetCassetteGrid(stacks, width, height), roundSize, false)
+
+			Entity:SetSize(Data.Size)
+
+			local Rounds = ACF.GetCassetteCapacity(stacks, width, height)
 			-- Floored with no minimum: an odd cell out holds half a round, and half a round is nothing
 			if Bullet.TwoPiece then Rounds = Floor(Rounds * 0.5) end
 
@@ -185,10 +214,12 @@ do -- Spawn/Update/Remove
 			ExtraData.Bodygroup = Bodygroup
 			ExtraData.NeedsRotation = NeedsRotation
 			ExtraData.TwoPiece = BulletData.TwoPiece or false
-			ExtraData.HexPacking = Entity:ACF_GetUserVar("HexPacking") or false
+
+			local ShapeClass = Entity:ACF_GetUserVar("Shape")
+			ExtraData.IsCassette = Entity.IsCassette
+			ExtraData.HexPacking = Entity:IsHexPacked()
 
 			-- Drum-specific data
-			local ShapeClass = Entity:ACF_GetUserVar("Shape")
 			ExtraData.IsDrum = ShapeClass and ShapeClass.IsDrum or false
 			if ExtraData.IsDrum then
 				ExtraData.DrumShape = Entity.Shape
@@ -253,6 +284,7 @@ do -- Spawn/Update/Remove
 
 					net.WriteBool(ExtraData.TwoPiece)
 					net.WriteBool(ExtraData.HexPacking)
+					net.WriteBool(ExtraData.IsCassette)
 
 					-- Overridden slots and the bodygroup of the round each one holds
 					net.WriteUInt(table.Count(Entity.SlotRounds), 6)
@@ -322,6 +354,9 @@ do -- Spawn/Update/Remove
 		local ShapeName = ShapeInst and ShapeInst.GetType and Classes.GetTypeName(ShapeInst:GetType())
 
 		Entity.Shape = ShapeName and (string.match(ShapeName, "[^.]+$") or ShapeName) or "Box"
+
+		Entity.IsCassette   = ShapeInst and ShapeInst.IsCassette or false
+		Entity.IsMechanized = ShapeInst and ShapeInst.IsMechanized or false
 
 		Entity.Name       = Name or WeaponName .. " " .. Ammo.Name
 		Entity.ShortName  = ShortName or WeaponShort .. " " .. (Ammo.ID or "")
@@ -462,6 +497,13 @@ do -- Spawn/Update/Remove
 		self:ACF_SetUserVar("CrateProjectilesY", Data.CrateProjectilesY)
 		self:ACF_SetUserVar("CrateProjectilesZ", Data.CrateProjectilesZ)
 
+		-- Autoloaders can only feed from mechanized crates
+		if self.Autoloaders and not self.IsMechanized then
+			for Autoloader in pairs(self.Autoloaders) do
+				Autoloader:Unlink(self)
+			end
+		end
+
 		-- Unlink weapons that can no longer use this crate (legacy ENT:Update tail).
 		if self.Weapons and next(self.Weapons) then
 			if Data.Weapon ~= OldWeapon or self.Caliber ~= OldCaliber or self.Unlinkable then
@@ -534,15 +576,24 @@ do -- Overlay
 		local CountY = self.CrateProjectilesY
 		local CountZ = self.CrateProjectilesZ
 
+		-- Cassettes store stacks and conveyor size, so expand them to the full grid
+		if self.IsCassette then
+			CountX, CountY, CountZ = ACF.GetCassetteGrid(CountX, CountY, CountZ):Unpack()
+		end
+
 		State:AddDivider()
 		State:AddSize("Storage (in projectiles)", CountX, CountY, CountZ)
 		State:AddKeyValue("Ammo Type", AmmoType)
 		State:AddKeyValue("Two Piece", self.BulletData.TwoPiece and "Yes" or "No")
-		State:AddKeyValue("Hex Packing", self:ACF_GetUserVar("HexPacking") and "Yes" or "No")
+
+		State:AddKeyValue("Hex Packing", self:IsHexPacked() and "Yes" or "No")
 
 		local Layout = ACF.GetDrumLayout(self:ACF_GetUserVar("Shape"))
 		if Layout then
 			State:AddKeyValue("Layout", Layout.Name)
+		elseif self.IsCassette then
+			State:AddKeyValue("Layout", "Cassette")
+			State:AddKeyValue("Stacks", self.CrateProjectilesX)
 		end
 		State:AddProgressBar("Contents", self.Amount, self.Capacity)
 

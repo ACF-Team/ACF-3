@@ -5,8 +5,8 @@ local BoxSize   = Vector()
 
 -- The crate keeps its drum/box UI logic keyed on a short shape string, but the entity's inherited
 -- "Shape" field wants a ContainerShapes class FQN. This maps between them.
-local SHAPE_FQN = {Box = "ACF.ContainerShapes.Box"}
-local FQN_SHAPE = {["ACF.ContainerShapes.Box"] = "Box"}
+local SHAPE_FQN = {Box = "ACF.ContainerShapes.Box", Cassette = "ACF.ContainerShapes.Cassette"}
+local FQN_SHAPE = {["ACF.ContainerShapes.Box"] = "Box", ["ACF.ContainerShapes.Cassette"] = "Cassette"}
 
 for Key in pairs(ACF.DrumLayouts) do
 	local FQN = "ACF.ContainerShapes." .. Key
@@ -235,8 +235,18 @@ local function IsDrum()
 	return ACF.IsDrumShape(GetShapeName())
 end
 
+local function IsCassette()
+	return GetShapeName() == "Cassette"
+end
+
+local function CanHexPack(Name)
+	local Shape = Classes.GetTypeByName(SHAPE_FQN[Name] or SHAPE_FQN.Box)
+
+	return Shape and Shape.CanHexPack or false
+end
+
 local function GetHexPacking()
-	return AmmoCtx and AmmoCtx:Get("HexPacking") or false
+	return AmmoCtx and AmmoCtx:Get("HexPacking") and CanHexPack(GetShapeName()) or false
 end
 
 ---Complete rounds held by the given cell counts. Mirrors the server's UpdateCrateSize: two piece
@@ -249,6 +259,8 @@ local function GetRoundCount(CountX, CountY, CountZ)
 		-- For drums X is the layout's primary count, which is not always a round count:
 		-- a vertical drum reads it as rings, so the layout works out the rounds per disk
 		Rounds = Layout.GetPerDisk(CountX) * CountZ
+	elseif IsCassette() then
+		Rounds = ACF.GetCassetteCapacity(CountX, CountY, CountZ)
 	else
 		Rounds = CountX * CountY * CountZ
 	end
@@ -324,6 +336,14 @@ local function UpdateProjectileCountLimits(ToolData, SkipMissiles)
 		end
 
 		MaxY = 1
+	elseif IsCassette() then
+		-- The stacks wrap both sides of the conveyor, so they eat into its room twice
+		local Stacks = math.Clamp(CurrentX, 1, 2)
+		local _, GridY, GridZ = CalculateMaxCounts(ToolData)
+
+		MaxX = 2
+		MaxY = math.max(1, GridY - 2 * Stacks)
+		MaxZ = math.max(1, GridZ - 2 * Stacks)
 	else
 		MaxX, MaxY, MaxZ = CalculateMaxCounts(ToolData)
 	end
@@ -360,6 +380,10 @@ local function UpdateBoxSizeFromProjectileCounts(ToolData)
 	if Class and BulletData then
 		if IsDrum() then
 			BoxSize = ACF.GetDrumCrateSizeFromProjectileCounts(CountX, CountZ, Class, ToolData, BulletData, GetHexPacking(), GetShapeName())
+		elseif IsCassette() then
+			local Grid = ACF.GetCassetteGrid(CountX, CountY, CountZ)
+
+			BoxSize = ACF.GetCrateSizeFromProjectileCounts(Grid.x, Grid.y, Grid.z, Class, ToolData, BulletData, false)
 		else
 			BoxSize = ACF.GetCrateSizeFromProjectileCounts(CountX, CountY, CountZ, Class, ToolData, BulletData, GetHexPacking())
 		end
@@ -831,12 +855,19 @@ function ACF.CreateAmmoMenu(Menu, Context)
 			ShapeIDs[Key] = Index + 1 -- "Crate" occupies slot 1
 		end
 	end
+
+	ShapeList:AddChoice("Cassette", "Cassette")
+	ShapeIDs.Cassette = table.Count(ShapeIDs) + 1
 	Menu.AmmoShapeList = ShapeList
 	ShapeList:ChooseOptionID(ShapeIDs[GetShapeName()] or 1)
 
 	local CountXLabel = "#acf.menu.ammo.projectiles_length"
 	local CountYLabel = "#acf.menu.ammo.projectiles_width"
 	local CountZLabel = "#acf.menu.ammo.projectiles_height"
+
+	local CassetteXLabel = "Projectiles (Stacks)"
+	local CassetteYLabel = "Conveyor Width"
+	local CassetteZLabel = "Conveyor Height"
 
 	local function MakeCount(Label, Axis)
 		local Slider = ContainerBase:AddSlider(Label, 1, 50, 0)
@@ -858,7 +889,8 @@ function ACF.CreateAmmoMenu(Menu, Context)
 	local CountZ = MakeCount(CountZLabel, "Z")
 
 	local HexPacking = ContainerBase:AddCheckBox(language.GetPhrase("acf.menu.ammo.hex_packing"))
-	HexPacking:SetValue(GetHexPacking())
+	HexPacking:SetValue(AmmoCtx:Get("HexPacking") or false)
+	HexPacking:SetVisible(CanHexPack(GetShapeName()))
 
 	function HexPacking:OnChange(Value)
 		if self._Suppress then return end
@@ -873,17 +905,27 @@ function ACF.CreateAmmoMenu(Menu, Context)
 
 		local Layout = ACF.GetDrumLayout(Data)
 
+		HexPacking:SetVisible(CanHexPack(Data))
+
 		if Layout then
 			CountX:SetVisible(true)
 			CountX:SetText(Layout.PrimaryLabel)
 			CountX:SetMin(Layout.MinPrimary)
 			CountY:SetVisible(false)
 			CountZ:SetText(Layout.SecondaryLabel)
+		elseif Data == "Cassette" then
+			CountX:SetVisible(true)
+			CountX:SetText(CassetteXLabel)
+			CountX:SetMin(1)
+			CountY:SetVisible(true)
+			CountY:SetText(CassetteYLabel)
+			CountZ:SetText(CassetteZLabel)
 		else
 			CountX:SetVisible(true)
 			CountX:SetText(language.GetPhrase(CountXLabel))
 			CountX:SetMin(1)
 			CountY:SetVisible(true)
+			CountY:SetText(language.GetPhrase(CountYLabel))
 			CountZ:SetText(language.GetPhrase(CountZLabel))
 		end
 
@@ -895,11 +937,15 @@ function ACF.CreateAmmoMenu(Menu, Context)
 		CountX:SetMin(6)
 		CountY:SetVisible(false)
 		CountZ:SetText("Projectiles (Stacks)")
+	elseif IsCassette() then
+		CountX:SetText(CassetteXLabel)
+		CountY:SetText(CassetteYLabel)
+		CountZ:SetText(CassetteZLabel)
 	end
 
 	local Capacity = ContainerBase:AddLabel("")
 	local function CapText()
-		local RoundCount = IsDrum() and (GetCount("X") * GetCount("Z")) or (GetCount("X") * GetCount("Y") * GetCount("Z"))
+		local RoundCount = GetRoundCount(GetCount("X"), GetCount("Y"), GetCount("Z"))
 		return "Capacity: " .. RoundCount .. (RoundCount == 1 and " round" or " rounds")
 	end
 	Capacity:SetText(CapText())
