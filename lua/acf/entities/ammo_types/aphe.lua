@@ -21,7 +21,6 @@ Classes.DefineClass("ACF.Ammunition.APHE", "ACF.Ammunition.AP", function(CLASS, 
 
 	MENU_FIELD("Number", "FillerRatio", {Default = 0})
 	MENU_FIELD("Number", "PenFuze",     {Default = 0})
-	MENU_FIELD("Number", "PenFuzeScale", {Default = -1}) -- Negative until derived from PenFuze, see UpdateRoundData
 	MENU_FIELD("Number", "FuzeDelay",   {Default = 0})
 
 	function CLASS:GetPenetration(Bullet, Speed)
@@ -75,14 +74,7 @@ Classes.DefineClass("ACF.Ammunition.APHE", "ACF.Ammunition.AP", function(CLASS, 
 		-- Depth is capped by muzzle penetration, or arming would require more than the round can ever defeat.
 		local MaxPen = self:GetPenetration(Data, Data.MuzzleVel)
 
-		-- PenFuzeScale runs 0 (no fuze) to 1 (the round's muzzle penetration). Rounds saved before it existed
-		-- store a depth in mm instead, so the scale is derived from that once.
-		if (self.PenFuzeScale or -1) < 0 then
-			self.PenFuzeScale = MaxPen > 0 and math.Clamp((self.PenFuze or 0) / MaxPen, 0, 1) or 0
-		end
-
-		Data.PenFuze   = Data.CanFuze and math.Clamp(self.PenFuzeScale, 0, 1) * MaxPen or 0
-		self.PenFuze   = Data.PenFuze -- Kept in sync for anything still reading the depth
+		Data.PenFuze   = Data.CanFuze and math.Clamp(self.PenFuze or 0, 0, MaxPen) or 0
 		Data.FuzeDelay = Data.PenFuze > 0 and math.Clamp(self.FuzeDelay or 0, 0, MAX_FUZE_DELAY) or 0
 
 		hook.Run("ACF_OnUpdateRound", self, self, Data, GUIData)
@@ -120,10 +112,6 @@ Classes.DefineClass("ACF.Ammunition.APHE", "ACF.Ammunition.AP", function(CLASS, 
 			self.PenFuze = 0
 		end
 
-		if not isnumber(self.PenFuzeScale) then
-			self.PenFuzeScale = -1
-		end
-
 		if not isnumber(self.FuzeDelay) then
 			self.FuzeDelay = 0
 		end
@@ -144,7 +132,6 @@ Classes.DefineClass("ACF.Ammunition.APHE", "ACF.Ammunition.AP", function(CLASS, 
 
 			Entity.FillerRatio = nil
 			Entity.PenFuze     = nil
-			Entity.PenFuzeScale = nil
 			Entity.FuzeDelay   = nil
 
 			-- Cleanup the leftovers aswell
@@ -273,10 +260,17 @@ Classes.DefineClass("ACF.Ammunition.APHE", "ACF.Ammunition.AP", function(CLASS, 
 			-- Skipped by HE (no penetration to fuze on) and below the timed fuze's caliber gate.
 			if not self.HasDelayFuze or not self.BulletData.CanFuze then return end
 
-			-- 0 to 1 of the round's own muzzle penetration, which moves with filler and length
-			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.pen_fuze", 0, 1, 2, "PenFuzeScale", function(Value)
-				self.PenFuzeScale = math.Round(Value, 2)
+			local function GetMaxDepth()
+				return math.max(self.GUIData.MaxPen or 0, 1)
+			end
+
+			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.pen_fuze", 0, GetMaxDepth(), 0, "PenFuze", function(Value)
+				self.PenFuze = math.Round(Value)
 				self:UpdateRoundData()
+			end, function(Panel)
+				-- The ceiling is the round's own muzzle penetration, which moves with filler and length.
+				Panel:SetMinMax(0, GetMaxDepth())
+				Panel:SetValue(self.BulletData.PenFuze)
 			end)
 
 			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.fuze_delay", 0, MAX_FUZE_DELAY, 3, "FuzeDelay", function(Value)
