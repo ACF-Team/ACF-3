@@ -1,5 +1,5 @@
 -- Persistent, session-grouped record of ACF kills for the Kill Log menu. Kills are buffered
--- and flushed to SQLite in batched transactions, and queries run server-side against the DB.
+-- and flushed to SQLite in batched transactions, and clients pull new rows into their own copy.
 local ACF = ACF
 
 sql.Query([[CREATE TABLE IF NOT EXISTS acf_kill_log (
@@ -41,6 +41,20 @@ end
 
 -- Identifies this server run as a session.
 local SessionStart = os.time()
+
+-- Identifies this server's log, so clients know when their copy belongs to another server.
+do
+    sql.Query("CREATE TABLE IF NOT EXISTS acf_kill_log_meta (Key TEXT NOT NULL)")
+
+    local Key = sql.QueryValue("SELECT Key FROM acf_kill_log_meta")
+
+    if not Key then
+        Key = string.format("%08x%08x", os.time(), math.random(0, 0x7FFFFFFF))
+        sql.Query("INSERT INTO acf_kill_log_meta (Key) VALUES (" .. sql.SQLStr(Key) .. ")")
+    end
+
+    SetGlobal2String("ACF_KillLog_Key", Key)
+end
 
 -- Prune old sessions to stay within KillLogMaxSessions, keeping room for this new one.
 do
@@ -159,16 +173,75 @@ concommand.Add("acf_killlog_wipe", function(Player)
     ACF.PrintLog("Info", "Kill Log wiped.")
 end)
 
+-- Writes a fake battle between two teams as a new past session, for testing the Kill Log browser.
+-- Usage: acf_killlog_dummy [kills = 500] [players per team = 4]
+concommand.Add("acf_killlog_dummy", function(Player, _, Args)
+    if IsValid(Player) and not Player:IsSuperAdmin() then
+        ACF.PrintLog("Error", "You can't use this because you are not a superadmin.")
+        return
+    end
+
+    local Kills   = math.Clamp(math.floor(tonumber(Args[1]) or 500), 1, 10000)
+    local PerTeam = math.Clamp(math.floor(tonumber(Args[2]) or 4), 1, 32)
+    local Teams   = { {}, {} }
+
+    -- Fixed names and IDs, so repeated runs can be combined as the same players
+    for I = 1, PerTeam do
+        Teams[1][I] = { Name = "Red " .. I, ID = "DUMMY:Red" .. I, Cost = math.random(5000, 20000) }
+        Teams[2][I] = { Name = "Blue " .. I, ID = "DUMMY:Blue" .. I, Cost = math.random(5000, 20000) }
+    end
+
+    local Interval = 3 -- Seconds between kills
+    local Session  = os.time() - Kills * Interval - 60 -- Ends just before now, so it never merges with this session
+    local Weapons  = { "acf_gun", "acf_gun", "acf_rack", "acf_piledriver" }
+    local Bias     = math.Rand(0.35, 0.65) -- Chance Red gets each kill, so either side can win
+
+    sql.Begin()
+
+    for I = 1, Kills do
+        local Winner = math.random() < Bias and 1 or 2
+        local Attacker = Teams[Winner][math.random(PerTeam)]
+        local Victim = Teams[3 - Winner][math.random(PerTeam)]
+        local Roll = math.random()
+
+        if Roll < 0.02 then
+            Attacker = nil -- World death
+        elseif Roll < 0.04 then
+            Victim = Teams[Winner][math.random(PerTeam)] -- Team kill, or a self kill when it picks the attacker
+        end
+
+        local Query = string.format(
+            "INSERT INTO acf_kill_log (Session, Time, Attacker, AttackerSteamID, AttackerCost, Victim, VictimSteamID, VictimCost, Inflictor, IsDrone) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+            SQLValue(Session), SQLValue(Session + I * Interval), SQLValue(Attacker and Attacker.Name), SQLValue(Attacker and Attacker.ID), SQLValue(Attacker and Attacker.Cost),
+            SQLValue(Victim.Name), SQLValue(Victim.ID), SQLValue(Victim.Cost), SQLValue(Attacker and Weapons[math.random(#Weapons)]), SQLValue(math.random() < 0.05)
+        )
+
+        if sql.Query(Query) == false then
+            sql.Commit()
+            ACF.PrintLog("Error", "Kill Log dummy insert failed: " .. sql.LastError())
+            return
+        end
+    end
+
+    sql.Commit()
+
+    ACF.PrintLog("Info", string.format("Added %d dummy kills between two teams of %d to the Kill Log.", Kills, PerTeam))
+end)
+
 -- One net string per request/response pair, reused both ways: server and client each register
 -- their own net.Receive for the same name, so there's no ambiguity about which side sent it.
-util.AddNetworkString("ACF_KillLog_Sessions")
-util.AddNetworkString("ACF_KillLog_Players")
-util.AddNetworkString("ACF_KillLog_Query")
+util.AddNetworkString("ACF_KillLog_Update")
 util.AddNetworkString("ACF_KillLog_Wipe")
 
-local MaxResultRows = 1000
+local ChunkRows   = 500 -- Rows per update message, compressed to stay well under the net message limit
+local MaxRequests = 64  -- Sessions a single update may download rows for
 
-local NextQueryTime = {} -- [PlayerName] = CurTime() they're next allowed to query
+local NextQueryTime = {} -- [SteamID64] = CurTime() they're next allowed to start an update
+local Transfers     = {} -- [Player] = { Where = row filter, Cursor = last Id sent }, while one is in progress
+
+hook.Add("PlayerDisconnected", "ACF_KillLog_Transfers", function(Player)
+    Transfers[Player] = nil
+end)
 
 -- Runs a SELECT, logging an error on failure instead of treating it as an empty result.
 local function RunSelect(Query)
@@ -223,72 +296,81 @@ net.Receive("ACF_KillLog_Wipe", function(_, Player)
     net.Broadcast() -- Any menu still open is showing rows that no longer exist
 end)
 
-net.Receive("ACF_KillLog_Sessions", function(_, Player)
-    if not IsValid(Player) then return end
+local function WriteCompressed(Value)
+    local Data = util.Compress(util.TableToJSON(Value))
 
-    FlushKillLog() -- Ensure the current session shows up before its first periodic write
+    net.WriteUInt(#Data, 32)
+    net.WriteData(Data, #Data)
+end
 
-    local Rows = RunSelect("SELECT DISTINCT Session FROM acf_kill_log ORDER BY Session DESC")
-    local Sessions = {}
-    for _, Row in ipairs(Rows) do Sessions[#Sessions + 1] = tonumber(Row.Session) end
+-- Starts an update: the client lists the sessions it wants rows for, each with the newest Id it already
+-- has. Only these requests are rate limited, and the reply carries the full session list.
+local function StartTransfer(Player)
+    local SteamID = Player:SteamID64()
+    if (NextQueryTime[SteamID] or 0) > CurTime() then return end
 
-    local Count, Bytes, DBSize = GetLogStats()
+    local Count = net.ReadUInt(8)
+    if Count > MaxRequests then return end
 
-    net.Start("ACF_KillLog_Sessions")
-        net.WriteString(util.TableToJSON(Sessions))
-        WriteSize(Count)
-        WriteSize(Bytes)
-        WriteSize(DBSize)
-    net.Send(Player)
-end)
+    NextQueryTime[SteamID] = CurTime() + ACF.KillLogQueryCooldown
 
--- Returns the distinct player names seen in a session, for the client's filter checkboxes.
-net.Receive("ACF_KillLog_Players", function(_, Player)
-    if not IsValid(Player) then return end
+    -- Both values are read as unsigned integers, so they can only ever be digits in the query
+    local Conditions = {}
+    for I = 1, Count do
+        local Session = net.ReadUInt(32)
+        local AfterId = net.ReadUInt(32)
 
-    local Session = net.ReadUInt(32)
-
-    FlushKillLog()
-
-    local Query = "SELECT DISTINCT Attacker AS Name FROM acf_kill_log WHERE Session = " .. Session .. " AND Attacker IS NOT NULL"
-        .. " UNION SELECT DISTINCT Victim AS Name FROM acf_kill_log WHERE Session = " .. Session
-        .. " ORDER BY Name"
-
-    local Rows = RunSelect(Query)
-    local Names = {}
-    for _, Row in ipairs(Rows) do Names[#Names + 1] = Row.Name end
-
-    net.Start("ACF_KillLog_Players")
-        net.WriteString(util.TableToJSON(Names))
-    net.Send(Player)
-end)
-
-net.Receive("ACF_KillLog_Query", function(_, Player)
-    if not IsValid(Player) then return end
-
-    local PlayerName = Player:Name()
-    if (NextQueryTime[PlayerName] or 0) > CurTime() then return end
-
-    NextQueryTime[PlayerName] = CurTime() + ACF.KillLogQueryCooldown
-
-    local Names = util.JSONToTable(net.ReadString()) or {}
-    local Session = net.ReadUInt(32)
-
-    FlushKillLog() -- Ensure recent kills are queryable too
-
-    local Conditions = { "Session = " .. Session }
-
-    if #Names > 0 then
-        local Quoted = {}
-        for _, Name in ipairs(Names) do Quoted[#Quoted + 1] = sql.SQLStr(Name) end
-
-        local List = table.concat(Quoted, ", ")
-        Conditions[#Conditions + 1] = "(Attacker IN (" .. List .. ") OR Victim IN (" .. List .. "))"
+        Conditions[I] = "(Session = " .. Session .. " AND Id > " .. AfterId .. ")"
     end
 
-    local Rows = RunSelect("SELECT * FROM acf_kill_log WHERE " .. table.concat(Conditions, " AND ") .. " ORDER BY Time DESC LIMIT " .. MaxResultRows)
+    FlushKillLog() -- Ensure recent kills are included too
 
-    net.Start("ACF_KillLog_Query")
-        net.WriteString(util.TableToJSON(Rows))
+    Transfers[Player] = Count > 0 and { Where = table.concat(Conditions, " OR "), Cursor = 0 } or nil
+
+    return true
+end
+
+-- Sends the next chunk of rows for the requested sessions. Continuing reads no input at all: the
+-- server holds the filter and cursor, so a client can only move forward through its own update.
+net.Receive("ACF_KillLog_Update", function(_, Player)
+    if not IsValid(Player) then return end
+
+    local Continue = net.ReadBool()
+
+    if Continue then
+        if not Transfers[Player] then return end
+    elseif not StartTransfer(Player) then
+        return
+    end
+
+    local Transfer = Transfers[Player]
+    local Rows     = {}
+
+    if Transfer then
+        Rows = RunSelect("SELECT * FROM acf_kill_log WHERE (" .. Transfer.Where .. ") AND Id > " .. Transfer.Cursor .. " ORDER BY Id LIMIT " .. ChunkRows)
+    end
+
+    local More = #Rows == ChunkRows
+
+    if More then
+        Transfer.Cursor = tonumber(Rows[#Rows].Id)
+    else
+        Transfers[Player] = nil
+    end
+
+    net.Start("ACF_KillLog_Update")
+        net.WriteBool(not Continue)
+
+        if not Continue then
+            local Count, Bytes, DBSize = GetLogStats()
+
+            WriteCompressed(RunSelect("SELECT Session, COUNT(*) AS Kills, MIN(Time) AS First, MAX(Time) AS Last FROM acf_kill_log GROUP BY Session"))
+            WriteSize(Count)
+            WriteSize(Bytes)
+            WriteSize(DBSize)
+        end
+
+        net.WriteBool(More)
+        WriteCompressed(Rows)
     net.Send(Player)
 end)
