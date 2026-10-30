@@ -105,10 +105,7 @@ function ACF.VerifyRoundLengthData(ToolData)
 	ToolData.PropRatio   = Total > 0 and (Propellant / Total) or 0
 end
 
---- Total round length (RoundLength) and the fraction of it taken up by the propellant (PropRatio,
---- 0-1) are the authoritative state -- ProjLength/PropLength below are derived from them, and are
---- the hook point for future mechanics (e.g. telescoping projectiles) that need ProjLength/PropLength
---- to diverge from a simple RoundLength*(1-PropRatio)/RoundLength*PropRatio split.
+--- RoundLength and PropellantScale are stored, PropRatio, ProjLength and PropLength are derived from them.
 function ACF.UpdateRoundSpecs(Ammo)
 	local Data    = Ammo.BulletData
 	local GUIData = Ammo.GUIData
@@ -116,34 +113,62 @@ function ACF.UpdateRoundSpecs(Ammo)
 	Data.Tracer   = Ammo.Tracer and math.Round(Data.Caliber * 0.15, 2) or 0
 	Data.TwoPiece = Ammo.TwoPiece or false
 
-	-- Defaults to 1 so pre-slider dupes aren't silently buffed, matching where AddSlider seeds the var
+	-- NeckingScale runs 0 to 1 up to the class's widest case, negative on old rounds until derived from CaseScale
 	local MaxCaseScale = Data.MaxCaseScale or ACF.AmmoCaseScale
-	local CaseScale    = math.Clamp(Ammo.CaseScale or 1, 1, MaxCaseScale)
+
+	if (Ammo.NeckingScale or -1) < 0 then
+		local Span = MaxCaseScale - 1
+
+		Ammo.NeckingScale = Span > 0 and math.Clamp(((Ammo.CaseScale or 1) - 1) / Span, 0, 1) or 0
+	end
+
+	local CaseScale = 1 + math.Clamp(Ammo.NeckingScale, 0, 1) * (MaxCaseScale - 1)
+
+	Ammo.CaseScale = CaseScale -- Kept for readers of the real ratio
 
 	Data.CaseScale    = CaseScale
 	Data.CaseDiameter = Data.Caliber * CaseScale -- Widest point of the round, cased or not
 
 	-- Recomputed from the base, not scaled in place, so repeated slider updates don't compound
 	if Data.PropAreaBase then
-		Data.PropArea = Data.PropAreaBase * CaseScale * CaseScale
+		Data.PropArea = Data.PropAreaBase * (1 + (CaseScale * CaseScale - 1) * ACF.AmmoCaseFill)
 	end
 
 	local MinLength   = GUIData.MinProjLength + GUIData.MinPropLength
 	local RoundLength = math.Clamp(Ammo.RoundLength or 0, MinLength, GUIData.MaxRoundLength)
 
-	-- RatioMax is measured against MaxRoundLength, not RoundLength, so the propellant fraction is a
-	-- per-class constant rather than one that climbs as the round is shortened. Dividing the class's
-	-- fixed MaxPropLength by a shrinking RoundLength let any sub-maximum round reach a ratio of 1,
-	-- leaving a zero-length projectile and a zero ProjMass for MuzzleVelocity and DragCoef to divide by.
+	-- MinProjLength keeps ProjMass above zero
 	local RatioMin = math.max(0, 1 - GUIData.MaxProjLength / RoundLength)
-	local RatioMax = math.min(1, GUIData.MaxPropLength / GUIData.MaxRoundLength)
-	local PropRatio = math.Clamp(Ammo.PropRatio or 0, RatioMin, RatioMax)
+	local RatioMax = math.min(1, GUIData.MaxPropLength / RoundLength, 1 - GUIData.MinProjLength / RoundLength)
+	-- PropellantScale runs 0 to 1 over what this length allows, negative on old rounds until derived from PropRatio
+	if (Ammo.PropellantScale or -1) < 0 then
+		local Span = RatioMax - RatioMin
+
+		Ammo.PropellantScale = Span > 0 and math.Clamp(((Ammo.PropRatio or 0) - RatioMin) / Span, 0, 1) or 0
+	end
+
+	local PropRatio = Lerp(math.Clamp(Ammo.PropellantScale, 0, 1), RatioMin, RatioMax)
+
+	Ammo.PropRatio = PropRatio -- Kept for readers of the real share
 
 	local PropLength = math.Round(RoundLength * PropRatio, 2)
 
 	-- TelescopeRatio lets the projectile bore into the propellant. Only types that opt in via
 	-- CanTelescope have the field, so anything else reads as 0.
-	local TelescopeRatio  = Ammo.CanTelescope and math.Clamp(Ammo.TelescopeRatio or 0, 0, 1) or 0
+	local TelescopeRatio = 0
+
+	if Ammo.CanTelescope then
+		local MaxTelescope = Ammo.MaxTelescopeRatio or 1
+
+		-- Negative on old rounds until derived from TelescopeRatio
+		if (Ammo.TelescopeScale or -1) < 0 then
+			Ammo.TelescopeScale = math.Clamp((Ammo.TelescopeRatio or 0) / MaxTelescope, 0, 1)
+		end
+
+		TelescopeRatio      = math.Clamp(Ammo.TelescopeScale, 0, 1) * MaxTelescope
+		Ammo.TelescopeRatio = TelescopeRatio -- Kept for readers of the real ratio
+	end
+
 	local BaseProjLength  = RoundLength * (1 - PropRatio)
 	local TelescopeLength = math.Round(math.min(PropLength * TelescopeRatio, GUIData.MaxProjLength - BaseProjLength), 2)
 	local ProjLength      = math.Round(BaseProjLength + TelescopeLength, 2)

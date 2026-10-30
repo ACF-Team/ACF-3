@@ -15,8 +15,8 @@ ACF.Classes.DefineClass("ACF.Guns.Machinegun", "ACF.Guns.BaseScalableGun", funct
 	CLASS.ScaleFactor 		= 1.0 -- Corrective factor to account for improperly scaled base models
 	CLASS.CyclicCeilMult 	= 2 -- How high above base cyclic the gun can be set to
 	CLASS.Round 			= {
-		MaxLength  = 16,
-		PropLength = 10,
+		MaxLength  = 22, -- Relative to the Base caliber, in cm. 12.7x99mm and 14.5x114mm rounds run about 11 calibers
+		PropLength = 13, -- Relative to the Base caliber, in cm. Reaches real energy of .50 M2 AP and 14.5mm B-32
 		CaseScale  = 1.61, -- 12.7x99mm (.50 BMG): 20.4mm case over a 12.7mm projectile
 	}
 	CLASS.Preview 			= {

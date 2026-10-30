@@ -14,17 +14,39 @@ Classes.DefineClass("ACF.Ammunition.APDS", "ACF.Ammunition.AP", function(CLASS, 
 		["ACF.Guns.LightAutocannon"] = true,
 	})
 
+	-- Core diameter from 0 (thinnest) to 1 (thickest)
+	MENU_FIELD("Number", "CoreScale", {Default = 0.5})
+
+	local MinCoreRatio, MaxCoreRatio = 0.40, 0.58 -- Core over bore diameter, L28 to War Thunder's 120mm
+	local CoreLengthRatio = 3.3 -- Core length in calibers
+	local CoreCarrier     = 0.77 -- Sheath and sabot mass per kg of core
+	local AnnulusFill     = 0.12 -- Plus this share of solid steel in the ring between core and bore
+	local SheathShare     = 0.43 -- Share of the carrier that flies with the core
+
+	function CLASS:VerifyData()
+		BASE.VerifyData(self)
+
+		if not isnumber(self.CoreScale) then self.CoreScale = 0.5 end
+	end
+
 	function CLASS:UpdateRoundData()
 		local Data    = self.BulletData
 		local GUIData = self.GUIData
 
 		ACF.UpdateRoundSpecs(self)
 
-		local Cylinder  = (math.pi * (Data.Caliber * 0.5) ^ 2) * Data.ProjLength * 0.5 -- A cylinder 1/2 the length of the projectile
-		local Hole		= Data.ProjArea * Data.ProjLength * 0.5 -- Volume removed by the hole the dart passes through
-		local SabotMass = (Cylinder - Hole) * ACF.AluminumDensity -- Aluminum sabot
+		-- Sheath and sabot scale mostly with the core
+		local FullBoreArea = math.pi * (Data.Caliber * 0.5) ^ 2
 
-		Data.ProjMass  = Data.ProjArea * Data.ProjLength * ACF.SteelDensity -- Volume of the projectile as a cylinder * density of steel
+		Data.CoreLength = math.min(CoreLengthRatio * Data.Diameter, Data.ProjLength)
+		Data.CoreMass   = Data.ProjArea * Data.CoreLength * ACF.TungstenCarbideDensity
+
+		local RingMass    = (FullBoreArea - Data.ProjArea) * Data.CoreLength * ACF.SteelDensity * AnnulusFill
+		local CarrierMass = Data.CoreMass * CoreCarrier + RingMass
+		local SabotMass   = CarrierMass * (1 - SheathShare)
+
+		Data.ProjMass = Data.CoreMass + CarrierMass * SheathShare
+
 		Data.MuzzleVel = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass + SabotMass, Data.Efficiency)
 		Data.DragCoef  = Data.ProjArea * 0.000125 / Data.ProjMass -- Worse drag (Manually fudged to make a meaningful difference)
 		Data.CartMass  = Data.PropMass + Data.ProjMass + SabotMass
@@ -37,7 +59,9 @@ Classes.DefineClass("ACF.Ammunition.APDS", "ACF.Ammunition.AP", function(CLASS, 
 	end
 
 	function CLASS:BaseConvert()
-		self.BulletData = { ProjScale = 0.45 }
+		-- Mutated in place so the ammo menu preview keeps its reference (see apcr.lua)
+		self.BulletData = self.BulletData or {}
+		self.BulletData.ProjScale = Lerp(math.Clamp(self.CoreScale or 0.5, 0, 1), MinCoreRatio, MaxCoreRatio)
 
 		local Data = ACF.RoundBaseGunpowder(self) -- Ratio of projectile to gun caliber
 
@@ -60,8 +84,11 @@ Classes.DefineClass("ACF.Ammunition.APDS", "ACF.Ammunition.AP", function(CLASS, 
 	end
 
 	if SERVER then
+		function CLASS:OnLast(Entity)
+			BASE.OnLast(self, Entity)
 
-
+			Entity.CoreScale = nil
+		end
 
 		function CLASS:Network(Entity, BulletData)
 			BASE.Network(self, Entity, BulletData)
@@ -71,15 +98,23 @@ Classes.DefineClass("ACF.Ammunition.APDS", "ACF.Ammunition.AP", function(CLASS, 
 	else
 		ACF.RegisterAmmoDecal("ACF.Ammunition.APDS", "damage/apcr_pen", "damage/apcr_rico")
 
-		-- Ammo menu visual: a steel dart (BulletData.Diameter, scaled down to 45% of bore) riding inside
-		-- a full-bore aluminum sabot that wraps half of the dart's length, matching UpdateRoundData's mass split.
+		function CLASS:OnCreateAmmoControls(Base)
+			-- ProjScale is only read in BaseConvert, so the core diameter needs the full rebuild
+			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.core_scale", 0, 1, 2, "CoreScale", function(Value)
+				self.CoreScale = Value
+				self:BaseConvert()
+			end)
+		end
+
+		-- Ammo menu visual: a carbide core in a full bore sabot over half its length
 		function CLASS:DrawAmmoVisual(Panel, w, h, _, BulletData)
 			local GeoPrim = ACF.GeoPrim
 			local Margin  = 10
 			local DrawW   = w - Margin * 2
 
-			local SabotLenCm = math.min(BulletData.ProjLength * 0.5, BulletData.ProjLength) -- matches the "1/2 of ProjLength" sabot volume assumed in UpdateRoundData
-			local Length = BulletData.ProjLength + BulletData.PropLength
+			local CoreLength = BulletData.CoreLength or BulletData.ProjLength
+			local SabotLenCm = CoreLength * 0.5 -- Illustrative only
+			local Length = CoreLength + BulletData.PropLength -- The empty length past the core isn't drawn
 
 			if Length <= 0 then return end
 
@@ -100,15 +135,14 @@ Classes.DefineClass("ACF.Ammunition.APDS", "ACF.Ammunition.AP", function(CLASS, 
 			local Sabot = GeoPrim.New("Cylinder", { Radius = BulletData.Caliber * 0.5, Height = SabotLenCm })
 			Sabot:SetMaterial("Aluminum Sabot (Discarding)")
 
-			-- Steel dart, running the full length of the projectile. Drawn after the sabot at the same
-			-- starting X so it's the on-top, narrower shape within the overlap.
-			local Penetrator = GeoPrim.New("Cylinder", { Radius = BulletData.Diameter * 0.5, Height = BulletData.ProjLength })
-			Penetrator:SetMaterial("Steel Penetrator")
+			-- Carbide core on the propellant, drawn over the sabot
+			local Penetrator = GeoPrim.New("Cylinder", { Radius = BulletData.Diameter * 0.5, Height = CoreLength })
+			Penetrator:SetMaterial("Tungsten Core")
 
 			local X = Margin
 			X = Propellant:Draw(Panel, X, CenterY, Scale, MaxDia, Color(180, 150, 60), Color(30, 30, 30))
 			local DartX = X
-			Sabot:Draw(Panel, X, CenterY, Scale, MaxDia, Color(150, 150, 155), Color(30, 30, 30))
+			Sabot:Draw(Panel, DartX, CenterY, Scale, MaxDia, Color(150, 150, 155), Color(30, 30, 30))
 			Penetrator:Draw(Panel, DartX, CenterY, Scale, MaxDia, Color(120, 120, 130), Color(30, 30, 30))
 
 			-- Tracer, a colored segment at the base of the dart, drawn last (and not as a Dart child --

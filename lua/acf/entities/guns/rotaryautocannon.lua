@@ -19,9 +19,9 @@ ACF.Classes.DefineClass("ACF.Guns.RotaryAutocannon", "ACF.Guns.BaseScalableGun",
 	}
 	CLASS.ScaleFactor 	= 1.0 -- Corrective factor to account for improperly scaled base models
 	CLASS.Round 		= {
-		MaxLength  = 16,
-		PropLength = 10,
-		CaseScale  = 1.46, -- 37x219mm (T250 rotary): 54mm case over a 37mm projectile
+		MaxLength  = 20, -- Relative to the Base caliber, in cm. 30x173mm rounds run 290mm, 9.7 calibers
+		PropLength = 12, -- Relative to the Base caliber, in cm. Reaches real energy of 20mm Mk149 and 30x173 PGU-14
+		CaseScale  = 1.46, -- 20x102mm: 29mm base over a 20mm projectile
 	}
 	CLASS.Preview 		= {
 		Height = 90,

@@ -12,8 +12,8 @@ ACF.Classes.DefineClass("ACF.Guns.Mortar", "ACF.Guns.BaseScalableGun", function(
 	CLASS.Mass        	= 459
 	CLASS.ScaleFactor 	= 0.84 -- Corrective factor to account for improperly scaled base models
 	CLASS.Round = {
-		MaxLength  = 40,
-		PropLength = 3,
+		MaxLength  = 70, -- Relative to the Base caliber, in cm. 81mm M374 bombs run 527mm, 6.5 calibers
+		PropLength = 7, -- Relative to the Base caliber, in cm. Reaches real energy of 81mm M374 and 120mm M934
 		CaseScale  = 1, -- Propellant rings sit under the fins, narrower than the projectile itself
 	}
 	CLASS.Preview 		= {

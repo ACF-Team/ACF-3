@@ -13,8 +13,9 @@ ACF.Classes.DefineClass("ACF.Guns.Cannon", "ACF.Guns.BaseScalableGun", function(
 	CLASS.Spread      	= 0.08
 	CLASS.ScaleFactor 	= 0.84 -- Corrective factor to account for improperly scaled base models
 	CLASS.Round 		= {
-		MaxLength  = 80,
-		PropLength = 50,
+		-- Fits real case lengths up to the 155mm T43, PropLength keeps the old 0.62 ratio
+		MaxLength  = 95,
+		PropLength = 59,
 		CaseScale  = 1.33, -- 120x570mm (M256): 160mm case over a 120mm projectile
 	}
 	CLASS.Preview 		= {
