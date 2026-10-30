@@ -149,9 +149,9 @@ Classes.DefineClass("ACF.Missiles.UnguidedRocket.SPG-9", "ACF.Missiles.UnguidedR
 		FinMul          	= 0,
 		GLimit          	= 1,
 		TailFinMul      	= 0.06,
-		PenMul          	= 1.02,
-		FillerMul       	= 2.25,
-		LinerMassMul    	= 4.6,
+		PenMul          	= 0.67,
+		FillerMul       	= 6.5,
+		LinerMassMul    	= 7.5,
 		Standoff        	= 33.3,
 		GhostingPeriod  	= 0.0125, -- in s, overrides the global missile ghost period; omit to use the global
 		ActualLength    	= 39,
