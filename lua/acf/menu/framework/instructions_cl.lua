@@ -19,6 +19,7 @@ local BIND_COMBO = {
 	["right"]        = { "rmb" },
 	["reload"]       = { "R" },
 	["shift+left"]   = { "SHIFT", "lmb" },
+	["alt+left"]     = { "ALT", "lmb" },
 	["shift+right"]  = { "SHIFT", "rmb" },
 	["r+right"]      = { "R", "rmb" },
 	["shift+reload"] = { "SHIFT", "R" },

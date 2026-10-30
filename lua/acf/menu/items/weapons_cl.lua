@@ -297,6 +297,7 @@ ACF.Menu.RegisterPage({
 	Actions = {
 		{ Bind = "left",       Context = "Gun",  Preview = true, Desc = "Spawn a new weapon, or update the one you're aiming at." },
 		{ Bind = "shift+left", Context = "Ammo", Preview = true, Desc = "Spawn a new ammo crate, or update the one you're aiming at." },
+		{ Bind = "alt+left",   Context = "Ammo", Commit = "override", Desc = "Make the round you're aiming at in a crate this ammo type." },
 		{ Bind = "right",      Commit = "link", Desc = "Select entities, then a weapon/crate, to link them (hold R to unlink)." },
 	},
 

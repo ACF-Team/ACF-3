@@ -42,6 +42,7 @@ function Ballistics.BulletClient(Bullet, Type, Hit, HitPos)
 		Origin = (IsUpdate and Hit > 0) and HitPos or Bullet.Pos,
 		Scale = (not Bullet.Hide and IsUpdate) and Hit or 0,
 		EntIndex = not IsUpdate and Bullet.Crate or nil,
+		Flags = not IsUpdate and Bullet.CrateProfile or nil, -- Which of the crate's round types this is, 0 for its own
 	}
 
 	local Filter = true
@@ -66,6 +67,7 @@ function Ballistics.BulletClient(Bullet, Type, Hit, HitPos)
 			else
 				net.WriteDouble(Bullet.PredictionID)
 				net.WriteUInt(Bullet.Crate or 0, 16)
+				net.WriteUInt(Bullet.CrateProfile or 0, 3)
 				net.WriteBool(Bullet.Hide or false)
 				net.WriteVector(Bullet.Pos)
 			end

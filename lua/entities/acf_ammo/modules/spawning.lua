@@ -53,6 +53,21 @@ local function GetAmmoModel(ShapeClass)
 	return "models/holograms/hq_rcube_thin.mdl"
 end
 
+-- The ammo round inputs (Projectile/Propellant/Tracer + type-specific like FillerRatio) live
+-- on the ammo instance, which reads the weapon via this back-reference. On a menu spawn
+-- ClientData carries the inputs flat; copy any present keys onto the instance. Dupes already
+-- have them deserialized into the instance (nested under the AmmoType field), so nil keys are
+-- skipped to preserve those. Ammo:ServerConvert() then reads everything off the instance.
+function ENT:PrepareAmmo(Ammo, Data)
+	Ammo.Weapon = self:GetWeapon()
+
+	for _, Field in ipairs(Classes.GetTypeFields(Ammo:GetType())) do
+		if Field.Menu and Data[Field.Name] ~= nil then
+			Ammo[Field.Name] = Data[Field.Name]
+		end
+	end
+end
+
 do -- Spawn/Update/Remove
 	local function UpdateCrateSize(Entity, Data, Class, _, Ammo)
 		-- Convert the ammo instance once to get projectile geometry
@@ -238,6 +253,14 @@ do -- Spawn/Update/Remove
 
 					net.WriteBool(ExtraData.TwoPiece)
 					net.WriteBool(ExtraData.HexPacking)
+
+					-- Overridden slots and the bodygroup of the round each one holds
+					net.WriteUInt(table.Count(Entity.SlotRounds), 6)
+
+					for Slot, Round in pairs(Entity.SlotRounds) do
+						net.WriteUInt(Slot, 6)
+						net.WriteUInt(Round.Bodygroup, 4)
+					end
 				end
 
 			if Player then
@@ -247,6 +270,8 @@ do -- Spawn/Update/Remove
 			end
 		end
 	end
+
+	ENT.NetworkAmmoData = NetworkAmmoData
 
 	util.AddNetworkString("ACF_RequestAmmoData")
 
@@ -318,6 +343,7 @@ do -- Spawn/Update/Remove
 
 		Entity.Capacity = Rounds
 		Entity.MagSize  = MagSize
+		Entity:BuildOverrides()
 		Entity:SetAmount(math.floor(Entity.Capacity * Percentage))
 		Entity:SetNWInt("Ammo", Entity.Amount)
 
@@ -401,18 +427,7 @@ do -- Spawn/Update/Remove
 			FoldWeaponSubInstance(WeaponInst, "Fuze",     "ACF.Missiles.Fuze",     Data)
 		end
 
-		-- The ammo round inputs (Projectile/Propellant/Tracer + type-specific like FillerRatio) live
-		-- on the ammo instance, which reads the weapon via this back-reference. On a menu spawn
-		-- ClientData carries the inputs flat; copy any present keys onto the instance. Dupes already
-		-- have them deserialized into the instance (nested under the AmmoType field), so nil keys are
-		-- skipped to preserve those. Ammo:ServerConvert() then reads everything off the instance.
-		Ammo.Weapon = WeaponInst
-
-		for _, Field in ipairs(Classes.GetTypeFields(Ammo:GetType())) do
-			if Field.Menu and Data[Field.Name] ~= nil then
-				Ammo[Field.Name] = Data[Field.Name]
-			end
-		end
+		self:PrepareAmmo(Ammo, Data)
 
 		-- Derive the flat tool data UpdateCrate consumes from the authoritative instances.
 		Data.Weapon   = Classes.GetTypeName(Class)
@@ -425,6 +440,11 @@ do -- Spawn/Update/Remove
 		Data.CrateProjectilesY = self:ACF_GetUserVar("CrateProjectilesY")
 		Data.CrateProjectilesZ = self:ACF_GetUserVar("CrateProjectilesZ")
 		Data.AmmoStage         = self:ACF_GetUserVar("AmmoStage")
+
+		-- Overrides were made for the old weapon, so a new weapon or caliber drops them
+		if OldWeapon and (Data.Weapon ~= OldWeapon or WeaponInst.Caliber ~= OldCaliber) then
+			self:ClearOverrides()
+		end
 
 		-- Legacy "Weapon" param meant a concrete non-scalable group item (nil for scalables); the
 		-- non-scalable weapon instance fills that role now.
@@ -525,6 +545,10 @@ do -- Overlay
 			State:AddKeyValue("Layout", Layout.Name)
 		end
 		State:AddProgressBar("Contents", self.Amount, self.Capacity)
+
+		if next(self.SlotRounds) then
+			State:AddKeyValue("Next Round", self:GetNextAmmoType())
+		end
 
 		local BulletData = self.BulletData
 		local Projectile = math.Round(BulletData.ProjMass, 2)

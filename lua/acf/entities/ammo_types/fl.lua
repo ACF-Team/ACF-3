@@ -130,6 +130,7 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function(CLASS, BA
 				Owner      = BulletData.Owner,
 				Entity     = BulletData.Entity,
 				Crate      = BulletData.Crate,
+				CrateProfile = BulletData.CrateProfile,
 				Gun        = BulletData.Gun,
 				Pos        = BulletData.Pos,
 				ProjArea   = BulletData.FlechetteArea,

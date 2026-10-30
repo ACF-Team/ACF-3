@@ -10,7 +10,7 @@ local ChargeBodygroup    = 0
 local CartridgeModelPath = "models/acf/munitions/cartridge.mdl" -- last-resort fallback; the server normally names the model
 
 do --MARK: Networking
-	local MaxRounds = GetConVar( "acf_maxroundsdisplay" )
+	local MaxRounds = GetConVar( "acf_maxroundsdrawn" )
 	local Queued    = {}
 
 	local function updateAmmoCount( entity, ammo )
@@ -75,6 +75,15 @@ do --MARK: Networking
 
 		entity.IsTwoPiece  = net.ReadBool()
 		entity.IsHexPacked = net.ReadBool()
+
+		-- Bodygroups of the rounds overriding the crate's own, by slot
+		local slotBodygroups = {}
+
+		for _ = 1, net.ReadUInt( 6 ) do
+			slotBodygroups[net.ReadUInt( 6 )] = net.ReadUInt( 4 )
+		end
+
+		entity.SlotBodygroups = slotBodygroups
 
 		-- Resolve model path - use cartridge model with bodygroups for ammo visualization
 		local modelPath = entity.RoundModel
@@ -162,6 +171,7 @@ do --MARK: Networking
 		entity._RoundBoxes       = nil
 		entity.DisplayAmmo       = nil
 		entity.TargetDisplayAmmo = nil
+		entity.Ammo              = nil -- Forces a recount, the data can change without the ammo count changing
 
 		if Queued[entity] then
 			Queued[entity] = nil
@@ -175,7 +185,7 @@ do --MARK: Networking
 			updateAmmoCount( self, ammo )
 		end )
 
-		cvars.AddChangeCallback( "acf_maxroundsdisplay", function()
+		cvars.AddChangeCallback( "acf_maxroundsdrawn", function()
 			updateAmmoCount( self )
 		end, "Ammo Crate " .. self:EntIndex() )
 
@@ -203,6 +213,9 @@ do --MARK: Ammo rendering
 	local drawBoxes      = GetConVar( "acf_drawboxes" )
 	local getRoundOffset = ACF.GetRoundOffset
 	local WireRender     = Wire_Render
+	local slotColor      = Color( 0, 255, 0, 255 )
+	local overrideColor  = Color( 255, 160, 0, 255 )
+	local hoveredColor   = Color( 255, 255, 255, 255 )
 
 	local function cleanupRoundModels( entity )
 		if not entity._RoundModels then return end
@@ -271,12 +284,17 @@ do --MARK: Ammo rendering
 
 		-- Two-piece rounds pair along the stacking axis: charge on the bottom tier, projectile above it.
 		-- Keyed off the tier rather than the flat slot index, which advances around a drum's ring first.
-		local function GetSlotModel( tier )
+		local function GetSlotModel( tier, slot )
 			if isTwoPiece and tier % 2 == 0 then
 				return ChargeModelPath, chargeScaleMatrix, ChargeBodygroup
 			end
 
-			return modelPath, scaleMatrix, bodygroup
+			return modelPath, scaleMatrix, self.SlotBodygroups[slot] or bodygroup
+		end
+
+		-- Two-piece rounds take two model slots each, overrides are by round
+		local function GetRoundSlot( index )
+			return isTwoPiece and math.ceil( index * 0.5 ) or index
 		end
 
 		if self.IsDrum then
@@ -295,7 +313,8 @@ do --MARK: Ammo rendering
 					localPos, localAng.yaw, localAngle, boxAngle, roundSize, self.CachedNeedsRotation
 				)
 
-				local slotPath, slotScale, slotBodygroup = GetSlotModel( layout.GetTier( index, primary ) )
+				local slot = GetRoundSlot( index )
+				local slotPath, slotScale, slotBodygroup = GetSlotModel( layout.GetTier( index, primary ), slot )
 
 				local model = ClientsideModel( slotPath, RENDERGROUP_OPAQUE )
 				if IsValid( model ) then
@@ -307,7 +326,7 @@ do --MARK: Ammo rendering
 					model:EnableMatrix( "RenderMultiply", slotScale )
 					model:SetBodygroup( 0, slotBodygroup ) -- Apply ammo type bodygroup
 					models[index] = model
-					boxes[index]  = { Pos = localPos, Ang = drumBoxAngle, Size = roundSize }
+					boxes[index]  = { Pos = localPos, Ang = drumBoxAngle, Size = roundSize, Slot = slot }
 				end
 			end
 		else
@@ -328,7 +347,8 @@ do --MARK: Ammo rendering
 							local localGridPos  = getRoundOffset( x, y, z, roundSize, self.IsHexPacked )
 							local localModelPos = localStartPos + localGridPos + modelOffset
 
-							local slotPath, slotScale, slotBodygroup = GetSlotModel( z - 1 )
+							local slot = GetRoundSlot( index )
+							local slotPath, slotScale, slotBodygroup = GetSlotModel( z - 1, slot )
 
 							local model = ClientsideModel( slotPath, RENDERGROUP_OPAQUE )
 							if IsValid( model ) then
@@ -340,7 +360,7 @@ do --MARK: Ammo rendering
 								model:EnableMatrix( "RenderMultiply", slotScale )
 								model:SetBodygroup( 0, slotBodygroup ) -- Apply ammo type bodygroup
 								models[index] = model
-								boxes[index]  = { Pos = localStartPos + localGridPos, Ang = boxAngle, Size = roundSize }
+								boxes[index]  = { Pos = localStartPos + localGridPos, Ang = boxAngle, Size = roundSize, Slot = slot }
 							end
 						end
 
@@ -350,6 +370,34 @@ do --MARK: Ammo rendering
 				end
 			end
 		end
+	end
+
+	-- Finds the slot of the round the local player is aiming at, nearest box first
+	function ENT:UpdateHoveredSlot()
+		local player  = LocalPlayer()
+		local start   = player:EyePos()
+		local delta   = player:GetAimVector() * 32768
+		local nearest = math.huge
+		local hovered
+
+		for _, box in pairs( self._RoundBoxes ) do
+			local half = box.Size * 0.5
+			local _, _, fraction = util.IntersectRayWithOBB( start, delta, self:LocalToWorld( box.Pos ), self:LocalToWorldAngles( box.Ang ), -half, half )
+
+			if fraction and fraction < nearest then
+				nearest, hovered = fraction, box.Slot
+			end
+		end
+
+		self.HoveredSlot = hovered
+
+		return hovered
+	end
+
+	function ENT:GetHoveredSlot()
+		if ACF.RenderContext.LookAt ~= self then return end
+
+		return self.HoveredSlot
 	end
 
 	function ENT:Draw()
@@ -393,9 +441,14 @@ do --MARK: Ammo rendering
 
 		-- Draw a wireframe box around each slot showing the true space it occupies
 		if self._RoundBoxes then
+			local hovered   = self:UpdateHoveredSlot()
+			local overrides = self.SlotBodygroups
+
 			for _, box in pairs( self._RoundBoxes ) do
-				local Half = box.Size * 0.5
-				render.DrawWireframeBox( self:LocalToWorld( box.Pos ), self:LocalToWorldAngles( box.Ang ), -Half, Half, Color( 0, 255, 0, 255 ), true )
+				local Half  = box.Size * 0.5
+				local color = box.Slot == hovered and hoveredColor or overrides[box.Slot] and overrideColor or slotColor
+
+				render.DrawWireframeBox( self:LocalToWorld( box.Pos ), self:LocalToWorldAngles( box.Ang ), -Half, Half, color, true )
 			end
 		end
 
@@ -408,17 +461,16 @@ do --MARK: Ammo rendering
 		end
 	end
 
+	-- Ammo data doesn't depend on the crate's size, only the models placed for the old size are stale
 	function ENT:OnResized( _ )
-		self.HasData = nil
 		self.DisplayAmmo = nil
-		self.TargetDisplayAmmo = nil
 
 		cleanupRoundModels(self)
 	end
 
 	function ENT:OnRemove()
 		cleanupRoundModels( self )
-		cvars.RemoveChangeCallback( "acf_maxroundsdisplay", "Ammo Crate " .. self:EntIndex() )
+		cvars.RemoveChangeCallback( "acf_maxroundsdrawn", "Ammo Crate " .. self:EntIndex() )
 	end
 
 	function ENT:CanDrawOverlay()

@@ -291,6 +291,8 @@ do -- ACF global vars
 	ACF.AmmoCaseScale        = 1 -- Fallback max case/projectile diameter ratio when a Round omits CaseScale
 	ACF.AmmoMaxLength        = 192 -- Defines the highest possible length of ammo crates for the X axis (length), in gmu
 	ACF.AmmoMaxWidth         = 96 -- Defines the highest possible width of ammo crates for the Y and Z axes (width/height), in gmu
+	ACF.MaxRoundsDrawn       = 30 -- Most rounds an ammo crate draws, and the highest slot a round override can target
+	ACF.MaxOverrideTypes     = 4 -- Most distinct round types an ammo crate can hold besides its own
 	ACF.AmmoSupplyColor      = Color(255, 255, 0, 10) -- The color to use for the ammo supply effect
 	ACF.PropImpetus          = 1075 -- Energy in KJ produced by 1kg of propellant, based off M30A1 propellant
 	ACF.PDensity             = 0.95 -- Propellant loading density (Density of propellant + volume lost due to packing density)
@@ -484,7 +486,7 @@ elseif CLIENT then
 	CreateClientConVar("acf_mobilityropelinks", 0, true, true, "Toggles the visibility of the links connecting mobility components.")
 	CreateClientConVar("acf_drawtruevisuals", 0, true, true, "Enables/disables drawing the true visuals of contraptions. This does not apply to just ACF entities or contraptions, and will apply to everything out at the time. Its purpose is to counter 'facades', where people will make physical armor smaller than the visual model of the contraption.")
 	-- CreateClientConVar("acf_advancedmobilityropelinks", 0, true, true, "Uses generated models to represent mobility links.")
-	CreateClientConVar("acf_maxroundsdisplay", 16, true, false, "Maximum rounds to display before using bulk display (0 to only display bulk)", 0, 5000)
+	CreateClientConVar("acf_maxroundsdrawn", ACF.MaxRoundsDrawn, true, false, "Maximum rounds drawn in an ammo crate (0 to draw none)", 0, ACF.MaxRoundsDrawn)
 	CreateClientConVar("acf_drawboxes", 1, true, false, "Whether or not to draw hitboxes on ACF entities", 0, 1)
 	CreateClientConVar("acf_legalhints", 1, true, true, "If enabled, ACF will throw a warning hint whenever an entity gets disabled.", 0, 1)
 	CreateClientConVar("acf_legalvisuals", 1, true, true, "If enabled, ACF will highlight your disabled entities, and the unmet requirements of your entities, and show what is causing it.", 0, 1)

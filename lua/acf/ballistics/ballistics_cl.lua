@@ -14,7 +14,7 @@ local LocalIndex     = 0
 local LocalIndexBase = 100000 -- Far past the server's index limit, so a predicted bullet never takes a real index
 local WallTrace      = { start = true, endpos = true, mask = MASK_SOLID_BRUSHONLY }
 
-local function SpawnBulletEffect(Index, Crate, Pos, Flight, Hide)
+local function SpawnBulletEffect(Index, Crate, Pos, Flight, Hide, Profile)
 	local Effect = EffectData()
 	Effect:SetDamageType(Index)
 	Effect:SetStart(Flight * 0.1)
@@ -22,6 +22,7 @@ local function SpawnBulletEffect(Index, Crate, Pos, Flight, Hide)
 	Effect:SetOrigin(Pos)
 	Effect:SetScale(0)
 	Effect:SetEntity(Crate)
+	Effect:SetFlags(Profile or 0)
 
 	util.Effect("ACF_Bullet_Effect", Effect, true, true)
 
@@ -68,6 +69,7 @@ net.Receive("ACF_PredictedBullet", function()
 
 	local PredictionID = net.ReadDouble()
 	local Crate        = Entity(net.ReadUInt(16))
+	local Profile      = net.ReadUInt(3)
 	local Hide         = net.ReadBool()
 	local Pos          = net.ReadVector()
 	local Flight       = net.ReadVector()
@@ -77,7 +79,7 @@ net.Receive("ACF_PredictedBullet", function()
 
 	-- We didn't predict this one, so it's made the way the server's effect would have
 	if not Bullet or Bullet.Removed or not IsValid(Bullet.Effect) then
-		SpawnBulletEffect(Index, Crate, Pos, Flight, Hide)
+		SpawnBulletEffect(Index, Crate, Pos, Flight, Hide, Profile)
 
 		return
 	end
