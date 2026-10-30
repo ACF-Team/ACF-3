@@ -289,6 +289,7 @@ do -- ACF global vars
 
 	-- Ammo
 	ACF.AmmoCaseScale        = 1 -- Fallback max case/projectile diameter ratio when a Round omits CaseScale
+	ACF.AmmoCaseFill         = 0.75 -- Share of the case's area beyond the bore that holds propellant
 	ACF.AmmoMaxLength        = 192 -- Defines the highest possible length of ammo crates for the X axis (length), in gmu
 	ACF.AmmoMaxWidth         = 96 -- Defines the highest possible width of ammo crates for the Y and Z axes (width/height), in gmu
 	ACF.MaxRoundsDrawn       = 30 -- Most rounds an ammo crate draws, and the highest slot a round override can target
@@ -296,8 +297,8 @@ do -- ACF global vars
 	ACF.SlotBits             = math.ceil(math.log(ACF.MaxRoundsDrawn + 1, 2)) -- Bits to network a slot or slot count
 	ACF.ProfileBits          = math.ceil(math.log(ACF.MaxOverrideTypes + 1, 2)) -- Bits to network a round profile, 0 for the crate's own
 	ACF.AmmoSupplyColor      = Color(255, 255, 0, 10) -- The color to use for the ammo supply effect
-	ACF.PropImpetus          = 1075 -- Energy in KJ produced by 1kg of propellant, based off M30A1 propellant
-	ACF.PDensity             = 0.95 -- Propellant loading density (Density of propellant + volume lost due to packing density)
+	ACF.PropImpetus          = 1300 -- Muzzle energy in kJ per kg of propellant at full efficiency
+	ACF.PDensity             = 0.75 -- Propellant loading density in g/cm^3
 
 	-- HE
 	ACF.HEPower              = 8000 -- HE Filler power per KG in KJ
@@ -325,6 +326,11 @@ do -- ACF global vars
 	ACF.AluminumDensity      = 2.7e-3 	-- kg/cm^3
 	ACF.CopperDensity        = 8.96e-3	-- kg/cm^3
 	ACF.TungstenDensity		 = 19.25e-3	-- kg/cm^3
+	ACF.TungstenCarbideDensity = 12.5e-3 -- kg/cm^3, as in real penetrator cores
+	ACF.CarbideCorePenFactor   = 1.69 -- Carbide core penetration over steel AP
+
+	-- Mass of pointed AP shot over a full diameter cylinder
+	ACF.APNoseFactor         = 0.84
 
 	-- Material conversion to points, kg * modifier
 	ACF.PointConversion		 = {
