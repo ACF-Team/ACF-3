@@ -4,6 +4,8 @@ ACF.Classes.DefineClass("ACF.ContainerShapes.Cylinder", "ACF.ContainerShapes.Bas
     CLASS.Model  = "models/acf/core/s_ammo_cyl.mdl"
     CLASS.Icon   = "models/acf/core/s_ammo_cyl.mdl"
     CLASS.IsDrum = true
+    CLASS.IsMechanized = true
+    CLASS.CanHexPack = false
 
     function CLASS.ShapeCalculation(Size)
         local a = Size.x / 2  -- Semi-axis X (radius in X direction)

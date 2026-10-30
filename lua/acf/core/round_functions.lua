@@ -467,6 +467,30 @@ do -- MARK: Ammo capacity
 
 			return countX, max(1, countY), max(1, countZ)
 		end
+
+		--- Cassettes wrap `stacks` layers of rounds around a conveyor `width` by `height` rounds across.
+		function ACF.GetCassetteGrid(stacks, width, height)
+			return Vector(1, width + 2 * stacks, height + 2 * stacks)
+		end
+
+		--- True for grid cells inside the conveyor, which hold no rounds.
+		function ACF.IsCassetteVoid(y, z, stacks, width, height)
+			return y > stacks and y <= stacks + width and z > stacks and z <= stacks + height
+		end
+
+		--- Most stacks, conveyor width and conveyor height for a crate `gridY` by `gridZ` rounds across.
+		--- The stacks wrap both sides of the conveyor, so they eat into its room twice.
+		function ACF.GetCassetteMaxCounts(stacks, gridY, gridZ)
+			local wrap = 2 * math.Clamp(stacks, 1, 2)
+
+			return 2, max(1, gridY - wrap), max(1, gridZ - wrap)
+		end
+
+		function ACF.GetCassetteCapacity(stacks, width, height)
+			local grid = ACF.GetCassetteGrid(stacks, width, height)
+
+			return grid.y * grid.z - width * height
+		end
 	end
 
 	do -- MARK: Drums
@@ -763,6 +787,13 @@ do -- MARK: Ammo capacity
 		--- True if the given container shape is a drum of any orientation.
 		function ACF.IsDrumShape(Shape)
 			return ACF.DrumLayouts[ShapeName(Shape)] ~= nil
+		end
+
+		--- True if the given container shape wraps its rounds around a conveyor.
+		function ACF.IsCassetteShape(Shape)
+			local Class = Classes.GetTypeByName("ACF.ContainerShapes." .. (ShapeName(Shape) or ""))
+
+			return Class and Class.IsCassette or false
 		end
 
 		--- Returns the drum layout for a container shape, or nil for non-drum shapes.
