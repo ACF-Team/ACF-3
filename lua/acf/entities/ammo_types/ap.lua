@@ -22,7 +22,8 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 	MENU_FIELD("Number",  "RoundLength", {Default = 0})
 	MENU_FIELD("Number",  "PropRatio",   {Default = 0})
 	MENU_FIELD("Number",  "PropellantScale", {Default = -1}) -- Negative until derived from PropRatio, see ACF.UpdateRoundSpecs
-	MENU_FIELD("Number",  "CaseScale",   {Default = 0})
+	MENU_FIELD("Number",  "CaseScale",   {Default = 1})
+	MENU_FIELD("Number",  "NeckingScale", {Default = -1}) -- Negative until derived from CaseScale, see ACF.UpdateRoundSpecs
 	MENU_FIELD("Boolean", "TwoPiece",    {Default = false})
 	MENU_FIELD("Boolean", "Tracer", 	 {Default = false})
 
@@ -220,7 +221,8 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 	function CLASS:VerifyData()
 		ACF.VerifyRoundLengthData(self)
 
-		if not isnumber(self.CaseScale) then self.CaseScale = 0 end
+		if not isnumber(self.CaseScale) then self.CaseScale = 1 end
+		if not isnumber(self.NeckingScale) then self.NeckingScale = -1 end
 		if not isnumber(self.PropellantScale) then self.PropellantScale = -1 end
 		if self.TwoPiece == nil then self.TwoPiece = false end
 		if self.Tracer == nil then self.Tracer = false end
@@ -241,6 +243,7 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 			Entity.PropRatio = nil
 			Entity.PropellantScale = nil
 			Entity.CaseScale = nil
+			Entity.NeckingScale = nil
 			Entity.TwoPiece = nil
 			Entity.Tracer = nil
 

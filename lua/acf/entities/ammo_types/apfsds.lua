@@ -10,6 +10,7 @@ Classes.DefineClass("ACF.Ammunition.APFSDS", "ACF.Ammunition.AP", function(CLASS
 	CLASS.CanTelescope = true
 
 	MENU_FIELD("Number", "TelescopeRatio", {Default = 0})
+	MENU_FIELD("Number", "TelescopeScale", {Default = -1}) -- Negative until derived from TelescopeRatio, see ACF.UpdateRoundSpecs
 	-- TelescopeRatio bores the rod back into the propellant to shorten the overall round; real telescoped
 	-- designs do this a lot. A real M829A1 cross-section shows the rod running nearly the entire case,
 	-- propellant packed in the annular space around it, not a rod mostly exposed ahead of a separate
@@ -24,8 +25,8 @@ Classes.DefineClass("ACF.Ammunition.APFSDS", "ACF.Ammunition.AP", function(CLASS
 	-- velocity cost for telescoping is small relative to the length gained; the worst case across the
 	-- class's full slider range, now that RodScale/MaxLengthToDiameter are both Cold War-bounded too, is
 	-- ~809mm, down from 923mm when those two bounds mixed modern-era figures, and well under the 1126mm
-	-- an unbounded 0-1 range let through.
-	local MaxTelescopeRatio = 0.474
+	-- an unbounded 0-1 range let through. TelescopeScale runs 0 to 1 up to this.
+	CLASS.MaxTelescopeRatio = 0.474
 
 	-- Real long-rod penetrators are monobloc, one dense material (tungsten alloy or DU) end to end, not a
 	-- dense core embedded in a separate lighter shaft; an earlier version of this file modeled the latter
@@ -150,7 +151,9 @@ Classes.DefineClass("ACF.Ammunition.APFSDS", "ACF.Ammunition.AP", function(CLASS
 			self.TelescopeRatio = 0
 		end
 
-		self.TelescopeRatio = math.Clamp(self.TelescopeRatio, 0, MaxTelescopeRatio)
+		if not isnumber(self.TelescopeScale) then
+			self.TelescopeScale = -1
+		end
 
 		if not isnumber(self.RodScale) then
 			self.RodScale = 1
@@ -191,6 +194,7 @@ Classes.DefineClass("ACF.Ammunition.APFSDS", "ACF.Ammunition.AP", function(CLASS
 			BASE.OnLast(self, Entity)
 
 			Entity.TelescopeRatio = nil
+			Entity.TelescopeScale = nil
 			Entity.RodScale = nil
 		end
 
@@ -203,11 +207,9 @@ Classes.DefineClass("ACF.Ammunition.APFSDS", "ACF.Ammunition.AP", function(CLASS
 		ACF.RegisterAmmoDecal("ACF.Ammunition.APFSDS", "damage/apcr_pen", "damage/apcr_rico")
 
 		function CLASS:OnCreateAmmoControls(Base)
-			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.telescope_ratio", 0, MaxTelescopeRatio, 3, "TelescopeRatio", function(Value)
-				self.TelescopeRatio = Value
+			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.telescope_ratio", 0, 1, 2, "TelescopeScale", function(Value)
+				self.TelescopeScale = Value
 				self:UpdateRoundData()
-			end, function(Panel)
-				Panel:SetValue(math.Clamp(self.TelescopeRatio or 0, 0, MaxTelescopeRatio))
 			end)
 
 			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.rod_scale", 0, 1, 2, "RodScale", function(Value)

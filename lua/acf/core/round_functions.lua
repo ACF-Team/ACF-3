@@ -117,9 +117,19 @@ function ACF.UpdateRoundSpecs(Ammo)
 	Data.Tracer   = Ammo.Tracer and math.Round(Data.Caliber * 0.15, 2) or 0
 	Data.TwoPiece = Ammo.TwoPiece or false
 
-	-- Ammo.CaseScale runs 0 to 1, from an unnecked case to the class's widest; 0 keeps pre-slider dupes unbuffed
+	-- Ammo.NeckingScale runs 0 to 1, from an unnecked case to the class's widest.
+	-- Unset (negative) on rounds saved before it existed, so it's derived once from their real CaseScale.
 	local MaxCaseScale = Data.MaxCaseScale or ACF.AmmoCaseScale
-	local CaseScale    = 1 + math.Clamp(Ammo.CaseScale or 0, 0, 1) * (MaxCaseScale - 1)
+
+	if (Ammo.NeckingScale or -1) < 0 then
+		local Span = MaxCaseScale - 1
+
+		Ammo.NeckingScale = Span > 0 and math.Clamp(((Ammo.CaseScale or 1) - 1) / Span, 0, 1) or 0
+	end
+
+	local CaseScale = 1 + math.Clamp(Ammo.NeckingScale, 0, 1) * (MaxCaseScale - 1)
+
+	Ammo.CaseScale = CaseScale -- Kept in sync for anything still reading the real ratio
 
 	Data.CaseScale    = CaseScale
 	Data.CaseDiameter = Data.Caliber * CaseScale -- Widest point of the round, cased or not
@@ -151,7 +161,20 @@ function ACF.UpdateRoundSpecs(Ammo)
 
 	-- TelescopeRatio lets the projectile bore into the propellant. Only types that opt in via
 	-- CanTelescope have the field, so anything else reads as 0.
-	local TelescopeRatio  = Ammo.CanTelescope and math.Clamp(Ammo.TelescopeRatio or 0, 0, 1) or 0
+	local TelescopeRatio = 0
+
+	if Ammo.CanTelescope then
+		local MaxTelescope = Ammo.MaxTelescopeRatio or 1
+
+		-- Ammo.TelescopeScale runs 0 to 1 up to MaxTelescopeRatio, derived once from the real TelescopeRatio when unset (negative)
+		if (Ammo.TelescopeScale or -1) < 0 then
+			Ammo.TelescopeScale = math.Clamp((Ammo.TelescopeRatio or 0) / MaxTelescope, 0, 1)
+		end
+
+		TelescopeRatio      = math.Clamp(Ammo.TelescopeScale, 0, 1) * MaxTelescope
+		Ammo.TelescopeRatio = TelescopeRatio -- Kept in sync for anything still reading the real ratio
+	end
+
 	local BaseProjLength  = RoundLength * (1 - PropRatio)
 	local TelescopeLength = math.Round(math.min(PropLength * TelescopeRatio, GUIData.MaxProjLength - BaseProjLength), 2)
 	local ProjLength      = math.Round(BaseProjLength + TelescopeLength, 2)

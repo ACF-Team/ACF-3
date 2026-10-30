@@ -545,12 +545,13 @@ local function AddControls(Base, ToolData)
 	-- 0 to 1 from an unnecked case to the class's widest, see ACF.UpdateRoundSpecs
 	local CaseScale = Base:AddSlider("#acf.menu.ammo.case_scale", 0, 1, 2)
 
-	CaseScale:SetValue(Ammo.CaseScale or 0)
+	CaseScale:SetValue(Ammo.NeckingScale or 0)
 	function CaseScale:OnValueChanged(Value)
-		Ammo.CaseScale = Value
+		Ammo.NeckingScale = Value
 		Ammo:UpdateRoundData()
 
-		Sub:Set("CaseScale", Value)
+		Sub:Set("NeckingScale", Value)
+		Sub:Set("CaseScale", BulletData.CaseScale)
 
 		-- A wider case is a wider round, so the crate's projectile counts have to be refit
 		UpdateProjectileCountLimits(BuildToolData(), true)
