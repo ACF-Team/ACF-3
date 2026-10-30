@@ -1,8 +1,7 @@
 -- Keeps a local copy of the server's kill log in cl.db. The Update button refreshes the session list
--- and downloads kills for the selected sessions only. The browser compares two teams across them.
+-- and downloads kills for the selected sessions only. The browser compares teams across them.
 local ACF = ACF
 
-local TEAM_COLORS = { Color(80, 150, 255), Color(235, 85, 70) }
 local MAX_FEED_ROWS = 1000
 
 local Browser -- The open browser window, if any
@@ -216,20 +215,60 @@ do -- MARK: Local copy
 end
 
 do -- MARK: Analysis
-	local Teams = {} -- [SteamID64] = 1 or 2, kept until the game closes
+	local Teams = {} -- [SteamID64] = Team name, kept until the game closes
 
 	ACF.KillLogTeams = Teams
 
-	local function NewTeamStats()
-		return { Players = 0, Kills = 0, Deaths = 0, Destroyed = 0, Lost = 0, TeamKills = 0, SelfDeaths = 0, Drones = 0 }
+	--- Every team name in use, most players first.
+	function ACF.GetKillLogTeamNames()
+		local Counts, Names = {}, {}
+
+		for _, Team in pairs(Teams) do
+			if not Counts[Team] then Names[#Names + 1] = Team end
+
+			Counts[Team] = (Counts[Team] or 0) + 1
+		end
+
+		table.sort(Names, function(A, B)
+			if Counts[A] ~= Counts[B] then return Counts[A] > Counts[B] end
+
+			return A < B
+		end)
+
+		return Names
 	end
 
+	-- Points destroyed decide it, since a cheap kill and an expensive one are not worth the same
+	local function IsAhead(A, B)
+		if A.Destroyed ~= B.Destroyed then return A.Destroyed > B.Destroyed end
+
+		return A.Kills > B.Kills
+	end
+
+	ACF.IsKillLogAhead = IsAhead
+
 	--- Aggregates kills per player and per team. Team kills only count against the opposing team.
+	--- Teams come back ranked, best first.
 	function ACF.AnalyzeKillLog(Kills)
 		local Players   = {} -- [SteamID64] = Stats
 		local Order     = {}
-		local TeamStats = { NewTeamStats(), NewTeamStats() }
-		local Timeline  = { { { 0, 0 } }, { { 0, 0 } } } -- Cumulative points destroyed per team over elapsed time
+		local TeamStats = {} -- [Team] = Stats
+		local TeamList  = {}
+		local Timeline  = {} -- [Team] = Cumulative points destroyed over elapsed time
+
+		local function GetTeam(Team)
+			local Stats = TeamStats[Team]
+
+			if not Stats then
+				Stats = { Name = Team, Players = 0, Kills = 0, Deaths = 0, Destroyed = 0, Lost = 0, TeamKills = 0, SelfDeaths = 0, Drones = 0 }
+
+				TeamStats[Team] = Stats
+				TeamList[#TeamList + 1] = Stats
+				Timeline[Team] = { { 0, 0 } }
+			end
+
+			return Stats
+		end
 
 		local function GetPlayer(ID, Name)
 			local Player = Players[ID]
@@ -279,7 +318,7 @@ do -- MARK: Analysis
 			local AttackerTeam = Attacker and Teams[Attacker.ID]
 
 			if VictimTeam then
-				local Stats = TeamStats[VictimTeam]
+				local Stats = GetTeam(VictimTeam)
 
 				Stats.Deaths = Stats.Deaths + 1
 				Stats.Lost   = Stats.Lost + Cost
@@ -292,7 +331,7 @@ do -- MARK: Analysis
 			end
 
 			if AttackerTeam and VictimTeam and AttackerTeam ~= VictimTeam then
-				local Stats = TeamStats[AttackerTeam]
+				local Stats = GetTeam(AttackerTeam)
 				local Line  = Timeline[AttackerTeam]
 
 				Stats.Kills     = Stats.Kills + 1
@@ -306,7 +345,11 @@ do -- MARK: Analysis
 
 		for _, Player in ipairs(Order) do
 			local Team = Teams[Player.ID]
-			if Team then TeamStats[Team].Players = TeamStats[Team].Players + 1 end
+			if Team then
+				local Stats = GetTeam(Team)
+
+				Stats.Players = Stats.Players + 1
+			end
 
 			local Top, TopCount = nil, 0
 			for Weapon, Count in pairs(Player.Weapons) do
@@ -316,14 +359,22 @@ do -- MARK: Analysis
 			Player.TopWeapon = Top
 		end
 
-		-- Carry both lines out to the end so they finish level with each other
-		for Team, Line in ipairs(Timeline) do
+		-- Carry every line out to the end so they finish level with each other
+		for Team, Line in pairs(Timeline) do
 			Line[#Line + 1] = { Elapsed, TeamStats[Team].Destroyed }
 		end
 
 		table.sort(Order, function(A, B) return A.Name < B.Name end)
+		table.sort(TeamList, function(A, B)
+			if A.Destroyed ~= B.Destroyed or A.Kills ~= B.Kills then return IsAhead(A, B) end
 
-		return Order, TeamStats, { Lines = Timeline, Duration = Elapsed }
+			return A.Name < B.Name
+		end)
+
+		local Names = {}
+		for I, Stats in ipairs(TeamList) do Names[I] = Stats.Name end
+
+		return Order, TeamList, { Lines = Timeline, Teams = Names, Duration = Elapsed }
 	end
 
 	--- Splits players into the two teams that put the most kills between them (a local max cut).
@@ -389,7 +440,46 @@ do -- MARK: Analysis
 			if not Changed then break end
 		end
 
-		for ID, Team in pairs(Assigned) do Teams[ID] = Team end
+		-- Reuse the names players already have, so splitting again doesn't rename the teams
+		local function NameCounts(Side)
+			local Counts, List = {}, {}
+
+			for ID, Team in pairs(Assigned) do
+				local Name = Teams[ID]
+
+				if Team == Side and Name then
+					if not Counts[Name] then List[#List + 1] = Name end
+
+					Counts[Name] = (Counts[Name] or 0) + 1
+				end
+			end
+
+			table.sort(List, function(A, B)
+				if Counts[A] ~= Counts[B] then return Counts[A] > Counts[B] end
+
+				return A < B
+			end)
+
+			return List, Counts
+		end
+
+		local List1, Counts1 = NameCounts(1)
+		local List2, Counts2 = NameCounts(2)
+		local Name1, Name2   = List1[1], List2[1]
+
+		-- Both sides want the same name, the side with more of its players keeps it
+		if Name1 and Name1 == Name2 then
+			if Counts1[Name1] >= Counts2[Name2] then Name2 = List2[2] else Name1 = List1[2] end
+		end
+
+		local function Fallback(Other)
+			return Other == "Team 1" and "Team 2" or "Team 1"
+		end
+
+		Name1 = Name1 or Fallback(Name2)
+		Name2 = Name2 or Fallback(Name1)
+
+		for ID, Team in pairs(Assigned) do Teams[ID] = Team == 1 and Name1 or Name2 end
 	end
 end
 
@@ -436,7 +526,26 @@ do -- MARK: Browser
 	end
 
 	local function TeamName(Team)
-		return Team and ("Team " .. Team) or "-"
+		return Team or "-"
+	end
+
+	local TeamColors = {} -- [Team] = Color
+
+	-- Same name, same color, every time
+	local function TeamColor(Team)
+		if not Team then return end
+
+		local Result = TeamColors[Team]
+
+		if not Result then
+			local Hash = tonumber(util.CRC(Team)) or 0
+			local HSV  = HSVToColor(Hash % 360, 0.55 + math.floor(Hash / 360) % 4 * 0.08, 1)
+
+			Result = Color(HSV.r, HSV.g, HSV.b)
+			TeamColors[Team] = Result
+		end
+
+		return Result
 	end
 
 	local function CreateList(Parent, ...)
@@ -513,10 +622,14 @@ do -- MARK: Browser
 
 			local TextColor = self:GetSkin().Colours.Label.Dark -- Matches the SetDark labels around it
 			local Data      = self.Data
-			local Max  = Data and math.max(Data.Lines[1][#Data.Lines[1]][2], Data.Lines[2][#Data.Lines[2]][2]) or 0
+			local Max       = 0
+
+			if Data then
+				for _, Line in pairs(Data.Lines) do Max = math.max(Max, Line[#Line][2]) end
+			end
 
 			if Max <= 0 or Data.Duration <= 0 then
-				draw.SimpleText("No kills between the two teams yet.", "ACF_Label", W / 2, H / 2, TextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+				draw.SimpleText("No kills between teams yet.", "ACF_Label", W / 2, H / 2, TextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 				return
 			end
 
@@ -535,8 +648,11 @@ do -- MARK: Browser
 			draw.SimpleText(FormatDuration(Data.Duration), "ACF_Control", Right, Bottom + 2, TextColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
 			draw.SimpleText("Points destroyed over time", "ACF_Control", (Left + Right) / 2, Bottom + 2, TextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
 
-			for Team, Line in ipairs(Data.Lines) do
-				surface.SetDrawColor(TEAM_COLORS[Team])
+			for Index, Team in ipairs(Data.Teams) do
+				local Line      = Data.Lines[Team]
+				local LineColor = TeamColor(Team)
+
+				surface.SetDrawColor(LineColor)
 
 				for I = 2, #Line do
 					local X1, Y1 = Left + Line[I - 1][1] * ScaleX, Bottom - Line[I - 1][2] * ScaleY
@@ -546,7 +662,7 @@ do -- MARK: Browser
 					surface.DrawLine(X2, Y1, X2, Y2)
 				end
 
-				draw.SimpleText(TeamName(Team), "ACF_Label", Left + 8, Top + (Team - 1) * 16, TEAM_COLORS[Team])
+				draw.SimpleText(Team, "ACF_Label", Left + 8, Top + (Index - 1) * 16, LineColor)
 			end
 		end
 
@@ -687,9 +803,31 @@ do -- MARK: Browser
 		local VerdictLabel = CreateLabel(ResultPanel, "", "ACF_Title")
 		local DetailLabel  = CreateLabel(ResultPanel, "", "ACF_Control")
 
-		local CompareList = CreateList(ResultPanel, "Metric", "Team 1", "Team 2")
-		CompareList:SetMultiSelect(false)
-		CompareList:SetSortable(false)
+		local CompareList
+
+		-- One column per team, so the list is rebuilt whenever the columns change
+		local function SetCompareColumns(...)
+			local Names = { "Metric", ... }
+			local Key   = table.concat(Names, "\n")
+
+			if IsValid(CompareList) then
+				if CompareList.Key == Key then
+					CompareList:Clear()
+					return
+				end
+
+				-- Hidden so it stops taking up the dock until it's gone
+				CompareList:SetVisible(false)
+				CompareList:Remove()
+			end
+
+			CompareList = CreateList(ResultPanel, unpack(Names))
+			CompareList:SetMultiSelect(false)
+			CompareList:SetSortable(false)
+			CompareList.Key = Key
+		end
+
+		SetCompareColumns()
 
 		-- MARK: Players and kills
 		local CenterPanel = vgui.Create("DPanel", Frame)
@@ -706,35 +844,298 @@ do -- MARK: Browser
 		end
 
 		CreateLabel(PlayerPanel, "Players", "ACF_Title")
-		CreateLabel(PlayerPanel, "Select players and pick their team, or double click one to cycle it. Auto Split guesses the teams from who killed whom.", "ACF_Control")
+		CreateLabel(PlayerPanel, "Click a player's team to type it in. Tab fills in the highlighted team and moves down, Enter moves down without it. Auto Split guesses two teams from who killed whom.", "ACF_Control")
 
 		local PlayerList
+		local CloseEditor
 
 		local function SetSelectedTeam(Team)
+			CloseEditor(true)
+
 			for _, Line in ipairs(PlayerList:GetSelected()) do Teams[Line.ID] = Team end
 
 			Frame:Refresh()
 		end
 
 		CreateButtonRow(PlayerPanel, {
-			{ "Team 1", function() SetSelectedTeam(1) end },
-			{ "Team 2", function() SetSelectedTeam(2) end },
 			{ "Unassign", function() SetSelectedTeam(nil) end },
-			{ "Auto Split", function() ACF.AutoSplitKillLog(Kills, Players) Frame:Refresh() end },
+			{ "Auto Split", function()
+				CloseEditor(true)
+				ACF.AutoSplitKillLog(Kills, Players)
+				Frame:Refresh()
+			end },
 			{ "Clear Teams", function()
+				CloseEditor(true)
+
 				for _, Player in ipairs(Players) do Teams[Player.ID] = nil end
+
 				Frame:Refresh()
 			end },
 		})
 
 		PlayerList = CreateList(PlayerPanel, "Player", "Team", "Kills", "Deaths", "Destroyed", "Lost", "Top Weapon")
 
-		function PlayerList:DoDoubleClick(_, Line)
-			local Team = Teams[Line.ID]
+		-- MARK: Team editor
+		local MAX_SUGGESTIONS = 8
 
-			Teams[Line.ID] = not Team and 1 or Team == 1 and 2 or nil
+		local Editor -- The DTextEntry over the team cell being edited, if any
+		local EditTeam
+
+		local function FindLine(ID)
+			for _, Line in ipairs(PlayerList:GetLines()) do
+				if Line.ID == ID then return Line end
+			end
+		end
+
+		-- The player below this one, in whatever order the list is sorted by
+		local function GetNextID(ID)
+			local Sorted = PlayerList.Sorted
+
+			for I, Line in ipairs(Sorted) do
+				if Line.ID == ID then return Sorted[I + 1] and Sorted[I + 1].ID end
+			end
+		end
+
+		local function SetTeam(ID, Text)
+			local Team = string.Trim(Text or "")
+			if Team == "" then Team = nil end
+
+			if Teams[ID] == Team then return end
+
+			Teams[ID] = Team
 
 			Frame:Refresh()
+		end
+
+		function CloseEditor(Apply, Text)
+			if not IsValid(Editor) then return end
+
+			local Entry = Editor
+			Editor = nil
+
+			Text = Text or Entry:GetText()
+
+			Entry.Suggestions:Remove()
+			Entry:Remove()
+
+			if Apply then SetTeam(Entry.ID, Text) end
+		end
+
+		local function FinishEdit(Text, MoveOn)
+			if not IsValid(Editor) then return end
+
+			local ID = Editor.ID
+
+			CloseEditor(true, Text)
+
+			local NextID = MoveOn and GetNextID(ID)
+			if NextID then EditTeam(NextID) end
+		end
+
+		local function HighlightSuggestion(Entry)
+			local List = Entry.Suggestions
+			local Line = List:GetLines()[Entry.Selected]
+
+			List:ClearSelection()
+
+			if Line then Line:SetSelected(true) end
+		end
+
+		-- Names starting with the text come first, then names containing it
+		local function UpdateSuggestions(Entry)
+			local Text = Entry:GetText()
+			if Text ~= Entry.Initial then Entry.Typed = true end
+
+			local Filter = Entry.Typed and string.lower(string.Trim(Text)) or ""
+			local Starts, Contains = {}, {}
+
+			for _, Name in ipairs(ACF.GetKillLogTeamNames()) do
+				local Lower = string.lower(Name)
+
+				if string.sub(Lower, 1, #Filter) == Filter then
+					Starts[#Starts + 1] = Name
+				elseif string.find(Lower, Filter, 1, true) then
+					Contains[#Contains + 1] = Name
+				end
+			end
+
+			local Matches = {}
+			for _, Name in ipairs(Starts) do Matches[#Matches + 1] = Name end
+			for _, Name in ipairs(Contains) do Matches[#Matches + 1] = Name end
+
+			for I = #Matches, MAX_SUGGESTIONS + 1, -1 do Matches[I] = nil end
+
+			local List = Entry.Suggestions
+			List:Clear()
+
+			Entry.Matches  = Matches
+			Entry.Selected = 1
+
+			for I, Name in ipairs(Matches) do
+				local Line = AddLine(List, Name)
+				Line.Team = Name
+				Line.Columns[1]:SetTextColor(TeamColor(Name))
+
+				-- Untouched text starts on the team the player already has
+				if not Entry.Typed and Name == Entry.Initial then Entry.Selected = I end
+			end
+
+			HighlightSuggestion(Entry)
+
+			List:SetTall(#Matches * List:GetDataHeight() + 2)
+			List:SetVisible(#Matches > 0)
+		end
+
+		-- Keeps the editor on its cell. False once the row is gone or scrolled out of view.
+		local function PlaceEditor(Entry)
+			local Line = FindLine(Entry.ID)
+			if not Line then return false end
+
+			local Cell      = Line.Columns[2]
+			local X, Y      = Frame:ScreenToLocal(Cell:LocalToScreen(0, 0))
+			local _, Top    = Frame:ScreenToLocal(PlayerList:LocalToScreen(0, PlayerList:GetHeaderHeight()))
+			local _, Bottom = Frame:ScreenToLocal(PlayerList:LocalToScreen(0, PlayerList:GetTall()))
+			local W, H      = Cell:GetWide(), Cell:GetTall()
+
+			if Y < Top - 1 or Y + H > Bottom + 1 then return false end
+
+			Entry:SetPos(X, Y)
+			Entry:SetSize(W, H)
+
+			-- Flip above the cell when there's no room below
+			local List  = Entry.Suggestions
+			local ListY = Y + H
+
+			if ListY + List:GetTall() > Frame:GetTall() then ListY = Y - List:GetTall() end
+
+			List:SetPos(X, ListY)
+			List:SetWide(math.max(W, 120))
+
+			return true
+		end
+
+		local function ScrollToLine(Line)
+			local VBar   = PlayerList.VBar
+			local _, Y   = Line:GetPos()
+			local View   = PlayerList:GetTall() - PlayerList:GetHeaderHeight()
+			local Scroll = VBar:GetScroll()
+
+			if Y < Scroll then
+				VBar:SetScroll(Y)
+			elseif Y + Line:GetTall() > Scroll + View then
+				VBar:SetScroll(Y + Line:GetTall() - View)
+			end
+
+			PlayerList:InvalidateLayout(true)
+		end
+
+		function EditTeam(ID)
+			if IsValid(Editor) then
+				if Editor.ID == ID then return end
+
+				CloseEditor(true)
+			end
+
+			-- Lines from a fresh Refresh have no position until the list lays them out
+			PlayerList:InvalidateLayout(true)
+
+			local Line = FindLine(ID)
+			if not Line then return end
+
+			ScrollToLine(Line)
+
+			local Current = Teams[ID] or ""
+
+			local Entry = vgui.Create("DTextEntry", Frame)
+			Entry:SetFont("ACF_Control")
+			Entry:SetText(Current)
+			Entry:SetTabbingDisabled(true)
+
+			Entry.ID      = ID
+			Entry.Initial = Current
+			Entry.Typed   = false
+
+			local Suggestions = vgui.Create("DListView", Frame)
+			Suggestions:SetHideHeaders(true)
+			Suggestions:SetMultiSelect(false)
+			Suggestions:SetSortable(false)
+			Suggestions:AddColumn("Team")
+
+			Entry.Suggestions = Suggestions
+			Editor = Entry
+
+			-- bClear is only set on a press, dragging over lines calls this too
+			function Suggestions:OnClickLine(Clicked, bClear)
+				if bClear and Editor == Entry and input.IsMouseDown(MOUSE_LEFT) then FinishEdit(Clicked.Team, false) end
+			end
+
+			function Entry:OnChange()
+				UpdateSuggestions(self)
+			end
+
+			function Entry:OnKeyCodeTyped(Code)
+				if Code == KEY_TAB then
+					FinishEdit(self.Matches[self.Selected] or self:GetText(), true)
+
+					return true
+				elseif Code == KEY_ENTER or Code == KEY_PAD_ENTER then
+					FinishEdit(self:GetText(), true)
+
+					return true
+				elseif Code == KEY_UP or Code == KEY_DOWN then
+					local Count = #self.Matches
+
+					if Count > 0 then
+						self.Selected = (self.Selected - 1 + (Code == KEY_DOWN and 1 or -1)) % Count + 1
+
+						HighlightSuggestion(self)
+					end
+
+					return true
+				end
+			end
+
+			-- Clicking a suggestion takes focus first, so wait a frame to see if the click already handled it
+			local BaseLoseFocus = Entry.OnLoseFocus
+
+			function Entry:OnLoseFocus(...)
+				BaseLoseFocus(self, ...)
+
+				timer.Simple(0, function()
+					if Editor == self and IsValid(self) and not self:HasFocus() then CloseEditor(true) end
+				end)
+			end
+
+			function Entry:Think()
+				if Editor ~= self or PlayerList:GetDirty() then return end -- rows from a Refresh aren't placed yet
+
+				if not PlaceEditor(self) then CloseEditor(true) end
+			end
+
+			UpdateSuggestions(Entry)
+			PlaceEditor(Entry)
+
+			Entry:MoveToFront()
+			Suggestions:MoveToFront()
+			Entry:RequestFocus()
+			Entry:SelectAllText(true)
+		end
+
+		local BasePlayerClick = PlayerList.OnClickLine
+
+		function PlayerList:OnClickLine(Line, bClear, ...)
+			BasePlayerClick(self, Line, bClear, ...)
+
+			if not bClear or not input.IsMouseDown(MOUSE_LEFT) then return end
+
+			local Cell = Line.Columns[2]
+			local X    = Cell:CursorPos()
+
+			if X >= 0 and X < Cell:GetWide() then EditTeam(Line.ID) end
+		end
+
+		function PlayerList:DoDoubleClick(_, Line)
+			EditTeam(Line.ID)
 		end
 
 		local Sheet = vgui.Create("DPropertySheet", CenterPanel)
@@ -812,12 +1213,12 @@ do -- MARK: Browser
 
 		local function ColorTeam(Line, Column, ID)
 			local Team = ID and Teams[ID]
-			if Team then Line.Columns[Column]:SetTextColor(TEAM_COLORS[Team]) end
+			if Team then Line.Columns[Column]:SetTextColor(TeamColor(Team)) end
 		end
 
 		function Frame:Refresh()
-			local TeamStats, TimelineData
-			Players, TeamStats, TimelineData = ACF.AnalyzeKillLog(Kills)
+			local TeamList, TimelineData
+			Players, TeamList, TimelineData = ACF.AnalyzeKillLog(Kills)
 
 			-- Players
 			local Selected = {}
@@ -856,47 +1257,43 @@ do -- MARK: Browser
 
 			Timeline.Data = TimelineData
 
-			self:ShowResult(TeamStats)
+			self:ShowResult(TeamList)
 		end
 
-		function Frame:ShowResult(TeamStats)
-			local T1, T2 = TeamStats[1], TeamStats[2]
-
-			CompareList:Clear()
-			CompareList.Columns[2]:SetName("Team 1")
-			CompareList.Columns[3]:SetName("Team 2")
-
+		-- TeamList comes ranked, so the first team is the winner unless it's level with the second
+		function Frame:ShowResult(TeamList)
 			if #Kills == 0 then
+				SetCompareColumns()
+
 				VerdictLabel:SetText("No kills")
 				VerdictLabel:SetTextColor(nil)
 				DetailLabel:SetText(#SessionList:GetSelected() > 0 and "Press Update to download the selected sessions." or "Select a session.")
 				return
 			end
 
-			if T1.Players == 0 or T2.Players == 0 then
+			if #TeamList < 2 then
 				self:ShowTopPlayer()
 				return
 			end
 
-			-- Points destroyed decide it, since a cheap kill and an expensive one are not worth the same
-			local Winner
-			if T1.Destroyed ~= T2.Destroyed then
-				Winner = T1.Destroyed > T2.Destroyed and 1 or 2
-			elseif T1.Kills ~= T2.Kills then
-				Winner = T1.Kills > T2.Kills and 1 or 2
-			end
+			local Win, Second = TeamList[1], TeamList[2]
 
-			if Winner then
-				local Win, Lose = TeamStats[Winner], TeamStats[3 - Winner]
+			if ACF.IsKillLogAhead(Win, Second) then
+				VerdictLabel:SetText(Win.Name .. " won")
+				VerdictLabel:SetTextColor(TeamColor(Win.Name))
 
-				VerdictLabel:SetText(TeamName(Winner) .. " won")
-				VerdictLabel:SetTextColor(TEAM_COLORS[Winner])
-				DetailLabel:SetText(string.format("Destroyed %s points while losing %s, with %d kills to %d.",
-					FormatPoints(Win.Destroyed), FormatPoints(Win.Lost), Win.Kills, Lose.Kills))
+				if #TeamList == 2 then
+					DetailLabel:SetText(string.format("Destroyed %s points while losing %s, with %d kills to %d.",
+						FormatPoints(Win.Destroyed), FormatPoints(Win.Lost), Win.Kills, Second.Kills))
+				else
+					DetailLabel:SetText(string.format("Destroyed %s points while losing %s, with %d kills. %s came second with %s points.",
+						FormatPoints(Win.Destroyed), FormatPoints(Win.Lost), Win.Kills, Second.Name, FormatPoints(Second.Destroyed)))
+				end
 			else
 				VerdictLabel:SetText("Draw")
 				VerdictLabel:SetTextColor(nil)
-				DetailLabel:SetText("Both teams destroyed the same points with the same number of kills.")
+				DetailLabel:SetText(#TeamList == 2 and "Both teams destroyed the same points with the same number of kills."
+					or "The top teams destroyed the same points with the same number of kills.")
 			end
 
 			-- Best player per team by points destroyed
@@ -910,24 +1307,33 @@ do -- MARK: Browser
 			end
 
 			local Rows = {
-				{ "Players", T1.Players, T2.Players },
-				{ "Kills", T1.Kills, T2.Kills },
-				{ "Deaths", T1.Deaths, T2.Deaths },
-				{ "K/D", FormatRatio(T1.Kills, T1.Deaths), FormatRatio(T2.Kills, T2.Deaths) },
-				{ "Points Destroyed", FormatPoints(T1.Destroyed), FormatPoints(T2.Destroyed) },
-				{ "Points Lost", FormatPoints(T1.Lost), FormatPoints(T2.Lost) },
-				{ "Exchange Ratio", FormatRatio(T1.Destroyed, T1.Lost), FormatRatio(T2.Destroyed, T2.Lost) },
-				{ "Drones Destroyed", T1.Drones, T2.Drones },
-				{ "Team Kills", T1.TeamKills, T2.TeamKills },
-				{ "Self/World Deaths", T1.SelfDeaths, T2.SelfDeaths },
-				{ "Top Player", Best[1] and Best[1].Name or "-", Best[2] and Best[2].Name or "-" },
+				{ "Players", function(T) return T.Players end },
+				{ "Kills", function(T) return T.Kills end },
+				{ "Deaths", function(T) return T.Deaths end },
+				{ "K/D", function(T) return FormatRatio(T.Kills, T.Deaths) end },
+				{ "Points Destroyed", function(T) return FormatPoints(T.Destroyed) end },
+				{ "Points Lost", function(T) return FormatPoints(T.Lost) end },
+				{ "Exchange Ratio", function(T) return FormatRatio(T.Destroyed, T.Lost) end },
+				{ "Drones Destroyed", function(T) return T.Drones end },
+				{ "Team Kills", function(T) return T.TeamKills end },
+				{ "Self/World Deaths", function(T) return T.SelfDeaths end },
+				{ "Top Player", function(T) return Best[T.Name] and Best[T.Name].Name or "-" end },
 			}
 
-			for _, Row in ipairs(Rows) do
-				local Line = AddLine(CompareList, unpack(Row))
+			local Names = {}
+			for I, Stats in ipairs(TeamList) do Names[I] = Stats.Name end
 
-				Line.Columns[2]:SetTextColor(TEAM_COLORS[1])
-				Line.Columns[3]:SetTextColor(TEAM_COLORS[2])
+			SetCompareColumns(unpack(Names))
+
+			for _, Row in ipairs(Rows) do
+				local Values = { Row[1] }
+				for I, Stats in ipairs(TeamList) do Values[I + 1] = Row[2](Stats) end
+
+				local Line = AddLine(CompareList, unpack(Values))
+
+				for I, Stats in ipairs(TeamList) do
+					Line.Columns[I + 1]:SetTextColor(TeamColor(Stats.Name))
+				end
 			end
 		end
 
@@ -940,23 +1346,16 @@ do -- MARK: Browser
 				TotalDestroyed = TotalDestroyed + Player.Destroyed
 			end
 
-			-- Same order as the team verdict: points destroyed, then kills
-			table.sort(Ranked, function(A, B)
-				if A.Destroyed ~= B.Destroyed then return A.Destroyed > B.Destroyed end
-
-				return A.Kills > B.Kills
-			end)
+			table.sort(Ranked, ACF.IsKillLogAhead)
 
 			local Top, Second = Ranked[1], Ranked[2]
-			local TopTeam = Teams[Top.ID]
 
 			VerdictLabel:SetText("Top player: " .. Top.Name)
-			VerdictLabel:SetTextColor(TopTeam and TEAM_COLORS[TopTeam] or nil)
-			DetailLabel:SetText(string.format("Destroyed %s points with %d kills. Assign players to both teams to see who won.",
+			VerdictLabel:SetTextColor(TeamColor(Teams[Top.ID]))
+			DetailLabel:SetText(string.format("Destroyed %s points with %d kills. Put players on at least two teams to see who won.",
 				FormatPoints(Top.Destroyed), Top.Kills))
 
-			CompareList.Columns[2]:SetName(Top.Name)
-			CompareList.Columns[3]:SetName(Second and Second.Name or "-")
+			SetCompareColumns(Top.Name, Second and Second.Name or "-")
 
 			local function Share(Player)
 				return TotalDestroyed > 0 and string.format("%.0f%%", Player.Destroyed / TotalDestroyed * 100) or "-"
@@ -986,7 +1385,7 @@ do -- MARK: Browser
 
 	local function CreateMenu(Menu)
 		Menu:AddTitle("Kill Log")
-		Menu:AddLabel("Browse past battles on this server. Pick one or more sessions, split the players into two teams, and see which side came out ahead.")
+		Menu:AddLabel("Browse past battles on this server. Pick one or more sessions, split the players into teams, and see which side came out ahead.")
 		Menu:AddButton("Open Kill Log Browser", OpenBrowser)
 	end
 
