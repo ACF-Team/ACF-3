@@ -844,7 +844,7 @@ do -- MARK: Browser
 		end
 
 		CreateLabel(PlayerPanel, "Players", "ACF_Title")
-		CreateLabel(PlayerPanel, "Click a player's team to type it in. Tab fills in the highlighted team and moves down, Enter moves down without it. Auto Split guesses two teams from who killed whom.", "ACF_Control")
+		CreateLabel(PlayerPanel, "Click a player's team to type it in, or select several players and click one of their teams to set them all. Tab fills in the highlighted team and moves down, Enter moves down without it. Auto Split guesses two teams from who killed whom.", "ACF_Control")
 
 		local PlayerList
 		local CloseEditor
@@ -877,6 +877,7 @@ do -- MARK: Browser
 
 		-- MARK: Team editor
 		local MAX_SUGGESTIONS = 8
+		local REFOCUS_TIME    = 0.25 -- Seconds the editor keeps grabbing focus back after moving
 
 		local Editor -- The DTextEntry over the team cell being edited, if any
 		local EditTeam
@@ -887,24 +888,36 @@ do -- MARK: Browser
 			end
 		end
 
-		-- The player below this one, in whatever order the list is sorted by
-		local function GetNextID(ID)
-			local Sorted = PlayerList.Sorted
+		-- The row after the last of these players, in whatever order the list is sorted by
+		local function GetNextID(IDs)
+			local Set = {}
+			for _, ID in ipairs(IDs) do Set[ID] = true end
+
+			local Sorted, Last = PlayerList.Sorted, nil
 
 			for I, Line in ipairs(Sorted) do
-				if Line.ID == ID then return Sorted[I + 1] and Sorted[I + 1].ID end
+				if Set[Line.ID] then Last = I end
 			end
+
+			local Next = Last and Sorted[Last + 1]
+
+			return Next and Next.ID
 		end
 
-		local function SetTeam(ID, Text)
+		local function SetTeams(IDs, Text)
 			local Team = string.Trim(Text or "")
 			if Team == "" then Team = nil end
 
-			if Teams[ID] == Team then return end
+			local Changed = false
 
-			Teams[ID] = Team
+			for _, ID in ipairs(IDs) do
+				if Teams[ID] ~= Team then
+					Teams[ID] = Team
+					Changed   = true
+				end
+			end
 
-			Frame:Refresh()
+			if Changed then Frame:Refresh() end
 		end
 
 		function CloseEditor(Apply, Text)
@@ -918,18 +931,7 @@ do -- MARK: Browser
 			Entry.Suggestions:Remove()
 			Entry:Remove()
 
-			if Apply then SetTeam(Entry.ID, Text) end
-		end
-
-		local function FinishEdit(Text, MoveOn)
-			if not IsValid(Editor) then return end
-
-			local ID = Editor.ID
-
-			CloseEditor(true, Text)
-
-			local NextID = MoveOn and GetNextID(ID)
-			if NextID then EditTeam(NextID) end
+			if Apply then SetTeams(Entry.IDs, Text) end
 		end
 
 		local function HighlightSuggestion(Entry)
@@ -976,7 +978,7 @@ do -- MARK: Browser
 				Line.Team = Name
 				Line.Columns[1]:SetTextColor(TeamColor(Name))
 
-				-- Untouched text starts on the team the player already has
+				-- Untouched text starts on the team the players already have
 				if not Entry.Typed and Name == Entry.Initial then Entry.Selected = I end
 			end
 
@@ -1029,31 +1031,78 @@ do -- MARK: Browser
 			PlayerList:InvalidateLayout(true)
 		end
 
-		function EditTeam(ID)
-			if IsValid(Editor) then
-				if Editor.ID == ID then return end
+		-- ID is the row the editor sits on, IDs are every player it sets the team of
+		local function Retarget(Entry, ID, IDs)
+			local First, Mixed = Teams[IDs[1]], false
 
-				CloseEditor(true)
+			for I = 2, #IDs do
+				if Teams[IDs[I]] ~= First then
+					Mixed = true
+					break
+				end
 			end
 
+			Entry.ID      = ID
+			Entry.IDs     = IDs
+			Entry.Initial = not Mixed and First or ""
+			Entry.Typed   = false
+
+			Entry:SetPlaceholderText(Mixed and "Several teams" or "")
+			Entry:SetText(Entry.Initial)
+
+			UpdateSuggestions(Entry)
+		end
+
+		local function ShowEditor(Entry)
 			-- Lines from a fresh Refresh have no position until the list lays them out
 			PlayerList:InvalidateLayout(true)
 
-			local Line = FindLine(ID)
-			if not Line then return end
+			local Line = FindLine(Entry.ID)
+			if Line then ScrollToLine(Line) end
 
-			ScrollToLine(Line)
+			PlaceEditor(Entry)
 
-			local Current = Teams[ID] or ""
+			-- Tab moves focus to the next panel after we've handled it, so keep taking it back for a bit
+			Entry.RefocusUntil = RealTime() + REFOCUS_TIME
+
+			Entry:RequestFocus()
+			Entry:SelectAllText(true)
+		end
+
+		local function FinishEdit(Text, MoveOn)
+			local Entry = Editor
+			if not IsValid(Entry) then return end
+
+			if not MoveOn then return CloseEditor(true, Text) end
+
+			SetTeams(Entry.IDs, Text)
+
+			local NextID = GetNextID(Entry.IDs)
+			if not NextID then return CloseEditor(false) end
+
+			Retarget(Entry, NextID, { NextID })
+			ShowEditor(Entry)
+		end
+
+		function EditTeam(ID, IDs)
+			IDs = IDs or { ID }
+
+			-- Reuse the open editor, deleting the focused entry and making another one loses focus
+			if IsValid(Editor) then
+				if Editor.ID == ID and #Editor.IDs == #IDs then return end
+
+				SetTeams(Editor.IDs, Editor:GetText())
+				Retarget(Editor, ID, IDs)
+				ShowEditor(Editor)
+
+				return
+			end
 
 			local Entry = vgui.Create("DTextEntry", Frame)
 			Entry:SetFont("ACF_Control")
-			Entry:SetText(Current)
 			Entry:SetTabbingDisabled(true)
 
-			Entry.ID      = ID
-			Entry.Initial = Current
-			Entry.Typed   = false
+			Entry.RefocusUntil = 0
 
 			local Suggestions = vgui.Create("DListView", Frame)
 			Suggestions:SetHideHeaders(true)
@@ -1102,36 +1151,60 @@ do -- MARK: Browser
 				BaseLoseFocus(self, ...)
 
 				timer.Simple(0, function()
-					if Editor == self and IsValid(self) and not self:HasFocus() then CloseEditor(true) end
+					if Editor ~= self or not IsValid(self) or self:HasFocus() then return end
+					if RealTime() < self.RefocusUntil then return end
+
+					CloseEditor(true)
 				end)
 			end
 
 			function Entry:Think()
-				if Editor ~= self or PlayerList:GetDirty() then return end -- rows from a Refresh aren't placed yet
+				if Editor ~= self then return end
+
+				if RealTime() < self.RefocusUntil and not self:HasFocus() then
+					self:RequestFocus()
+
+					if not self.Typed then self:SelectAllText(true) end
+				end
+
+				if PlayerList:GetDirty() then return end -- rows from a Refresh aren't placed yet
 
 				if not PlaceEditor(self) then CloseEditor(true) end
 			end
 
-			UpdateSuggestions(Entry)
-			PlaceEditor(Entry)
+			Retarget(Entry, ID, IDs)
 
 			Entry:MoveToFront()
 			Suggestions:MoveToFront()
-			Entry:RequestFocus()
-			Entry:SelectAllText(true)
+
+			ShowEditor(Entry)
 		end
 
 		local BasePlayerClick = PlayerList.OnClickLine
 
 		function PlayerList:OnClickLine(Line, bClear, ...)
+			local Cell     = Line.Columns[2]
+			local X        = Cell:CursorPos()
+			local OnTeam   = bClear and input.IsMouseDown(MOUSE_LEFT) and X >= 0 and X < Cell:GetWide()
+			local Modifier = input.IsKeyDown(KEY_LCONTROL) or input.IsKeyDown(KEY_RCONTROL) or input.IsKeyDown(KEY_LSHIFT) or input.IsKeyDown(KEY_RSHIFT)
+
+			-- Clicking the team of a selected player edits every selected player, so the selection has to stay
+			if OnTeam and not Modifier and Line:IsLineSelected() then
+				local Selected = self:GetSelected()
+
+				if #Selected > 1 then
+					local IDs = {}
+					for I, Other in ipairs(Selected) do IDs[I] = Other.ID end
+
+					EditTeam(Line.ID, IDs)
+
+					return
+				end
+			end
+
 			BasePlayerClick(self, Line, bClear, ...)
 
-			if not bClear or not input.IsMouseDown(MOUSE_LEFT) then return end
-
-			local Cell = Line.Columns[2]
-			local X    = Cell:CursorPos()
-
-			if X >= 0 and X < Cell:GetWide() then EditTeam(Line.ID) end
+			if OnTeam and not Modifier then EditTeam(Line.ID) end
 		end
 
 		function PlayerList:DoDoubleClick(_, Line)
