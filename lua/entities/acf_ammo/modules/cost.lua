@@ -20,5 +20,12 @@ function ENT:GetRoundCost()
 end
 
 function ENT:GetCost()
-	return self.Capacity * self:GetRoundCost()
+	local Cost = self.Capacity * self:GetRoundCost()
+
+	-- Overridden slots swap the crate's round for their own
+	for _, Round in pairs(self.SlotRounds) do
+		Cost = Cost + Round.Ammo:GetCost(Round.BulletData) - self.RoundData:GetCost(self.BulletData)
+	end
+
+	return Cost
 end

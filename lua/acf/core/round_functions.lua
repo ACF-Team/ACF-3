@@ -334,6 +334,11 @@ function ACF.GetWeaponValue(Key, Caliber, Class, Weapon)
 	return Lerp(Percent, Values.Min, Values.Max)
 end
 
+--- Suffix of the network keys a crate's round data goes under, empty for the crate's own round
+function ACF.GetCrateNWSuffix(Profile)
+	return (Profile or 0) > 0 and "#" .. Profile or ""
+end
+
 do -- MARK: Ammo capacity
 
 	-- Packing constants

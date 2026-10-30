@@ -11,6 +11,10 @@ ACF.Entities.AutoRegister(2026091001, function(CLASS)
 	MENU_FIELD("Number", 					"CrateProjectilesZ", 	{Min = 1, Default = 3, Decimals = 0})
 	MENU_FIELD("Boolean", 					"HexPacking",        	{Default = false})
 
+	-- Per slot round overrides, slot I holds a round of OverrideAmmo[OverrideProfiles[I]], 0 for the crate's own
+	FIELD("ACF.Ammunition.BaseAmmo[]", 		"OverrideAmmo",      	{OnlyAllowSubtypes = true})
+	FIELD("Number[]", 						"OverrideProfiles",  	{Min = 0, Max = ACF.MaxOverrideTypes, Decimals = 0})
+
 	function CLASS:VerifyData()
 		self.Weapon:VerifyData()
 		self.AmmoType:VerifyData()

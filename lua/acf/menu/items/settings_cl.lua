@@ -42,8 +42,8 @@ do -- Clientside settings
 		local MultTorque = Base:AddCheckBox("#acf.menu.settings.menu_multiplytorquemult")
 		MultTorque:SetConVar("acf_menu_multiplytorquemult")
 
-		local Rounds = Base:AddSlider("#acf.menu.settings.max_rounds", 0, 64, 0)
-		Rounds:SetConVar("ACF_MaxRoundsDisplay")
+		local Rounds = Base:AddSlider("#acf.menu.settings.max_rounds", 0, ACF.MaxRoundsDrawn, 0)
+		Rounds:SetConVar("acf_maxroundsdrawn")
 
 		Base:AddHelp("#acf.menu.settings.max_rounds_desc")
 	end)

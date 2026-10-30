@@ -8,9 +8,11 @@ local function ResolveBind(Button)
 
 	local Shift  = Player:KeyDown(IN_SPEED)
 	local Reload = Player:KeyDown(IN_RELOAD)
+	local Alt    = Player:KeyDown(IN_WALK)
 
 	if Button == "left" then
 		if Shift then return "shift+left" end
+		if Alt then return "alt+left" end
 	elseif Button == "right" then
 		if Reload then return "r+right" end
 		if Shift then return "shift+right" end
@@ -51,6 +53,15 @@ function ACF.Menu.DoClientAction(Button)
 	-- Prefer the exact modifier bind, else fall back to the plain button.
 	local Action = FindAction(Page, ResolveBind(Button)) or FindAction(Page, Button)
 	if not Action then return end
+
+	-- An action with a Try handler acts as the plain button whenever the handler declines
+	if Action.Try then
+		local Ctx = Page._Contexts and Page._Contexts[Action.Context]
+		if Ctx and Action.Try(Ctx.ClassName, Ctx:Serialize()) then return end
+
+		Action = FindAction(Page, Button)
+		if not Action then return end
+	end
 
 	if Action.Context then
 		local Ctx = Page._Contexts and Page._Contexts[Action.Context]
