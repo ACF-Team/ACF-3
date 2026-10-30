@@ -66,7 +66,7 @@ Classes.DefineClass("ACF.Ammunition.APHE", "ACF.Ammunition.AP", function(CLASS, 
 		local FillerVol = FreeVol * math.Clamp(self.FillerRatio, 0, 1)
 
 		Data.FillerMass = FillerVol * ACF.HEDensity
-		Data.ProjMass   = math.max(GUIData.ProjVolume - FillerVol, 0) * ACF.SteelDensity + Data.FillerMass
+		Data.ProjMass   = math.max(GUIData.ProjVolume - FillerVol, 0) * ACF.SteelDensity * ACF.APNoseFactor + Data.FillerMass -- Same nose taper as AP, so an empty shell matches it
 		Data.MuzzleVel  = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
 		Data.DragCoef   = Data.ProjArea * 0.0001 / Data.ProjMass
 		Data.CartMass   = Data.PropMass + Data.ProjMass
