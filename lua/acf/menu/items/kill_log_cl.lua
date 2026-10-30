@@ -254,7 +254,7 @@ do -- MARK: Analysis
 		local Order     = {}
 		local TeamStats = {} -- [Team] = Stats
 		local TeamList  = {}
-		local Timeline  = {} -- [Team] = Cumulative points destroyed over elapsed time
+		local Events    = {} -- Every death of a team player, for the timeline
 
 		local function GetTeam(Team)
 			local Stats = TeamStats[Team]
@@ -264,7 +264,6 @@ do -- MARK: Analysis
 
 				TeamStats[Team] = Stats
 				TeamList[#TeamList + 1] = Stats
-				Timeline[Team] = { { 0, 0 } }
 			end
 
 			return Stats
@@ -330,16 +329,20 @@ do -- MARK: Analysis
 				end
 			end
 
-			if AttackerTeam and VictimTeam and AttackerTeam ~= VictimTeam then
-				local Stats = GetTeam(AttackerTeam)
-				local Line  = Timeline[AttackerTeam]
+			local Scorer = AttackerTeam and VictimTeam and AttackerTeam ~= VictimTeam and AttackerTeam or nil
+
+			if Scorer then
+				local Stats = GetTeam(Scorer)
 
 				Stats.Kills     = Stats.Kills + 1
 				Stats.Destroyed = Stats.Destroyed + Cost
 
 				if tonumber(Kill.IsDrone) == 1 then Stats.Drones = Stats.Drones + 1 end
+			end
 
-				Line[#Line + 1] = { Elapsed, Stats.Destroyed }
+			-- Counted the same way as the team stats above, so the timeline ends on the table's numbers
+			if VictimTeam then
+				Events[#Events + 1] = { Time = Elapsed, Victim = VictimTeam, Scorer = Scorer, Cost = Cost }
 			end
 		end
 
@@ -359,11 +362,6 @@ do -- MARK: Analysis
 			Player.TopWeapon = Top
 		end
 
-		-- Carry every line out to the end so they finish level with each other
-		for Team, Line in pairs(Timeline) do
-			Line[#Line + 1] = { Elapsed, TeamStats[Team].Destroyed }
-		end
-
 		table.sort(Order, function(A, B) return A.Name < B.Name end)
 		table.sort(TeamList, function(A, B)
 			if A.Destroyed ~= B.Destroyed or A.Kills ~= B.Kills then return IsAhead(A, B) end
@@ -374,7 +372,7 @@ do -- MARK: Analysis
 		local Names = {}
 		for I, Stats in ipairs(TeamList) do Names[I] = Stats.Name end
 
-		return Order, TeamList, { Lines = Timeline, Teams = Names, Duration = Elapsed }
+		return Order, TeamList, { Events = Events, Teams = Names, Duration = Elapsed }
 	end
 
 	--- Splits players into the two teams that put the most kills between them (a local max cut).
@@ -609,57 +607,279 @@ do -- MARK: Browser
 		return Row
 	end
 
+	local function FormatCount(Value)
+		return tostring(math.Round(Value))
+	end
+
+	local function FormatDecimal(Value)
+		return string.format("%.2f", Value)
+	end
+
+	local function FormatPercent(Value)
+		return string.format("%.0f%%", Value)
+	end
+
+	local function Ratio(A, B)
+		return B > 0 and A / B or nil
+	end
+
+	local RATE_SAMPLES = 300 -- Points along the per minute lines
+
+	-- Value gets a team's running totals after every death. nil leaves a gap in the line.
+	local TIMELINE_METRICS = {
+		{ Name = "Points destroyed over time", Format = FormatPoints, Value = function(S) return S.Destroyed end },
+		{ Name = "Points lost over time", Format = FormatPoints, Value = function(S) return S.Lost end },
+		{ Name = "Net points (destroyed minus lost)", Format = FormatPoints, Value = function(S) return S.Destroyed - S.Lost end },
+		{ Name = "Share of points destroyed", Format = FormatPercent, Max = 100, Value = function(S, Total)
+			return Total.Destroyed > 0 and S.Destroyed / Total.Destroyed * 100 or nil
+		end },
+		{ Name = "Points destroyed per minute", Format = FormatPoints, Rate = true },
+		{ Name = "Kills over time", Format = FormatCount, Value = function(S) return S.Kills end },
+		{ Name = "K/D over time", Format = FormatDecimal, Value = function(S) return Ratio(S.Kills, S.Deaths) end },
+		{ Name = "Exchange ratio over time", Format = FormatDecimal, Value = function(S) return Ratio(S.Destroyed, S.Lost) end },
+	}
+
+	local TimelineMetric = 1 -- Kept until the game closes
+
+	-- Points destroyed in the last minute, sampled evenly across the battle
+	local function BuildRateLines(Data, Lines)
+		local Window = math.max(60, Data.Duration / RATE_SAMPLES)
+		local Events = Data.Events
+		local Sums   = {}
+		local Head, Tail = 1, 1
+
+		for Team in pairs(Lines) do Sums[Team] = 0 end
+
+		for I = 0, RATE_SAMPLES do
+			local Time = Data.Duration * I / RATE_SAMPLES
+
+			while Events[Head] and Events[Head].Time <= Time do
+				local Event = Events[Head]
+				if Event.Scorer then Sums[Event.Scorer] = Sums[Event.Scorer] + Event.Cost end
+
+				Head = Head + 1
+			end
+
+			while Tail < Head and Events[Tail].Time <= Time - Window do
+				local Event = Events[Tail]
+				if Event.Scorer then Sums[Event.Scorer] = Sums[Event.Scorer] - Event.Cost end
+
+				Tail = Tail + 1
+			end
+
+			for Team, Line in pairs(Lines) do
+				Line[#Line + 1] = { Time, math.max(0, Sums[Team]) * 60 / Window }
+			end
+		end
+
+		return Lines
+	end
+
+	-- [Team] = { { Time, Value }, ... }
+	local function BuildLines(Data, Metric)
+		local Lines, State = {}, {}
+		local Total = { Destroyed = 0 }
+
+		for _, Team in ipairs(Data.Teams) do
+			Lines[Team] = {}
+			State[Team] = { Kills = 0, Deaths = 0, Destroyed = 0, Lost = 0 }
+		end
+
+		if Metric.Rate then return BuildRateLines(Data, Lines) end
+
+		local function Sample(Time)
+			for Team, Line in pairs(Lines) do
+				Line[#Line + 1] = { Time, Metric.Value(State[Team], Total) }
+			end
+		end
+
+		Sample(0)
+
+		for _, Event in ipairs(Data.Events) do
+			local Victim = State[Event.Victim]
+
+			Victim.Deaths = Victim.Deaths + 1
+			Victim.Lost   = Victim.Lost + Event.Cost
+
+			if Event.Scorer then
+				local Scorer = State[Event.Scorer]
+
+				Scorer.Kills     = Scorer.Kills + 1
+				Scorer.Destroyed = Scorer.Destroyed + Event.Cost
+				Total.Destroyed  = Total.Destroyed + Event.Cost
+			end
+
+			Sample(Event.Time)
+		end
+
+		-- Carry every line out to the end so they finish level with each other
+		Sample(Data.Duration)
+
+		return Lines
+	end
+
 	local function CreateTimeline(Parent)
 		local Timeline = vgui.Create("DPanel", Parent)
 		Timeline:Dock(FILL)
 
 		local MARGIN_LEFT, MARGIN_BOTTOM, MARGIN = 60, 22, 10
 
+		local function GetTextColor()
+			return Timeline:GetSkin().Colours.Label.Dark -- Matches the SetDark labels around it
+		end
+
+		-- Looks like a plain caption, clicking it picks what the chart shows
+		local Caption = vgui.Create("DButton", Timeline)
+		Caption:SetText("")
+		Caption:SetTooltip("Click to pick what the chart shows.")
+
+		function Caption:Paint(W)
+			local TextColor = GetTextColor()
+			local Text      = TIMELINE_METRICS[TimelineMetric].Name
+
+			draw.SimpleText(Text, "ACF_Control", W / 2, 0, TextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+
+			if self:IsHovered() then
+				surface.SetFont("ACF_Control")
+
+				local TextW, TextH = surface.GetTextSize(Text)
+
+				surface.SetDrawColor(TextColor)
+				surface.DrawLine((W - TextW) / 2, TextH, (W + TextW) / 2, TextH)
+			end
+		end
+
+		function Caption:DoClick()
+			local Menu = DermaMenu()
+
+			for I, Metric in ipairs(TIMELINE_METRICS) do
+				local Option = Menu:AddOption(Metric.Name, function() Timeline:SetMetric(I) end)
+
+				if I == TimelineMetric then Option:SetChecked(true) end
+			end
+
+			Menu:InvalidateLayout(true)
+
+			-- Opens upwards from the caption
+			local X, Y = self:LocalToScreen(self:GetWide() / 2, 0)
+
+			Menu:Open(X - Menu:GetWide() / 2, Y - Menu:GetTall())
+		end
+
+		function Timeline:PerformLayout(W, H)
+			surface.SetFont("ACF_Control")
+
+			local TextW, TextH = surface.GetTextSize(TIMELINE_METRICS[TimelineMetric].Name)
+			local Center       = (MARGIN_LEFT + W - MARGIN) / 2
+
+			Caption:SetSize(TextW + 8, TextH + 2)
+			Caption:SetPos(math.Round(Center - Caption:GetWide() / 2), H - MARGIN_BOTTOM + 2)
+		end
+
+		function Timeline:SetData(Data)
+			self.Data  = Data
+			self.Lines = nil
+		end
+
+		function Timeline:SetMetric(Index)
+			TimelineMetric = Index
+
+			self.Lines = nil
+			self:InvalidateLayout()
+		end
+
 		local BasePaint = Timeline.Paint
 
 		function Timeline:Paint(W, H)
 			BasePaint(self, W, H)
 
-			local TextColor = self:GetSkin().Colours.Label.Dark -- Matches the SetDark labels around it
+			local TextColor = GetTextColor()
 			local Data      = self.Data
-			local Max       = 0
+			local Metric    = TIMELINE_METRICS[TimelineMetric]
 
-			if Data then
-				for _, Line in pairs(Data.Lines) do Max = math.max(Max, Line[#Line][2]) end
-			end
-
-			if Max <= 0 or Data.Duration <= 0 then
+			if not Data or Data.Duration <= 0 then
 				draw.SimpleText("No kills between teams yet.", "ACF_Label", W / 2, H / 2, TextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 				return
 			end
 
-			local Left, Right  = MARGIN_LEFT, W - MARGIN
-			local Top, Bottom  = MARGIN, H - MARGIN_BOTTOM
-			local ScaleX       = (Right - Left) / Data.Duration
-			local ScaleY       = (Bottom - Top) / Max
+			if not self.Lines then
+				local Min, Max, HasValue = 0, 0, false
+
+				self.Lines = BuildLines(Data, Metric)
+
+				for _, Line in pairs(self.Lines) do
+					for _, Point in ipairs(Line) do
+						local Value = Point[2]
+
+						if Value then
+							HasValue = true
+							Min = math.min(Min, Value)
+							Max = math.max(Max, Value)
+						end
+					end
+				end
+
+				if HasValue and Metric.Max then Max = math.max(Max, Metric.Max) end
+
+				self.Min, self.Max = Min, Max
+			end
+
+			local Min, Max = self.Min, self.Max
+
+			if Max <= Min then
+				draw.SimpleText("Nothing to show for this yet.", "ACF_Label", W / 2, H / 2, TextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+				return
+			end
+
+			local Left, Right = MARGIN_LEFT, W - MARGIN
+			local Top, Bottom = MARGIN, H - MARGIN_BOTTOM
+			local ScaleX      = (Right - Left) / Data.Duration
+			local ScaleY      = (Bottom - Top) / (Max - Min)
+
+			local function GetY(Value)
+				return Bottom - (Value - Min) * ScaleY
+			end
 
 			surface.SetDrawColor(TextColor)
 			surface.DrawLine(Left, Top, Left, Bottom)
 			surface.DrawLine(Left, Bottom, Right, Bottom)
 
-			draw.SimpleText(FormatPoints(Max), "ACF_Control", Left - 4, Top, TextColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
-			draw.SimpleText("0", "ACF_Control", Left - 4, Bottom, TextColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM)
+			draw.SimpleText(Metric.Format(Max), "ACF_Control", Left - 4, Top, TextColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
+			draw.SimpleText(Metric.Format(Min), "ACF_Control", Left - 4, Bottom, TextColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM)
 			draw.SimpleText("0:00", "ACF_Control", Left, Bottom + 2, TextColor, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
 			draw.SimpleText(FormatDuration(Data.Duration), "ACF_Control", Right, Bottom + 2, TextColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
-			draw.SimpleText("Points destroyed over time", "ACF_Control", (Left + Right) / 2, Bottom + 2, TextColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+
+			if Min < 0 then
+				local Zero = GetY(0)
+
+				surface.SetDrawColor(TextColor.r, TextColor.g, TextColor.b, 60)
+				surface.DrawLine(Left, Zero, Right, Zero)
+
+				if Zero - Top > 14 and Bottom - Zero > 14 then
+					draw.SimpleText("0", "ACF_Control", Left - 4, Zero, TextColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+				end
+			end
 
 			for Index, Team in ipairs(Data.Teams) do
-				local Line      = Data.Lines[Team]
+				local Line      = self.Lines[Team]
 				local LineColor = TeamColor(Team)
 
 				surface.SetDrawColor(LineColor)
 
 				for I = 2, #Line do
-					local X1, Y1 = Left + Line[I - 1][1] * ScaleX, Bottom - Line[I - 1][2] * ScaleY
-					local X2, Y2 = Left + Line[I][1] * ScaleX, Bottom - Line[I][2] * ScaleY
+					local From, To = Line[I - 1], Line[I]
 
-					surface.DrawLine(X1, Y1, X2, Y1)
-					surface.DrawLine(X2, Y1, X2, Y2)
+					if From[2] and To[2] then
+						local X1, Y1 = Left + From[1] * ScaleX, GetY(From[2])
+						local X2, Y2 = Left + To[1] * ScaleX, GetY(To[2])
+
+						if Metric.Rate then
+							surface.DrawLine(X1, Y1, X2, Y2)
+						else
+							surface.DrawLine(X1, Y1, X2, Y1)
+							surface.DrawLine(X2, Y1, X2, Y2)
+						end
+					end
 				end
 
 				draw.SimpleText(Team, "ACF_Label", Left + 8, Top + (Index - 1) * 16, LineColor)
@@ -1328,7 +1548,7 @@ do -- MARK: Browser
 				ColorTeam(Line, 3, Kill.VictimSteamID)
 			end
 
-			Timeline.Data = TimelineData
+			Timeline:SetData(TimelineData)
 
 			self:ShowResult(TeamList)
 		end
