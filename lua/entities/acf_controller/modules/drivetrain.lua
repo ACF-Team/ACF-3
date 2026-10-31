@@ -394,8 +394,8 @@ do
 		local MinRPM, MaxRPM = self:GetShiftMinRPM(), self:GetShiftMaxRPM()
 		if MinRPM == MaxRPM then return end -- Probably not set by the user
 		if self:GetDisableAutoShifter() then return end
-		if RPM > MinRPM then Gear = Gear + 1
-		elseif RPM < MaxRPM then Gear = Gear - 1 end
+		if RPM > MaxRPM then Gear = Gear + 1
+		elseif RPM < MinRPM then Gear = Gear - 1 end
 
 		-- Clean this up later
 		local UseReverser = self.HasTransfers
