@@ -11,13 +11,11 @@ local GearCVTST = 700
 local StTB = 1.25 -- Straight torque bonus multiplier
 
 local function InitGearbox(Gearbox)
-	local Gears = Gearbox.Gears
-
 	Gearbox.CVT      = true
 	Gearbox.CVTRatio = 0
 
-	WireLib.TriggerOutput(Gearbox, "Min Target RPM", Gears.MinRPM)
-	WireLib.TriggerOutput(Gearbox, "Max Target RPM", Gears.MaxRPM)
+	WireLib.TriggerOutput(Gearbox, "Min Target RPM", Gearbox.MinRPM)
+	WireLib.TriggerOutput(Gearbox, "Max Target RPM", Gearbox.MaxRPM)
 end
 
 Classes.DefineClass("ACF.Gearboxes.CVT", "ACF.Gearboxes.BaseGearbox", function(CLASS)
