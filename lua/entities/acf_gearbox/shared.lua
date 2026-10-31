@@ -36,7 +36,7 @@ ENT.ACF_StaticWireOutputs = {
 	"Current Gear (Returns the gear currently in use.)",
 	"Ratio (Returns the current gear ratio, based on the current gear and final drive.)",
 	"Entity (The gearbox itself.) [ENTITY]",
-	"Output Torque (The amount of torque being outputted by this gearbox.)"
+	"Output Torque (The amount of torque being outputted by this gearbox.)" -- TODO: Check if its worth the serverside performance penalty of having this.
 }
 
 -- Returns the gearbox instance backing this entity.

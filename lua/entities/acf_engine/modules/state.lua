@@ -338,7 +338,10 @@ function ENT:CalcRPM(SelfTbl)
 		end
 	end
 
-	SelfTbl.FlyRPM = FlyRPM
+	-- Jank: Adding this just for turbines, since those just slip like crazy. 
+	local TorqueDiff = IsElectric and max(FlyRPM - IdleRPM, 0) / FlyInertia or 0
+
+	SelfTbl.FlyRPM = FlyRPM - TorqueDiff
 	SelfTbl.LastThink = ClockTime
 	SelfTbl.LastGearboxLoad = GearboxLoad
 
