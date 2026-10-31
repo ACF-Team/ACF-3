@@ -70,8 +70,8 @@ end
 local function CheckUnloadable(v, Gun)
 	if not (CheckValid(v, Gun) and v:CanRestock()) then return false end
 
-	-- The shell goes back on top of the stack, so that slot has to hold the same round
-	local Round = v:GetRound(v.Amount + 1)
+	-- The slot the shell goes back into has to hold the same round
+	local Round = v:GetRound(v:GetRefillSlot())
 
 	return Round.AmmoType == Gun.BulletData.AmmoType and ACF.BulletEquality(Round, Gun.BulletData)
 end

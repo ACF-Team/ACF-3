@@ -2072,6 +2072,50 @@ if SERVER then
 		return ACF.GetLegacyStyleClassName(BulletData and BulletData.AmmoType or "")
 	end
 
+	--- Returns the rounds left in an ammo crate by ammo type
+	-- @server
+	-- @return table The rounds left, keyed by ammo type
+	function ents_methods:acfRoundCounts()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and This.IsACFAmmo) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return {} end
+
+		return This:GetAmmoTypeCounts()
+	end
+
+	--- Returns the type of ammo that will leave an ammo crate next
+	-- @server
+	-- @return string The type of ammo
+	function ents_methods:acfNextRoundType()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and This.IsACFAmmo) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return "" end
+
+		return This:GetNextAmmoType()
+	end
+
+	--- Limits an ammo crate to feeding one type of ammo
+	-- @param string ammoType The type of ammo to feed, an empty string lets it feed all of them
+	-- @server
+	function ents_methods:acfSetRoundFilter(ammoType)
+		CheckType(self, ents_metatable)
+		CheckLuaType(ammoType, TYPE_STRING)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and This.IsACFAmmo) then SF.Throw("Entity is not valid", 2) end
+
+		CheckPerms(instance, This, "entities.acf")
+
+		This:SetAmmoTypeFilter(ammoType)
+	end
+
 	--- Returns the caliber of an ammo or gun
 	-- @server
 	-- @return number The caliber

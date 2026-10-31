@@ -1098,6 +1098,37 @@ e2function string entity:acfAmmoType()
 	return ACF.GetLegacyStyleClassName(BulletData and BulletData.AmmoType or "")
 end
 
+-- Returns the rounds left in an ACF ammo crate by ammo type
+e2function table entity:acfRoundCounts()
+	local ret = newE2Table()
+	if not (IsACFEntity(this) and this.IsACFAmmo) then return ret end
+	if RestrictInfo(self, this) then return ret end
+
+	for AmmoType, Count in pairs(this:GetAmmoTypeCounts()) do
+		ret.s[AmmoType]      = Count
+		ret.stypes[AmmoType] = "n"
+		ret.size             = ret.size + 1
+	end
+
+	return ret
+end
+
+-- Returns the type of ammo that will leave an ACF ammo crate next
+e2function string entity:acfNextRoundType()
+	if not (IsACFEntity(this) and this.IsACFAmmo) then return "" end
+	if RestrictInfo(self, this) then return "" end
+
+	return this:GetNextAmmoType()
+end
+
+-- Limits an ACF ammo crate to feeding one type of ammo, an empty string lets it feed all of them
+e2function void entity:acfSetRoundFilter(string AmmoType)
+	if not (IsACFEntity(this) and this.IsACFAmmo) then return end
+	if not isOwner(self, this) then return end
+
+	this:SetAmmoTypeFilter(AmmoType)
+end
+
 -- Returns the caliber of an ammo
 e2function number entity:acfCaliber()
 	if not IsACFEntity(this) then return 0 end
