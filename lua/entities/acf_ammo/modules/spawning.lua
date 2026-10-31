@@ -103,11 +103,7 @@ do -- Spawn/Update/Remove
 
 			Entity:SetSize(Data.Size)
 
-			local Rounds = Layout.GetPerDisk(primary) * numStacks
-			-- Floored with no minimum: an odd cell out holds half a round, and half a round is nothing
-			if Bullet.TwoPiece then Rounds = Floor(Rounds * 0.5) end
-
-			return Rounds
+			return ACF.GetCrateCapacity(Shape, primary, 1, numStacks, Bullet.TwoPiece)
 		elseif IsCassette then
 			-- X is the stacks around the conveyor, Y and Z the conveyor's width and height
 			local roundSize        = ACF.GetRoundProperties(Class, Data, Bullet)
@@ -119,15 +115,11 @@ do -- Spawn/Update/Remove
 			Data.CrateProjectilesX = stacks
 			Data.CrateProjectilesY = width
 			Data.CrateProjectilesZ = height
-			Data.Size              = ACF.GetCrateDimensions(ACF.GetCassetteGrid(stacks, width, height), roundSize, false)
+			Data.Size              = ACF.GetCrateDimensions(ACF.GetCassetteGrid(stacks, width, height, Bullet.TwoPiece), roundSize, false)
 
 			Entity:SetSize(Data.Size)
 
-			local Rounds = ACF.GetCassetteCapacity(stacks, width, height)
-			-- Floored with no minimum: an odd cell out holds half a round, and half a round is nothing
-			if Bullet.TwoPiece then Rounds = Floor(Rounds * 0.5) end
-
-			return Rounds
+			return ACF.GetCrateCapacity(Shape, stacks, width, height, Bullet.TwoPiece)
 		else
 			-- Standard box crate logic
 			local cx = tonumber(Data.CrateProjectilesX)
@@ -160,11 +152,7 @@ do -- Spawn/Update/Remove
 
 			Entity:SetSize(Data.Size)
 
-			local Rounds = cx * cy * cz
-			-- Floored with no minimum: an odd cell out holds half a round, and half a round is nothing
-			if Bullet.TwoPiece then Rounds = Floor(Rounds * 0.5) end
-
-			return Rounds
+			return ACF.GetCrateCapacity(Shape, cx, cy, cz, Bullet.TwoPiece)
 		end
 	end
 
@@ -578,7 +566,7 @@ do -- Overlay
 
 		-- Cassettes store stacks and conveyor size, so expand them to the full grid
 		if self.IsCassette then
-			CountX, CountY, CountZ = ACF.GetCassetteGrid(CountX, CountY, CountZ):Unpack()
+			CountX, CountY, CountZ = ACF.GetCassetteGrid(CountX, CountY, CountZ, self.BulletData.TwoPiece):Unpack()
 		end
 
 		State:AddDivider()

@@ -464,8 +464,9 @@ do -- MARK: Ammo capacity
 		end
 
 		--- Cassettes wrap `stacks` layers of rounds around a conveyor `width` by `height` rounds across.
-		function ACF.GetCassetteGrid(stacks, width, height)
-			return Vector(1, width + 2 * stacks, height + 2 * stacks)
+		--- Two piece rounds lie end to end along X, the conveyor leaves no room to pair them across the ring.
+		function ACF.GetCassetteGrid(stacks, width, height, twoPiece)
+			return Vector(twoPiece and 2 or 1, width + 2 * stacks, height + 2 * stacks)
 		end
 
 		--- True for grid cells inside the conveyor, which hold no rounds.
@@ -505,7 +506,6 @@ do -- MARK: Ammo capacity
 		--   GetPerDisk(primary)   -- rounds in one disk, which is NOT always the primary
 		--   GetDimensions(primary, numStacks, roundSize, hexPack)
 		--   GetRoundOffset(index, primary, numStacks, roundSize, hexPack)
-		--   GetTier(index, primary)
 		--   GetRenderTransform(localPos, ringAngle, modelAngle, boxAngle, roundSize, needsRotation)
 		--
 		-- Capacity is always GetPerDisk(primary) * numStacks.
@@ -593,11 +593,6 @@ do -- MARK: Ammo capacity
 
 			-- Round points inward: yaw = angle + 180
 			return Vector(x, y, z), Angle(0, angle + 180, 0)
-		end
-
-		--- Two-piece rounds pair along the layer axis: charge below, projectile above.
-		function Horizontal.GetTier(index, roundsPerRing)
-			return floor((index - 1) / roundsPerRing)
 		end
 
 		function Horizontal.GetRenderTransform(localPos, ringAngle, modelAngle, boxAngle, roundSize, needsRotation)
@@ -720,11 +715,6 @@ do -- MARK: Ammo capacity
 			return Vector(x, y, z), Angle(0, angle, 0)
 		end
 
-		--- Two-piece rounds pair along the stack: charge below, projectile above.
-		function Vertical.GetTier(index, numRings)
-			return floor((index - 1) / Vertical.GetPerDisk(numRings))
-		end
-
 		function Vertical.GetRenderTransform(localPos, ringAngle, _, boxAngle, roundSize, needsRotation)
 			-- Cartridge models run along their own Z, which is already this drum's stacking axis, so
 			-- they need no pitch correction here -- the reverse of the horizontal drum. Models whose
@@ -779,6 +769,18 @@ do -- MARK: Ammo capacity
 		--- Returns the drum layout for a container shape, or nil for non-drum shapes.
 		function ACF.GetDrumLayout(Shape)
 			return ACF.DrumLayouts[ShapeName(Shape)]
+		end
+
+		--- Rounds a crate holds for its counts. Two piece rounds take a charge cell and the projectile cell
+		--- above it on box crates and drums, so only whole pairs of layers count. Cassettes pair along X instead.
+		function ACF.GetCrateCapacity(Shape, CountX, CountY, CountZ, TwoPiece)
+			local Layout = ACF.DrumLayouts[ShapeName(Shape)]
+			local Layers = TwoPiece and floor(CountZ / 2) or CountZ
+
+			if Layout then return Layout.GetPerDisk(CountX) * Layers end
+			if ShapeName(Shape) == "Cassette" then return ACF.GetCassetteCapacity(CountX, CountY, CountZ) end
+
+			return CountX * CountY * Layers
 		end
 
 		function ACF.GetDrumCrateSizeFromProjectileCounts(primary, numStacks, Class, ToolData, BulletData, hexPack, Shape)

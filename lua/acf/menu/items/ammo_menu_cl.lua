@@ -249,25 +249,9 @@ local function GetHexPacking()
 	return AmmoCtx and AmmoCtx:Get("HexPacking") and CanHexPack(GetShapeName()) or false
 end
 
----Complete rounds held by the given cell counts. Mirrors the server's UpdateCrateSize: two piece
----ammo stows the charge and projectile in a cell each, so it takes two cells to make a round.
+---Complete rounds held by the given cell counts, the same figure the server uses.
 local function GetRoundCount(CountX, CountY, CountZ)
-	local Layout = ACF.GetDrumLayout(GetShapeName())
-	local Rounds
-
-	if Layout then
-		-- For drums X is the layout's primary count, which is not always a round count:
-		-- a vertical drum reads it as rings, so the layout works out the rounds per disk
-		Rounds = Layout.GetPerDisk(CountX) * CountZ
-	elseif IsCassette() then
-		Rounds = ACF.GetCassetteCapacity(CountX, CountY, CountZ)
-	else
-		Rounds = CountX * CountY * CountZ
-	end
-
-	if BulletData and BulletData.TwoPiece then Rounds = math.floor(Rounds * 0.5) end
-
-	return Rounds
+	return ACF.GetCrateCapacity(GetShapeName(), CountX, CountY, CountZ, BulletData and BulletData.TwoPiece)
 end
 
 ---Returns the cost of a single round, including any per-round missile components.
@@ -381,7 +365,7 @@ local function UpdateBoxSizeFromProjectileCounts(ToolData)
 		if IsDrum() then
 			BoxSize = ACF.GetDrumCrateSizeFromProjectileCounts(CountX, CountZ, Class, ToolData, BulletData, GetHexPacking(), GetShapeName())
 		elseif IsCassette() then
-			local Grid = ACF.GetCassetteGrid(CountX, CountY, CountZ)
+			local Grid = ACF.GetCassetteGrid(CountX, CountY, CountZ, BulletData.TwoPiece)
 
 			BoxSize = ACF.GetCrateSizeFromProjectileCounts(Grid.x, Grid.y, Grid.z, Class, ToolData, BulletData, false)
 		else
