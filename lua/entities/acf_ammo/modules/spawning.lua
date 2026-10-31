@@ -281,6 +281,13 @@ do -- Spawn/Update/Remove
 						net.WriteUInt(Slot, 6)
 						net.WriteUInt(Round.Bodygroup, 4)
 					end
+
+					-- Empty slots below the top, left by rounds taken out of order
+					net.WriteUInt(table.Count(Entity.Holes), 6)
+
+					for Slot in pairs(Entity.Holes) do
+						net.WriteUInt(Slot, 6)
+					end
 				end
 
 			if Player then
@@ -291,7 +298,12 @@ do -- Spawn/Update/Remove
 		end
 	end
 
-	ENT.NetworkAmmoData = NetworkAmmoData
+	--- Networks the ammo data at the end of the tick, so several changes in one tick send it once
+	function ENT:QueueAmmoData()
+		timer.Create("ACF Ammo Data " .. self:EntIndex(), 0, 1, function()
+			if IsValid(self) then NetworkAmmoData(self) end
+		end)
+	end
 
 	util.AddNetworkString("ACF_RequestAmmoData")
 
@@ -366,6 +378,7 @@ do -- Spawn/Update/Remove
 
 		Entity.Capacity = Rounds
 		Entity.MagSize  = MagSize
+		Entity.Holes    = {} -- The layout may have changed, so the remaining rounds close up from the bottom
 		Entity:BuildOverrides()
 		Entity:SetAmount(math.floor(Entity.Capacity * Percentage))
 		Entity:SetNWInt("Ammo", Entity.Amount)

@@ -108,8 +108,8 @@ function ENT:Detonate(VisualOnly)
 	local Position   = self:LocalToWorld(self:OBBCenter() + VectorRand() * self:GetSize() * 0.5) -- Random position within the crate
 	local BulletData = self.BulletData
 	local Rounds     = math.max(self.Ammo, 1)
-	local Filler     = self:SumRounds("FillerMass", Rounds) / Rounds -- Averaged, overridden rounds can carry more or less
-	local Propellant = self:SumRounds("PropMass", Rounds) / Rounds
+	local Filler     = self:SumRounds("FillerMass") / Rounds -- Averaged, overridden rounds can carry more or less
+	local Propellant = self:SumRounds("PropMass") / Rounds
 	local AmmoPower  = self.Ammo ^ 0.7 -- Arbitrary exponent to reduce ammo-based explosive power
 	local Explosive  = (Filler + Propellant * (ACF.PropImpetus / ACF.HEPower)) * AmmoPower
 	local FragMass   = BulletData.ProjMass or Explosive * 0.5

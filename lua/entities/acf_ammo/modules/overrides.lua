@@ -13,9 +13,66 @@ do -- MARK: Round access
 		return self.BulletData, self.RoundData
 	end
 
-	--- Returns the round that will leave the crate next, rounds come off the top of the stack
+	--- The highest slot holding a round. Slots below it can be empty where a filtered take left a hole
+	function ENT:GetTopSlot()
+		return self.Amount + table.Count(self.Holes)
+	end
+
+	function ENT:IsSlotFilled(Slot)
+		return Slot >= 1 and Slot <= self:GetTopSlot() and not self.Holes[Slot]
+	end
+
+	--- Limits which rounds leave the crate to those Filter(BulletData, Ammo) accepts, nil allows all of them
+	function ENT:SetRoundFilter(Filter)
+		self.RoundFilter = Filter
+
+		WireLib.TriggerOutput(self, "Loading", self:CanConsume() and 1 or 0)
+	end
+
+	--- Limits the crate to rounds of one ammo type, by full or short name ("ACF.Ammunition.HE" or "HE"), "" allows all of them
+	function ENT:SetAmmoTypeFilter(AmmoType)
+		if not AmmoType or AmmoType == "" then return self:SetRoundFilter(nil) end
+
+		self:SetRoundFilter(function(BulletData)
+			return BulletData.AmmoType == AmmoType or ACF.GetLegacyStyleClassName(BulletData.AmmoType) == AmmoType
+		end)
+	end
+
+	--- The slot of the next round to leave the crate, the highest one the filter accepts, nil if none does
+	function ENT:FindNextSlot()
+		local Top    = self:GetTopSlot()
+		local Filter = self.RoundFilter
+		local Holes  = self.Holes
+
+		if Top < 1 then return end
+		if not Filter then return Top end
+
+		-- Past the overridable slots every round is the crate's own and none are holes, so only the top one matters
+		if Top > ACF.MaxRoundsDrawn then
+			if Filter(self.BulletData, self.RoundData) then return Top end
+
+			Top = ACF.MaxRoundsDrawn
+		end
+
+		for Slot = Top, 1, -1 do
+			if not Holes[Slot] and Filter(self:GetRound(Slot)) then return Slot end
+		end
+	end
+
+	--- The slot a round put back into the crate goes into, the lowest hole or the one above the top
+	function ENT:GetRefillSlot()
+		local Holes = self.Holes
+
+		for Slot = 1, math.min(self:GetTopSlot(), ACF.MaxRoundsDrawn) do
+			if Holes[Slot] then return Slot end
+		end
+
+		return self:GetTopSlot() + 1
+	end
+
+	--- Returns the round that will leave the crate next
 	function ENT:PeekRound()
-		return self:GetRound(self.Amount)
+		return self:GetRound(self:FindNextSlot() or self:GetTopSlot())
 	end
 
 	--- Short name of the ammo type that will leave the crate next
@@ -25,20 +82,98 @@ do -- MARK: Round access
 
 	--- Removes the next round from the crate and returns it
 	function ENT:TakeRound()
-		local BulletData, Ammo = self:PeekRound()
+		local Slot = self:FindNextSlot() or self:GetTopSlot()
+		local BulletData, Ammo = self:GetRound(Slot)
+
+		-- A round taken from below the top leaves a hole, so the top stays put as the amount drops
+		if Slot < self:GetTopSlot() then
+			self.Holes[Slot] = true
+			self:QueueAmmoData()
+		end
 
 		self:Consume(1)
 
 		return BulletData, Ammo
 	end
 
-	--- Sums a bullet data value over the first Count rounds, overrides included
-	function ENT:SumRounds(Key, Count)
-		local Base  = self.BulletData[Key] or 0
-		local Total = Base * Count
+	--- Keeps the holes in step with a new amount: rounds leave from the top and refills fill the lowest hole first
+	function ENT:UpdateHoles(OldAmount)
+		local Holes = self.Holes
+		local Count = table.Count(Holes)
+		local Delta = self.Amount - OldAmount
+		local Top   = OldAmount + Count
+
+		if Delta == 0 then return end
+
+		if self.Amount <= 0 then
+			self.Holes = {}
+		elseif Delta > 0 then
+			for Slot = 1, math.min(Top, ACF.MaxRoundsDrawn) do
+				if Delta == 0 then break end
+
+				if Holes[Slot] then
+					Holes[Slot] = nil
+					Delta = Delta - 1
+				end
+			end
+		else
+			for _ = 1, -Delta do
+				Top = Top - 1
+
+				while Holes[Top] do
+					Holes[Top] = nil
+					Top = Top - 1
+				end
+			end
+		end
+
+		-- Clients draw holes as gaps, every change to them changes how many there are
+		if table.Count(self.Holes) ~= Count then self:QueueAmmoData() end
+	end
+
+	--- Every kind of round the crate is loaded with and how many of each are left, as a list of { BulletData, Ammo, Count }
+	function ENT:GetRoundCounts()
+		local Base   = { BulletData = self.BulletData, Ammo = self.RoundData, Count = self.Amount }
+		local Kinds  = { Base }
+		local ByAmmo = {}
 
 		for Slot, Round in pairs(self.SlotRounds) do
-			if Slot <= Count then Total = Total + (Round.BulletData[Key] or 0) - Base end
+			local Kind = ByAmmo[Round.Ammo]
+
+			if not Kind then
+				Kind = { BulletData = Round.BulletData, Ammo = Round.Ammo, Count = 0 }
+				ByAmmo[Round.Ammo]  = Kind
+				Kinds[#Kinds + 1]   = Kind
+			end
+
+			if self:IsSlotFilled(Slot) then
+				Kind.Count = Kind.Count + 1
+				Base.Count = Base.Count - 1
+			end
+		end
+
+		return Kinds
+	end
+
+	--- Rounds left in the crate by short ammo type name, rounds of one type with different specs count together
+	function ENT:GetAmmoTypeCounts()
+		local Counts = {}
+
+		for _, Kind in ipairs(self:GetRoundCounts()) do
+			local Name = ACF.GetLegacyStyleClassName(Kind.BulletData.AmmoType)
+
+			Counts[Name] = (Counts[Name] or 0) + Kind.Count
+		end
+
+		return Counts
+	end
+
+	--- Sums a bullet data value over the rounds in the crate
+	function ENT:SumRounds(Key)
+		local Total = 0
+
+		for _, Kind in ipairs(self:GetRoundCounts()) do
+			Total = Total + (Kind.BulletData[Key] or 0) * Kind.Count
 		end
 
 		return Total
@@ -49,7 +184,7 @@ do -- MARK: Round access
 
 		if not next(self.SlotRounds) or Amount <= 0 then return self.BaseClass.GetUnitMass(self) end
 
-		return self:SumRounds("CartMass", Amount) / Amount
+		return self:SumRounds("CartMass") / Amount
 	end
 end
 
@@ -273,7 +408,7 @@ do -- MARK: Storage
 		end
 
 		self:BuildOverrides(Map)
-		self:NetworkAmmoData()
+		self:QueueAmmoData()
 		self:UpdateMass(true)
 		self:UpdateOverlay(true)
 

@@ -4,8 +4,9 @@ local TimerExists = timer.Exists
 function ENT:CanConsume()
 	if not ACF.IsOperational(self) then return false end
 	if not self.Load then return false end
+	if self.Amount <= 0 then return false end
 
-	return self.Amount > 0
+	return not self.RoundFilter or self:FindNextSlot() ~= nil
 end
 
 function ENT:SetAmount(Amount)
@@ -13,6 +14,7 @@ function ENT:SetAmount(Amount)
 
 	-- Use base container logic
 	self.BaseClass.SetAmount(self, Amount)
+	self:UpdateHoles(OldAmount)
 	self.Ammo = self.Amount
 
 	-- Play resupply sound when ammo increases

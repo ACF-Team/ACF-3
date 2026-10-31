@@ -121,8 +121,9 @@ do --MARK: Networking
 
 		entity.Ammo = newAmmo
 
+		-- Drawn up to the top slot, which sits above any holes left by rounds taken out of order
 		local maxDisplayRounds = math.max( 0, MaxRounds:GetInt() )
-		entity.TargetDisplayAmmo = math.min( newAmmo, maxDisplayRounds )
+		entity.TargetDisplayAmmo = math.min( newAmmo + table.Count( entity.Holes or {} ), maxDisplayRounds )
 	end
 
 	net.Receive( "ACF_RequestAmmoData", function()
@@ -182,6 +183,14 @@ do --MARK: Networking
 		end
 
 		entity.SlotBodygroups = slotBodygroups
+
+		local holes = {}
+
+		for _ = 1, net.ReadUInt( 6 ) do
+			holes[net.ReadUInt( 6 )] = true
+		end
+
+		entity.Holes = holes
 
 		-- Resolve model path - use cartridge model with bodygroups for ammo visualization
 		local modelPath = entity.RoundModel
@@ -342,8 +351,9 @@ do --MARK: Ammo rendering
 
 		for round = previous + 1, count do
 			local roundModels, roundBoxes = {}, {}
+			local pieces = not self.Holes[round] and self.CachedRounds[round] or {}
 
-			for _, piece in ipairs( self.CachedRounds[round] or {} ) do
+			for _, piece in ipairs( pieces ) do
 				local path, scale, group = modelPath, scaleMatrix, self.SlotBodygroups[round] or bodygroup
 
 				if piece.Charge then
