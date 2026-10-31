@@ -5,6 +5,8 @@ local ACF = ACF
 local CHECK_INTERVAL = 0.1 -- Seconds between samples
 
 -- Never sampled and never counted as a blocker
+local IGNORE_GROUPS = {}
+
 local EXEMPT = {
     acf_baseplate = true,
     acf_waterjet = true,

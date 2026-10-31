@@ -71,7 +71,7 @@ Classes.DefineClass("ACF.Missiles.GuidedBomb.227kg", "ACF.Missiles.GuidedBomb", 
 	CLASS.Racks			= { ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true, ["3xRK"] = true, ["ACF.Racks.4xRK"] = true }
 	CLASS.Guidances		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.Laser"] = true, ["ACF.Missiles.Guidance.GPSGuided"] = true }
 	CLASS.Navigation	= "ACF.Missiles.Navigation.PN"
-	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Timed"] = true, ["ACF.Missiles.Fuze.Optical"] = true, ["ACF.Missiles.Fuze.Altitude"] = true }
+	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Timed"] = true, ["ACF.Missiles.Fuze.Optical"] = true, ["ACF.Missiles.Fuze.Altitude"] = true, ["ACF.Missiles.Fuze.Cluster"] = true }
 	CLASS.SeekCone		= 60
 	CLASS.ViewCone		= 80
 	CLASS.Agility		= 0.015
@@ -131,7 +131,7 @@ Classes.DefineClass("ACF.Missiles.GuidedBomb.454kg", "ACF.Missiles.GuidedBomb", 
 	CLASS.Racks			= { ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true, ["3xRK"] = true, ["ACF.Racks.4xRK"] = true }
 	CLASS.Guidances		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.Laser"] = true, ["ACF.Missiles.Guidance.GPSGuided"] = true }
 	CLASS.Navigation	= "ACF.Missiles.Navigation.PN"
-	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Timed"] = true, ["ACF.Missiles.Fuze.Optical"] = true, ["ACF.Missiles.Fuze.Altitude"] = true }
+	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Timed"] = true, ["ACF.Missiles.Fuze.Optical"] = true, ["ACF.Missiles.Fuze.Altitude"] = true, ["ACF.Missiles.Fuze.Cluster"] = true }
 	CLASS.SeekCone		= 60
 	CLASS.ViewCone		= 80
 	CLASS.Agility		= 0.03
@@ -191,7 +191,7 @@ Classes.DefineClass("ACF.Missiles.GuidedBomb.909kg", "ACF.Missiles.GuidedBomb", 
 	CLASS.Racks			= { ["ACF.Racks.1xRK"] = true, ["ACF.Racks.2xRK"] = true, ["ACF.Racks.4xRK"] = true }
 	CLASS.Guidances		= { ["ACF.Missiles.Guidance.Dumb"] = true, ["ACF.Missiles.Guidance.Laser"] = true, ["ACF.Missiles.Guidance.GPSGuided"] = true }
 	CLASS.Navigation	= "ACF.Missiles.Navigation.PN"
-	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Timed"] = true, ["ACF.Missiles.Fuze.Optical"] = true, ["ACF.Missiles.Fuze.Altitude"] = true }
+	CLASS.Fuzes			= { ["ACF.Missiles.Fuze.Contact"] = true, ["ACF.Missiles.Fuze.Timed"] = true, ["ACF.Missiles.Fuze.Optical"] = true, ["ACF.Missiles.Fuze.Altitude"] = true, ["ACF.Missiles.Fuze.Cluster"] = true }
 	CLASS.SeekCone		= 60
 	CLASS.ViewCone		= 80
 	CLASS.Agility		= 0.05

@@ -58,7 +58,7 @@ function ACF.CreateSoundMenu(Panel)
 		RunConsoleCommand("wire_soundemitter_sound", "")
 	end
 
-	local VolumeSlider = Menu:AddSlider("#tool.acfsound.volume", 0.1, 1, 2)
+	local VolumeSlider = Menu:AddSlider("#tool.acfsound.volume", 0.1, 2.5, 2)
 	VolumeSlider:SetConVar("acfsound_volume")
 	local PitchSlider = Menu:AddSlider("#tool.acfsound.pitch", 0.1, 2, 2)
 	PitchSlider:SetConVar("acfsound_pitch")
