@@ -1,3 +1,5 @@
+DEFINE_BASECLASS("acf_base_simple")
+
 local Clock		= ACF.Utilities.Clock
 local Queued	= {}
 
@@ -53,21 +55,95 @@ do	-- Overlay/networking
 		if SelfTbl.Spherical then
 			render.DrawWireframeSphere(Origin, SelfTbl.Range, 50, 50, Col2)
 		else
-
-			for I = 0, 7 do
-				local Dir = Vector(16384, 0, 0)
-				Dir:Rotate(Angle(SelfTbl.Cone, 0, 0))
-				Dir:Rotate(Angle(0, 0, 45 * I))
-				local Point = self:LocalToWorld(SelfTbl.Origin + Dir)
-				local Dir2 = Vector(16384, 0, 0)
-				Dir2:Rotate(Angle(SelfTbl.Cone, 0, 0))
-				Dir2:Rotate(Angle(0, 0, 45 * (I + 1)))
-				local Point2 = self:LocalToWorld(SelfTbl.Origin + Dir2)
-
-				render.DrawQuad(Origin, Point, Point2, Point, Col)
-				render.DrawLine(Point, Point2, Col, true)
-				render.DrawLine(Origin, Point, Col, true)
-			end
+			ACF.DrawCone(Origin, self:GetForward(), SelfTbl.Cone, SelfTbl.Range, Col, Col)
 		end
+	end
+end
+
+do	-- Dish rotation
+	local SpinSpeed = 360 -- Degrees per second
+	local SpinAccel = 540 -- Degrees per second squared, used for both spin-up and braking
+	local SpinAng   = Angle()
+
+	-- Entity up axis in the bone's frame, which a spin about that axis leaves unchanged
+	local function GetSpinAxis(Entity, Bone)
+		local Matrix = Entity:GetBoneMatrix(Bone)
+		if not Matrix then return end
+
+		local Up = Entity:GetUp()
+
+		return Vector(Up:Dot(Matrix:GetForward()), -Up:Dot(Matrix:GetRight()), Up:Dot(Matrix:GetUp()))
+	end
+
+	local function UpdateSpin(Entity)
+		local SelfTbl = Entity:GetTable()
+		local Model   = Entity:GetModel()
+
+		if SelfTbl.SpinModel ~= Model then -- Updating the radar can swap its model
+			SelfTbl.SpinModel = Model
+			SelfTbl.SpinBone  = Entity:LookupBone("radar_rot")
+			SelfTbl.SpinAxis  = nil
+			SelfTbl.SpinAngle = 0
+			SelfTbl.SpinSpeed = 0
+			SelfTbl.SpinStop  = nil
+		end
+
+		local Bone = SelfTbl.SpinBone
+		if not Bone then return end
+
+		local Now   = Clock.CurTime
+		local Delta = Now - (SelfTbl.SpinTime or Now) -- Not FrameTime, so the dish catches up after being off-screen
+		local Speed = SelfTbl.SpinSpeed
+		local Ang   = SelfTbl.SpinAngle
+
+		SelfTbl.SpinTime = Now
+
+		if Entity:GetNW2Bool("ACF_RadarSpin") then
+			Speed = math.min(Speed + SpinAccel * Delta, SpinSpeed)
+			Ang   = (Ang + Speed * Delta) % 360
+
+			SelfTbl.SpinStop = nil
+		elseif Speed > 0 then
+			local Stop = SelfTbl.SpinStop
+
+			if not Stop then -- First home position we can brake into without exceeding SpinAccel
+				Stop = math.ceil((Ang + Speed * Speed / (2 * SpinAccel)) / 360) * 360
+
+				SelfTbl.SpinStop = Stop
+			end
+
+			Ang = math.min(Ang + Speed * Delta, Stop)
+
+			local Left = Stop - Ang
+
+			if Left <= 0 then
+				Ang, Speed = 0, 0
+
+				SelfTbl.SpinStop = nil
+			else
+				Speed = math.min(Speed, math.sqrt(2 * SpinAccel * Left)) -- Coast until on the braking curve
+			end
+		else
+			return
+		end
+
+		SelfTbl.SpinSpeed = Speed
+		SelfTbl.SpinAngle = Ang
+
+		local Axis = SelfTbl.SpinAxis or GetSpinAxis(Entity, Bone)
+		if not Axis then return end
+
+		SelfTbl.SpinAxis = Axis
+
+		SpinAng:Zero()
+		SpinAng:RotateAroundAxis(Axis, -Ang)
+
+		Entity:ManipulateBoneAngles(Bone, SpinAng)
+	end
+
+	function ENT:Draw(...)
+		BaseClass.Draw(self, ...)
+
+		UpdateSpin(self) -- After drawing so the bone matrix is set up, takes effect next frame
 	end
 end

@@ -2,6 +2,13 @@ DEFINE_BASECLASS("acf_base_simple")
 
 ENT.ACF_InvisibleToBallistics = true
 
+-- Number of Gun1/Gun2/Gun3 slots, shared by every module that iterates or looks up weapons by slot
+ENT.NUM_WEAPONS = 3
+
+function ENT:GetWeapon(Slot)
+	return self["GetGun" .. Slot](self)
+end
+
 -- The controller's live settings are NetworkVars (see below). The only serialized field is a request
 -- for the default config, applied by init.lua's ACF_OnVerifyClientData on spawn (always true from the
 -- menu, matching the previous behavior).
@@ -24,6 +31,7 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "Float", "ReloadAngleHorizontal", { KeyName = "reloadangle2", Edit = { type = "Float", order = 110, category = "Miscellaneous", min = -30, max = 30, tooltip = "If nonzero, Rotates the primary weapon to this angle when firing" } } )
 	self:NetworkVar( "Float", "SmokeFuse", { KeyName = "smokefuse", Edit = { type = "Float", order = 111, category = "Miscellaneous", min = 0, max = 1, tooltip = "IF nonzero, airburst fuse time in seconds for smoke launchers" } } )
 	self:NetworkVar( "Float", "FireDelay", { KeyName = "firedelay", Edit = { type = "Float", order = 112, category = "Miscellaneous", min = 0, max = 5, tooltip = "Fallback fire delay if non can be found (e.g. missiles)" } } )
+	self:NetworkVar( "Bool", "DisableTurretLock", { KeyName = "disableturretlock", Edit = { type = "Bool", order = 113, category = "Miscellaneous", tooltip = "Disables the turret lock toggle, keeping turrets always active while in the seat instead of toggled with Reload" } } )
 
 	self:NetworkVar( "Float", "ZoomSpeed", { KeyName = "zoomspeed", Edit = { type = "Float", order = 200, category = "Camera Settings", min = 0.001, max = 90, tooltip = "FOV zoom rate with scroll"  } } )
 	self:NetworkVar( "Float", "ZoomMin", { KeyName = "zoommin", Edit = { type = "Float", order = 201, category = "Camera Settings" , min = 0.001, max = 90, tooltip = "FOV when zoomed in (closer to 0)"  } } )
@@ -41,6 +49,13 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "Vector", "Cam3Offset", { KeyName = "cam3offset", Edit = { type = "Generic", order = 307, category = "Camera Specific Settings", tooltip = "Offset for third camera" } } )
 	self:NetworkVar( "Int", "Cam3Orbit", { KeyName = "cam3orbit", Edit = { type = "Float", order = 308, category = "Camera Specific Settings" , min = 0, max = 400, tooltip = "Orbit distance for third camera" } } )
 	self:NetworkVar( "Entity", "Cam3Parent", { KeyName = "cam3parent", Edit = { type = "Entity", order = 309, category = "Camera Specific Settings", tooltip = "Parent for third camera (defaults to vehicle)" } } )
+	self:NetworkVar( "Entity", "Gun1", { KeyName = "gun1", Edit = { type = "Entity", order = 500, category = "Weapon Settings", tooltip = "Primary weapon (auto-detected if unset)" } } )
+	self:NetworkVar( "Entity", "Gun2", { KeyName = "gun2", Edit = { type = "Entity", order = 501, category = "Weapon Settings", tooltip = "Secondary weapon (auto-detected if unset)" } } )
+	self:NetworkVar( "Entity", "Gun3", { KeyName = "gun3", Edit = { type = "Entity", order = 502, category = "Weapon Settings", tooltip = "Tertiary weapon, e.g. a rack (auto-detected if unset)" } } )
+	self:NetworkVar( "Bool", "LockWeaponSlots", { KeyName = "lockweaponslots", Edit = { type = "Bool", order = 503, category = "Weapon Settings", tooltip = "Locks Gun1/2/3 as set above, disabling auto-detection of newly linked weapons" } } )
+	self:NetworkVar( "Bool", "EnableFCS", { KeyName = "enablefcs", Edit = { type = "Bool", order = 504, category = "Weapon Settings", tooltip = "Enables drop and drift compensation." } } )
+	self:NetworkVar( "Bool", "EnableTimeFuse", { KeyName = "enabletimefuse", Edit = { type = "Bool", order = 505, category = "Weapon Settings", tooltip = "Sets the primary weapon's Fuze wire input to the FCS's computed travel time" } } )
+
 	self:NetworkVar( "Int", "HUDType", { KeyName = "hudtype", Edit = { type = "Combo", order = 400, category = "HUD Settings", values = {Minimal = 0, Sosna = 1, Leopard = 2}, tooltip = "HUD style" } } )
 	self:NetworkVar( "Float", "HUDScale", { KeyName = "hudscale", Edit = { type = "Float", order = 401, category = "HUD Settings", min = 0, max = 3, tooltip = "HUD scale" } } )
 	self:NetworkVar( "Vector", "HUDColor", { KeyName = "hudcolor", Edit = { type = "VectorColor", order = 402, category = "HUD Settings", tooltip = "HUD color" } } )
@@ -67,6 +82,8 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "Float", "SteerPercent3", { KeyName = "steerpercent3", Edit = { type = "Float", order = 902, category = "Car Steering Settings", min = -1, max = 1, tooltip = "Percent of brake strength used to steer 3rd wheel pair" } } )
 	self:NetworkVar( "Float", "SteerPercent4", { KeyName = "steerpercent4", Edit = { type = "Float", order = 903, category = "Car Steering Settings", min = -1, max = 1, tooltip = "Percent of brake strength used to steer 4th wheel pair" } } )
 	self:NetworkVar( "Float", "SteerRate", { KeyName = "steerrate", Edit = { type = "Float", order = 904, category = "Car Steering Settings", min = -45, max = 45, tooltip = "Speed wheels are steered at" } } )
+	self:NetworkVar( "Int", "SteerLow", { KeyName = "steerlow", Edit = { type = "Int", order = 905, category = "Car Steering Settings", min = 0, max = 1000, tooltip = "Steer angle at low speed, if 0 and SteerTop is 0 the brake strength is used instead" } } )
+	self:NetworkVar( "Int", "SteerTop", { KeyName = "steertop", Edit = { type = "Int", order = 906, category = "Car Steering Settings", min = 0, max = 1000, tooltip = "Steer angle at top speed, if 0 and SteerLow is 0 the brake strength is used instead" } } )
 end
 
 -- Thank you march (https://github.com/marchc1/imagestickers/blob/master/lua/imagestickers/properties.lua)

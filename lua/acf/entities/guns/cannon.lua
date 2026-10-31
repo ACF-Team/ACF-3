@@ -9,13 +9,13 @@ ACF.Classes.DefineClass("ACF.Guns.Cannon", "ACF.Guns.BaseScalableGun", function(
 	CLASS.MassCenter    = Vector(0, 0, 0)
 	CLASS.Sound       	= "acf_base/weapons/cannon_new.mp3"
 	CLASS.MuzzleFlash 	= "cannon_muzzleflash_noscale"
-	CLASS.Mass        	= 2031
+	CLASS.Mass        	= 1229
 	CLASS.Spread      	= 0.08
 	CLASS.ScaleFactor 	= 0.84 -- Corrective factor to account for improperly scaled base models
-	CLASS.TransferMult 	= 4 -- Thermal energy transfer rate
 	CLASS.Round 		= {
 		MaxLength  = 80,
-		PropLength = 65,
+		PropLength = 50,
+		CaseScale  = 1.33, -- 120x570mm (M256): 160mm case over a 120mm projectile
 	}
 	CLASS.Preview 		= {
 		Height = 50,
@@ -35,7 +35,7 @@ ACF.Classes.DefineClass("ACF.Guns.Cannon", "ACF.Guns.BaseScalableGun", function(
 			{Name = "Breech", LPos = Vector(-58.9363, 0, 0), LAng = Angle(0, 0, 0), Width = 6.6929133858268, Height = 6.6929133858268},
 		}
 	}
-	CLASS.CostScalar	= 0.4
+	CLASS.CostScalar	= 0.48
 end)
 
 ACF.SetCustomAttachment("models/tankgun_new/tankgun_100mm.mdl", "muzzle", Vector(175), Angle(0, 0, 90))

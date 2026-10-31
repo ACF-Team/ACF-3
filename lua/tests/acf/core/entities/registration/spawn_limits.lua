@@ -13,18 +13,19 @@ local function WaitForContraption()
     coroutine.yield()
 end
 
+-- Returns the first limit the class checks, followed by every limit it checks
 local function GetCheckedLimit( Class, ClientData )
-    local Checked
+    local Checked = {}
     local Player = {
         CheckLimit = function( _, Name )
-            Checked = Name
+            Checked[#Checked + 1] = Name
             return true
         end
     }
 
     scripted_ents.GetStored( Class ).t.ACF_CheckSpawnLimit( Player, "_" .. Class, ClientData )
 
-    return Checked
+    return Checked[1], Checked
 end
 
 return {
@@ -38,10 +39,13 @@ return {
                     local Check = Stored.t.ACF_CheckSpawnLimit
 
                     if Stored.t.IsACFEntity and Check then
-                        local Name = GetCheckedLimit( Class, {} )
+                        local Name, Names = GetCheckedLimit( Class, {} )
 
                         expect( Name ).to.exist()
-                        expect( ConVarExists( "sbox_max" .. Name ) ).to.beTrue()
+
+                        for _, Checked in ipairs( Names ) do
+                            expect( ConVarExists( "sbox_max" .. Checked ) ).to.beTrue()
+                        end
                     end
                 end
             end
@@ -87,6 +91,15 @@ return {
             func = function()
                 expect( GetCheckedLimit( "acf_radar", {} ) ).to.equal( "_acf_sensor" )
                 expect( GetCheckedLimit( "acf_receiver", {} ) ).to.equal( "_acf_sensor" )
+            end
+        },
+
+        {
+            name = "Radars also check their own limit",
+            func = function()
+                local _, Names = GetCheckedLimit( "acf_radar", {} )
+
+                expect( table.HasValue( Names, "_acf_radar" ) ).to.beTrue()
             end
         },
 

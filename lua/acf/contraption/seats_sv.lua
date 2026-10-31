@@ -73,27 +73,14 @@ hook.Add("OnEntityCreated", "ACF_SeatLegality", function(Entity)
     end)
 end)
 
-hook.Add("ACF_OnCheckLegal", "ACF_CheckLegal_SeatLegality", function(Entity)
-    if not ACF.VehicleLegalChecks then return end
-    if not Entity:IsVehicle() then return end
-    if not Entity.VehicleTable then return end
-    if Entity.ACF and Entity.ACF.LuaGeneratedSeat then return end -- Crew/Baseplate seat bypass
-
-    local ModelPath = Entity:GetModel()
-
-    if not ValidSeatModels[ModelPath] and ModelPath ~= Entity.VehicleTable.Model then
-        return false, "Bad Seat Model", "This seat model is not on the whitelist."
-    end
-end)
-
 hook.Add("CanPlayerEnterVehicle", "ACF_SeatLegality", function(Player, Entity)
     if not ACF.VehicleLegalChecks or not Entity.ACF then return end
     if Entity.ACF and Entity.ACF.LuaGeneratedSeat then return end -- Crew/Baseplate seat bypass
 
-    local IsLegal, Reason = ACF.IsLegal(Entity)
-    if IsLegal then return end
+    if not Entity:GetTable().ACF_Restricted then return end
 
-    Reason = Reason or "Reason not found."
+    local Title, Detail = ACF.Legality.GetReason(Entity)
+    local Reason        = Detail ~= "" and Detail or Title or "Reason not found."
 
     Notify.EntityWarningToPlayer(Entity, Player, "Seat is not legal and is currently disabled.", Reason)
 

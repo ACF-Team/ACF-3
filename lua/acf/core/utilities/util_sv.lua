@@ -1,6 +1,31 @@
 local ACF = ACF
 local Notify = ACF.Utilities.Notify
 
+do -- Combat state
+	local CombatTimeout = 30 / engine.TickInterval() -- 30 seconds
+
+	--- Whether an entity's contraption has fired a weapon or taken prop damage recently.
+	--- Shared by anything that should pause while a vehicle is actively fighting (crew health
+	--- regen, supply crate resupplying).
+	--- @param Entity table Any entity belonging to the contraption to check
+	function ACF.IsContraptionInCombat(Entity)
+		local Contraption = Entity:CFW_GetContraption()
+		return Contraption and Contraption.InCombat and (engine.TickCount() - Contraption.InCombat) < CombatTimeout
+	end
+end
+
+do -- Primitives
+	--- Primitives keep the combine bomb's physics until their shape is built, so traces should skip them until then.
+	--- @param Entity entity
+	--- @return boolean # Whether the entity is a primitive with a rebuild pending or in progress
+	function ACF.IsPrimitivePending(Entity)
+		local Primitive = Entity.primitive
+		if not istable(Primitive) then return false end
+
+		return Primitive.init ~= nil or Primitive.thread ~= nil
+	end
+end
+
 -- 16 Segments font created by ThorType
 -- Huge thanks to LiddulBOFH to help me get it working
 -- Source: https://www.dafont.com/16-segments.font
@@ -658,6 +683,70 @@ do -- Entity linking
 		local LinkData = ACF.InitLink(Class1, Class2)
 		LinkData.ChipDelay = ChipDelay
 	end
+end
+
+do -- Wheel torque axes
+	local function StoreAxis(Wheel, Axis, Sign)
+		Wheel.ACF_TorqueAxis = Axis
+		Wheel.ACF_TorqueSign = Axis and (Sign == -1 and -1 or 1) or nil
+
+		-- The tool's link preview reads these client-side
+		Wheel:SetNWInt("ACF_TorqueAxis", Axis or 0)
+		Wheel:SetNWInt("ACF_TorqueSign", Wheel.ACF_TorqueSign or 1)
+	end
+
+	-- Wheel.ACF_TorqueAxis (1-3 for local X/Y/Z) overrides snapping the gearbox's right, which all its wheels share
+	function ACF.UpdateWheelAxes(Wheel)
+		local Phys = Wheel:GetPhysicsObject()
+
+		if not IsValid(Phys) or not Wheel.ACF_Gearboxes then return end
+
+		local Axis = Wheel.ACF_TorqueAxis
+
+		if not Axis then
+			local Sum, First = Vector()
+
+			for Box in pairs(Wheel.ACF_Gearboxes) do
+				Sum   = Sum + Box:GetRight()
+				First = First or Box
+			end
+
+			if not First then return end
+			if Sum:IsZero() then Sum = First:GetRight() end -- Gearboxes facing opposite ways cancel out
+
+			Axis = ACF.GetWheelAxis(Wheel, Sum)
+		end
+
+		Axis = ACF.WheelAxes[Axis]
+
+		local World = Phys:LocalToWorldVector(Axis)
+
+		for Box, Link in pairs(Wheel.ACF_Gearboxes) do
+			-- Signed per gearbox so positive torque rolls the same way whichever way the wheel faces
+			Link:SetAxis(Axis * ACF.GetAxisSign(World, Box:GetRight(), Wheel.ACF_TorqueAxis and Wheel.ACF_TorqueSign))
+		end
+	end
+
+	--- Defines (1-3, Sign +-1) or clears (nil) a wheel's torque axis and reapplies it to its links.
+	function ACF.SetWheelTorqueAxis(Wheel, Axis, Sign)
+		StoreAxis(Wheel, Axis, Sign)
+
+		if Axis then
+			duplicator.StoreEntityModifier(Wheel, "ACF_TorqueAxis", { Axis = Axis, Sign = Wheel.ACF_TorqueSign })
+		else
+			duplicator.ClearEntityModifier(Wheel, "ACF_TorqueAxis")
+		end
+
+		ACF.UpdateWheelAxes(Wheel)
+	end
+
+	-- A paste can run this before or after the gearboxes relink, so links built first get redone
+	duplicator.RegisterEntityModifier("ACF_TorqueAxis", function(_, Wheel, Data)
+		if not IsValid(Wheel) or not ACF.WheelAxes[Data.Axis] then return end
+
+		StoreAxis(Wheel, Data.Axis, Data.Sign)
+		ACF.UpdateWheelAxes(Wheel)
+	end)
 end
 
 do -- Entity inputs

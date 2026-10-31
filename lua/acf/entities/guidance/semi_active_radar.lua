@@ -1,14 +1,16 @@
 local Classes 	= ACF.Classes
 Classes.DefineClass("ACF.Missiles.Guidance.SemiActiveRadar", "ACF.Missiles.Guidance.AntiMissile", function(CLASS)
 	CLASS.Name = "Semi-active Radar"
+	-- Shared so the ammo menu can price missile rounds clientside.
+	function CLASS:GetCost()
+		return 5
+	end
+
 	if CLIENT then
 		CLASS.Description = "This guidance package uses a radar to detect contraptions and guides the munition towards the most centered one it can find."
 	else
-		CLASS.RadarType = "TGT-Radar"
+		CLASS.RadarDetects = "DetectContraptions"
 
-		function CLASS:GetCost()
-			return 2
-		end
 
 		-- Semi-actives can't seek targets by themselves
 		function CLASS:SeekTarget()
@@ -17,16 +19,19 @@ Classes.DefineClass("ACF.Missiles.Guidance.SemiActiveRadar", "ACF.Missiles.Guida
 		end
 
 		function CLASS:UpdateTarget(Missile, Radar)
-			if not Radar or Radar.TargetCount == 0 then
-				return self:SeekTarget(Missile)
-			end
+			if not Radar then return self:SeekTarget(Missile) end
 
-			local Targets    = Radar.Targets
+			local Targets, TargetCount = Radar:GetTargets()
+
+			if TargetCount == 0 then return self:SeekTarget(Missile) end
+
 			local Position   = Missile.ACF_Position
 			local HighestDot = 0
 			local Target, TargetPos
 
 			for Entity, Data in pairs(Targets) do
+				if Data.Type ~= "Contraption" then continue end
+
 				local EntPos   = Data.Position
 				local Distance = Position:DistToSqr(EntPos)
 

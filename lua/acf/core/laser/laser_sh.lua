@@ -24,7 +24,7 @@ local function GetLaserData(Entity, Data)
 	TraceData.endpos = Entity:LocalToWorld(Offset + Direction * 50000)
 	TraceData.filter = Data.Filter
 
-	local Result = ACF.trace(TraceData)
+	local Result = ACF.ClipTraceToSmoke(Origin, ACF.trace(TraceData))
 	Result.Distance = Result.Fraction * 50000
 
 	return Origin, Result.HitPos, Result

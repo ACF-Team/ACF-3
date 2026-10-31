@@ -127,6 +127,22 @@ function SetACFPanelComboBox:First(playback)
     end
 end
 
+local SetACFPanelTreeNode = Ponder.API.NewInstruction("ACF.SetPanelTreeNode")
+SetACFPanelTreeNode.Length = 1
+
+function SetACFPanelTreeNode:First(playback)
+    local panel = playback.Environment:GetNamedObject("VGUIPanel", self.Name)
+    local Tree = RecursiveFindPanelByName(panel.Base, language.GetPhrase(self.TreeName))
+    if not IsValid(Tree) then return end
+
+    local Node = RecursiveFindNodeByName(Tree:Root(), language.GetPhrase(self.Select))
+    if Node then
+        ACF.DisableClientData = true
+        Tree:SetSelectedItem(Node)
+        ACF.DisableClientData = false
+    end
+end
+
 local SetACFPanelCheckBox = Ponder.API.NewInstruction("ACF.SetPanelCheckBox")
 SetACFPanelCheckBox.Length = 1
 function SetACFPanelCheckBox:First(playback)

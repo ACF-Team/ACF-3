@@ -35,6 +35,8 @@ do	-- Spawn and Update funcs
 		if IsValid(Player) then
 			Player:AddCount("_acf_turret", self)
 		end
+
+		ACF.Hints.Set(self, "turret_computer_no_gun", true)
 	end
 
 	function ENT:ACF_PreSpawn(_, _, _, Data)
@@ -88,8 +90,6 @@ do	-- Metamethods and other important stuff
 		function ENT:ACF_UpdateOverlayState(State)
 			if IsValid(self.Gun) then
 				State:AddKeyValue("Linked to", tostring(self.Gun))
-			else
-				State:AddError("Not linked to a gun!")
 			end
 
 			if self.Status then
@@ -101,7 +101,7 @@ do	-- Metamethods and other important stuff
 	end
 
 	do	-- Link/unlink
-		ACF.RegisterLinkSource("acf_turret_computer", "Guns")
+		ACF.RegisterLinkSource("acf_turret_computer", "Gun", true)
 
 		-- Gun links
 
@@ -109,6 +109,13 @@ do	-- Metamethods and other important stuff
 			if IsValid(This.Gun) then return false, "This computer already has a gun linked!" end
 
 			This.Gun	= Gun
+
+			-- Removing the gun does not unlink it on its own
+			Gun:CallOnRemove("ACF_TurretComputer" .. This:EntIndex(), function()
+				if IsValid(This) and This.Gun == Gun then This:Unlink(Gun) end
+			end)
+
+			ACF.Hints.Set(This, "turret_computer_no_gun", false)
 
 			This:UpdateOverlay(true)
 
@@ -120,6 +127,10 @@ do	-- Metamethods and other important stuff
 			if This.Gun ~= Gun then return false, "This computer isn't linked to this gun!" end
 
 			This.Gun	= nil
+
+			Gun:RemoveCallOnRemove("ACF_TurretComputer" .. This:EntIndex())
+
+			ACF.Hints.Set(This, "turret_computer_no_gun", true)
 
 			This:UpdateOverlay(true)
 
@@ -177,7 +188,10 @@ do	-- Metamethods and other important stuff
 
 			StartAngle:Normalize()
 
-			Debug.Line(Gun:LocalToWorld(Gun.Muzzle), Gun:LocalToWorld(Gun.Muzzle) + StartAngle:Forward() * 32, 3, Color(255, 0, 0), true)
+			if Debug.SetDeveloperLevel(2) then
+				Debug.SetTarget(self:CPPIGetOwner())
+				Debug.Line(Gun:LocalToWorld(Gun.Muzzle), Gun:LocalToWorld(Gun.Muzzle) + StartAngle:Forward() * 32, 3, Color(255, 0, 0), true)
+			end
 
 			self.SimData	= {
 				MuzzleVel		= BD.MuzzleVel,
@@ -294,7 +308,10 @@ do	-- Metamethods and other important stuff
 					self.SimData.StartAngle		= StartAngle
 					self.SimData.Flight			= StartAngle:Forward() * Sim.MuzzleVel * ACF.MeterToInch
 
-					Debug.Cross(Sim.StartPos + LocalPosition, 3, 5, Color(0, 0, 255), true)
+					if Debug.SetDeveloperLevel(2) then
+						Debug.SetTarget(self:CPPIGetOwner())
+						Debug.Cross(Sim.StartPos + LocalPosition, 3, 5, Color(0, 0, 255), true)
+					end
 
 					self.SimData.Pos			= Vector()
 
@@ -330,7 +347,10 @@ do	-- Metamethods and other important stuff
 					local ErrorDir2D	= ((Sim.TargetPos - (Sim.StartPos + Sim.Pos)) * Vector(1, 1, 0)):GetNormalized()
 					local ErrorDist		= (Sim.StartPos + Sim.Pos):Distance2D(Sim.TargetPos)
 
-					Debug.Line(Sim.StartPos + Sim.Pos, (Sim.StartPos + Sim.Pos) + ErrorDir2D * ErrorDist, 3, Color(255, 0, 0), true)
+					if Debug.SetDeveloperLevel(2) then
+						Debug.SetTarget(self:CPPIGetOwner())
+						Debug.Line(Sim.StartPos + Sim.Pos, (Sim.StartPos + Sim.Pos) + ErrorDir2D * ErrorDist, 3, Color(255, 0, 0), true)
+					end
 
 					local LocalPosition = (Sim.AdjustedTargetPos - Sim.StartPos)
 
@@ -345,7 +365,10 @@ do	-- Metamethods and other important stuff
 					self.SimData.StartAngle		= StartAngle
 					self.SimData.Flight			= StartAngle:Forward() * Sim.MuzzleVel * ACF.MeterToInch
 
-					Debug.Cross(Sim.StartPos + LocalPosition, 3, 5, Color(0, 0, 255), true)
+					if Debug.SetDeveloperLevel(2) then
+						Debug.SetTarget(self:CPPIGetOwner())
+						Debug.Cross(Sim.StartPos + LocalPosition, 3, 5, Color(0, 0, 255), true)
+					end
 
 					self.SimData.Pos			= Vector()
 
@@ -397,7 +420,10 @@ do	-- Metamethods and other important stuff
 
 			Sim.TotalTime		= Sim.TotalTime + DeltaTime
 
-			Debug.Line(Sim.StartPos + Sim.Pos, Sim.StartPos + Sim.NextPos, 5, ColorRand(false), true)
+			if Debug.SetDeveloperLevel(2) then
+				Debug.SetTarget(self:CPPIGetOwner())
+				Debug.Line(Sim.StartPos + Sim.Pos, Sim.StartPos + Sim.NextPos, 5, ColorRand(false), true)
+			end
 
 			local Dir = (Sim.NextPos - Sim.Pos):GetNormalized()
 
@@ -410,19 +436,28 @@ do	-- Metamethods and other important stuff
 					local Ratio = (Sim.Pos:Distance(Point)) / FlightDistance
 					Sim.FlightTime	= Sim.FlightTime + (DeltaTime * Ratio)
 
-					Debug.Line(Sim.StartPos + Sim.Pos, Sim.StartPos + Sim.NextPos, 8, Color(0, 255, 0), true)
-					Debug.Cross(Sim.StartPos + Sim.Pos, 15, 8, Color(255, 0, 0), true)
+					if Debug.SetDeveloperLevel(2) then
+						Debug.SetTarget(self:CPPIGetOwner())
+						Debug.Line(Sim.StartPos + Sim.Pos, Sim.StartPos + Sim.NextPos, 8, Color(0, 255, 0), true)
+						Debug.Cross(Sim.StartPos + Sim.Pos, 15, 8, Color(255, 0, 0), true)
+					end
 
 					Sim.Pos		= Point
 
 					Sim.FlightDistance = Sim.FlightDistance + (FlightDistance * Ratio)
 
-					Debug.Cross(Sim.StartPos + Point, 15, 8, Color(255, 255, 255), true)
-					Debug.Cross(Sim.StartPos + Sim.NextPos, 15, 8, Color(0, 255, 0), true)
+					if Debug.SetDeveloperLevel(2) then
+						Debug.SetTarget(self:CPPIGetOwner())
+						Debug.Cross(Sim.StartPos + Point, 15, 8, Color(255, 255, 255), true)
+						Debug.Cross(Sim.StartPos + Sim.NextPos, 15, 8, Color(0, 255, 0), true)
+					end
 
 					return self:AdjustSimulation()
 				elseif Dir:Dot((Point - Sim.Pos):GetNormalized()) < 0 then
-					Debug.Cross(Sim.StartPos + Sim.Pos, 30, 8, Color(255, 0, 0), true)
+					if Debug.SetDeveloperLevel(2) then
+						Debug.SetTarget(self:CPPIGetOwner())
+						Debug.Cross(Sim.StartPos + Sim.Pos, 30, 8, Color(255, 0, 0), true)
+					end
 
 					return self:AdjustSimulation()
 				else

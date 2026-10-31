@@ -5,21 +5,30 @@ local Damage      = ACF.Damage
 local Clock       = ACF.Utilities.Clock
 local Effects     = ACF.Utilities.Effects
 local EventViewer = ACF.EventViewer
+local GCmToKgIn    = ACF.gCmToKgIn
+local MaxPenetrations = ACF.MaxPenetrations
 
-Ballistics.Bullets         = Ballistics.Bullets or {}
-Ballistics.UnusedIndexes   = Ballistics.UnusedIndexes or {}
-Ballistics.HighestIndex    = Ballistics.HighestIndex or 0
-Ballistics.SkyboxGraceZone = 100
+Ballistics.Bullets          = Ballistics.Bullets or {}
+Ballistics.PredictedBullets = Ballistics.PredictedBullets or {} -- Player -> {[Index] = Bullet}, stepped in that player's commands
+Ballistics.UnusedIndexes    = Ballistics.UnusedIndexes or {}
+Ballistics.HighestIndex     = Ballistics.HighestIndex or 0
+Ballistics.SkyboxGraceZone  = Ballistics.SkyboxGraceZone or 100
 
 local function GetEventViewerName(Idx) return "Ballistics - Bullet #" .. Idx end
 
 
-local Bullets      = Ballistics.Bullets
-local Unused       = Ballistics.UnusedIndexes
-local IndexLimit   = 2000
-local SkyGraceZone = 100
-local FlightTr     = { start = true, endpos = true, filter = true, mask = true }
-local GlobalFilter = ACF.GlobalFilter
+local Bullets          = Ballistics.Bullets
+local PredictedBullets = Ballistics.PredictedBullets
+local Unused           = Ballistics.UnusedIndexes
+local IndexLimit       = 2000
+local SkyGraceZone     = Ballistics.SkyboxGraceZone
+local FlightTr         = { start = true, endpos = true, filter = true, mask = true }
+local GlobalFilter     = ACF.GlobalFilter
+local Classes          = ACF.Classes
+
+local function GetArmorType(ID) return Classes.GetSubtypeByName("ACF.ArmorTypes.BaseArmorType", "ACF.ArmorTypes." .. tostring(ID)) end
+
+util.AddNetworkString("ACF_PredictedBullet")
 
 -- This will create, or update, the tracer effect on the clientside
 function Ballistics.BulletClient(Bullet, Type, Hit, HitPos)
@@ -35,7 +44,64 @@ function Ballistics.BulletClient(Bullet, Type, Hit, HitPos)
 		EntIndex = not IsUpdate and Bullet.Crate or nil,
 	}
 
-	Effects.CreateEffect("ACF_Bullet_Effect", EffectTable, true, true)
+	local Filter = true
+
+	-- The owner's client already made this bullet itself, it only needs the index the server gave it and the updates after
+	-- Both go through net so they arrive in order, an effect can get there before the index otherwise
+	if Bullet.Predictable and Bullet.PredictionID and IsValid(Bullet.Owner) then
+		local Owner = Bullet.Owner
+
+		Filter = RecipientFilter()
+		Filter:AddAllPlayers()
+		Filter:RemovePlayer(Owner)
+
+		net.Start("ACF_PredictedBullet")
+			net.WriteBool(IsUpdate)
+			net.WriteUInt(Bullet.Index, 16)
+
+			if IsUpdate then
+				net.WriteUInt(EffectTable.Scale, 2)
+				net.WriteUInt(EffectTable.Attachment, 1)
+				net.WriteVector(EffectTable.Origin)
+			else
+				net.WriteDouble(Bullet.PredictionID)
+				net.WriteUInt(Bullet.Crate or 0, 16)
+				net.WriteBool(Bullet.Hide or false)
+				net.WriteVector(Bullet.Pos)
+			end
+
+			net.WriteVector(Bullet.Flight)
+		net.Send(Owner)
+	end
+
+	Effects.CreateEffect("ACF_Bullet_Effect", EffectTable, true, Filter)
+end
+
+local function AddPredictedBullet(Bullet)
+	local Owner = Bullet.Owner
+	if not IsValid(Owner) or not Owner:IsPlayer() then return false end
+
+	local Owned = PredictedBullets[Owner]
+
+	if not Owned then
+		Owned = {}
+		PredictedBullets[Owner] = Owned
+	end
+
+	Owned[Bullet.Index] = Bullet
+
+	return true
+end
+
+local function RemovePredictedBullet(Bullet)
+	local Owned = PredictedBullets[Bullet.Owner]
+	if not Owned then return end
+
+	Owned[Bullet.Index] = nil
+
+	if not next(Owned) then
+		PredictedBullets[Bullet.Owner] = nil
+	end
 end
 
 function Ballistics.RemoveBullet(Bullet)
@@ -45,6 +111,10 @@ function Ballistics.RemoveBullet(Bullet)
 
 	Bullets[Index] = nil
 	Unused[Index]  = true
+
+	if Bullet.Predictable then
+		RemovePredictedBullet(Bullet)
+	end
 
 	if Bullet.OnRemoved then
 		Bullet:OnRemoved()
@@ -62,6 +132,8 @@ end
 
 function Ballistics.CalcBulletFlight(Bullet)
 	local ClockTime = Clock.CurTime
+
+	ACF.Debug.SetTarget(Bullet.Owner)
 
 	if Bullet.KillTime and ClockTime >= Bullet.KillTime then
 		return Ballistics.RemoveBullet(Bullet)
@@ -89,7 +161,9 @@ function Ballistics.CalcBulletFlight(Bullet)
 		Bullet:PostCalcFlight()
 	end
 
-	debugoverlay.Line(Bullet.Pos, Bullet.NextPos, 5, Bullet.Color)
+	if ACF.Debug.SetDeveloperLevel(3) then
+		ACF.Debug.Line(Bullet.Pos, Bullet.NextPos, 15, Bullet.Color, true)
+	end
 	Bullet.Pos = Bullet.NextPos
 end
 
@@ -113,11 +187,55 @@ end
 
 function Ballistics.IterateBullets()
 	for _, Bullet in pairs(Bullets) do
-		if not Bullet.HandlesOwnIteration then
+		if not Bullet.HandlesOwnIteration and not Bullet.Predictable then
 			Ballistics.CalcBulletFlight(Bullet)
 		end
 	end
 end
+
+-- Inside the owner's command CurTime() is the owner's own clock, which is what predicted bullets run on
+-- An error has to stop at its bullet, otherwise the clock stays adjusted and everyone stays rewound
+local function StepOnOwnersClock(Bullet)
+	local LastClock = Clock.CurTime
+	Clock.CurTime = CurTime()
+
+	ProtectedCall(Ballistics.CalcBulletFlight, Bullet)
+
+	Clock.CurTime = LastClock
+end
+
+function Ballistics.IteratePredictedBullets(Player)
+	local Owned = PredictedBullets[Player]
+	if not Owned then return end
+
+	Player:LagCompensation(true)
+
+	for _, Bullet in pairs(Owned) do
+		if not Bullet.HandlesOwnIteration then
+			StepOnOwnersClock(Bullet)
+		end
+	end
+
+	Player:LagCompensation(false)
+end
+
+hook.Add("PlayerTick", "ACF Iterate Predicted Bullets", Ballistics.IteratePredictedBullets)
+
+-- PlayerTick doesn't run for dead or disconnected players, so their bullets go back to the server's tick
+local function ReleasePredictedBullets(Player)
+	local Owned = PredictedBullets[Player]
+	if not Owned then return end
+
+	for _, Bullet in pairs(Owned) do
+		Bullet.Predictable = false
+		Bullet.LastThink   = Clock.CurTime -- Back on the server's clock
+	end
+
+	PredictedBullets[Player] = nil
+end
+
+hook.Add("PostPlayerDeath", "ACF Release Predicted Bullets", ReleasePredictedBullets)
+hook.Add("PlayerDisconnected", "ACF Release Predicted Bullets", ReleasePredictedBullets)
 
 
 local RequiredBulletDataProperties = {"Pos", "Flight"}
@@ -144,8 +262,16 @@ function Ballistics.CreateBullet(BulletData)
 	end
 
 	Bullet.Index       = Index
-	Bullet.LastThink   = Clock.CurTime
-	Bullet.Fuze        = Bullet.Fuze and Bullet.Fuze + Clock.CurTime or nil -- Convert Fuze from fuze length to time of detonation
+
+	-- Without a player to step it, the bullet falls back to the server's tick
+	if Bullet.Predictable and not AddPredictedBullet(Bullet) then
+		Bullet.Predictable = false
+	end
+
+	local Now = Bullet.Predictable and CurTime() or Clock.CurTime -- See StepOnOwnersClock
+
+	Bullet.LastThink   = Now
+	Bullet.Fuze        = Bullet.Fuze and Bullet.Fuze + Now or nil -- Convert Fuze from fuze length to time of detonation
 	if Bullet.Caliber then
 		Bullet.Mask		= (Bullet.Caliber < 3 and bit.band(MASK_SOLID, MASK_SHOT) or MASK_SOLID) -- I hope CONTENTS_AUX isn't used for anything important? I can't find any references outside of the wiki to it so hopefully I can use this
 	else
@@ -155,6 +281,7 @@ function Ballistics.CreateBullet(BulletData)
 	Bullet.Ricochets   = Bullet.Ricochets or 0
 	Bullet.GroundRicos = Bullet.GroundRicos or 0
 	Bullet.Color       = ColorRand(100, 255)
+	Bullet.Mode        = "Flight" -- Flight follows the ballistic arc, Penetration walks a frozen ray through armor
 
 	-- Purely to allow someone to shoot out of a seat without hitting themselves and dying
 	if IsValid(Bullet.Owner) and Bullet.Owner:IsPlayer() and Bullet.Owner:InVehicle() and (Bullet.Gun and Bullet.Gun:GetClass() ~= "acf_gun") then
@@ -168,7 +295,10 @@ function Ballistics.CreateBullet(BulletData)
 	end
 
 	-- TODO: Make bullets use a metatable instead
+	-- Bullet.PenetrationOverride lets standoff-dependent ammo types (HEAT) report their real current penetration instead of the Standoff-less placeholder.
 	function Bullet:GetPenetration()
+		if Bullet.PenetrationOverride then return Bullet.PenetrationOverride end
+
 		return Bullet.TypeDef:GetPenetration(self)
 	end
 
@@ -179,7 +309,12 @@ function Ballistics.CreateBullet(BulletData)
 	Bullets[Index] = Bullet
 
 	Ballistics.BulletClient(Bullet, "Init", 0)
-	Ballistics.CalcBulletFlight(Bullet)
+
+	if Bullet.Predictable then
+		StepOnOwnersClock(Bullet)
+	else
+		Ballistics.CalcBulletFlight(Bullet)
+	end
 
 	return Bullet
 end
@@ -206,6 +341,8 @@ function Ballistics.OnImpact(Bullet, Trace, Ammo, Type)
 			EventViewer.AppendEvent(GetEventViewerName(Bullet.Index), "Ballistics.OnImpact.Penetrated", Trace.StartPos, Trace.HitPos, Trace)
 		end
 	elseif Retry == "Ricochet" then
+		Ballistics.EndPenetration(Bullet) -- New heading, so the frozen penetration ray no longer applies
+
 		if Bullet.OnRicocheted then
 			Bullet.OnRicocheted(Bullet, Trace)
 		end
@@ -216,6 +353,8 @@ function Ballistics.OnImpact(Bullet, Trace, Ammo, Type)
 			EventViewer.AppendEvent(GetEventViewerName(Bullet.Index), "Ballistics.OnImpact.Ricochet", Trace.StartPos, Trace.HitPos, Trace)
 		end
 	else
+		Ballistics.EndPenetration(Bullet)
+
 		if Bullet.OnEndFlight then
 			Bullet.OnEndFlight(Bullet, Trace)
 		end
@@ -228,8 +367,45 @@ function Ballistics.OnImpact(Bullet, Trace, Ammo, Type)
 	end
 end
 
+-- Marks a single convex of an entity as transparent to this bullet for the rest of its flight.
+-- Used when a projectile penetrates a convex so subsequent re-traces advance to the next one.
+function Ballistics.FilterConvex(Bullet, Entity, ConvexID)
+	local ConvexFilter = Bullet.ConvexFilter
+
+	if not ConvexFilter then
+		ConvexFilter = {}
+		Bullet.ConvexFilter = ConvexFilter
+	end
+
+	local EntFilter = ConvexFilter[Entity]
+
+	if not EntFilter then
+		EntFilter = {}
+		ConvexFilter[Entity] = EntFilter
+	end
+
+	EntFilter[ConvexID] = true
+end
+
+-- Non-ACF entities spawned or moved by chips are ignored for a while, ACF ones are never ghosted
+function ACF.IsRecentlyMutated(Entity)
+	if Entity.IsACFEntity then return false end
+
+	local Contraption = Entity:CFW_GetContraption()
+	if Contraption and Contraption:ACF_IsACFContraption() then return false end
+
+	local Now, Time = CurTime(), ACF.MutationGhostTime
+	local EntLast   = Entity.ACF_LastMutated
+	if EntLast and Now - EntLast < Time then return true end
+
+	local ContLast = Contraption and Contraption.ACF_LastMutated
+
+	return ContLast ~= nil and Now - ContLast < Time
+end
+
 function Ballistics.TestFilter(Entity, Bullet)
 	if not IsValid(Entity) then return true end
+	if ACF.IsRecentlyMutated(Entity) then return false end
 
 	if GlobalFilter[Entity:GetClass()] then return false end
 
@@ -246,6 +422,184 @@ function Ballistics.TestFilter(Entity, Bullet)
 	if EntTbl.ACF_TestFilter then return EntTbl.ACF_TestFilter(Entity, Bullet) end
 
 	return true
+end
+
+-- Every live, unfiltered mesh intersection the ACF-meshed entities along this flight segment present,
+-- gathered with a single ents.FindAlongRay. Unsorted; feed it to ACF.ResolveConvexStack.
+local function GatherMeshIntersections(Bullet, Start, Direction)
+	local TraceTo       = Bullet.TraceTo
+	local FoundEnts     = ents.FindAlongRay(Start, TraceTo) -- bounds discovery to this segment, same as the physics trace already covers
+	local MaxDist       = Start:Distance(TraceTo) -- and bounds the mesh rays to match, so convexes past the segment cost nothing
+	local Intersections = {}
+
+	for _, Ent in ipairs(FoundEnts) do
+		if not Ent.ACF_Volumetric_Mesh then continue end
+		if table.HasValue(Bullet.Filter, Ent) then continue end
+
+		if not Ballistics.TestFilter(Ent, Bullet) then
+			table.insert(Bullet.Filter, Ent) -- same "filtered for the rest of this bullet's life" semantics as today's whole-entity filter
+			continue
+		end
+
+		local EntConvexFilter = Bullet.ConvexFilter and Bullet.ConvexFilter[Ent]
+		local Hits            = ACF.RayIntersectMesh(Ent, Start, Direction, false, EntConvexFilter, MaxDist)
+
+		for _, Hit in ipairs(Hits) do
+			Intersections[#Intersections + 1] = Hit
+		end
+	end
+
+	return Intersections
+end
+
+do -- Obstacle resolution --------------------------
+	-- A projectile in flight mode looks ahead with one cheap physics trace. The moment that trace lands on
+	-- a meshed entity it switches to penetration mode: the ray is frozen at the impact point, a single
+	-- ents.FindAlongRay resolves every convex standing on that line, and the projectile walks the whole
+	-- stack in one instant. Nothing advances its position and no gravity is integrated in between, so it
+	-- stays exactly on the frozen line until it stops, ricochets, or runs out of stack and returns to flight.
+	--
+	-- Shared by bullets and spall fragments. Both keep their own motion model and impact handling and use
+	-- this only to find what they run into next, so a projectile here is anything carrying Pos, TraceTo,
+	-- Flight and Filter.
+
+	-- Freezes the ray at Trace.HitPos and builds the ordered convex stack the projectile will walk.
+	-- Returns false when nothing on the line is left to hit, leaving it in flight mode.
+	function Ballistics.BeginPenetration(Projectile, Trace)
+		local Direction = Projectile.Flight:GetNormalized()
+		local Stack     = ACF.ResolveConvexStack(GatherMeshIntersections(Projectile, Trace.HitPos, Direction), Direction)
+
+		if #Stack == 0 then return false end
+
+		for Index = #Stack, MaxPenetrations + 1, -1 do
+			Stack[Index] = nil
+		end
+
+		Projectile.Mode     = "Penetration"
+		Projectile.PenStack = Stack
+		Projectile.PenIndex = 0
+		Projectile.PenTrace = Trace -- Reused for every convex so the damage code keeps the physics trace's other fields
+
+		return true
+	end
+
+	-- Drops the frozen ray and puts the projectile back on its own flight path.
+	function Ballistics.EndPenetration(Projectile)
+		Projectile.Mode      = "Flight"
+		Projectile.PenStack  = nil
+		Projectile.PenIndex  = nil
+		Projectile.PenTrace  = nil
+		Projectile.ConvexHit = nil
+	end
+
+	-- The next live convex on the frozen ray with the penetration trace spliced onto it, or nil once the
+	-- stack is walked out, which retires it and returns the projectile to flight mode.
+	local function NextConvex(Projectile)
+		local Stack = Projectile.PenStack
+
+		while true do
+			local Index = Projectile.PenIndex + 1
+			local Hit   = Stack[Index]
+
+			if not Hit then break end
+
+			Projectile.PenIndex = Index
+
+			-- The stack was resolved before the first impact landed, so anything an earlier convex destroyed
+			-- on the way through (a killed entity, a spent reactive plate) is transparent by now and skipped.
+			local Entity   = Hit.Entity
+			local MeshData = IsValid(Entity) and Entity.ACF_Volumetric_Mesh
+			local Convex   = MeshData and MeshData.Convexes[Hit.ConvexID]
+
+			if Convex and Convex.Health > 0 then
+				-- Splice the resolved hit into the trace so downstream code sees the convex actually struck,
+				-- even when it belongs to an entity the physics trace never reported.
+				local Trace = Projectile.PenTrace
+
+				Trace.Entity    = Entity
+				Trace.HitPos    = Hit.EntryPos
+				Trace.HitNormal = Hit.EntryNormal
+
+				if Convex.IsExplosive and Hit.ArmorType.ExplosiveThreshold then
+					-- Projectile.Energy is only refreshed at impact, after this runs, so work it out from the current flight
+					local CanSetOff = not Projectile.IsSpall and not Projectile.IsCookOff
+					local KE        = CanSetOff and ACF.Kinetic(Projectile.Flight:Length() / ACF.Scale, Projectile.ProjMass).Kinetic or 0
+
+					-- The flyer plates need open space in front of the face to swing out into
+					local Clear = not util.TraceLine({
+						start  = Hit.EntryPos,
+						endpos = Hit.EntryPos + Hit.EntryNormal * Convex.MinWidth * Hit.ArmorType.FlyerClearance,
+						mask   = MASK_SOLID,
+					}).Hit
+
+					if KE < Hit.ArmorType.ExplosiveThreshold or not Clear then
+						-- Unspent or boxed in reactive armor only contributes a fraction of its thickness
+						Hit.GeoThick = Hit.GeoThick * (Hit.ArmorType.UnspentMul or 1)
+					end
+				end
+
+				return Trace, Hit
+			end
+		end
+
+		-- Walked the line to its end, so every entity on it is spent. Filtering them lets the resumed
+		-- trace reach the world, players and anything else meshless sitting behind them.
+		local Filter = Projectile.Filter
+
+		local Overflow = #Stack >= MaxPenetrations -- Layer spam hitting the cap deletes everything it passed through
+
+		for _, Spent in ipairs(Stack) do
+			if not table.HasValue(Filter, Spent.Entity) then
+				Filter[#Filter + 1] = Spent.Entity
+			end
+
+			if Overflow and IsValid(Spent.Entity) then
+				Spent.Entity:Remove()
+			end
+		end
+
+		Ballistics.EndPenetration(Projectile)
+	end
+
+	-- What the projectile runs into next along Pos -> TraceTo, as the trace (hit or not) plus the convex
+	-- hit when it landed on armor. Steps the frozen ray while in penetration mode, otherwise traces,
+	-- skipping past anything it should ignore and entering penetration mode on the first meshed entity.
+	function Ballistics.ResolveNextObstacle(Projectile)
+		if Projectile.Mode == "Penetration" then
+			local PenTrace, Hit = NextConvex(Projectile)
+
+			if Hit then return PenTrace, Hit end
+		end
+
+		-- Every retry adds an entity to the filter, so this drains rather than spinning. Retrying here
+		-- instead of next tick matters: letting the projectile advance first would skip anything sitting
+		-- behind the entity it just gave up on within the current segment.
+		while true do
+			FlightTr.mask   = Projectile.Mask
+			FlightTr.filter = Projectile.Filter
+			FlightTr.start  = Projectile.Pos
+			FlightTr.endpos = Projectile.TraceTo
+
+			local Trace = ACF.trace(FlightTr) -- Does not modify the projectile's original filter
+
+			if not Trace.Hit or Trace.HitSky then return Trace end
+
+			local Entity = Trace.Entity
+
+			if not Ballistics.TestFilter(Entity, Projectile) then
+				-- Important in case something is embedded in something that shouldn't be hit
+				table.insert(Projectile.Filter, Entity)
+			elseif not Entity.ACF_Volumetric_Mesh then
+				return Trace
+			elseif Ballistics.BeginPenetration(Projectile, Trace) then
+				local PenTrace, Hit = NextConvex(Projectile)
+
+				if Hit then return PenTrace, Hit end
+			else
+				table.insert(Projectile.Filter, Entity) -- Nothing live left on its mesh anywhere along the line
+			end
+		end
+	end
 end
 
 function Ballistics.DoBulletsFlight(Bullet)
@@ -274,12 +628,7 @@ function Ballistics.DoBulletsFlight(Bullet)
 		end
 	end
 
-	FlightTr.mask 	= Bullet.Mask
-	FlightTr.filter = Bullet.Filter
-	FlightTr.start 	= Bullet.Pos
-	FlightTr.endpos = Bullet.TraceTo
-
-	local traceRes = ACF.trace(FlightTr) -- Does not modify the bullet's original filter
+	local traceRes, ConvexHit = Ballistics.ResolveNextObstacle(Bullet)
 
 	if Bullet.Fuze and Bullet.Fuze <= Clock.CurTime then
 		if not util.IsInWorld(Bullet.Pos) then -- Outside world, just delete
@@ -290,6 +639,8 @@ function Ballistics.DoBulletsFlight(Bullet)
 			local Lerp = DeltaFuze / DeltaTime
 
 			if not traceRes.Hit or Lerp < traceRes.Fraction then -- Fuze went off before running into something
+				Ballistics.EndPenetration(Bullet) -- Flight is over, so a stack resolved this tick goes unwalked
+
 				Bullet.Pos       = LerpVector(Lerp, Bullet.Pos, Bullet.NextPos)
 				Bullet.DetByFuze = true
 
@@ -311,7 +662,11 @@ function Ballistics.DoBulletsFlight(Bullet)
 
 
 	if EventViewer.Enabled() then
-		EventViewer.AppendEvent(GetEventViewerName(Bullet.Index), "Ballistics.DoBulletsFlight", Bullet.Pos, Bullet.NextPos, FlightTr)
+		if ConvexHit then
+			EventViewer.AppendEvent(GetEventViewerName(Bullet.Index), "Ballistics.DoPenetration", ConvexHit.EntryPos, ConvexHit.ExitPos)
+		else
+			EventViewer.AppendEvent(GetEventViewerName(Bullet.Index), "Ballistics.DoBulletsFlight", Bullet.Pos, Bullet.NextPos, FlightTr)
+		end
 	end
 
 	if traceRes.Hit then
@@ -323,32 +678,22 @@ function Ballistics.DoBulletsFlight(Bullet)
 				Ballistics.RemoveBullet(Bullet)
 			end
 		else
-			local Entity = traceRes.Entity
+			-- Stored on the bullet rather than the trace: the EventViewer networks the trace table, and a
+			-- convex hit carries its ArmorType (a class object with functions) which can't be serialized.
+			Bullet.ConvexHit = ConvexHit
 
-			if not Ballistics.TestFilter(Entity, Bullet) then
-				table.insert(Bullet.Filter, Entity)
-				timer.Simple(0, function()
-					Ballistics.DoBulletsFlight(Bullet) -- Retries the same trace after adding the entity to the filter; important in case something is embedded in something that shouldn't be hit
-				end)
-
-				return
-			end
-
-			local Type = Ballistics.GetImpactType(traceRes, Entity)
-			Ballistics.OnImpact(Bullet, traceRes, Bullet.TypeDef, Type)
+			Ballistics.OnImpact(Bullet, traceRes, Bullet.TypeDef, Ballistics.GetImpactType(traceRes, traceRes.Entity))
 		end
 	end
 end
 
 do -- Terminal ballistics --------------------------
-	function Ballistics.GetRicochetVector(Flight, HitNormal)
-		local Normal = Flight:GetNormalized()
+	-- GetRicochetVector, ApplyRicochet and DoRicochet are in world_pen_sh.lua, the client predicts with them
 
-		return Normal - (2 * Normal:Dot(HitNormal)) * HitNormal
-	end
-
-	function Ballistics.CalculateRicochet(Bullet, Trace)
-		local HitAngle = ACF.GetHitAngle(Trace, Bullet.Flight)
+	-- HitAngle (optional) overrides the angle derived from the physical trace; the per-convex impact
+	-- path passes the struck convex's entry angle so ricochets evaluate against the real convex face.
+	function Ballistics.CalculateRicochet(Bullet, Trace, HitAngle)
+		HitAngle = HitAngle or ACF.GetHitAngle(Trace, Bullet.Flight)
 		-- Ricochet distribution center
 		local sigmoidCenter = Bullet.DetonatorAngle or (Bullet.Ricochet - math.abs(Bullet.Speed / ACF.MeterToInch - Bullet.LimitVel) / 100)
 
@@ -373,22 +718,38 @@ do -- Terminal ballistics --------------------------
 		local HitRes   = Damage.dealDamage(Entity, DmgResult, DmgInfo)
 		local Ricochet = 0
 
+		-- When the impact was resolved against a specific convex, ricochet, knockback and effects
+		-- should use that convex's entry face/position instead of the entity's outer physical surface.
+		local ConvexHit  = Bullet.ConvexHit
+		local ImpactPos  = ConvexHit and ConvexHit.EntryPos or Trace.HitPos
+		local HitNormal  = ConvexHit and ConvexHit.EntryNormal or Trace.HitNormal
+		local HitAngle   = ConvexHit and ConvexHit.HitAngle or nil
+
 		-- Determine this before ricochetting
 		if (HitRes.Kill or (HitRes.Overkill and HitRes.Overkill > 0)) and not Bullet.IsSpall and not Bullet.IsCookOff then
 			-- Penetrated or killed plate
-			Ballistics.DoSpall(Bullet, Trace, HitRes, Bullet.Flight:Length())
+			Ballistics.DoSpall(Bullet, Trace, HitRes, Bullet.Flight:Length(), DmgInfo)
+		end
+
+		-- Detonate any explosive reactive armor the round struck (guards on round type and kinetic energy internally)
+		Ballistics.DoReactiveArmor(Bullet, Trace, DmgInfo)
+
+		-- The round punched through the struck convex; mark it transparent so the flight loop's next
+		-- re-trace advances to the convex behind it instead of resolving against this one again.
+		if ConvexHit and HitRes.Overkill and HitRes.Overkill > 0 then
+			Ballistics.FilterConvex(Bullet, Entity, ConvexHit.ConvexID)
 		end
 
 		if HitRes.Loss == 1 then
 			-- If the there's more armor than penetration, the bullet ricochets
-			Ricochet, HitRes.Loss = Ballistics.CalculateRicochet(Bullet, Trace)
+			Ricochet, HitRes.Loss = Ballistics.CalculateRicochet(Bullet, Trace, HitAngle)
 		end
 
 		-- Transfer bullet momentum into target
 		if ACF.KEPush then
 			ACF.KEShove(
 				Entity,
-				Trace.HitPos,
+				ImpactPos,
 				-Bullet.Flight:GetNormalized(),
 				Energy.Kinetic * HitRes.Loss * 1000 * Bullet.ShovePower
 			)
@@ -403,15 +764,9 @@ do -- Terminal ballistics --------------------------
 
 		-- Apply the ricochet for the next bullet iteration if needed
 		if Ricochet > 0 and Bullet.Ricochets < 3 then
-			local Direction = Ballistics.GetRicochetVector(Bullet.Flight, Trace.HitNormal) + VectorRand() * 0.025
-			local Flight    = Direction:GetNormalized() * Speed * Ricochet * ACF.Scale
-			local Position  = Trace.HitPos
-
 			Bullet.Ricochets = Bullet.Ricochets + 1
-			Bullet.Flight    = Flight
-			Bullet.Pos       = Position
-			Bullet.NextPos   = Position + Flight * Bullet.DeltaTime
-			Bullet.TraceTo   = Position + Flight * (Bullet.DeltaTime * 2)
+
+			Ballistics.ApplyRicochet(Bullet, ImpactPos, HitNormal, Speed, Ricochet, 0.025, Bullet.DeltaTime)
 
 			HitRes.Ricochet = true
 		end
@@ -419,53 +774,57 @@ do -- Terminal ballistics --------------------------
 		return HitRes
 	end
 
-	function Ballistics.DoRicochet(Bullet, Trace)
-		local HitAngle = ACF.GetHitAngle(Trace, Bullet.Flight)
-		local Speed    = Bullet.Flight:Length() / ACF.Scale
-		local MinAngle = math.min(Bullet.Ricochet - Speed / ACF.MeterToInch / 30 + 20, 89.9) -- Making the chance of a ricochet get higher as the speeds increase
-		local Ricochet = 0
+	-- Tuning constants for DoSpall; kept as locals (rather than ACF globals) so they can be edited and hot-reloaded from this file alone, without a full game restart.
+	local SpallFragFraction   = 0.01 -- Fraction of the spall energy budget that goes into forming countable fragments
+	local SpallEnergyFraction = 0.05 -- Fraction of the spall energy budget imparted to the ejected mass as kinetic energy
+	local SpallMinCone        = 30     -- Degrees, spall cone half angle with maximum overmatch (Loss near 0)
+	local SpallMaxCone        = 90    -- Degrees, spall cone half angle near the ballistic limit (Loss near 1)
+	local SpallAngleSigma     = 0.5 -- Standard deviation of the fragment angle distribution, as a fraction of the cone half angle
+	local SpallEnergyFalloff  = 2   -- Power of the cos(angle) energy falloff used to split speed across fragments
 
-		if HitAngle < 89.9 and HitAngle > math.random(MinAngle, 90) then -- Checking for ricochet
-			Ricochet = HitAngle / 90 * 0.75
-		end
+	local SpallMinFragCount   = 1 -- Minimum number of fragments created; ensures at least one fragment is formed even with very low energy
+	local SpallMaxFragCount   = 20 -- Hard limit on the number of fragments created; prevents server overload from a single overmatch
 
-		if Ricochet > 0 and Bullet.GroundRicos < 2 then
-			local Direction = Ballistics.GetRicochetVector(Bullet.Flight, Trace.HitNormal) + VectorRand() * 0.05
-			local DeltaTime = engine.TickInterval()
-
-			Bullet.GroundRicos = Bullet.GroundRicos + 1
-			Bullet.Flight      = Direction:GetNormalized() * Speed * ACF.Scale * Ricochet
-			Bullet.Pos         = Trace.HitPos
-			Bullet.NextPos     = Bullet.Pos + Bullet.Flight * DeltaTime
-			Bullet.TraceTo     = Bullet.Pos + Bullet.Flight * (DeltaTime * 2)
-
-			return "Ricochet"
-		end
-
-		return false
-	end
-
-	function Ballistics.DoSpall(Bullet, Trace, HitRes, Speed)
+	function Ballistics.DoSpall(Bullet, Trace, HitRes, Speed, DmgInfo)
 		-- Only ever called during overpenetration
-		local Energy = Bullet.Energy.Kinetic -- Energy the projectile carries (J)
+		local Energy = Bullet.Energy.Kinetic -- Energy the projectile carries (kJ)
 
-		local RemovedMass = HitRes.Damage * ACF.RHADensity -- Damage is used as a proxy for volume (cm^3) and RHA density is in kg/cm^3
-		local RemovedArea = Bullet.ProjArea -- Area of the spall (cm^2)
+		-- Spall is generated from the convex the bullet exited through; its material determines the removed mass and how readily it fragments
+		local RemovedMass
+		local Density
+		local SpallMul   = 1
+		local MeshData   = Trace.Entity.ACF_Volumetric_Mesh
+		local ConvexHits = DmgInfo and DmgInfo:GetConvexHits()
 
-		local FragFormEnergy = 100 -- Energy needed to form a fragment (J) (Might depend on the material?)
-		local FragTotalEnergy = Energy * 0.33 -- 25% of energy is used to form fragments (J) (Might depend on the material?)
-		local FragCount = math.floor(FragTotalEnergy / FragFormEnergy) -- Number of fragments formed
-		FragCount = math.Clamp(FragCount, 1, 30) -- Atleast 1, up to 30 fragments (let's not kill the server)
+		if MeshData and ConvexHits and #ConvexHits > 0 then
+			local ExitHit   = ConvexHits[#ConvexHits]
+			local Convex    = MeshData.Convexes[ExitHit.ConvexID]
+			local ArmorType = GetArmorType(Convex.Material) or GetArmorType("Default")
+
+			RemovedMass = ExitHit.Volume * ArmorType.Density * GCmToKgIn -- ExitHit.Volume is the actual penetration channel volume (in^3), Density is g/cm^3
+			Density     = ArmorType.Density * 1e-3 -- g/cm^3 to kg/cm^3, to match FragSize's cm-based units below
+			SpallMul    = ArmorType.SpallMul
+		else
+			RemovedMass = HitRes.Damage * ACF.RHADensity -- Damage is used as a proxy for volume (cm^3) and RHA density is in kg/cm^3
+			Density     = ACF.RHADensity
+		end
+
+		if RemovedMass <= 0 then return end -- Nothing was actually removed, so there's no mass to turn into fragments
+
+		-- Both the fragment count and the fragments' kinetic energy are drawn from the penetrator's kinetic energy, scaled by how readily this material spalls.
+		local SpallEnergy = Energy * SpallMul -- kJ
+
+		local FragsFormed = SpallEnergy * SpallFragFraction
+		local FragCount = math.Clamp(math.floor(FragsFormed), SpallMinFragCount, SpallMaxFragCount) -- Atleast 1, up to 20 fragments (let's not kill the server)
 
 		if FragCount < 1 then return end -- No fragments formed
 
-		-- Test values
-		local FragSize = RemovedArea / FragCount 	-- Area of the fragments (cm^2)
-		local FragMass = RemovedMass / FragCount 	-- Mass of the fragments (kg)
-		local FragSpeed = Speed * 0.25 				-- Speed of the fragments (u/s) (50% of the original speed)
+		-- Total kinetic energy budget for the spall, split per-fragment below so mass, angle and speed all vary together instead of one bulk speed for everyone.
+		local TotalFragEnergy = SpallEnergy * SpallEnergyFraction * 1000 -- kJ to J
 
-		local BaseCone = 10 * math.pow(FragSize, 1 / 3) -- Half angle of the spall cone (degrees) (Might depend on the material?)
-		local FragPos = Trace.HitPos
+		-- Half angle of the spall cone: closer to the ballistic limit (Loss near 1) the plate barely fails and sprays debris wide, while heavy overmatch (Loss near 0) keeps debris close to the original flight direction.
+		local BaseCone = SpallMinCone + (SpallMaxCone - SpallMinCone) * HitRes.Loss
+		local FragPos = (Bullet.ConvexHit and Bullet.ConvexHit.ExitPos) or Trace.HitPos -- Spall originates at the convex the bullet exited through
 		local FragDirInit = Bullet.Flight:GetNormalized()
 
 		-- Filter what the bullet has travelled through + the hit entity itself if applicable
@@ -475,42 +834,110 @@ do -- Terminal ballistics --------------------------
 		-- Define a plane for the spread
 		local Right = FragDirInit:Cross(Vector(0, 0, 1)):GetNormalized()
 		local Up = FragDirInit:Cross(Right):GetNormalized()
-		local ConeTan = math.tan(math.rad(BaseCone)) -- "Width" of cone on the plane
 
-		-- Copied from AP ammotype definition
-		local ProjArea = math.pi * (FragSize / 2) ^ 2
-		local DragCoef = ProjArea * 0.0001 / FragMass
+		-- Sample fragment angles from a half normal distribution clamped to the cone, and weight each fragment's mass by the same curve so the center carries the heavy fragments.
+		local Sigma = BaseCone * SpallAngleSigma
+		local Masses, Weights, MassSum, WeightSum = {}, {}, 0, 0
+		local MinWeight, MaxWeight = math.huge, 0
+		for i = 1, FragCount do
+			local U = 1 - math.random()
+			local Angle = math.min(math.abs(Sigma * math.sqrt(-2 * math.log(U)) * math.cos(2 * math.pi * math.random())), BaseCone) -- Box-Muller
+
+			-- Penetration scales with the cube root of fragment mass, so cubing the normal curve makes penetration follow it
+			local Mass = math.max(math.exp(-1.5 * (Angle / Sigma) ^ 2), 1e-6)
+			Masses[i] = Mass
+			MassSum = MassSum + Mass
+
+			-- Energy share scales with mass so heavy center fragments keep their speed
+			local Weight = Mass * math.cos(math.rad(Angle)) ^ SpallEnergyFalloff
+			Weights[i] = { Angle = Angle, Weight = Weight }
+			WeightSum = WeightSum + Weight
+			MinWeight = math.min(MinWeight, Weight)
+			MaxWeight = math.max(MaxWeight, Weight)
+		end
+
+		-- Rescale so the sampled masses still sum to RemovedMass
+		local MassScale = RemovedMass / MassSum
 
 		-- Create the fragments
-		for _ = 1, FragCount do
-			-- Uniform sampling of points on a circle defined by the cone on the plane
-			local SpreadRadius = ConeTan * math.sqrt(math.random())
+		for i = 1, FragCount do
+			local FragMass   = Masses[i] * MassScale
+			local FragVolume = FragMass / Density -- cm^3, assuming the fragment has the same density as the removed material
+			local FragSize   = (6 * FragVolume / math.pi) ^ (1 / 3) -- Diameter of a sphere of that volume (cm)
+
+			-- Copied from AP ammotype definition
+			local ProjArea = math.pi * (FragSize / 2) ^ 2
+			local DragCoef = ProjArea * 0.0001 / FragMass
+
+			-- This fragment's share of the total energy budget, via energy conservation (Speed = sqrt(2 * KE / Mass)), clamped to the impact speed since spall can't outrun its source.
+			local FragEnergy = TotalFragEnergy * Weights[i].Weight / WeightSum
+			local FragSpeed  = math.min((2 * FragEnergy / FragMass) ^ 0.5 * ACF.MeterToInch, Speed)
+
+			-- Point on a circle at this fragment's sampled angle, placed at a random rotation around the cone axis
+			local SpreadRadius = math.tan(math.rad(Weights[i].Angle))
 			local SpreadAngle = math.random() * 2 * math.pi
 			local SpreadDir = Up * SpreadRadius * math.cos(SpreadAngle) + Right * SpreadRadius * math.sin(SpreadAngle)
 			local FragDir = (FragDirInit + SpreadDir):GetNormalized()
 
-			Ballistics.CreateBullet({
-				Caliber    = FragSize,
-				Diameter   = FragSize,
-				-- WeaponType = Bullet.WeaponType,
-				AmmoType   = "ACF.Ammunition.AP",
-				Owner      = Bullet.Owner,
-				Entity     = Bullet.Entity,
-				-- Crate      = Bullet.Crate,
-				Gun        = Bullet.Gun,
-				Pos        = FragPos,
-				ProjArea   = ProjArea,
-				ProjMass   = FragMass,
+			-- Debug color from yellow (least energetic fragment in this burst) to red (most energetic)
+			local EnergyFrac = MaxWeight > MinWeight and (Weights[i].Weight - MinWeight) / (MaxWeight - MinWeight) or 1
+
+			Ballistics.CreateFragment({
+				Diameter = FragSize,
+				Owner    = Bullet.Owner,
+				Entity   = Bullet.Entity,
+				Gun      = Bullet.Gun,
+				Pos      = FragPos,
+				ProjArea = ProjArea,
+				ProjMass = FragMass,
 				DragCoef = DragCoef,
-				-- Tracer     = Bullet.Tracer,
-				LimitVel   = 800,
-				Ricochet   = 60,
-				ShovePower = 0.2,
-				Flight = FragDir * FragSpeed,
-				Filter = Filter,
-				Hide = true,
-				IsSpall = true,
+				Flight   = FragDir * FragSpeed,
+				Filter   = Filter,
+				Color    = Color(255, 255 * (1 - EnergyFrac), 0),
 			})
+		end
+	end
+
+	-- Explosive Reactive Armor: when a round carrying enough kinetic energy passes through an explosive
+	-- armor convex, that convex detonates. The spent convex is zeroed out (becoming transparent to ballistics)
+	-- and its filler is set off as an HE blast at the impact point.
+	function Ballistics.DoReactiveArmor(Bullet, Trace, DmgInfo)
+		if Bullet.IsSpall or Bullet.IsCookOff then return end -- Neither carries a warhead that could set the plate off
+
+		local Entity = Trace.Entity
+		if not IsValid(Entity) then return end
+
+		local MeshData = Entity.ACF_Volumetric_Mesh
+		if not MeshData or not MeshData.HasReactiveArmor then return end -- Nothing reactive on this entity; bail before any work
+
+		local ConvexHits = DmgInfo and DmgInfo.GetConvexHits and DmgInfo:GetConvexHits()
+		if not ConvexHits then return end
+
+		local KE = Bullet.Energy and Bullet.Energy.Kinetic or 0
+
+		for _, Hit in ipairs(ConvexHits) do
+			local Convex = MeshData.Convexes[Hit.ConvexID]
+			if not Convex or not Convex.IsExplosive or Convex.Detonated then continue end
+
+			local ArmorType = GetArmorType(Convex.Material)
+			if not ArmorType then continue end
+			if KE < (ArmorType.ExplosiveThreshold or math.huge) then continue end
+
+			-- Spend the convex; zero health makes it transparent to subsequent projectiles
+			Convex.Detonated = true
+			Convex.Health    = 0
+			Damage.NetworkConvex(Entity, Hit.ConvexID)
+
+			local Filler = Convex.Mass * (ArmorType.ExplosiveFiller or 0)
+			-- print("Filler", 	Filler)
+			if Filler <= 0 then continue end
+
+			local FragMass  = math.max(Convex.Mass - Filler)
+			local Position  = (Bullet.ConvexHit and Bullet.ConvexHit.EntryPos) or Trace.HitPos
+			local BlastInfo = Damage.Objects.DamageInfo(Bullet.Owner, Bullet.Gun)
+
+			Damage.createExplosion(Position, Filler, FragMass, { Entity }, BlastInfo)
+			Damage.explosionEffect(Position, nil, Filler)
 		end
 	end
 end
