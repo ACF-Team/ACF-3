@@ -155,8 +155,6 @@ do -- Gear Shifting ------------------------------------
 end ----------------------------------------------------
 
 do -- Movement -----------------------------------------
-	-- local Tick = Clock.DeltaTime
-
 	local function GetRotationalInertia(Link, Wheel)
 		local Phys = ENTITY.GetPhysicsObject(Wheel)
 		if not Phys then return end
@@ -313,23 +311,19 @@ do -- Movement -----------------------------------------
 			OutputInertia = OutputInertia + (EntTbl.OutputInertia or 0)
 		end
 
-		SelfTbl.OutputInertia = OutputInertia -- Output side, wheels, effectors and gearboxes receive this inertia, as torque shares are fractions of this.
-		SelfTbl.DownstreamInertia = OutputInertia / (GearRatio * GearRatio) -- On the other hand, Engines reflect inertia as 1/N^2.
-		SelfTbl.TotalRatio = max(TotalRatioSum, 1)
+		SelfTbl.OutputInertia = OutputInertia -- Every linked entity receive this inertia, as torque shares are fractions of this.
+		SelfTbl.TotalRatio = max(TotalRatioSum, 1) -- Must be higher than 1, otherwise it just dips way too low and it just doesn't work.
 		SelfTbl.MeasuredRPM = MeasuredCount > 0 and (MeasuredRPMSum / MeasuredCount) or InputRPM
 		SelfTbl.LeftRPM  = LeftCount  > 0 and (LeftRPMSum  / LeftCount)  or SelfTbl.MeasuredRPM
 		SelfTbl.RightRPM = RightCount > 0 and (RightRPMSum / RightCount) or SelfTbl.MeasuredRPM
-
-		-- local TargetLoad = SelfTbl.InGear and (LClutch + RClutch) * 0.5 or 0
-		-- local Load = SelfTbl.Load or 0
-		SelfTbl.Load = (LClutch + RClutch) * 0.5 --Load + Clamp(TargetLoad - Load, -1, Tick / (SelfTbl.SwitchTime or 0.15))
+		SelfTbl.Load = (LClutch + RClutch) * 0.5
 
 		self:UpdateOverlay()
 
 		return SelfTbl.MeasuredRPM
 	end
 
-	function ENT:DistributeTorque(Torque, DeltaTime, MassRatio, FlyRPM, CompressionBrake)
+	function ENT:DistributeTorque(Torque, DeltaTime, MassRatio, FlyRPM)
 		local SelfTbl = ENTITY.GetTable(self)
 		if SelfTbl.Disabled or Torque == 0 then return end
 
@@ -379,7 +373,7 @@ do -- Movement -----------------------------------------
 
 				local GearTorque = StageTorque * Share * Clutch
 
-				Link:TransferGearbox(Ent, GearTorque, DeltaTime, MassRatio, FlyRPM, CompressionBrake)
+				Link:TransferGearbox(Ent, GearTorque, DeltaTime, MassRatio, FlyRPM)
 				ReactTq = ReactTq + GearTorque
 			end
 		end
@@ -403,7 +397,7 @@ do -- Movement -----------------------------------------
 		for Wheel, Link in pairs(SelfTbl.Wheels) do
 			local Clutch = Link.Side == 0 and LClutch or RClutch
 
-			-- Check also that the gearbox is not braking
+			-- Check that the gearbox is not gearing or its clutch is disengaged
 			if SelfTbl.InGear and Clutch > 0 then
 				local WheelInertia = Link.CachedInertia or GetRotationalInertia(Link, Wheel)
 				local Share = WheelInertia / TotalInertia
