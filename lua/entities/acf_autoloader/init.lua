@@ -134,10 +134,8 @@ ACF.RegisterClassLinkCheck("acf_autoloader", "acf_ammo", function(This, Ammo)
 
 	if BulletData and (Caliber - 0.01) > This:ACF_GetUserVar("AutoloaderCaliber") / 10 then return false, "Ammo is too wide for this autoloader." end
 
-	-- An autoloader handles one piece of a two piece round, and only part of a round its crate carries to the breech
-	local Shape = Ammo:ACF_GetUserVar("Shape")
-
-	Length = Length * (Shape and Shape.AutoloaderMinLengthFrac or 1) * (BulletData.TwoPiece and 1 / ACF.TwoPieceCount or 1)
+	-- An autoloader handles one piece of a two piece round
+	if BulletData.TwoPiece then Length = Length / ACF.TwoPieceCount end
 
 	if BulletData and (Length - 0.01) > This:ACF_GetUserVar("AutoloaderLength") then return false, "Ammo is too long for this autoloader." end
 	return true
@@ -211,8 +209,7 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 
 	-- Gun to ammo
 	local AmmoMoveOffset = self:WorldToLocal(Ammo:GetPos())
-	local AmmoDirection = Ammo:LocalToWorldAngles(Ammo.ExtraData.LocalAng):Forward()
-	local AmmoAngleDiff = math.deg(math.acos(math.Clamp(self:GetForward():Dot(AmmoDirection), -1, 1)))
+	local AmmoAngleDiff = Ammo:ACF_GetUserVar("Shape").GetShellAngleDiff(Ammo, self:GetForward())
 
 	local HorizontalScore = ACF.Normalize(math.abs(GunMoveOffset.x) + math.abs(AmmoMoveOffset.x) + math.abs(GunMoveOffset.y) + math.abs(AmmoMoveOffset.y), ACF.AutoloaderWorstDistHorizontal, ACF.AutoloaderBestDistHorizontal)
 	local VerticalScore = ACF.Normalize(math.abs(GunMoveOffset.z) + math.abs(AmmoMoveOffset.z), ACF.AutoloaderWorstDistVertical, ACF.AutoloaderBestDistVertical)
@@ -247,7 +244,7 @@ function ENT:GetCost()
 	-- Based on caliber rather than volume, so long/short autoloaders of the same caliber cost the same
 	local Caliber = self:ACF_GetUserVar("AutoloaderCaliber")
 
-	return Caliber * 0.2
+	return Caliber * 0.16
 end
 
 function ENT:Think()

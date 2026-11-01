@@ -633,8 +633,8 @@ if CLIENT then
         Key = Key and Key:upper() or "C"
 
         local Messages = ACF.Utilities.Messages
-        Messages.PrintChat("Info", "The contraption on baseplate #" .. EntIndex .. " failed the autotest with " .. FaultCount .. " failure(s).")
-        Messages.PrintChat("Info", "To find out why, open the Context Menu (" .. Key .. "), right click on the baseplate, and click \"Autotester\".")
+        Messages.PrintChat("Error", "The contraption on baseplate #" .. EntIndex .. " failed the autotest with " .. FaultCount .. " failure(s).")
+        Messages.PrintChat("Error", "To find out why, open the Context Menu (" .. Key .. "), right click on the baseplate, and click \"Autotester\".")
     end)
 
     -- Don't let stale results show up on a different entity that reuses the index

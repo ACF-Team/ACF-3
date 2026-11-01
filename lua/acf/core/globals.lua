@@ -434,7 +434,7 @@ do -- ACF global vars
 
 	ACF.MinAutoloaderCaliber = 60	-- Minimum caliber for autoloaders
 	ACF.MaxAutoloaderCaliber = 280	-- Maximum caliber for autoloaders
-	ACF.MinAutoloaderLength = 50	-- Minimum shell length for autoloaders (mm)
+	ACF.MinAutoloaderLength = 1	-- Minimum shell length for autoloaders (cm)
 	ACF.MaxAutoloaderLength = 200	-- Maximum shell length for autoloaders (cm)
 	ACF.AutoloaderMaxAngleDiff = 10 -- Maximum deviation between autoloader and breech to be aligned (deg)
 

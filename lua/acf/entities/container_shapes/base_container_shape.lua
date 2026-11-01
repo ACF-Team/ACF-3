@@ -16,8 +16,12 @@ ACF.Classes.DefineClass("ACF.ContainerShapes.BaseContainerShape", function(CLASS
     -- False for shapes whose rounds sit on a fixed lattice that hex packing cannot tighten.
     CLASS.CanHexPack = true
 
-    -- Fraction of a round's length an autoloader must fit, lower for shapes that carry rounds to the breech themselves.
-    CLASS.AutoloaderMinLengthFrac = 1
+    -- Degrees between Direction and the way the crate's shells point, which an autoloader arm should match.
+    function CLASS.GetShellAngleDiff(Crate, Direction)
+        local Facing = Crate:LocalToWorldAngles(Crate.ExtraData.LocalAng):Forward()
+
+        return math.deg(math.acos(math.Clamp(Direction:Dot(Facing), -1, 1)))
+    end
 
     -- Subtypes must implement ShapeCalculation(Size) -> Volume (cu in).
     -- Wall thickness is no longer a fixed figure, so this is the full exterior volume;

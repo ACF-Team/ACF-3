@@ -655,10 +655,9 @@ do -- MARK: Ammo capacity
 		-- of equal circles. The primary count is the number of RINGS, and every ring is
 		-- filled completely, so a disk is always a whole hexagon rather than a ring with
 		-- a gap in it:
-		--   1 ring  = 1                 3 rings = 1 + 6 + 12 = 19
-		--   2 rings = 1 + 6 = 7         4 rings = 1 + 6 + 12 + 18 = 37
-		-- Ring r (counting the lone centre round as ring 0) holds 6r rounds, giving the
-		-- centred hexagonal numbers, and its furthest rounds sit r diameters out.
+		--   1 ring  = 6                 3 rings = 6 + 12 + 18 = 36
+		--   2 rings = 6 + 12 = 18       4 rings = 6 + 12 + 18 + 24 = 60
+		-- Ring r holds 6r rounds, and its furthest rounds sit r diameters out.
 		---------------------------------------------------------------------------
 
 		local Vertical = {
@@ -673,14 +672,15 @@ do -- MARK: Ammo capacity
 			return max(1, numStacks) * roundLength
 		end
 
-		--- Centred hexagonal number: how many rounds a disk of `numRings` rings holds.
+		--- How many rounds a disk of `numRings` rings holds, with no centre round.
 		function Vertical.GetPerDisk(numRings)
 			local rings = max(1, numRings)
 
-			return 3 * rings * (rings - 1) + 1
+			return 3 * rings * (rings + 1)
 		end
 
-		--- Places a zero-based slot on the hex lattice, in units of round diameters.
+		--- Places a slot on the hex lattice, in units of round diameters. Slot 1 is the
+		-- first round of ring 1; there is no centre round.
 		-- Ring r has six corners r out at 60 degree steps, with r-1 rounds evenly spaced
 		-- along each edge between them -- those land on lattice points because a hexagon's
 		-- side equals its circumradius.
@@ -710,14 +710,14 @@ do -- MARK: Ammo capacity
 			return x, y
 		end
 
-		--- The outermost rounds sit (numRings - 1) diameters out, plus their own radius
+		--- The outermost rounds sit numRings diameters out, plus their own radius
 		local function GetDiskRadius(numRings, roundDiameter)
-			return (max(1, numRings) - 0.5) * roundDiameter
+			return (max(1, numRings) + 0.5) * roundDiameter
 		end
 
 		function Vertical.GetMaxPrimary(roundSize, maxDiameter)
 			-- Solving GetDiskRadius(n, d) <= maxDiameter / 2 for n
-			return max(1, floor(maxDiameter / (2 * roundSize.y) + 0.5))
+			return max(1, floor(maxDiameter / (2 * roundSize.y) - 0.5))
 		end
 
 		function Vertical.GetMaxStacks(roundSize, maxHeight)
@@ -736,7 +736,7 @@ do -- MARK: Ammo capacity
 
 			local perDisk    = Vertical.GetPerDisk(numRings)
 			local stackIndex = floor((index - 1) / perDisk)
-			local x, y       = HexLatticePosition((index - 1) % perDisk)
+			local x, y       = HexLatticePosition((index - 1) % perDisk + 1)
 
 			-- The lattice is in diameters; scale it out to real units
 			x = x * roundDiameter

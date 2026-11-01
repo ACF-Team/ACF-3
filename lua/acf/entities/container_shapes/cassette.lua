@@ -5,5 +5,4 @@ ACF.Classes.DefineClass("ACF.ContainerShapes.Cassette", "ACF.ContainerShapes.Box
     CLASS.IsCassette   = true
     CLASS.IsMechanized = true
     CLASS.CanHexPack   = false
-    CLASS.AutoloaderMinLengthFrac = 0.1
 end)
