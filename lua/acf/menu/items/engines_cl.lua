@@ -63,6 +63,15 @@ local function Build(Menu, Contexts)
 	Menu:AddTitle("#acf.menu.engines.settings")
 	Menu:AddWikiLink("Engines", "docs/acf_tutorials/engines.html")
 
+	Menu:AddLabel(
+				"Warning: \n" ..
+				"Engines have recently received a rework, which completely overhauls the way how they work. \n\n" ..
+				"The reworked engines now rev-match any linked Wheel's RPM, meaning no more torque \"pulsation\" whenever wheels are on par with the Engine's RPM. \n\n" ..
+				"Mass ratio has also been buffed, meaning that both tanks and light vehicles should behave similar as before at a lower torque multiplier. \n\n" ..
+				"Engines also can now stall below their Idling RPM and over-rev above their Redline RPM, for increased realism. As well as many other changes. \n\n" ..
+				"Please note that these changes are experimental. Please report any bugs/suggestions in the recommended channels; See \"About the Addon - Contact Us\"."
+				)
+
 	local EngineClass = Menu:AddComboBox()
 	local EngineList  = Menu:AddComboBox()
 
