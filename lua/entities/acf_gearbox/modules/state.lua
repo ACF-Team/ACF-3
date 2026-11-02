@@ -236,10 +236,14 @@ do -- Movement -----------------------------------------
 			SelfTbl.TotalRatio        = 0
 			SelfTbl.DownstreamInertia = 0
 			SelfTbl.OutputInertia     = 0
+			SelfTbl.TorqueInput       = 0
+			SelfTbl.TorqueOutput      = 0
 			SelfTbl.Load              = 0
 			SelfTbl.MeasuredRPM       = 0
 			SelfTbl.LeftRPM           = 0
 			SelfTbl.RightRPM          = 0
+
+			SelfTbl.UpdateOutputs(self, SelfTbl)
 			return 0
 		end
 
@@ -342,6 +346,7 @@ do -- Movement -----------------------------------------
 		local Slop = SelfTbl.Automatic and 0.9 or 1.0
 		-- Capacity ceiling: this gearbox's own rated torque, a gearbox cannot transmit more than it's rated for, even if the engine sends more.
 		local ClampedTorque = Clamp(Torque, -MaxTorque, MaxTorque)
+		local InputTorque = ClampedTorque
 		-- Reflect through this stage's own ratio, same direction gearboxes already scale torque.
 		local StageTorque = ClampedTorque * GearRatio * Loss * Slop
 
@@ -418,8 +423,10 @@ do -- Movement -----------------------------------------
 			SelfTbl.LoadTicks = (SelfTbl.LoadTicks or 0) + 1
 			if ReactTq > SelfTbl.MaxTorque then SelfTbl.CappedTicks = (SelfTbl.CappedTicks or 0) + 1 end
 
-			WireLib.TriggerOutput(self, "Output Torque", ReactTq)
-			SelfTbl.TorqueOutput = ReactTq -- For the overlay
+			SelfTbl.TorqueOutput = ReactTq
+			SelfTbl.TorqueInput = InputTorque
+
+			SelfTbl.UpdateOutputs(self, SelfTbl)
 		end
 
 		-- Chassis reaction torque: Newton's third law makes the body twist opposite to the drive direction when power is applied
@@ -439,7 +446,7 @@ do -- Movement -----------------------------------------
 		self:UpdateOverlay()
 	end
 
-	function ENT:Act(Torque, DeltaTime, MassRatio, FlyRPM, CompressionBrake)
+	function ENT:Act(Torque, DeltaTime, MassRatio, FlyRPM)
 		local SelfTbl = ENTITY.GetTable(self)
 		if not ACF.IsOperational(self, SelfTbl) then return 0 end -- Not operational, either was destroyed or disabled by legality checks.
 
@@ -453,7 +460,7 @@ do -- Movement -----------------------------------------
 
 		-- Single-engine fast path: distribute immediately, no deferred timer
 		if EngineCount + GearboxCount <= 1 then
-			self:DistributeTorque(Torque, DeltaTime, MassRatio, FlyRPM, CompressionBrake)
+			self:DistributeTorque(Torque, DeltaTime, MassRatio, FlyRPM)
 			return
 		end
 
@@ -463,7 +470,6 @@ do -- Movement -----------------------------------------
 		if SelfTbl.ActTick ~= Now then
 			SelfTbl.ActTick        = Now
 			SelfTbl.AccumTorque    = 0
-			SelfTbl.AccumBrakeTq   = 0
 			SelfTbl.ActDt          = DeltaTime
 			SelfTbl.ActMassRatio   = MassRatio
 			SelfTbl.ActFlyRPM      = FlyRPM
@@ -471,14 +477,13 @@ do -- Movement -----------------------------------------
 		end
 
 		SelfTbl.AccumTorque = SelfTbl.AccumTorque + Torque
-		SelfTbl.AccumBrakeTq = SelfTbl.AccumBrakeTq + CompressionBrake
 
 		if not SelfTbl.ActDistributed then
 			SelfTbl.ActDistributed = true
 			-- Deferred so all engines complete their Act calls before distribution
 			timer.Simple(0, function()
 				if IsEntityValid(self) then
-					self:DistributeTorque(SelfTbl.AccumTorque, SelfTbl.ActDt, SelfTbl.ActMassRatio, SelfTbl.ActFlyRPM, SelfTbl.AccumBrakeTq)
+					self:DistributeTorque(SelfTbl.AccumTorque, SelfTbl.ActDt, SelfTbl.ActMassRatio, SelfTbl.ActFlyRPM)
 				end
 			end)
 		end
@@ -531,8 +536,29 @@ do -- Braking ------------------------------------------
 			self:ApplyBrakes()
 		end)
 	end
-	-- ENT.ApplyBrakes = ENT:ApplyBrakes()
 end ----------------------------------------------------
+
+do -- Wiremod debug overlay ----------------------------
+	local Round = math.Round
+
+	function ENT:UpdateOutputs(SelfTbl)
+		SelfTbl = SelfTbl or self:GetTable()
+
+		local TorqueMult = ACF.TorqueMult
+		local InputTorque = Round(SelfTbl.TorqueInput * TorqueMult)
+		local OutputTorque = Round(SelfTbl.TorqueOutput * TorqueMult)
+
+		if SelfTbl.LastTqInput ~= InputTorque then
+			SelfTbl.LastTqInput = InputTorque
+			WireLib.TriggerOutput(self, "Input Torque", InputTorque)
+		end
+
+		if SelfTbl.LastTqOutput ~= OutputTorque then
+			SelfTbl.LastTqOutput = OutputTorque
+			WireLib.TriggerOutput(self, "Output Torque", OutputTorque)
+		end
+	end
+end
 
 do -- Inputs -------------------------------------------
 	local function ToBrakeTorque(Value)

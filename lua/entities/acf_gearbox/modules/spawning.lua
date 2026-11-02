@@ -366,6 +366,7 @@ do -- Spawn and Update functions -----------------------
 		self.Effectors      = {}
 		self.GearboxIn      = {}
 		self.GearboxOut     = {}
+		self.TorqueInput    = 0
 		self.TorqueOutput   = 0
 		self.LoadTicks      = 0
 		self.CappedTicks    = 0
@@ -374,6 +375,8 @@ do -- Spawn and Update functions -----------------------
 		self.ChangeFinished = 0
 		self.InGear         = false
 		self.Braking        = false
+		self.LastTqInput    = 0
+		self.LastTqOutput   = 0
 		self.LastBrake      = 0
 		self.LastActive     = 0
 		self.LClutch        = 1
