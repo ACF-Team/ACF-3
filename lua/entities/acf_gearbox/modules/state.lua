@@ -3,6 +3,7 @@ local ACF         	 = ACF
 
 local Utilities   	 = ACF.Utilities
 local Clock       	 = Utilities.Clock
+local Tick 			 = Clock.DeltaTime
 local Clamp       	 = math.Clamp
 local abs         	 = math.abs
 local min         	 = math.min
@@ -197,14 +198,26 @@ do -- Movement -----------------------------------------
 		local Gear    = SelfTbl.Gear
 
 		if SelfTbl.CVT and Gear == 1 then
+			local CVT_LAUNCH_MARGIN = 1.1 -- Magick multiplier, its the full launch engagement above the CVT's Target Min RPM 
+
 			local Gears = SelfTbl.Gears
+			local Target
 
 			if SelfTbl.CVTRatio > 0 then
-				Gears[1] = SelfTbl.CVTRatio
+				Target = SelfTbl.CVTRatio
 			else
 				local MinRPM  = SelfTbl.MinRPM
-				Gears[1] = 1 / Clamp((InputRPM - MinRPM) / (SelfTbl.MaxRPM - MinRPM), 0.05, 1)
+				Target = 1 / Clamp((InputRPM - MinRPM) / (SelfTbl.MaxRPM - MinRPM), 0.05, 1)
 			end
+
+			-- The variator is smoothed overtime, so it doesn't do the instantaneous RPM -> ratio -> measured RPM loop
+			local Alpha     = Tick / max(SelfTbl.SwitchTime, Tick)
+			local Variator  = SelfTbl.VariatorRatio or Target
+			Variator        = Variator + (Target - Variator) * Alpha
+			SelfTbl.VariatorRatio = Variator
+			SelfTbl.LaunchRPM = SelfTbl.MinRPM * CVT_LAUNCH_MARGIN -- Them engine's read this
+
+			Gears[1] = Variator
 
 			local GearRatio = Gears[1] * SelfTbl.FinalDrive
 			SelfTbl.GearRatio = GearRatio
