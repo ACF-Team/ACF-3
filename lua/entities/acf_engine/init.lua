@@ -12,6 +12,7 @@ local ENTITY 			= FindMetaTable("Entity")
 local PHYSOBJ			= FindMetaTable("PhysObj")
 
 local IsEntityValid		= ACF.Optimizations.IsEntityValid
+local Fire				= ACF.Damage.Fire
 local IsPhysObjValid	= ACF.Optimizations.IsPhysObjValid
 
 --===============================================================================================--
@@ -410,6 +411,8 @@ function ENT:ACF_UpdateOverlayState(State)
 	State:AddEngineTorque("Torque", self.PeakTorque)
 	State:AddKeyValue("Powerband", ("%s - %s RPM"):format(self.PeakMinRPM, self.PeakMaxRPM))
 	State:AddKeyValue("Redline", ("%s RPM"):format(self.LimitRPM))
+
+	Fire.AddOverlay(self, State)
 end
 
 ACF.AddInputAction("acf_engine", "Throttle", function(Entity, Value)
@@ -421,21 +424,77 @@ ACF.AddInputAction("acf_engine", "Active", function(Entity, Value)
 end)
 
 
+-- Adjusting performance based on damage
+local function UpdateDamagedTorque(Entity)
+	local TorqueMult = Clamp(((1 - Entity.TorqueScale) / 0.5) * ((Entity.ACF.Health / Entity.ACF.MaxHealth) - 1) + 1, Entity.TorqueScale, 1)
+
+	if ACF.IsDestroyed(Entity) then TorqueMult = 0 end -- Destroyed engines produce no power
+
+	Entity.PeakTorque = Entity.PeakTorqueHeld * TorqueMult
+end
+
 --This function needs to return HitRes
 function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	local HitRes = Damage.doPropDamage(self, DmgResult, DmgInfo)
 
-	-- Adjusting performance based on damage
-	local TorqueMult = Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, self.TorqueScale, 1)
+	UpdateDamagedTorque(self)
 
-	if ACF.IsDestroyed(self) then TorqueMult = 0 end -- Destroyed engines produce no power
+	-- A round through a running engine can set its oil and fuel lines alight
+	if self.Active and (HitRes.Overkill or 0) > 0 and math.random() < ACF.EngineIgnitionChance then
+		Fire.Ignite(self, Fire.GetIgnitionSource(self, DmgInfo) or "Hit")
+	end
 
-	self.PeakTorque = self.PeakTorqueHeld * TorqueMult
 	return HitRes
 end
 
 function ENT:ACF_OnRepaired()
 	self.PeakTorque = self.PeakTorqueHeld
+	self.FireLoad   = nil
+end
+
+do -- MARK: Fire
+	local FIRE_LOAD = 0.02 -- kg of oil and fuel that can burn per kg of engine
+	local BURN_RATE = 0.02 -- kg/s an engine fire burns
+	local OIL_HEAT  = 44e6 -- J/kg, oil and fuel alike
+
+	function ENT:ACF_OnHeatDamage()
+		UpdateDamagedTorque(self)
+	end
+
+	function ENT:ACF_OnHeat(Flux, DeltaTime)
+		Fire.DamageComponent(self, Flux, DeltaTime)
+
+		if not Fire.IsBurning(self) and Fire.AddHeatDose(self, Flux, DeltaTime) >= ACF.EngineHeatDose then
+			Fire.Ignite(self, "Heat")
+		end
+	end
+
+	function ENT:ACF_OnIgnite()
+		if not self.FireLoad then
+			local PhysObj = self:GetPhysicsObject()
+
+			self.FireLoad = (IsValid(PhysObj) and PhysObj:GetMass() or 0) * FIRE_LOAD
+		end
+
+		return self.FireLoad > 0
+	end
+
+	function ENT:ACF_IsSuppressible()
+		return true
+	end
+
+	--- Burns the engine's oil and fuel lines, and the engine with them
+	function ENT:ACF_FireTick(DeltaTime)
+		local Burnt = math.min(self.FireLoad or 0, BURN_RATE * DeltaTime)
+
+		if Burnt <= 0 then return end
+
+		self.FireLoad = self.FireLoad - Burnt
+
+		Fire.DamageComponent(self, Fire.MaxFlux, DeltaTime)
+
+		return Burnt * OIL_HEAT / DeltaTime
+	end
 end
 
 function ENT:UpdateSound(SelfTbl)

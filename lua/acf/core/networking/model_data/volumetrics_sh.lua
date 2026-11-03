@@ -349,6 +349,7 @@ do
                 Thinnest  = math.min(Maxs.x - Mins.x, Maxs.y - Mins.y, Maxs.z - Mins.z), -- Smallest local bounds size, for the overlap check
                 Centroid  = Sum,
                 Volume    = Volume,
+                SurfaceArea = Area, -- in², bounds how much of the convex holes can open
                 MinWidth  = Area > 0 and 2 * Volume / Area or 0, -- Minimum width is empirically atleast half the mean chord length
                 Mass      = 0,
                 Health    = 0,

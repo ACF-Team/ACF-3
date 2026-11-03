@@ -184,6 +184,14 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 		return true
 	end
 
+	--- Called when an entity is about to catch fire.
+	--- @param Entity entity The entity about to burn.
+	--- @param Source string What lit it, see ACF.Damage.Fire.GetIgnitionSource.
+	--- @return boolean # True if the entity can catch fire, false otherwise.
+	function Gamemode:ACF_PreIgnite()
+		return true
+	end
+
 	--- Called when a supply crate attempts to create an explosion, usually due to damage.
 	--- @param Entity entity The affected supply crate.
 	--- @return boolean # True if the supply crate can explode, false otherwise.

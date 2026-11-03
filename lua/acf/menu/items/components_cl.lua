@@ -3,7 +3,7 @@ local Classes = ACF.Classes
 local PAGE    = "acf_component"
 
 local COMPONENT_BASE = "ACF.Components.BaseComponent"
-local CTX_NAMES      = { "Computer", "Autoloader", "Supply", "Waterjet", "GroundLoader", "SensorSync" }
+local CTX_NAMES      = { "Computer", "Autoloader", "Supply", "Waterjet", "GroundLoader", "SensorSync", "BlowoutPanel", "Extinguisher" }
 
 -- Maps a component group to the context whose SENT it spawns.
 local function ContextFor(Contexts, Group)
@@ -78,6 +78,7 @@ local function Build(Menu, Contexts)
 
 		ComponentPreview:UpdateModel(Data.Model, Data.Material or "")
 		ComponentPreview:UpdateSettings(Data.Preview)
+		ComponentPreview:SetColor(Data.Color or color_white)
 
 		Menu:ClearTemporal(Base)
 		Menu:StartTemporal(Base)
@@ -111,6 +112,8 @@ ACF.Menu.RegisterPage({
 		Waterjet     = "acf_waterjet",
 		GroundLoader = "acf_groundloader",
 		SensorSync   = "acf_sensorsync",
+		BlowoutPanel = "acf_blowout_panel",
+		Extinguisher = "acf_extinguisher",
 	},
 	LinkContexts = function(Contexts) Contexts.Active = Contexts.Computer end,
 

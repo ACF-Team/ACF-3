@@ -69,6 +69,9 @@ do -- ACF.trace
 		return false
 	end
 
+	--- @return boolean # Whether ACF's traces pass through the entity, as for destroyed components or ones flagged ACF_InvisibleToTrace.
+	ACF.IsInvisibleToTrace = TestTraceable
+
 	--- ACF trace function that automatically filters out and retries when hitting a clipped portion of a prop.
 	function ACF.trace(TraceData)
 		local Original = TraceData.output

@@ -96,6 +96,7 @@ local function Build(Menu, Contexts)
 	local SizeZ = Menu:AddSlider("#acf.menu.fuel.tank_height", Min, Max)
 
 	Menu:AddField(Fuel, "FuelPriority", { Title = "#acf.menu.fuel.priority", wang = true })
+	local SelfSealing = Menu:AddField(Fuel, "SelfSealing", { Title = "#acf.menu.fuel.self_sealing" })
 
 	local FuelBase    = Menu:AddCollapsible("#acf.menu.fuel.tank_info", nil, "icon16/cup_edit.png")
 	local FuelDesc    = FuelBase:AddLabel()
@@ -108,7 +109,7 @@ local function Build(Menu, Contexts)
 		local ShapeInst = Fuel:Get("Shape")
 		local Shape = (ShapeInst and ShapeInst.GetType) and ShapeInst:GetType() or GetType("ACF.ContainerShapes.Box")
 
-		local Volume = Shape.ShapeCalculation(TankSize)
+		local Volume = Shape.ShapeCalculation(self.Selected:GetFuelSpace(TankSize, Fuel:Get("SelfSealing")))
 
 		local Capacity = Volume * ACF.gCmToKgIn
 		local Mass     = Capacity * self.Selected.Density
@@ -123,6 +124,18 @@ local function Build(Menu, Contexts)
 
 		FuelDesc:SetText("Scalable Fuel Tank\n\nShape: " .. (Shape.Name or "Box"))
 		FuelInfo:SetText(FuelText)
+	end
+
+	local Unsubscribe = Fuel:OnChange(FuelInfo, "SelfSealing", function()
+		if IsValid(FuelType) then FuelType:UpdateFuelText() end
+	end)
+
+	local OldRemove = FuelInfo.OnRemove
+
+	function FuelInfo:OnRemove() -- The context outlives this menu
+		if OldRemove then OldRemove(self) end
+
+		Unsubscribe()
 	end
 
 	local function ScalePreview()
@@ -185,6 +198,8 @@ local function Build(Menu, Contexts)
 
 		Fuel:Set("FuelType", Classes.GetTypeName(Data))
 		self:UpdateFuelText()
+
+		if IsValid(SelfSealing) then SelfSealing:SetVisible(Data.CanSelfSeal) end
 	end
 
 	function FuelShape:OnSelect(_, _, Data)

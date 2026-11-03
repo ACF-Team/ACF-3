@@ -776,7 +776,8 @@ do
 		-- Avoid negative health to avoid weird damage interactions
 		local NewHealth = math.max(0, SelfACF.Health - Damage)
 
-		SelfACF.Health = NewHealth
+		SelfACF.Health   = NewHealth
+		SelfTbl.HealthEff = NewHealth / SelfACF.MaxHealth -- The periodic update doesn't run once crew are dead or outside a contraption
 
 		if NewHealth == 0 and SelfTbl.IsAlive then
 			self:KillCrew(sound)
@@ -794,6 +795,7 @@ do
 
 		self.IsAlive = false
 		self.ACF.Health = 0
+		self.HealthEff = 0
 
 		self:UpdateOverlay()
 		self:ReplaceCrew()
@@ -845,6 +847,18 @@ do
 		end
 
 		return HitRes
+	end
+
+	local BURN_TIME_COEF = 240 -- Purser's skin burn time, 4 q^-1.35 minutes with q in kW/m², in seconds
+	local BURN_TIME_EXP  = -1.35
+
+	-- Crew can't bail out, so heat they couldn't stay in kills them instead
+	function ENT:ACF_OnHeat(Flux, DeltaTime)
+		if not self.IsAlive or Flux <= ACF.CrewTenableFlux then return end
+
+		local BurnTime = BURN_TIME_COEF * (Flux * 0.001) ^ BURN_TIME_EXP
+
+		self:DamageCrew(self.ACF.MaxHealth * DeltaTime / BurnTime, "player/pl_burnpain3.wav")
 	end
 
 	function ENT:ACF_OnRepaired(_, OldHealth)

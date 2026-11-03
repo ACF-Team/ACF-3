@@ -5,6 +5,7 @@ local Sounds        = Utilities.Sounds
 local ActiveCrates  = ACF.AmmoCrates or {}
 local ActiveTanks   = ACF.FuelTanks or {}
 local ActiveCrews   = ACF.ActiveCrews or {}
+local Extinguishers = ACF.Extinguishers or {}
 local SupplyDist2   = (ACF.SupplyDistance or 300) * (ACF.SupplyDistance or 300)
 
 local function SupplyEffect(Entity, RefilledAmmo, RefilledFuel, RevivedCrew)
@@ -115,6 +116,16 @@ function ENT:Think()
 		end
 	end
 
+	for Target in pairs(Extinguishers) do
+		if IsValid(Target) then
+			local Dist2 = Pos:DistToSqr(Target:GetPos())
+			if CanSupply(self, Target, Dist2) then
+				Count = Count + 1
+				Recipients[Count] = Target
+			end
+		end
+	end
+
 	for Target in pairs(ActiveCrews) do
 		if IsValid(Target) then
 			local Dist2 = Pos:DistToSqr(Target:GetPos())
@@ -163,8 +174,8 @@ function ENT:Think()
 
 				UsedBudget = UsedBudget + ReviveCost
 			end
-		elseif Target.IsACFAmmo then
-			-- For ammo crates: only whole cartridges can be transferred
+		elseif Target.IsACFAmmo or Target.IsACFExtinguisher then
+			-- For ammo crates: only whole cartridges can be transferred (extinguishers likewise take a whole fill)
 			-- If we can't transfer enough mass for a full cartridge, build it up until we can
 
 			local UnitMass = Target:GetUnitMass()

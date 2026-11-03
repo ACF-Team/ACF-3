@@ -62,7 +62,7 @@ do -- Updating
 		self.FuelType    = Classes.GetTypeName(FuelType:GetType())
 		self.FuelDensity = FuelType.Density
 		self.ConvexMaterial = FuelType.ArmorType or "RHA" -- Convex armor type defaults to this fuel's material
-		self.IsExplosive = FuelType.IsExplosive
+		self.IsExplosive = true -- Ruptured by ACF.KillChildProps when what it's mounted on is destroyed
 		self.IsElectric  = FuelType.IsElectric
 		self.FuelPriority = self:ACF_GetUserVar("FuelPriority")
 		self.EntType     = "Fuel Tank"
@@ -70,7 +70,9 @@ do -- Updating
 		self.ShortName   = FuelID
 		self.WireAmountName = "Fuel"
 
-		local _, Capacity = self:CalcVolumeAndCapacity(Size)
+		self.SelfSealing = self:ACF_GetUserVar("SelfSealing") and FuelType.CanSelfSeal or false
+
+		local _, Capacity = self:CalcVolumeAndCapacity(FuelType:GetFuelSpace(Size, self.SelfSealing))
 
 		self.Capacity = Capacity -- Internal volume available for fuel in liters
 
@@ -147,11 +149,15 @@ do -- Overlay text
 			end
 		end
 
+		ACF.Damage.Fire.AddOverlay(self, State)
+
 		-- The V2 fuel type instance lives on the entity's field set; read it straight off.
 		local FuelType = self:ACF_GetUserVar("FuelType")
 
 		State:AddKeyValue("Fuel Type", FuelType and FuelType.ID or self.FuelType)
 		State:AddNumber("Priority", self.FuelPriority)
+
+		if self.SelfSealing then State:AddKeyValue("Self-Sealing", "Yes") end
 
 		if FuelType and FuelType.FuelTankOverlay then
 			FuelType.FuelTankOverlay(self.Amount, State)

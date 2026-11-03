@@ -510,6 +510,19 @@ do -- Overlay
 			end
 		end
 
+		ACF.Damage.Fire.AddOverlay(self, State)
+
+		if self.Cookoff then
+			local Plan = self.Cookoff.Plan
+			local Text = self.Cookoff.SmallArms and "Cooking off, rounds going off one by one"
+				or not Plan and "Cooking off"
+				or Plan.Burst and "Cooking off contained, will burst"
+				or Plan.Pressure < ACF.AmmoBurstPressure and "Cooking off, burning inside"
+				or "Cooking off, venting"
+
+			State:AddWarning(Text)
+		end
+
 		local CountX = self.CrateProjectilesX
 		local CountY = self.CrateProjectilesY
 		local CountZ = self.CrateProjectilesZ

@@ -12,7 +12,6 @@ local util       = util
 local math       = math
 local sqrt       = math.sqrt
 local floor      = math.floor
-local ceil	     = math.ceil
 local max        = math.max
 local min        = math.min
 local pi         = math.pi
@@ -117,13 +116,41 @@ local function getRandomPos(Entity)
 	return Entity:LocalToWorld(Point)
 end
 
+--- Adds up the armor a seeking explosion has to get through to reach a part of its own vehicle.
+-- @param Start Where the explosion is.
+-- @param Finish The point it is reaching for.
+-- @param Parts The vehicle's entities, as Parts[Entity] = true.
+-- @param Target The part being reached, which is not counted.
+-- @param Filter Entities the explosion ignores.
+-- @return RHA mm the blast has to get through, and RHA mm the fragments have to.
+local function getSeekArmor(Start, Finish, Parts, Target, Filter)
+	local Direction   = (Finish - Start):GetNormalized()
+	local Blast, Frag = 0, 0
+
+	Damage.PierceLine(Start, Finish, Filter, function(Result)
+		local Hit = Result.Entity
+
+		if Result.HitWorld or Hit == Target then return true end
+		if not Parts[Hit] then return end
+
+		local Kinetic, Chemical = Damage.GetSolidArmor(Hit, Result.HitPos, Direction)
+
+		Blast = Blast + Chemical
+		Frag  = Frag + Kinetic
+	end)
+
+	return Blast, Frag
+end
+
 --- Creates an explosion at the given position.
 -- @param Position The world coordinates where the explosion will be created at.
 -- @param FillerMass The amount of HE filler in kilograms.
 -- @param FragMass The amount of steel containing the filler in kilograms.
 -- @param Filter Optional, a list of entities that will not be affected by the explosion.
 -- @param DmgInfo A DamageInfo object.
-function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
+-- @param Seek Optional, a contraption whose components the blast reaches directly, as when a vehicle's own structure is what gives way.
+-- Its parts don't block the explosion, but the armor between it and each component still takes away from its penetration.
+function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo, Seek)
 	local ExplosionName
 	if EventViewer.Enabled() then
 		ExplosionName = "ACF Explosion @ " .. SysTime()
@@ -163,6 +190,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 	end
 
 	DmgInfo:SetOrigin(Position)
+	DmgInfo:SetFireballRadius(Radius * ACF.FireballRadiusRatio)
 
 	-- Phase 1: Build sorted target list
 	-- Validate targets, sort by distance, cache target positions
@@ -217,6 +245,7 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 	local Blocking = {} -- Blocking[Entity] = {list of entities this one blocks}
 	local Index    = 1
+	local SeekEnts = Seek and Seek.ents
 
 	while Index <= TargetCount and Power > 0 do
 		local Data = TargetList[Index]
@@ -233,7 +262,21 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 		TraceData.endpos = Data.TraceEndPos
 
+		local Seeking = SeekEnts and SeekEnts[Entity] and Entity.IsACFEntity
+
+		if Seeking then
+			local SeekFilter = { unpack(Filter) }
+
+			for Part in pairs(SeekEnts) do
+				if Part ~= Entity then SeekFilter[#SeekFilter + 1] = Part end
+			end
+
+			TraceData.filter = SeekFilter
+		end
+
 		ACFTrace(TraceData)
+
+		TraceData.filter = Filter
 
 		if TraceResult.HitWorld then
 			-- Hit world - this entity is permanently blocked from this angle
@@ -353,9 +396,16 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		-- Use intercepted power directly so splitting one large detonation into many small ones does
 		-- not gain extra total penetration from the old concave scaling curve.
 		local BlastPen = Damage.getBlastPenetration(PowerFraction * BlastArea, BlastArea)
+		local SeekBlast, SeekFrag = 0, 0
 
-		local FragHit = ceil(Fragments * SolidAngle)
-		local FragPen = FragHit > 0 and Damage.getFragmentPenetration(FillerMass, FragMass, Radius, Distance) or 0
+		if Seeking then SeekBlast, SeekFrag = getSeekArmor(Position, HitPos, SeekEnts, Entity, Filter) end
+
+		BlastPen = max(BlastPen - SeekBlast, 0)
+
+		-- Fragments are a few heavy chunks, so each target takes its expected share of them rather than whole
+		-- chunks; rounding up landed a chunk on every target in range, however small or far
+		local FragHit = Fragments * SolidAngle
+		local FragPen = FragHit > 0 and max(Damage.getFragmentPenetration(FillerMass, FragMass, Radius, Distance) - SeekFrag, 0) or 0
 
 		local BlastThickness, FragThickness, HitAngle, BlastHits, FragHits
 
@@ -386,7 +436,11 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 
 				-- (mm)(mm to cm)(cm^2) = cm^3, then cm^3 to in^3
 				if BlastDepth > 0 then BlastHits[#BlastHits + 1] = { ConvexID = Hit.ConvexID, Volume = BlastDepth * 0.1 * BlastArea / ACF.InchToCmCu } end
-				if FragDepth  > 0 then FragHits[#FragHits + 1]   = { ConvexID = Hit.ConvexID, Volume = FragDepth  * 0.1 * FragArea  / ACF.InchToCmCu } end
+				if FragDepth  > 0 then
+					-- Blast hits never open holes; only fragments that perforate the layer do
+					local HitArea = FragHit * FragArea / ACF.InchToCmSq
+					FragHits[#FragHits + 1] = { ConvexID = Hit.ConvexID, EntryPos = Hit.EntryPos, ExitPos = Hit.ExitPos, EntryNormal = Hit.EntryNormal, Volume = FragDepth * 0.1 * FragArea * FragHit / ACF.InchToCmCu, HitArea = HitArea, Holes = FragHit, HoleArea = FragLeft > 0 and HitArea or nil }
+				end
 			end
 
 			HitAngle = 0 -- GeoThick is measured face-on, so there is no obliquity to apply
@@ -400,7 +454,8 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 			local BlastDmg = Objects.DamageResult(BlastArea, BlastPen, BlastThickness)
 
 			DmgInfo:SetType(DMG_BLAST)
-			if BlastHits then DmgInfo:SetConvexHits(BlastHits) end
+			DmgInfo:SetIgnition("Blast")
+			DmgInfo:SetConvexHits(BlastHits) -- nil clears the previous target's hits, whose IDs mean nothing here
 
 			BlastResult = Damage.dealDamage(HitEnt, BlastDmg, DmgInfo)
 			Losses      = BlastResult.Loss * 0.5
@@ -409,13 +464,12 @@ function Damage.createExplosion(Position, FillerMass, FragMass, Filter, DmgInfo)
 		end
 
 		do -- Fragment damage
-			local FragHit = ceil(Fragments * SolidAngle)
-
 			if FragHit > 0 then
-				local FragDmg = Objects.DamageResult(FragArea, FragPen, FragThickness, HitAngle, nil, Fragments)
+				local FragDmg = Objects.DamageResult(FragArea * FragHit, FragPen, FragThickness, HitAngle) -- Only the fragments that reach this target
 
 				DmgInfo:SetType(DMG_BULLET)
-				if FragHits then DmgInfo:SetConvexHits(FragHits) end
+				DmgInfo:SetIgnition("Hit")
+				DmgInfo:SetConvexHits(FragHits)
 
 				FragResult  = Damage.dealDamage(HitEnt, FragDmg, DmgInfo)
 				Losses      = Losses + FragResult.Loss * 0.5
