@@ -7,33 +7,27 @@ local Clamp  = math.Clamp
 --===============================================================================================--
 function ENT:UpdateTorqueDamageMult()
 	-- Adjusting performance based on damage
-	local TorqueMult = Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, self.TorqueScale, 1)
-	if ACF.IsDestroyed(self) then TorqueMult = 0 end -- Destroyed engines produce no power
+	local HealthMult = Clamp(((1 - self.TorqueScale) / 0.5) * ((self.ACF.Health / self.ACF.MaxHealth) - 1) + 1, self.TorqueScale, 1)
+	if ACF.IsDestroyed(self) then HealthMult = 0 end -- Destroyed engines produce no power. This concerns the overlay more than the engine itself.
 
-	self.PeakTorque = self.PeakTorqueHeld * TorqueMult
+	self.PeakTorque = self.PeakTorqueHeld * HealthMult
+	self.PeakPower  = self.PeakPowerHeld * HealthMult
 end
 
---This function needs to return HitRes
+-- This function needs to return HitRes
 function ENT:ACF_OnDamage(DmgResult, DmgInfo)
 	local HitRes = Damage.doPropDamage(self, DmgResult, DmgInfo)
 
 	self:UpdateTorqueDamageMult()
 
 	-- Turn off the engine if it was destroyed
-	if self.ACF.Health <= 0 then
-		self.IsDestroyed = true
-		self:Disable()
-	end
+	if ACF.IsDestroyed(self) then self:Disable() end
 
 	return HitRes
 end
 
 function ENT:ACF_OnRepaired()
+	-- Update the overlay once it was repaired
 	self:UpdateTorqueDamageMult()
-
-	-- Restore engine state if it was destroyed
-	if self.ACF.Health >= self.ACF.MaxHealth and self.IsDestroyed then
-		self.IsDestroyed = false
-		self:UpdateOverlay()
-	end
+	self:UpdateOverlay()
 end

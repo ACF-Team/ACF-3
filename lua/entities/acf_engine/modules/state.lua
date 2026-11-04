@@ -80,7 +80,7 @@ local function SetActive(Entity, Value, EntTbl)
 	local ActBool = tobool(Value)
 
 	if EntTbl.Active == ActBool then return end -- Already in the desired state
-	if ActBool and (EntTbl.Disabled or EntTbl.IsDestroyed) then return end -- Can't activate a disabled engine
+	if ActBool and not ACF.IsOperational(Entity) then return end -- Can't activate a disabled engine
 
 	if ActBool then -- Was off, turn on
 		EntTbl.Active = true

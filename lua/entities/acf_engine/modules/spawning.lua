@@ -113,6 +113,7 @@ do -- Spawn and Update functions
         Entity.TorqueCurve      = Engine.TorqueCurve
         Entity.PeakTorque       = Engine.Torque
         Entity.PeakPower		= Engine.PeakPower
+        Entity.PeakPowerHeld    = Engine.PeakPower
         Entity.PeakPowerRPM		= Engine.PeakPowerRPM
         Entity.PeakTorqueHeld   = Engine.Torque
         Entity.IdleRPM          = Engine.RPM.Idle
@@ -168,7 +169,6 @@ do -- Spawn and Update functions
         self.Throttle          = 0
         self.IdleThrottle      = 0
         self.FlyRPM            = 0
-        self.IsDestroyed       = false
         self.LastPitch         = 0
         self.LastTorque        = 0
         self.LastFuelUsage     = 0
