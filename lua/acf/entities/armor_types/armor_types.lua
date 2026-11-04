@@ -1,6 +1,8 @@
 local Classes = ACF.Classes
 
-Classes.DefineClass("ACF.ArmorTypes.BaseArmorType", function() end)
+Classes.DefineClass("ACF.ArmorTypes.BaseArmorType", function(CLASS)
+    CLASS.SpecificHeat = 500 -- Steel
+end)
 
 -- Name       : full display name
 -- ShortName  : abbreviated display name, used where space is limited (e.g. the cost comparison grid)
@@ -10,6 +12,7 @@ Classes.DefineClass("ACF.ArmorTypes.BaseArmorType", function() end)
 -- KineticMul : RHA equivalent multiplier vs kinetic (AP) threats
 -- ChemicalMul: RHA equivalent multiplier vs chemical energy (HEAT/shaped charge) threats
 -- SpallMul   : multiplier on spall fragment mass produced when this material is penetrated
+-- SpecificHeat: J/kg/K, how much heat it takes to warm up in a fire
 
 -- Explosive Reactive Armor (optional, only set on reactive types):
 -- IsExplosive       : marks the material as reactive; convexes detonate when penetrated with enough kinetic energy
@@ -39,6 +42,7 @@ Classes.DefineClass("ACF.ArmorTypes.Flesh", "ACF.ArmorTypes.BaseArmorType", func
     CLASS.ShortName   = "Flesh"
     CLASS.Description = "Soft tissue, used to represent crew members. Lab-grown for your convenience."
     CLASS.Density     = 1.1 -- https://www.sciencedirect.com/topics/immunology-and-microbiology/body-density
+    CLASS.SpecificHeat = 3500
     CLASS.CostMul     = 4.5
     CLASS.HealthMul   = 0.005
     CLASS.KineticMul  = 0.03
@@ -51,11 +55,12 @@ Classes.DefineClass("ACF.ArmorTypes.Diesel", "ACF.ArmorTypes.BaseArmorType", fun
     CLASS.ID          = "Diesel"
     CLASS.Name        = "Diesel"
     CLASS.ShortName   = "Diesel"
-    CLASS.Description = "Provides slight CE protection. Does not detonate."
+    CLASS.Description = "Provides slight CE protection. Spilled fuel is hard to light."
     CLASS.SuppressLoad = true
-    CLASS.Density     = 0.745 -- lua/acf/entities/fuel_types/diesel.lua (0.745 kg/L)
+    CLASS.Density     = 0.832 -- lua/acf/entities/fuel_types/diesel.lua (0.832 kg/L)
+    CLASS.SpecificHeat = 2000
     CLASS.CostMul     = 1.8
-    CLASS.HealthMul   = 0.00318878
+    CLASS.HealthMul   = 0.015 -- Same as Component, it's the tank around the fuel that ruptures
     CLASS.KineticMul  = 0.1
     CLASS.ChemicalMul = 0.3
     CLASS.SpallMul    = 0.1
@@ -66,11 +71,12 @@ Classes.DefineClass("ACF.ArmorTypes.Petrol", "ACF.ArmorTypes.BaseArmorType", fun
     CLASS.ID          = "Petrol"
     CLASS.Name        = "Petrol"
     CLASS.ShortName   = "Petrol"
-    CLASS.Description = "Provides negligible protection. Prone to detonate when penetrated or damaged."
+    CLASS.Description = "Provides negligible protection. Spilled fuel lights easily."
     CLASS.SuppressLoad = true
-    CLASS.Density     = 0.832 -- lua/acf/entities/fuel_types/petrol.lua (0.832 kg/L)
+    CLASS.Density     = 0.745 -- lua/acf/entities/fuel_types/petrol.lua (0.745 kg/L)
+    CLASS.SpecificHeat = 2000
     CLASS.CostMul     = 2.07
-    CLASS.HealthMul   = 0.00255102
+    CLASS.HealthMul   = 0.015 -- Same as Component, it's the tank around the fuel that ruptures
     CLASS.KineticMul  = 0.1
     CLASS.ChemicalMul = 0.1
     CLASS.SpallMul    = 0.1
@@ -81,11 +87,12 @@ Classes.DefineClass("ACF.ArmorTypes.LiIon", "ACF.ArmorTypes.BaseArmorType", func
     CLASS.ID          = "LiIon"
     CLASS.Name        = "Li-Ion Battery"
     CLASS.ShortName   = "Li-Ion"
-    CLASS.Description = "Provides slight protection. Prone to detonate when penetrated or damaged."
+    CLASS.Description = "Provides slight protection. Can go into thermal runaway when damaged."
     CLASS.SuppressLoad = true
     CLASS.Density     = 3.89 -- lua/acf/entities/fuel_types/electric.lua (3.89 kg/L)
+    CLASS.SpecificHeat = 1000
     CLASS.CostMul     = 7.2
-    CLASS.HealthMul   = 0.00127551
+    CLASS.HealthMul   = 0.015 -- Same as Component
     CLASS.KineticMul  = 0.3
     CLASS.ChemicalMul = 0.3
     CLASS.SpallMul    = 0.5
@@ -97,6 +104,7 @@ Classes.DefineClass("ACF.ArmorTypes.Wing", "ACF.ArmorTypes.BaseArmorType", funct
     CLASS.ShortName   = "Aircraft Aluminum"
     CLASS.Description = "For aircraft wings and similar hollow structures. Very light."
     CLASS.Density     = 1.08 -- https://en.wikipedia.org/wiki/Aluminium
+    CLASS.SpecificHeat = 900
     CLASS.CostMul     = 10.8
     CLASS.HealthMul   = 0.055102
     CLASS.KineticMul  = 0.2
@@ -112,6 +120,7 @@ Classes.DefineClass("ACF.ArmorTypes.Aluminum", "ACF.ArmorTypes.BaseArmorType", f
     CLASS.ShortName   = "Aluminum"
     CLASS.Description = "Lower resistance than RHA, but substantially lighter."
     CLASS.Density     = 2.7 -- https://en.wikipedia.org/wiki/Aluminium
+    CLASS.SpecificHeat = 900
     CLASS.CostMul     = 27
     CLASS.HealthMul   = 0.25
     CLASS.KineticMul  = 0.5
@@ -173,6 +182,7 @@ Classes.DefineClass("ACF.ArmorTypes.Component", "ACF.ArmorTypes.BaseArmorType", 
     CLASS.Description = "Material intended to represent components. Better protection than Gun Steel, but worse health for balance reasons."
     CLASS.SuppressLoad = true
     CLASS.Density     = 2.7 -- https://en.wikipedia.org/wiki/Aluminium
+    CLASS.SpecificHeat = 900
     CLASS.CostMul     = 16.11
     CLASS.HealthMul   = 0.015
     CLASS.KineticMul  = 0.1
@@ -187,6 +197,7 @@ Classes.DefineClass("ACF.ArmorTypes.Rubber", "ACF.ArmorTypes.BaseArmorType", fun
     CLASS.ShortName   = "Rubber"
     CLASS.Description = "Very cheap and light, but offers very little protection."
     CLASS.Density     = 1.5 -- * https://rubberandseal.com/what-is-the-density-of-rubber-sheets/
+    CLASS.SpecificHeat = 2000
     CLASS.CostMul     = 13.5
     CLASS.HealthMul   = 0.35
     CLASS.KineticMul  = 0.15
@@ -202,6 +213,7 @@ Classes.DefineClass("ACF.ArmorTypes.Textolite", "ACF.ArmorTypes.BaseArmorType", 
     CLASS.ShortName   = "Textolite"
     CLASS.Description = "Layered fibrous laminate material. Not much protection, but is cheap and light."
     CLASS.Density     = 1.8 -- * http://www.china-anza.com/2-1-7-textolite-3025.html
+    CLASS.SpecificHeat = 1200
     CLASS.CostMul     = 31.5
     CLASS.HealthMul   = 0.2
     CLASS.KineticMul  = 0.5
@@ -217,6 +229,7 @@ Classes.DefineClass("ACF.ArmorTypes.Aramid", "ACF.ArmorTypes.BaseArmorType", fun
     CLASS.ShortName   = "Aramid"
     CLASS.Description = "Very poor resistance compared to RHA, but reduces spalling."
     CLASS.Density     = 1.44 -- https://en.wikipedia.org/wiki/Kevlar
+    CLASS.SpecificHeat = 1400
     CLASS.CostMul     = 40.5
     CLASS.HealthMul   = 0.085
     CLASS.KineticMul  = 0.32
@@ -247,6 +260,7 @@ Classes.DefineClass("ACF.ArmorTypes.DU", "ACF.ArmorTypes.BaseArmorType", functio
     CLASS.ShortName   = "DU"
     CLASS.Description = "Higher resistance than RHA, but heavy and slightly expensive."
     CLASS.Density     = 19.05 -- https://en.wikipedia.org/wiki/Uranium
+    CLASS.SpecificHeat = 120
     CLASS.CostMul     = 62.37
     CLASS.HealthMul   = 2.14668
     CLASS.KineticMul  = 1.8
@@ -262,6 +276,7 @@ Classes.DefineClass("ACF.ArmorTypes.SiliconCarbide", "ACF.ArmorTypes.BaseArmorTy
     CLASS.ShortName   = "SiC"
     CLASS.Description = "Very high resistance compared to RHA, but very brittle and expensive."
     CLASS.Density     = 3.21 -- https://en.wikipedia.org/wiki/Silicon_carbide
+    CLASS.SpecificHeat = 750
     CLASS.CostMul     = 72
     CLASS.HealthMul   = 0.025
     CLASS.KineticMul  = 2.2
@@ -321,6 +336,7 @@ Classes.DefineClass("ACF.ArmorTypes.ReinforcedConcrete", "ACF.ArmorTypes.BaseArm
     CLASS.ShortName   = "Reinforced Concrete"
     CLASS.Description = "Decent protection per volume and cheap, but very heavy."
     CLASS.Density     = 2.5 -- https://www.civilengicon.com/2024/02/density-of-rcc-pcc-sand-cement.html
+    CLASS.SpecificHeat = 880
     CLASS.CostMul     = 5.85
     CLASS.HealthMul   = 0.1
     CLASS.KineticMul  = 0.22
@@ -336,6 +352,7 @@ Classes.DefineClass("ACF.ArmorTypes.Wood", "ACF.ArmorTypes.BaseArmorType", funct
     CLASS.ShortName   = "Wood"
     CLASS.Description = "The cheapest and lightest material available. Offers almost no meaningful protection."
     CLASS.Density     = 0.9 -- https://www.engineeringtoolbox.com/wood-density-d_40.html specifically oak.
+    CLASS.SpecificHeat = 1700
     CLASS.CostMul     = 3.6
     CLASS.HealthMul   = 0.04
     CLASS.KineticMul  = 0.06

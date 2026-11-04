@@ -294,12 +294,19 @@ function SWEP:PrimaryAttack()
 			local HealAmount = ConvexHit.GeoThick * 0.1 * DmgResult:GetArea() / ACF.InchToCmCu
 
 			-- Heal directly, Damage.dealDamage would trigger crew/turret/ammo ACF_OnDamage handlers as real damage.
+			-- Holes only close once fully repaired
 			if Ent.IsACFEntity then
 				Ent.ACF.Health = math.Clamp(Ent.ACF.Health + HealAmount, 0, Ent.ACF.MaxHealth)
+
+				if Ent.ACF.Health >= Ent.ACF.MaxHealth then
+					for _, Convex in ipairs(EntMeshData.Convexes) do Convex.HoleArea = nil end
+				end
 			else
 				local Convex = EntMeshData.Convexes[ConvexHit.ConvexID]
 				Convex.Health = math.Clamp(Convex.Health + HealAmount, 0, Convex.MaxHealth)
 				Damage.NetworkConvex(Ent, ConvexHit.ConvexID)
+
+				if Convex.Health >= Convex.MaxHealth then Convex.HoleArea = nil end
 			end
 
 			Healed = true

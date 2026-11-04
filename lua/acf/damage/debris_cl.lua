@@ -262,6 +262,8 @@ function Damage.CreateDebris(Model, Position, Angles, Material, Color, Normal, P
     }
 
     Effects.CreateEffect("cball_explode", EffectTable)
+
+    return Debris
 end
 
 local EntData = {}

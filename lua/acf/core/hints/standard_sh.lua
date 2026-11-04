@@ -99,9 +99,9 @@ end
 
 do -- MARK: Fuel hints
 	Register("fueltank_leaking", {
-		Title  = "Leaking",
-		Detail = "This tank is leaking fuel.",
-		Help   = "The leak will seal itself over time, faster the less fuel is left.",
+		Title = "Leaking",
+		Help  = "Holes in this tank will continue leaking until it runs out of fuel, the holes are sealed by a self-sealing "
+			.. "liner, or if the tank is repaired to full health.",
 	})
 end
 

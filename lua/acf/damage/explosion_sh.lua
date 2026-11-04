@@ -26,7 +26,7 @@ function Damage.getFragmentInfo(FillerMass, FragMass)
 		Count    = Count,
 		Mass     = FragMassEa,
 		Velocity = (Power * 10350 / FragMassEa / Count) ^ 0.5, -- Calibrated against measured TNTe-to-penetration data
-		Area     = (FragMassEa / 7.8) ^ 0.33,
+		Area     = 1.5 * (FragMassEa * 1000 / 7.8) ^ (2 / 3), -- cm², mean presented area of a tumbling steel cube (Cauchy: a quarter of its surface)
 		Caliber  = 20 * (FragMassEa / math.pi) ^ 0.5,
 	}
 end

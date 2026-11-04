@@ -39,6 +39,8 @@ AccessorFunc(Meta, "Origin", "Origin")
 AccessorFunc(Meta, "HitPos", "HitPos")
 AccessorFunc(Meta, "HitGroup", "HitGroup", FORCE_NUMBER)
 AccessorFunc(Meta, "ConvexHits", "ConvexHits") -- List of { ConvexID, Weight } into Entity.ACF_Volumetric_Mesh.Convexes; nil if no mesh was hit
+AccessorFunc(Meta, "Ignition", "Ignition") -- What the hit could light fuel with, see ACF.Damage.Fire.GetIgnitionSource
+AccessorFunc(Meta, "FireballRadius", "FireballRadius") -- Reach of an explosion's fireball from Origin; nil if not an explosion
 
 Meta.__index    = Meta
 Meta.__tostring = Meta.ToString
