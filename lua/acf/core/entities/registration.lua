@@ -207,7 +207,7 @@ local function PrepareSpawnFunctions(ENT, ClassName)
 
         if IsValid(Player) then
             local Func = CheckSpawnLimit or Player.CheckLimit
-            if not Func(Player, "_" .. ClassName, ClientData) then return nil, "You've reached the spawn limit for this entity." end
+            if not Func(Player, "_" .. ClassName) then return nil, "You've reached the spawn limit for this entity." end
         end
 
         local CanSpawn, Reason = hook.Run("ACF_PreSpawnEntity", ClassName, Player, ClientData)
