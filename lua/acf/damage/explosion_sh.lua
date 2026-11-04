@@ -56,6 +56,8 @@ end
 -- @param Area The area of the blast in cm2.
 -- @return The penetration of the blast in RHA mm.
 function Damage.getBlastPenetration(Energy, Area)
+	if Area <= 0 then return 0 end
+
 	return Energy / Area * 0.00125 -- Emperically derived
 end
 
