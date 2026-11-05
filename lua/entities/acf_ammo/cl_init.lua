@@ -494,32 +494,145 @@ do --MARK: Stages overlay
 	end
 end
 do --MARK: Round counts menu
-	-- Opens a window to set the count of each other kind of round, sent through the given property
-	function ENT:OpenRoundCounts( property )
-		local kinds   = self.RoundKinds
-		local frame   = g_ContextMenu:Add( "DFrame" )
-		local sliders = {}
+	local ownColor = Color( 130, 130, 130 )
 
-		frame:SetSize( 320, 60 + #kinds * 36 )
+	-- Opens a window to split the crate between its kinds of rounds by dragging the dividers of a bar, sent through the given property
+	function ENT:OpenRoundCounts( property )
+		local kinds    = self.RoundKinds
+		local capacity = math.max( self.Capacity or 0, 1 )
+		local frame    = g_ContextMenu:Add( "DFrame" )
+		local entries  = {}
+
+		frame:SetSize( 320, 96 + #kinds * 24 )
 		frame:SetTitle( "Round Counts [" .. self:EntIndex() .. "]" )
 		frame:Center()
 		frame:MoveToFront()
 
+		-- Rounds before the divider after an entry
+		local function boundary( index )
+			local sum = 0
+
+			for i = 1, index do sum = sum + entries[i].Count end
+
+			return sum
+		end
+
+		local function ownCount() return capacity - boundary( #entries ) end
+
+		-- A segment per kind, dragging a divider moves rounds between its two neighbours
+		local bar = frame:Add( "DPanel" )
+		bar:Dock( TOP )
+		bar:DockMargin( 4, 0, 4, 8 )
+		bar:SetTall( 24 )
+
+		-- The rightmost divider under the cursor, so dividers bunched together can still be pulled apart
+		local function dividerAt( x )
+			for index = #entries, 1, -1 do
+				if math.abs( bar:GetWide() * boundary( index ) / capacity - x ) <= 6 then return index end
+			end
+		end
+
+		function bar:OnMousePressed()
+			self.Dragging = dividerAt( self:CursorPos() )
+			self:MouseCapture( self.Dragging ~= nil )
+		end
+
+		function bar:OnMouseReleased()
+			self.Dragging = nil
+			self:MouseCapture( false )
+		end
+
+		function bar:Think()
+			local x     = self:CursorPos()
+			local index = self.Dragging
+
+			self:SetCursor( ( index or dividerAt( x ) ) and "sizewe" or "arrow" )
+
+			if not index then return end
+
+			-- Every kind keeps a round, its X removes it
+			local after = entries[index + 1]
+			local low   = boundary( index - 1 ) + 1
+			local high  = after and boundary( index + 1 ) - 1 or capacity
+			local delta = math.Clamp( math.Round( x / self:GetWide() * capacity ), low, high ) - boundary( index )
+
+			entries[index].Count = entries[index].Count + delta
+
+			if after then after.Count = after.Count - delta end
+		end
+
+		function bar.Paint( _, w, h )
+			local x = 0
+
+			for index = 1, #entries + 1 do
+				local entry = entries[index]
+				local right = entry and math.Round( w * boundary( index ) / capacity ) or w
+				local count = entry and entry.Count or ownCount()
+
+				-- The gap after each segment is its divider
+				surface.SetDrawColor( entry and entry.Color or ownColor )
+				surface.DrawRect( x, 0, right - x - ( entry and 2 or 0 ), h )
+
+				if right - x >= 20 then
+					draw.SimpleText( count, "DermaDefault", ( x + right ) * 0.5, h * 0.5, color_black, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+				end
+
+				x = right
+			end
+		end
+
+		-- A row per kind with its colour and count, its X removes it and gives its rounds to the crate's own
 		for index = 2, #kinds do
 			local suffix = ACF.GetCrateNWSuffix( index - 1 )
-			local name   = ACF.GetLegacyStyleClassName( self:GetNW2String( "AmmoType" .. suffix, "" ) )
-			local slider = frame:Add( "DNumSlider" )
+			local entry  = {
+				Slot  = index - 1,
+				Name  = ACF.GetLegacyStyleClassName( self:GetNW2String( "AmmoType" .. suffix, "" ) ) .. ", " .. math.Round( self:GetNW2Float( "ProjMass" .. suffix ), 2 ) .. " kg",
+				Color = HSVToColor( ( index - 1 ) * 90, 0.6, 0.9 ),
+				Count = kinds[index].Target,
+			}
 
-			slider:Dock( TOP )
-			slider:DockMargin( 4, 0, 4, 4 )
-			slider:SetDark( true )
-			slider:SetText( ( index - 1 ) .. ". " .. name .. ", " .. math.Round( self:GetNW2Float( "ProjMass" .. suffix ), 2 ) .. " kg" )
-			slider:SetMinMax( 0, self.Capacity or 0 )
-			slider:SetDecimals( 0 )
-			slider:SetValue( kinds[index].Target )
+			entries[#entries + 1] = entry
 
-			sliders[#sliders + 1] = slider
+			local row = frame:Add( "DPanel" )
+			row:Dock( TOP )
+			row:DockMargin( 4, 0, 4, 4 )
+			row:SetTall( 20 )
+			row:SetPaintBackground( false )
+
+			local remove = row:Add( "DButton" )
+			remove:Dock( LEFT )
+			remove:SetWide( 20 )
+			remove:SetText( "X" )
+
+			function remove.DoClick()
+				table.RemoveByValue( entries, entry )
+				row:Remove()
+				frame:SetTall( frame:GetTall() - 24 )
+			end
+
+			local swatch = row:Add( "DPanel" )
+			swatch:Dock( LEFT )
+			swatch:DockMargin( 4, 2, 4, 2 )
+			swatch:SetWide( 16 )
+
+			function swatch.Paint( _, w, h )
+				surface.SetDrawColor( entry.Color )
+				surface.DrawRect( 0, 0, w, h )
+			end
+
+			local label = row:Add( "DLabel" )
+			label:Dock( FILL )
+			label:SetDark( true )
+
+			function label.Think() label:SetText( entry.Name .. ": " .. entry.Count ) end
 		end
+
+		local own = frame:Add( "DLabel" )
+		own:Dock( TOP )
+		own:DockMargin( 28, 0, 4, 4 )
+		own:SetDark( true )
+
+		function own.Think() own:SetText( "Crate's own round: " .. ownCount() ) end
 
 		local apply = frame:Add( "DButton" )
 		apply:Dock( BOTTOM )
@@ -527,13 +640,15 @@ do --MARK: Round counts menu
 
 		function apply.DoClick()
 			if IsValid( self ) then
+				local counts = {}
+
+				for _, entry in ipairs( entries ) do counts[entry.Slot] = entry.Count end
+
 				property:MsgStart()
 					net.WriteEntity( self )
-					net.WriteUInt( #sliders, ACF.ProfileBits )
+					net.WriteUInt( #kinds - 1, ACF.ProfileBits )
 
-					for _, slider in ipairs( sliders ) do
-						net.WriteUInt( math.Round( slider:GetValue() ), 25 )
-					end
+					for slot = 1, #kinds - 1 do net.WriteUInt( counts[slot] or 0, 25 ) end
 				property:MsgEnd()
 			end
 
