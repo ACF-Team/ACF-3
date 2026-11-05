@@ -41,7 +41,7 @@ local function GetPropertiesHealth(Slot)
     local MaxColor  = Slot.NumData >= 7 and Slot.Data[7] or HEALTH_GOOD
 
     local Ratio = SafeRatio(Health, MaxHealth)
-    return ("%d/%d%s (%." .. Decimals .. "f%%)"):format(Health, MaxHealth, Unit, Ratio * 100), Ratio, MinColor, MaxColor
+    return ("%." .. Decimals .. "f/%." .. Decimals .. "f%s (%." .. Decimals .. "f%%)"):format(Health, MaxHealth, Unit, Ratio * 100), Ratio, MinColor, MaxColor
 end
 
 local function GetPropertiesProgress(Slot)
@@ -54,7 +54,7 @@ local function GetPropertiesProgress(Slot)
     local MaxColor  = Slot.NumData >= 7 and Slot.Data[7] or PROGRESS_FULL
 
     local Ratio = SafeRatio(Health, MaxHealth)
-    return ("%d/%d%s (%." .. Decimals .. "f%%)"):format(Health, MaxHealth, Unit, Ratio * 100), Ratio, MinColor, MaxColor
+    return ("%." .. Decimals .. "f/%." .. Decimals .. "f%s (%." .. Decimals .. "f%%)"):format(Health, MaxHealth, Unit, Ratio * 100), Ratio, MinColor, MaxColor
 end
 
 local function GetPropertiesTime(Slot)
