@@ -68,12 +68,7 @@ local function CheckRestockable(v, Gun)
 end
 
 local function CheckUnloadable(v, Gun)
-	if not (CheckValid(v, Gun) and v:CanRestock()) then return false end
-
-	-- The slot the shell goes back into has to hold the same round
-	local Round = v:GetRound(v:GetRefillSlot())
-
-	return Round.AmmoType == Gun.BulletData.AmmoType and ACF.BulletEquality(Round, Gun.BulletData)
+	return CheckValid(v, Gun) and v:CanRestock() and v:CanReturnRound(Gun.BulletData)
 end
 
 local ENT_UpdateLoadMod
@@ -1016,7 +1011,7 @@ do -- Metamethods --------------------------------
 			if SelfTbl.State == "Unloading" then return end -- Don't unload while unloading
 			if SelfTbl.BulletData == EMPTY then return end -- If it's empty, we're already unloading, or something went wrong
 			SelfTbl.FreeCrate = self:FindNextCrate(SelfTbl.FreeCrate, CheckUnloadable, self)
-			if IsValid(SelfTbl.FreeCrate) then SelfTbl.FreeCrate:Consume(-1) end -- Put a shell back in the crate, if possible
+			if IsValid(SelfTbl.FreeCrate) then SelfTbl.FreeCrate:ReturnRound(SelfTbl.BulletData) end -- Put a shell back in the crate, if possible
 
 			local IdealTime, Manual = ACF.CalcReloadTimeMag(SelfTbl.Caliber, SelfTbl.ClassData, SelfTbl.WeaponData, SelfTbl.BulletData, self)
 			if SelfTbl.TargetReloadTime then IdealTime = math.max(IdealTime, SelfTbl.TargetReloadTime) end

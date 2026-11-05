@@ -24,6 +24,7 @@ local function cleanupRoundModels( entity )
 
 	entity._RoundModels = nil
 	entity._RoundBoxes  = nil
+	entity._RoundKinds  = nil
 end
 
 do --MARK: Networking
@@ -121,9 +122,8 @@ do --MARK: Networking
 
 		entity.Ammo = newAmmo
 
-		-- Drawn up to the top slot, which sits above any holes left by rounds taken out of order
 		local maxDisplayRounds = math.max( 0, MaxRounds:GetInt() )
-		entity.TargetDisplayAmmo = math.min( newAmmo + table.Count( entity.Holes or {} ), maxDisplayRounds )
+		entity.TargetDisplayAmmo = math.min( newAmmo, maxDisplayRounds )
 	end
 
 	net.Receive( "ACF_RequestAmmoData", function()
@@ -175,22 +175,14 @@ do --MARK: Networking
 			entity.ProjectileCounts = ACF.GetCassetteGrid( counts.x, counts.y, counts.z, entity.IsTwoPiece )
 		end
 
-		-- Bodygroups of the rounds overriding the crate's own, by slot
-		local slotBodygroups = {}
+		-- Bodygroup and count of each kind of round, the crate's own first
+		local kinds = {}
 
-		for _ = 1, net.ReadUInt( ACF.SlotBits ) do
-			slotBodygroups[net.ReadUInt( ACF.SlotBits )] = net.ReadUInt( 4 )
+		for index = 1, net.ReadUInt( ACF.ProfileBits ) + 1 do
+			kinds[index] = { Bodygroup = net.ReadUInt( 4 ), Target = net.ReadUInt( 25 ) }
 		end
 
-		entity.SlotBodygroups = slotBodygroups
-
-		local holes = {}
-
-		for _ = 1, net.ReadUInt( ACF.SlotBits ) do
-			holes[net.ReadUInt( ACF.SlotBits )] = true
-		end
-
-		entity.Holes = holes
+		entity.RoundKinds = kinds
 
 		-- Resolve model path - use cartridge model with bodygroups for ammo visualization
 		local modelPath = entity.RoundModel
@@ -270,7 +262,6 @@ do --MARK: Networking
 		-- Reset model state
 		cleanupRoundModels( entity )
 
-		entity.DisplayAmmo       = nil
 		entity.TargetDisplayAmmo = nil
 		entity.Ammo              = nil -- Forces a recount, the data can change without the ammo count changing
 
@@ -315,99 +306,82 @@ do --MARK: Ammo rendering
 	local WireRender     = Wire_Render
 	local slotColor      = Color( 0, 255, 0, 255 )
 	local overrideColor  = Color( 255, 160, 0, 255 )
-	local hoveredColor   = Color( 255, 255, 255, 255 )
 
-	function ENT:SetAmount( count )
+	-- Kind of each drawn round, every kind in one block. The other kinds come first so the crate's own never hides them
+	function ENT:GetDrawnKinds( count )
+		local kinds = self.RoundKinds
+		local drawn = {}
+
+		for index = 2, #kinds do
+			for _ = 1, self:GetNW2Int( "RoundCount" .. ACF.GetCrateNWSuffix( index - 1 ) ) do
+				if #drawn >= count then return drawn end
+
+				drawn[#drawn + 1] = index
+			end
+		end
+
+		for round = #drawn + 1, count do drawn[round] = 1 end
+
+		return drawn
+	end
+
+	-- Rebuilds the models of every drawn round whose kind changed, the rest are kept
+	function ENT:SetRounds( kinds )
 		if not self.HasData then return end
 
-		-- Models don't exist yet - create table from scratch
-		local previous
 		if not self._RoundModels then
 			self._RoundModels = {}
 			self._RoundBoxes  = {}
-			previous = 0
-		else
-			previous = self.DisplayAmmo or 0
-		end
-		self.DisplayAmmo = count
-
-		local models = self._RoundModels
-		local boxes  = self._RoundBoxes
-
-		-- Decrease: remove the rounds past the count (includes going to 0)
-		for round = previous, count + 1, -1 do
-			removeModels( models[round] or {} )
-
-			models[round] = nil
-			boxes[round]  = nil
+			self._RoundKinds  = {}
 		end
 
-		-- Increase: add the rounds we don't have yet, each from its precomputed pieces
+		local models  = self._RoundModels
+		local boxes   = self._RoundBoxes
+		local current = self._RoundKinds
+
 		local modelPath         = self.CachedModelPath
 		local scaleMatrix       = self.CachedScaleMatrix
 		local chargeScaleMatrix = self.CachedChargeScaleMatrix
 		local roundSize         = self.RoundSize
-		local bodygroup         = self.RoundBodygroup or 0
 
-		for round = previous + 1, count do
-			local roundModels, roundBoxes = {}, {}
-			local pieces = not self.Holes[round] and self.CachedRounds[round] or {}
+		for round = 1, math.max( #current, #kinds ) do
+			local kind = kinds[round]
 
-			for _, piece in ipairs( pieces ) do
-				local path, scale, group = modelPath, scaleMatrix, self.SlotBodygroups[round] or bodygroup
+			if current[round] ~= kind then
+				removeModels( models[round] or {} )
 
-				if piece.Charge then
-					path, scale, group = ChargeModelPath, chargeScaleMatrix, ChargeBodygroup
-				end
-
-				local model = ClientsideModel( path, RENDERGROUP_OPAQUE )
-				if IsValid( model ) then
-					model:SetParent( self )
-					model:SetPos( self:LocalToWorld( piece.ModelPos ) )
-					model:SetAngles( self:LocalToWorldAngles( piece.ModelAng ) )
-					model:SetNoDraw( true )
-					model:DrawShadow( false )
-					model:EnableMatrix( "RenderMultiply", scale )
-					model:SetBodygroup( 0, group ) -- Apply ammo type bodygroup
-					roundModels[#roundModels + 1] = model
-				end
-
-				roundBoxes[#roundBoxes + 1] = { Pos = piece.Pos, Ang = piece.Ang, Size = roundSize }
+				models[round], boxes[round], current[round] = nil, nil, kind
 			end
 
-			models[round] = roundModels
-			boxes[round]  = roundBoxes
-		end
-	end
+			if kind and not models[round] then
+				local roundModels, roundBoxes = {}, {}
 
-	-- Finds the slot of the round the local player is aiming at, nearest box first
-	function ENT:UpdateHoveredSlot()
-		local player  = LocalPlayer()
-		local start   = player:EyePos()
-		local delta   = player:GetAimVector() * 32768
-		local nearest = math.huge
-		local hovered
+				for _, piece in ipairs( self.CachedRounds[round] or {} ) do
+					local path, scale, group = modelPath, scaleMatrix, self.RoundKinds[kind].Bodygroup
 
-		for round, boxes in pairs( self._RoundBoxes ) do
-			for _, box in ipairs( boxes ) do
-				local half = box.Size * 0.5
-				local _, _, fraction = util.IntersectRayWithOBB( start, delta, self:LocalToWorld( box.Pos ), self:LocalToWorldAngles( box.Ang ), -half, half )
+					if piece.Charge then
+						path, scale, group = ChargeModelPath, chargeScaleMatrix, ChargeBodygroup
+					end
 
-				if fraction and fraction < nearest then
-					nearest, hovered = fraction, round
+					local model = ClientsideModel( path, RENDERGROUP_OPAQUE )
+					if IsValid( model ) then
+						model:SetParent( self )
+						model:SetPos( self:LocalToWorld( piece.ModelPos ) )
+						model:SetAngles( self:LocalToWorldAngles( piece.ModelAng ) )
+						model:SetNoDraw( true )
+						model:DrawShadow( false )
+						model:EnableMatrix( "RenderMultiply", scale )
+						model:SetBodygroup( 0, group ) -- Apply ammo type bodygroup
+						roundModels[#roundModels + 1] = model
+					end
+
+					roundBoxes[#roundBoxes + 1] = { Pos = piece.Pos, Ang = piece.Ang, Size = roundSize }
 				end
+
+				models[round] = roundModels
+				boxes[round]  = roundBoxes
 			end
 		end
-
-		self.HoveredSlot = hovered
-
-		return hovered
-	end
-
-	function ENT:GetHoveredSlot()
-		if ACF.RenderContext.LookAt ~= self then return end
-
-		return self.HoveredSlot
 	end
 
 	function ENT:Draw()
@@ -434,11 +408,8 @@ do --MARK: Ammo rendering
 			self:DrawEntityOutline()
 		end
 
-		-- Sync models with target ammo count (only when looking at crate)
-		local targetAmmo = self.TargetDisplayAmmo or 0
-		if self.DisplayAmmo ~= targetAmmo or not self._RoundModels then
-			self:SetAmount( targetAmmo )
-		end
+		-- Sync models with the rounds left (only when looking at crate)
+		self:SetRounds( self:GetDrawnKinds( self.TargetDisplayAmmo or 0 ) )
 
 		-- Draw models
 		if self._RoundModels then
@@ -451,11 +422,8 @@ do --MARK: Ammo rendering
 
 		-- Draw a wireframe box around each piece showing the true space it occupies, colored by its round
 		if self._RoundBoxes then
-			local hovered   = self:UpdateHoveredSlot()
-			local overrides = self.SlotBodygroups
-
 			for round, boxes in pairs( self._RoundBoxes ) do
-				local color = round == hovered and hoveredColor or overrides[round] and overrideColor or slotColor
+				local color = self._RoundKinds[round] > 1 and overrideColor or slotColor
 
 				for _, box in ipairs( boxes ) do
 					local Half = box.Size * 0.5
@@ -476,8 +444,6 @@ do --MARK: Ammo rendering
 
 	-- Ammo data doesn't depend on the crate's size, only the models placed for the old size are stale
 	function ENT:OnResized( _ )
-		self.DisplayAmmo = nil
-
 		cleanupRoundModels(self)
 	end
 
@@ -525,5 +491,53 @@ do --MARK: Stages overlay
 
 	function ENT:DrawOverlay()
 		self:DrawStage()
+	end
+end
+do --MARK: Round counts menu
+	-- Opens a window to set the count of each other kind of round, sent through the given property
+	function ENT:OpenRoundCounts( property )
+		local kinds   = self.RoundKinds
+		local frame   = g_ContextMenu:Add( "DFrame" )
+		local sliders = {}
+
+		frame:SetSize( 320, 60 + #kinds * 36 )
+		frame:SetTitle( "Round Counts [" .. self:EntIndex() .. "]" )
+		frame:Center()
+		frame:MoveToFront()
+
+		for index = 2, #kinds do
+			local suffix = ACF.GetCrateNWSuffix( index - 1 )
+			local name   = ACF.GetLegacyStyleClassName( self:GetNW2String( "AmmoType" .. suffix, "" ) )
+			local slider = frame:Add( "DNumSlider" )
+
+			slider:Dock( TOP )
+			slider:DockMargin( 4, 0, 4, 4 )
+			slider:SetDark( true )
+			slider:SetText( ( index - 1 ) .. ". " .. name .. ", " .. math.Round( self:GetNW2Float( "ProjMass" .. suffix ), 2 ) .. " kg" )
+			slider:SetMinMax( 0, self.Capacity or 0 )
+			slider:SetDecimals( 0 )
+			slider:SetValue( kinds[index].Target )
+
+			sliders[#sliders + 1] = slider
+		end
+
+		local apply = frame:Add( "DButton" )
+		apply:Dock( BOTTOM )
+		apply:SetText( "Apply" )
+
+		function apply.DoClick()
+			if IsValid( self ) then
+				property:MsgStart()
+					net.WriteEntity( self )
+					net.WriteUInt( #sliders, ACF.ProfileBits )
+
+					for _, slider in ipairs( sliders ) do
+						net.WriteUInt( math.Round( slider:GetValue() ), 25 )
+					end
+				property:MsgEnd()
+			end
+
+			frame:Close()
+		end
 	end
 end

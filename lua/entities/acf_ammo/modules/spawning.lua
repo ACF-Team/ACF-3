@@ -276,19 +276,12 @@ do -- Spawn/Update/Remove
 					net.WriteBool(ExtraData.HexPacking)
 					net.WriteBool(ExtraData.IsCassette)
 
-					-- Overridden slots and the bodygroup of the round each one holds
-					net.WriteUInt(table.Count(Entity.SlotRounds), ACF.SlotBits)
+					-- Bodygroup and count of each kind of round, the crate's own first
+					net.WriteUInt(#Entity.RoundKinds - 1, ACF.ProfileBits)
 
-					for Slot, Round in pairs(Entity.SlotRounds) do
-						net.WriteUInt(Slot, ACF.SlotBits)
-						net.WriteUInt(Round.Bodygroup, 4)
-					end
-
-					-- Empty slots below the top, left by rounds taken out of order
-					net.WriteUInt(table.Count(Entity.Holes), ACF.SlotBits)
-
-					for Slot in pairs(Entity.Holes) do
-						net.WriteUInt(Slot, ACF.SlotBits)
+					for _, Kind in ipairs(Entity.RoundKinds) do
+						net.WriteUInt(Kind.Bodygroup, 4)
+						net.WriteUInt(Kind.Target, 25)
 					end
 				end
 
@@ -377,8 +370,6 @@ do -- Spawn/Update/Remove
 
 		Entity.Capacity = Rounds
 		Entity.MagSize  = MagSize
-		Entity.Holes    = {} -- The layout may have changed, so the remaining rounds close up from the bottom
-		Entity.TopSlot  = Entity.Amount or 0
 		Entity:BuildOverrides()
 		Entity:SetAmount(math.floor(Entity.Capacity * Percentage))
 		Entity:SetNWInt("Ammo", Entity.Amount)
@@ -599,7 +590,7 @@ do -- Overlay
 		end
 		State:AddProgressBar("Contents", self.Amount, self.Capacity)
 
-		if next(self.SlotRounds) then
+		if #self.RoundKinds > 1 then
 			State:AddKeyValue("Next Round", self:GetNextAmmoType())
 		end
 

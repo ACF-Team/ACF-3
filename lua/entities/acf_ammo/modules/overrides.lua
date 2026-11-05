@@ -4,22 +4,24 @@ local Serialization = Classes.Serialization
 local Empty         = {}
 
 do -- MARK: Round access
-	--- Returns the bullet data and ammo instance of the round in a slot, overridden or not
-	function ENT:GetRound(Slot)
-		local Round = self.SlotRounds[Slot]
+	-- Index of the kind at a depth in the stack, 0 is the top: the crate's own round, then the other kinds last added first
+	local function StackIndex(Kinds, Depth) return Depth == 0 and 1 or #Kinds + 1 - Depth end
 
-		if Round then return Round.BulletData, Round.Ammo end
+	-- Index of the top kind with rounds left that the filter accepts
+	local function FindKind(Entity, Filter)
+		local Kinds = Entity.RoundKinds
 
-		return self.BulletData, self.RoundData
+		for Depth = 0, #Kinds - 1 do
+			local Index = StackIndex(Kinds, Depth)
+			local Kind  = Kinds[Index]
+
+			if Kind.Count > 0 and (not Filter or Filter(Kind.BulletData, Kind.Ammo)) then return Index end
+		end
 	end
 
-	--- The highest slot holding a round. Slots below it can be empty where a filtered take left a hole
-	function ENT:GetTopSlot()
-		return self.TopSlot
-	end
-
-	function ENT:IsSlotFilled(Slot)
-		return Slot >= 1 and Slot <= self:GetTopSlot() and not self.Holes[Slot]
+	-- The kind of the next round to leave, the next one with any rounds left if the filter accepts none
+	local function GetNextKind(Entity)
+		return FindKind(Entity, Entity.RoundFilter) or FindKind(Entity)
 	end
 
 	--- Limits which rounds leave the crate to those Filter(BulletData, Ammo) accepts, nil allows all of them
@@ -38,46 +40,16 @@ do -- MARK: Round access
 		end)
 	end
 
-	--- The slot of the next round to leave the crate, the highest one the filter accepts, nil if none does
-	function ENT:FindNextSlot()
-		local Top    = self:GetTopSlot()
-		local Filter = self.RoundFilter
-		local Holes  = self.Holes
-
-		if Top < 1 then return end
-		if not Filter then return Top end
-
-		-- Past the overridable slots every round is the crate's own and none are holes, so only the top one matters
-		if Top > ACF.MaxRoundsDrawn then
-			if Filter(self.BulletData, self.RoundData) then return Top end
-
-			Top = ACF.MaxRoundsDrawn
-		end
-
-		for Slot = Top, 1, -1 do
-			if not Holes[Slot] and Filter(self:GetRound(Slot)) then return Slot end
-		end
-	end
-
-	--- The slot a round put back into the crate goes into, the lowest hole or the one above the top
-	function ENT:GetRefillSlot()
-		local Holes = self.Holes
-
-		for Slot = 1, math.min(self:GetTopSlot(), ACF.MaxRoundsDrawn) do
-			if Holes[Slot] then return Slot end
-		end
-
-		return self:GetTopSlot() + 1
-	end
-
-	-- The slot of the next round to leave, the top one if the filter accepts none
-	local function GetNextSlot(Entity)
-		return Entity:FindNextSlot() or Entity:GetTopSlot()
+	--- The index of the kind the next round leaves from, nil if the filter accepts none
+	function ENT:FindNextKind()
+		return FindKind(self, self.RoundFilter)
 	end
 
 	--- Returns the round that will leave the crate next
 	function ENT:PeekRound()
-		return self:GetRound(GetNextSlot(self))
+		local Kind = self.RoundKinds[GetNextKind(self) or 1]
+
+		return Kind.BulletData, Kind.Ammo
 	end
 
 	--- Short name of the ammo type that will leave the crate next
@@ -87,67 +59,69 @@ do -- MARK: Round access
 
 	--- Removes the next round from the crate and returns it
 	function ENT:TakeRound()
-		local Slot = GetNextSlot(self)
-		local BulletData, Ammo = self:GetRound(Slot)
+		local Index = GetNextKind(self)
+		local Kind  = self.RoundKinds[Index or 1]
 
-		-- A round taken from below the top leaves a hole, so the top stays put as the amount drops
-		if Slot < self:GetTopSlot() then
-			self.Holes[Slot] = true
-			self:QueueAmmoData()
+		if Index then
+			Kind.Count = Kind.Count - 1
 		end
 
 		self:Consume(1)
 
-		return BulletData, Ammo
+		return Kind.BulletData, Kind.Ammo
 	end
 
-	--- Moves the top and holes until the filled slots match the amount again: rounds leave from the top, refills fill the lowest hole first
-	function ENT:UpdateHoles()
-		local Holes  = self.Holes
-		local Count  = table.Count(Holes)
-		local Filled = self.TopSlot - Count
+	-- The kind a round goes back into, one equal to it that is short of its count
+	local function FindReturnKind(Entity, BulletData)
+		for _, Kind in ipairs(Entity.RoundKinds) do
+			local Own = Kind.BulletData
 
-		while Filled > self.Amount do
-			self.TopSlot, Filled = self.TopSlot - 1, Filled - 1
+			if Kind.Count < Kind.Target and Own.AmmoType == BulletData.AmmoType and ACF.BulletEquality(Own, BulletData) then return Kind end
+		end
+	end
 
-			-- Holes uncovered at the top are no longer below anything
-			while Holes[self.TopSlot] do
-				Holes[self.TopSlot], self.TopSlot = nil, self.TopSlot - 1
-			end
+	--- True if a round like this one can be put back into the crate
+	function ENT:CanReturnRound(BulletData)
+		return FindReturnKind(self, BulletData) ~= nil
+	end
+
+	--- Puts a round back into the crate, among the rounds of its kind
+	function ENT:ReturnRound(BulletData)
+		local Kind = FindReturnKind(self, BulletData)
+
+		if not Kind then return end
+
+		Kind.Count = Kind.Count + 1
+
+		self:Consume(-1)
+	end
+
+	--- Matches the kind counts to the amount again: rounds that came in fill from the bottom, rounds that left go from the top
+	function ENT:SyncRoundCounts()
+		local Kinds = self.RoundKinds
+
+		if not Kinds then return end
+
+		local Change = self.Amount or 0
+
+		for _, Kind in ipairs(Kinds) do Change = Change - Kind.Count end
+
+		for Depth = 0, #Kinds - 1 do
+			local Kind = Kinds[StackIndex(Kinds, Change > 0 and #Kinds - 1 - Depth or Depth)]
+			local Step = math.Clamp(Change, -Kind.Count, Kind.Target - Kind.Count)
+
+			Kind.Count, Change = Kind.Count + Step, Change - Step
 		end
 
-		while Filled < self.Amount and next(Holes) do
-			Holes[self:GetRefillSlot()], Filled = nil, Filled + 1
+		-- Clients draw each other kind from its count, the crate's own round fills the rest
+		for Index = 2, #Kinds do
+			self:SetNW2Int("RoundCount" .. ACF.GetCrateNWSuffix(Index - 1), Kinds[Index].Count)
 		end
-
-		self.TopSlot = self.TopSlot + self.Amount - Filled
-
-		-- Clients draw holes as gaps, every change to them changes how many there are
-		if table.Count(Holes) ~= Count then self:QueueAmmoData() end
 	end
 
 	--- Every kind of round the crate is loaded with and how many of each are left, as a list of { BulletData, Ammo, Count }
 	function ENT:GetRoundCounts()
-		local Base   = { BulletData = self.BulletData, Ammo = self.RoundData, Count = self.Amount }
-		local Kinds  = { Base }
-		local ByAmmo = {}
-
-		for Slot, Round in pairs(self.SlotRounds) do
-			local Kind = ByAmmo[Round.Ammo]
-
-			if not Kind then
-				Kind = { BulletData = Round.BulletData, Ammo = Round.Ammo, Count = 0 }
-				ByAmmo[Round.Ammo]  = Kind
-				Kinds[#Kinds + 1]   = Kind
-			end
-
-			if self:IsSlotFilled(Slot) then
-				Kind.Count = Kind.Count + 1
-				Base.Count = Base.Count - 1
-			end
-		end
-
-		return Kinds
+		return self.RoundKinds
 	end
 
 	--- Rounds left in the crate by short ammo type name, rounds of one type with different specs count together
@@ -177,7 +151,7 @@ do -- MARK: Round access
 	function ENT:GetUnitMass()
 		local Amount = self.Amount
 
-		if not next(self.SlotRounds) or Amount <= 0 then return self.BaseClass.GetUnitMass(self) end
+		if Amount <= 0 then return self.BaseClass.GetUnitMass(self) end
 
 		return self:SumRounds("CartMass") / Amount
 	end
@@ -195,51 +169,6 @@ do -- MARK: Storage
 		end
 
 		return true
-	end
-
-	-- Distinct ammo instances in a slot to ammo instance map
-	local function CountTypes(Map)
-		local Types = {}
-
-		for _, Ammo in pairs(Map) do Types[Ammo] = true end
-
-		return table.Count(Types)
-	end
-
-	-- Reads the user vars into a slot to ammo instance map
-	local function ReadOverrides(Entity)
-		local Profiles = Entity:ACF_GetUserVar("OverrideAmmo") or Empty
-		local Map      = {}
-
-		for Slot, Profile in ipairs(Entity:ACF_GetUserVar("OverrideProfiles") or Empty) do
-			Map[Slot] = Profiles[Profile]
-		end
-
-		return Map
-	end
-
-	-- Writes a slot to ammo instance map back into the user vars, numbering profiles by first use
-	local function StoreOverrides(Entity, Map)
-		local Profiles, Indices, Lookup = {}, {}, {}
-
-		for Slot = 1, ACF.MaxRoundsDrawn do
-			local Ammo = Map[Slot]
-
-			if Ammo and not Lookup[Ammo] then
-				Profiles[#Profiles + 1] = Ammo
-				Lookup[Ammo]            = #Profiles
-			end
-
-			Indices[Slot] = Ammo and Lookup[Ammo] or 0
-		end
-
-		-- Only up to the highest overridden slot is kept
-		while Indices[#Indices] == 0 do Indices[#Indices] = nil end
-
-		Entity:ACF_SetUserVar("OverrideAmmo", Profiles)
-		Entity:ACF_SetUserVar("OverrideProfiles", Indices)
-
-		return Profiles, Lookup
 	end
 
 	-- Ammo types write their client data with SetNW2*, this redirects it to keys suffixed with the profile
@@ -287,83 +216,81 @@ do -- MARK: Storage
 		return true
 	end
 
-	--- The highest slot a round override can target, none on missile crates
-	function ENT:GetOverridableSlots()
-		return self.IsMissileAmmo and 0 or math.min(self.Capacity, ACF.MaxRoundsDrawn)
-	end
+	--- Rebuilds the kinds of rounds from the user vars, dropping the ones that no longer fit the crate
+	function ENT:BuildOverrides()
+		local AmmoList = self:ACF_GetUserVar("OverrideAmmo") or Empty
+		local Counts   = self:ACF_GetUserVar("OverrideCounts") or Empty
+		local Own     = self.RoundData
+		local Kinds    = { { Ammo = Own, BulletData = self.BulletData, Bodygroup = GetCrateModel(self, Own, self.BulletData).Bodygroup or 0 } }
 
-	--- Rebuilds the overridden rounds from a slot to ammo map, the user vars by default, dropping any that no longer fit the crate
-	function ENT:BuildOverrides(Overrides)
-		local Limit     = self:GetOverridableSlots()
-		local Map       = {}
-		local Converted = {}
+		for Index, Ammo in ipairs(AmmoList) do
+			local Count = math.floor(tonumber(Counts[Index]) or 0)
 
-		for Slot, Ammo in pairs(Overrides or ReadOverrides(self)) do
-			if Slot <= Limit then
-				if Converted[Ammo] == nil then
-					self:PrepareAmmo(Ammo, Empty)
+			-- Missile crates and hand edited dupes past the type limit hold only their own round
+			if Count > 0 and not self.IsMissileAmmo and #Kinds <= ACF.MaxOverrideTypes then
+				self:PrepareAmmo(Ammo, Empty)
 
-					local BulletData = Ammo:ServerConvert()
+				local BulletData = Ammo:ServerConvert()
 
-					Converted[Ammo] = self:CanHoldRound(Ammo, BulletData) and BulletData or false
+				if self:CanHoldRound(Ammo, BulletData) then
+					Kinds[#Kinds + 1] = { Ammo = Ammo, BulletData = BulletData, Bodygroup = GetCrateModel(self, Ammo, BulletData).Bodygroup or 0, Target = Count }
 				end
-
-				if Converted[Ammo] then Map[Slot] = Ammo end
 			end
 		end
 
-		-- Only a hand edited dupe can get past the type limit
-		if CountTypes(Map) > ACF.MaxOverrideTypes then Map = {} end
+		local StoredAmmo, StoredCounts = {}, {}
+		local Room = self.Capacity or 0
 
-		local Profiles, Lookup = StoreOverrides(self, Map)
-		local Rounds = {}
+		-- Each other kind takes its count out of the crate's own, as far as there is room
+		for Index = 2, #Kinds do
+			local Kind = Kinds[Index]
 
-		for Profile, Ammo in ipairs(Profiles) do
-			local BulletData = Converted[Ammo]
+			StoredAmmo[Index - 1], StoredCounts[Index - 1] = Kind.Ammo, Kind.Target
 
-			BulletData.Crate        = self:EntIndex()
-			BulletData.CrateProfile = Profile
+			Kind.Target = math.min(Kind.Target, Room)
+			Room        = Room - Kind.Target
 
-			NetworkProfile(self, Ammo, BulletData, Profile)
+			Kind.BulletData.Crate        = self:EntIndex()
+			Kind.BulletData.CrateProfile = Index - 1
 
-			Rounds[Profile] = {
-				Ammo       = Ammo,
-				BulletData = BulletData,
-				Bodygroup  = GetCrateModel(self, Ammo, BulletData).Bodygroup or 0,
-			}
+			NetworkProfile(self, Kind.Ammo, Kind.BulletData, Index - 1)
 		end
 
-		self.SlotRounds = {}
+		Kinds[1].Target = Room
 
-		for Slot, Ammo in pairs(Map) do
-			self.SlotRounds[Slot] = Rounds[Lookup[Ammo]]
-		end
+		-- The rounds in the crate are dealt out again, so a new mix applies straight away
+		for _, Kind in ipairs(Kinds) do Kind.Count = 0 end
+
+		self:ACF_SetUserVar("OverrideAmmo", StoredAmmo)
+		self:ACF_SetUserVar("OverrideCounts", StoredCounts)
+
+		self.RoundKinds = Kinds
+
+		self:SyncRoundCounts()
 	end
 
 	function ENT:ClearOverrides()
-		StoreOverrides(self, Empty)
+		self:ACF_SetUserVar("OverrideAmmo", {})
+		self:ACF_SetUserVar("OverrideCounts", {})
 	end
 
-	-- Builds the ammo instance serialized crate data describes, returns false and a reason if the crate can't hold it
+	-- Applies a change to the user vars and everything that depends on the mix of rounds
+	local function UpdateOverrides(Entity)
+		Entity:BuildOverrides()
+		Entity:QueueAmmoData()
+		Entity:UpdateMass(true)
+		Entity:UpdateOverlay(true)
+	end
+
+	-- Builds the round serialized crate data describes for the crate's own weapon, returns false and a reason if it can't hold it
 	local function ParseRound(Entity, Data)
 		local ClassDef = Entity.ACF_ClassDef
 
 		Serialization.SanitizeClassFields(ClassDef, Data)
 
-		local Config  = Serialization.DeserializePartial(ClassDef, Data)
-		local Weapon  = Config.Weapon
-		local Ammo    = Config.AmmoType
-		local Current = Entity:GetWeapon()
+		local Ammo = Serialization.DeserializePartial(ClassDef, Data).AmmoType
 
-		if not Weapon or not Ammo then return false, "Invalid ammo data." end
-		if Weapon:GetType() ~= Current:GetType() then return false, "The selected weapon doesn't match the crate's." end
-
-		if Weapon.Caliber ~= nil then
-			Weapon.Caliber = tonumber(Data.Caliber) or Weapon.Caliber
-			if Weapon.VerifyData then Weapon:VerifyData() end
-
-			if math.abs(Weapon.Caliber - Current.Caliber) > 1e-3 then return false, "The selected caliber doesn't match the crate's." end
-		end
+		if not Ammo then return false, "Invalid ammo data." end
 
 		Entity:PrepareAmmo(Ammo, Data)
 
@@ -374,36 +301,41 @@ do -- MARK: Storage
 		return Ammo
 	end
 
-	--- Sets the round in a slot from serialized crate data (as the menu sends it), returns success and a message
-	function ENT:ACF_OverrideSlot(_, Slot, Data)
-		if Slot < 1 or Slot > self:GetOverridableSlots() then return false, "That slot can't be overridden." end
+	--- Adds one round of serialized crate data (as the menu sends it) to the crate's mix, returns success and a message
+	function ENT:ACF_AddRound(_, Data)
+		if self.IsMissileAmmo then return false, "Missile crates can't mix rounds." end
 
 		local Ammo, Reason = ParseRound(self, Data)
 
 		if not Ammo then return false, Reason end
+		if SameAmmo(Ammo, self.RoundData) then return false, "This is already the crate's own round." end
 
-		local Map = ReadOverrides(self)
+		local AmmoList = table.Copy(self:ACF_GetUserVar("OverrideAmmo") or Empty)
+		local Counts   = table.Copy(self:ACF_GetUserVar("OverrideCounts") or Empty)
+		local Index    = #AmmoList + 1
 
-		-- Reuse a matching override so equal rounds share one profile, the crate's own round needs no override
-		if SameAmmo(Ammo, self.RoundData) then
-			Ammo = nil
-		else
-			for _, Other in pairs(Map) do
-				if SameAmmo(Ammo, Other) then Ammo = Other break end
-			end
+		for Other, Listed in ipairs(AmmoList) do
+			if SameAmmo(Ammo, Listed) then Index = Other break end
 		end
 
-		Map[Slot] = Ammo
-
-		if CountTypes(Map) > ACF.MaxOverrideTypes then
+		if Index > ACF.MaxOverrideTypes then
 			return false, "A crate can't hold more than " .. ACF.MaxOverrideTypes .. " other round types."
 		end
 
-		self:BuildOverrides(Map)
-		self:QueueAmmoData()
-		self:UpdateMass(true)
-		self:UpdateOverlay(true)
+		AmmoList[Index], Counts[Index] = AmmoList[Index] or Ammo, (Counts[Index] or 0) + 1
 
-		return true, "Slot " .. Slot .. " now holds " .. ACF.GetLegacyStyleClassName(self:GetRound(Slot).AmmoType) .. "."
+		self:ACF_SetUserVar("OverrideAmmo", AmmoList)
+		self:ACF_SetUserVar("OverrideCounts", Counts)
+
+		UpdateOverrides(self)
+
+		return true, "The crate now holds " .. Counts[Index] .. " " .. ACF.GetLegacyStyleClassName(Classes.GetTypeName(Ammo:GetType())) .. "."
+	end
+
+	--- Sets how many rounds of each other kind the crate holds, in the order they were added, 0 removes a kind
+	function ENT:ACF_SetRoundCounts(_, Counts)
+		self:ACF_SetUserVar("OverrideCounts", Counts)
+
+		UpdateOverrides(self)
 	end
 end

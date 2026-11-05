@@ -54,18 +54,10 @@ function ACF.Menu.DoClientAction(Button)
 	local Action = FindAction(Page, ResolveBind(Button)) or FindAction(Page, Button)
 	if not Action then return end
 
-	-- An action with a Try handler acts as the plain button whenever the handler declines
-	if Action.Try then
-		local Ctx = Page._Contexts and Page._Contexts[Action.Context]
-		if Ctx and Action.Try(Ctx.ClassName, Ctx:Serialize()) then return end
-
-		Action = FindAction(Page, Button)
-		if not Action then return end
-	end
-
+	-- A context action spawns unless it names its own Send
 	if Action.Context then
 		local Ctx = Page._Contexts and Page._Contexts[Action.Context]
-		if Ctx then ACF.Menu.SendSpawn(Ctx.ClassName, Ctx:Serialize()) end
+		if Ctx then (Action.Send or ACF.Menu.SendSpawn)(Ctx.ClassName, Ctx:Serialize()) end
 	elseif Action.Func then
 		ACF.Menu.SendFunc(Page.ID, Action._Index)
 	elseif Action.Commit == "link" then

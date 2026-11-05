@@ -12,22 +12,13 @@ function ACF.Menu.SendSpawn(ClassName, Data)
 	net.SendToServer()
 end
 
---- Sends a context's data to override the slot hovered on the aimed entity, false if no slot is hovered.
+--- Sends a context's data to add one of its rounds to the aimed entity.
 function ACF.Menu.SendOverride(ClassName, Data)
-	local Entity = LocalPlayer():GetEyeTrace().Entity
-	if not IsValid(Entity) or Entity:GetClass() ~= ClassName or not Entity.GetHoveredSlot then return false end
-
-	local Slot = Entity:GetHoveredSlot()
-	if not Slot then return false end
-
 	net.Start("ACF_MenuCommit")
 		net.WriteString("override")
 		net.WriteString(ClassName)
 		net.WriteTable(Data or {})
-		net.WriteUInt(Slot, ACF.SlotBits)
 	net.SendToServer()
-
-	return true
 end
 
 --- Triggers a page's server-side action function (identified by page id + action index).

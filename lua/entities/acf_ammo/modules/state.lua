@@ -6,7 +6,7 @@ function ENT:CanConsume()
 	if not self.Load then return false end
 	if self.Amount <= 0 then return false end
 
-	return not self.RoundFilter or self:FindNextSlot() ~= nil
+	return not self.RoundFilter or self:FindNextKind() ~= nil
 end
 
 function ENT:SetAmount(Amount)
@@ -14,7 +14,7 @@ function ENT:SetAmount(Amount)
 
 	-- Use base container logic
 	self.BaseClass.SetAmount(self, Amount)
-	self:UpdateHoles()
+	self:SyncRoundCounts()
 	self.Ammo = self.Amount
 
 	-- Play resupply sound when ammo increases
