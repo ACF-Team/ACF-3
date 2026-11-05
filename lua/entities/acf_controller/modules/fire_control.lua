@@ -119,7 +119,7 @@ do
 				CurrentGun.Firing = false
 			end
 
-			local Delay = (OverrideDelay or CurrentGun.FireDelay or CurrentGun.ReloadTime or 0) / Count
+			local Delay = OverrideDelay or (CurrentGun.FireDelay or CurrentGun.ReloadTime or 0) / Count
 			timer.Create(TimerName, Delay, 1, FireNext)
 		end
 
@@ -130,12 +130,15 @@ do
 		if SelfTbl:GetDisableFiring() then return end
 
 		local Fires = {GetBindState(SelfTbl, "Fire1"), GetBindState(SelfTbl, "Fire2"), GetBindState(SelfTbl, "Fire3")}
+		local Delays = {SelfTbl:GetFire1Delay(), SelfTbl:GetFire2Delay(), SelfTbl:GetFire3Delay()}
 
 		for i = 1, NUM_WEAPONS do
-			HandleFire(self, SelfTbl.FireState[i], Fires[i], SelfTbl.FireGroups[i], i == NUM_WEAPONS and SelfTbl:GetFireDelay() or nil)
+			local Delay = Delays[i]
+			HandleFire(self, SelfTbl.FireState[i], Fires[i], SelfTbl.FireGroups[i], Delay > 0 and Delay or nil)
 		end
 
-		HandleFire(self, SelfTbl.FireState.Smoke, GetBindState(SelfTbl, "FireSmoke"), SelfTbl.GunsSmoke)
+		local SmokeDelay = SelfTbl:GetSmokeDelay()
+		HandleFire(self, SelfTbl.FireState.Smoke, GetBindState(SelfTbl, "FireSmoke"), SelfTbl.GunsSmoke, SmokeDelay > 0 and SmokeDelay or nil)
 	end
 
 	function ENT:ToggleTurretLock(SelfTbl)

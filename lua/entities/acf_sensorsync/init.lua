@@ -41,7 +41,12 @@ local function RunBatch(Entity, GroupSensors)
 	end
 
 	for Ent, Data in pairs(Detections) do
-		BatchResults[Ent] = Data
+		local Existing = BatchResults[Ent]
+
+		-- Across however many rate groups report this target, keep whichever sensor is least damaged
+		if not Existing or GroupSensors[Existing.Sensor] or (Existing.Sensor.Damage or 0) >= (Data.Sensor.Damage or 0) then
+			BatchResults[Ent] = Data
+		end
 	end
 
 	RefreshOutputs(Entity, next(Detections) ~= nil)
