@@ -20,16 +20,17 @@ local BrakeDelta     = Vector()
 
 -- Get the chassis' angular velocity 
 local function GetChassisAngularVelocity(Entity)
-	local Parent = ENTITY.GetParent(Entity)
+	local Ancestor = ENTITY.GetAncestor(Entity)
+	local IsValid = IsEntityValid(Ancestor)
 
 	-- Fast path if its a reliable entity, like a baseplate.
-	if ENTITY.GetClass(Parent) == "acf_baseplate" then
-		local Phys = ENTITY.GetPhysicsObject(Parent)
+	if IsValid and ENTITY.GetClass(Ancestor) == "acf_baseplate" then
+		local Phys = ENTITY.GetPhysicsObject(Ancestor)
 		return PHYSOBJ.GetAngleVelocity(Phys)
 	end
 
 	-- No baseplate detected, lets keep checking if the parent is still a valid entity.
-	local Phys = IsEntityValid(Parent) and ENTITY.GetPhysicsObject(Parent)
+	local Phys = IsValid and ENTITY.GetPhysicsObject(Ancestor)
 
 	-- Returns the chassis' angular velocity in world space (deg/s).
 	if IsPhysObjValid(Phys) then return PHYSOBJ.GetAngleVelocity(Phys) end
