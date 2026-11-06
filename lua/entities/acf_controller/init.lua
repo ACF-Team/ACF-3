@@ -16,6 +16,7 @@ include("shared.lua")
 AddCSLuaFile("modules_cl/overlay.lua")
 AddCSLuaFile("modules_cl/camera.lua")
 AddCSLuaFile("modules_cl/hud.lua")
+AddCSLuaFile("modules/defaults.lua") -- Read by the ponder proxy of the settings menu
 
 AddCSLuaFile("modules_sh/helpers_sh.lua")
 AddCSLuaFile("modules_sh/binds_sh.lua")

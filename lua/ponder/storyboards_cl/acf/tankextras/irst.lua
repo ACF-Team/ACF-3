@@ -42,4 +42,10 @@ Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Alternatively, wire 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Its outputs report Detected, IDs, Position, Velocity, Distance and Type arrays for everything found, same as a radar."}))
 Chapter:AddInstruction("HideToolgun", {}):DelayByLength()
 
+Chapter:AddInstruction("PlaceModel", {Name = "AIO", IdentifyAs = "AIO Controller", Model = "models/hunter/plates/plate025x025.mdl", Position = Vector(-30, 60, 3), ComeFrom = Vector(0, 0, 50), ParentTo = "Base"}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Or link it to an AIO controller. Its contacts show on the HUD, and selecting one points the IRST at it."}))
+Chapter:AddInstruction("ShowToolgun", {Tool = language.GetPhrase("tool.acf_menu.menu_name")}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("ACF Menu", {Children = {"IRST"}, Target = "AIO", Easing = math.ease.InOutQuad, Length = 2}))
+Chapter:AddInstruction("HideToolgun", {}):DelayByLength()
+
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Like radars, multiple IRSTs can be linked to a Radar Synchronizer to merge their detections into one set of outputs."}))

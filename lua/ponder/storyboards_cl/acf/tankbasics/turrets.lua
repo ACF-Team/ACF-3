@@ -18,6 +18,7 @@ Chapter:AddDelay(Chapter:AddInstruction("PlaceModels", {
         {Name = "Gearbox", IdentifyAs = "Gearbox", Model = "models/engines/transaxial_s.mdl", Angles = Angle(0, 90, 0), Position = Vector(0, -144, 3), ComeFrom = Vector(0, 0, 50), ParentTo = "Base", Scale = Vector(2, 2, 2)},
         {Name = "FuelTank1", IdentifyAs = "Fuel Tank", Model = "models/holograms/hq_rcube.mdl", Angles = Angle(0, -90, 0), Position = Vector(36, -84, 15), ComeFrom = Vector(0, 0, 50), Scale = Vector(6, 2, 2), Material = "models/props_canal/metalcrate001d", ParentTo = "Base", },
         {Name = "FuelTank2", IdentifyAs = "Fuel Tank", Model = "models/holograms/hq_rcube.mdl", Angles = Angle(0, -90, 0), Position = Vector(-36, -84, 15), ComeFrom = Vector(0, 0, 50), Scale = Vector(6, 2, 2), Material = "models/props_canal/metalcrate001d", ParentTo = "Base", },
+        {Name = "AIO", IdentifyAs = "AIO Controller", Model = "models/hunter/plates/plate025x025.mdl", Position = Vector(-30, 100, 3), ComeFrom = Vector(0, 0, 50), ParentTo = "Base"},
     }
 }))
 
@@ -39,8 +40,8 @@ Chapter:AddInstruction("ACF.CreateMenuCPanel", {Name = "MainMenuCPanel", Label =
 Chapter:AddInstruction("ACF.InitializeMainMenu", {Name = "MainMenuCPanel"}):DelayByLength()
 Chapter:AddInstruction("ACF.SelectMenuTreeNode", {Name = "MainMenuCPanel", Select = "#acf.menu.turrets"}):DelayByLength()
 Chapter:AddInstruction("ACF.ScrollToMenuPanel", {Name = "MainMenuCPanel", Scroll = "#acf.menu.turrets.components"}):DelayByLength()
-Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", ComboBoxName = "TurretClass", OptionID = 1}):DelayByLength()
-Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", ComboBoxName = "TurretComponentClass", OptionID = 1}):DelayByLength()
+Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", Choice = "Turrets"}):DelayByLength()
+Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", Choice = "Horizontal Turret"}):DelayByLength()
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Ring diameters determine how large of a turret you can mount. For this example, set the ring diameter to 96."}))
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.turrets.ring_diameter", Value = 96}):DelayByLength()
@@ -51,7 +52,7 @@ Chapter:AddInstruction("PlaceModel", {Name = "TurretH", IdentifyAs = "Turret Rin
 
 local Chapter = Storyboard:Chapter("Vertical Turret Spawn")
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Now select a vertical turret ring with diameter 18 units."}))
-Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", ComboBoxName = "TurretComponentClass", OptionID = 2}):DelayByLength()
+Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", Choice = "Vertical Turret"}):DelayByLength()
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.turrets.ring_diameter", Value = 18}):DelayByLength()
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Spawn the vertical turret ring and move it towards the front of the turret ring and above."}))
@@ -106,4 +107,15 @@ Chapter:AddDelay(1)
 Chapter:AddDelay(Chapter:AddInstruction("Tools.MultiParent", {Children = {"TurretV"}, Parent = "TurretH", Easing = math.ease.InOutQuad, Length = 2}))
 Chapter:AddDelay(Chapter:AddInstruction("Tools.MultiParent", {Children = {"TurretH"}, Parent = "Base", Easing = math.ease.InOutQuad, Length = 2}))
 Chapter:AddInstruction("HideToolgun", {}):DelayByLength()
+
+-------------------------------------------------------------------------------------------------
+local Chapter = Storyboard:Chapter("AIO Controller")
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Link both turret rings to your controller to aim them with your camera."}))
+Chapter:AddInstruction("ShowToolgun", {Tool = language.GetPhrase("tool.acf_menu.menu_name")}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("ACF Menu", {Children = {"TurretH", "TurretV"}, Target = "AIO", Easing = math.ease.InOutQuad, Length = 2}))
+Chapter:AddInstruction("HideToolgun", {}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("ACF.ShowAIOMenu", {Target = "AIO"}))
+Chapter:AddInstruction("ACF.SetAIOSetting", {Name = "AIOMenu", Setting = "DisableTurretLock"}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "While seated, press R to unlock the turret. Tick DisableTurretLock to keep it always aiming."}))
+Chapter:AddInstruction("RemovePanel", {Name = "AIOMenu", Length = 0.5}):DelayByLength()
 Chapter:RecommendStoryboard("acf.tankbasics.weapons")

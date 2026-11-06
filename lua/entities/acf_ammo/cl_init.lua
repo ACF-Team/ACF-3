@@ -496,17 +496,13 @@ end
 do --MARK: Round counts menu
 	local ownColor = Color( 130, 130, 130 )
 
-	-- Opens a window to split the crate between its kinds of rounds by dragging the dividers of a bar, sent through the given property
-	function ENT:OpenRoundCounts( property )
-		local kinds    = self.RoundKinds
-		local capacity = math.max( self.Capacity or 0, 1 )
-		local frame    = g_ContextMenu:Add( "DFrame" )
-		local entries  = {}
+	-- Fills a frame with a bar split between a crate's kinds of rounds by draggable dividers, and a row per other kind
+	-- Kinds lists the other kinds as { Name, Count, Slot }, OnApply gets the counts by slot. Also used by ponder.
+	function ACF.BuildRoundCountsMenu( frame, capacity, kinds, onApply )
+		local entries = {}
 
-		frame:SetSize( 320, 96 + #kinds * 24 )
-		frame:SetTitle( "Round Counts [" .. self:EntIndex() .. "]" )
-		frame:Center()
-		frame:MoveToFront()
+		capacity = math.max( capacity, 1 )
+		frame:SetSize( 320, 120 + #kinds * 24 )
 
 		-- Rounds before the divider after an entry
 		local function boundary( index )
@@ -518,6 +514,18 @@ do --MARK: Round counts menu
 		end
 
 		local function ownCount() return capacity - boundary( #entries ) end
+
+		-- Moves a divider to sit after the given number of rounds, every kind keeping a round
+		local function moveDivider( index, rounds )
+			local after = entries[index + 1]
+			local low   = boundary( index - 1 ) + 1
+			local high  = after and boundary( index + 1 ) - 1 or capacity
+			local delta = math.Clamp( math.Round( rounds ), low, high ) - boundary( index )
+
+			entries[index].Count = entries[index].Count + delta
+
+			if after then after.Count = after.Count - delta end
+		end
 
 		-- A segment per kind, dragging a divider moves rounds between its two neighbours
 		local bar = frame:Add( "DPanel" )
@@ -548,17 +556,7 @@ do --MARK: Round counts menu
 
 			self:SetCursor( ( index or dividerAt( x ) ) and "sizewe" or "arrow" )
 
-			if not index then return end
-
-			-- Every kind keeps a round, its X removes it
-			local after = entries[index + 1]
-			local low   = boundary( index - 1 ) + 1
-			local high  = after and boundary( index + 1 ) - 1 or capacity
-			local delta = math.Clamp( math.Round( x / self:GetWide() * capacity ), low, high ) - boundary( index )
-
-			entries[index].Count = entries[index].Count + delta
-
-			if after then after.Count = after.Count - delta end
+			if index then moveDivider( index, x / self:GetWide() * capacity ) end
 		end
 
 		function bar.Paint( _, w, h )
@@ -582,13 +580,12 @@ do --MARK: Round counts menu
 		end
 
 		-- A row per kind with its colour and count, its X removes it and gives its rounds to the crate's own
-		for index = 2, #kinds do
-			local suffix = ACF.GetCrateNWSuffix( index - 1 )
-			local entry  = {
-				Slot  = index - 1,
-				Name  = ACF.GetLegacyStyleClassName( self:GetNW2String( "AmmoType" .. suffix, "" ) ) .. ", " .. math.Round( self:GetNW2Float( "ProjMass" .. suffix ), 2 ) .. " kg",
-				Color = HSVToColor( ( index - 1 ) * 90, 0.6, 0.9 ),
-				Count = kinds[index].Target,
+		for index, kind in ipairs( kinds ) do
+			local entry = {
+				Slot  = kind.Slot,
+				Name  = kind.Name,
+				Color = HSVToColor( index * 90, 0.6, 0.9 ),
+				Count = kind.Count,
 			}
 
 			entries[#entries + 1] = entry
@@ -639,20 +636,47 @@ do --MARK: Round counts menu
 		apply:SetText( "Apply" )
 
 		function apply.DoClick()
-			if IsValid( self ) then
-				local counts = {}
+			local counts = {}
 
-				for _, entry in ipairs( entries ) do counts[entry.Slot] = entry.Count end
+			for _, entry in ipairs( entries ) do counts[entry.Slot] = entry.Count end
 
-				property:MsgStart()
-					net.WriteEntity( self )
-					net.WriteUInt( #kinds - 1, ACF.ProfileBits )
-
-					for slot = 1, #kinds - 1 do net.WriteUInt( counts[slot] or 0, 25 ) end
-				property:MsgEnd()
-			end
+			if onApply then onApply( counts ) end
 
 			frame:Close()
 		end
+
+		return { Bar = bar, Apply = apply, Entries = entries, Boundary = boundary, MoveDivider = moveDivider }
+	end
+
+	-- Opens a window to split the crate between its kinds of rounds, sent through the given property
+	function ENT:OpenRoundCounts( property )
+		local roundKinds = self.RoundKinds
+		local frame      = g_ContextMenu:Add( "DFrame" )
+		local kinds      = {}
+
+		for index = 2, #roundKinds do
+			local suffix = ACF.GetCrateNWSuffix( index - 1 )
+
+			kinds[#kinds + 1] = {
+				Slot  = index - 1,
+				Name  = ACF.GetLegacyStyleClassName( self:GetNW2String( "AmmoType" .. suffix, "" ) ) .. ", " .. math.Round( self:GetNW2Float( "ProjMass" .. suffix ), 2 ) .. " kg",
+				Count = roundKinds[index].Target,
+			}
+		end
+
+		ACF.BuildRoundCountsMenu( frame, self.Capacity or 0, kinds, function( counts )
+			if not IsValid( self ) then return end
+
+			property:MsgStart()
+				net.WriteEntity( self )
+				net.WriteUInt( #roundKinds - 1, ACF.ProfileBits )
+
+				for slot = 1, #roundKinds - 1 do net.WriteUInt( counts[slot] or 0, 25 ) end
+			property:MsgEnd()
+		end )
+
+		frame:SetTitle( "Round Counts [" .. self:EntIndex() .. "]" )
+		frame:Center()
+		frame:MoveToFront()
 	end
 end

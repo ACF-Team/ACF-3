@@ -19,7 +19,8 @@ Chapter:AddInstruction("PlaceModel", {
     ComeFrom = Vector(0, 0, 50)
 }):DelayByLength()
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Now that you have a baseplate, let's make it move."}))
+Chapter:AddInstruction("PlaceModel", {Name = "AIO", IdentifyAs = "AIO Controller", Model = "models/hunter/plates/plate025x025.mdl", Position = Vector(-30, 100, 3), ComeFrom = Vector(0, 0, 50), ParentTo = "Baseplate1"}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Now that you have a baseplate and a controller, let's give it a drivetrain."}))
 
 Chapter:AddDelay(1)
 local Chapter = Storyboard:Chapter("Engines Intro")
@@ -43,9 +44,9 @@ Chapter:AddInstruction("ACF.SelectMenuTreeNode", {Name = "MainMenuCPanel", Selec
 Chapter:AddInstruction("ACF.ScrollToMenuPanel", {Name = "MainMenuCPanel", Scroll = "#acf.menu.engines.engine_info"}):DelayByLength()
 
 Chapter:AddDelay(1)
-Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", ComboBoxName = "EngineClass", OptionID = 17}):DelayByLength()
+Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", Choice = "V12 Engine"}):DelayByLength()
 Chapter:AddDelay(1)
-Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", ComboBoxName = "EngineList", OptionID = 7}):DelayByLength()
+Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", Choice = "21.0L V12 Diesel"}):DelayByLength()
 Chapter:AddDelay(1)
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Press Mouse1 (Left Click) to spawn an engine."}))
@@ -156,9 +157,9 @@ Chapter:AddInstruction("Caption", {
 })
 
 Chapter:AddDelay(1)
-Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", ComboBoxName = "GearboxClass", OptionID = 3}):DelayByLength()
+Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", Choice = "CVT"}):DelayByLength()
 Chapter:AddDelay(1)
-Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", ComboBoxName = "GearboxList", OptionID = 3}):DelayByLength()
+Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", Choice = "CVT, Transaxial"}):DelayByLength()
 Chapter:AddDelay(1)
 
 Chapter:AddInstruction("ACF.ScrollToMenuPanel", {Name = "MainMenuCPanel", Scroll = "#acf.menu.gearboxes.scale"}):DelayByLength()
@@ -219,5 +220,23 @@ Chapter:AddInstruction("TransformModel", {
 
 Chapter:AddDelay(1)
 Chapter:AddInstruction("RemovePanel", {Name = "MainMenuCPanel", Length = 1}):DelayByLength()
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "This tutorial continues in the 'Parenting & Linking' storyboard."}))
-Chapter:RecommendStoryboard("acf.tankbasics.parenting_linking")
+
+-------------------------------------------------------------------------------------------------
+local Chapter = Storyboard:Chapter("Parenting")
+Chapter:AddInstruction("ShowToolgun", {Tool = language.GetPhrase("tool.multi_parent.listname")}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "With the Multi Parent tool, parent the engine, fuel tanks and gearbox to the baseplate."}))
+Chapter:AddDelay(Chapter:AddInstruction("Tools.MultiParent", {Children = {"Engine1", "FuelTank1", "FuelTank2", "Gearbox1"}, Parent = "Baseplate1", Easing = math.ease.InOutQuad, Length = 4}))
+Chapter:AddInstruction("HideToolgun", {}):DelayByLength()
+
+local Chapter = Storyboard:Chapter("Linking")
+Chapter:AddInstruction("ShowToolgun", {Tool = language.GetPhrase("tool.acf_menu.menu_name")}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "With the ACF Menu tool, right click the engine, then right click the gearbox, to link them."}))
+Chapter:AddDelay(Chapter:AddInstruction("ACF Menu", {Children = {"Engine1"}, Target = "Gearbox1", Easing = math.ease.InOutQuad, Length = 2}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Now the gearbox can receive power from the engine."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Hold Shift and right click each fuel tank, then right click the engine, to link them all."}))
+Chapter:AddDelay(Chapter:AddInstruction("ACF Menu", {Children = {"FuelTank1", "FuelTank2"}, Target = "Engine1", Easing = math.ease.InOutQuad, Length = 3}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Now the engine can receive fuel from the fuel tanks."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "If you look at the engine, you can see a visualization of all linked entities in your drivetrain."}))
+Chapter:AddInstruction("HideToolgun", {}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Next, add wheels so the gearbox has something to drive."}))
+Chapter:RecommendStoryboard("acf.tankbasics.suspension")

@@ -95,10 +95,8 @@ if CLIENT then
 		if not WeaponSub then return end
 
 		local GuidanceList = Base:AddComboBox()
-		GuidanceList:SetName("GuidanceList")
 		local GuidanceBase = Base:AddPanel("ACF_Panel")
 		local FuzeList     = Base:AddComboBox()
-		FuzeList:SetName("FuzeList")
 		local FuzeBase     = Base:AddPanel("ACF_Panel")
 
 		function GuidanceList:OnSelect(Index, Name, Data)

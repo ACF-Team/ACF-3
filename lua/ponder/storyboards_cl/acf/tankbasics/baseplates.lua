@@ -206,5 +206,5 @@ Chapter:AddInstruction("TransformModel", {
     Length = 0.75,
 }):DelayByLength()
 
-Chapter:RecommendStoryboard("acf.tankbasics.drivetrain")
+Chapter:RecommendStoryboard("acf.tankbasics.parenting_linking")
 
