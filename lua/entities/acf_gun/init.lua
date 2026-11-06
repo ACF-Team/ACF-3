@@ -68,7 +68,7 @@ local function CheckRestockable(v, Gun)
 end
 
 local function CheckUnloadable(v, Gun)
-	return CheckValid(v, Gun) and v:CanRestock() and ACF.BulletEquality(v.BulletData, Gun.BulletData)
+	return CheckValid(v, Gun) and v:CanRestock() and v:CanReturnRound(Gun.BulletData)
 end
 
 local ENT_UpdateLoadMod
@@ -1011,7 +1011,7 @@ do -- Metamethods --------------------------------
 			if SelfTbl.State == "Unloading" then return end -- Don't unload while unloading
 			if SelfTbl.BulletData == EMPTY then return end -- If it's empty, we're already unloading, or something went wrong
 			SelfTbl.FreeCrate = self:FindNextCrate(SelfTbl.FreeCrate, CheckUnloadable, self)
-			if IsValid(SelfTbl.FreeCrate) then SelfTbl.FreeCrate:Consume(-1) end -- Put a shell back in the crate, if possible
+			if IsValid(SelfTbl.FreeCrate) then SelfTbl.FreeCrate:ReturnRound(SelfTbl.BulletData) end -- Put a shell back in the crate, if possible
 
 			local IdealTime, Manual = ACF.CalcReloadTimeMag(SelfTbl.Caliber, SelfTbl.ClassData, SelfTbl.WeaponData, SelfTbl.BulletData, self)
 			if SelfTbl.TargetReloadTime then IdealTime = math.max(IdealTime, SelfTbl.TargetReloadTime) end
@@ -1054,12 +1054,11 @@ do -- Metamethods --------------------------------
 			-- A disabled gun goes empty rather than staying mid-load, firing retries the load once it is enabled
 			if not SelfTbl.Disabled and IsValid(Crate) and not CheckCrate(self, Crate, ENTITY.GetPos(self)) then -- Have a crate, start loading
 				self:SetState("Loading") -- Set our state to loading
-				Crate:Consume() -- Take one round of ammo out of the current crate (Must be called *after* setting the state to loading)
+				local BulletData = Crate:TakeRound() -- Take one round of ammo out of the current crate (Must be called *after* setting the state to loading)
 
 				SelfTbl.CurrentCrate = Crate
 				ENTITY.SetNW2Int(self, "CurCrate", ENTITY.EntIndex(SelfTbl.CurrentCrate))
 
-				local BulletData = Crate.BulletData
 				local IdealTime, Manual = ACF.CalcReloadTime(SelfTbl.Caliber, SelfTbl.ClassData, SelfTbl.WeaponData, BulletData, self)
 				if SelfTbl.TargetReloadTime then IdealTime = math.max(IdealTime, SelfTbl.TargetReloadTime) end
 				local Time = Manual and IdealTime / SelfTbl.LoadCrewMod or IdealTime
@@ -1160,7 +1159,7 @@ do -- Metamethods --------------------------------
 				return false
 			end
 
-			SelfTbl.BulletData = Crate.BulletData
+			SelfTbl.BulletData = Crate:PeekRound()
 
 			SelfTbl.CurrentCrate = Crate
 			ENTITY.SetNW2Int(self, "Length", SelfTbl.BulletData.RoundLength or (SelfTbl.BulletData.PropLength + SelfTbl.BulletData.ProjLength))

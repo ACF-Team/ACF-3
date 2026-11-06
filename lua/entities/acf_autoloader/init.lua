@@ -114,6 +114,7 @@ end)
 ACF.RegisterClassPreLinkCheck("acf_autoloader", "acf_ammo", function(This, Ammo)
 	Ammo.Autoloaders = Ammo.Autoloaders or {}
 	if This.AmmoCrates[Ammo] or Ammo.Autoloaders[This] then return false, "Autoloader is already linked to that ammo." end
+	if not Ammo:ACF_GetUserVar("Shape").IsMechanized then return false, "Autoloaders can only feed from drums, carousels and cassettes." end
 
 	return true
 end)
@@ -125,7 +126,6 @@ ACF.RegisterClassLinkCheck("acf_autoloader", "acf_ammo", function(This, Ammo)
 	local BulletData = Ammo.BulletData
 	local Caliber = BulletData.CaseDiameter -- Necked cases are wider than their bore, so the case is what has to fit
 	local Length = BulletData.RoundLength or (BulletData.ProjLength + BulletData.PropLength)
-	if BulletData.TwoPiece then Length = Length * 0.5 end
 	if Ammo.IsMissileAmmo then
 		local Weapon    = Classes.GetSubtypeByName("ACF.Missiles.BaseMissile", BulletData.WeaponType)
 		local Round 	= Weapon and Weapon.Round
@@ -133,6 +133,10 @@ ACF.RegisterClassLinkCheck("acf_autoloader", "acf_ammo", function(This, Ammo)
 	end
 
 	if BulletData and (Caliber - 0.01) > This:ACF_GetUserVar("AutoloaderCaliber") / 10 then return false, "Ammo is too wide for this autoloader." end
+
+	-- An autoloader handles one piece of a two piece round
+	if BulletData.TwoPiece then Length = Length / ACF.TwoPieceCount end
+
 	if BulletData and (Length - 0.01) > This:ACF_GetUserVar("AutoloaderLength") then return false, "Ammo is too long for this autoloader." end
 	return true
 end)
@@ -205,8 +209,7 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 
 	-- Gun to ammo
 	local AmmoMoveOffset = self:WorldToLocal(Ammo:GetPos())
-	local AmmoDirection = Ammo:LocalToWorldAngles(Ammo.ExtraData.LocalAng):Forward()
-	local AmmoAngleDiff = math.deg(math.acos(math.Clamp(self:GetForward():Dot(AmmoDirection), -1, 1)))
+	local AmmoAngleDiff = Ammo:ACF_GetUserVar("Shape").GetShellAngleDiff(Ammo, self:GetForward())
 
 	local HorizontalScore = ACF.Normalize(math.abs(GunMoveOffset.x) + math.abs(AmmoMoveOffset.x) + math.abs(GunMoveOffset.y) + math.abs(AmmoMoveOffset.y), ACF.AutoloaderWorstDistHorizontal, ACF.AutoloaderBestDistHorizontal)
 	local VerticalScore = ACF.Normalize(math.abs(GunMoveOffset.z) + math.abs(AmmoMoveOffset.z), ACF.AutoloaderWorstDistVertical, ACF.AutoloaderBestDistVertical)
@@ -241,7 +244,7 @@ function ENT:GetCost()
 	-- Based on caliber rather than volume, so long/short autoloaders of the same caliber cost the same
 	local Caliber = self:ACF_GetUserVar("AutoloaderCaliber")
 
-	return Caliber * 0.2
+	return Caliber * 0.16
 end
 
 function ENT:Think()

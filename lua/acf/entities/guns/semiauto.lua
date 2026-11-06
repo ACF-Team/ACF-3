@@ -17,7 +17,7 @@ ACF.Classes.DefineClass("ACF.Guns.SemiautomaticCannon", "ACF.Guns.BaseScalableGu
 	CLASS.Round = {
 		MaxLength  		= 36,
 		PropLength 		= 22.5,
-		CaseScale  = 1.39, -- 40x311mm (Bofors L/60): 55.62mm case over a 40mm projectile
+		CaseScale  = 1.54, -- 40x311mm (Bofors L/60): 62mm rim over a 40mm projectile
 	}
 	CLASS.Preview 		= {
 		FOV = 70,

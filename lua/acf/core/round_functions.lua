@@ -105,10 +105,7 @@ function ACF.VerifyRoundLengthData(ToolData)
 	ToolData.PropRatio   = Total > 0 and (Propellant / Total) or 0
 end
 
---- Total round length (RoundLength) and the fraction of it taken up by the propellant (PropRatio,
---- 0-1) are the authoritative state -- ProjLength/PropLength below are derived from them, and are
---- the hook point for future mechanics (e.g. telescoping projectiles) that need ProjLength/PropLength
---- to diverge from a simple RoundLength*(1-PropRatio)/RoundLength*PropRatio split.
+--- RoundLength and PropellantScale are stored, PropRatio, ProjLength and PropLength are derived from them.
 function ACF.UpdateRoundSpecs(Ammo)
 	local Data    = Ammo.BulletData
 	local GUIData = Ammo.GUIData
@@ -116,34 +113,62 @@ function ACF.UpdateRoundSpecs(Ammo)
 	Data.Tracer   = Ammo.Tracer and math.Round(Data.Caliber * 0.15, 2) or 0
 	Data.TwoPiece = Ammo.TwoPiece or false
 
-	-- Defaults to 1 so pre-slider dupes aren't silently buffed, matching where AddSlider seeds the var
+	-- NeckingScale runs 0 to 1 up to the class's widest case, negative on old rounds until derived from CaseScale
 	local MaxCaseScale = Data.MaxCaseScale or ACF.AmmoCaseScale
-	local CaseScale    = math.Clamp(Ammo.CaseScale or 1, 1, MaxCaseScale)
+
+	if (Ammo.NeckingScale or -1) < 0 then
+		local Span = MaxCaseScale - 1
+
+		Ammo.NeckingScale = Span > 0 and math.Clamp(((Ammo.CaseScale or 1) - 1) / Span, 0, 1) or 0
+	end
+
+	local CaseScale = 1 + math.Clamp(Ammo.NeckingScale, 0, 1) * (MaxCaseScale - 1)
+
+	Ammo.CaseScale = CaseScale -- Kept for readers of the real ratio
 
 	Data.CaseScale    = CaseScale
 	Data.CaseDiameter = Data.Caliber * CaseScale -- Widest point of the round, cased or not
 
 	-- Recomputed from the base, not scaled in place, so repeated slider updates don't compound
 	if Data.PropAreaBase then
-		Data.PropArea = Data.PropAreaBase * CaseScale * CaseScale
+		Data.PropArea = Data.PropAreaBase * (1 + (CaseScale * CaseScale - 1) * ACF.AmmoCaseFill)
 	end
 
 	local MinLength   = GUIData.MinProjLength + GUIData.MinPropLength
 	local RoundLength = math.Clamp(Ammo.RoundLength or 0, MinLength, GUIData.MaxRoundLength)
 
-	-- RatioMax is measured against MaxRoundLength, not RoundLength, so the propellant fraction is a
-	-- per-class constant rather than one that climbs as the round is shortened. Dividing the class's
-	-- fixed MaxPropLength by a shrinking RoundLength let any sub-maximum round reach a ratio of 1,
-	-- leaving a zero-length projectile and a zero ProjMass for MuzzleVelocity and DragCoef to divide by.
+	-- MinProjLength keeps ProjMass above zero
 	local RatioMin = math.max(0, 1 - GUIData.MaxProjLength / RoundLength)
-	local RatioMax = math.min(1, GUIData.MaxPropLength / GUIData.MaxRoundLength)
-	local PropRatio = math.Clamp(Ammo.PropRatio or 0, RatioMin, RatioMax)
+	local RatioMax = math.min(1, GUIData.MaxPropLength / RoundLength, 1 - GUIData.MinProjLength / RoundLength)
+	-- PropellantScale runs 0 to 1 over what this length allows, negative on old rounds until derived from PropRatio
+	if (Ammo.PropellantScale or -1) < 0 then
+		local Span = RatioMax - RatioMin
+
+		Ammo.PropellantScale = Span > 0 and math.Clamp(((Ammo.PropRatio or 0) - RatioMin) / Span, 0, 1) or 0
+	end
+
+	local PropRatio = Lerp(math.Clamp(Ammo.PropellantScale, 0, 1), RatioMin, RatioMax)
+
+	Ammo.PropRatio = PropRatio -- Kept for readers of the real share
 
 	local PropLength = math.Round(RoundLength * PropRatio, 2)
 
 	-- TelescopeRatio lets the projectile bore into the propellant. Only types that opt in via
 	-- CanTelescope have the field, so anything else reads as 0.
-	local TelescopeRatio  = Ammo.CanTelescope and math.Clamp(Ammo.TelescopeRatio or 0, 0, 1) or 0
+	local TelescopeRatio = 0
+
+	if Ammo.CanTelescope then
+		local MaxTelescope = Ammo.MaxTelescopeRatio or 1
+
+		-- Negative on old rounds until derived from TelescopeRatio
+		if (Ammo.TelescopeScale or -1) < 0 then
+			Ammo.TelescopeScale = math.Clamp((Ammo.TelescopeRatio or 0) / MaxTelescope, 0, 1)
+		end
+
+		TelescopeRatio      = math.Clamp(Ammo.TelescopeScale, 0, 1) * MaxTelescope
+		Ammo.TelescopeRatio = TelescopeRatio -- Kept for readers of the real ratio
+	end
+
 	local BaseProjLength  = RoundLength * (1 - PropRatio)
 	local TelescopeLength = math.Round(math.min(PropLength * TelescopeRatio, GUIData.MaxProjLength - BaseProjLength), 2)
 	local ProjLength      = math.Round(BaseProjLength + TelescopeLength, 2)
@@ -334,6 +359,11 @@ function ACF.GetWeaponValue(Key, Caliber, Class, Weapon)
 	return Lerp(Percent, Values.Min, Values.Max)
 end
 
+--- Suffix of the network keys a crate's round data goes under, empty for the crate's own round
+function ACF.GetCrateNWSuffix(Profile)
+	return (Profile or 0) > 0 and "#" .. Profile or ""
+end
+
 do -- MARK: Ammo capacity
 
 	-- Packing constants
@@ -462,6 +492,31 @@ do -- MARK: Ammo capacity
 
 			return countX, max(1, countY), max(1, countZ)
 		end
+
+		--- Cassettes wrap `stacks` layers of rounds around a conveyor `width` by `height` rounds across.
+		--- Two piece rounds lie end to end along X, the conveyor leaves no room to pair them across the ring.
+		function ACF.GetCassetteGrid(stacks, width, height, twoPiece)
+			return Vector(twoPiece and 2 or 1, width + 2 * stacks, height + 2 * stacks)
+		end
+
+		--- True for grid cells inside the conveyor, which hold no rounds.
+		function ACF.IsCassetteVoid(y, z, stacks, width, height)
+			return y > stacks and y <= stacks + width and z > stacks and z <= stacks + height
+		end
+
+		--- Most stacks, conveyor width and conveyor height for a crate `gridY` by `gridZ` rounds across.
+		--- The stacks wrap both sides of the conveyor, so they eat into its room twice.
+		function ACF.GetCassetteMaxCounts(stacks, gridY, gridZ)
+			local wrap = 2 * math.Clamp(stacks, 1, 2)
+
+			return 2, max(1, gridY - wrap), max(1, gridZ - wrap)
+		end
+
+		function ACF.GetCassetteCapacity(stacks, width, height)
+			local grid = ACF.GetCassetteGrid(stacks, width, height)
+
+			return grid.y * grid.z - width * height
+		end
 	end
 
 	do -- MARK: Drums
@@ -489,7 +544,6 @@ do -- MARK: Ammo capacity
 		--   GetPerDisk(primary)   -- rounds in one disk, which is NOT always the primary
 		--   GetDimensions(primary, numStacks, roundSize, hexPack)
 		--   GetRoundOffset(index, primary, numStacks, roundSize, hexPack)
-		--   GetTier(index, primary)
 		--   GetRenderTransform(localPos, ringAngle, modelAngle, boxAngle, roundSize, needsRotation)
 		--
 		-- Capacity is always GetPerDisk(primary) * numStacks.
@@ -579,11 +633,6 @@ do -- MARK: Ammo capacity
 			return Vector(x, y, z), Angle(0, angle + 180, 0)
 		end
 
-		--- Two-piece rounds pair along the layer axis: charge below, projectile above.
-		function Horizontal.GetTier(index, roundsPerRing)
-			return floor((index - 1) / roundsPerRing)
-		end
-
 		function Horizontal.GetRenderTransform(localPos, ringAngle, modelAngle, boxAngle, roundSize, needsRotation)
 			local outModel = Angle(modelAngle)
 			local outBox   = Angle(boxAngle)
@@ -606,10 +655,9 @@ do -- MARK: Ammo capacity
 		-- of equal circles. The primary count is the number of RINGS, and every ring is
 		-- filled completely, so a disk is always a whole hexagon rather than a ring with
 		-- a gap in it:
-		--   1 ring  = 1                 3 rings = 1 + 6 + 12 = 19
-		--   2 rings = 1 + 6 = 7         4 rings = 1 + 6 + 12 + 18 = 37
-		-- Ring r (counting the lone centre round as ring 0) holds 6r rounds, giving the
-		-- centred hexagonal numbers, and its furthest rounds sit r diameters out.
+		--   1 ring  = 6                 3 rings = 6 + 12 + 18 = 36
+		--   2 rings = 6 + 12 = 18       4 rings = 6 + 12 + 18 + 24 = 60
+		-- Ring r holds 6r rounds, and its furthest rounds sit r diameters out.
 		---------------------------------------------------------------------------
 
 		local Vertical = {
@@ -624,14 +672,15 @@ do -- MARK: Ammo capacity
 			return max(1, numStacks) * roundLength
 		end
 
-		--- Centred hexagonal number: how many rounds a disk of `numRings` rings holds.
+		--- How many rounds a disk of `numRings` rings holds, with no centre round.
 		function Vertical.GetPerDisk(numRings)
 			local rings = max(1, numRings)
 
-			return 3 * rings * (rings - 1) + 1
+			return 3 * rings * (rings + 1)
 		end
 
-		--- Places a zero-based slot on the hex lattice, in units of round diameters.
+		--- Places a slot on the hex lattice, in units of round diameters. Slot 1 is the
+		-- first round of ring 1; there is no centre round.
 		-- Ring r has six corners r out at 60 degree steps, with r-1 rounds evenly spaced
 		-- along each edge between them -- those land on lattice points because a hexagon's
 		-- side equals its circumradius.
@@ -661,14 +710,14 @@ do -- MARK: Ammo capacity
 			return x, y
 		end
 
-		--- The outermost rounds sit (numRings - 1) diameters out, plus their own radius
+		--- The outermost rounds sit numRings diameters out, plus their own radius
 		local function GetDiskRadius(numRings, roundDiameter)
-			return (max(1, numRings) - 0.5) * roundDiameter
+			return (max(1, numRings) + 0.5) * roundDiameter
 		end
 
 		function Vertical.GetMaxPrimary(roundSize, maxDiameter)
 			-- Solving GetDiskRadius(n, d) <= maxDiameter / 2 for n
-			return max(1, floor(maxDiameter / (2 * roundSize.y) + 0.5))
+			return max(1, floor(maxDiameter / (2 * roundSize.y) - 0.5))
 		end
 
 		function Vertical.GetMaxStacks(roundSize, maxHeight)
@@ -687,7 +736,7 @@ do -- MARK: Ammo capacity
 
 			local perDisk    = Vertical.GetPerDisk(numRings)
 			local stackIndex = floor((index - 1) / perDisk)
-			local x, y       = HexLatticePosition((index - 1) % perDisk)
+			local x, y       = HexLatticePosition((index - 1) % perDisk + 1)
 
 			-- The lattice is in diameters; scale it out to real units
 			x = x * roundDiameter
@@ -702,11 +751,6 @@ do -- MARK: Ammo capacity
 			local angle = (x == 0 and y == 0) and 0 or deg(atan2(y, x))
 
 			return Vector(x, y, z), Angle(0, angle, 0)
-		end
-
-		--- Two-piece rounds pair along the stack: charge below, projectile above.
-		function Vertical.GetTier(index, numRings)
-			return floor((index - 1) / Vertical.GetPerDisk(numRings))
 		end
 
 		function Vertical.GetRenderTransform(localPos, ringAngle, _, boxAngle, roundSize, needsRotation)
@@ -760,9 +804,28 @@ do -- MARK: Ammo capacity
 			return ACF.DrumLayouts[ShapeName(Shape)] ~= nil
 		end
 
+		--- True if the given container shape wraps its rounds around a conveyor.
+		function ACF.IsCassetteShape(Shape)
+			local Class = Classes.GetTypeByName("ACF.ContainerShapes." .. (ShapeName(Shape) or ""))
+
+			return Class and Class.IsCassette or false
+		end
+
 		--- Returns the drum layout for a container shape, or nil for non-drum shapes.
 		function ACF.GetDrumLayout(Shape)
 			return ACF.DrumLayouts[ShapeName(Shape)]
+		end
+
+		--- Rounds a crate holds for its counts. Two piece rounds take a charge cell and the projectile cell
+		--- above it on box crates and drums, so only whole pairs of layers count. Cassettes pair along X instead.
+		function ACF.GetCrateCapacity(Shape, CountX, CountY, CountZ, TwoPiece)
+			local Layout = ACF.DrumLayouts[ShapeName(Shape)]
+			local Layers = TwoPiece and floor(CountZ / 2) or CountZ
+
+			if Layout then return Layout.GetPerDisk(CountX) * Layers end
+			if ACF.IsCassetteShape(Shape) then return ACF.GetCassetteCapacity(CountX, CountY, CountZ) end
+
+			return CountX * CountY * Layers
 		end
 
 		function ACF.GetDrumCrateSizeFromProjectileCounts(primary, numStacks, Class, ToolData, BulletData, hexPack, Shape)

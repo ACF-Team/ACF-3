@@ -12,6 +12,15 @@ function ACF.Menu.SendSpawn(ClassName, Data)
 	net.SendToServer()
 end
 
+--- Sends a context's data to add one of its rounds to the aimed entity.
+function ACF.Menu.SendOverride(ClassName, Data)
+	net.Start("ACF_MenuCommit")
+		net.WriteString("override")
+		net.WriteString(ClassName)
+		net.WriteTable(Data or {})
+	net.SendToServer()
+end
+
 --- Triggers a page's server-side action function (identified by page id + action index).
 function ACF.Menu.SendFunc(PageID, ActionIndex)
 	if not PageID or not ActionIndex then return end
