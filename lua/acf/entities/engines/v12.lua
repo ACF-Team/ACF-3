@@ -13,7 +13,8 @@ do -- Petrol Engines
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
 		CLASS.Mass		 = 250
-		CLASS.Torque		 = 275
+		CLASS.Displacement = 4.6
+		CLASS.Torque	   = 275
 		CLASS.FlywheelMass = 0.2
 		CLASS.RPM = {
 			Idle	= 1000,
@@ -32,7 +33,8 @@ do -- Petrol Engines
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
 		CLASS.Mass		 = 435
-		CLASS.Torque		 = 668
+		CLASS.Displacement = 7.0
+		CLASS.Torque	   = 668
 		CLASS.FlywheelMass = 0.45
 		CLASS.RPM = {
 			Idle	= 800,
@@ -51,7 +53,8 @@ do -- Petrol Engines
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
 		CLASS.Mass		 = 590
-		CLASS.Torque		 = 884
+		CLASS.Displacement = 13.0
+		CLASS.Torque	   = 884
 		CLASS.FlywheelMass = 2
 		CLASS.RPM = {
 			Idle	= 700,
@@ -70,7 +73,8 @@ do -- Petrol Engines
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
 		CLASS.Mass		 = 1350
-		CLASS.Torque		 = 2436
+		CLASS.Displacement = 23.0
+		CLASS.Torque	   = 2436
 		CLASS.FlywheelMass = 5
 		CLASS.RPM = {
 			Idle	= 600,
@@ -91,7 +95,8 @@ do -- Diesel Engines
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
 		CLASS.Mass		 = 380
-		CLASS.Torque		 = 462
+		CLASS.Displacement = 4.0
+		CLASS.Torque	   = 462
 		CLASS.FlywheelMass = 0.475
 		CLASS.RPM = {
 			Idle	= 650,
@@ -110,7 +115,8 @@ do -- Diesel Engines
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
 		CLASS.Mass		 = 660
-		CLASS.Torque		 = 1154
+		CLASS.Displacement = 9.2
+		CLASS.Torque	   = 1154
 		CLASS.FlywheelMass = 2.5
 		CLASS.RPM = {
 			Idle	= 675,
@@ -129,7 +135,8 @@ do -- Diesel Engines
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Diesel"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
 		CLASS.Mass		 = 1800
-		CLASS.Torque		 = 4325
+		CLASS.Displacement = 21.0
+		CLASS.Torque	   = 4325
 		CLASS.FlywheelMass = 7
 		CLASS.RPM = {
 			Idle	= 400,
