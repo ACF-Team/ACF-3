@@ -172,8 +172,6 @@ function ACF.UpdateRoundSpecs(Ammo)
 	local BaseProjLength  = RoundLength * (1 - PropRatio)
 	local TelescopeLength = math.Round(math.min(PropLength * TelescopeRatio, GUIData.MaxProjLength - BaseProjLength), 2)
 	local ProjLength      = math.Round(BaseProjLength + TelescopeLength, 2)
-	local ProjVolume      = Data.ProjArea * ProjLength
-	local PropVolume      = math.max(0, Data.PropArea * PropLength - Data.ProjArea * TelescopeLength)
 
 	Data.RoundLength     = RoundLength
 	Data.PropRatio       = PropRatio
@@ -181,10 +179,20 @@ function ACF.UpdateRoundSpecs(Ammo)
 	Data.TelescopeLength = TelescopeLength
 	Data.ProjLength      = ProjLength
 	Data.PropLength      = PropLength
-	Data.PropMass    = PropVolume * ACF.PDensity * 0.001 -- Volume of the case (hollowed out by any telescoped rod) * Powder density converted from g to kg
+
+	ACF.UpdateRoundVolumes(Ammo)
+end
+
+--- Re-run by ammo types that resize the projectile after UpdateRoundSpecs, since a telescoped rod hollows the case by its area
+function ACF.UpdateRoundVolumes(Ammo)
+	local Data       = Ammo.BulletData
+	local ProjVolume = Data.ProjArea * Data.ProjLength
+	local PropVolume = math.max(0, Data.PropArea * Data.PropLength - Data.ProjArea * Data.TelescopeLength)
+
+	Data.PropMass    = PropVolume * ACF.PDensity * 0.001 -- Powder density converted from g to kg
 	Data.RoundVolume = ProjVolume + PropVolume
 
-	GUIData.ProjVolume = ProjVolume
+	Ammo.GUIData.ProjVolume = ProjVolume
 end
 
 -- Using Simplified Garzke and Dulin Empirical Formula
