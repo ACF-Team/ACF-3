@@ -186,7 +186,7 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	self:SetRequirement("autoloader_breech_alignment", GunArmAngleAligned,
 		{ Angle = math.Round(GunArmAngle), Limit = ACF.AutoloaderMaxAngleDiff, Weapon = Gun })
 
-	TraceConfig.filter = function(x) return not (x == self or x == Gun or x == Ammo or x == self:GetParent() or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or x.IsACFMissile or self.AmmoCrates[x] or ACF.GlobalFilter[x:GetClass()]) end
+	TraceConfig.filter = function(x) return not (x == self or x == Gun or x == Ammo or x == self:GetParent() or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or x.IsACFMissile or ACF.GlobalFilter[x:GetClass()]) end
 
 	-- Check LOS from arm to breech is unobstructed
 	TraceConfig.start = AutoloaderPos
