@@ -13,13 +13,15 @@ ACF.Classes.DefineClass("ACF.Guns.RotaryAutocannon", "ACF.Guns.BaseScalableGun",
 	CLASS.IsBelted		= true
 	CLASS.Spread      	= 0.48
 	CLASS.Mass        	= 212
-	CLASS.Cyclic      	= 2000
+	CLASS.Cyclic      	= {
+		Min = 2000,
+		Max = 1000,
+	}
 	CLASS.ScaleFactor 	= 1.0 -- Corrective factor to account for improperly scaled base models
-	CLASS.ReloadMod 	= 0.5 -- Load time multiplier. Represents the ease of manipulating the weapon's ammunition
-	CLASS.TransferMult 	= 10 -- Thermal energy transfer rate
 	CLASS.Round 		= {
-		MaxLength  = 16,
-		PropLength = 13,
+		MaxLength  = 20, -- Relative to the Base caliber, in cm. 30x173mm rounds run 290mm, 9.7 calibers
+		PropLength = 12, -- Relative to the Base caliber, in cm. Reaches real energy of 20mm Mk149 and 30x173 PGU-14
+		CaseScale  = 1.46, -- 20x102mm: 29mm base over a 20mm projectile
 	}
 	CLASS.Preview 		= {
 		Height = 90,
@@ -27,23 +29,15 @@ ACF.Classes.DefineClass("ACF.Guns.RotaryAutocannon", "ACF.Guns.BaseScalableGun",
 	}
 	CLASS.CaliberLimits	= {
 		Base = 20,
-		Min  = 7.62,
+		Min  = 12.7,
 		Max  = 37,
-	}
-	CLASS.MagSize 		= {
-		Min = 450,
-		Max = 150,
-	}
-	CLASS.MagReload 	= {
-		Min = 10,
-		Max = 20,
 	}
 	CLASS.LimitConVar 	= {
 		Name = "_acf_rotaryautocannon",
 		Amount = 2,
 		Text = "Maximum amount of ACF rotary auto cannons a player can create."
 	}
-	CLASS.CostScalar	= 1.75
+	CLASS.CostScalar	= 1.68
 end)
 
 ACF.SetCustomAttachment("models/rotarycannon/kw/20mmrac.mdl", "muzzle", Vector(59.6, 0, 1.74))

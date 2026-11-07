@@ -7,11 +7,34 @@ local NO_PLAYER               = -1
 local ALL_CREW_KILLED         = -2
 local OK                      = 1
 
-local ERROR_MESSAGES = {
-    [NO_CONTRAPTION]     = "must be part of a contraption",
-    [NO_PLAYER]          = "require that a player is inside of the current contraption",
-    [ALL_CREW_KILLED]    = "requires that the contraption's crew has not been killed off",
+local RESTRICTIONS = {
+    [NO_CONTRAPTION]     = "lethal_no_contraption",
+    [NO_PLAYER]          = "lethal_no_player",
+    [ALL_CREW_KILLED]    = "lethal_crew_killed",
 }
+
+-- The seats to sit in, or the dead crew, marked for the owner by the targets renderer
+local function GetTargets(State, Contraption)
+    local Targets = {}
+
+    if State == NO_PLAYER then
+        for _, Set in pairs(Contraption.entsbyclass) do
+            for Ent in pairs(Set) do
+                if IsValid(Ent) and Ent:IsVehicle() then Targets[#Targets + 1] = Ent end
+            end
+        end
+
+        return { Targets = Targets, Label = "Seat" }
+    end
+
+    if State == ALL_CREW_KILLED then
+        for Crew in pairs(Contraption.entsbyclass.acf_crew or {}) do
+            if IsValid(Crew) then Targets[#Targets + 1] = Crew end
+        end
+
+        return { Targets = Targets, Label = "Dead crew" }
+    end
+end
 
 ACF.ContraptionQueryTimes = ACF.ContraptionQueryTimes or {}
 local ContraptionQueryTimes = ACF.ContraptionQueryTimes
@@ -37,18 +60,18 @@ local function PlayerContraptionCheck(Entity)
     local Contraption = Entity:CFW_GetContraption()
     if not Contraption then return NO_CONTRAPTION end
 
-    if Contraption.ACF_AllCrewKilled then return ALL_CREW_KILLED end
+    if Contraption.ACF_AllCrewKilled then return ALL_CREW_KILLED, Contraption end
     for _, _ in ACF.PlayersInContraptionIterator(Contraption) do return OK end
-    return NO_PLAYER
+    return NO_PLAYER, Contraption
 end
 
 -- Purpose: Hook into all lethals pre-fire, check valid player contraption state
 hook.Add("ACF_PreFireWeapon", "ACF_CheckPlayerContraptionLethals", function(Ent)
     if not ACF.LethalEntityPlayerChecks then return end
 
-    local ValidPlayerContraptionState = PlayerContraptionCheck(Ent)
+    local ValidPlayerContraptionState, Contraption = PlayerContraptionCheck(Ent)
     if ValidPlayerContraptionState ~= OK then
-        ACF.DisableEntity(Ent, "Player Error", string.format("%s %s.", Ent.PluralName or Ent:GetClass(), ERROR_MESSAGES[ValidPlayerContraptionState]), 5)
+        ACF.Legality.Report(Ent, RESTRICTIONS[ValidPlayerContraptionState], GetTargets(ValidPlayerContraptionState, Contraption))
         return false
     end
 end)

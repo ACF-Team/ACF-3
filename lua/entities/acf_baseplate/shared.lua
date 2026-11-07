@@ -13,6 +13,7 @@ ACF.Entities.AutoRegister(2026091001, function()
 	MENU_FIELD("Boolean", 					  	"UnfreezeOnEntry",    		{Default = false})
 		 FIELD("Entity", 						"Seat",    					{AcceptableClasses = {prop_vehicle_prisoner_pod = true}})
 		 FIELD("Boolean", 					  	"AlreadyHasSeat",    		{Default = false})
+		 FIELD("String", 					  	"SuppressedPasteTests",		{Default = ""}) -- Comma separated autotest IDs to skip on paste
 end, "Baseplate")
 
 ENT.ACF_StaticWireInputs = {

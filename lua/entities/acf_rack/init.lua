@@ -9,6 +9,7 @@ local EMPTY       = { AmmoType = "Empty", PropMass = 0, ProjMass = 0, Tracer = 0
 local ACF         = ACF
 local Contraption = ACF.Contraption
 local Classes     = ACF.Classes
+local Missiles    = ACF.Missiles
 local Utilities   = ACF.Utilities
 local Clock       = Utilities.Clock
 local Sounds      = Utilities.Sounds
@@ -91,6 +92,8 @@ do
 
 	local TraceConfig = {start = Vector(), endpos = Vector(), filter = nil}
 
+	-- Crew that lost sight of the breech during the last UpdateLoadMod
+	local BlockedCrew = 0
 	-- Calculates the reload efficiency between a Crew, one of it's racks and an ammo crate
 	local function GetReloadEff(Crew, Rack, Ammo)
 		local BreechPos = Rack:LocalToWorld(Rack.BreechPos)
@@ -104,29 +107,53 @@ do
 		TraceConfig.filter = function(x) return not (x == Rack or x == Crew or x.noradius or x:GetOwner() ~= Rack:GetOwner() or x:IsPlayer() or x:GetClass() == "acf_missile" or ACF.GlobalFilter[x:GetClass()]) end
 		local tr = util.TraceLine(TraceConfig)
 
-		debugoverlay.Line(CrewPos, tr.HitPos, 1, Green, true)
-		debugoverlay.Line(tr.HitPos, BreechPos, 1, Red, true)
+		if ACF.Debug.SetDeveloperLevel(2) then
+			ACF.Debug.SetTarget(Rack:CPPIGetOwner())
+			ACF.Debug.Line(CrewPos, tr.HitPos, 1, Green, true)
+			ACF.Debug.Line(tr.HitPos, BreechPos, 1, Red, true)
+		end
 
-		Crew.OverlayErrors.LOSCheck = tr.Hit and "Crew cannot see the breech\nOf: " .. (tostring(Rack) or "<INVALID ENTITY???>") .. "\nBlocked by " .. (tostring(tr.Entity) or "<INVALID ENTITY???>") or nil
+		ACF.Hints.Set(Crew, "crew_breech_los", tr.Hit, tr.Hit and { Gun = Rack, Blocker = tr.Entity } or nil)
 		Crew:UpdateOverlay()
-		if tr.Hit then return 0.000001 end -- Wanna avoid division by zero...
+		-- A crew member who can't reach the breech contributes nothing
+		if tr.Hit then
+			BlockedCrew = BlockedCrew + 1
+			return 0
+		end
 
 		return Crew.TotalEff * ACF.Normalize(D1 + D2, ACF.LoaderWorstDist, ACF.LoaderBestDist)
 	end
 
+	--- Recalculates the load modifier of the rack
+	--- @return number # The load modifier, always a usable value
+	--- @return boolean # Whether the rack currently can't load at all, which stalls the reload
 	function ENT:UpdateLoadMod()
 		self.CrewsByType = self.CrewsByType or {}
-		if IsValid(self.Autoloader) and self.Autoloader.ACF.Health > 0 and table.Count(self.MountPoints) == 1 then
-			local Sum1 = self.Autoloader:GetReloadEffAuto(self, self.CurrentCrate)
+
+		if IsValid(self.Autoloader) and not ACF.IsDestroyed(self.Autoloader) and table.Count(self.MountPoints) == 1 then
+			local Sum1, AutoBlocked = self.Autoloader:GetReloadEffAuto(self, self.CurrentCrate)
 			self.LoadCrewMod = self.LoadCrewModOverride or math.Clamp(Sum1, ACF.AutoloaderFallbackCoef, ACF.AutoloaderMaxBonus)
+			self.AutoloaderFeeding = true
+
+			self:SetRequirement("weapon_autoloader_ready", not AutoBlocked, { Autoloader = self.Autoloader })
+			self:SetRequirement("weapon_loader_sight", true)
 		else
-			local Sum1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.CurrentCrate or self)
-			local Sum2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.CurrentCrate or self)
-			local Sum3 = ACF.WeightedLinkSum(self.CrewsByType.Pilot or {}, GetReloadEff, self, self.CurrentCrate or self)
+			self.AutoloaderFeeding = false
+			BlockedCrew = 0
+			local Sum1, Count1 = ACF.WeightedLinkSum(self.CrewsByType.Loader or {}, GetReloadEff, self, self.CurrentCrate or self)
+			local Sum2, Count2 = ACF.WeightedLinkSum(self.CrewsByType.Commander or {}, GetReloadEff, self, self.CurrentCrate or self)
+			local Sum3, Count3 = ACF.WeightedLinkSum(self.CrewsByType.Gunner or {}, GetReloadEff, self, self.CurrentCrate or self)
 			self.LoadCrewMod = self.LoadCrewModOverride or math.Clamp(Sum1 + Sum2 + Sum3, ACF.CrewFallbackCoef, ACF.LoaderMaxBonus)
+			-- A crewed rack only stalls once every last crew member has lost sight of the breech
+			local CrewCount = Count1 + Count2 + Count3
+
+			self:SetRequirement("weapon_autoloader_ready", true)
+			self:SetRequirement("weapon_loader_sight", BlockedCrew < CrewCount or CrewCount == 0)
 		end
 
 		-- Check space behind breech
+		local IsBlocked, Room = false, nil
+
 		if ACF.LegalChecks and self.BulletData --[[ useless? and self.BulletData.AmmoType ~= "Empty"]] and self.ClassData.BreechConfigs then
 			local IdName      = self.BulletData.WeaponType
 			local IdClass     = GetMissileClass(IdName)
@@ -143,50 +170,59 @@ do
 			TraceConfig.filter = function(x) return not (x == self or x.noradius or x.IsACFAutoloader or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or x:GetClass() == "acf_missile" or ACF.GlobalFilter[x:GetClass()]) end
 			local tr = TraceLine(TraceConfig)
 
-			debugoverlay.Line(wp1, tr.HitPos, 1, Green, true)
-			debugoverlay.Line(tr.HitPos, wp2, 1, Red, true)
+			if ACF.Debug.SetDeveloperLevel(2) then
+				ACF.Debug.SetTarget(self:CPPIGetOwner())
+				ACF.Debug.Line(wp1, tr.HitPos, 1, Green, true)
+				ACF.Debug.Line(tr.HitPos, wp2, 1, Red, true)
+			end
 
 			-- Additional Randomized check just in case
 			local tr2
+			local rp1, rp2
 			if not tr.Hit then
 				local Width = IdClass.Round.ActualWidth
 				local rb = Vector(0, Width, Width) / 2 * VectorRand()
-				local rp1 = p1 + rb
-				local rp2 = p2 + rb
+				rp1 = p1 + rb
+				rp2 = p2 + rb
 				local wrp1, wrp2 = self:LocalToWorld(rp1), self:LocalToWorld(rp2)
 
 				TraceConfig.start = wrp1
 				TraceConfig.endpos = wrp2
 				tr2 = TraceLine(TraceConfig)
 
-				debugoverlay.Line(wrp1, tr2.HitPos, 1, Green, true)
-				debugoverlay.Line(tr2.HitPos, wrp2, 1, Red, true)
+				if ACF.Debug.SetDeveloperLevel(2) then
+					ACF.Debug.SetTarget(self:CPPIGetOwner())
+					ACF.Debug.Line(wrp1, tr2.HitPos, 1, Green, true)
+					ACF.Debug.Line(tr2.HitPos, wrp2, 1, Red, true)
+				end
 			end
 
-			local IsBlocked = (tr.Hit or (tr2 and tr2.Hit))
-			self.OverlayErrors.BreechCheck = IsBlocked and "Not enough space behind breech!\nHover with ACF menu tool" or nil
-			self:UpdateOverlay()
-			if IsBlocked then return 0.000001 end
+			IsBlocked = tr.Hit or (tr2 and tr2.Hit)
+
+			-- The blocking trace, local to the rack so the drawing follows it
+			if IsBlocked then
+				local First = tr.Hit
+				local Hit   = First and tr or tr2
+
+				Room = {
+					Blocker = Hit.Entity,
+					From    = First and p1 or rp1,
+					To      = First and p2 or rp2,
+					HitPos  = self:WorldToLocal(Hit.HitPos),
+				}
+			end
 		end
 
-		return self.LoadCrewMod
+		self:SetRequirement("weapon_breech_room", not IsBlocked, Room)
+
+		-- A ground crew loading the rack works around whatever is in the way
+		local Blocked = not self.LoadCrewModOverride and not self:RequirementsMet()
+
+		self.LoadBlocked = Blocked
+
+		return self.LoadCrewMod, Blocked
 	end
 
-	function ENT:FindPropagator()
-		local Temp = self:GetParent()
-		if IsValid(Temp) and Temp:GetClass() == "acf_turret" and Temp.Turret == "Turret-V" then Temp = Temp:GetParent() end
-		if IsValid(Temp) and Temp:GetClass() == "acf_turret" and Temp.Turret == "Turret-H" then return Temp end
-		if IsValid(Temp) and Temp:GetClass() == "acf_baseplate" then return Temp end
-		return nil
-	end
-
-	function ENT:UpdateAccuracyMod(Config)
-		local Propagator = self:FindPropagator(Config)
-		local Val = Propagator and Propagator.AccuracyCrewMod or 0
-
-		self.AccuracyCrewMod = math.Clamp(Val, ACF.CrewFallbackCoef, 1)
-		return self.AccuracyCrewMod
-	end
 
 	function ENT:SetLoadModOverride(Efficiency)
 		self.LoadCrewModOverride = Efficiency
@@ -261,8 +297,6 @@ do -- Spawning and Updating --------------------
 		Entity.CurrentShot    = 0
 		Entity.Spread         = Rack.Spread or 1
 		Entity.InAirMissiles  = {}
-
-		Entity.OverlayErrors = {}
 
 		Entity:ACF_SetEntityName("ACF " .. Entity.Name)
 		Entity:SetNWString("ACF_Class", Entity.Class)
@@ -354,11 +388,12 @@ do -- Spawning and Updating --------------------
 	end
 
 	function ENT:ACF_PostSpawn()
+		ACF.Hints.Set(self, "weapon_no_ammo", true)
+
 		local Rack = self:GetRack()
 		if Rack.OnSpawn then Rack.OnSpawn(self, nil, Rack) end
 
 		ACF.AugmentedTimer(function(Config) self:UpdateLoadMod(Config) end, function() return IsValid(self) end, nil, {MinTime = 0.5, MaxTime = 1})
-		ACF.AugmentedTimer(function(Config) self:UpdateAccuracyMod(Config) end, function() return IsValid(self) end, nil, {MinTime = 0.5, MaxTime = 1})
 
 		WireLib.TriggerOutput(self, "Rate of Fire", 60)
 		WireLib.TriggerOutput(self, "Reload Time", 1)
@@ -401,6 +436,14 @@ do -- Spawning and Updating --------------------
 			contraption.Racks[ent] = nil
 		end
 	end)
+
+	-- Tracks the turret a rack is mounted to, for turret auto-leveling
+	function ENT:CFW_OnParentedTo(_, NewParent)
+		if not IsValid(NewParent) then return end
+		if NewParent:GetClass() == "acf_turret_rotator" then NewParent = NewParent:GetTable().Turret end
+
+		self.BreechReference = NewParent
+	end
 end ---------------------------------------------
 
 do -- Custom ACF damage ------------------------
@@ -447,7 +490,7 @@ do -- Custom ACF damage ------------------------
 				local Missile = Point.Missile
 
 				if Missile and math.random() > 0.9 * Ratio then
-					Missile:Launch(nil, true)
+					Missiles.Launch(Missile, { Velocity = self.ACF_Velocity, Misfire = true })
 
 					self:UpdateLoad(Point)
 
@@ -514,6 +557,9 @@ do -- Entity Link/Unlink -----------------------
 		Target.Weapons[Weapon] = true
 		Weapon.Crates[Target] = true
 
+		ACF.Hints.Set(Weapon, "weapon_no_ammo", false)
+		ACF.Hints.Set(Target, "ammo_no_weapon", false)
+
 		Weapon:UpdateOverlay()
 		Target:UpdateOverlay()
 
@@ -552,6 +598,9 @@ do -- Entity Link/Unlink -----------------------
 
 			Target.Weapons[Weapon] = nil
 			Weapon.Crates[Target] = nil
+
+			ACF.Hints.Set(Weapon, "weapon_no_ammo", not next(Weapon.Crates))
+			ACF.Hints.Set(Target, "ammo_no_weapon", not next(Target.Weapons))
 
 			Weapon:UpdateOverlay()
 			Target:UpdateOverlay()
@@ -614,31 +663,28 @@ do -- Entity Inputs ----------------------------
 end ---------------------------------------------
 
 do -- Entity Overlay ----------------------------
+	-- Loading requirements are only worth listing while a mount point waits on them, ground crews bypass them
+	function ENT:ACF_ShowRequirements()
+		if self.LoadCrewModOverride then return false end
+
+		for _, Mount in ipairs(self.MountPoints) do
+			if Mount.State ~= "Loaded" then return true end
+		end
+
+		return false
+	end
+
 	function ENT:ACF_UpdateOverlayState(State)
 		local Delay  = math.Round(self.FireDelay, 2)
 		local Reload = math.Round(self.ReloadTime, 2)
 		local Bullet = self.BulletData
 		local Ammo   = (Bullet.WeaponType and (ACF.GetLegacyStyleClassName(Bullet.WeaponType) .. " ") or "") .. (Bullet.AmmoType and ACF.GetLegacyStyleClassName(Bullet.AmmoType) or "Empty")
-		local Status = self.State
-
-		local Error = false
 		if self.Jammed then
-			Error = true
-			Status = "Jammed!\nRepair this rack to be able to use it again."
-		elseif not next(self.Crates) then
-			Error = true
-			Status = "Not linked to an ammo crate!"
-		end
+			local _, Detail = ACF.Diagnostics.Describe("rack_jammed")
 
-		if Error then
-			State:AddError(Status)
+			State:AddError(Detail, "rack_jammed")
 		else
-			State:AddLabel(Status)
-		end
-
-		-- Compile error messages
-		for _, Error in pairs(self.OverlayErrors) do
-			State:AddError(Error)
+			State:AddLabel(self.State)
 		end
 
 		local ReadyToFire = 0
@@ -665,11 +711,12 @@ do -- Firing -----------------------------------
 		local ShootDir = (Ang:Forward() + Spread):GetNormalized()
 
 		local Missile = Point.Missile
-		local BulletData = Missile.BulletData
 
-		BulletData.Flight = ShootDir
-
-		Missile:Launch(Rack.LaunchDelay)
+		Missiles.Launch(Missile, {
+			Velocity   = Rack.ACF_Velocity,
+			Direction  = ShootDir,
+			MotorDelay = Rack.LaunchDelay,
+		})
 		local LimitOwner = Missile.LimitOwner
 		if Missile.LimitConVar and IsValid(LimitOwner) then
 			RemoveCount(LimitOwner, Missile.LimitConVar.Name, Missile)
@@ -701,12 +748,13 @@ do -- Firing -----------------------------------
 		if self.RetryShoot then return false end
 		if not self.Firing then return false end
 		if not ACF.RacksCanFire then return false end
+		if ACF.IsDestroyed(self) then return false end
 
 		return true
 	end
 
 	function ENT:GetSpread()
-		return self.Spread * ACF.GunInaccuracyScale / (self.AccuracyCrewMod or 1)
+		return self.Spread * ACF.GunInaccuracyScale
 	end
 
 	function ENT:Shoot()
@@ -781,8 +829,23 @@ do -- Loading ----------------------------------
 	end
 
 	local function AddMissile(Rack, Point, Crate, LimitConVar, Owner)
+		local Spec = Missiles.SpecFromCrate(Crate)
+		if not Spec then return end
+
 		local Pos, Ang = GetMissileAngPos(Crate.BulletData, Point)
-		local Missile = ACF.MakeMissile(Rack.Owner, Pos, Ang, Rack, Point, Crate)
+		local RackOwner = Rack:CPPIGetOwner()
+		local Missile = Missiles.Create(Spec, {
+			Owner     = IsValid(RackOwner) and RackOwner or game.GetWorld(),
+			Pos       = Rack:LocalToWorld(Pos),
+			Ang       = Rack:LocalToWorldAngles(Ang),
+			Launcher  = Missiles.RackLauncher(Rack, Point),
+			Parent    = Rack,
+			Hidden    = Rack.HideMissile,
+			Protected = Rack.ProtectMissile,
+			Color     = Crate:GetColor(),
+			Model     = Rack.MissileModel,
+		})
+		if not Missile then return end
 
 		Sounds.SendSound(Rack, "acf_missiles/fx/bomb_reload.mp3", 70, math.random(99, 101), 1)
 
@@ -830,6 +893,8 @@ do -- Loading ----------------------------------
 
 		if not self.Firing and Index and Crate and not CheckDistantLink(self, Crate, self:GetPos()) then
 			local Missile    = AddMissile(self, Point, Crate, LimitConVar, Owner)
+			if not Missile then return end
+
 			local IdealTime  = Missile.ReloadTime
 			local ReloadTime = IdealTime / self.LoadCrewMod
 
@@ -847,11 +912,23 @@ do -- Loading ----------------------------------
 
 			self:SetNW2Int("BreechIndex", self.BreechIndex or 1)
 
-			local ReloadLoop = function()
-				local eff = self:UpdateLoadMod() or 1
-				WireLib.TriggerOutput(self, "Reload Time", IdealTime / eff)
-				WireLib.TriggerOutput(self, "Rate of Fire", 60 / (IdealTime / eff))
-				return eff
+			local ReloadLoop = function(Config)
+				local Eff, Blocked = self:UpdateLoadMod()
+				local Time = IdealTime / (Eff or 1)
+
+				-- Keeps NextFire tracking the real remaining time, a stalled reload lets the last one run out
+				if not Blocked and Config and Config.Goal then
+					Point.NextFire = Clock.CurTime + math.max(Config.Goal - Config.Progress, 0) / (Eff or 1)
+				end
+
+				if IsValid(self.Autoloader) then self.Autoloader:PlayLoadSound(self, Config, Blocked) end
+
+				self.ReloadTime = Time
+
+				WireLib.TriggerOutput(self, "Reload Time", Time)
+				WireLib.TriggerOutput(self, "Rate of Fire", 60 / Time)
+
+				return Eff, Blocked
 			end
 
 			local ReloadFinish = function()
@@ -1021,7 +1098,11 @@ do -- Misc -------------------------------------
 
 	function ENT:GetCost()
 		local selftbl = self:GetTable()
-		return selftbl.MagSize * 1.5 * math.max(1, math.max(70, selftbl.RackCaliber) / 70)
+		local Class   = selftbl.ClassData
+
+		if Class.Cost then return Class.Cost end -- Flat override for outliers
+
+		return selftbl.MagSize * (Class.CostPerSlot or 1.8)
 	end
 
 	function ENT:Enable()
@@ -1042,6 +1123,7 @@ do -- Misc -------------------------------------
 
 	function ENT:SetState(State)
 		self.State = State
+		self.MagazineReloading = State ~= "Loaded" -- Racks reload per shot, mirroring a gun's magazine reload for fire_control.lua's leveling check
 
 		self:UpdateOverlay()
 
@@ -1085,7 +1167,7 @@ do -- Misc -------------------------------------
 		local Reload     = IsValid(Missile) and Missile.ReloadTime or 1
 
 		self.BulletData = BulletData
-		self.Caliber    = BulletData.Caliber
+		self.Caliber    = BulletData.Caliber and BulletData.Caliber * 10 or self.Caliber -- mm like guns, kept while reloading
 		self.NextFire   = Point.NextFire
 		self.Jammed     = Point.Disabled
 

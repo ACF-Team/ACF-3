@@ -39,20 +39,20 @@ Chapter:AddInstruction("ACF.SelectMenuTreeNode", {Name = "MainMenuCPanel", Selec
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Select a missile that supports GPS guidance. For this example, we will use the SAKR-10."}))
 Chapter:AddDelay(1)
-Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", ComboBoxName = "MissileTypes", OptionID = 3}):DelayByLength()
+Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", Choice = "Artillery Rockets"}):DelayByLength()
 Chapter:AddDelay(1)
 
-Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", ComboBoxName = "MissileList", OptionID = 2}):DelayByLength()
+Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", Choice = "SAKR-10 Rocket"}):DelayByLength()
 Chapter:AddInstruction("ACF.ScrollToMenuPanel", {Name = "MainMenuCPanel", Scroll = "#acf.menu.ammo.stage"}):DelayByLength()
 
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Set ammo guidance to GPS Guided."}))
-Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", ComboBoxName = "GuidanceList", OptionID = 2}):DelayByLength()
+Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", Choice = "GPS Guided"}):DelayByLength()
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Set fuze to contact or optical"}))
-Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", ComboBoxName = "FuzeList", OptionID = 2}):DelayByLength()
+Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", Choice = "Contact"}):DelayByLength()
 
-Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.ammo.propellant_length", Value = 50}):DelayByLength()
-Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.ammo.projectile_length", Value = 100}):DelayByLength()
+Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.ammo.total_length", Value = 150.00}):DelayByLength()
+Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.ammo.propellant_ratio", Value = 0.3333}):DelayByLength()
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.ammo.filler_ratio", Value = 1}):DelayByLength()
 
 
@@ -86,3 +86,11 @@ Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Now when you fire th
 
 Chapter:AddDelay(1)
 
+-------------------------------------------------------------------------------------------------
+local Chapter = Storyboard:Chapter("AIO Controller")
+Chapter:AddInstruction("RemovePanel", {Name = "MainMenuCPanel", Length = 0.5}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Instead of wiring, you can link the GPS transmitter and the rack to the AIO controller."}))
+Chapter:AddInstruction("ShowToolgun", {Tool = language.GetPhrase("tool.acf_menu.menu_name")}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("ACF Menu", {Children = {"GPS Transmitter", "Rack"}, Target = "AIO", Easing = math.ease.InOutQuad, Length = 2}))
+Chapter:AddInstruction("HideToolgun", {}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "It feeds the transmitter the position you are aiming at, and Alt fires the rack."}))

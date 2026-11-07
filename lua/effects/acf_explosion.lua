@@ -22,7 +22,9 @@ function EFFECT:Init(Data)
 
 	self.Radius = Radius
 
-	Debug.Cross(Origin, 15, 15, Yellow, true)
+	if Debug.SetDeveloperLevel(1) then
+		Debug.Cross(Origin, 15, 15, Yellow, true)
+	end
 	--Debug.Sphere(Origin, Size, 15, Yellow, true)
 
 	TraceData.start  = Origin - Normal * 5
@@ -163,9 +165,9 @@ function EFFECT:GroundImpact(Emitter, Origin, Radius, HitNormal, SmokeColor, Mul
 			endpos = (Origin + (Angle:Up() * math.Rand(-2, -100) * Radius)) - (HitNormalForward * 10)
 		}
 
-		-- debugoverlay.Line(TracePoint.StartPos, TracePoint.HitPos, 2, Color(255, 0, 0), true)
-		-- debugoverlay.Cross(TracePoint.StartPos, 4, 4, Color(255, 111, 111), true)
-		-- debugoverlay.Cross(TracePoint.HitPos, 4, 4, Color(120, 255, 142), true)
+		-- Debug.Line(TracePoint.StartPos, TracePoint.HitPos, 2, Color(255, 0, 0), true)
+		-- Debug.Cross(TracePoint.StartPos, 4, 4, Color(255, 111, 111), true)
+		-- Debug.Cross(TracePoint.HitPos, 4, 4, Color(120, 255, 142), true)
 
 		if TracePoint.Hit then
 			local TraceTime = TracePoint.StartPos:Distance(TracePoint.HitPos) / 2000

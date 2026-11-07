@@ -41,6 +41,8 @@ do -- Laser Receiver
 
 	local TraceData = { start = true, endpos = true, mask = MASK_SOLID }
 	local function CheckLOS(Receiver, Source, Start, End)
+		if ACF.TraceSmoke(Start, End) then return false end
+
 		TraceData.start = Start
 		TraceData.endpos = End
 		if IsValid(Source.Player) then
@@ -57,6 +59,7 @@ do -- Laser Receiver
 		CLASS.Model       = "models/bluemetaknight/laser_detector.mdl"
 
 		CLASS.Mass        = 25
+		CLASS.Cost        = 1.5
 		CLASS.Health      = 10
 		CLASS.Armor       = 10
 		CLASS.Offset      = Vector(0, 0, 3)
@@ -84,17 +87,19 @@ do -- Radar Receiver
 		local ReceiverOrigin = Receiver:LocalToWorld(Receiver.Origin)
 
 		for k in pairs(ACF.ActiveRadars) do -- Radar entities
-			if k.EntType ~= "Targeting Radar" then continue end
+			if not k.DetectContraptions then continue end -- Only contraption-detecting radars should trip receivers
+
 			local RadarOrigin = k:LocalToWorld(k.Origin)
 
-			if k.Range then -- Spherical
-				if RadarOrigin:DistToSqr(ReceiverOrigin) <= (k.Range ^ 2) then RadarSource[k] = true end
-			else -- Directional
-				if Countermeasures.ConeContainsPos(RadarOrigin, k:GetForward(), k.ConeDegs, ReceiverOrigin) then RadarSource[k] = true end
+			if RadarOrigin:DistToSqr(ReceiverOrigin) > (k.Range ^ 2) then continue end
+
+			-- Only check against view cone if the radar has one
+			if not k.ConeDegs or Countermeasures.ConeContainsPos(RadarOrigin, k:GetForward(), k.ConeDegs, ReceiverOrigin) then
+				RadarSource[k] = true
 			end
 		end
 
-		for k in pairs(ACF.ActiveMissiles) do -- Missile entities
+		for k in ACF.Missiles.IterateActive() do -- Missile entities
 			if not k.UseGuidance then continue end -- Don't waste time on missiles that don't have functional guidance
 			if not ValidMissileRadars[k.Guidance] then continue end -- Further filter for anything without radar on the missile itself
 
@@ -120,6 +125,7 @@ do -- Radar Receiver
 		CLASS.Model       = "models/jaanus/wiretool/wiretool_siren.mdl"
 
 		CLASS.Mass        = 25
+		CLASS.Cost        = 4
 		CLASS.Health      = 10
 		CLASS.Armor       = 10
 		CLASS.Offset      = Vector(0, 0, 6)

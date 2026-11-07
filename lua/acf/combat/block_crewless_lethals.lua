@@ -33,7 +33,7 @@ end
 hook.Add("ACF_PreFireWeapon", "ACF_PreventCrewlessLethals", function(Ent)
     local Result = CrewlessLethalCheck(Ent)
     if not Result then
-        ACF.DisableEntity(Ent, "Player Error", string.format("%s %s.", Ent.PluralName or Ent:GetClass(), "Lethal weapons cannot be used on crewless contraptions"), 5)
+        ACF.Legality.Report(Ent, "lethal_crewless")
         return false
     end
 end)

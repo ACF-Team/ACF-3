@@ -25,12 +25,22 @@ function EFFECT:Init(Data)
 
 	-- Scale encodes the hit type, so if it's 0 it's a new bullet, else it's an update so we need to remove the effect
 	if Bullet and not Bullet.Removed and Hit > 0 then
+		-- Our own predicted bullet already showed this hit and moved on, see ballistics_cl.lua
+		if ACF.Ballistics.MatchPrediction(Bullet, Hit, Origin) then
+			if Hit == 1 then Bullet.Effect.Kill = true end
+
+			self:Remove()
+
+			return
+		end
+
 		local RoundData = Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", Bullet.AmmoType)
 
 		-- Updating old effect with new values
 		Bullet.Effect.DrawEffect = CanDraw
 		Bullet.SimFlight = Flight
 		Bullet.SimPos = Origin
+		Bullet.Stopped = nil -- A predicted bullet waiting at a wall carries on from here
 
 		if Hit == 1 then
 			-- Bullet has reached end of flight, remove old effect
@@ -58,8 +68,11 @@ function EFFECT:Init(Data)
 		end
 
 		-- TODO: Force crates to network and store this information on the client when they're created
-		local Tracer  = Crate:GetNW2Float("Tracer") > 0
-		local Caliber = Crate:GetNW2Float("Caliber", 10)
+		-- Overridden rounds network their data under keys suffixed with their profile
+		local Suffix = ACF.GetCrateNWSuffix(Data:GetFlags())
+
+		local Tracer  = Crate:GetNW2Float("Tracer" .. Suffix) > 0
+		local Caliber = Crate:GetNW2Float("Caliber" .. Suffix, 10)
 		local BulletData = {
 			Index         = self.Index,
 			Crate         = Crate,
@@ -67,14 +80,14 @@ function EFFECT:Init(Data)
 			SimPos        = Origin,
 			SimPosLast    = Origin,
 			Caliber       = Caliber,
-			RoundMass     = Crate:GetNW2Float("ProjMass", 10),
-			FillerMass    = Crate:GetNW2Float("FillerMass"),
-			WPMass        = Crate:GetNW2Float("WPMass"),
-			DragCoef      = Crate:GetNW2Float("DragCoef", 1),
-			AmmoType      = Crate:GetNW2String("AmmoType", "ACF.Ammunition.AP"),
+			RoundMass     = Crate:GetNW2Float("ProjMass" .. Suffix, 10),
+			FillerMass    = Crate:GetNW2Float("FillerMass" .. Suffix),
+			WPMass        = Crate:GetNW2Float("WPMass" .. Suffix),
+			DragCoef      = Crate:GetNW2Float("DragCoef" .. Suffix, 1),
+			AmmoType      = Crate:GetNW2String("AmmoType" .. Suffix, "ACF.Ammunition.AP"),
 			Tracer        = Tracer and ParticleEmitter(Origin) or nil,
 			Color         = Tracer and Crate:GetColor() or nil,
-			Accel         = Crate:GetNW2Vector("Accel", ACF.Gravity),
+			Accel         = Crate:GetNW2Vector("Accel" .. Suffix, ACF.Gravity),
 			LastThink     = Clock.CurTime,
 			Effect        = self,
 		}
@@ -83,10 +96,10 @@ function EFFECT:Init(Data)
 		Bullets[self.Index] = BulletData
 
 		-- Set model and bodygroup based on ammo type
-		local FlightModel = Crate:GetNW2String("FlightModel", "")
+		local FlightModel = Crate:GetNW2String("FlightModel" .. Suffix, "")
 		if FlightModel ~= "" then
 			self:SetModel(FlightModel)
-			self:SetBodygroup(0, Crate:GetNW2Int("FlightBodygroup", 0))
+			self:SetBodygroup(0, Crate:GetNW2Int("FlightBodygroup" .. Suffix, 0))
 		end
 
 		self:SetPos(Origin)

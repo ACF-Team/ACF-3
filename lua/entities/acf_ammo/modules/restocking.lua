@@ -34,10 +34,9 @@ ACF.FindCrateByStage = FindCrateByStage
 function ENT:CanRestock()
 	local SelfTbl = self:GetTable()
 
-	if SelfTbl.Disabled then return false end
+	if not ACF.IsOperational(self, SelfTbl) then return false end
 	if not SelfTbl.Load then return false end
-	if SelfTbl.Damaged then return false end
-	if SelfTbl.IsBelted then return false end
+	if SelfTbl.IsBelted then return false end -- Belt feds don't support ammo restocking between crates
 
 	return SelfTbl.Amount < SelfTbl.Capacity
 end

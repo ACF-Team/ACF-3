@@ -2,4 +2,5 @@ ACF.Classes.DefineClass("ACF.FuelTypes.Petrol", "ACF.FuelTypes.FuelType", functi
     CLASS.ID      = "Petrol"
     CLASS.Name    = "Petrol Fuel"
     CLASS.Density = 0.832
+    CLASS.ArmorType  = "Petrol"
 end)

@@ -4,7 +4,6 @@ ENT.PrintName      = "ACF Waterjet"
 ENT.WireDebugName  = "ACF Waterjet"
 ENT.PluralName     = "ACF Waterjets"
 ENT.ACF_Limit      = 4
-ENT.ACF_PreventArmoring = true
 
 ACF.Entities.AutoRegister(2026091001, function()
     MENU_FIELD("Number",  					  	"WaterjetSize", 				{Min = 0.5, Max = 2, Default = 1, Decimals = 2})

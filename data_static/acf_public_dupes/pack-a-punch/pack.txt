@@ -1,0 +1,15 @@
+-- Insert pack
+INSERT INTO PackData (packid, packname, author, contact)
+VALUES ('pack-a-punch', 'Pack-a-Punch', 'Larry', 'laarryzoid');
+
+-- Insert dupes using the string packid
+INSERT INTO DupeData (path, name, cost, weight, type, mobility, packid, description) VALUES
+('t-85m', 'T-85M', 257, 24.3, 'MBT', 'Tracked', 'pack-a-punch', 'T85M Tempere 2.
+
+700Hp, 80Km/h max, 28.8 hp/ton.
+
+Alt : Smokes.
+Mouse 1 : Main Gun.
+Mouse 2: Secondaries.
+WASD : Driving controls.
+Space : Brakes.');

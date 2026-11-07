@@ -18,6 +18,7 @@ Chapter:AddDelay(Chapter:AddInstruction("PlaceModels", {
         {Name = "Gearbox", IdentifyAs = "Gearbox", Model = "models/engines/transaxial_s.mdl", Angles = Angle(0, 90, 0), Position = Vector(0, -144, 3), ComeFrom = Vector(0, 0, 50), ParentTo = "Base", Scale = Vector(2, 2, 2)},
         {Name = "FuelTank1", IdentifyAs = "Fuel Tank", Model = "models/holograms/hq_rcube.mdl", Angles = Angle(0, -90, 0), Position = Vector(36, -84, 15), ComeFrom = Vector(0, 0, 50), Scale = Vector(6, 2, 2), Material = "models/props_canal/metalcrate001d", ParentTo = "Base", },
         {Name = "FuelTank2", IdentifyAs = "Fuel Tank", Model = "models/holograms/hq_rcube.mdl", Angles = Angle(0, -90, 0), Position = Vector(-36, -84, 15), ComeFrom = Vector(0, 0, 50), Scale = Vector(6, 2, 2), Material = "models/props_canal/metalcrate001d", ParentTo = "Base", },
+        {Name = "AIO", IdentifyAs = "AIO Controller", Model = "models/hunter/plates/plate025x025.mdl", Position = Vector(-30, 100, 3), ComeFrom = Vector(0, 0, 50), ParentTo = "Base"},
     }
 }))
 
@@ -76,7 +77,7 @@ Chapter:AddInstruction("PlacePanel", {
 Chapter:AddInstruction("ACF.CreateMenuCPanel", {Name = "SuspensionMenuCPanel", Label = "ACF Menu"}):DelayByLength()
 Chapter:AddInstruction("ACF.InitializeCustomACFMenu", {Name = "SuspensionMenuCPanel", CreateMenu = ACF.CreateSuspensionToolMenuHeadless}):DelayByLength()
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "We recommend beginners use rigid suspension, since it is the easiest and most optimized."}))
-Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "SuspensionMenuCPanel", ComboBoxName = "Spring Type", OptionID = 1}):DelayByLength()
+Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "SuspensionMenuCPanel", Choice = "Spring Type: Rigid (None)"}):DelayByLength()
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "First shift + right click the baseplate."}))
 Chapter:AddDelay(Chapter:AddInstruction("FlashModel", {Reps = 2, Models = {"Base"}}))
@@ -84,4 +85,20 @@ Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Select (in any order
 Chapter:AddDelay(Chapter:AddInstruction("FlashModel", {Reps = 2, Models = {"LWheel1", "LWheel2", "LWheel3", "LWheel4", "RWheel1", "RWheel2", "RWheel3", "RWheel4"}}))
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Clear the drivetrain of any previously existing constraints for optimization."}))
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Press the create button once to create the suspension. Avoid doing this multiple times to prevent redundant constraints."}))
+Chapter:AddInstruction("RemovePanel", {Name = "SuspensionMenuCPanel", Length = 0.5}):DelayByLength()
+Chapter:AddInstruction("HideToolgun", {}):DelayByLength()
+
+-------------------------------------------------------------------------------------------------
+local Chapter = Storyboard:Chapter("Driving")
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Your tank can now move. Link the main gearbox to your controller to drive with W, A, S and D. Never link transfer gearboxes."}))
+Chapter:AddInstruction("ShowToolgun", {Tool = language.GetPhrase("tool.acf_menu.menu_name")}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("ACF Menu", {Children = {"Gearbox"}, Target = "AIO", Easing = math.ease.InOutQuad, Length = 2}))
+Chapter:AddInstruction("HideToolgun", {}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("ACF.ShowAIOMenu", {Target = "AIO"}))
+Chapter:AddInstruction("ACF.SetAIOSetting", {Name = "AIOMenu", Setting = "BrakeStrength"}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Tanks steer by braking one side. BrakeStrength sets how hard."}))
+Chapter:AddInstruction("ACF.SetAIOSetting", {Name = "AIOMenu", Setting = "ShiftMinRPM"}):DelayByLength()
+Chapter:AddInstruction("ACF.SetAIOSetting", {Name = "AIOMenu", Setting = "ShiftMaxRPM"}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Left at 0, the shift RPMs fill in from your engine's powerband. A CVT like this one finds its own ratio, so they only matter for manual gearboxes."}))
+Chapter:AddInstruction("RemovePanel", {Name = "AIOMenu", Length = 0.5}):DelayByLength()
 Chapter:RecommendStoryboard("acf.tankbasics.turrets")

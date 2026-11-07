@@ -11,7 +11,7 @@ local function DrawGitCommit(Menu, Commit)
 	Base:AddLabel(language.GetPhrase("acf.menu.updates.commit_date"):format(
 		os.date("%Y-%m-%d %H:%M:%S", Commit.date) .. " (" .. string.FormattedTime(os.time() - Commit.date, "%dh") .. " ago)"
 	))
-	Base:AddLabel(language.GetPhrase("acf.menu.updates.commit_code"):format(Commit.Code or Commit.code or "#acf.menu.updates.unknown"))
+	Base:AddLabel(language.GetPhrase("acf.menu.updates.commit_code"):format(Commit.Code or Commit.code or language.GetPhrase("acf.menu.updates.unknown")))
 	local Button = Base:AddButton("#acf.menu.updates.commit_view")
 	function Button:DoClickInternal()
 		gui.OpenURL(Commit.url)
@@ -39,7 +39,7 @@ local function DrawGitStatus(Menu, ExtensionName, Version, MostRecentCommit)
 		end
 		Status:SetText(StatusPrefix:format(StatusValue))
 	else
-		Status:SetText(StatusPrefix:format("#acf.menu.updates.unknown"))
+		Status:SetText(StatusPrefix:format(language.GetPhrase("acf.menu.updates.unknown")))
 	end
 
 	Base:AddLabel(language.GetPhrase("acf.menu.updates.current_branch"):format(Version.head))
@@ -55,19 +55,29 @@ end
 local function CreateMenu(Menu)
 	Menu:AddTitle("#acf.menu.updates.version_status")
 
+	-- Server versions arrive in a net message after load, so they can still be missing here
+	local ServerExtensions = ACF.ServerExtensions
+
 	for _, ExtensionName in ipairs(ACF.ExtensionOrders) do
-		local ClientExtension = ACF.Extensions and ACF.Extensions[ExtensionName]
-		local ServerExtension = ACF.ServerExtensions[ExtensionName]
-		local Base = Menu:AddCollapsible(ExtensionName, true, "icon16/package.png")
-		DrawGitCommit(Base, ServerExtension.Commit)
+		local ClientExtension = ACF.Extensions[ExtensionName]
+		local ServerExtension = ServerExtensions and ServerExtensions[ExtensionName]
+		local Commit          = ServerExtension and ServerExtension.Commit
+		local Base            = Menu:AddCollapsible(ExtensionName, true, "icon16/package.png")
+
+		DrawGitCommit(Base, Commit)
 
 		-- The listen server host is always going to match.
 		if LocalPlayer():IsListenServerHost() then
-			ClientExtension = ServerExtension
+			ClientExtension = ServerExtension or ClientExtension
 		end
 
-		DrawGitStatus(Base, ExtensionName, ClientExtension and ClientExtension.Version, ClientExtension and ClientExtension.Commit)
-		DrawGitStatus(Base, ExtensionName, ServerExtension and ServerExtension.Version, ServerExtension and ServerExtension.Commit)
+		if ClientExtension and ClientExtension.Version then
+			DrawGitStatus(Base, ExtensionName, ClientExtension.Version, Commit)
+		end
+
+		if ServerExtension and ServerExtension.Version then
+			DrawGitStatus(Base, ExtensionName, ServerExtension.Version, Commit)
+		end
 	end
 end
 

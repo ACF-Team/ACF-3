@@ -10,21 +10,20 @@ ACF.Classes.DefineClass("ACF.Guns.SmokeLauncher", "ACF.Guns.BaseScalableGun", fu
 	CLASS.MuzzleFlash 	= "gl_muzzleflash_noscale"
 	CLASS.Cleanup     	= "acf_smokelauncher"
 	CLASS.DefaultAmmo 	= "ACF.Ammunition.SM"
-	CLASS.IsBoxed     	= true
 	CLASS.Spread      	= 0.32
 	CLASS.Mass        	= 3.77
-	CLASS.Cyclic      	= 600
-	CLASS.MagSize     	= 1
+	-- Manually loaded like a cannon: no cyclic rate, no magazine. Reload time keys off the loaded round.
 	CLASS.ScaleFactor 	= 0.96 -- Corrective factor to account for improperly scaled base models
-	CLASS.TransferMult 	= 4 -- Thermal energy transfer rate
 	CLASS.LimitConVar 	= {
 		Name = "_acf_smokelauncher",
-		Amount = 10,
+		Amount = 12,
+		LegacyDefault = 10,
 		Text = "Maximum amount of ACF smoke launchers a player can create."
 	}
 	CLASS.Round 		= {
 		MaxLength  = 17.5,
 		PropLength = 0.05,
+		CaseScale  = 1, -- Countermeasure, no meaningful propellant case
 	}
 	CLASS.Preview 		= {
 		FOV = 75,
@@ -34,10 +33,6 @@ ACF.Classes.DefineClass("ACF.Guns.SmokeLauncher", "ACF.Guns.BaseScalableGun", fu
 		Min  = 40,
 		Max  = 81,
 	}
-	CLASS.MagReload 	= {
-		Min = 10,
-		Max = 15,
-	}
 	CLASS.BreechConfigs = {
 		MeasuredCaliber = 8.1,
 		Locations = {
@@ -45,7 +40,7 @@ ACF.Classes.DefineClass("ACF.Guns.SmokeLauncher", "ACF.Guns.BaseScalableGun", fu
 			{Name = "Barrel", LPos = Vector(9.8606, 0, -0.182617), LAng = Angle(180, 0, 0), Width = 3.1889763779528, Height = 3.1889763779528},
 		}
 	}
-	CLASS.CostScalar	= 0.02
+	CLASS.CostScalar	= 0.024
 end)
 
 ACF.SetCustomAttachment("models/launcher/40mmsl.mdl", "muzzle", Vector(5), Angle(0, 0, 180))

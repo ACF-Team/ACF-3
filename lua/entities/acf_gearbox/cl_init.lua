@@ -41,15 +41,17 @@ do	-- NET SURFER 2.0
 
 		if OutLLen > 0 then
 			for I = 1, OutLLen do
-				OutL[I] = net.ReadUInt(MAX_EDICT_BITS)
+				OutL[I] = { Index = net.ReadUInt(MAX_EDICT_BITS), Bent = net.ReadBool() }
 			end
 		end
 
 		if OutRLen > 0 then
 			for I = 1, OutRLen do
-				OutR[I] = net.ReadUInt(MAX_EDICT_BITS)
+				OutR[I] = { Index = net.ReadUInt(MAX_EDICT_BITS), Bent = net.ReadBool() }
 			end
 		end
+
+		local Overloaded = net.ReadBool()
 
 		local InEnts	= {}
 		local OutLEnts	= {}
@@ -63,8 +65,8 @@ do	-- NET SURFER 2.0
 			end
 		end
 
-		for _, E in ipairs(OutL) do
-			local Ent = Entity(E)
+		for _, Output in ipairs(OutL) do
+			local Ent = Entity(Output.Index)
 
 			if IsValid(Ent) then
 				local Pos = Vector()
@@ -73,12 +75,12 @@ do	-- NET SURFER 2.0
 					Pos = Ent:WorldToLocal(Ent:GetAttachment(Ent:LookupAttachment("input")).Pos)
 				end
 
-				OutLEnts[#OutLEnts + 1] = {Ent = Ent, Pos = Pos}
+				OutLEnts[#OutLEnts + 1] = {Ent = Ent, Pos = Pos, Bent = Output.Bent}
 			end
 		end
 
-		for _, E in ipairs(OutR) do
-			local Ent = Entity(E)
+		for _, Output in ipairs(OutR) do
+			local Ent = Entity(Output.Index)
 
 			if IsValid(Ent) then
 				local Pos = Vector()
@@ -87,7 +89,7 @@ do	-- NET SURFER 2.0
 					Pos = Ent:WorldToLocal(Ent:GetAttachment(Ent:LookupAttachment("input")).Pos)
 				end
 
-				OutREnts[#OutREnts + 1] = {Ent = Ent, Pos = Pos}
+				OutREnts[#OutREnts + 1] = {Ent = Ent, Pos = Pos, Bent = Output.Bent}
 			end
 		end
 
@@ -101,6 +103,7 @@ do	-- NET SURFER 2.0
 		Gearbox.Mid		= (OutLPos + OutRPos) / 2
 
 		Gearbox.IsStraight = (OutLPos == OutRPos)
+		Gearbox.Overloaded = Overloaded
 
 		Gearbox.HasData	= true
 		Gearbox.Age		= Clock.CurTime + 5
@@ -131,6 +134,8 @@ do	-- Overlay
 	local green = Color(0, 255, 0)
 	local innerConnection = Color(127, 127, 127)
 	local outerConnection = Color(255, 255, 255)
+	local bentConnection = Color(255, 200, 0) -- Shaft close to the driveshaft angle limit
+	local overloadedConnection = Color(255, 60, 60) -- Gearbox keeps hitting its torque rating
 
 	function ENT:DrawLinks(Rendered)
 		if Rendered[self] then return end
@@ -146,6 +151,7 @@ do	-- Overlay
 		end
 
 		local Perc = (Clock.CurTime / 2) % 1
+		local Inner = SelfTbl.Overloaded and overloadedConnection or innerConnection
 
 		local InPos		= self:LocalToWorld(SelfTbl.In)
 		local LeftPos	= self:LocalToWorld(SelfTbl.OutL)
@@ -163,9 +169,9 @@ do	-- Overlay
 
 		if not SelfTbl.IsStraight then
 			render.DrawBeam(LeftPos, RightPos, 2, 0, 0, color_black)
-			render.DrawBeam(LeftPos, RightPos, 1.5, 0, 0, innerConnection)
+			render.DrawBeam(LeftPos, RightPos, 1.5, 0, 0, Inner)
 			render.DrawBeam(InPos, MidPoint, 2, 0, 0, color_black)
-			render.DrawBeam(InPos, MidPoint, 1.5, 0, 0, innerConnection)
+			render.DrawBeam(InPos, MidPoint, 1.5, 0, 0, Inner)
 
 			local SpherePos1 = LerpVector(Perc, InPos, MidPoint)
 			render.DrawSphere(SpherePos1, 1.5, 4, 3, orange)
@@ -175,7 +181,7 @@ do	-- Overlay
 			render.DrawSphere(SpherePos3, 1.5, 4, 3, orange)
 		else
 			render.DrawBeam(InPos, LeftPos, 2, 0, 0, color_black)
-			render.DrawBeam(InPos, LeftPos, 1.5, 0, 0, innerConnection)
+			render.DrawBeam(InPos, LeftPos, 1.5, 0, 0, Inner)
 
 			local SpherePos1 = LerpVector(Perc, InPos, LeftPos)
 			render.DrawSphere(SpherePos1, 1.5, 4, 3, orange)
@@ -188,7 +194,7 @@ do	-- Overlay
 
 				local Pos = E:LocalToWorld(T.Pos)
 				render.DrawBeam(LeftPos, Pos, 2, 0, 0, color_black)
-				render.DrawBeam(LeftPos, Pos, 1.5, 0, 0, outerConnection)
+				render.DrawBeam(LeftPos, Pos, 1.5, 0, 0, T.Bent and bentConnection or outerConnection)
 				local SpherePos = LerpVector(Perc, LeftPos, Pos)
 				render.DrawSphere(SpherePos, 1.5, 4, 3, orange)
 
@@ -207,7 +213,7 @@ do	-- Overlay
 
 				local Pos = E:LocalToWorld(T.Pos)
 				render.DrawBeam(RightPos, Pos, 2, 0, 0, color_black)
-				render.DrawBeam(RightPos, Pos, 1.5, 0, 0, outerConnection)
+				render.DrawBeam(RightPos, Pos, 1.5, 0, 0, T.Bent and bentConnection or outerConnection)
 				local SpherePos = LerpVector(Perc, RightPos, Pos)
 				render.DrawSphere(SpherePos, 1.5, 4, 3, orange)
 

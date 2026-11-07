@@ -16,21 +16,6 @@ local ENTITY = FindMetaTable("Entity")
 local ANGLE  = FindMetaTable("Angle")
 local CachedTurretAngle  = Angle(0, 0, 0)
 
-local math_min = math.min
-local math_max = math.max
-
-local function ClampAngleInPlace(A, minp, miny, minr, maxp, maxy, maxr)
-	local p, y, r = ANGLE.Unpack(A)
-
-	p = math_min(math_max(p, minp), maxp)
-	y = math_min(math_max(y, miny), maxy)
-	r = math_min(math_max(r, minr), maxr)
-
-	ANGLE.SetUnpacked(A, p, y, r)
-
-	return A
-end
-
 local function WillUseSmallModel(Size) return Size <= 12.5 end
 
 Classes.DefineClass("ACF.Turrets.Component", function() end)
@@ -40,6 +25,24 @@ Classes.AddSboxLimit({
 	Amount = 24,
 	Text   = "Maximum amount of ACF turrets a player can create."
 })
+
+-- Slewing ring friction moments (Nm) for a load, per drive style. Servos blend the two.
+local function HorizontalMz(TurretData, Weight, Diameter, CoMDistance, OffBaseDistance)
+	local Mk = Weight * OffBaseDistance -- Sum of tilting moments (kNm) (off balance load)
+	local Fa = Weight * math.Clamp(1 - (CoMDistance * 2), 0, 1) * TurretData.Tilt -- Sum of axial dynamic forces (kN) (on balance load)
+	local Fr = Weight * math.Clamp(1 - (CoMDistance * 2), 0, 1) * (1 - TurretData.Tilt) * 1.73 -- Sum of radial dynamic forces (kN), 1.73 is the coefficient for prevailing load, which is already determined by CoMDistance and Tilt
+
+	return 0.004 * 4.4 * (((Mk * 1000) / Diameter) + (Fa / 4.4) + (Fr / 2)) * (Diameter / 2000)
+end
+
+local function VerticalMz(TurretData, Weight, Diameter, CoMDistance)
+	local ZDist           = TurretData.LocalCoM.z * (InchToMm / 1000)
+	local OffBaseDistance = math.max(ZDist - math.max(ZDist - ((TurretData.RingHeight * InchToMm) / 2), 0), 0)
+	local Mk              = Weight * OffBaseDistance
+	local Fr              = Weight * math.Clamp(1 - (CoMDistance * 2), 0, 1) -- Sum of radial dynamic forces (kN), included for vertical turret drives
+
+	return 0.004 * 4.4 * (((Mk * 1000) / Diameter) + (Fr / 2)) * (Diameter / 2000)
+end
 
 do	-- Turret drives
 	Classes.DefineClass("ACF.Turrets.Drive", "ACF.Turrets.Component", function(CLASS)
@@ -123,20 +126,12 @@ do	-- Turret drives
 			local Weight = (TurretData.TotalMass * 9.81) / 1000
 			local Mz     = 0 -- Nm resistance to torque
 
-			local Mk, Fa, Fr
-
 			if TurretData.TurretClass == "Turret-H" then
-				Mk = Weight * OffBaseDistance -- Sum of tilting moments (kNm) (off balance load)
-				Fa = Weight * math.Clamp(1 - (CoMDistance * 2), 0, 1) * TurretData.Tilt -- Sum of axial dynamic forces (kN) (on balance load)
-				Fr = Weight * math.Clamp(1 - (CoMDistance * 2), 0, 1) * (1 - TurretData.Tilt) * 1.73 -- Sum of radial dynamic forces (kN), 1.73 is the coefficient for prevailing load, which is already determined by CoMDistance and Tilt
-				Mz = 0.004 * 4.4 * (((Mk * 1000) / Diameter) +  (Fa / 4.4) + (Fr / 2)) * (Diameter / 2000)
+				Mz = HorizontalMz(TurretData, Weight, Diameter, CoMDistance, OffBaseDistance)
+			elseif TurretData.TurretClass == "Turret-S" then
+				Mz = (HorizontalMz(TurretData, Weight, Diameter, CoMDistance, OffBaseDistance) + VerticalMz(TurretData, Weight, Diameter, CoMDistance)) * 0.5
 			else
-				local ZDist = TurretData.LocalCoM.z * (InchToMm / 1000)
-
-				OffBaseDistance = math.max(ZDist - math.max(ZDist - ((TurretData.RingHeight * InchToMm) / 2), 0), 0)
-				Mk = Weight * OffBaseDistance -- Sum of tilting moments (kNm) (off balance load)
-				Fr = Weight * math.Clamp(1 - (CoMDistance * 2), 0, 1) -- Sum of radial dynamic forces (kN), included for vertical turret drives
-				Mz = 0.004 * 4.4 * (((Mk * 1000) / Diameter) + (Fr / 2)) * (Diameter / 2000)
+				Mz = VerticalMz(TurretData, Weight, Diameter, CoMDistance)
 			end
 
 			-- 9.55 is 1 rad/s to RPM
@@ -161,6 +156,10 @@ do	-- Turret drives
 			if (math.max(1, ReqAccelPower) / math.max(1, Accel)) > 5 then return {SlewAccel = 0, MaxSlewRate = 0} end -- Too heavy to accelerate, so we'll just stop here
 
 			local FinalAccel = Accel * math.Clamp(MaxPower / ReqAccelPower, 0, 1) * 6 -- converting back to deg/s^2
+
+			-- The power ratios above divide by zero while the turret still reports no mass, such as during a dupe paste
+			-- math.max(1, x) in the bail-outs above hides a NaN from them, so stop it here instead
+			if FinalTopSpeed ~= FinalTopSpeed or FinalAccel ~= FinalAccel then return {SlewAccel = 0, MaxSlewRate = 0} end
 
 			return {SlewAccel = FinalAccel, MaxSlewRate = FinalTopSpeed, MotorMaxSpeed = TopSpeed * 6, MotorGearRatio = GearRatio, EffortScale = math.min(1, 1 / (MaxPower / ReqConstantPower))}
 		end
@@ -204,16 +203,23 @@ do	-- Turret drives
 			end
 
 			CLASS.SlewFuncs = {
-				GetStab = function(Turret)
+				-- Yaw the mount rotated since last tick, in the Turret's current frame, scaled by
+				-- StabilizeAmount. RunTurretSlew adds this as an acceleration-free feedforward term
+				-- to cancel mount motion; GetTargetBearing solves the aim target fresh.
+				GetStab				= function(Turret)
 					local TurretTbl = ENTITY.GetTable(Turret)
 
 					if (not (TurretTbl.Stabilized and TurretTbl.Active)) or (TurretTbl.Manual == true) then return 0 end
-					local AngDiff = ENTITY.WorldToLocalAngles(TurretTbl.Rotator, TurretTbl.LastRotatorAngle)
-					local _, Yaw  = ANGLE.Unpack(AngDiff)
+
+					local _, Yaw = ANGLE.Unpack(ENTITY.WorldToLocalAngles(Turret, TurretTbl.LastTurretAngle))
+
 					return (Yaw * TurretTbl.StabilizeAmount) or 0
 				end,
 
-				GetTargetBearing = function(Turret, StabAmt)
+				-- Solves fresh each tick for the local yaw that points the Rotator at DesiredAngle,
+				-- given the Turret's current orientation, then expresses that as a gap relative to
+				-- the Rotator's actual transform. The fresh solve already accounts for mount drift.
+				GetTargetBearing	= function(Turret)
 					local TurretTbl = ENTITY.GetTable(Turret)
 					local Rotator = TurretTbl.Rotator
 
@@ -223,35 +229,32 @@ do	-- Turret drives
 							local _, Yaw = ANGLE.Unpack(ENTITY.WorldToLocalAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, CachedTurretAngle)))
 							return Yaw
 						else
-							local AngDiff = ENTITY.WorldToLocalAngles(Rotator, TurretTbl.LastRotatorAngle)
 							local LocalDesiredAngle = ENTITY.WorldToLocalAngles(Turret, TurretTbl.DesiredAngle)
-							local ADPitch, ADYaw, ADRoll = ANGLE.Unpack(AngDiff)
-							ANGLE.SetUnpacked(CachedTurretAngle, -ADPitch, StabAmt - ADYaw, -ADRoll)
-							ANGLE.Sub(LocalDesiredAngle, CachedTurretAngle)
-							LocalDesiredAngle = ClampAngleInPlace(LocalDesiredAngle, 0, -TurretTbl.MaxDeg, 0, 0, -TurretTbl.MinDeg, 0)
+							local _, DesiredYaw = ANGLE.Unpack(LocalDesiredAngle)
+							ANGLE.SetUnpacked(CachedTurretAngle, 0, math.Clamp(DesiredYaw, -TurretTbl.MaxDeg, -TurretTbl.MinDeg), 0)
 
-							local _, Yaw = ANGLE.Unpack(ENTITY.WorldToLocalAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, LocalDesiredAngle)))
+							local _, Yaw = ANGLE.Unpack(ENTITY.WorldToLocalAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, CachedTurretAngle)))
 							return Yaw
 						end
 					else
-						local AngDiff = ENTITY.WorldToLocalAngles(Rotator, TurretTbl.LastRotatorAngle)
-						local AngleRet
 						if TurretTbl.Manual then
-							AngleRet = ENTITY.WorldToLocalAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, Angle(0, -TurretTbl.DesiredDeg, 0)))
+							local AngleRet = ENTITY.WorldToLocalAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, Angle(0, -TurretTbl.DesiredDeg, 0)))
 							local _, Yaw = ANGLE.Unpack(AngleRet)
 							return Yaw
 						else
-							ANGLE.SetUnpacked(CachedTurretAngle, ANGLE.Unpack(TurretTbl.DesiredAngle))
-							ANGLE.Add(CachedTurretAngle, AngDiff)
-							AngleRet = ENTITY.WorldToLocalAngles(Rotator, CachedTurretAngle)
+							local LocalDesiredAngle = ENTITY.WorldToLocalAngles(Turret, TurretTbl.DesiredAngle)
+							local _, DesiredYaw = ANGLE.Unpack(LocalDesiredAngle)
+							ANGLE.SetUnpacked(CachedTurretAngle, 0, DesiredYaw, 0)
+
+							local AngleRet = ENTITY.WorldToLocalAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, CachedTurretAngle))
 							local _, Yaw = ANGLE.Unpack(AngleRet)
-							Yaw = Yaw - StabAmt
+
 							return Yaw
 						end
 					end
 				end,
 
-				GetWorldTarget = function(Turret)
+				GetWorldTarget		= function(Turret)
 					local SelfTbl = ENTITY.GetTable(Turret)
 					if SelfTbl.Manual then
 						ANGLE.SetUnpacked(CachedTurretAngle, 0, SelfTbl.DesiredDeg, 0)
@@ -261,7 +264,7 @@ do	-- Turret drives
 					end
 				end,
 
-				SetRotatorAngle = function(Turret, Rotator)
+				SetRotatorAngle		= function(Turret, Rotator)
 					ANGLE.SetUnpacked(CachedTurretAngle, 0, Turret.CurrentAngle, 0)
 					ENTITY.SetAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, CachedTurretAngle))
 				end
@@ -310,16 +313,22 @@ do	-- Turret drives
 			end
 
 			CLASS.SlewFuncs = {
-				GetStab = function(Turret)
+				-- Pitch the mount rotated since last tick, in the Turret's current frame, scaled by
+				-- StabilizeAmount. Fed to RunTurretSlew as an acceleration-free feedforward term;
+				-- GetTargetBearing solves the aim target fresh.
+				GetStab				= function(Turret)
 					local TurretTbl = ENTITY.GetTable(Turret)
 
 					if (not (TurretTbl.Stabilized and TurretTbl.Active)) or (TurretTbl.Manual == true) then return 0 end
-					local AngDiff = ENTITY.WorldToLocalAngles(TurretTbl.Rotator, TurretTbl.LastRotatorAngle)
-					local Pitch   = ANGLE.Unpack(AngDiff)
+
+					local Pitch = ANGLE.Unpack(ENTITY.WorldToLocalAngles(Turret, TurretTbl.LastTurretAngle))
+
 					return (Pitch * TurretTbl.StabilizeAmount) or 0
 				end,
 
-				GetTargetBearing = function(Turret, StabAmt)
+				-- Solves fresh each tick for the local pitch that points the Rotator at DesiredAngle,
+				-- given the Turret's current orientation. The fresh solve already accounts for mount drift.
+				GetTargetBearing	= function(Turret)
 					local TurretTbl = ENTITY.GetTable(Turret)
 					local Rotator = TurretTbl.Rotator
 
@@ -330,11 +339,10 @@ do	-- Turret drives
 							return Pitch
 						else
 							local LocalDesiredAngle = ENTITY.WorldToLocalAngles(Turret, TurretTbl.DesiredAngle)
-							ANGLE.SetUnpacked(CachedTurretAngle, StabAmt, 0, 0)
-							ANGLE.Sub(LocalDesiredAngle, CachedTurretAngle)
-							local LocalDesiredAngle = ClampAngleInPlace(LocalDesiredAngle, -TurretTbl.MaxDeg, 0, 0, -TurretTbl.MinDeg, 0, 0)
+							local DesiredPitch = ANGLE.Unpack(LocalDesiredAngle)
+							ANGLE.SetUnpacked(CachedTurretAngle, math.Clamp(DesiredPitch, -TurretTbl.MaxDeg, -TurretTbl.MinDeg), 0, 0)
 
-							local Pitch = ANGLE.Unpack(ENTITY.WorldToLocalAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, LocalDesiredAngle)))
+							local Pitch = ANGLE.Unpack(ENTITY.WorldToLocalAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, CachedTurretAngle)))
 							return Pitch
 						end
 					elseif TurretTbl.Manual then
@@ -342,12 +350,16 @@ do	-- Turret drives
 						local Pitch = ANGLE.Unpack(ENTITY.WorldToLocalAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, CachedTurretAngle)))
 						return Pitch
 					else
-						local Pitch = ANGLE.Unpack(ENTITY.WorldToLocalAngles(Rotator, TurretTbl.DesiredAngle))
-						return Pitch - StabAmt
+						local LocalDesiredAngle = ENTITY.WorldToLocalAngles(Turret, TurretTbl.DesiredAngle)
+						local DesiredPitch = ANGLE.Unpack(LocalDesiredAngle)
+						ANGLE.SetUnpacked(CachedTurretAngle, DesiredPitch, 0, 0)
+
+						local Pitch = ANGLE.Unpack(ENTITY.WorldToLocalAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, CachedTurretAngle)))
+						return Pitch
 					end
 				end,
 
-				GetWorldTarget = function(Turret)
+				GetWorldTarget		= function(Turret)
 					local SelfTbl = ENTITY.GetTable(Turret)
 					if SelfTbl.Manual then
 						ANGLE.SetUnpacked(CachedTurretAngle, SelfTbl.DesiredDeg, 0, 0)
@@ -357,13 +369,184 @@ do	-- Turret drives
 					end
 				end,
 
-				SetRotatorAngle = function(Turret, Rotator)
+				SetRotatorAngle		= function(Turret, Rotator)
 					ANGLE.SetUnpacked(CachedTurretAngle, Turret.CurrentAngle, 0, 0)
 					ENTITY.SetAngles(Rotator, ENTITY.LocalToWorldAngles(Turret, CachedTurretAngle))
 				end
 			}
 		end)
 	end
+end
+
+do	-- Turret servos
+	-- Inherits Drive so acf_turret's Turret field accepts it; the menu lists it as its own category
+	Classes.DefineClass("ACF.Turrets.Servo", "ACF.Turrets.Drive", function(CLASS)
+		CLASS.Name         = "Servos"
+		CLASS.ID           = "6-Servo"
+		CLASS.SpawnModel   = "models/holograms/cylinder.mdl"
+		CLASS.Description  = "#acf.descs.servos"
+		CLASS.CreateMenu   = ACF.CreateTurretServoMenu
+		CLASS.IsPassthroughGroup = true
+	end)
+
+	Classes.DefineClass("ACF.Turrets.Servo.Standard", "ACF.Turrets.Servo", function(CLASS)
+		CLASS.Name         = "Servo"
+		CLASS.ID           = "Turret-S"
+		CLASS.Description  = "#acf.descs.servos.standard"
+		CLASS.Model        = "models/holograms/cylinder.mdl"
+		CLASS.Mass         = 20 -- At default size, this is the mass of the servo. Will scale up/down with diameter difference
+
+		CLASS.Preview = {
+			FOV = 105,
+		}
+
+		CLASS.Size = {
+			Base  = 8,
+			Min   = 4,
+			Max   = 10,
+			Ratio = 0.5
+		}
+
+		CLASS.Teeth = {
+			Min = 8,
+			Max = 96
+		}
+
+		CLASS.Armor = {
+			Min = 5,
+			Max = 30
+		}
+
+		CLASS.MassLimit = { -- Squared for the final capacity: 256kg at the smallest size, 4000kg at the largest
+			Min = 16,
+			Max = math.sqrt(4000)
+		}
+
+		-- Built-in power, fed to CalcSpeed in place of a motor or the handcrank
+		CLASS.Power = {
+			Teeth      = 12,
+			Speed      = 300,
+			Torque     = 300,
+			Efficiency = 0.9,
+			Accel      = 1,
+			Sound      = "acf_base/fx/turret_electric.wav",
+		}
+
+		CLASS.SetupInputs = function(_, List)
+			local Count = #List
+
+			List[Count + 1] = "State (Moves to the ON angle when non-zero, the OFF angle when zero)"
+		end
+
+		CLASS.SlewFuncs = Classes.GetTypeByName("ACF.Turrets.Drive.Horizontal").SlewFuncs -- Yaws about Up like a horizontal drive
+	end)
+end
+
+do	-- Linear actuators
+	-- Hydraulic: force scales with piston area, speed with pump flow over it, and long thin rods buckle
+	local ForceCoef    = 31.25 -- kg per in^2 of bore
+	local BucklingCoef = 4000
+	local SpeedCoef    = 72 -- in/s at 1" bore
+	local CachedPos    = Vector()
+
+	-- Inherits Drive so acf_turret's Turret field accepts it; the menu lists it as its own category.
+	-- Reuses the turret slew loop with CurrentAngle as inches of extension, and RingSize as the bore
+	Classes.DefineClass("ACF.Turrets.Actuator", "ACF.Turrets.Drive", function(CLASS)
+		CLASS.Name         = "Actuators"
+		CLASS.ID           = "7-Actuator"
+		CLASS.SpawnModel   = "models/holograms/cylinder.mdl"
+		CLASS.Description  = "#acf.descs.actuators"
+		CLASS.CreateMenu   = ACF.CreateTurretActuatorMenu
+		CLASS.IsPassthroughGroup = true
+
+		CLASS.GetMaxLoad = function(Bore, Stroke)
+			return math.Round(math.min(ForceCoef * Bore ^ 2, BucklingCoef * Bore ^ 4 / Stroke ^ 2), 1)
+		end
+
+		CLASS.GetActuatorMass = function(Bore, Stroke)
+			return math.Round(math.max(0.04 * Bore ^ 2 * (2 * Stroke + Bore), 2), 1) -- Steel in the barrel and rod
+		end
+
+		CLASS.GetActuatorCost = function(Bore, Stroke)
+			return 0.15 * Bore * (1 + Stroke / 72)
+		end
+
+		CLASS.CalcSpeed = function(TurretData)
+			local TopSpeed = SpeedCoef / TurretData.RingSize
+			local LoadPerc = TurretData.TotalMass / math.max(TurretData.MaxMass, 1)
+			local Speed    = TopSpeed * (1 - 0.5 * math.min(LoadPerc, 1))
+
+			return {MaxSlewRate = Speed, SlewAccel = Speed * 4, MotorMaxSpeed = TopSpeed, EffortScale = math.min(LoadPerc, 1), Overloaded = LoadPerc > 1}
+		end
+	end)
+
+	Classes.DefineClass("ACF.Turrets.Actuator.Hydraulic", "ACF.Turrets.Actuator", function(CLASS)
+		CLASS.Name        = "Hydraulic Actuator"
+		CLASS.ID          = "Turret-L"
+		CLASS.Description = "#acf.descs.actuators.hydraulic"
+		CLASS.Model       = "models/holograms/cylinder.mdl"
+
+		CLASS.Preview = {
+			FOV = 105,
+		}
+
+		CLASS.Size = { -- Bore
+			Base  = 4,
+			Min   = 2,
+			Max   = 10,
+			Ratio = 1
+		}
+
+		CLASS.Stroke = {
+			Base = 24,
+			Min  = 4,
+			Max  = 72
+		}
+
+		CLASS.Power = {
+			Sound = "acf_base/fx/turret_hydraulic.wav",
+		}
+
+		CLASS.SetupInputs = function(_, List)
+			List[#List + 1] = "Extend (Fraction of the stroke to extend to, from 0 to 1)"
+		end
+
+		CLASS.SetupOutputs = function(_, List)
+			for I = #List, 1, -1 do
+				if string.StartsWith(List[I], "Degrees") then table.remove(List, I) end
+			end
+
+			List[#List + 1] = "Extension (Current fraction of the stroke extended, from 0 to 1.)"
+			List[#List + 1] = "Length (Current extension in inches.)"
+		end
+
+		CLASS.SlewFuncs = {
+			GetStab = function() return 0 end,
+
+			GetTargetBearing = function(Turret)
+				local TurretTbl = ENTITY.GetTable(Turret)
+				local Gap       = TurretTbl.DesiredExtension - TurretTbl.CurrentAngle
+
+				-- Overloaded actuators can still retract. A zero gap alone leaves SlewRate coasting, so stall it
+				if TurretTbl.Overloaded and Gap > 0 then
+					TurretTbl.SlewRate = math.min(TurretTbl.SlewRate, 0)
+
+					return 0
+				end
+
+				return Gap
+			end,
+
+			GetWorldTarget = function(Turret)
+				return ENTITY.GetAngles(Turret)
+			end,
+
+			SetRotatorAngle = function(Turret, Rotator)
+				CachedPos:SetUnpacked(0, 0, Turret.CurrentAngle)
+				ENTITY.SetLocalPos(Rotator, CachedPos)
+			end
+		}
+	end)
 end
 
 do	-- Turret motors
@@ -591,4 +774,54 @@ do	-- Turret computers
 			}
 		end)
 	end
+end
+
+
+do	-- Turret Controllers
+	Classes.DefineClass("ACF.Turrets.Controller", "ACF.Turrets.Component", function(CLASS)
+		CLASS.Name        = "Turret Controllers"
+		CLASS.ID          = "5-Controller"
+		CLASS.Description = "#acf.descs.controllers"
+		CLASS.Entity      = "acf_turret_controller"
+		CLASS.SpawnModel  = "models/props_c17/tv_monitor01.mdl"
+		CLASS.CreateMenu  = ACF.CreateTurretControllerMenu
+
+		-- Both controllers share one entity, so each type carries its own spawn limit.
+		-- acf_turret_controller enforces these through ACF_CheckSpawnLimit.
+		function CLASS.__inherited(NewClass)
+			if NewClass.LimitConVar then Classes.AddSboxLimit(NewClass.LimitConVar) end
+		end
+	end)
+
+	Classes.DefineClass("ACF.Turrets.Controller.Remote", "ACF.Turrets.Controller", function(CLASS)
+		CLASS.Name        = "Remote Turret Controller"
+		CLASS.ID          = "Remote"
+		CLASS.LimitConVar = {
+			Name   = "_acf_turret_controller_remote",
+			Amount = 2,
+			Text   = "Maximum number of ACF Remote Turret Controllers a player can create."
+		}
+		CLASS.Description = "#acf.descs.controllers.remote"
+		CLASS.Model       = "models/props_c17/tv_monitor01.mdl"
+		CLASS.IsRemote    = true
+		CLASS.Preview     = { FOV = 90 }
+		CLASS.Mass        = 15
+		CLASS.Cost        = 10
+	end)
+
+	Classes.DefineClass("ACF.Turrets.Controller.Lightweight", "ACF.Turrets.Controller", function(CLASS)
+		CLASS.Name        = "Lightweight Turret Controller"
+		CLASS.ID          = "Lightweight"
+		CLASS.LimitConVar = {
+			Name   = "_acf_turret_controller_lightweight",
+			Amount = 2,
+			Text   = "Maximum number of ACF Lightweight Turret Controllers a player can create."
+		}
+		CLASS.Description = "#acf.descs.controllers.lightweight"
+		CLASS.Model       = "models/props_lab/powerbox02c.mdl"
+		CLASS.IsRemote    = false
+		CLASS.Preview     = { FOV = 90 }
+		CLASS.Mass        = 10
+		CLASS.Cost        = 5
+	end)
 end

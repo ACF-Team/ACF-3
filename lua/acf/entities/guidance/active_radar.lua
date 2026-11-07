@@ -2,12 +2,14 @@ local ACF       = ACF
 local Classes 	= ACF.Classes
 Classes.DefineClass("ACF.Missiles.Guidance.ActiveRadar", "ACF.Missiles.Guidance.SemiActiveRadar", function(CLASS)
 	CLASS.Name = "Active Radar"
+	-- Shared so the ammo menu can price missile rounds clientside.
+	function CLASS:GetCost()
+		return 5
+	end
+
 	if CLIENT then
 		CLASS.Description = "This guidance package uses a radar to detect contraptions and guides the munition towards the most centered one it can find."
 	else
-		function CLASS:GetCost()
-			return 3
-		end
 
 		function CLASS:SeekTarget(Missile)
 			local Position   = Missile.ACF_Position

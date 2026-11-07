@@ -36,6 +36,16 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 		return true
 	end
 
+	--- Called when an entity's health reaches zero. Unrelated to legality restrictions.
+	--- @param Entity entity The entity that was destroyed.
+	function Gamemode:ACF_OnEntityDestroyed()
+	end
+
+	--- Called when a destroyed entity is repaired above zero health.
+	--- @param Entity entity The entity that was restored.
+	function Gamemode:ACF_OnEntityRestored()
+	end
+
 	--- Called when an ACF entity creates or updates its Wire inputs.  
 	--- It's recommended to just push entries into the List parameter.
 	--- @param Entity entity The entity to create or update Wire inputs on.
@@ -144,8 +154,6 @@ Hooks.Add("ACF_Base_Server", function(Gamemode)
 	--- Called when an entity is set to store or use ammo type information.
 	--- @param AmmoType table The ammo type class that's about to be used.
 	--- @param Entity entity The entity that will be using the ammo type.
-	--- @param Data table The table of entity information that was used on the entity.
-	--- @param ... any One or many tables or objects that are related to the entity, these will vary on every class.
 	function Gamemode:ACF_OnAmmoFirst()
 	end
 

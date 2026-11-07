@@ -48,6 +48,7 @@ do -- Receiving new notifications
         local Duration = net.ReadFloat()
         local Icon = net.ReadString()
         local Sound = net.ReadString()
+        local HelpId = net.ReadString()
         local TargetEntityIdx = net.ReadUInt(MAX_EDICT_BITS)
         local TargetPhysObjIdx = net.ReadInt(10)
         local ButtonCount = net.ReadUInt(MAX_BUTTON_BITS)
@@ -74,6 +75,7 @@ do -- Receiving new notifications
             Icon = Icon,
             Sound = Sound,
             Buttons = Buttons,
+            HelpId = HelpId,
             TargetEntity = TargetEntityIdx,
             TargetPhysObj = TargetPhysObjIdx,
         }
@@ -176,6 +178,63 @@ do
         end)
     end
     hook.Remove("Think", "ACF_NotifyInterpViewAngleTo")
+end
+
+-- Window with the help of a hint or restriction, toggled by the Read more button
+do
+    local HELP_W = 320
+    local Window
+
+    function Notify.ToggleHelpWindow(Context, Id)
+        local Panel = Context:GetNotifyPanel()
+        local Def   = ACF.Diagnostics.GetHelp(Id)
+        local Same  = IsValid(Window) and Window.HelpId == Id
+
+        if IsValid(Window) then Window:Remove() end
+        if Same or not Def then return end
+
+        Window = vgui.Create("DFrame")
+        Window.HelpId = Id
+        Window:SetTitle(Def.Title)
+        Window:SetSizable(false)
+        Window:SetKeyboardInputEnabled(false)
+
+        -- Wrap by hand so the window can be sized to the text
+        surface.SetFont("ACF_GModNotify_Description")
+
+        local Lines, Current, Widest = {}, "", 0
+
+        for Word in Def.Help:gmatch("%S+") do
+            local Test = Current == "" and Word or Current .. " " .. Word
+
+            if Current ~= "" and surface.GetTextSize(Test) > HELP_W - 20 then
+                Lines[#Lines + 1] = Current
+                Current = Word
+            else
+                Current = Test
+            end
+        end
+
+        Lines[#Lines + 1] = Current
+
+        for _, Line in ipairs(Lines) do Widest = math.max(Widest, surface.GetTextSize(Line)) end
+
+        local Text = vgui.Create("DLabel", Window)
+        Text:SetFont("ACF_GModNotify_Description")
+        Text:SetDark(true)
+        Text:SetText(table.concat(Lines, "\n"))
+        Text:SetPos(10, 34)
+        Text:SizeToContents()
+
+        Window:SetSize(math.max(Widest, 120) + 20, 34 + Text:GetTall() + 10)
+
+        local X, Y = Panel:LocalToScreen(0, 0)
+
+        Window:SetPos(math.max(X - Window:GetWide() - 8, 0), math.Clamp(Y, 0, ScrH() - Window:GetTall()))
+        Window:MakePopup()
+
+        Panel.HelpWindow = Window
+    end
 end
 
 -- Toast notifications (mostly for notification errors)
@@ -424,7 +483,14 @@ do
             end
         end
 
-        for _, ButtonData in ipairs(Data.Buttons) do
+        local Buttons = Data.Buttons
+
+        if Data.HelpId and Data.HelpId ~= "" and ACF.Diagnostics.GetHelp(Data.HelpId) then
+            Buttons = table.Copy(Buttons)
+            Buttons[#Buttons + 1] = {Text = {"Read more"}, Action = "ReadMore", Params = {Data.HelpId}}
+        end
+
+        for _, ButtonData in ipairs(Buttons) do
             local RealButton = vgui.Create("DButton", self)
             self.Buttons[#self.Buttons + 1] = RealButton
 
@@ -502,6 +568,10 @@ do
         end
         surface.SetDrawColor(232, 243, 255)
         surface.DrawRect(BoxX + 1 + x, BoxY + 1, w, BoxH - 2)
+    end
+
+    function PANEL:OnRemove()
+        if IsValid(self.HelpWindow) then self.HelpWindow:Remove() end
     end
 
     function PANEL:KillSelf()

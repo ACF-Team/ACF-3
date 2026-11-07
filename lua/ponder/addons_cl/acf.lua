@@ -7,27 +7,6 @@ Ponder.API.RegisterAddon("acf", {
 -- NOTE TO CRAFT/anyone wondering why we define these here:
 --     Ponder can load categories at this point; the categories_cl folder is meant to just make it more extendable (say, ACF missiles adds its own things)
 
-Ponder.API.RegisterAddonCategory("acf", "weapons", {
-    Name = "acf.storyboards.weapons",
-    Order = 0,
-    ModelIcon = "models/munitions/round_100mm_shot.mdl",
-    Description = "acf.storyboards.weapons.desc"
-})
-
-Ponder.API.RegisterAddonCategory("acf", "turrets", {
-    Name = "acf.storyboards.turrets",
-    Order = 0,
-    ModelIcon = "models/acf/core/t_ring.mdl",
-    Description = "acf.storyboards.turrets.desc"
-})
-
-Ponder.API.RegisterAddonCategory("acf", "mobility", {
-    Name = "acf.storyboards.mobility",
-    Order = 0,
-    ModelIcon = "models/props_phx/wheels/trucktire.mdl",
-    Description = "acf.storyboards.mobility.desc"
-})
-
 Ponder.API.RegisterAddonCategory("acf", "tankbasics", {
     Name = "Tank Basics",
     Order = 100,
@@ -42,12 +21,12 @@ Ponder.API.RegisterAddonCategory("acf", "tankextras", {
     Description = "Learn more advanced features for your tank."
 })
 
--- Ponder.API.RegisterAddonCategory("acf", "carbasics", {
---     Name = "Car Basics",
---     Order = 98,
---     ModelIcon = "models/sprops/trans/stwheels/stwheel_2.mdl",
---     Description = "Learn how to setup a basic car."
--- })
+Ponder.API.RegisterAddonCategory("acf", "carbasics", {
+    Name = "Car Basics",
+    Order = 98,
+    ModelIcon = "models/xeon133/offroad/off-road-40.mdl",
+    Description = "Learn how to setup a basic car."
+})
 
 -- Ponder.API.RegisterAddonCategory("acf", "missilesbasics", {
 --     Name = "Missiles Basics",

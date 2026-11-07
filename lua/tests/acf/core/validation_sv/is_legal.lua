@@ -1,5 +1,5 @@
 return {
-    groupName = "ACF.IsLegal",
+    groupName = "ACF.Legality.Evaluate",
 
     beforeEach = function( State )
         local Volume = 1
@@ -48,7 +48,7 @@ return {
                 State.OriginalLegalChecks = ACF.LegalChecks
                 ACF.LegalChecks = false
 
-                expect( ACF.IsLegal() ).to.beTrue()
+                expect( ACF.Legality.Evaluate( State.Ent )[1] ).to.beNil()
             end,
 
             cleanup = function( State )
@@ -65,10 +65,9 @@ return {
                     return { GetVolume = function() return nil end }
                 end
 
-                local IsLegal, Err = ACF.IsLegal( Ent )
+                local Failure = ACF.Legality.Evaluate( Ent )[1]
 
-                expect( IsLegal ).to.beFalse()
-                expect( Err ).to.equal( "Invalid Physics" )
+                expect( Failure.Id ).to.equal( "invalid_physics" )
             end
         },
 
@@ -78,10 +77,9 @@ return {
                 local Ent = State.Ent
                 Ent.IsSolid = function() return false end
 
-                local IsLegal, Err = ACF.IsLegal( Ent )
+                local Failure = ACF.Legality.Evaluate( Ent )[1]
 
-                expect( IsLegal ).to.beFalse()
-                expect( Err ).to.equal( "Not Solid" )
+                expect( Failure.Id ).to.equal( "not_solid" )
             end
         },
         --[[
@@ -135,9 +133,9 @@ return {
                 local Ent = State.Ent
                 Ent.ClipData = { "clip" }
 
-                local IsLegal, Err = ACF.IsLegal( Ent )
-                expect( IsLegal ).to.beFalse()
-                expect( Err ).to.equal( "Visual Clip" )
+                local Failure = ACF.Legality.Evaluate( Ent )[1]
+
+                expect( Failure.Id ).to.equal( "visual_clip" )
             end
         },
 
@@ -149,9 +147,9 @@ return {
                 local Ent = State.Ent
                 Ent.IsACFGun = true
 
-                local IsLegal, Err = ACF.IsLegal( Ent )
-                expect( IsLegal ).to.beFalse()
-                expect( Err ).to.equal( "Cannot fire" )
+                local Failure = ACF.Legality.Evaluate( Ent )[1]
+
+                expect( Failure.Id ).to.equal( "cannot_fire" )
             end,
 
             cleanup = function() ACF.GunsCanFire = true end
@@ -165,9 +163,9 @@ return {
                 local Ent = State.Ent
                 Ent.IsRack = true
 
-                local IsLegal, Err = ACF.IsLegal( Ent )
-                expect( IsLegal ).to.beFalse()
-                expect( Err ).to.equal( "Cannot fire" )
+                local Failure = ACF.Legality.Evaluate( Ent )[1]
+
+                expect( Failure.Id ).to.equal( "cannot_fire" )
             end,
 
             cleanup = function() ACF.RacksCanFire = true end
@@ -181,12 +179,12 @@ return {
                 end )
 
                 local Ent = State.Ent
-                local IsLegal, Reason, Message, Timeout = ACF.IsLegal( Ent )
+                local Failure = ACF.Legality.Evaluate( Ent )[1]
 
-                expect( IsLegal ).to.beFalse()
-                expect( Reason ).to.equal( "Test reason" )
-                expect( Message ).to.equal( "Test message" )
-                expect( Timeout ).to.equal( "Test timeout" )
+                expect( Failure.Id ).to.equal( "external" )
+                expect( Failure.Data.Title ).to.equal( "Test reason" )
+                expect( Failure.Data.Detail ).to.equal( "Test message" )
+                expect( Failure.Timeout ).to.equal( "Test timeout" )
             end,
 
             cleanup = function() hook.Remove( "ACF_OnCheckLegal", "TestFailure" ) end
@@ -197,9 +195,7 @@ return {
             func = function( State )
                 local Ent = State.Ent
 
-                local IsLegal, Err = ACF.IsLegal( Ent )
-                expect( IsLegal ).to.beTrue()
-                expect( Err ).to.beNil()
+                expect( ACF.Legality.Evaluate( Ent )[1] ).to.beNil()
             end
         }
     }

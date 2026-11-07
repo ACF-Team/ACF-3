@@ -2,41 +2,64 @@
 -- ACF entities and contraptions. Still a lot of work to do here...
 
 local ACF = ACF
-local Detours = ACF.Detours
 local Notify  = ACF.Utilities.Notify
 local ENTITY = FindMetaTable("Entity")
 
-local function DisableEntity(Entity, Reason, Message)
-    local Disabled = Entity.Disabled
-    if not Disabled then -- Only complain if the reason has changed
-        ACF.DisableEntity(Entity, Reason, Message, Timeout)
+-- The chip, gate or entity running the current detour, so a blocked call can point the owner at it
+-- Chip is "E2" or "SF" for chips, since both report the same call names
+local Source, Chip
+
+local function WithSource(GetSource, Hook, Kind)
+    local function Finish(PreviousSource, PreviousChip, Ok, ...)
+        Source, Chip = PreviousSource, PreviousChip
+
+        if not Ok then error(..., 0) end -- Rethrown unchanged, chips throw their runtime errors as tables
+
+        return ...
+    end
+
+    return function(First, ...)
+        local PreviousSource, PreviousChip = Source, Chip
+
+        Source, Chip = GetSource(First), Kind
+
+        return Finish(PreviousSource, PreviousChip, pcall(Hook, First, ...))
     end
 end
 
--- Crew are explicitly blocked from being disabled, since that will instantly kill all crew members
--- Other entities are fair game though
+-- Used like ACF.Detours, but records the caller around each chip, gate and entity detour
+local Detours = setmetatable({
+    Expression2 = function(Sig, Hook) return ACF.Detours.Expression2(Sig, WithSource(function(Scope) return Scope.entity end, Hook, "E2")) end,
+    Starfall    = function(Expr, Hook) return ACF.Detours.Starfall(Expr, WithSource(function(Instance) return Instance.entity end, Hook, "SF")) end,
+    WireGate    = function(Name, Hook) return ACF.Detours.WireGate(Name, WithSource(function(Gate) return Gate end, Hook)) end,
+    SENT        = function(Class, Method, Hook) return ACF.Detours.SENT(Class, Method, WithSource(function(Ent) return Ent end, Hook)) end,
+}, { __index = ACF.Detours, __newindex = ACF.Detours })
+
+-- Repeated calls keep the violation alive, it clears once the chip stops calling
+local function DisableEntity(Entity, Call)
+    ACF.Legality.Report(Entity, "blocked_call", { Call = Call or "UNKNOWN", Chip = Chip, Source = IsValid(Source) and Source or nil })
+end
+
 -- The Player argument is to prevent a case where you could grief other peoples contraptions
-
-local function DisableEntityCheckable(Player, Entity, Reason)
-    if IsValid(Entity) and ENTITY.CPPICanTool(Entity, Player, "") and Entity.IsACFEntity and not Entity.IsACFCrew then
-        DisableEntity(Entity, "Invalid usercall on " .. tostring(Entity) .. "", Reason, 10)
+local function DisableEntityCheckable(Player, Entity, Call)
+    if IsValid(Entity) and ENTITY.CPPICanTool(Entity, Player, "") and Entity.IsACFEntity then
+        DisableEntity(Entity, Call)
     end
 end
 
-
-local function DisableFamily(Player, Ent, Reason)
-    DisableEntityCheckable(Player, Ent, Reason)
+local function DisableFamily(Player, Ent, Call)
+    DisableEntityCheckable(Player, Ent, Call)
     for Entity in pairs(ENTITY.GetFamilyChildren(Ent)) do
-        DisableEntityCheckable(Player, Entity, Reason)
+        DisableEntityCheckable(Player, Entity, Call)
     end
 
     return false
 end
 
-local function DisableContraption(Player, Ent, Reason)
-    DisableEntityCheckable(Player, Ent, Reason)
+local function DisableContraption(Player, Ent, Call)
+    DisableEntityCheckable(Player, Ent, Call)
     for Entity in pairs(ENTITY.CFW_GetContraption(Ent).ents) do
-        DisableEntityCheckable(Player, Entity, Reason)
+        DisableEntityCheckable(Player, Entity, Call)
     end
 
     return false
@@ -46,7 +69,29 @@ local function PreCheck()
     if not ACF.LegalityDetours then return true end
 end
 
-local ATTEMPT_MESSAGE = "Attempted to use %s (a blocked usercall)."
+-- Stamps the entity and its contraption so ballistics and damage ignore them for ACF.MutationGhostTime
+-- If a Player is given, they must be able to tool the entity, so nobody can ghost props they cannot touch
+local function MarkMutated(Ent, Player)
+    if PreCheck() then return end
+    if not IsValid(Ent) then return end
+    if Player and not ENTITY.CPPICanTool(Ent, Player, "") then return end
+
+    local Now = CurTime()
+    Ent.ACF_LastMutated = Now
+
+    local Contraption = Ent:CFW_GetContraption()
+    if not Contraption then return end
+
+    -- Stamp every member too, since CFW splits and merges drop the contraption stamp
+    Contraption.ACF_LastMutated = Now
+
+    if Contraption:ACF_IsACFContraption() then return end
+
+    for Member in pairs(Contraption.ents) do
+        Member.ACF_LastMutated = Now
+    end
+end
+
 -- These names are... something... but I figure it's better we're explicit about functionality
 -- to make the detours easier to read. These are the methods to disable contraptions/families,
 -- based on a single entity or physics object.
@@ -60,14 +105,14 @@ local function IfEntManipulationOnACFEntity_ThenDisableFamily(Player, Ent, Type)
 
     if not Family then
         if Ent.IsACFEntity == true then
-            DisableEntity(Ent, "Invalid usercall on " .. tostring(Ent) .. "", ATTEMPT_MESSAGE:format(Type or "UNKNOWN"), 10)
+            DisableEntity(Ent, Type)
             return CalledOnCalleeOwned
         end
         return true
     end
 
     if Ent.IsACFEntity then
-       DisableFamily(Player, Ent, ATTEMPT_MESSAGE:format(Type or "UNKNOWN"))
+       DisableFamily(Player, Ent, Type)
        return CalledOnCalleeOwned
     end
 
@@ -90,7 +135,7 @@ local function IfEntManipulationOnACFContraption_ThenDisableContraption(Player, 
     -- So ACF entities/contraptions with ACF entities get blocked.
     if not Contraption then
         if Ent.IsACFEntity == true then
-            DisableEntity(Ent, "Invalid usercall on " .. tostring(Ent) .. "", ATTEMPT_MESSAGE:format(Type or "UNKNOWN"), 10)
+            DisableEntity(Ent, Type)
             return false
         end
         return true
@@ -101,7 +146,7 @@ local function IfEntManipulationOnACFContraption_ThenDisableContraption(Player, 
             local Override = PostContraptionCheck(Contraption)
             if Override == true then return true end
         end
-        return DisableContraption(Player, Ent, ATTEMPT_MESSAGE:format(Type or "UNKNOWN"))
+        return DisableContraption(Player, Ent, Type)
     end
 
     return true
@@ -115,8 +160,12 @@ local function IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Play
     return IfEntManipulationOnACFContraption_ThenDisableContraption(Player, Ent, Type, PostContraptionCheck)
 end
 
+-- Marks the contraption as having used applyforce-family methods, so the aircraft armor volume
+-- limit only enforces against aircraft that actually rely on them for thrust/lift, not fin aircraft
 local function PostContraptionCheck_IsNotGroundVehicle(Contraption)
-    if Contraption:ACF_IsAircraft() or Contraption:ACF_IsRecreational() then
+    if Contraption:ACF_IsRecreational() then return true end
+    if Contraption:ACF_IsAircraft() then
+        Contraption.ACF_UsedApplyForce = true
         return true
     end
 end
@@ -135,6 +184,7 @@ local function SetPosDetours()
     do
         local Func Func = Detours.Expression2("e:setPos(v)", function(Scope, Args, ...)
             if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Args[1], "e:setPos(v)") then return end
+            MarkMutated(Args[1], Scope.player)
             return Func(Scope, Args, ...)
         end)
     end
@@ -142,6 +192,7 @@ local function SetPosDetours()
         local Func Func = Detours.Expression2("b:setPos(v)", function(Scope, Args, ...)
             local Ent = E2Lib.isValidBone(Args[1])
             if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Ent, "b:setPos(v)") then return end
+            MarkMutated(Ent, Scope.player)
             return Func(Scope, Args, ...)
         end)
     end
@@ -149,6 +200,7 @@ local function SetPosDetours()
     do
         local Func Func = Detours.Starfall("instance.Types.Entity.Methods.setPos", function(Instance, Ent, ...)
             if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:setPos(v)") then return end
+            MarkMutated(Instance.Types.Entity.Unwrap(Ent), Instance.player)
             return Func(Instance, Ent, ...)
         end)
     end
@@ -156,6 +208,7 @@ local function SetPosDetours()
     do
         local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.setPos", function(Instance, PhysObj, ...)
             if not IfPhysObjManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setPos(v)") then return end
+            MarkMutated(Instance.Types.PhysObj.Unwrap(PhysObj):GetEntity(), Instance.player)
             return Func(Instance, PhysObj, ...)
         end)
     end
@@ -170,6 +223,7 @@ local function SetAngDetours()
     do
         local Func Func = Detours.Expression2("e:setAng(a)", function(Scope, Args, ...)
             local CalledOnCalleeOwned = IfEntManipulationOnACFEntity_ThenDisableFamily(Scope.player, Args[1], "e:setAng(a)")
+            MarkMutated(Args[1], Scope.player)
             if CalledOnCalleeOwned then return Func(Scope, Args, ...) end
         end)
     end
@@ -177,6 +231,7 @@ local function SetAngDetours()
         local Func Func = Detours.Expression2("b:setAng(a)", function(Scope, Args, ...)
             local Ent = E2Lib.isValidBone(Args[1])
             local CalledOnCalleeOwned = IfEntManipulationOnACFEntity_ThenDisableFamily(Scope.player, Ent, "b:setAng(a)")
+            MarkMutated(Ent, Scope.player)
             if CalledOnCalleeOwned then return Func(Scope, Args, ...) end
         end)
     end
@@ -184,6 +239,7 @@ local function SetAngDetours()
     do
         local Func Func = Detours.Starfall("instance.Types.Entity.Methods.setAngles", function(Instance, Ent, ...)
             local CalledOnCalleeOwned = IfEntManipulationOnACFEntity_ThenDisableFamily(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:setAngles(a)")
+            MarkMutated(Instance.Types.Entity.Unwrap(Ent), Instance.player)
             if CalledOnCalleeOwned then return Func(Instance, Ent, ...) end
         end)
     end
@@ -191,7 +247,37 @@ local function SetAngDetours()
     do
         local Func Func = Detours.Starfall("instance.Types.PhysObj.Methods.setAngles", function(Instance, PhysObj, ...)
             local CalledOnCalleeOwned = IfPhysObjManipulationOnACFEntity_ThenDisableFamily(Instance.player, Instance.Types.PhysObj.Unwrap(PhysObj), "physobj:setAngles(a)")
+            MarkMutated(Instance.Types.PhysObj.Unwrap(PhysObj):GetEntity(), Instance.player)
             if CalledOnCalleeOwned then return Func(Instance, PhysObj, ...) end
+        end)
+    end
+end
+
+-- TARGET  : Prop spawning
+-- METHODS : Expression 2 (propSpawn, seatSpawn, sentSpawn, customPropSpawn), Starfall (prop library)
+-- ON CALL : Allow the call, but stamp the new entity so ballistics and damage ignore it for a while.
+-- This stops chips from spawning free props into the path of projectiles.
+local function SpawnDetours()
+    local E2Spawners = {
+        "propSpawn(sn)", "propSpawn(en)", "propSpawn(svn)", "propSpawn(evn)", "propSpawn(san)", "propSpawn(ean)", "propSpawn(svan)", "propSpawn(evan)",
+        "seatSpawn(sn)", "seatSpawn(svan)", "seatSpawn(svans)",
+        "sentSpawn(s)", "sentSpawn(sv)", "sentSpawn(st)", "sentSpawn(svt)", "sentSpawn(sva)", "sentSpawn(svat)", "sentSpawn(svan)", "sentSpawn(svant)",
+        "customPropSpawn(t)", "customPropSpawn(tv)", "customPropSpawn(ta)", "customPropSpawn(tva)", "customPropSpawn(tvan)",
+    }
+
+    for _, Signature in ipairs(E2Spawners) do
+        local Func Func = Detours.Expression2(Signature, function(Scope, Args, ...)
+            local Ent = Func(Scope, Args, ...)
+            MarkMutated(Ent)
+            return Ent
+        end)
+    end
+
+    for _, Name in ipairs({"create", "createCustom", "createRagdoll", "createComponent", "createSeat", "createSent"}) do
+        local Func Func = Detours.Starfall("instance.Libraries.prop." .. Name, function(Instance, ...)
+            local Wrapped = Func(Instance, ...)
+            MarkMutated(Instance.Types.Entity.Unwrap(Wrapped))
+            return Wrapped
         end)
     end
 end
@@ -247,6 +333,48 @@ local function FreezeDetours()
             then
                 return false
             end
+        end)
+    end
+end
+
+-- TARGET  : propDraw and equiv. NoDraw setters
+-- METHODS : Expression 2, Starfall (Entity binding)
+-- ON CALL : If target's contraption is an ACF contraption, disable the contraption and block the call.
+-- Hiding a contraption's props mid-combat has no legitimate building use.
+local function PropDrawDetours()
+    do
+        local Func Func = Detours.Expression2("e:propDraw(n)", function(Scope, Args, ...)
+            if Args[2] == 0 and not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Args[1], "e:propDraw(n)") then return end
+            return Func(Scope, Args, ...)
+        end)
+    end
+    do
+        local Func Func = Detours.Starfall("instance.Types.Entity.Methods.setNoDraw", function(Instance, Ent, Draw, ...)
+            if Draw and not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:setNoDraw(b)") then return end
+            return Func(Instance, Ent, Draw, ...)
+        end)
+    end
+end
+
+-- TARGET  : primitiveEdit (primitive addon)
+-- METHODS : Expression 2, Starfall (Entity binding)
+-- ON CALL : If target's contraption is an ACF contraption, disable the contraption and block the call.
+-- primitiveEdit writes directly to a primitive entity's editable variables (size, mass, etc.), so we
+-- treat it the same as SetPos, block it during combat but allow the owner to keep building.
+local function PrimitiveEditDetours()
+    do
+        local Func Func = Detours.Expression2("primitiveEdit(es...)", function(Scope, Args, ...)
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Scope.player, Args[1], "primitiveEdit(e, s, ...)") then return end
+            MarkMutated(Args[1], Scope.player)
+            return Func(Scope, Args, ...)
+        end)
+    end
+
+    do
+        local Func Func = Detours.Starfall("instance.Types.Entity.Methods.primitiveEdit", function(Instance, Ent, ...)
+            if not IfEntManipulationOnACFContraption_ThenDisableContraption(Instance.player, Instance.Types.Entity.Unwrap(Ent), "e:primitiveEdit(s, ...)") then return end
+            MarkMutated(Instance.Types.Entity.Unwrap(Ent), Instance.player)
+            return Func(Instance, Ent, ...)
         end)
     end
 end
@@ -970,9 +1098,12 @@ local function TriggerDetourRebuild()
 
     SetPosDetours()
     SetAngDetours()
+    SpawnDetours()
 
     FreezeDetours()
     UseDetours()
+    PropDrawDetours()
+    PrimitiveEditDetours()
 
     AddAngleVelocityDetours()
     AddVelocityDetours()

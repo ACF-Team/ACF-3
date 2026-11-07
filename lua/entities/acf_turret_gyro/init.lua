@@ -83,6 +83,12 @@ do	-- Spawn and Update funcs
 				end
 			end
 		end
+
+		self:UpdateLinkHints()
+	end
+
+	function ENT:UpdateLinkHints()
+		ACF.Hints.Set(self, "turret_gyro_no_drive", not (IsValid(self.Turret) or IsValid(self["Turret-H"]) or IsValid(self["Turret-V"])))
 	end
 end
 
@@ -99,20 +105,20 @@ do	-- Metamethods and other important stuff
 			if self.Active then
 				State:AddKeyValue("Status", "Active")
 			else
-				State:AddError("Inactive: " .. self.InactiveReason)
+				State:AddError("Inactive")
 			end
 		end
 	end
 
 	do	-- ACF Funcs
 		function ENT:Enable()
-			self:SetActive(true, "")
+			self:SetActive(true)
 			self:UpdateOverlay()
 		end
 
 		function ENT:Disable()
 			self.Active	= false
-			self:SetActive(false, "")
+			self:SetActive(false)
 			self:UpdateOverlay()
 		end
 
@@ -124,30 +130,31 @@ do	-- Metamethods and other important stuff
 			self.DamageScale = math.max((self.ACF.Health / (self.ACF.MaxHealth * 0.75)) - 0.25 / 0.75, 0)
 		end
 
-		function ENT:SetActive(Active, Reason)
-			local Trigger = (self.Active ~= Active) or (self.InactiveReason ~= Reason)
-			if not Active then
-				self.InactiveReason = Reason
-				self.Active = false
-			else
-				self.InactiveReason = ""
-				self.Active = true
-			end
+		function ENT:SetActive(Active)
+			if self.Active == Active then return end
 
-			if Trigger then self:UpdateOverlay(true) end
+			self.Active = Active
+
+			self:UpdateOverlay(true)
+		end
+
+		function ENT:ACF_ShowRequirements()
+			return IsValid(self.Turret) or IsValid(self["Turret-H"]) or IsValid(self["Turret-V"])
 		end
 
 		function ENT:IsActive()
 			if self.Disabled then return false end
 
-			if not (IsValid(self.Turret) or IsValid(self["Turret-H"]) or IsValid(self["Turret-V"])) then self:SetActive(false, "") return false end
+			if not (IsValid(self.Turret) or IsValid(self["Turret-H"]) or IsValid(self["Turret-V"])) then self:SetActive(false) return false end
 
-			if (self.ACF.Health / self.ACF.MaxHealth) <= 0.25 then
-				self:SetActive(false, "Too damaged!")
+			local Percent = self.ACF.Health / self.ACF.MaxHealth * 100
+
+			if not self:SetRequirement("component_health", Percent > 25, { Percent = math.floor(Percent) }) then
+				self:SetActive(false)
 				return false
 			end
 
-			if self.Active == false then self:SetActive(true, "") end
+			if self.Active == false then self:SetActive(true) end
 			return true
 		end
 

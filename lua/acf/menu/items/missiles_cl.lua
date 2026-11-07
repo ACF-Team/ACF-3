@@ -27,29 +27,42 @@ local function GetRackList(Data)
 	return Result
 end
 
-local BaseText    = "Caliber : %s\nMass : %s kg"
-local RackText    = BaseText .. "\nMunitions : %s%s\n"
+-- MenuHidden classes are spawned by other code (e.g. SWEPs), not mounted on racks
+local function GetListed(List)
+	local Result = {}
+
+	for ID, Class in pairs(List) do
+		if not Class.MenuHidden then Result[ID] = Class end
+	end
+
+	return Result
+end
+
+local BaseText    = "Caliber : %s\nMass : %s"
+local RackText    = BaseText .. "\nCost : %s\nMunitions : %s%s\n"
 local MissileText = BaseText .. "\nArming Delay : %ss%s%s"
 
 local function GetMissileText(Data)
 	local Seek = Data.SeekCone and ("\nSeek Cone : " .. Data.SeekCone * 2 .. " degrees") or ""
 	local View = Data.ViewCone and ("\nView Cone : " .. Data.ViewCone * 2 .. " degrees") or ""
 
-	return MissileText:format(Data.Caliber .. "mm", Data.Mass, Data.ArmDelay, Seek, View)
+	return MissileText:format(Data.Caliber .. "mm", ACF.FormatMass(Data.Mass or 10), Data.ArmDelay, Seek, View)
 end
 
 local function GetRackText(Data)
 	local Caliber = Data.Caliber and (Data.Caliber .. "mm") or "Any caliber"
 	local Protect = Data.ProtectMissile and "\n\nThis rack will protect its payload from getting destroyed." or ""
 
-	return RackText:format(Caliber, Data.Mass, Data.MagSize, Protect)
+	local Cost = Data.Cost or Data.MagSize * (Data.CostPerSlot or 1.8) -- Mirrors acf_rack's GetCost
+
+	return RackText:format(Caliber, ACF.FormatMass(Data.Mass or 0), ACF.FormatCost(Cost), Data.MagSize, Protect)
 end
 
 local function Build(Menu, Contexts)
 	local Rack = Contexts.Rack
 	local Ammo = Contexts.Ammo
 
-	local Entries = Classes.GetChildren(Classes.GetTypeByName(MISSILE_BASE))
+	local Entries = GetListed(Classes.GetChildren(Classes.GetTypeByName(MISSILE_BASE)))
 
 	Menu:AddTitle("Missile Settings")
 
@@ -85,7 +98,7 @@ local function Build(Menu, Contexts)
 		MissileClass:SetText(Data.Description)
 
 		AmmoList:LoadEntries(Data:GetType())
-		ACF.Menu.LoadClassCombo(MissileList, Classes.GetChildren(Data), "Caliber", "Model", PAGE, "missile")
+		ACF.Menu.LoadClassCombo(MissileList, GetListed(Classes.GetChildren(Data)), "Caliber", "Model", PAGE, "missile")
 	end
 
 	function MissileList:OnSelect(Index, _, Data)

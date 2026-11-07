@@ -14,6 +14,35 @@ Classes.DefineClass("ACF.Ammunition.GLATGM", "ACF.Ammunition.HEATFS", function(C
 
 	CLASS.MaxStandoffRatio = .4
 
+	--- Picks the missile model for a given caliber, matching the model used by the entity in flight.
+	local function GetFlightModel(Caliber)
+		if Caliber < 12 then
+			return "models/missiles/glatgm/9m117.mdl"
+		elseif Caliber >= 14 then
+			return "models/missiles/glatgm/mgm51.mdl"
+		else
+			return "models/missiles/glatgm/9m112.mdl"
+		end
+	end
+
+	function CLASS:ResolveModel(Context, Class, Weapon, TwoPiece)
+		if Context == "Crate" and self.BulletData then
+			local ModelPath = GetFlightModel(self.BulletData.Caliber)
+			local ModelData = ACF.ModelData.GetModelData(ModelPath)
+			local Offset    = ModelData and ModelData.Center and Vector(-ModelData.Center.x, 0, 0) or Vector()
+
+			return {
+				Model         = ModelPath,
+				Offset        = Offset,
+				Bodygroup     = self.Bodygroup,
+				NeedsRotation = false,
+				FOV           = self.MenuFOV,
+			}
+		end
+
+		return BASE.ResolveModel(self, Context, Class, Weapon, TwoPiece)
+	end
+
 	function CLASS:BaseConvert()
 		self.BulletData = {}
 
@@ -108,33 +137,26 @@ Classes.DefineClass("ACF.Ammunition.GLATGM", "ACF.Ammunition.HEATFS", function(C
 			BASE.OnCreateAmmoPreview(self, Preview, Setup)
 
 			local Caliber = BulletData.Caliber
-			local Model, FOV, Height
+			local FOV, Height
 
 			if Caliber < 12 then
-				Model = "models/missiles/glatgm/9m117.mdl"
 				FOV   = 65
 			elseif Caliber >= 14 then
-				Model  = "models/missiles/glatgm/mgm51.mdl"
 				Height = 100
 				FOV    = 60
 			else
-				Model = "models/missiles/glatgm/9m112.mdl"
-				FOV   = 80
+				FOV = 80
 			end
 
-			Setup.Model  = Model
+			Setup.Model  = GetFlightModel(Caliber)
 			Setup.FOV    = FOV
 			Setup.Height = Height or Setup.Height
 		end
 
-		function CLASS:OnCreateAmmoControls(Base, _, BulletData)
-			ACF.AmmoMenu.Slider(Base, "Liner Angle", self.GUIData.MinConeAng, 90, 1, "LinerAngle", function(Value)
-				self.LinerAngle = math.Round(Value, 2)
+		function CLASS:OnCreateAmmoControls(Base)
+			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.liner_angle_ratio", 0, 1, 2, "LinerAngleRatio", function(Value)
+				self.LinerAngleRatio = math.Round(Value, 2)
 				self:UpdateRoundData()
-			end, function(Panel)
-				-- Min cone angle + clamped value depend on the round; re-clamp on any change.
-				Panel:SetMin(self.GUIData.MinConeAng)
-				Panel:SetValue(BulletData.ConeAng)
 			end)
 
 			ACF.AmmoMenu.Slider(Base, "Extra Standoff Ratio", 0, 0.4, 2, "StandoffRatio", function(Value)
@@ -153,9 +175,9 @@ Classes.DefineClass("ACF.Ammunition.GLATGM", "ACF.Ammunition.HEATFS", function(C
 				local PeakVel	= math.Round(Velocity * 0.5, 2)
 				local LaunchVel = math.Round(Velocity * 0.2, 2)
 				local Accel     = math.Round(math.Clamp(BulletData.ProjMass / BulletData.PropMass + BulletData.Caliber / 7, 0.2, 10), 2)
-				local ProjMass	= ACF.GetProperMass(BulletData.ProjMass)
-				local PropMass	= ACF.GetProperMass(BulletData.PropMass)
-				local Filler	= ACF.GetProperMass(BulletData.FillerMass)
+				local ProjMass	= ACF.FormatMass(BulletData.ProjMass)
+				local PropMass	= ACF.FormatMass(BulletData.PropMass)
+				local Filler	= ACF.FormatMass(BulletData.FillerMass)
 
 				RoundStats:SetText(Text:format(PeakVel, LaunchVel, Accel, ProjMass, PropMass, Filler))
 			end)
@@ -166,7 +188,7 @@ Classes.DefineClass("ACF.Ammunition.GLATGM", "ACF.Ammunition.HEATFS", function(C
 
 				local Text	   = "Blast Radius : %s m\nFragments : %s\nFragment Mass : %s\nFragment Velocity : %s m/s"
 				local Blast	   = math.Round(self.GUIData.BlastRadius, 2)
-				local FragMass = ACF.GetProperMass(self.GUIData.FragMass)
+				local FragMass = ACF.FormatMass(self.GUIData.FragMass)
 				local FragVel  = math.Round(self.GUIData.FragVel, 2)
 
 				FillerStats:SetText(Text:format(Blast, self.GUIData.Fragments, FragMass, FragVel))
