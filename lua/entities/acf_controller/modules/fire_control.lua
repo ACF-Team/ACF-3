@@ -33,12 +33,7 @@ end
 do
 	-- Groups are keyed by weapon name, never by raw caliber alone,
 	-- since a gun and a rack's missile can share the same caliber number but aren't the same weapon
-	local function AnalyzeWeapon(self, Weapon)
-		local Key = Weapon.Name
-		local Set = self.WeaponGroups[Key] or {}
-		self.WeaponGroups[Key] = Set
-		Set[Weapon] = true
-
+	local function RefreshFireGroups(self)
 		-- The user's LockWeaponSlots checkbox decides auto-detection, instead of us guessing
 		-- intent from whether Gun1/2/3 happen to be set (e.g. from a dupe restore)
 		if not self:GetLockWeaponSlots() then
@@ -59,6 +54,40 @@ do
 			local Gun = self["GetGun" .. i](self)
 			self.FireGroups[i] = IsValid(Gun) and self.WeaponGroups[Gun.Name] or {}
 		end
+	end
+
+	local function AnalyzeWeapon(self, Weapon)
+		local Key = Weapon.Name
+		local Set = self.WeaponGroups[Key] or {}
+		self.WeaponGroups[Key] = Set
+		Set[Weapon] = true
+
+		RefreshFireGroups(self)
+	end
+
+	function ENT:ForgetWeapon(Weapon)
+		self.Weapons[Weapon]   = nil
+		self.GunsSmoke[Weapon] = nil
+
+		if self.Smoke == Weapon then self.Smoke = next(self.GunsSmoke) end
+
+		local Twins
+
+		for Key, Group in pairs(self.WeaponGroups) do
+			if Group[Weapon] then
+				Group[Weapon] = nil
+				Twins = next(Group)
+			end
+
+			if not next(Group) then self.WeaponGroups[Key] = nil end
+		end
+
+		-- Locked slots keep firing the rest of the group
+		for i = 1, NUM_WEAPONS do
+			if self["GetGun" .. i](self) == Weapon then self["SetGun" .. i](self, Twins or NULL) end
+		end
+
+		RefreshFireGroups(self)
 	end
 
 	function ENT:AnalyzeGuns(Gun)
@@ -275,12 +304,35 @@ ACF.RegisterControllerLink("acf_turret", {
 	Single = false,
 })
 
+local function OnWeaponLinked(Controller, Target, Analyze)
+	if not IsValid(Controller) or not Controller.Weapons then return end
+
+	if not IsValid(Target) then -- removed before this tick
+		Controller.Guns[Target], Controller.Racks[Target] = nil, nil
+		return
+	end
+
+	if not (Controller.Guns[Target] or Controller.Racks[Target]) then return end -- unlinked before this tick
+
+	Analyze(Controller, Target)
+
+	Target:CallOnRemove("ACF_Controller_" .. Controller:EntIndex(), function(Removed)
+		if IsValid(Controller) then Controller:Unlink(Removed) end
+	end)
+end
+
+local function OnWeaponUnlinked(Controller, Target)
+	Target:RemoveCallOnRemove("ACF_Controller_" .. Controller:EntIndex())
+	Controller:ForgetWeapon(Target)
+end
+
 ACF.RegisterControllerLink("acf_gun", {
 	Field = "Guns",
 	Single = false,
 	OnLinked = function(Controller, Target)
-		Controller:AnalyzeGuns(Target)
+		OnWeaponLinked(Controller, Target, Controller.AnalyzeGuns)
 	end,
+	OnUnlinked = OnWeaponUnlinked,
 })
 
 ACF.RegisterControllerLink("acf_turret_computer", {
@@ -303,8 +355,9 @@ ACF.RegisterControllerLink("acf_rack", {
 	Field = "Racks",
 	Single = false,
 	OnLinked = function(Controller, Target)
-		Controller:AnalyzeRacks(Target)
+		OnWeaponLinked(Controller, Target, Controller.AnalyzeRacks)
 	end,
+	OnUnlinked = OnWeaponUnlinked,
 })
 
 return Init
