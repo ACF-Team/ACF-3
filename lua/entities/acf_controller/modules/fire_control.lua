@@ -90,11 +90,15 @@ do
 		RefreshFireGroups(self)
 	end
 
+	local function IsSmoke(Gun)
+		return Gun.Weapon == "ACF.Guns.SmokeLauncher" or Gun.Weapon == "ACF.Guns.40mmFlareLauncher"
+	end
+
 	function ENT:AnalyzeGuns(Gun)
 		self.Guns[Gun] = true
 		self.Weapons[Gun] = true
 
-		if Gun.Weapon == "ACF.Guns.SmokeLauncher" or Gun.Weapon == "ACF.Guns.40mmFlareLauncher" then
+		if IsSmoke(Gun) then
 			self.GunsSmoke[Gun] = true
 			if not IsValid(self.Smoke) then self.Smoke = Gun end
 			local Fuse = self:GetSmokeFuse() or 0
@@ -110,6 +114,41 @@ do
 		self.Weapons[Rack] = true
 
 		AnalyzeWeapon(self, Rack)
+	end
+
+	--- Moves weapons that were changed after linking (an update to another weapon) into their new group
+	function ENT:RegroupWeapons()
+		local Moved
+
+		for Key, Group in pairs(self.WeaponGroups) do
+			for Weapon in pairs(Group) do
+				if IsValid(Weapon) and (Weapon.Name ~= Key or self.Guns[Weapon] and IsSmoke(Weapon)) then
+					Group[Weapon] = nil
+					Moved = Moved or {}
+					Moved[#Moved + 1] = Weapon
+				end
+			end
+
+			if not next(Group) then self.WeaponGroups[Key] = nil end
+		end
+
+		for Gun in pairs(self.GunsSmoke) do
+			if IsValid(Gun) and not IsSmoke(Gun) then
+				self.GunsSmoke[Gun] = nil
+				Moved = Moved or {}
+				Moved[#Moved + 1] = Gun
+
+				if self.Smoke == Gun then self.Smoke = next(self.GunsSmoke) end
+			end
+		end
+
+		if not Moved then return end
+
+		for _, Weapon in ipairs(Moved) do
+			if self.Guns[Weapon] then self:AnalyzeGuns(Weapon) else self:AnalyzeRacks(Weapon) end
+		end
+
+		RefreshFireGroups(self)
 	end
 
 	-- Fire guns one at a time, round robin, resuming from the last index on the next Fire press
