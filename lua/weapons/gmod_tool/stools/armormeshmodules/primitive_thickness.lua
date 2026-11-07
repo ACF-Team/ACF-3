@@ -13,8 +13,8 @@ return function()
 
 	-- Multiplier compensates for shapes where PrimDT doesn't map 1:1 to the actually measured
 	-- wall thickness (e.g. faceting/diagonal-offset quirks) -- see the per-shape comments below.
-	local function RegisterThicknessApply(Shape, Apply, Multiplier)
-		Registry[Shape] = { Apply = Apply, Multiplier = Multiplier or 1 }
+	local function RegisterThicknessApply(Shape, Apply, Get, Multiplier)
+		Registry[Shape] = { Apply = Apply, Get = Get, Multiplier = Multiplier or 1 }
 	end
 
 	local function GetThicknessApply(Shape)
@@ -61,16 +61,22 @@ return function()
 		Primitive:SetPrimSIZE(NewSize)
 	end
 
-	RegisterThicknessApply("cone", ResizeAlongNormal)
-	RegisterThicknessApply("cube", ResizeAlongNormal)
-	RegisterThicknessApply("cube_hole", ResizeAlongNormal)
-	RegisterThicknessApply("dome", ResizeAlongNormal)
-	RegisterThicknessApply("parallelogram", ResizeAlongNormal)
-	RegisterThicknessApply("pyramid", ResizeAlongNormal)
-	RegisterThicknessApply("sphere", ResizeAlongNormal)
-	RegisterThicknessApply("torus", ResizeAlongNormal)
-	RegisterThicknessApply("wedge", ResizeAlongNormal)
-	RegisterThicknessApply("wedge_corner", ResizeAlongNormal)
+	local function GetAlongNormal(Primitive, Normal)
+		if not Normal then return end
+
+		return Primitive:GetPrimSIZE()[GetNormalAxis(Primitive, Normal)]
+	end
+
+	RegisterThicknessApply("cone", ResizeAlongNormal, GetAlongNormal)
+	RegisterThicknessApply("cube", ResizeAlongNormal, GetAlongNormal)
+	RegisterThicknessApply("cube_hole", ResizeAlongNormal, GetAlongNormal)
+	RegisterThicknessApply("dome", ResizeAlongNormal, GetAlongNormal)
+	RegisterThicknessApply("parallelogram", ResizeAlongNormal, GetAlongNormal)
+	RegisterThicknessApply("pyramid", ResizeAlongNormal, GetAlongNormal)
+	RegisterThicknessApply("sphere", ResizeAlongNormal, GetAlongNormal)
+	RegisterThicknessApply("torus", ResizeAlongNormal, GetAlongNormal)
+	RegisterThicknessApply("wedge", ResizeAlongNormal, GetAlongNormal)
+	RegisterThicknessApply("wedge_corner", ResizeAlongNormal, GetAlongNormal)
 
 	-- cube_magic hollows each corner inward along its own center-to-corner diagonal instead of
 	-- the face normal (see construct.lua's cube_magic builder), so a straight PrimDT undershoots
@@ -83,30 +89,37 @@ return function()
 		local Axis        = GetNormalAxis(Primitive, Normal)
 
 		Primitive:SetPrimDT(Thickness * HalfExtents:Length() / HalfExtents[Axis])
+	end, function(Primitive, Normal)
+		if not Normal then return end
+
+		local HalfExtents = Primitive:GetPrimSIZE() * 0.5
+		local Axis        = GetNormalAxis(Primitive, Normal)
+
+		return Primitive:GetPrimDT() * HalfExtents[Axis] / HalfExtents:Length()
 	end)
 
 	local function SetHollowThickness(Primitive, Thickness)
 		Primitive:SetPrimDT(Thickness)
 	end
 
+	local function GetHollowThickness(Primitive)
+		return Primitive:GetPrimDT()
+	end
+
 	-- 2.79520 measured empirically -- dome_hollow's polar-cap faceting means the correction
 	-- isn't a clean closed form (see chat), so this is fit rather than derived.
-	RegisterThicknessApply("dome_hollow", SetHollowThickness, 2.79520)
-	RegisterThicknessApply("tube", SetHollowThickness)
+	RegisterThicknessApply("dome_hollow", SetHollowThickness, GetHollowThickness, 2.79520)
+	RegisterThicknessApply("tube", SetHollowThickness, GetHollowThickness)
 
 	-- Reads the thickness back, mirroring how Apply would set it (used by the eyedropper).
 	local function GetThickness(Primitive, Normal)
-		local Shape = Primitive:GetPrimTYPE()
-		local Entry = Registry[Shape]
+		local Entry = Registry[Primitive:GetPrimTYPE()]
 		if not Entry then return nil end
 
-		if Shape == "cube" or Shape == "cube_hole" then
-			if not Normal then return nil end
-			local Axis = GetNormalAxis(Primitive, Normal)
-			return Primitive:GetPrimSIZE()[Axis]
-		end
+		local Thickness = Entry.Get(Primitive, Normal)
+		if not Thickness then return nil end
 
-		return Primitive:GetPrimDT() / Entry.Multiplier
+		return Thickness / Entry.Multiplier
 	end
 
 	return {

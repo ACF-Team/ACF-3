@@ -466,6 +466,13 @@ do -- Spawn and Update functions --------------------------------
 		return Player:CheckLimit(GetWeaponClass(ClientData).LimitConVar.Name)
 	end
 
+	-- nil if the data doesn't change the weapon
+	function ENT.ACF_GetLimitName(ClientData)
+		if ClientData.Weapon == nil then return end
+
+		return GetWeaponClass(ClientData).LimitConVar.Name
+	end
+
 	function ENT:ACF_PreUpdateEntityData()
 		-- Don't reconfigure mid-fire.
 		self.Firing = false
@@ -513,7 +520,9 @@ do -- Spawn and Update functions --------------------------------
 	function ENT:ACF_PostSpawn(Player, _, _, _)
 		-- Count toward the weapon spawn limit checked by ENT.ACF_CheckSpawnLimit.
 		if IsValid(Player) then
-			Player:AddCount(self:GetWeapon():GetType().LimitConVar.Name, self)
+			self.ACF_LimitName = self:GetWeapon():GetType().LimitConVar.Name
+
+			Player:AddCount(self.ACF_LimitName, self)
 		end
 
 		ACF.Hints.Set(self, "weapon_no_ammo", true)

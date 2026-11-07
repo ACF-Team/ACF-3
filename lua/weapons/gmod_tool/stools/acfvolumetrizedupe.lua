@@ -271,16 +271,8 @@ elseif SERVER then
 			return false, "Incompatible entity class '" .. Target:GetClass() .. "'"
 		end
 
-		-- Determine which entities to area copy
-		local EntsByIndex = {}
-		local Contraption = Target:CFW_GetContraption()
-		if Contraption then
-			-- Save everything including turrets through contraption data
-			for ent, _ in pairs(Contraption.ents) do EntsByIndex[ent:EntIndex()] = ent end
-		else
-			-- Otherwise, just the baseplate entity
-			EntsByIndex[Target:EntIndex()] = Target
-		end
+		local EntsByIndex, Error = ACF.GetConversionEntities(Player, Target)
+		if not EntsByIndex then return false, Error end
 
 		-- Perform the area copy and retrieve the dupe table
 		local Entities, Constraints = AdvDupe2.duplicator.AreaCopy(Player, EntsByIndex, vector_origin, false)
