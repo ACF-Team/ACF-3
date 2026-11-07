@@ -8,6 +8,7 @@ hook.Add("cfw.contraption.entityRemoved", "ACF_KillFeed_VehicleRemoved", functio
     if not IsValid(Ent) or Ent:GetClass() ~= "acf_baseplate" then return end
     -- print("ACF_KillFeed_VehicleRemoved", Ent, Contraption, Contraption.ACF_LastDamageAttacker)
 
+    -- This should not check if the baseplate has died; the goal is to catch contraptions that got damaged and then removed (otherwise people will despawn to escape losing cost)
     local Attacker = Contraption.ACF_LastDamageAttacker
     if not IsValid(Attacker) or not Attacker:IsPlayer() then return end -- Never took damage
 
