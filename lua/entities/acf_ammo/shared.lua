@@ -44,7 +44,7 @@ end
 
 ENT.ACF_StaticWireInputs = {
 	"Load (If set to a non-zero value, it'll allow weapons to use rounds from this ammo crate.)",
-	"Ammo Type (Loads the ammo type at this position in the crate's list.)",
+	"Round Select (Loads the round at this position in the crate's list, 0 cycles through all of them.)",
 }
 
 ENT.ACF_StaticWireOutputs = {

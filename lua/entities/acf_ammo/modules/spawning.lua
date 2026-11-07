@@ -43,7 +43,7 @@ do -- IO
 		Entity:UpdateLoading()
 	end)
 
-	ACF.AddInputAction("acf_ammo", "Ammo Type", function(Entity, Value)
+	ACF.AddInputAction("acf_ammo", "Round Select", function(Entity, Value)
 		Entity:SetRoundSelect(Value)
 	end)
 end
