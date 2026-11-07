@@ -103,6 +103,8 @@ Classes.DefineClass("ACF.Ammunition.APFSDS", "ACF.Ammunition.AP", function(CLASS
 		Data.Diameter = Data.Caliber * Lerp(math.Clamp(self.RodScale or 1, 0, 1), MinDiameterRatio, RealMaxDiameterRatio)
 		Data.ProjArea = math.pi * (Data.Diameter * 0.5) ^ 2
 
+		ACF.UpdateRoundVolumes(self) -- UpdateRoundSpecs used the previous rod's area
+
 		-- Sabot sized off the bore
 		local SabotLength = SabotCalibers * Data.Caliber + SabotRodShare * Data.ProjLength
 		local SabotMass   = math.pi * (Data.Caliber * 0.5) ^ 2 * SabotLength * ACF.AluminumDensity

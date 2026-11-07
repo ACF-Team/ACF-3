@@ -64,6 +64,10 @@ ACF.AddClientSettings(501, "Overlay", function(Base)
     local CONVAR = FindMetaTable("ConVar")
     LinkToConVar(Base:AddSlider("Overlay Scale", 0, 3, 2), "SetValue", "OnValueChanged", "acf_overlay_scale", CONVAR.GetFloat, CONVAR.SetFloat, 0.1)
 
+    local Sticky = Base:AddCheckBox("Keep overlay in context menu")
+    Sticky:SetConVar("acf_overlay_contextmenu_sticky")
+    Base:AddHelp("While the context menu is open, the overlay stays on the last ACF entity until the cursor moves onto another one.")
+
     hook.Add("PostRenderVGUI", Base, function()
         local Parent = Base:GetParent()
         local OK = Parent:GetExpanded() and (CtxMenuOpen or SpawnMenuOpen)

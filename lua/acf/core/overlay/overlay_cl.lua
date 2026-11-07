@@ -369,6 +369,11 @@ do
         return TargetX, TargetY
     end
 
+    --- Top of the slot being rendered, in overlay space
+    function Overlay.GetSlotY()
+        return TotalY
+    end
+
     function Overlay.SimpleText(Text, Font, X, Y, Color, XAlign, YAlign)
         local W, H = Overlay.GetTextSize(Font, Text)
 
@@ -582,14 +587,18 @@ do
             surface.SetAlphaMultiplier(math.ease.InSine(FadeInTime) * math.ease.OutCirc(1 - FadeOutTime))
         end
 
+        local HiddenSlots = Overlay.BeginPages(State, Target)
+
         for Idx, ElementSlot in State:IterateElementSlots() do
-            CurrentSlotIdx = Idx
-            local TypeIdx  = ElementSlot.Type
-            local Type     = Overlay.GetElementType(TypeIdx)
-            if Type.Render then
-                Type.Render(Target, ElementSlot)
+            if not HiddenSlots[Idx] then
+                CurrentSlotIdx = Idx
+                local TypeIdx  = ElementSlot.Type
+                local Type     = Overlay.GetElementType(TypeIdx)
+                if Type.Render then
+                    Type.Render(Target, ElementSlot)
+                end
+                Overlay.PushSlotSizeToTotal(Idx)
             end
-            Overlay.PushSlotSizeToTotal(Idx)
         end
 
         if Overlay.RenderHelpFooter then Overlay.RenderHelpFooter() end
@@ -604,19 +613,21 @@ do
         CanAccessOverlaySize = true
         -- Now that we have TotalW/TotalH, give elements a shot to resize and place things according to our current bounds.
         for Idx, ElementSlot in State:IterateElementSlots() do
-            CurrentSlotIdx = Idx
-            -- Reload slot state for post-render.
-            local SlotCache = Overlay.GetSlotDataCache(Idx)
-            TotalY     = SlotCache.Y
-            SlotW      = SlotCache.W
-            SlotH      = SlotCache.H
-            KeyWidth   = SlotCache.KeyWidth
-            ValueWidth = SlotCache.ValueWidth
-            -- Post render
-            local TypeIdx  = ElementSlot.Type
-            local Type     = Overlay.GetElementType(TypeIdx)
-            if Type.PostRender then
-                Type.PostRender(Target, ElementSlot)
+            if not HiddenSlots[Idx] then
+                CurrentSlotIdx = Idx
+                -- Reload slot state for post-render.
+                local SlotCache = Overlay.GetSlotDataCache(Idx)
+                TotalY     = SlotCache.Y
+                SlotW      = SlotCache.W
+                SlotH      = SlotCache.H
+                KeyWidth   = SlotCache.KeyWidth
+                ValueWidth = SlotCache.ValueWidth
+                -- Post render
+                local TypeIdx  = ElementSlot.Type
+                local Type     = Overlay.GetElementType(TypeIdx)
+                if Type.PostRender then
+                    Type.PostRender(Target, ElementSlot)
+                end
             end
         end
         TotalY = TotalH
@@ -655,6 +666,7 @@ do
         OverlayOffset:SetUnpacked(math.Round(TargetX), math.Round((TargetY - (TotalH / (2 / YScale))) + PER_SLOT_VERTICAL_PADDING), 0)
         OverlayMatrix:Translate(OverlayOffset)
         OverlayMatrix:Scale(OverlayScale)
+        Overlay.PlacePageArrows(XScale, YScale)
 
         -- Draw background
         surface.SetDrawColor(COLOR_PRIMARY_BACKGROUND)
@@ -694,6 +706,8 @@ do
     end
 
     hook.Add("HUDPaint", "ACF_OverlayRender", function()
+        Overlay.ResetPageArrows()
+
         if Overlay.UpdateHelpExpand then Overlay.UpdateHelpExpand() end
         if HideInfoBubble() then return end
         if not next(Overlays) then return end

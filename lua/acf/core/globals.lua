@@ -293,8 +293,8 @@ do -- ACF global vars
 	ACF.AmmoMaxLength        = 192 -- Defines the highest possible length of ammo crates for the X axis (length), in gmu
 	ACF.AmmoMaxWidth         = 96 -- Defines the highest possible width of ammo crates for the Y and Z axes (width/height), in gmu
 	ACF.MaxRoundsDrawn       = 30 -- Most rounds an ammo crate draws
-	ACF.MaxOverrideTypes     = 4 -- Most distinct round types an ammo crate can hold besides its own
-	ACF.ProfileBits          = math.ceil(math.log(ACF.MaxOverrideTypes + 1, 2)) -- Bits to network a round profile, 0 for the crate's own
+	ACF.MaxRoundKinds        = 5 -- Most distinct rounds an ammo crate can hold
+	ACF.ProfileBits          = math.ceil(math.log(ACF.MaxRoundKinds, 2)) -- Bits to network a kind index minus one
 	ACF.AmmoSupplyColor      = Color(255, 255, 0, 10) -- The color to use for the ammo supply effect
 	ACF.PropImpetus          = 1300 -- Muzzle energy in kJ per kg of propellant at full efficiency
 	ACF.PDensity             = 0.75 -- Propellant loading density in g/cm^3

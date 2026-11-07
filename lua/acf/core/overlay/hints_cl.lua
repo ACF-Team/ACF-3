@@ -76,11 +76,9 @@ local function GetPointer(Def)
 	if Def.Wiki then return "More in the wiki: " .. Def.Wiki .. "." end
 end
 
--- Called by the Warning and Error elements after their label, grows the slot to fit the help under it while expanded
-function Overlay.RenderHelp(Slot, LabelW, LabelH)
-	local Def = ACF.Diagnostics.GetHelp(Slot:GetElementData(2))
-	if not Def then return end
-
+--- Called by an element after laying out its own content.
+--- Grows the slot to fit the text under it while the help is expanded
+function Overlay.RenderInlineHelp(Text, LabelW, LabelH)
 	HasHelp = true
 
 	if Expand == 0 then return end
@@ -88,8 +86,7 @@ function Overlay.RenderHelp(Slot, LabelW, LabelH)
 	local Ease     = math.ease.OutCubic(Expand)
 	local Font     = Overlay.MAIN_FONT
 	local Width    = math.max(LabelW, INLINE_W * Overlay.GetScaleMult())
-	local Pointer  = GetPointer(Def)
-	local Lines    = Wrap(Pointer and Def.Help .. " " .. Pointer or Def.Help, Font, Width)
+	local Lines    = Wrap(Text, Font, Width)
 	local _, LineH = Overlay.GetTextSize(Font, "A")
 	local Top      = LabelH + INLINE_GAP
 	local Bottom   = LabelH + (INLINE_GAP + #Lines * LineH) * Ease
@@ -104,6 +101,16 @@ function Overlay.RenderHelp(Slot, LabelW, LabelH)
 	end
 
 	Overlay.AppendSlotSize(Width, Bottom)
+end
+
+-- Called by the Warning and Error elements after their label, with the help of the diagnostic they show
+function Overlay.RenderHelp(Slot, LabelW, LabelH)
+	local Def = ACF.Diagnostics.GetHelp(Slot:GetElementData(2))
+	if not Def then return end
+
+	local Pointer = GetPointer(Def)
+
+	Overlay.RenderInlineHelp(Pointer and Def.Help .. " " .. Pointer or Def.Help, LabelW, LabelH)
 end
 
 -- How far the footer key is pushed down, 0 to 1: a short tap every TAP_PERIOD, held down while the help is open
