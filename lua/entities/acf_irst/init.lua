@@ -76,6 +76,12 @@ hook.Add("ACF_OnTick", "ACF IRST Scan", function()
 
 		UpdateGimbal(Entity)
 
+		local Direction = Vector(Entity.LookDir)
+
+		Direction:Rotate(Entity:GetAngles())
+
+		WireLib.TriggerOutput(Entity, "Direction", Direction)
+
 		RadarHelpers.TickScan(Entity)
 	end
 end)
