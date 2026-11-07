@@ -71,6 +71,28 @@ local function DimToModel(x, y, z)
     return Model .. ".mdl"
 end
 
+--- Returns the entities a conversion of Target removes and pastes back, by EntIndex.
+--- Fails unless Player owns every one of them. The paste makes them all Player's.
+function ACF.GetConversionEntities(Player, Target)
+    local EntsByIndex = {}
+    local Contraption = Target:CFW_GetContraption()
+    if Contraption then
+        -- Save everything including turrets through contraption data
+        for ent, _ in pairs(Contraption.ents) do EntsByIndex[ent:EntIndex()] = ent end
+    else
+        -- Otherwise, just the baseplate entity
+        EntsByIndex[Target:EntIndex()] = Target
+    end
+
+    for _, Ent in pairs(EntsByIndex) do
+        if Ent:CPPIGetOwner() ~= Player then
+            return nil, "The contraption contains entities you do not own (" .. tostring(Ent) .. ")"
+        end
+    end
+
+    return EntsByIndex
+end
+
 function ACF.ConvertBaseplate(Player, Target)
     if not AdvDupe2 then return false, "Advanced Duplicator 2 is not installed" end
 
@@ -92,16 +114,8 @@ function ACF.ConvertBaseplate(Player, Target)
     local AMi, AMa = PhysObj:GetAABB()
     local BoxSize = AMa - AMi
 
-    -- Determine which entities to area copy
-    local EntsByIndex = {}
-    local Contraption = Target:CFW_GetContraption()
-    if Contraption then
-        -- Save everything including turrets through contraption data
-        for ent, _ in pairs(Contraption.ents) do EntsByIndex[ent:EntIndex()] = ent end
-    else
-        -- Otherwise, just the baseplate entity
-        EntsByIndex[Target:EntIndex()] = Target
-    end
+    local EntsByIndex, Error = ACF.GetConversionEntities(Player, Target)
+    if not EntsByIndex then return false, Error end
 
     -- Perform the area copy and retrieve the dupe table
     local Entities, Constraints = AdvDupe2.duplicator.AreaCopy(Player, EntsByIndex, vector_origin, false)

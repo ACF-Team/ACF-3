@@ -419,7 +419,7 @@ do -- MARK: Ammo capacity
 		end
 
 		-- The case, not the projectile, sizes the cylinder the crate has to find room for
-		Diameter = Caliber * (BulletData.CaseScale or ACF.GetMaxCaseScale(Class, Weapon)) * MM_TO_CM
+		Diameter = Caliber * (BulletData.CaseScale or ACF.GetMaxCaseScale(Class)) * MM_TO_CM
 		-- RoundLength, not PropLength + ProjLength -- ProjLength already includes any telescoped
 		-- overlap into the propellant, so summing them would double-count that overlap.
 		Length   = BulletData.RoundLength or (BulletData.PropLength + BulletData.ProjLength)

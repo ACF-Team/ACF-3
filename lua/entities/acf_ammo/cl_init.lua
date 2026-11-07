@@ -182,7 +182,8 @@ do --MARK: Networking
 			kinds[index] = { Bodygroup = net.ReadUInt( 4 ), Target = net.ReadUInt( 25 ) }
 		end
 
-		entity.RoundKinds = kinds
+		entity.RoundKinds         = kinds
+		entity.RoundKindsRevision = net.ReadUInt( 32 )
 
 		-- Resolve model path - use cartridge model with bodygroups for ammo visualization
 		local modelPath = entity.RoundModel
@@ -651,6 +652,7 @@ do --MARK: Round counts menu
 	-- Opens a window to split the crate between its kinds of rounds, sent through the given property
 	function ENT:OpenRoundCounts( property )
 		local roundKinds = self.RoundKinds
+		local revision   = self.RoundKindsRevision or 0
 		local frame      = g_ContextMenu:Add( "DFrame" )
 		local kinds      = {}
 
@@ -669,6 +671,7 @@ do --MARK: Round counts menu
 
 			property:MsgStart()
 				net.WriteEntity( self )
+				net.WriteUInt( revision, 32 )
 				net.WriteUInt( #roundKinds - 1, ACF.ProfileBits )
 
 				for slot = 1, #roundKinds - 1 do net.WriteUInt( counts[slot] or 0, 25 ) end

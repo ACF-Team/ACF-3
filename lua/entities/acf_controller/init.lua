@@ -276,6 +276,8 @@ do
 		-- Process cameras
 		local _, _, HitPos = self:ProcessCameras(SelfTbl)
 
+		if iters % 4 == 0 then self:RegroupWeapons() end
+
 		-- Aim turrets
 		if iters % 4 == 0 then self:ProcessTurrets(SelfTbl, HitPos) end
 

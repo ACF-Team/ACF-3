@@ -305,6 +305,7 @@ do -- Cost limit enforcement
 		local Owner = Baseplate:CPPIGetOwner()
 		if IsValid(Owner) and Owner:IsPlayer() then
 			-- Feeds the same fields real damage would set, so the vehicle kill feed picks this up too
+			Contraption.ACF_LastDamageTime = CurTime()
 			Contraption.ACF_LastDamageAttacker = Owner
 			Contraption.ACF_LastCost = Cost
 
