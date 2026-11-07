@@ -5,6 +5,7 @@ ENT.WireDebugName  = "ACF Actuator Rod"
 ENT.ConvexMaterial = "Aluminum"
 ENT.DoNotDuplicate = true -- Recreated by its actuator
 ENT.ACF_IsNotLegalityChecked = true
+ENT.ACF_HasOverlay = true
 
 -- Tools assume they can move or unparent what they hit, which throws the rod off its actuator
 hook.Add("CanTool", "ACF Actuator Rod", function(_, Trace)

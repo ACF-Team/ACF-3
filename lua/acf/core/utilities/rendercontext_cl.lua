@@ -2,6 +2,21 @@
 ACF.RenderContext = {}
 local RenderContext = ACF.RenderContext
 
+local STICKY_CVAR = CreateClientConVar("acf_overlay_contextmenu_sticky", 1, true, false, "ACF Overlay; keeps the overlay while the context menu cursor is off the entity.", 0, 1)
+
+local function InRange(Entity, Origin)
+    return Entity:GetPos():Distance(Origin) < (Entity.MaxWorldTipDistance or 256)
+end
+
+-- The context menu's world clicker moves the aim vector with the cursor, so the eye trace follows the mouse
+local function KeepLastLookAt(Lookat, LastLookAt, Origin)
+    if IsValid(Lookat) and Lookat.ACF_HasOverlay and InRange(Lookat, Origin) then return false end
+    if not IsValid(LastLookAt) or not LastLookAt.ACF_HasOverlay or not InRange(LastLookAt, Origin) then return false end
+    if not STICKY_CVAR:GetBool() then return false end
+
+    return IsValid(g_ContextMenu) and g_ContextMenu:IsVisible()
+end
+
 timer.Create("ACF_RenderContextPopulate_HighFreq", 0.1, 0, function()
     -- This condition happens during first join, which causes the timer to fail
     local LocalPlayer = _G.LocalPlayer()
@@ -17,10 +32,10 @@ timer.Create("ACF_RenderContextPopulate_HighFreq", 0.1, 0, function()
     local LastLookAt = RenderContext.LookAt
 
     local Lookat = EyeTrace.Entity
-    if
-        IsValid(Lookat) and
-        Lookat:GetPos():Distance(RenderContext.ViewSetup.origin) < (Lookat.MaxWorldTipDistance or 256)
-    then
+    local Origin = RenderContext.ViewSetup.origin
+    if KeepLastLookAt(Lookat, LastLookAt, Origin) then
+        RenderContext.LookAt = LastLookAt
+    elseif IsValid(Lookat) and InRange(Lookat, Origin) then
         RenderContext.LookAt = Lookat
     else
         RenderContext.LookAt = nil
