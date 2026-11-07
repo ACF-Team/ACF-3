@@ -286,6 +286,9 @@ do -- Spawn/Update/Remove
 						net.WriteUInt(Kind.Bodygroup, 4)
 						net.WriteUInt(Kind.Target, 25)
 					end
+
+					-- Next to the kinds, so the round counts menu gets the revision they belong to
+					net.WriteUInt(Entity.RoundKindsRevision or 0, 32)
 				end
 
 			if Player then
