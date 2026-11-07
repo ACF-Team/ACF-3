@@ -36,6 +36,15 @@ do -- Spawning
 		return Player:CheckLimit(Limit.Name)
 	end
 
+	-- nil if the data doesn't change the controller type, false if the new one has no limit
+	function ENT.ACF_GetLimitName(Data)
+		if Data.Controller == nil then return end
+
+		local Limit = GetSpawnClass(Data).LimitConVar
+
+		return Limit and Limit.Name or false
+	end
+
 	function ENT:ACF_PreSpawn(_, _, _, Data)
 		self.ACF = {}
 
@@ -50,8 +59,10 @@ do -- Spawning
 		local Class = GetSpawnClass(Data)
 		local Limit = Class and Class.LimitConVar
 
-		if IsValid(Player) and Limit then
-			Player:AddCount(Limit.Name, self)
+		if IsValid(Player) then
+			self.ACF_LimitName = Limit and Limit.Name or false
+
+			if Limit then Player:AddCount(Limit.Name, self) end
 		end
 	end
 end

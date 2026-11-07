@@ -299,7 +299,7 @@ local function UpdateProjectileCountLimits(ToolData, SkipMissiles)
 	local CurrentY = GetCount("Y")
 	local CurrentZ = GetCount("Z")
 
-	local MinX = 1
+	local MinX, MinZ = 1, 1
 	local MaxX, MaxY, MaxZ
 
 	local Layout = ACF.GetDrumLayout(GetShapeName())
@@ -328,9 +328,13 @@ local function UpdateProjectileCountLimits(ToolData, SkipMissiles)
 		MaxX, MaxY, MaxZ = CalculateMaxCounts(ToolData)
 	end
 
+	-- two piece rounds need a charge and a projectile layer
+	if BulletData and BulletData.TwoPiece and not IsCassette() then MinZ = math.min(2, MaxZ) end
+
 	CountSliders.X:SetMin(MinX)
 	CountSliders.X:SetMax(MaxX)
 	CountSliders.Y:SetMax(MaxY)
+	CountSliders.Z:SetMin(MinZ)
 	CountSliders.Z:SetMax(MaxZ)
 
 	if CurrentX < MinX then
@@ -344,7 +348,10 @@ local function UpdateProjectileCountLimits(ToolData, SkipMissiles)
 		CountSliders.Y:SetValue(MaxY)
 		AmmoCtx:Set("CrateProjectilesY", MaxY)
 	end
-	if CurrentZ > MaxZ then
+	if CurrentZ < MinZ then
+		CountSliders.Z:SetValue(MinZ)
+		AmmoCtx:Set("CrateProjectilesZ", MinZ)
+	elseif CurrentZ > MaxZ then
 		CountSliders.Z:SetValue(MaxZ)
 		AmmoCtx:Set("CrateProjectilesZ", MaxZ)
 	end

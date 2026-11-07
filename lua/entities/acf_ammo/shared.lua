@@ -53,14 +53,21 @@ properties.Add("acf_ammo_counts", {
 	end,
 
 	Receive = function(self, _, Player)
-		local Entity = net.ReadEntity()
-		local Counts = {}
+		local Entity   = net.ReadEntity()
+		local Revision = net.ReadUInt(32)
+		local Counts   = {}
 
 		for Index = 1, net.ReadUInt(ACF.ProfileBits) do
 			Counts[Index] = net.ReadUInt(25)
 		end
 
 		if not properties.CanBeTargeted(Entity, Player) or not self:Filter(Entity, Player) then return end
+
+		-- Counts go by slot, so they only fit the kinds the menu was opened with
+		if Revision ~= Entity.RoundKindsRevision then
+			ACF.Utilities.Messages.SendChat(Player, "Error", "The crate's rounds changed while the menu was open, nothing was applied.")
+			return
+		end
 
 		Entity:ACF_SetRoundCounts(Player, Counts)
 	end,

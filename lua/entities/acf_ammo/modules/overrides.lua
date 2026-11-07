@@ -265,6 +265,7 @@ do -- MARK: Storage
 		self:ACF_SetUserVar("OverrideCounts", StoredCounts)
 
 		self.RoundKinds = Kinds
+		self.RoundKindsRevision = (self.RoundKindsRevision or 0) + 1
 
 		self:SyncRoundCounts()
 	end
