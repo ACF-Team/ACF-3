@@ -9,6 +9,16 @@ Classes.DefineClass("base_scalable",      "base_wire_entity", function() end)
 Classes.DefineClass("acf_base_simple",    "base_wire_entity", function() end)
 Classes.DefineClass("acf_base_scalable",  "base_scalable",    function() end)
 
+-- Same as the rack's, Player:AddCount has no counterpart
+local function RemoveCount(Player, Str, Entity)
+    local Key = Player:UniqueID()
+    local Tab = g_SBoxObjects[Key] and g_SBoxObjects[Key][Str]
+
+    if Tab and table.RemoveByValue(Tab, Entity) then
+        Player:GetCount(Str)
+    end
+end
+
 local function ClassNameTrick(ENT)
     local Class  = string.Split(ENT.Folder, "/"); Class = Class[#Class]
     ENT.ACF_ClassName = Class
@@ -114,6 +124,20 @@ local function PrepareSpawnFunctions(ENT, ClassName)
             ENT.ACF_OnVerifyClientData(ClientData)
         end
 
+        -- Entities with a limit per type are counted under one when spawned (ACF_LimitName), changing type moves them to another
+        local Owner, NewLimit
+
+        if self.ACF_LimitName ~= nil and ENT.ACF_GetLimitName then
+            NewLimit = ENT.ACF_GetLimitName(ClientData)
+            Owner    = self:CPPIGetOwner()
+
+            if NewLimit == nil or NewLimit == self.ACF_LimitName or not IsValid(Owner) then
+                NewLimit = nil
+            elseif NewLimit and not Owner:CheckLimit(NewLimit) then
+                return false, "You've reached the spawn limit for this entity."
+            end
+        end
+
         local HookArgs  = ENT.ACF_GetHookArguments and ENT.ACF_GetHookArguments(ClientData)
         local CanUpdate, Reason = hook.Run("ACF_PreUpdateEntity", ClassName, self, ClientData, HookArgs)
         if CanUpdate == false then return CanUpdate, Reason end
@@ -144,6 +168,13 @@ local function PrepareSpawnFunctions(ENT, ClassName)
         end
 
         self:ACF_SetupWireFunctions()
+
+        if NewLimit ~= nil then
+            if self.ACF_LimitName then RemoveCount(Owner, self.ACF_LimitName, self) end
+            if NewLimit then Owner:AddCount(NewLimit, self) end
+
+            self.ACF_LimitName = NewLimit
+        end
 
         ACF.Activate(self, true)
         return true, (self.PrintName or ClassName) .. " updated successfully!"
