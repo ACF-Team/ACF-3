@@ -93,7 +93,8 @@ do -- Spawn/Update/Remove
 
 			-- Primary means rounds per ring on a horizontal drum, but rings on a vertical one
 			local primary   = Clamp(Floor(tonumber(Data.CrateProjectilesX) or minPrimary), minPrimary, maxPrimary)
-			local numStacks = Clamp(Floor(tonumber(Data.CrateProjectilesZ) or 2), 1, maxStacks)
+			local minStacks = Bullet.TwoPiece and math.min(2, maxStacks) or 1 -- two piece rounds need a charge and a projectile layer
+			local numStacks = Clamp(Floor(tonumber(Data.CrateProjectilesZ) or 2), minStacks, maxStacks)
 
 			Data.CrateProjectilesX = primary
 			Data.CrateProjectilesZ = numStacks
@@ -143,6 +144,8 @@ do -- Spawn/Update/Remove
 			cx = math.min(cx, maxX)
 			cy = math.min(cy, maxY)
 			cz = math.min(cz, maxZ)
+
+			if Bullet.TwoPiece then cz = math.max(cz, math.min(2, maxZ)) end
 
 			-- Persist counts on both Data and Entity
 			Data.CrateProjectilesX = cx
