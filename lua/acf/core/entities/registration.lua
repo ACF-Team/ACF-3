@@ -206,8 +206,15 @@ local function PrepareSpawnFunctions(ENT, ClassName)
         Serialization.SanitizeClassFields(ClassDef, ClientData)
 
         if IsValid(Player) then
-            local Func = CheckSpawnLimit or Player.CheckLimit
-            if not Func(Player, "_" .. ClassName) then return nil, "You've reached the spawn limit for this entity." end
+            local Allowed
+
+            if CheckSpawnLimit then
+                Allowed = CheckSpawnLimit(Player, "_" .. ClassName, ClientData)
+            else
+                Allowed = Player:CheckLimit("_" .. ClassName)
+            end
+
+            if not Allowed then return nil, "You've reached the spawn limit for this entity." end
         end
 
         local CanSpawn, Reason = hook.Run("ACF_PreSpawnEntity", ClassName, Player, ClientData)
