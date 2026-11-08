@@ -213,19 +213,22 @@ do -- Mobility functions
 		return Mass, Torque, TorqueRating
 	end
 
-	--- Returns the minimum and max gear ratio limits depending on whether legacy ratios are used.
-	function ACF.GetGearRatioLimits(UseLegacyRatios)
-		if UseLegacyRatios then return ACF.MinGearRatioLegacy, ACF.MaxGearRatioLegacy end
-		return ACF.MinGearRatio, ACF.MaxGearRatio
+	--- Returns the minimum and max gear ratio limits depending on whether realistic ratios are used.
+	function ACF.GetGearRatioLimits(UseRealisticRatios)
+		if UseRealisticRatios then return ACF.MinGearRatio, ACF.MaxGearRatio end
+		return ACF.MinGearRatioLegacy, ACF.MaxGearRatioLegacy
 	end
 
-	--- Optionally converts a gear to the legacy ratio format of 1/x, and avoids converting 0
-	function ACF.ConvertGearRatio(Ratio, UseLegacyRatios)
+	--- Optionally converts a gear ratio to the realistic format of 1/x, and avoids converting 0. Storage
+	--- and physics are always legacy; this is purely a UI display/input conversion.
+	function ACF.ConvertGearRatio(Ratio, UseRealisticRatios, Decimals)
+		Decimals = Decimals or 3
+
 		if Ratio == 0 then return 0 end
-		if UseLegacyRatios then
-			return math.Round(1 / Ratio, 3)
+		if UseRealisticRatios then
+			return math.Round(1 / Ratio, Decimals)
 		end
-		return math.Round(Ratio, 3)
+		return math.Round(Ratio, Decimals)
 	end
 
 	ACF.WheelAxes     = { Vector(1, 0, 0), Vector(0, 1, 0), Vector(0, 0, 1) }

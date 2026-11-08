@@ -42,7 +42,7 @@ local function CalcWheel(Entity, Link, Wheel, SelfWorld)
 	if GearRatio == 0 then return 0 end
 
 	-- Reported BaseRPM is in angle per second and in the wrong direction, so we convert and add the gear ratio
-	return BaseRPM * GearRatio / -6
+	return BaseRPM / GearRatio / -6
 end
 
 do -- Spawn and Update functions -----------------------
@@ -71,8 +71,6 @@ do -- Spawn and Update functions -----------------------
 		end
 
 		local MaxGears = Class.CanSetGears and (Class.MaxGear or ClientData.GearAmount or Class.Gears.Max) or Class.Gears.Max
-		local Invert = Class.InvertGearRatios or ClientData.InvertGearRatios
-		ClientData.InvertGearRatios = nil
 
 		local Gears = istable(ClientData.Gears) and ClientData.Gears or {}
 
@@ -84,12 +82,7 @@ do -- Spawn and Update functions -----------------------
 				ClientData["Gear" .. I] = nil
 			end
 
-			-- Invert pre-scalable gear ratios (compat only; never set on V2 gearboxes).
-			if Invert and Gear ~= 0 and abs(Gear) < 1 then
-				Gear = math.Round(1 / Gear, 2)
-			end
-
-			Gears[I] = math.Round(Gear, 3)
+			Gears[I] = math.Round(Gear, ACF.GearRatioDecimals)
 		end
 
 		for I = MaxGears + 1, #Gears do Gears[I] = nil end
@@ -102,11 +95,7 @@ do -- Spawn and Update functions -----------------------
 			ClientData.Gear0 = nil
 		end
 
-		if Invert and Final ~= 0 and abs(Final) < 1 then
-			Final = math.Round(1 / Final, 2)
-		end
-
-		ClientData.FinalDrive = math.Round(Final, 3)
+		ClientData.FinalDrive = math.Round(Final, ACF.GearRatioDecimals)
 
 		-- Class-specific verification (automatic ShiftPoints/Reverse, CVT MinRPM/MaxRPM).
 		if Class.VerifyData then Class.VerifyData(ClientData, Class) end
@@ -154,7 +143,7 @@ do -- Spawn and Update functions -----------------------
 		Entity.MaxRPM             = Entity:ACF_GetUserVar("MaxRPM")
 		Entity.GearboxScale       = Scale
 		Entity.GearAmount         = MaxGear
-		Entity.GearboxLegacyRatio = Entity:ACF_GetUserVar("GearboxLegacyRatio")
+		Entity.GearboxRealisticRatio = Entity:ACF_GetUserVar("GearboxRealisticRatio")
 
 		Entity.Name         = Gearbox.Name
 		Entity.ShortName    = ShortName(Gearbox:GetType())
@@ -573,8 +562,8 @@ do -- Inputs -------------------------------------------
 	ACF.AddInputAction("acf_gearbox", "CVT Ratio", function(Entity, Value)
 		if not Entity.CVT then return end
 
-		if Entity.GearboxLegacyRatio and Value ~= 0 then Value = 1 / Value end
-		Entity.CVTRatio = Value ~= 0 and Clamp(Value, ACF.MinCVTRatio, ACF.MaxCVTRatio) or Value
+		if Entity.GearboxRealisticRatio and Value ~= 0 then Value = 1 / Value end
+		Entity.CVTRatio = Value ~= 0 and Clamp(Value, ACF.MinCVTRatioLegacy, ACF.MaxCVTRatioLegacy) or Value
 	end)
 
 	ACF.AddInputAction("acf_gearbox", "Steer Rate", function(Entity, Value)
@@ -788,7 +777,7 @@ end ----------------------------------------------------
 
 do -- Overlay Text -------------------------------------
 	function ENT:ACF_UpdateOverlayState(State)
-		local Final     = ACF.ConvertGearRatio(self.FinalDrive, self.GearboxLegacyRatio)
+		local Final     = ACF.ConvertGearRatio(self.FinalDrive, self.GearboxRealisticRatio)
 		local Torque    = math.Round(self.MaxTorque * ACF.TorqueMult * ACF.NmToFtLb)
 		local Output    = math.Round(self.TorqueOutput * ACF.TorqueMult * ACF.NmToFtLb)
 
@@ -798,12 +787,12 @@ do -- Overlay Text -------------------------------------
 			GearsText = ""
 
 			for I = 1, self.MaxGear do
-				local Ratio = ACF.ConvertGearRatio(Gears[I], self.GearboxLegacyRatio)
+				local Ratio = ACF.ConvertGearRatio(Gears[I], self.GearboxRealisticRatio)
 				GearsText = GearsText .. "Gear " .. I .. ": " .. Ratio .. "\n"
 			end
 		end
 
-		local RatioFormat = self.GearboxLegacyRatio and "Driven/Driver (Legacy)" or "Driver/Driven (Realistic)"
+		local RatioFormat = self.GearboxRealisticRatio and "Driver/Driven (Realistic)" or "Driven/Driver (Legacy)"
 		State:AddNumber("Scale", self.ScaleMult)
 		State:AddNumber("Current Gear", self.Gear)
 		State:AddDivider()
@@ -813,8 +802,8 @@ do -- Overlay Text -------------------------------------
 			local Gears = self.Gears
 
 			for I = 1, self.MaxGear do
-				local Ratio = ACF.ConvertGearRatio(Gears[I], self.GearboxLegacyRatio)
-				State:AddGearRatio("Gear " .. I, Ratio, "", self.GearboxLegacyRatio)
+				local Ratio = ACF.ConvertGearRatio(Gears[I], self.GearboxRealisticRatio)
+				State:AddGearRatio("Gear " .. I, Ratio, "", not self.GearboxRealisticRatio)
 			end
 		end
 		State:AddDivider()
@@ -860,7 +849,7 @@ do -- Gear Shifting ------------------------------------
 
 		WireLib.TriggerOutput(self, "Current Gear", Value)
 
-		local Ratio = ACF.ConvertGearRatio(self.GearRatio, self.GearboxLegacyRatio)
+		local Ratio = ACF.ConvertGearRatio(self.GearRatio, self.GearboxRealisticRatio)
 		WireLib.TriggerOutput(self, "Ratio", Ratio)
 	end
 end ----------------------------------------------------
@@ -888,7 +877,7 @@ do -- Movement -----------------------------------------
 				Gears[1] = SelfTbl.CVTRatio
 			else
 				local MinRPM  = SelfTbl.MinRPM
-				Gears[1] = 1 / Clamp((InputRPM - MinRPM) / (SelfTbl.MaxRPM - MinRPM), 0.05, 1)
+				Gears[1] = Clamp((InputRPM - MinRPM) / (SelfTbl.MaxRPM - MinRPM), 0.05, 1)
 			end
 
 			local GearRatio = Gears[1] * SelfTbl.FinalDrive
@@ -896,7 +885,7 @@ do -- Movement -----------------------------------------
 
 			if SelfTbl.LastRatio ~= GearRatio then
 				SelfTbl.LastRatio = GearRatio
-				local Ratio = ACF.ConvertGearRatio(GearRatio, SelfTbl.GearboxLegacyRatio)
+				local Ratio = ACF.ConvertGearRatio(GearRatio, SelfTbl.GearboxRealisticRatio)
 				WireLib.TriggerOutput(self, "Ratio", Ratio)
 			end
 		end
@@ -928,10 +917,10 @@ do -- Movement -----------------------------------------
 				local Inertia = 0
 
 				if GearRatio ~= 0 then
-					Inertia = InputInertia * GearRatio
+					Inertia = InputInertia / GearRatio
 				end
 
-				Link.ReqTq = abs(Ent:Calc(InputRPM / GearRatio, Inertia) / GearRatio) * Clutch
+				Link.ReqTq = abs(Ent:Calc(InputRPM * GearRatio, Inertia) * GearRatio) * Clutch
 				TotalReqTq = TotalReqTq + abs(Link.ReqTq)
 			end
 		end
@@ -978,10 +967,10 @@ do -- Movement -----------------------------------------
 				local Inertia = 0
 
 				if GearRatio ~= 0 then
-					Inertia = InputInertia * GearRatio
+					Inertia = InputInertia / GearRatio
 				end
 
-				Link.ReqTq = abs(Effector:Calc(InputRPM / GearRatio, Inertia) / GearRatio) * Clutch
+				Link.ReqTq = abs(Effector:Calc(InputRPM * GearRatio, Inertia) * GearRatio) * Clutch
 				TotalReqTq = TotalReqTq + abs(Link.ReqTq)
 			end
 		end
@@ -1016,7 +1005,7 @@ do -- Movement -----------------------------------------
 		local GearRatio = SelfTbl.GearRatio
 
 		if Torque ~= 0 and GearRatio ~= 0 then
-			AvailTq = min(abs(Torque) / SelfTbl.TotalReqTq, 1) * GearRatio * -(-Torque / abs(Torque)) * Loss * Slop
+			AvailTq = min(abs(Torque) / SelfTbl.TotalReqTq, 1) / GearRatio * -(-Torque / abs(Torque)) * Loss * Slop
 		end
 
 		for Ent, Link in pairs(SelfTbl.GearboxOut) do

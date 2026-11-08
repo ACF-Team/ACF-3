@@ -88,7 +88,7 @@ Classes.DefineClass("ACF.Gearboxes.Auto", "ACF.Gearboxes.BaseGearbox", function(
 				Data.Gear8 = nil
 			end
 
-			Data.Reverse = math.Clamp(Reverse, ACF.MinGearRatio, ACF.MaxGearRatio)
+			Data.Reverse = math.Clamp(Reverse, ACF.MinGearRatioLegacy, ACF.MaxGearRatioLegacy)
 		end
 	end
 	CLASS.SetupInputs = function(_, List)
@@ -109,15 +109,15 @@ Classes.DefineClass("ACF.Gearboxes.Auto", "ACF.Gearboxes.BaseGearbox", function(
 		local Gears     = Gearbox.Gears
 
 		for I = 1, Gearbox.MaxGear do
-			local Ratio = ACF.ConvertGearRatio(Gears[I], Gearbox.GearboxLegacyRatio)
+			local Ratio = ACF.ConvertGearRatio(Gears[I], Gearbox.GearboxRealisticRatio)
 			local KPH = math.Round(Points[I] / 10.936, 1)
 			local MPH = math.Round(Points[I] / 17.6, 1)
 
-			State:AddGearRatio("Gear " .. I, Ratio, GearText:format(KPH, MPH), Gearbox.GearboxLegacyRatio)
+			State:AddGearRatio("Gear " .. I, Ratio, GearText:format(KPH, MPH), not Gearbox.GearboxRealisticRatio)
 		end
 
-		local Reverse = ACF.ConvertGearRatio(Gears[Gearbox.GearCount], Gearbox.GearboxLegacyRatio)
-		State:AddGearRatio("Reverse Gear", Reverse, "", Gearbox.GearboxLegacyRatio, true)
+		local Reverse = ACF.ConvertGearRatio(Gears[Gearbox.GearCount], Gearbox.GearboxRealisticRatio)
+		State:AddGearRatio("Reverse Gear", Reverse, "", not Gearbox.GearboxRealisticRatio, true)
 	end
 end)
 

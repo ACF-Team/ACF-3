@@ -182,8 +182,8 @@ do -- Default gearbox menus
 	local Values = {}
 
 	do -- Manual Gearbox Menu
-		function ACF.ManualGearboxMenu(Class, _, Menu, Ctx, UseLegacyRatios)
-			local MinGearRatio, MaxGearRatio = ACF.GetGearRatioLimits(UseLegacyRatios)
+		function ACF.ManualGearboxMenu(Class, _, Menu, Ctx, UseRealisticRatios)
+			local MinGearRatio, MaxGearRatio = ACF.GetGearRatioLimits(UseRealisticRatios)
 
 			local Gears = Class.CanSetGears and (Ctx:Get("GearAmount") or 3) or Class.Gears.Max
 			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings", nil, "icon16/cog_edit.png")
@@ -193,10 +193,11 @@ do -- Default gearbox menus
 
 			local ValuesData = Values[ClassID]
 
+			-- ValuesData holds stored (legacy) ratios so toggling the realistic display keeps their meaning
 			local GearValues = {}
 			local function PushGears()
 				local Arr = {}
-				for I = 1, Gears do Arr[I] = ACF.ConvertGearRatio(GearValues[I] or 0, UseLegacyRatios) end
+				for I = 1, Gears do Arr[I] = GearValues[I] or 0 end
 				Ctx:Set("Gears", Arr)
 			end
 
@@ -204,20 +205,20 @@ do -- Default gearbox menus
 				local Variable = "Gear" .. I
 
 				if not ValuesData[Variable] then
-					ValuesData[Variable] = math.Clamp(I * 0.1, ACF.MinGearRatio, ACF.MaxGearRatio)
+					ValuesData[Variable] = I * 0.1
 				end
 
 				GearValues[I] = ValuesData[Variable]
 
 				local SliderName = language.GetPhrase("acf.menu.gearboxes.gear_number"):format(I)
 				local Control = GearBase:AddSlider(SliderName, MinGearRatio, MaxGearRatio, 2)
-				Control:SetValue(ValuesData[Variable])
+				Control:SetValue(ACF.ConvertGearRatio(ValuesData[Variable], UseRealisticRatios))
 
 				function Control:OnValueChanged(Value)
 					Value = math.Round(Value, 2)
 					self:SetValue(Value)
-					ValuesData[Variable] = Value
-					GearValues[I] = Value
+					ValuesData[Variable] = ACF.ConvertGearRatio(Value, UseRealisticRatios, ACF.GearRatioDecimals)
+					GearValues[I] = ValuesData[Variable]
 					PushGears()
 				end
 			end
@@ -227,17 +228,17 @@ do -- Default gearbox menus
 			end
 
 			local FinalDrive = GearBase:AddSlider("#acf.menu.gearboxes.final_drive", MinGearRatio, MaxGearRatio, 2)
-			FinalDrive:SetValue(ValuesData.FinalDrive)
+			FinalDrive:SetValue(ACF.ConvertGearRatio(ValuesData.FinalDrive, UseRealisticRatios))
 
 			function FinalDrive:OnValueChanged(Value)
 				Value = math.Round(Value, 2)
 				self:SetValue(Value)
-				ValuesData.FinalDrive = Value
-				Ctx:Set("FinalDrive", ACF.ConvertGearRatio(Value, UseLegacyRatios))
+				ValuesData.FinalDrive = ACF.ConvertGearRatio(Value, UseRealisticRatios, ACF.GearRatioDecimals)
+				Ctx:Set("FinalDrive", ValuesData.FinalDrive)
 			end
 
 			PushGears()
-			Ctx:Set("FinalDrive", ACF.ConvertGearRatio(ValuesData.FinalDrive, UseLegacyRatios))
+			Ctx:Set("FinalDrive", ValuesData.FinalDrive)
 		end
 	end
 
@@ -273,8 +274,8 @@ do -- Default gearbox menus
 			},
 		}
 
-		function ACF.CVTGearboxMenu(Class, _, Menu, Ctx, UseLegacyRatios)
-			local MinGearRatio, MaxGearRatio = ACF.GetGearRatioLimits(UseLegacyRatios)
+		function ACF.CVTGearboxMenu(Class, _, Menu, Ctx, UseRealisticRatios)
+			local MinGearRatio, MaxGearRatio = ACF.GetGearRatioLimits(UseRealisticRatios)
 
 			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings", nil, "icon16/cog_edit.png")
 
@@ -283,33 +284,32 @@ do -- Default gearbox menus
 
 			local ValuesData = Values[ClassID]
 
-			-- CVT gear 1 is always 1:1; gear 2 is the user-set ratio. Gear 2 is converted from legacy-mode
-			-- input into the canonical ratio the entity stores (gear 1 is 1:1 in either convention).
+			-- CVT gear 1 is always 1:1; gear 2 is the user-set ratio. Ratio entries in ValuesData are stored
+			-- (legacy) ratios, converted only for display.
 			local function PushGears()
-				Ctx:Set("Gears", { 1, ACF.ConvertGearRatio(ValuesData.Gear2 or -1, UseLegacyRatios) })
+				Ctx:Set("Gears", { 1, ValuesData.Gear2 or -1 })
 			end
 
 			for _, GearData in ipairs(CVTData) do
 				local Variable = GearData.Variable
+				local IsRatio  = not GearData.Min -- MinRPM / MaxRPM are RPM fields, not ratios
 
 				if not ValuesData[Variable] then
 					ValuesData[Variable] = GearData.Default
 				end
 
 				local Control = GearBase:AddSlider(GearData.Name, GearData.Min or MinGearRatio, GearData.Max or MaxGearRatio, GearData.Decimals)
-				Control:SetValue(ValuesData[Variable])
+				Control:SetValue(IsRatio and ACF.ConvertGearRatio(ValuesData[Variable], UseRealisticRatios) or ValuesData[Variable])
 
 				function Control:OnValueChanged(Value)
 					Value = math.Round(Value, GearData.Decimals)
 					self:SetValue(Value)
-					ValuesData[Variable] = Value
+					ValuesData[Variable] = IsRatio and ACF.ConvertGearRatio(Value, UseRealisticRatios, ACF.GearRatioDecimals) or Value
 
 					if Variable == "Gear2" then
 						PushGears()
-					elseif Variable == "FinalDrive" then
-						Ctx:Set(Variable, ACF.ConvertGearRatio(Value, UseLegacyRatios))
 					else
-						Ctx:Set(Variable, Value) -- MinRPM / MaxRPM are RPM fields, not ratios
+						Ctx:Set(Variable, ValuesData[Variable])
 					end
 				end
 			end
@@ -317,7 +317,7 @@ do -- Default gearbox menus
 			PushGears()
 			Ctx:Set("MinRPM", ValuesData.MinRPM)
 			Ctx:Set("MaxRPM", ValuesData.MaxRPM)
-			Ctx:Set("FinalDrive", ACF.ConvertGearRatio(ValuesData.FinalDrive, UseLegacyRatios))
+			Ctx:Set("FinalDrive", ValuesData.FinalDrive)
 		end
 	end
 
@@ -366,8 +366,8 @@ do -- Default gearbox menus
 			},
 		}
 
-		function ACF.AutomaticGearboxMenu(Class, _, Menu, Ctx, UseLegacyRatios)
-			local MinGearRatio, MaxGearRatio = ACF.GetGearRatioLimits(UseLegacyRatios)
+		function ACF.AutomaticGearboxMenu(Class, _, Menu, Ctx, UseRealisticRatios)
+			local MinGearRatio, MaxGearRatio = ACF.GetGearRatioLimits(UseRealisticRatios)
 
 			local Gears = Class.CanSetGears and (Ctx:Get("GearAmount") or 3) or Class.Gears.Max
 			local GearBase = Menu:AddCollapsible("#acf.menu.gearboxes.gear_settings", nil, "icon16/cog_edit.png")
@@ -381,9 +381,10 @@ do -- Default gearbox menus
 			local ShiftValues = {}
 			local ShiftWangs  = {}
 
+			-- Ratio entries in ValuesData are stored (legacy) ratios, converted only for display
 			local function PushGears()
 				local Arr = {}
-				for I = 1, Gears do Arr[I] = ACF.ConvertGearRatio(GearValues[I] or 0, UseLegacyRatios) end
+				for I = 1, Gears do Arr[I] = GearValues[I] or 0 end
 				Ctx:Set("Gears", Arr)
 			end
 
@@ -419,20 +420,20 @@ do -- Default gearbox menus
 				local GearVar = "Gear" .. I
 
 				if not ValuesData[GearVar] then
-					ValuesData[GearVar] = math.Clamp(I * 0.1, MinGearRatio, MaxGearRatio)
+					ValuesData[GearVar] = I * 0.1
 				end
 
 				GearValues[I] = ValuesData[GearVar]
 
 				local GearName = language.GetPhrase("acf.menu.gearboxes.gear_number"):format(I)
 				local Gear = GearBase:AddSlider(GearName, MinGearRatio, MaxGearRatio, 2)
-				Gear:SetValue(ValuesData[GearVar])
+				Gear:SetValue(ACF.ConvertGearRatio(ValuesData[GearVar], UseRealisticRatios))
 
 				function Gear:OnValueChanged(Value)
 					Value = math.Round(Value, 2)
 					self:SetValue(Value)
-					ValuesData[GearVar] = Value
-					GearValues[I] = Value
+					ValuesData[GearVar] = ACF.ConvertGearRatio(Value, UseRealisticRatios, ACF.GearRatioDecimals)
+					GearValues[I] = ValuesData[GearVar]
 					PushGears()
 				end
 
@@ -465,13 +466,13 @@ do -- Default gearbox menus
 				end
 
 				local Control = GearBase:AddSlider(GearData.Name, GearData.Min or MinGearRatio, GearData.Max or MaxGearRatio, GearData.Decimals)
-				Control:SetValue(ValuesData[Variable])
+				Control:SetValue(ACF.ConvertGearRatio(ValuesData[Variable], UseRealisticRatios))
 
 				function Control:OnValueChanged(Value)
 					Value = math.Round(Value, GearData.Decimals)
 					self:SetValue(Value)
-					ValuesData[Variable] = Value
-					Ctx:Set(Variable, ACF.ConvertGearRatio(Value, UseLegacyRatios))
+					ValuesData[Variable] = ACF.ConvertGearRatio(Value, UseRealisticRatios, ACF.GearRatioDecimals)
+					Ctx:Set(Variable, ValuesData[Variable])
 				end
 			end
 
@@ -488,12 +489,14 @@ do -- Default gearbox menus
 					ValuesData[Variable] = PanelData.Default
 				end
 
+				local IsRatio = Variable == "TotalRatio"
 				local Panel = GenBase:AddNumberWang(PanelData.Name, PanelData.Min, PanelData.Max, PanelData.Decimals)
 				Panel:HideWang()
-				Panel:SetValue(ValuesData[Variable])
+				Panel:SetValue(IsRatio and ACF.ConvertGearRatio(ValuesData[Variable], UseRealisticRatios) or ValuesData[Variable])
 
 				function Panel:OnValueChanged(Value)
-					ValuesData[Variable] = math.Round(Value, PanelData.Decimals)
+					Value = math.Round(Value, PanelData.Decimals)
+					ValuesData[Variable] = IsRatio and ACF.ConvertGearRatio(Value, UseRealisticRatios, ACF.GearRatioDecimals) or Value
 				end
 
 				if PanelData.Tooltip then
@@ -508,14 +511,11 @@ do -- Default gearbox menus
 				local TotalRatio = ValuesData.TotalRatio
 				local FinalDrive = ValuesData.FinalDrive
 				local WheelDiameter = ValuesData.WheelDiameter
-				local Multiplier = math.pi * UpshiftRPM * WheelDiameter / (60 * UnitMult)
-
-				if not UseLegacyRatios then Multiplier = Multiplier / TotalRatio / FinalDrive
-				else Multiplier = Multiplier * TotalRatio * FinalDrive end
+				local Multiplier = math.pi * UpshiftRPM * WheelDiameter / (60 * UnitMult) * TotalRatio * FinalDrive
 
 				for I = 1, Gears do
 					local Gear  = ValuesData["Gear" .. I]
-					local Speed = (not UseLegacyRatios) and (Multiplier / Gear) or (Multiplier * Gear)
+					local Speed = Multiplier * Gear
 
 					ValuesData["Shift" .. I] = Speed
 					ShiftValues[I] = Speed
@@ -527,8 +527,8 @@ do -- Default gearbox menus
 
 			PushGears()
 			PushShifts()
-			Ctx:Set("Reverse", ACF.ConvertGearRatio(ValuesData.Reverse or -1, UseLegacyRatios))
-			Ctx:Set("FinalDrive", ACF.ConvertGearRatio(ValuesData.FinalDrive or 1, UseLegacyRatios))
+			Ctx:Set("Reverse", ValuesData.Reverse or -1)
+			Ctx:Set("FinalDrive", ValuesData.FinalDrive or 1)
 		end
 	end
 end
