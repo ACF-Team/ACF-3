@@ -404,6 +404,17 @@ function ENT:UpdateOutputs(SelfTbl)
 end
 
 function ENT:ACF_UpdateOverlayState(State)
+	-- TODO: Super fucking janky i know. Rewrite this before merging!
+	local TorqueMult    = ACF.GetServerData("TorqueMult") or 1
+
+	local PeakTorque    = Round(self.PeakTorque * TorqueMult)
+	local PeakTqFtLb    = Round(PeakTorque * ACF.NmToFtLb)
+	local PeakPower     = Round(self.PeakPower * TorqueMult)
+	local PeakPowerHP   = Round(PeakPower * ACF.KwToHp)
+	local PeakTorqueRPM = Round(self.PeakTqRPM)
+	local PeakPowerRPM  = Round(self.PeakPowerRPM)
+	local DeltaBand     = Round(abs(self.PeakMaxRPM - self.PeakMinRPM))
+
 	if self.Active then
 		State:AddSuccess("Active")
 	else
@@ -411,9 +422,9 @@ function ENT:ACF_UpdateOverlayState(State)
 	end
 
 	State:AddKeyValue("Type", self.Name)
-	State:AddEnginePower("Power", self.PeakPower)
-	State:AddEngineTorque("Torque", self.PeakTorque)
-	State:AddKeyValue("Powerband", ("%s - %s RPM"):format(self.PeakMinRPM, self.PeakMaxRPM))
+	State:AddKeyValue("Power", ("%s kW / %s hp @%s RPM"):format(PeakPower, PeakPowerHP, PeakPowerRPM))
+	State:AddKeyValue("Torque", ("%s Nm / %s ft-lb @%s RPM"):format(PeakTorque, PeakTqFtLb, PeakTorqueRPM))
+	State:AddKeyValue("Powerband", ("%s - %s RPM Δ%s RPM"):format(self.PeakMinRPM, self.PeakMaxRPM, DeltaBand))
 	State:AddKeyValue("Redline", ("%s RPM"):format(self.LimitRPM))
 end
 

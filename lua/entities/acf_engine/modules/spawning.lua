@@ -93,7 +93,7 @@ do -- Spawn and Update functions
             or Classes.GetTypeByName("ACF.EngineTypes.GenericPetrol")
         local Mass         = Engine.Mass
         local ShortName    = GetShortName(EngineClass, "ACF%.Engines%.")
-        local Displacement = not Engine.IsElectric and Engine.Displacement or Engine.PeakPower
+        local Displacement = not Engine.IsElectric and Engine.Displacement or Engine.PeakPower -- TODO: this is wrong for turbines/electric motors
 
         Entity.ACF = Entity.ACF or {}
 
@@ -120,6 +120,8 @@ do -- Spawn and Update functions
         Entity.PeakMinRPM       = Engine.RPM.PeakMin
         Entity.PeakMaxRPM       = Engine.RPM.PeakMax
         Entity.LimitRPM         = Engine.RPM.Limit
+        Entity.PeakTqRPM        = Engine.PeakTqRPM
+        Entity.PeakPowerRPM     = Engine.PeakPowerRPM
         Entity.RevLimited       = false
         Entity.FlywheelOverride = Engine.RPM.Override
         Entity.FlywheelMass     = Engine.FlywheelMass
