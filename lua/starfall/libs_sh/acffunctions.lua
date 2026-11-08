@@ -1224,6 +1224,36 @@ if SERVER then
 		return math.floor(This.Torque * This.FlyRPM / 9548.8)
 	end
 
+	-- Returns the RPM at the peak power of an ACF engine
+	-- @server
+	-- @return number The RPM at peak power, in kW
+	function ents_methods:acfPeakPowerRPM()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return 0 end
+		if not This.PeakPowerRPM then return 0 end
+
+		return math.Round(This.PeakPowerRPM)
+	end
+
+	-- Returns the RPM at the peak torque of an ACF engine
+	-- @server
+	-- @return number The RPM at peak torque, in N/m
+	function ents_methods:acfPeakTorqueRPM()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return 0 end
+		if not This.PeakTqRPM then return 0 end
+
+		return math.Round(This.PeakTqRPM)
+	end
+
 	--- Returns true if the RPM of an ACF engine is inside the powerband
 	-- @server
 	-- @return boolean True if the RPM is inside the powerband
