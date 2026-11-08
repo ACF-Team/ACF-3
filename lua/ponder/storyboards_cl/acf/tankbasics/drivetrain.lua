@@ -157,6 +157,9 @@ Chapter:AddInstruction("Caption", {
 })
 
 Chapter:AddDelay(1)
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "This guide uses the default gear ratio format, so leave Use Realistic Gear Ratios unticked."}))
+Chapter:AddInstruction("ACF.SetPanelCheckBox", {Name = "MainMenuCPanel", CheckBoxName = "#acf.menu.gearboxes.inverted", Value = false}):DelayByLength()
+Chapter:AddDelay(1)
 Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", Choice = "CVT"}):DelayByLength()
 Chapter:AddDelay(1)
 Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", Choice = "CVT, Transaxial"}):DelayByLength()
@@ -177,9 +180,9 @@ Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Dual clutches allow 
 Chapter:AddInstruction("ACF.SetPanelCheckBox", {Name = "MainMenuCPanel", CheckBoxName = "#acf.menu.gearboxes.dual_clutch", Value = true}):DelayByLength()
 
 Chapter:AddDelay(1)
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Gearing roughly determines your preference for speed (towards 1) or torque (towards 10)."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Gearing roughly determines your preference for acceleration (towards 0) or top speed (towards 1)."}))
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Gear 2 is a gear used to reverse the tank. Usually torque is preferred."}))
-Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = string.format(language.GetPhrase("#acf.menu.gearboxes.gear_number"), 2), Value = 2}):DelayByLength()
+Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = string.format(language.GetPhrase("#acf.menu.gearboxes.gear_number"), 2), Value = 0.5}):DelayByLength()
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Final Drive is a multiplier applied to all gears 'at the end' of the gearbox."}))
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.gearboxes.final_drive", Value = 1}):DelayByLength()
 
