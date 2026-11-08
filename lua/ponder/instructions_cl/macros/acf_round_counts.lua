@@ -31,7 +31,7 @@ function CreateRoundCounts:First(playback)
     local panel = playback.Environment:GetNamedObject("VGUIPanel", self.Name)
     local Kinds = {}
 
-    for Slot, Kind in ipairs(self.Kinds) do Kinds[Slot] = {Name = Kind.Name, Count = Kind.Count, Slot = Slot} end
+    for Slot, Kind in ipairs(self.Kinds) do Kinds[Slot] = {Name = Kind.Name, Count = Kind.Count, Slot = Slot, Icon = Kind.Icon} end
 
     panel.RoundCounts = ACF.BuildRoundCountsMenu(panel, self.Capacity, Kinds)
     panel.RoundCapacity = self.Capacity

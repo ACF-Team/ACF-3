@@ -39,7 +39,7 @@ local function UpdateTotalAmmo(Entity)
 
 	for Crate in pairs(Entity.Crates) do
 		if Crate:CanConsume() then
-			Total = Total + Crate.Ammo
+			Total = Total + Crate:CountSelectedRounds()
 		end
 	end
 
@@ -1341,7 +1341,7 @@ do -- Metamethods --------------------------------
 
 			for Crate in pairs(self.Crates) do
 				if Crate:CanConsume() then
-					CrateAmmo = CrateAmmo + Crate.Ammo
+					CrateAmmo = CrateAmmo + Crate:CountSelectedRounds()
 					if Crate.AmmoStage == ACF.AmmoStageMin then StageOneAmmo = true end
 				end
 			end
