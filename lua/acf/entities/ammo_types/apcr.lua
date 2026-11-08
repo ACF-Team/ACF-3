@@ -21,6 +21,7 @@ Classes.DefineClass("ACF.Ammunition.APCR", "ACF.Ammunition.AP", function(CLASS, 
 	local MinCoreRatio, MaxCoreRatio = 0.32, 0.531 -- Core over bore diameter, BR-365P to M304
 	local CoreLengthRatio = 3.3 -- Core length in calibers
 	local CarrierFill     = 0.275 -- Carrier mass relative to solid steel
+	local MinCarrierRatio = 2.15 -- Shortest carrier over core length, M304's 34cm around its 15.8cm core
 
 	function CLASS:VerifyData()
 		BASE.VerifyData(self)
@@ -73,6 +74,14 @@ Classes.DefineClass("ACF.Ammunition.APCR", "ACF.Ammunition.AP", function(CLASS, 
 		self.BulletData.ProjScale = CoreScale >= 0 and Lerp(math.min(CoreScale, 1), MinCoreRatio, MaxCoreRatio) or 0.75
 
 		local Data = ACF.RoundBaseGunpowder(self) -- APCR has a smaller penetrator
+
+		-- Without a floor the carrier shrinks to a ring around the core, flying far lighter than any real HVAP
+		if CoreScale >= 0 then
+			local GUIData = self.GUIData
+
+			GUIData.MinProjLength = math.min(math.Round(Data.Diameter * CoreLengthRatio * MinCarrierRatio, 2), GUIData.MaxProjLength)
+			GUIData.MaxPropLength = math.min(GUIData.MaxPropLength, GUIData.MaxRoundLength - GUIData.MinProjLength)
+		end
 
 		Data.ShovePower = 0.2
 		Data.LimitVel   = 900 --Most efficient penetration speed in m/s
