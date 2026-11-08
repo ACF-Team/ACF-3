@@ -465,8 +465,8 @@ do -- ACF global vars
 	ACF.MaxCVTRatio        = 100 -- The maximum value that a CVT's ratio can be set to (realistic)
 	ACF.MinCVTRatioLegacy  = 0.01 -- The minimum value that a CVT's ratio can be set to (legacy)
 	ACF.MaxCVTRatioLegacy  = 1 -- The maximum value that a CVT's ratio can be set to (legacy)
-	ACF.MinGearRatioLegacy = -1 -- The minimum value that a gear's ratio can be set to (legacy)
-	ACF.MaxGearRatioLegacy = 1 -- The maximum value that a gear's ratio can be set to (legacy)
+	ACF.MinGearRatioLegacy = -10 -- The minimum value that a gear's ratio can be set to (legacy), 1 / the smallest realistic ratio
+	ACF.MaxGearRatioLegacy = 10 -- The maximum value that a gear's ratio can be set to (legacy), 1 / the smallest realistic ratio
 	ACF.GearRatioDecimals  = 5 -- Stored precision of gear ratios, enough for realistic ratios to survive inversion
 end
 

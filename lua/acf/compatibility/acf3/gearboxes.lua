@@ -618,7 +618,7 @@ end)
 
 -- Gearboxes saved between 2025-06-20 and 2026-11-07 stored realistic ratios (x) instead of legacy ones (1/x).
 -- Every save from 2025-08-02 on carries GearboxLegacyRatio, which only ever controlled the display.
--- Earlier saves (old format, no ACF_Version) are only recognizable by a ratio above 1, which legacy storage never allowed.
+-- Earlier saves (old format, no ACF_Version) are only recognizable by a ratio above 1, which legacy storage did not allow back then.
 ACF.Entities.RegisterCompatPatch("acf_gearbox", 2026110701, function(Data)
 	local UserData = Data.ACF_UserData
 	if not UserData then return end
