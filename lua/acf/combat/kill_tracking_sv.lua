@@ -1,18 +1,23 @@
 -- Purpose: Hooks into some ACF hooks to provide accurate player damage results.
 
 do
+    local CostSnapshotLife = 10 -- seconds without damage before the cost is taken again
+
     -- Purpose: Track inflictor info when ACF damages an entity on the contraption of the entity.
     hook.Add("ACF_OnDamageEntity", "ACF_OnDamageEntity_TrackInflictorInfo", function(Entity, _, DmgInfo)
         local Contraption = Entity:CFW_GetContraption()
         if not Contraption then return end
-        Contraption.ACF_LastDamageTime = CurTime()
-        Contraption.ACF_LastDamageAttacker = DmgInfo:GetAttacker()
-        Contraption.ACF_LastDamageInflictor = DmgInfo:GetInflictor()
 
-        -- Cost cached on the first damage event
-        if not Contraption.ACF_LastCost then
+        local Now = CurTime()
+
+        -- Cost cached on the first damage event of each fight
+        if not Contraption.ACF_LastCost or Now - (Contraption.ACF_LastDamageTime or 0) > CostSnapshotLife then
             Contraption.ACF_LastCost = (ACF.Contraption.CostSystem.CalcCostsFromContraption(Contraption))
         end
+
+        Contraption.ACF_LastDamageTime = Now
+        Contraption.ACF_LastDamageAttacker = DmgInfo:GetAttacker()
+        Contraption.ACF_LastDamageInflictor = DmgInfo:GetInflictor()
     end)
 
 

@@ -130,7 +130,7 @@ do -- MARK: Mobility hints
 	Register("gearbox_overloaded", {
 		Title  = "Overloaded",
 		Detail = function(Data)
-			return "This gearbox is at its " .. (Data.Rating or "?") .. " Nm torque limit " .. (Data.Percent or "?") .. "% of the time."
+			return "The load exceeds this gearbox's " .. (Data.Rating or "?") .. " Nm rating " .. (Data.Percent or "?") .. "% of the time, capping delivery."
 		end,
 		Help   = "Torque past the limit is lost, so increase the gearbox scale, use fewer gears or split the load between more gearboxes.",
 		Ponder = "acf.tankbasics.drivetrain",

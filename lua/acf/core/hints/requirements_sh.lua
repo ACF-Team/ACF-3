@@ -181,8 +181,15 @@ do -- MARK: Turret requirements
 	-- Data.Crews lists each linked crew that could aim the turret but does not, with why
 	Register("turret_aim_control", {
 		Title  = "Aim control",
-		Detail = "No gunner, commander, pilot or controller",
+		Detail = function(Data)
+			local Crews = Data.Crews
+
+			if Crews and Crews[1] and not Crews[2] then return Crews[1].Reason end
+
+			return "No gunner, commander, pilot or controller"
+		end,
 		Help   = "Link a gunner, commander or pilot on the turret or sharing its parent, or a lightweight turret controller. "
+			.. "A shared-parent crew only controls a heavy, wide-arc turret if seated above the vertical drive. "
 			.. "Vertical drives can also use the crew of the horizontal drive under them.",
 	}, {
 		Draw = function(Debug, Entity, Data, Life)

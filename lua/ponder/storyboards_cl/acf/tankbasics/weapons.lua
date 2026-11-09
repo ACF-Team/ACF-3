@@ -20,6 +20,7 @@ Chapter:AddDelay(Chapter:AddInstruction("PlaceModels", {
         {Name = "FuelTank2", IdentifyAs = "Fuel Tank", Model = "models/holograms/hq_rcube.mdl", Angles = Angle(0, -90, 0), Position = Vector(-36, -84, 15), ComeFrom = Vector(0, 0, 50), Scale = Vector(6, 2, 2), Material = "models/props_canal/metalcrate001d", ParentTo = "Base", },
         {Name = "TurretH", IdentifyAs = "Turret Ring", Model = "models/acf/core/t_ring.mdl", Angles = Angle(0, 0, 0), Position = Vector(0, 0, 36), ComeFrom = Vector(0, 0, 50), ParentTo = "Base", },
         {Name = "TurretV", IdentifyAs = "Turret Trun", Model = "models/acf/core/t_trun.mdl", Angles = Angle(0, 90, 0), Position = Vector(0, 48, 18), ComeFrom = Vector(0, 0, 50), ParentTo = "TurretH", },
+        {Name = "AIO", IdentifyAs = "AIO Controller", Model = "models/hunter/plates/plate025x025.mdl", Position = Vector(-30, 100, 3), ComeFrom = Vector(0, 0, 50), ParentTo = "Base"},
     }
 }))
 
@@ -44,8 +45,8 @@ Chapter:AddInstruction("ACF.ScrollToMenuPanel", {Name = "MainMenuCPanel", Scroll
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "The primary way to destroy other vehicles is through the use of weapons. Here we will look at guns."}))
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "For this example, use a 125mm Cannon."}))
-Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", ComboBoxName = "WeaponClassList", OptionID = 2}):DelayByLength()
-Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", ComboBoxName = "WeaponBreechIndex", OptionID = 1}):DelayByLength()
+Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", Choice = "Cannon"}):DelayByLength()
+Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", Choice = "Loaded At: Breech"}):DelayByLength()
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.caliber", Value = 125}):DelayByLength()
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Spawn the gun and place it in the center of the vertical turret ring."}))
@@ -73,7 +74,7 @@ Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Our cannon still nee
 Chapter:AddInstruction("ACF.ScrollToMenuPanel", {Name = "MainMenuCPanel", Scroll = "#acf.menu.ammo.ammo_info"}):DelayByLength()
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Select AP ammo for this example."}))
-Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", ComboBoxName = "AmmoType", OptionID = 1}):DelayByLength()
+Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", Choice = "Armor Piercing"}):DelayByLength()
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Set the projectile vs propellant length to optimize for penetration."}))
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "#acf.menu.ammo.total_length", Value = 40.00}):DelayByLength()
@@ -107,5 +108,19 @@ Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Using the ACF Menu t
 Chapter:AddDelay(Chapter:AddInstruction("ACF Menu", {Children = {"AmmoCrate1", "AmmoCrate2"}, Target = "Gun", Easing = math.ease.InOutQuad, Length = 3}))
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Now the gun can draw ammo from either crate when firing."}))
 Chapter:AddInstruction("HideToolgun", {}):DelayByLength()
+
+-------------------------------------------------------------------------------------------------
+local Chapter = Storyboard:Chapter("AIO Controller")
+Chapter:AddInstruction("RemovePanel", {Name = "MainMenuCPanel", Length = 0.5}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Link the gun to your controller to fire it with Mouse1."}))
+Chapter:AddInstruction("ShowToolgun", {Tool = language.GetPhrase("tool.acf_menu.menu_name")}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("ACF Menu", {Children = {"Gun"}, Target = "AIO", Easing = math.ease.InOutQuad, Length = 2}))
+Chapter:AddInstruction("HideToolgun", {}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("ACF.ShowAIOMenu", {Target = "AIO"}))
+Chapter:AddInstruction("ACF.SetAIOSetting", {Name = "AIOMenu", Setting = "Gun1"}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "The largest linked gun becomes the primary weapon. Set Gun1 to pick a different one."}))
+Chapter:AddInstruction("ACF.SetAIOSetting", {Name = "AIOMenu", Setting = "EnableFCS", Value = true}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "EnableFCS compensates for shell drop and your own movement when no ballistic computer is linked."}))
+Chapter:AddInstruction("RemovePanel", {Name = "AIOMenu", Length = 0.5}):DelayByLength()
 Chapter:AddDelay(1)
 Chapter:RecommendStoryboard("acf.tankbasics.crew_basics")

@@ -172,10 +172,6 @@ do
 		end
 		table.sort(ForwardGears, function(A, B) return MainGearbox.Gears[A] < MainGearbox.Gears[B] end)
 		table.sort(ReverseGears, function(A, B) return MainGearbox.Gears[A] > MainGearbox.Gears[B] end)
-		if MainGearbox.GearboxLegacyRatio then
-			ForwardGears = table.Reverse(ForwardGears)
-			ReverseGears = table.Reverse(ReverseGears)
-		end
 
 		self.ForwardGears, self.ReverseGears = ForwardGears, ReverseGears
 		if MainGearbox.Automatic then self.ForwardGears = {1} self.ReverseGears = {2} end
@@ -394,8 +390,8 @@ do
 		local MinRPM, MaxRPM = self:GetShiftMinRPM(), self:GetShiftMaxRPM()
 		if MinRPM == MaxRPM then return end -- Probably not set by the user
 		if self:GetDisableAutoShifter() then return end
-		if RPM > MinRPM then Gear = Gear + 1
-		elseif RPM < MaxRPM then Gear = Gear - 1 end
+		if RPM > MaxRPM then Gear = Gear + 1
+		elseif RPM < MinRPM then Gear = Gear - 1 end
 
 		-- Clean this up later
 		local UseReverser = self.HasTransfers

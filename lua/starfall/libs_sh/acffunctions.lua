@@ -136,6 +136,21 @@ local function RestrictInfo(Entity)
 	return not isOwner(instance, Entity)
 end
 
+-- Round data of a gun's loaded round, or of a crate's round at Position (the one it feeds next if 0 or nil)
+local function GetBulletData(Entity, Position)
+	Position = math.floor(Position or 0)
+
+	if Position > 0 and Entity.GetRoundAt then return (Entity:GetRoundAt(Position)) end
+	if Entity.PeekRound then return (Entity:PeekRound()) end
+
+	return Entity.BulletData
+end
+
+-- Type check for the optional crate position the round data functions take
+local function CheckPosition(Position)
+	if Position ~= nil then CheckLuaType(Position, TYPE_NUMBER, 2) end
+end
+
 local function WrapTable(Table, Ignore, Checked)
 	local Result = {}
 
@@ -1862,10 +1877,12 @@ if SERVER then
 	end
 
 	--- Returns the spread for an ACF gun or flechette ammo
+	-- @param number? position Position in an ammo crate's list to read, top is 1. Omitted or 0 reads the round it feeds next
 	-- @server
 	-- @return number The spread
-	function ents_methods:acfSpread()
+	function ents_methods:acfSpread(position)
 		CheckType(self, ents_metatable)
+		CheckPosition(position)
 
 		local This = unwrap(self)
 
@@ -1873,9 +1890,10 @@ if SERVER then
 		if RestrictInfo(This) then return 0 end
 
 		local Spread = (This.GetSpread and This:GetSpread()) or This.Spread or 0
+		local BulletData = GetBulletData(This, position)
 
-		if This.BulletData and This.BulletData.AmmoType == "ACF.Ammunition.FL" then -- TODO: Replace this hardcoded bit
-			return Spread + (This.BulletData.FlechetteSpread or 0)
+		if BulletData and BulletData.AmmoType == "ACF.Ammunition.FL" then -- TODO: Replace this hardcoded bit
+			return Spread + (BulletData.FlechetteSpread or 0)
 		end
 
 		return Spread
@@ -1987,33 +2005,37 @@ if SERVER then
 	end
 
 	--- Returns the type of weapon the ammo in an ACF ammo crate loads into
+	-- @param number? position Position in an ammo crate's list to read, top is 1. Omitted or 0 reads the round it feeds next
 	-- @server
 	-- @return string The type of weapon
-	function ents_methods:acfRoundType()
+	function ents_methods:acfRoundType(position)
 		CheckType(self, ents_metatable)
+		CheckPosition(position)
 
 		local This = unwrap(self)
 
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return "" end
 
-		local BulletData = This.BulletData
+		local BulletData = GetBulletData(This, position)
 
 		return ACF.GetLegacyStyleClassName(BulletData and BulletData.WeaponType or "")
 	end
 
 	--- Returns the BulletData table of the ammo in an ACF ammo crate
+	-- @param number? position Position in an ammo crate's list to read, top is 1. Omitted or 0 reads the round it feeds next
 	-- @server
 	-- @return table The BulletData table
-	function ents_methods:acfBulletData()
+	function ents_methods:acfBulletData(position)
 		CheckType(self, ents_metatable)
+		CheckPosition(position)
 
 		local This = unwrap(self)
 
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return {} end
 
-		local BulletData = This.BulletData
+		local BulletData = GetBulletData(This, position)
 
 		return BulletData and shallowCopy(BulletData) or {}
 	end
@@ -2057,19 +2079,65 @@ if SERVER then
 	end
 
 	--- Returns the type of ammo in a crate or gun
+	-- @param number? position Position in an ammo crate's list to read, top is 1. Omitted or 0 reads the round it feeds next
 	-- @server
 	-- @return string The type of ammo
-	function ents_methods:acfAmmoType()
+	function ents_methods:acfAmmoType(position)
 		CheckType(self, ents_metatable)
+		CheckPosition(position)
 
 		local This = unwrap(self)
 
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return "" end
 
-		local BulletData = This.BulletData
+		local BulletData = GetBulletData(This, position)
 
 		return ACF.GetLegacyStyleClassName(BulletData and BulletData.AmmoType or "")
+	end
+
+	--- Returns the rounds left in an ammo crate by position in its list
+	-- @server
+	-- @return table The rounds left of each kind, top of the list first
+	function ents_methods:acfRoundCounts()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and This.IsACFAmmo) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return {} end
+
+		return This:GetPositionCounts()
+	end
+
+	--- Returns the type of ammo that will leave an ammo crate next
+	-- @server
+	-- @return string The type of ammo
+	function ents_methods:acfNextRoundType()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and This.IsACFAmmo) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return "" end
+
+		return This:GetNextAmmoType()
+	end
+
+	--- Limits an ammo crate to feeding the round at one position in its list
+	-- @param number position The position to feed, top of the list is 1, 0 lets it feed all of them
+	-- @server
+	function ents_methods:acfSetRoundFilter(position)
+		CheckType(self, ents_metatable)
+		CheckLuaType(position, TYPE_NUMBER)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and This.IsACFAmmo) then SF.Throw("Entity is not valid", 2) end
+
+		CheckPerms(instance, This, "entities.acf")
+
+		This:SetPositionFilter(position)
 	end
 
 	--- Returns the caliber of an ammo or gun
@@ -2087,50 +2155,56 @@ if SERVER then
 	end
 
 	--- Returns the muzzle velocity of the ammo in a crate or gun
+	-- @param number? position Position in an ammo crate's list to read, top is 1. Omitted or 0 reads the round it feeds next
 	-- @server
 	-- @return number The muzzle velocity
-	function ents_methods:acfMuzzleVel()
+	function ents_methods:acfMuzzleVel(position)
 		CheckType(self, ents_metatable)
+		CheckPosition(position)
 
 		local This = unwrap(self)
 
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return 0 end
 
-		local BulletData = This.BulletData
+		local BulletData = GetBulletData(This, position)
 		local MuzzleVel  = BulletData and BulletData.MuzzleVel
 
 		return MuzzleVel and MuzzleVel * ACF.Scale or 0
 	end
 
 	--- Returns the mass of the projectile in a crate or gun
+	-- @param number? position Position in an ammo crate's list to read, top is 1. Omitted or 0 reads the round it feeds next
 	-- @server
 	-- @return number The projectile mass
-	function ents_methods:acfProjectileMass()
+	function ents_methods:acfProjectileMass(position)
 		CheckType(self, ents_metatable)
+		CheckPosition(position)
 
 		local This = unwrap(self)
 
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return 0 end
 
-		local BulletData = This.BulletData
+		local BulletData = GetBulletData(This, position)
 
 		return BulletData and BulletData.ProjMass or 0
 	end
 
 	--- Returns the drag coef of the ammo in a crate or gun
+	-- @param number? position Position in an ammo crate's list to read, top is 1. Omitted or 0 reads the round it feeds next
 	-- @server
 	-- @return number The drag coef
-	function ents_methods:acfDragCoef()
+	function ents_methods:acfDragCoef(position)
 		CheckType(self, ents_metatable)
+		CheckPosition(position)
 
 		local This = unwrap(self)
 
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return 0 end
 
-		local BulletData = This.BulletData
+		local BulletData = GetBulletData(This, position)
 		local DragCoef   = BulletData and BulletData.DragCoef
 
 		return DragCoef and DragCoef / ACF.DragDiv or 0
@@ -2179,66 +2253,74 @@ if SERVER then
 	end
 
 	--- Returns the number of projectiles in a flechette round
+	-- @param number? position Position in an ammo crate's list to read, top is 1. Omitted or 0 reads the round it feeds next
 	-- @server
 	-- @return number The number of projectiles
-	function ents_methods:acfFLSpikes()
+	function ents_methods:acfFLSpikes(position)
 		CheckType(self, ents_metatable)
+		CheckPosition(position)
 
 		local This = unwrap(self)
 
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return 0 end
 
-		local BulletData = This.BulletData
+		local BulletData = GetBulletData(This, position)
 
 		return BulletData and BulletData.Flechettes or 0
 	end
 
 	--- Returns the mass of a single spike in a FL round in a crate or gun
+	-- @param number? position Position in an ammo crate's list to read, top is 1. Omitted or 0 reads the round it feeds next
 	-- @server
 	-- @return number The mass of a single spike
-	function ents_methods:acfFLSpikeMass()
+	function ents_methods:acfFLSpikeMass(position)
 		CheckType(self, ents_metatable)
+		CheckPosition(position)
 
 		local This = unwrap(self)
 
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return 0 end
 
-		local BulletData = This.BulletData
+		local BulletData = GetBulletData(This, position)
 
 		return BulletData and BulletData.FlechetteMass or 0
 	end
 
 	--- Returns the radius of the spikes in a flechette round in mm
+	-- @param number? position Position in an ammo crate's list to read, top is 1. Omitted or 0 reads the round it feeds next
 	-- @server
 	-- @return number The radius of the spikes
-	function ents_methods:acfFLSpikeRadius()
+	function ents_methods:acfFLSpikeRadius(position)
 		CheckType(self, ents_metatable)
+		CheckPosition(position)
 
 		local This = unwrap(self)
 
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return 0 end
 
-		local BulletData = This.BulletData
+		local BulletData = GetBulletData(This, position)
 		local Radius     = BulletData and BulletData.FlechetteRadius
 
 		return Radius and math.Round(Radius * 10, 2) or 0
 	end
 
 	--- Returns the penetration of an AP, APHE, or HEAT round
+	-- @param number? position Position in an ammo crate's list to read, top is 1. Omitted or 0 reads the round it feeds next
 	-- @server
 	-- @return number The penetration
-	function ents_methods:acfPenetration()
+	function ents_methods:acfPenetration(position)
 		CheckType(self, ents_metatable)
+		CheckPosition(position)
 
 		local This = unwrap(self)
 
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return 0 end
 
-		local BulletData = This.BulletData
+		local BulletData = GetBulletData(This, position)
 		local AmmoType   = BulletData and Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.AmmoType)
 
 		if not AmmoType then return 0 end
@@ -2250,17 +2332,19 @@ if SERVER then
 	end
 
 	--- Returns the blast radius of an HE, APHE, or HEAT round
+	-- @param number? position Position in an ammo crate's list to read, top is 1. Omitted or 0 reads the round it feeds next
 	-- @server
 	-- @return number The blast radius
-	function ents_methods:acfBlastRadius()
+	function ents_methods:acfBlastRadius(position)
 		CheckType(self, ents_metatable)
+		CheckPosition(position)
 
 		local This = unwrap(self)
 
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return 0 end
 
-		local BulletData = This.BulletData
+		local BulletData = GetBulletData(This, position)
 		local AmmoType   = BulletData and Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.AmmoType)
 
 		if not AmmoType then return 0 end

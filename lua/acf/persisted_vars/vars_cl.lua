@@ -25,4 +25,4 @@ ACF.PersistClientData("SupplySizeZ", 24)
 ACF.PersistClientData("SupplyShape", "Box")
 
 -- Gearbox
-ACF.PersistClientData("GearboxLegacyRatio", false)
+ACF.PersistClientData("GearboxRealisticRatio", false)

@@ -95,10 +95,8 @@ if CLIENT then
 		if not WeaponSub then return end
 
 		local GuidanceList = Base:AddComboBox()
-		GuidanceList:SetName("GuidanceList")
 		local GuidanceBase = Base:AddPanel("ACF_Panel")
 		local FuzeList     = Base:AddComboBox()
-		FuzeList:SetName("FuzeList")
 		local FuzeBase     = Base:AddPanel("ACF_Panel")
 
 		function GuidanceList:OnSelect(Index, Name, Data)
@@ -175,6 +173,13 @@ else
 		Entity.IsMissileAmmo = true
 		Entity.GuidanceData  = Guidance
 		Entity.FuzeData      = Fuze
+
+		local Round      = Class.Round
+		local BulletData = Entity.BulletData
+
+		if Round then -- The crate reports the estimated launch speed, not the gun formula's
+			BulletData.MuzzleVel = ACF.MissileMuzzleVel(Class.NoThrust, Round, BulletData.ProjMass, BulletData.PropMass)
+		end
 	end)
 
 	hook.Add("ACF_OnAmmoLast", "ACF Missile Ammo", function(_, Entity)

@@ -33,12 +33,7 @@ end
 do
 	-- Groups are keyed by weapon name, never by raw caliber alone,
 	-- since a gun and a rack's missile can share the same caliber number but aren't the same weapon
-	local function AnalyzeWeapon(self, Weapon)
-		local Key = Weapon.Name
-		local Set = self.WeaponGroups[Key] or {}
-		self.WeaponGroups[Key] = Set
-		Set[Weapon] = true
-
+	local function RefreshFireGroups(self)
 		-- The user's LockWeaponSlots checkbox decides auto-detection, instead of us guessing
 		-- intent from whether Gun1/2/3 happen to be set (e.g. from a dupe restore)
 		if not self:GetLockWeaponSlots() then
@@ -61,11 +56,49 @@ do
 		end
 	end
 
+	local function AnalyzeWeapon(self, Weapon)
+		local Key = Weapon.Name
+		local Set = self.WeaponGroups[Key] or {}
+		self.WeaponGroups[Key] = Set
+		Set[Weapon] = true
+
+		RefreshFireGroups(self)
+	end
+
+	function ENT:ForgetWeapon(Weapon)
+		self.Weapons[Weapon]   = nil
+		self.GunsSmoke[Weapon] = nil
+
+		if self.Smoke == Weapon then self.Smoke = next(self.GunsSmoke) end
+
+		local Twins
+
+		for Key, Group in pairs(self.WeaponGroups) do
+			if Group[Weapon] then
+				Group[Weapon] = nil
+				Twins = next(Group)
+			end
+
+			if not next(Group) then self.WeaponGroups[Key] = nil end
+		end
+
+		-- Locked slots keep firing the rest of the group
+		for i = 1, NUM_WEAPONS do
+			if self["GetGun" .. i](self) == Weapon then self["SetGun" .. i](self, Twins or NULL) end
+		end
+
+		RefreshFireGroups(self)
+	end
+
+	local function IsSmoke(Gun)
+		return Gun.Weapon == "ACF.Guns.SmokeLauncher" or Gun.Weapon == "ACF.Guns.40mmFlareLauncher"
+	end
+
 	function ENT:AnalyzeGuns(Gun)
 		self.Guns[Gun] = true
 		self.Weapons[Gun] = true
 
-		if Gun.Weapon == "ACF.Guns.SmokeLauncher" or Gun.Weapon == "ACF.Guns.40mmFlareLauncher" then
+		if IsSmoke(Gun) then
 			self.GunsSmoke[Gun] = true
 			if not IsValid(self.Smoke) then self.Smoke = Gun end
 			local Fuse = self:GetSmokeFuse() or 0
@@ -81,6 +114,41 @@ do
 		self.Weapons[Rack] = true
 
 		AnalyzeWeapon(self, Rack)
+	end
+
+	--- Moves weapons that were changed after linking (an update to another weapon) into their new group
+	function ENT:RegroupWeapons()
+		local Moved
+
+		for Key, Group in pairs(self.WeaponGroups) do
+			for Weapon in pairs(Group) do
+				if IsValid(Weapon) and (Weapon.Name ~= Key or self.Guns[Weapon] and IsSmoke(Weapon)) then
+					Group[Weapon] = nil
+					Moved = Moved or {}
+					Moved[#Moved + 1] = Weapon
+				end
+			end
+
+			if not next(Group) then self.WeaponGroups[Key] = nil end
+		end
+
+		for Gun in pairs(self.GunsSmoke) do
+			if IsValid(Gun) and not IsSmoke(Gun) then
+				self.GunsSmoke[Gun] = nil
+				Moved = Moved or {}
+				Moved[#Moved + 1] = Gun
+
+				if self.Smoke == Gun then self.Smoke = next(self.GunsSmoke) end
+			end
+		end
+
+		if not Moved then return end
+
+		for _, Weapon in ipairs(Moved) do
+			if self.Guns[Weapon] then self:AnalyzeGuns(Weapon) else self:AnalyzeRacks(Weapon) end
+		end
+
+		RefreshFireGroups(self)
 	end
 
 	-- Fire guns one at a time, round robin, resuming from the last index on the next Fire press
@@ -119,7 +187,7 @@ do
 				CurrentGun.Firing = false
 			end
 
-			local Delay = (OverrideDelay or CurrentGun.FireDelay or CurrentGun.ReloadTime or 0) / Count
+			local Delay = OverrideDelay or (CurrentGun.FireDelay or CurrentGun.ReloadTime or 0) / Count
 			timer.Create(TimerName, Delay, 1, FireNext)
 		end
 
@@ -130,12 +198,15 @@ do
 		if SelfTbl:GetDisableFiring() then return end
 
 		local Fires = {GetBindState(SelfTbl, "Fire1"), GetBindState(SelfTbl, "Fire2"), GetBindState(SelfTbl, "Fire3")}
+		local Delays = {SelfTbl:GetFire1Delay(), SelfTbl:GetFire2Delay(), SelfTbl:GetFire3Delay()}
 
 		for i = 1, NUM_WEAPONS do
-			HandleFire(self, SelfTbl.FireState[i], Fires[i], SelfTbl.FireGroups[i], i == NUM_WEAPONS and SelfTbl:GetFireDelay() or nil)
+			local Delay = Delays[i]
+			HandleFire(self, SelfTbl.FireState[i], Fires[i], SelfTbl.FireGroups[i], Delay > 0 and Delay or nil)
 		end
 
-		HandleFire(self, SelfTbl.FireState.Smoke, GetBindState(SelfTbl, "FireSmoke"), SelfTbl.GunsSmoke)
+		local SmokeDelay = SelfTbl:GetSmokeDelay()
+		HandleFire(self, SelfTbl.FireState.Smoke, GetBindState(SelfTbl, "FireSmoke"), SelfTbl.GunsSmoke, SmokeDelay > 0 and SmokeDelay or nil)
 	end
 
 	function ENT:ToggleTurretLock(SelfTbl)
@@ -272,12 +343,35 @@ ACF.RegisterControllerLink("acf_turret", {
 	Single = false,
 })
 
+local function OnWeaponLinked(Controller, Target, Analyze)
+	if not IsValid(Controller) or not Controller.Weapons then return end
+
+	if not IsValid(Target) then -- removed before this tick
+		Controller.Guns[Target], Controller.Racks[Target] = nil, nil
+		return
+	end
+
+	if not (Controller.Guns[Target] or Controller.Racks[Target]) then return end -- unlinked before this tick
+
+	Analyze(Controller, Target)
+
+	Target:CallOnRemove("ACF_Controller_" .. Controller:EntIndex(), function(Removed)
+		if IsValid(Controller) then Controller:Unlink(Removed) end
+	end)
+end
+
+local function OnWeaponUnlinked(Controller, Target)
+	Target:RemoveCallOnRemove("ACF_Controller_" .. Controller:EntIndex())
+	Controller:ForgetWeapon(Target)
+end
+
 ACF.RegisterControllerLink("acf_gun", {
 	Field = "Guns",
 	Single = false,
 	OnLinked = function(Controller, Target)
-		Controller:AnalyzeGuns(Target)
+		OnWeaponLinked(Controller, Target, Controller.AnalyzeGuns)
 	end,
+	OnUnlinked = OnWeaponUnlinked,
 })
 
 ACF.RegisterControllerLink("acf_turret_computer", {
@@ -300,8 +394,9 @@ ACF.RegisterControllerLink("acf_rack", {
 	Field = "Racks",
 	Single = false,
 	OnLinked = function(Controller, Target)
-		Controller:AnalyzeRacks(Target)
+		OnWeaponLinked(Controller, Target, Controller.AnalyzeRacks)
 	end,
+	OnUnlinked = OnWeaponUnlinked,
 })
 
 return Init

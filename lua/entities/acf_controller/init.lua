@@ -16,6 +16,7 @@ include("shared.lua")
 AddCSLuaFile("modules_cl/overlay.lua")
 AddCSLuaFile("modules_cl/camera.lua")
 AddCSLuaFile("modules_cl/hud.lua")
+AddCSLuaFile("modules/defaults.lua") -- Read by the ponder proxy of the settings menu
 
 AddCSLuaFile("modules_sh/helpers_sh.lua")
 AddCSLuaFile("modules_sh/binds_sh.lua")
@@ -274,6 +275,8 @@ do
 
 		-- Process cameras
 		local _, _, HitPos = self:ProcessCameras(SelfTbl)
+
+		if iters % 4 == 0 then self:RegroupWeapons() end
 
 		-- Aim turrets
 		if iters % 4 == 0 then self:ProcessTurrets(SelfTbl, HitPos) end

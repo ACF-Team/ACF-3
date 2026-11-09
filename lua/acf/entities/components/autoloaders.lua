@@ -16,7 +16,7 @@ function ACF.CreateAutoloaderMenu(_, Menu, Ctx)
         local Volume = math.pi * R * R * H
 
         MassLabel:SetText(string.format("Mass : %s", ACF.FormatMass(Volume * 250)))
-        CostLabel:SetText(string.format("Cost : %s", ACF.FormatCost(Caliber * 0.2)))
+        CostLabel:SetText(string.format("Cost : %s", ACF.FormatCost(Caliber * 0.16)))
 
         if Menu.ComponentPreview then
             Menu.ComponentPreview:SetModelScale(AutoloaderSize, true)

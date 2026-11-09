@@ -62,7 +62,7 @@ local function UpdateTotalAmmo(Entity)
 
 	for Crate in pairs(Entity.Crates) do
 		if Crate:CanConsume() then
-			Total = Total + Crate.Ammo
+			Total = Total + Crate:CountSelectedRounds()
 		end
 	end
 

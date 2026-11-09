@@ -1,5 +1,6 @@
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
+AddCSLuaFile("modules_cl/round_counts.lua")
 
 include("shared.lua")
 
@@ -10,3 +11,7 @@ include("modules/state.lua")
 include("modules/crew.lua")
 include("modules/restocking.lua")
 include("modules/cost.lua")
+include("modules/rounds.lua")
+include("modules/mix.lua")
+include("modules/mix_editing.lua")
+include("modules/overlay.lua")

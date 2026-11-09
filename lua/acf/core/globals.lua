@@ -289,11 +289,15 @@ do -- ACF global vars
 
 	-- Ammo
 	ACF.AmmoCaseScale        = 1 -- Fallback max case/projectile diameter ratio when a Round omits CaseScale
+	ACF.AmmoCaseFill         = 0.75 -- Share of the case's area beyond the bore that holds propellant
 	ACF.AmmoMaxLength        = 192 -- Defines the highest possible length of ammo crates for the X axis (length), in gmu
 	ACF.AmmoMaxWidth         = 96 -- Defines the highest possible width of ammo crates for the Y and Z axes (width/height), in gmu
+	ACF.MaxRoundsDrawn       = 30 -- Most rounds an ammo crate draws
+	ACF.MaxRoundKinds        = 5 -- Most distinct rounds an ammo crate can hold
+	ACF.ProfileBits          = math.ceil(math.log(ACF.MaxRoundKinds, 2)) -- Bits to network a kind index minus one
 	ACF.AmmoSupplyColor      = Color(255, 255, 0, 10) -- The color to use for the ammo supply effect
-	ACF.PropImpetus          = 1075 -- Energy in KJ produced by 1kg of propellant, based off M30A1 propellant
-	ACF.PDensity             = 0.95 -- Propellant loading density (Density of propellant + volume lost due to packing density)
+	ACF.PropImpetus          = 1300 -- Muzzle energy in kJ per kg of propellant at full efficiency
+	ACF.PDensity             = 0.75 -- Propellant loading density in g/cm^3
 
 	-- HE
 	ACF.HEPower              = 8000 -- HE Filler power per KG in KJ
@@ -321,6 +325,11 @@ do -- ACF global vars
 	ACF.AluminumDensity      = 2.7e-3 	-- kg/cm^3
 	ACF.CopperDensity        = 8.96e-3	-- kg/cm^3
 	ACF.TungstenDensity		 = 19.25e-3	-- kg/cm^3
+	ACF.TungstenCarbideDensity = 12.5e-3 -- kg/cm^3, as in real penetrator cores
+	ACF.CarbideCorePenFactor   = 1.69 -- Carbide core penetration over steel AP
+
+	-- Mass of pointed AP shot over a full diameter cylinder
+	ACF.APNoseFactor         = 0.84
 
 	-- Material conversion to points, kg * modifier
 	ACF.PointConversion		 = {
@@ -394,7 +403,7 @@ do -- ACF global vars
 	}
 	ACF.LightweightTurretMassLimit = 300	-- kg. Turrets at or under this carried mass can be controlled by a shared-parent Gunner, or a Lightweight Turret Controller, without needing to be mounted on it
 	ACF.LightweightTurretCaliberLimit = 90	-- mm. Turrets with weapons at or under this caliber can be controlled by a Lightweight Turret Controller
-	ACF.CasemateArcLimit = 30	-- Degrees of total arc (MaxDeg - MinDeg) at or under which a shared-parent Gunner controls a turret at any mass, so casemate mounts don't need the gunner parented to the ring
+	ACF.CasemateArcLimit = 180	-- Degrees of total arc (MaxDeg - MinDeg), i.e. +-90, at or under which a shared-parent Gunner above the vertical drive controls a turret at any mass, so casemate mounts don't need the gunner parented to the ring
 
 	ACF.CrewRepTimeBase 	= 3		-- Base time to replace a crew member
 	ACF.CrewRepDistToTime 	= 0.05 	-- Time it takes for crew to move one inch during replacement
@@ -424,7 +433,7 @@ do -- ACF global vars
 
 	ACF.MinAutoloaderCaliber = 60	-- Minimum caliber for autoloaders
 	ACF.MaxAutoloaderCaliber = 280	-- Maximum caliber for autoloaders
-	ACF.MinAutoloaderLength = 50	-- Minimum shell length for autoloaders (mm)
+	ACF.MinAutoloaderLength = 1	-- Minimum shell length for autoloaders (cm)
 	ACF.MaxAutoloaderLength = 200	-- Maximum shell length for autoloaders (cm)
 	ACF.AutoloaderMaxAngleDiff = 10 -- Maximum deviation between autoloader and breech to be aligned (deg)
 
@@ -452,10 +461,13 @@ do -- ACF global vars
 	ACF.DefineSetting("TorqueMult", 2.5, "Arbitrary torque multiplier has been set to a factor of %.2f. Stopgap measure until a future engine update.", ACF.FloatDataCallback(0, 10, 2))
 	ACF.MinGearRatio       = -10 -- The minimum value that a gear's ratio can be set to
 	ACF.MaxGearRatio       = 10 -- The maximum value that a gear's ratio can be set to
-	ACF.MinCVTRatio        = 1 -- The minimum value that a CVT's ratio can be set to
-	ACF.MaxCVTRatio        = 100 -- The maximum value that a CVT's ratio can be set to
-	ACF.MinGearRatioLegacy = -1 -- The minimum value that a gear's ratio can be set to (legacy)
-	ACF.MaxGearRatioLegacy = 1 -- The maximum value that a gear's ratio can be set to (legacy)
+	ACF.MinCVTRatio        = 1 -- The minimum value that a CVT's ratio can be set to (realistic)
+	ACF.MaxCVTRatio        = 100 -- The maximum value that a CVT's ratio can be set to (realistic)
+	ACF.MinCVTRatioLegacy  = 0.01 -- The minimum value that a CVT's ratio can be set to (legacy)
+	ACF.MaxCVTRatioLegacy  = 1 -- The maximum value that a CVT's ratio can be set to (legacy)
+	ACF.MinGearRatioLegacy = -10 -- The minimum value that a gear's ratio can be set to (legacy), 1 / the smallest realistic ratio
+	ACF.MaxGearRatioLegacy = 10 -- The maximum value that a gear's ratio can be set to (legacy), 1 / the smallest realistic ratio
+	ACF.GearRatioDecimals  = 5 -- Stored precision of gear ratios, enough for realistic ratios to survive inversion
 end
 
 do -- ACF Particles
@@ -489,7 +501,7 @@ elseif CLIENT then
 	CreateClientConVar("acf_mobilityropelinks", 0, true, true, "Toggles the visibility of the links connecting mobility components.")
 	CreateClientConVar("acf_drawtruevisuals", 0, true, true, "Enables/disables drawing the true visuals of contraptions. This does not apply to just ACF entities or contraptions, and will apply to everything out at the time. Its purpose is to counter 'facades', where people will make physical armor smaller than the visual model of the contraption.")
 	-- CreateClientConVar("acf_advancedmobilityropelinks", 0, true, true, "Uses generated models to represent mobility links.")
-	CreateClientConVar("acf_maxroundsdisplay", 16, true, false, "Maximum rounds to display before using bulk display (0 to only display bulk)", 0, 5000)
+	CreateClientConVar("acf_maxroundsdrawn", ACF.MaxRoundsDrawn, true, false, "Maximum rounds drawn in an ammo crate (0 to draw none)", 0, ACF.MaxRoundsDrawn)
 	CreateClientConVar("acf_drawboxes", 1, true, false, "Whether or not to draw hitboxes on ACF entities", 0, 1)
 	CreateClientConVar("acf_legalhints", 1, true, true, "If enabled, ACF will throw a warning hint whenever an entity gets disabled.", 0, 1)
 	CreateClientConVar("acf_legalvisuals", 1, true, true, "If enabled, ACF will highlight your disabled entities, and the unmet requirements of your entities, and show what is causing it.", 0, 1)

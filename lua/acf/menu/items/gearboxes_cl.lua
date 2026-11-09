@@ -20,18 +20,14 @@ local function Build(Menu, Contexts)
 	Menu:AddTitle("#acf.menu.gearboxes.settings")
 	Menu:AddWikiLink("Gearboxes", "docs/acf_tutorials/gearboxes.html")
 
-	Menu:AddLabel("#acf.menu.gearboxes.temp_gear_ratio_warning1")
-	Menu:AddLabel("#acf.menu.gearboxes.temp_gear_ratio_warning2")
-	Menu:AddLabel("#acf.menu.gearboxes.temp_gear_ratio_warning3")
-
 	local GearboxInverted = Menu:AddCheckBox("#acf.menu.gearboxes.inverted")
 	Menu:AddHelp("#acf.menu.gearboxes.inverted_desc")
 
 	local GearboxPanel = Menu:AddPanel("ACF_Panel")
 
-	-- Rebuild the sub-menu whenever the legacy-ratio toggle changes (it changes the ratio limits).
+	-- Rebuild the sub-menu whenever the realistic-ratio toggle changes (it changes the ratio limits).
 	function GearboxInverted:OnChange(Value)
-		Ctx:Set("GearboxLegacyRatio", Value)
+		Ctx:Set("GearboxRealisticRatio", Value)
 
 		GearboxPanel:ClearTemporal()
 		GearboxPanel:StartTemporal()
@@ -39,10 +35,10 @@ local function Build(Menu, Contexts)
 		GearboxPanel:EndTemporal()
 	end
 
-	GearboxInverted:SetValue(Ctx:Get("GearboxLegacyRatio") and true or false)
+	GearboxInverted:SetValue(Ctx:Get("GearboxRealisticRatio") and true or false)
 end
 
-CreateSubMenu = function(Menu, Entries, UseLegacyRatios, Ctx)
+CreateSubMenu = function(Menu, Entries, UseRealisticRatios, Ctx)
 	local GearboxClass = Menu:AddComboBox()
 	local GearboxList  = Menu:AddComboBox()
 
@@ -130,9 +126,9 @@ CreateSubMenu = function(Menu, Entries, UseLegacyRatios, Ctx)
 		end
 
 		if ClassData.CreateMenu then
-			-- Builder signature: (Class, _, Menu, Ctx, UseLegacyRatios). Build onto Base so its
+			-- Builder signature: (Class, _, Menu, Ctx, UseRealisticRatios). Build onto Base so its
 			-- controls are temporal-managed and cleared on reselect.
-			ClassData:CreateMenu(ListData, Base, Ctx, UseLegacyRatios)
+			ClassData:CreateMenu(ListData, Base, Ctx, UseRealisticRatios)
 		end
 
 		Menu:EndTemporal(Base)

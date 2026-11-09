@@ -2,6 +2,7 @@ do
     -- Values default to zero anyways so only specify nonzero here
     local Defaults = {
         SmokeFuse = 0.5,
+        SmokeDelay = 0.25,
 
         ZoomSpeed = 10,
         ZoomMin = 5,

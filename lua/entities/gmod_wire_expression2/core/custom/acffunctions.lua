@@ -34,6 +34,24 @@ local function RestrictInfo(Player, Entity)
 	return not isOwner(Player, Entity)
 end
 
+-- Round data of a gun's loaded round, or of a crate's round at Position (the one it feeds next if 0)
+local function GetBulletData(Entity, Position)
+	Position = floor(Position or 0)
+
+	if Position > 0 and Entity.GetRoundAt then return (Entity:GetRoundAt(Position)) end
+	if Entity.PeekRound then return (Entity:PeekRound()) end
+
+	return Entity.BulletData
+end
+
+-- Get(BulletData, Entity) for a gun, or for a crate's round at Position, behind the usual entity checks
+local function RoundValue(Context, Entity, Position, Default, Get)
+	if not IsACFEntity(Entity) then return Default end
+	if RestrictInfo(Context, Entity) then return Default end
+
+	return Get(GetBulletData(Entity, Position), Entity)
+end
+
 local function GetReloadTime(Entity)
 	local Unloading = Entity.State == "Unloading"
 	local NewLoad = Entity.State ~= "Loaded" and Entity.CurrentShot == 0
@@ -1022,18 +1040,24 @@ e2function number entity:acfMagReloadTime()
 	return this.MagReload or 0
 end
 
--- Returns the spread for an ACF gun or flechette ammo
-e2function number entity:acfSpread()
-	if not IsACFEntity(this) then return 0 end
-	if RestrictInfo(self, this) then return 0 end
+local function Spread(BulletData, Entity)
+	local Value = (Entity.GetSpread and Entity:GetSpread()) or Entity.Spread or 0
 
-	local Spread = (this.GetSpread and this:GetSpread()) or this.Spread or 0
-
-	if this.BulletData and this.BulletData.AmmoType == "ACF.Ammunition.FL" then
-		return Spread + (this.BulletData.FlechetteSpread or 0)
+	if BulletData and BulletData.AmmoType == "ACF.Ammunition.FL" then
+		return Value + (BulletData.FlechetteSpread or 0)
 	end
 
-	return Spread
+	return Value
+end
+
+-- Returns the spread for an ACF gun or flechette ammo
+e2function number entity:acfSpread()
+	return RoundValue(self, this, 0, 0, Spread)
+end
+
+-- Returns the spread for an ACF gun or for the flechette ammo at this position in a crate's list
+e2function number entity:acfSpread(number Position)
+	return RoundValue(self, this, Position, 0, Spread)
 end
 
 -- Returns 1 if an ACF gun is reloading
@@ -1078,24 +1102,63 @@ e2function void entity:acfReload()
 	this:TriggerInput("Reload", 1)
 end
 
+local function RoundType(BulletData)
+	return ACF.GetLegacyStyleClassName(BulletData and BulletData.WeaponType or "")
+end
+
+local function AmmoType(BulletData)
+	return ACF.GetLegacyStyleClassName(BulletData and BulletData.AmmoType or "")
+end
+
 -- Returns the type of weapon the ammo in an ACF ammo crate loads into
 e2function string entity:acfRoundType()
-	if not IsACFEntity(this) then return "" end
-	if RestrictInfo(self, this) then return "" end
+	return RoundValue(self, this, 0, "", RoundType)
+end
 
-	local BulletData = this.BulletData
-
-	return ACF.GetLegacyStyleClassName(BulletData and BulletData.WeaponType or "")
+-- Returns the type of weapon the round at this position in an ACF ammo crate's list loads into
+e2function string entity:acfRoundType(number Position)
+	return RoundValue(self, this, Position, "", RoundType)
 end
 
 -- Returns the type of ammo in a crate or gun
 e2function string entity:acfAmmoType()
-	if not IsACFEntity(this) then return "" end
+	return RoundValue(self, this, 0, "", AmmoType)
+end
+
+-- Returns the type of ammo at this position in a crate's list
+e2function string entity:acfAmmoType(number Position)
+	return RoundValue(self, this, Position, "", AmmoType)
+end
+
+-- Returns the rounds left in an ACF ammo crate by position in its list
+e2function table entity:acfRoundCounts()
+	local ret = newE2Table()
+	if not (IsACFEntity(this) and this.IsACFAmmo) then return ret end
+	if RestrictInfo(self, this) then return ret end
+
+	for Position, Count in ipairs(this:GetPositionCounts()) do
+		ret.n[Position]      = Count
+		ret.ntypes[Position] = "n"
+		ret.size             = ret.size + 1
+	end
+
+	return ret
+end
+
+-- Returns the type of ammo that will leave an ACF ammo crate next
+e2function string entity:acfNextRoundType()
+	if not (IsACFEntity(this) and this.IsACFAmmo) then return "" end
 	if RestrictInfo(self, this) then return "" end
 
-	local BulletData = this.BulletData
+	return this:GetNextAmmoType()
+end
 
-	return ACF.GetLegacyStyleClassName(BulletData and BulletData.AmmoType or "")
+-- Limits an ACF ammo crate to feeding the round at this position in its list, 0 lets it feed all of them
+e2function void entity:acfSetRoundFilter(number Position)
+	if not (IsACFEntity(this) and this.IsACFAmmo) then return end
+	if not isOwner(self, this) then return end
+
+	this:SetPositionFilter(Position)
 end
 
 -- Returns the caliber of an ammo
@@ -1106,35 +1169,48 @@ e2function number entity:acfCaliber()
 	return this.Caliber or 0
 end
 
+local function MuzzleVel(BulletData)
+	local Value = BulletData and BulletData.MuzzleVel
+
+	return Value and Value * ACF.Scale or 0
+end
+
+local function ProjectileMass(BulletData)
+	return BulletData and BulletData.ProjMass or 0
+end
+
+local function DragCoef(BulletData)
+	local Value = BulletData and BulletData.DragCoef
+
+	return Value and Value / ACF.DragDiv or 0
+end
+
 -- Returns the muzzle velocity of the ammo in a crate or gun
 e2function number entity:acfMuzzleVel()
-	if not IsACFEntity(this) then return 0 end
-	if RestrictInfo(self, this) then return 0 end
+	return RoundValue(self, this, 0, 0, MuzzleVel)
+end
 
-	local BulletData = this.BulletData
-	local MuzzleVel  = BulletData and BulletData.MuzzleVel
-
-	return MuzzleVel and MuzzleVel * ACF.Scale or 0
+-- Returns the muzzle velocity of the round at this position in a crate's list
+e2function number entity:acfMuzzleVel(number Position)
+	return RoundValue(self, this, Position, 0, MuzzleVel)
 end
 
 -- Returns the mass of the projectile in a crate or gun
 e2function number entity:acfProjectileMass()
-	if not IsACFEntity(this) then return 0 end
-	if RestrictInfo(self, this) then return 0 end
+	return RoundValue(self, this, 0, 0, ProjectileMass)
+end
 
-	local BulletData = this.BulletData
-
-	return BulletData and BulletData.ProjMass or 0
+-- Returns the mass of the projectile at this position in a crate's list
+e2function number entity:acfProjectileMass(number Position)
+	return RoundValue(self, this, Position, 0, ProjectileMass)
 end
 
 e2function number entity:acfDragCoef()
-	if not IsACFEntity(this) then return 0 end
-	if RestrictInfo(self, this) then return 0 end
+	return RoundValue(self, this, 0, 0, DragCoef)
+end
 
-	local BulletData = this.BulletData
-	local DragCoef   = BulletData and BulletData.DragCoef
-
-	return DragCoef and DragCoef / ACF.DragDiv or 0
+e2function number entity:acfDragCoef(number Position)
+	return RoundValue(self, this, Position, 0, DragCoef)
 end
 
 -- Returns the fin multiplier of the missile/bomb
@@ -1161,69 +1237,85 @@ e2function number entity:acfMissileLength()
 	return this.Length or 0
 end
 
+local function FLSpikes(BulletData)
+	return BulletData and BulletData.Flechettes or 0
+end
+
+local function FLSpikeMass(BulletData)
+	return BulletData and BulletData.FlechetteMass or 0
+end
+
+local function FLSpikeRadius(BulletData)
+	local Radius = BulletData and BulletData.FlechetteRadius
+
+	return Radius and Round(Radius * 10, 2) or 0
+end
+
 -- Returns the number of projectiles in a flechette round
 e2function number entity:acfFLSpikes()
-	if not IsACFEntity(this) then return 0 end
-	if RestrictInfo(self, this) then return 0 end
+	return RoundValue(self, this, 0, 0, FLSpikes)
+end
 
-	local BulletData = this.BulletData
-
-	return BulletData and BulletData.Flechettes or 0
+-- Returns the number of projectiles in the flechette round at this position in a crate's list
+e2function number entity:acfFLSpikes(number Position)
+	return RoundValue(self, this, Position, 0, FLSpikes)
 end
 
 -- Returns the mass of a single spike in a FL round in a crate or gun
 e2function number entity:acfFLSpikeMass()
-	if not IsACFEntity(this) then return 0 end
-	if RestrictInfo(self, this) then return 0 end
+	return RoundValue(self, this, 0, 0, FLSpikeMass)
+end
 
-	local BulletData = this.BulletData
-
-	return BulletData and BulletData.FlechetteMass or 0
+-- Returns the mass of a single spike in the FL round at this position in a crate's list
+e2function number entity:acfFLSpikeMass(number Position)
+	return RoundValue(self, this, Position, 0, FLSpikeMass)
 end
 
 -- Returns the radius of the spikes in a flechette round in mm
 e2function number entity:acfFLSpikeRadius()
-	if not IsACFEntity(this) then return 0 end
-	if RestrictInfo(self, this) then return 0 end
-
-	local BulletData = this.BulletData
-	local Radius     = BulletData and BulletData.FlechetteRadius
-
-	return Radius and Round(Radius * 10, 2) or 0
+	return RoundValue(self, this, 0, 0, FLSpikeRadius)
 end
+
+-- Returns the radius of the spikes in the flechette round at this position in a crate's list in mm
+e2function number entity:acfFLSpikeRadius(number Position)
+	return RoundValue(self, this, Position, 0, FLSpikeRadius)
+end
+
+-- A value from the ammo type's display data for this round, rounded to 2 decimals
+local function DisplayValue(BulletData, Key)
+	local Type = BulletData and Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.AmmoType)
+
+	if not Type then return 0 end
+
+	local DisplayData = Type:GetDisplayData(BulletData)
+	local Value       = DisplayData and DisplayData[Key]
+
+	return Value and Round(Value, 2) or 0
+end
+
+local function Penetration(BulletData) return DisplayValue(BulletData, "MaxPen") end
+local function BlastRadius(BulletData) return DisplayValue(BulletData, "BlastRadius") end
 
 __e2setcost(10)
 
 -- Returns the penetration of an ACF round
 e2function number entity:acfPenetration()
-	if not IsACFEntity(this) then return 0 end
-	if RestrictInfo(self, this) then return 0 end
+	return RoundValue(self, this, 0, 0, Penetration)
+end
 
-	local BulletData = this.BulletData
-	local AmmoType   = BulletData and Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.AmmoType)
-
-	if not AmmoType then return 0 end
-
-	local DisplayData = AmmoType:GetDisplayData(BulletData)
-	local MaxPen      = DisplayData and DisplayData.MaxPen
-
-	return MaxPen and Round(MaxPen, 2) or 0
+-- Returns the penetration of the round at this position in a crate's list
+e2function number entity:acfPenetration(number Position)
+	return RoundValue(self, this, Position, 0, Penetration)
 end
 
 -- Returns the blast radius of an ACF round
 e2function number entity:acfBlastRadius()
-	if not IsACFEntity(this) then return 0 end
-	if RestrictInfo(self, this) then return 0 end
+	return RoundValue(self, this, 0, 0, BlastRadius)
+end
 
-	local BulletData = this.BulletData
-	local AmmoType   = BulletData and Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.AmmoType)
-
-	if not AmmoType then return 0 end
-
-	local DisplayData = AmmoType:GetDisplayData(BulletData)
-	local Radius      = DisplayData and DisplayData.BlastRadius
-
-	return Radius and Round(Radius, 2) or 0
+-- Returns the blast radius of the round at this position in a crate's list
+e2function number entity:acfBlastRadius(number Position)
+	return RoundValue(self, this, Position, 0, BlastRadius)
 end
 
 --===============================================================================================--

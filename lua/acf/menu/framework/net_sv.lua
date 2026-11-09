@@ -80,6 +80,16 @@ local function DoSpawn(Player, Trace, ClassName, Data)
 	end
 end
 
+-- Adds one round to the aimed entity, which must be of the class the data was made for
+local function DoOverride(Player, Trace, ClassName, Data)
+	local Entity = Trace.Entity
+
+	if not IsValid(Entity) or Entity:GetClass() ~= ClassName or not Entity.ACF_AddRound then return end
+
+	local Result, Message = Entity:ACF_AddRound(Player, Data)
+	Messages.SendChat(Player, Result and "Info" or "Error", Message)
+end
+
 -- =============================================================================================
 -- Link / unlink (ported from operations/acf_menu.lua; state kept per player, no ClientData)
 -- =============================================================================================
@@ -328,7 +338,7 @@ net.Receive("ACF_MenuCommit", function(_, Player)
 	-- Read the payload BEFORE the CanCommit gate so the message is always fully consumed.
 	local ClassName, Data, PageID, ActionIndex
 
-	if Kind == "spawn" then
+	if Kind == "spawn" or Kind == "override" then
 		ClassName = net.ReadString()
 		Data      = net.ReadTable()
 	elseif Kind == "func" then
@@ -343,6 +353,11 @@ net.Receive("ACF_MenuCommit", function(_, Player)
 		if not Trace then return end
 
 		DoSpawn(Player, Trace, ClassName, Data)
+	elseif Kind == "override" then
+		local Trace = ACF.Menu.GetCommitTrace(Player, 1)
+		if not Trace then return end
+
+		DoOverride(Player, Trace, ClassName, Data)
 	elseif Kind == "func" then
 		local Action = GetFuncAction(PageID, ActionIndex)
 		if not Action then return end
