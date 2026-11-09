@@ -121,7 +121,6 @@ do -- Spawn and Update functions
         Entity.PeakMaxRPM       = Engine.RPM.PeakMax
         Entity.LimitRPM         = Engine.RPM.Limit
         Entity.PeakTqRPM        = Engine.PeakTqRPM
-        Entity.PeakPowerRPM     = Engine.PeakPowerRPM
         Entity.RevLimited       = false
         Entity.FlywheelOverride = Engine.RPM.Override
         Entity.FlywheelMass     = Engine.FlywheelMass
@@ -155,6 +154,7 @@ do -- Spawn and Update functions
         ACF.Activate(Entity, true)
 
         Contraption.SetMass(Entity, Mass)
+        PrintTable({Engine.TorqueCurve})
     end
 
     -- Spawn-only init (runs before Entity:Spawn(), so the model is ready for physics).
