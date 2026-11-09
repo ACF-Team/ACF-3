@@ -329,7 +329,7 @@ e2function string entity:acfConvexMaterial(number ConvexID)
 	return Convex.Material or ""
 end
 
--- Returns the materials of all convexes of an entity, indexed by convex ID
+-- Returns the materials of all convexes of an entity, indexed by convex IDfLinkTo
 e2function array entity:acfConvexMaterials()
 	if not validPhysics(this) then return {} end
 	if RestrictInfo(self, this) then return {} end
@@ -598,6 +598,24 @@ e2function number entity:acfPower()
 	if not this.FlyRPM then return 0 end
 
 	return floor(this.Torque * this.FlyRPM / 9548.8)
+end
+
+-- Returns the RPM at the peak power of an ACF engine
+e2function number entity:acfPeakPowerRPM()
+	if not IsACFEntity(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+	if not this.PeakPowerRPM then return 0 end
+
+	return Round(this.PeakPowerRPM)
+end
+
+-- Returns the RPM at the peak torque of an ACF engine
+e2function number entity:acfPeakTorqueRPM()
+	if not IsACFEntity(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+	if not this.PeakTqRPM then return 0 end
+
+	return Round(this.PeakTqRPM)
 end
 
 -- Returns 1 if the RPM of an ACF engine is inside the powerband
