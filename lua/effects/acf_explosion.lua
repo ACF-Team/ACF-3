@@ -8,6 +8,7 @@ local Debug       = ACF.Debug
 local Colors      = Effects.MaterialColors
 local DustAmount  = Effects.DustAmount
 local GetLitColor = Effects.GetLitColor
+local GetAngles   = Effects.GetSurfaceAngles
 local White       = Color(255, 255, 255)
 local Yellow      = Color(255, 255, 0)
 local SmokeTint   = Color(62, 58, 54)
@@ -31,13 +32,6 @@ local function GetDustTint(Trace, Pos)
 	local Base = Colors[Trace.MatType] or Colors.Default
 
 	return GetLitColor(Color(math.min(Base.r * 1.5 + 40, 255), math.min(Base.g * 1.5 + 40, 255), math.min(Base.b * 1.5 + 40, 255)), Pos)
-end
-
--- Any direction along the surface, used to orient the effect so its up is the surface normal
-local function GetSurfaceAngles(Normal)
-	local Side = math.abs(Normal.z) < 0.9 and Up or Vector(1, 0, 0)
-
-	return Side:Cross(Normal):GetNormalized():AngleEx(Normal)
 end
 
 function EFFECT:Init(Data)
@@ -103,7 +97,7 @@ function EFFECT:Init(Data)
 
 	if Dust > 0.25 then
 		local Pos    = Ground.HitPos + Ground.HitNormal * 2
-		local Effect = CreateParticleSystemNoEntity("acf_he_ground", Pos, GetSurfaceAngles(Ground.HitNormal))
+		local Effect = CreateParticleSystemNoEntity("acf_he_ground", Pos, GetAngles(Ground.HitNormal))
 
 		if Effect then
 			SetControlPoints(Effect, Size, Life, Count * math.Clamp(Dust, 0.5, 1), math.Clamp(Dust * 1.3, 0.4, 1),

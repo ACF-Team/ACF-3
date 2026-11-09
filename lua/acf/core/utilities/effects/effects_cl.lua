@@ -55,6 +55,22 @@ do -- Lighting for particle effects
 	end
 end
 
+do -- Particle system orientation
+	local Up   = Vector(0, 0, 1)
+	local Side = Vector(1, 0, 0)
+
+	--- Returns angles whose up is the given direction, for particle systems that use local Z as their direction.
+	-- @param Dir The direction, doesn't need to be normalized.
+	-- @return The angles to create the particle system with.
+	function Effects.GetSurfaceAngles(Dir)
+		Dir = Dir:GetNormalized()
+
+		local Other = math.abs(Dir.z) < 0.9 and Up or Side
+
+		return Other:Cross(Dir):GetNormalized():AngleEx(Dir)
+	end
+end
+
 do -- Resupply effect
 	local render   = render
 	local Distance = ACF.SupplyDistance
