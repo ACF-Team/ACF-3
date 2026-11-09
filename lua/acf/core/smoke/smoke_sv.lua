@@ -5,9 +5,11 @@ local Impacts    = {} -- Kept until their clouds expire, so late joiners can be 
 local TraceData  = { start = true, endpos = true, mask = MASK_NPCWORLDSTATIC }
 local Up         = Vector(0, 0, 1)
 local GroundGap  = 24 -- Bursts closer than this to the ground are treated as having landed on it, fits in 5 bits
-local CarryShare = 0.2 -- Share of an airbursting round's velocity its cloud carries
-local MaxCarry   = 16000 -- Stays inside net.WriteVector's coordinate range
-local FloorDepth = 32768
+local CarryShare  = 0.2 -- Share of an airbursting round's velocity its cloud carries
+local ImpactShare = 0.05 -- Share of an impacting round's velocity, along the surface it hit, its cloud carries
+local MaxCarry    = 16000 -- Stays inside net.WriteVector's coordinate range
+local CoastLift   = 32 -- Height above the surface the coast of a cloud is traced at, so bumps in the ground don't stop it
+local FloorDepth  = 32768
 local ImpactID   = 0
 
 util.AddNetworkString("ACF_SmokeImpact")
@@ -28,23 +30,34 @@ local function WriteImpact(ID, Impact, Burst)
 	net.WriteBool(Impact.WPMass > 0)
 	if Impact.WPMass > 0 then net.WriteFloat(Impact.WPMass) end
 
+	local Carrying = not Base.Carry:IsZero()
+
+	net.WriteBool(Carrying)
+	if Carrying then net.WriteVector(Base.Carry) end
+
 	net.WriteBool(Base.Grounded)
 
 	if Base.Grounded then
 		net.WriteUInt(Base.Drop, 5)
 		net.WriteNormal(Base.Normal)
 	else
-		local Carrying = not Base.Carry:IsZero()
-
-		net.WriteBool(Carrying)
-		if Carrying then net.WriteVector(Base.Carry) end
-
 		net.WriteFloat(Base.FloorZ)
 	end
 end
 
--- Filler masses are in kg. Velocity is only given for rounds that burst in the air, and is partly carried over to the cloud
-function ACF.CreateSmokeScreen(Origin, FillerMass, WPMass, Color, Velocity)
+-- Velocity of the round the cloud came from, partly carried over to it: along the surface it hit when HitNormal is
+-- given (or the ground it burst right above), all of it for rounds that burst in the air
+local function GetCarry(Velocity, Normal, Share)
+	local Carry = Velocity * Share
+
+	if Normal then Carry = Carry - Normal * Carry:Dot(Normal) end
+	if Carry:Length() > MaxCarry then Carry = Carry:GetNormalized() * MaxCarry end
+
+	return Carry
+end
+
+-- Filler masses are in kg. Velocity is the round's, HitNormal the normal of what it hit (nil for airbursts)
+function ACF.CreateSmokeScreen(Origin, FillerMass, WPMass, Color, Velocity, HitNormal)
 	if FillerMass <= 0 and WPMass <= 0 then return end
 
 	TraceData.start  = Origin
@@ -67,17 +80,29 @@ function ACF.CreateSmokeScreen(Origin, FillerMass, WPMass, Color, Velocity)
 		Base.Drop   = math.Clamp(math.Round(Origin.z - Ground.HitPos.z), 0, GroundGap)
 		Base.Center = Origin - Up * Base.Drop
 		Base.Normal = Ground.HitNormal
-	else
-		if Velocity then
-			Base.Carry = Velocity * CarryShare
+	end
 
-			if Base.Carry:Length() > MaxCarry then
-				Base.Carry = Base.Carry:GetNormalized() * MaxCarry
-			end
-		end
+	if Velocity then
+		local Share = HitNormal and ImpactShare or CarryShare
+		local Along = Base.Grounded and Base.Normal or HitNormal
+		local Lift  = Along and Along * CoastLift or vector_origin
 
-		-- Ground below where the cloud coasts to a stop, it sinks down to it and no further
-		local Rest = Origin + Base.Carry * (ACF.SmokeCarryTime * 0.5)
+		Base.Carry = GetCarry(Velocity, Along, Share)
+
+		-- Clouds stop at the first wall in their way, both share how far the slowest settling one would coast
+		TraceData.start  = Base.Center + Lift
+		TraceData.endpos = TraceData.start + ACF.GetSmokeCarryDistance(Base.Carry)
+
+		local Fraction = util.TraceLine(TraceData).Fraction
+
+		-- Rounded so clients that are sent it move the cloud exactly like the server
+		Base.Carry = Base.Carry * math.Round(Fraction, 3)
+	end
+
+	if not Base.Grounded then
+		-- Ground below where the cloud coasts to a stop, it sinks down to it and no further. WP stops sooner, but both
+		-- share the floor
+		local Rest = Origin + ACF.GetSmokeCarryDistance(Base.Carry)
 
 		TraceData.start  = Rest
 		TraceData.endpos = Rest - Up * FloorDepth

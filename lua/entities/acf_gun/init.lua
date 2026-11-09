@@ -951,7 +951,9 @@ do -- Metamethods --------------------------------
 
 			local EffectTable = {
 				Entity    = self,
+				Origin    = self:GetPos(), -- Effects are only sent to players who can hear their origin
 				Scale     = SelfTbl.BulletData.PropMass,
+				Radius    = SelfTbl.BulletData.Caliber,
 				Magnitude = SelfTbl.ReloadTime,
 			}
 
@@ -961,6 +963,7 @@ do -- Metamethods --------------------------------
 		function ENT:ReloadEffect(Time)
 			local EffectTable = {
 				Entity = self,
+				Origin = self:GetPos(),
 				Scale = 0,
 				Magnitude = Time,
 			}
