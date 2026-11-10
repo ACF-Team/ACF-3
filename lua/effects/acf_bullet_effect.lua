@@ -6,6 +6,9 @@ local Clock     = ACF.Utilities.Clock
 
 local White = Vector(255, 255, 255)
 
+-- Tracer -> bullet, every tracer that hasn't been destroyed yet
+local Tracers = {}
+
 -- Tracers burn at full brightness whatever the crate is painted, so only the hue is kept (black just burns white)
 local function GetTracerColors(Color)
 	local Max = math.max(Color.r, Color.g, Color.b)
@@ -37,6 +40,8 @@ local function CreateTracer(Bullet, Pos, Color)
 	Effect:SetControlPoint(5, Glow)
 	Effect:SetControlPoint(6, Core)
 	Effect:SetControlPoint(7, Vector(1, 0, 0))
+
+	Tracers[Effect] = Bullet
 
 	return Effect
 end
@@ -77,12 +82,42 @@ end
 local function RemoveTracer(Bullet)
 	local Tracer = Bullet.Tracer
 
-	if Tracer and Tracer:IsValid() then
-		Tracer:StopEmissionAndDestroyImmediately()
+	if not Tracer then return end
+
+	if Tracer:IsValid() then
+		Tracer:StopEmission(false, true)
 	end
 
-	Bullet.Tracer = nil
+	Tracers[Tracer] = nil
+	Bullet.Tracer   = nil
 end
+
+local function IsAlive(Bullet)
+	local Effect = Bullet.Effect
+
+	if Bullet.Removed or Bullets[Bullet.Index] ~= Bullet then return false end
+	if not IsValid(Effect) or Effect.Kill then return false end
+
+	return Effect.CreateTime > Clock.CurTime - 45
+end
+
+-- The tracer never dies on its own, it stays in the world until it's destroyed
+-- Effects dont always think (or get removed without it), so tracers are handled here instead of in EFFECT:Think
+hook.Add("Think", "ACF_UpdateTracers", function()
+	for Tracer, Bullet in pairs(Tracers) do
+		if not Tracer:IsValid() then
+			Tracers[Tracer] = nil
+		elseif Bullet.Tracer ~= Tracer then
+			Tracer:StopEmission(false, true)
+
+			Tracers[Tracer] = nil
+		elseif IsAlive(Bullet) then
+			UpdateTracer(Bullet)
+		else
+			RemoveTracer(Bullet)
+		end
+	end
+end)
 
 function EFFECT:Init(Data)
 	self.Index = Data:GetDamageType()
@@ -206,11 +241,7 @@ end
 function EFFECT:Think()
 	local Bullet = self.Bullet
 
-	if Bullet and not self.Kill and Bullets[self.Index] == Bullet and self.CreateTime > Clock.CurTime - 45 then
-		UpdateTracer(Bullet)
-
-		return true
-	end
+	if Bullet and IsAlive(Bullet) then return true end
 
 	if Bullet then
 		RemoveTracer(Bullet)

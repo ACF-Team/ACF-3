@@ -263,7 +263,13 @@ end
 hook.Add("ACF_OnTick", "ACF_ManageBulletEffects", function(_, DeltaTime)
 	ExpirePredictions()
 
-	for _, Bullet in pairs(Bullets) do
-		BulletFlight(Bullet, DeltaTime)
+	for Index, Bullet in pairs(Bullets) do
+		-- Effect got removed without its Think cleaning up
+		if not IsValid(Bullet.Effect) then
+			Bullet.Removed = true
+			Bullets[Index] = nil
+		else
+			BulletFlight(Bullet, DeltaTime)
+		end
 	end
 end)
