@@ -154,7 +154,6 @@ do -- Spawn and Update functions
         ACF.Activate(Entity, true)
 
         Contraption.SetMass(Entity, Mass)
-        PrintTable({Engine.TorqueCurve})
     end
 
     -- Spawn-only init (runs before Entity:Spawn(), so the model is ready for physics).
