@@ -39,7 +39,7 @@ local function UpdateTotalAmmo(Entity)
 
 	for Crate in pairs(Entity.Crates) do
 		if Crate:CanConsume() then
-			Total = Total + Crate.Ammo
+			Total = Total + Crate:CountSelectedRounds()
 		end
 	end
 
@@ -68,7 +68,7 @@ local function CheckRestockable(v, Gun)
 end
 
 local function CheckUnloadable(v, Gun)
-	return CheckValid(v, Gun) and v:CanRestock() and ACF.BulletEquality(v.BulletData, Gun.BulletData)
+	return CheckValid(v, Gun) and v:CanRestock() and v:CanReturnRound(Gun.BulletData)
 end
 
 local ENT_UpdateLoadMod
@@ -466,6 +466,13 @@ do -- Spawn and Update functions --------------------------------
 		return Player:CheckLimit(GetWeaponClass(ClientData).LimitConVar.Name)
 	end
 
+	-- nil if the data doesn't change the weapon
+	function ENT.ACF_GetLimitName(ClientData)
+		if ClientData.Weapon == nil then return end
+
+		return GetWeaponClass(ClientData).LimitConVar.Name
+	end
+
 	function ENT:ACF_PreUpdateEntityData()
 		-- Don't reconfigure mid-fire.
 		self.Firing = false
@@ -513,7 +520,9 @@ do -- Spawn and Update functions --------------------------------
 	function ENT:ACF_PostSpawn(Player, _, _, _)
 		-- Count toward the weapon spawn limit checked by ENT.ACF_CheckSpawnLimit.
 		if IsValid(Player) then
-			Player:AddCount(self:GetWeapon():GetType().LimitConVar.Name, self)
+			self.ACF_LimitName = self:GetWeapon():GetType().LimitConVar.Name
+
+			Player:AddCount(self.ACF_LimitName, self)
 		end
 
 		ACF.Hints.Set(self, "weapon_no_ammo", true)
@@ -942,7 +951,9 @@ do -- Metamethods --------------------------------
 
 			local EffectTable = {
 				Entity    = self,
+				Origin    = self:GetPos(), -- Effects are only sent to players who can hear their origin
 				Scale     = SelfTbl.BulletData.PropMass,
+				Radius    = SelfTbl.BulletData.Caliber,
 				Magnitude = SelfTbl.ReloadTime,
 			}
 
@@ -952,6 +963,7 @@ do -- Metamethods --------------------------------
 		function ENT:ReloadEffect(Time)
 			local EffectTable = {
 				Entity = self,
+				Origin = self:GetPos(),
 				Scale = 0,
 				Magnitude = Time,
 			}
@@ -1011,7 +1023,7 @@ do -- Metamethods --------------------------------
 			if SelfTbl.State == "Unloading" then return end -- Don't unload while unloading
 			if SelfTbl.BulletData == EMPTY then return end -- If it's empty, we're already unloading, or something went wrong
 			SelfTbl.FreeCrate = self:FindNextCrate(SelfTbl.FreeCrate, CheckUnloadable, self)
-			if IsValid(SelfTbl.FreeCrate) then SelfTbl.FreeCrate:Consume(-1) end -- Put a shell back in the crate, if possible
+			if IsValid(SelfTbl.FreeCrate) then SelfTbl.FreeCrate:ReturnRound(SelfTbl.BulletData) end -- Put a shell back in the crate, if possible
 
 			local IdealTime, Manual = ACF.CalcReloadTimeMag(SelfTbl.Caliber, SelfTbl.ClassData, SelfTbl.WeaponData, SelfTbl.BulletData, self)
 			if SelfTbl.TargetReloadTime then IdealTime = math.max(IdealTime, SelfTbl.TargetReloadTime) end
@@ -1054,12 +1066,11 @@ do -- Metamethods --------------------------------
 			-- A disabled gun goes empty rather than staying mid-load, firing retries the load once it is enabled
 			if not SelfTbl.Disabled and IsValid(Crate) and not CheckCrate(self, Crate, ENTITY.GetPos(self)) then -- Have a crate, start loading
 				self:SetState("Loading") -- Set our state to loading
-				Crate:Consume() -- Take one round of ammo out of the current crate (Must be called *after* setting the state to loading)
+				local BulletData = Crate:TakeRound() -- Take one round of ammo out of the current crate (Must be called *after* setting the state to loading)
 
 				SelfTbl.CurrentCrate = Crate
 				ENTITY.SetNW2Int(self, "CurCrate", ENTITY.EntIndex(SelfTbl.CurrentCrate))
 
-				local BulletData = Crate.BulletData
 				local IdealTime, Manual = ACF.CalcReloadTime(SelfTbl.Caliber, SelfTbl.ClassData, SelfTbl.WeaponData, BulletData, self)
 				if SelfTbl.TargetReloadTime then IdealTime = math.max(IdealTime, SelfTbl.TargetReloadTime) end
 				local Time = Manual and IdealTime / SelfTbl.LoadCrewMod or IdealTime
@@ -1160,7 +1171,7 @@ do -- Metamethods --------------------------------
 				return false
 			end
 
-			SelfTbl.BulletData = Crate.BulletData
+			SelfTbl.BulletData = Crate:PeekRound()
 
 			SelfTbl.CurrentCrate = Crate
 			ENTITY.SetNW2Int(self, "Length", SelfTbl.BulletData.RoundLength or (SelfTbl.BulletData.PropLength + SelfTbl.BulletData.ProjLength))
@@ -1333,7 +1344,7 @@ do -- Metamethods --------------------------------
 
 			for Crate in pairs(self.Crates) do
 				if Crate:CanConsume() then
-					CrateAmmo = CrateAmmo + Crate.Ammo
+					CrateAmmo = CrateAmmo + Crate:CountSelectedRounds()
 					if Crate.AmmoStage == ACF.AmmoStageMin then StageOneAmmo = true end
 				end
 			end

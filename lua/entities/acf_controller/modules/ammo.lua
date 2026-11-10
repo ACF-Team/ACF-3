@@ -9,17 +9,24 @@ local function Init(Entity)
 	end
 end
 
--- Crates sharing an ammo type can still differ in penetration, so entries are named after both.
+-- Rounds sharing an ammo type can still differ in penetration, so entries are named after both.
 -- MaxPen is not stored on BulletData, it only exists in the display data.
 -- Ammo types are V2 classes with no short ID field, so the display label uses the FQN's last segment
 -- ("ACF.Ammunition.AP" to "AP") while the fully qualified name is what goes over the wire.
-local function GetAmmoName(Crate)
-	local Ammo    = Crate.RoundData
+-- Names are cached by bullet data, which crates rebuild whenever their rounds change.
+local NameCache = setmetatable({}, { __mode = "k" })
+
+local function GetAmmoName(BulletData, Ammo)
+	local Cached = NameCache[BulletData]
+	if Cached then return Cached[1], Cached[2], Cached[3] end
+
 	local Type    = Classes.GetTypeName(Ammo:GetType())
-	local Display = Ammo:GetDisplayData(Crate.BulletData)
+	local Display = Ammo:GetDisplayData(BulletData)
 	local MaxPen  = math.max(math.Round(Display.MaxPen or 0), 0)
 	local Short   = string.match(Type, "[^.]+$") or Type
 	local Name    = MaxPen > 0 and Short .. " " .. MaxPen .. "mm" or Short
+
+	NameCache[BulletData] = { Name, Type, MaxPen }
 
 	return Name, Type, MaxPen
 end
@@ -37,10 +44,20 @@ do
 
 		local Gun = Entity:GetWeapon(WeaponSlot)
 		if not IsValid(Gun) then return end
+
+		local function IsSelected(BulletData, Ammo) return GetAmmoName(BulletData, Ammo) == SelectAmmoName end
+
+		-- Crates loaded with the selected round feed only that round, the rest stop feeding
 		for Crate, _ in pairs(Gun.Crates) do
 			if IsValid(Crate) then
-				local AmmoName = GetAmmoName(Crate)
-				Crate:TriggerInput("Load", AmmoName == SelectAmmoName and 1 or 0)
+				local HasRound = false
+
+				for _, Kind in ipairs(Crate:GetRoundCounts()) do
+					if IsSelected(Kind.BulletData, Kind.Ammo) then HasRound = true break end
+				end
+
+				Crate:SetRoundFilter(HasRound and IsSelected or nil)
+				Crate:TriggerInput("Load", HasRound and 1 or 0)
 			end
 		end
 		if ForceReload then Gun:TriggerInput("Reload", 1) end
@@ -57,13 +74,15 @@ do
 			local AmmoByName = {}
 			for Crate, _ in pairs(Gun.Crates) do
 				if IsValid(Crate) then
-					local AmmoName, RoundID, MaxPen = GetAmmoName(Crate)
-					local Ammo = AmmoByName[AmmoName]
-					if not Ammo then
-						Ammo = {RoundID = RoundID, MaxPen = MaxPen, Count = 0}
-						AmmoByName[AmmoName] = Ammo
+					for _, Kind in ipairs(Crate:GetRoundCounts()) do
+						local AmmoName, RoundID, MaxPen = GetAmmoName(Kind.BulletData, Kind.Ammo)
+						local Ammo = AmmoByName[AmmoName]
+						if not Ammo then
+							Ammo = {RoundID = RoundID, MaxPen = MaxPen, Count = 0}
+							AmmoByName[AmmoName] = Ammo
+						end
+						Ammo.Count = Ammo.Count + Kind.Count
 					end
-					Ammo.Count = Ammo.Count + (Crate.Amount or 0)
 				end
 			end
 

@@ -19,6 +19,8 @@ local function StartCookoff(Entity, BurnTime)
 
 	Entity.Burning = Clock.CurTime + BurnTime
 
+	Entity:SetNWFloat("Cookoff", math.max(Entity.BulletData.PropMass * Entity.Ammo, 0.01)) -- How much propellant is burning, the clients scale the fire by it
+
 	local Interval = 0.01 + Entity.BulletData.RoundVolume ^ 0.5 / 100
 
 	TimerCreate("ACF Crate Cookoff " .. Entity:EntIndex(), Interval, 0, function()
@@ -34,9 +36,10 @@ function CookoffCrate(Entity)
 
 		Entity.Burning = nil
 
+		Entity:SetNWFloat("Cookoff", 0)
 		Entity:Detonate()
 	elseif Entity.RoundData then -- Spew bullets out everywhere
-		local BulletData = Entity.BulletData
+		local BulletData, RoundData = Entity:PeekRound()
 		local VolumeRoll = math.Rand(0, 150) > math.min(BulletData.RoundVolume ^ 0.5, 150 * 0.25) -- The larger the round volume, the less the chance of detonation (25% chance at minimum)
 		local AmmoRoll   = math.Rand(0, 1) <= Entity.Ammo / math.max(Entity.Capacity, 1) -- The fuller the crate, the greater the chance of detonation
 
@@ -54,7 +57,7 @@ function CookoffCrate(Entity)
 			BulletData.Gun    = Entity
 			BulletData.Crate  = Entity:EntIndex()
 
-			Entity.RoundData:Create(Entity, BulletData)
+			RoundData:Create(Entity, BulletData)
 
 			Entity:Consume()
 		end
@@ -106,12 +109,13 @@ function ENT:Detonate(VisualOnly)
 	self.Exploding = true
 
 	local Position   = self:LocalToWorld(self:OBBCenter() + VectorRand() * self:GetSize() * 0.5) -- Random position within the crate
-	local BulletData = self.BulletData
-	local Filler     = BulletData.FillerMass or 0
-	local Propellant = BulletData.PropMass or 0
+	local Rounds     = math.max(self.Ammo, 1)
+	local Filler     = self:SumRounds("FillerMass") / Rounds -- Averaged over the kinds of rounds left
+	local Propellant = self:SumRounds("PropMass") / Rounds
 	local AmmoPower  = self.Ammo ^ 0.7 -- Arbitrary exponent to reduce ammo-based explosive power
 	local Explosive  = (Filler + Propellant * (ACF.PropImpetus / ACF.HEPower)) * AmmoPower
-	local FragMass   = BulletData.ProjMass or Explosive * 0.5
+	local MeanProj   = self.Ammo > 0 and self:SumRounds("ProjMass") / Rounds or self.BulletData.ProjMass
+	local FragMass   = MeanProj or Explosive * 0.5
 	local DmgInfo    = Objects.DamageInfo(self.Attacker or self, self.Inflictor)
 
 	ACF.KillChildProps(self, Position, Explosive)

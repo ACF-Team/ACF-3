@@ -64,3 +64,11 @@ Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Once linked, those s
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "It picks the healthiest linked sensor with line of sight to each target, and merges every result into its own outputs."}))
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "The merged picture is also mirrored back onto every linked radar, so a missile rack wired to that radar sees it too."}))
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "You can only place 2 per contraption, and sensors auto unlink if they drift too far away."}))
+
+-------------------------------------------------------------------------------------------------
+local Chapter = Storyboard:Chapter("AIO Controller")
+Chapter:AddInstruction("PlaceModel", {Name = "AIO", IdentifyAs = "AIO Controller", Model = "models/hunter/plates/plate025x025.mdl", Position = Vector(-30, 60, 3), ComeFrom = Vector(0, 0, 50), ParentTo = "Base"}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "An AIO controller links to one radar or IRST. Link any synchronized one and its HUD shows the merged picture."}))
+Chapter:AddInstruction("ShowToolgun", {Tool = language.GetPhrase("tool.acf_menu.menu_name")}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("ACF Menu", {Children = {"Radar1"}, Target = "AIO", Easing = math.ease.InOutQuad, Length = 2}))
+Chapter:AddInstruction("HideToolgun", {}):DelayByLength()

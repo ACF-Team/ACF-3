@@ -63,11 +63,11 @@ Classes.DefineClass("ACF.Gearboxes.CVT", "ACF.Gearboxes.BaseGearbox", function(C
 	CLASS.WriteGearOverlay = function(Gearbox, State)
 		local Text    = "%s - %s RPM"
 		local Gears   = Gearbox.Gears
-		local Reverse = ACF.ConvertGearRatio(Gears[2], Gearbox.GearboxLegacyRatio)
+		local Reverse = ACF.ConvertGearRatio(Gears[2], Gearbox.GearboxRealisticRatio)
 		local Min     = math.Round(Gearbox.MinRPM)
 		local Max     = math.Round(Gearbox.MaxRPM)
 
-		State:AddGearRatio("Reverse Gear", Reverse, "", Gearbox.GearboxLegacyRatio, true)
+		State:AddGearRatio("Reverse Gear", Reverse, "", not Gearbox.GearboxRealisticRatio, true)
 		State:AddKeyValue("Target", Text:format(Min, Max))
 	end
 end)

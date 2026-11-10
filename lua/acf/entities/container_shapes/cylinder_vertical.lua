@@ -6,4 +6,9 @@ ACF.Classes.DefineClass("ACF.ContainerShapes.CylinderVertical", "ACF.ContainerSh
     CLASS.Model  = "models/acf/core/s_ammo_cyl.mdl"
     CLASS.Icon   = "models/acf/core/s_ammo_cyl.mdl"
     CLASS.IsDrum = true
+
+    -- Shells stand on end along the drum's axis
+    function CLASS.GetShellAngleDiff(Crate, Direction)
+        return math.deg(math.acos(math.Clamp(Direction:Dot(Crate:GetUp()), -1, 1)))
+    end
 end)

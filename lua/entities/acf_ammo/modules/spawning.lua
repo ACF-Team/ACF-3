@@ -40,7 +40,11 @@ do -- IO
 	ACF.AddInputAction("acf_ammo", "Load", function(Entity, Value)
 		Entity.Load = tobool(Value)
 
-		WireLib.TriggerOutput(Entity, "Loading", Entity:CanConsume() and 1 or 0)
+		Entity:UpdateLoading()
+	end)
+
+	ACF.AddInputAction("acf_ammo", "Round Select", function(Entity, Value)
+		Entity:SetRoundSelect(Value)
 	end)
 end
 
@@ -53,14 +57,37 @@ local function GetAmmoModel(ShapeClass)
 	return "models/holograms/hq_rcube_thin.mdl"
 end
 
+-- The ammo round inputs (Projectile/Propellant/Tracer + type-specific like FillerRatio) live
+-- on the ammo instance, which reads the weapon via this back-reference. On a menu spawn
+-- ClientData carries the inputs flat; copy any present keys onto the instance. Dupes already
+-- have them deserialized into the instance (nested under the AmmoType field), so nil keys are
+-- skipped to preserve those. Ammo:ServerConvert() then reads everything off the instance.
+function ENT:PrepareAmmo(Ammo, Data)
+	Ammo.Weapon = self:GetWeapon()
+
+	for _, Field in ipairs(Classes.GetTypeFields(Ammo:GetType())) do
+		if Field.Menu and Data[Field.Name] ~= nil then
+			Ammo[Field.Name] = Data[Field.Name]
+		end
+	end
+end
+
+-- Shapes with a fixed lattice ignore the hex packing setting
+function ENT:IsHexPacked()
+	local Shape = self:ACF_GetUserVar("Shape")
+
+	return self:ACF_GetUserVar("HexPacking") and Shape and Shape.CanHexPack or false
+end
+
 do -- Spawn/Update/Remove
 	local function UpdateCrateSize(Entity, Data, Class, _, Ammo)
 		-- Convert the ammo instance once to get projectile geometry
 		local Bullet = Ammo:ServerConvert()
 
 		-- The shape picks the drum layout; nil means this is a plain box crate
-		local Layout     = ACF.GetDrumLayout(Entity:ACF_GetUserVar("Shape"))
-		local HexPacking = Entity:ACF_GetUserVar("HexPacking")
+		local Shape      = Entity:ACF_GetUserVar("Shape")
+		local Layout     = ACF.GetDrumLayout(Shape)
+		local HexPacking = Entity:IsHexPacked()
 
 		if Layout then
 			local roundSize = ACF.GetRoundProperties(Class, Data, Bullet)
@@ -70,7 +97,8 @@ do -- Spawn/Update/Remove
 
 			-- Primary means rounds per ring on a horizontal drum, but rings on a vertical one
 			local primary   = Clamp(Floor(tonumber(Data.CrateProjectilesX) or minPrimary), minPrimary, maxPrimary)
-			local numStacks = Clamp(Floor(tonumber(Data.CrateProjectilesZ) or 2), 1, maxStacks)
+			local minStacks = Bullet.TwoPiece and math.min(2, maxStacks) or 1 -- two piece rounds need a charge and a projectile layer
+			local numStacks = Clamp(Floor(tonumber(Data.CrateProjectilesZ) or 2), minStacks, maxStacks)
 
 			Data.CrateProjectilesX = primary
 			Data.CrateProjectilesZ = numStacks
@@ -79,11 +107,26 @@ do -- Spawn/Update/Remove
 
 			Entity:SetSize(Data.Size)
 
-			local Rounds = Layout.GetPerDisk(primary) * numStacks
-			-- Floored with no minimum: an odd cell out holds half a round, and half a round is nothing
-			if Bullet.TwoPiece then Rounds = Floor(Rounds * 0.5) end
+			return ACF.GetCrateCapacity(Shape, primary, 1, numStacks, Bullet.TwoPiece)
+		elseif Shape.IsCassette then
+			-- X is the stacks around the conveyor, Y and Z the conveyor's width and height
+			local roundSize        = ACF.GetRoundProperties(Class, Data, Bullet)
+			local _, gridY, gridZ  = ACF.GetMaxCounts(roundSize, ACF.AmmoMaxLength, ACF.AmmoMaxWidth, false)
+			local stacks           = Floor(tonumber(Data.CrateProjectilesX) or 1)
+			local maxX, maxY, maxZ = ACF.GetCassetteMaxCounts(stacks, gridY, gridZ)
+			local width            = Clamp(Floor(tonumber(Data.CrateProjectilesY) or 1), 1, maxY)
+			local height           = Clamp(Floor(tonumber(Data.CrateProjectilesZ) or 1), 1, maxZ)
 
-			return Rounds
+			stacks = Clamp(stacks, 1, maxX)
+
+			Data.CrateProjectilesX = stacks
+			Data.CrateProjectilesY = width
+			Data.CrateProjectilesZ = height
+			Data.Size              = ACF.GetCrateDimensions(ACF.GetCassetteGrid(stacks, width, height, Bullet.TwoPiece), roundSize, false)
+
+			Entity:SetSize(Data.Size)
+
+			return ACF.GetCrateCapacity(Shape, stacks, width, height, Bullet.TwoPiece)
 		else
 			-- Standard box crate logic
 			local cx = tonumber(Data.CrateProjectilesX)
@@ -106,6 +149,8 @@ do -- Spawn/Update/Remove
 			cy = math.min(cy, maxY)
 			cz = math.min(cz, maxZ)
 
+			if Bullet.TwoPiece then cz = math.max(cz, math.min(2, maxZ)) end
+
 			-- Persist counts on both Data and Entity
 			Data.CrateProjectilesX = cx
 			Data.CrateProjectilesY = cy
@@ -116,11 +161,7 @@ do -- Spawn/Update/Remove
 
 			Entity:SetSize(Data.Size)
 
-			local Rounds = cx * cy * cz
-			-- Floored with no minimum: an odd cell out holds half a round, and half a round is nothing
-			if Bullet.TwoPiece then Rounds = Floor(Rounds * 0.5) end
-
-			return Rounds
+			return ACF.GetCrateCapacity(Shape, cx, cy, cz, Bullet.TwoPiece)
 		end
 	end
 
@@ -170,10 +211,12 @@ do -- Spawn/Update/Remove
 			ExtraData.Bodygroup = Bodygroup
 			ExtraData.NeedsRotation = NeedsRotation
 			ExtraData.TwoPiece = BulletData.TwoPiece or false
-			ExtraData.HexPacking = Entity:ACF_GetUserVar("HexPacking") or false
+
+			local ShapeClass = Entity:ACF_GetUserVar("Shape")
+			ExtraData.IsCassette = ShapeClass and ShapeClass.IsCassette or false
+			ExtraData.HexPacking = Entity:IsHexPacked()
 
 			-- Drum-specific data
-			local ShapeClass = Entity:ACF_GetUserVar("Shape")
 			ExtraData.IsDrum = ShapeClass and ShapeClass.IsDrum or false
 			if ExtraData.IsDrum then
 				ExtraData.DrumShape = Entity.Shape
@@ -203,7 +246,7 @@ do -- Spawn/Update/Remove
 					local CountY = Entity.CrateProjectilesY
 					local CountZ = Entity.CrateProjectilesZ
 
-					net.WriteUInt(ExtraData.Capacity, 25)
+					net.WriteUInt(ExtraData.Capacity, Entity.CountBits)
 					net.WriteBool(ExtraData.IsRound)
 					net.WriteVector(ExtraData.RoundSize)
 					net.WriteAngle(ExtraData.LocalAng)
@@ -238,6 +281,22 @@ do -- Spawn/Update/Remove
 
 					net.WriteBool(ExtraData.TwoPiece)
 					net.WriteBool(ExtraData.HexPacking)
+					net.WriteBool(ExtraData.IsCassette)
+
+					-- Each kind of round top first, with what the round counts window lists it by
+					net.WriteUInt(Entity.RoundMixVersion, Entity.MixVersionBits)
+					net.WriteUInt(#Entity.RoundKinds - 1, ACF.ProfileBits)
+
+					for _, Kind in ipairs(Entity.RoundKinds) do
+						local BulletData = Kind.BulletData
+
+						net.WriteUInt(Kind.Bodygroup, 4)
+						net.WriteUInt(Kind.Target, Entity.CountBits)
+						net.WriteString(Kind.Name)
+						net.WriteString(Kind.Ammo.SpawnIcon or "")
+						net.WriteFloat(BulletData.ProjMass)
+						net.WriteFloat((BulletData.MuzzleVel or 0) * ACF.Scale)
+					end
 				end
 
 			if Player then
@@ -246,6 +305,13 @@ do -- Spawn/Update/Remove
 				net.Broadcast()
 			end
 		end
+	end
+
+	--- Networks the ammo data at the end of the tick, so several changes in one tick send it once
+	function ENT:QueueAmmoData()
+		timer.Create("ACF Ammo Data " .. self:EntIndex(), 0, 1, function()
+			if IsValid(self) then NetworkAmmoData(self) end
+		end)
 	end
 
 	util.AddNetworkString("ACF_RequestAmmoData")
@@ -283,8 +349,6 @@ do -- Spawn/Update/Remove
 
 		HookRun("ACF_OnAmmoFirst", Ammo, Entity)
 
-		Ammo:Network(Entity, Entity.BulletData)
-
 		Entity.Weapon            = Data.Weapon
 		Entity.AmmoType          = Data.AmmoType
 		Entity.CrateProjectilesX = Data.CrateProjectilesX
@@ -318,6 +382,7 @@ do -- Spawn/Update/Remove
 
 		Entity.Capacity = Rounds
 		Entity.MagSize  = MagSize
+		Entity:BuildRounds()
 		Entity:SetAmount(math.floor(Entity.Capacity * Percentage))
 		Entity:SetNWInt("Ammo", Entity.Amount)
 
@@ -325,31 +390,37 @@ do -- Spawn/Update/Remove
 
 		NetworkAmmoData(Entity)
 
-		if Entity.Weapons and next(Entity.Weapons) then
-			local Unloaded
-
-			for K in pairs(Entity.Weapons) do
-				if K.CurrentCrate == Entity then
-					Unloaded = true
-
-					K:Unload()
-				end
-			end
-
-			if Unloaded then
-				Notify.EntityWarning(Entity, "Weapons unloaded.", "Crate updated while weapons were loaded with its ammo")
-			end
-		end
+		Entity:UnloadWeapons()
 
 		Entity.ACF.Model = Entity:GetModel()
 
 		Entity:UpdateMass(true)
 	end
 
+	--- Unloads the weapons loaded from this crate, so they reload with its current rounds
+	function ENT:UnloadWeapons()
+		local Unloaded
+
+		for Weapon in pairs(self.Weapons) do
+			if Weapon.CurrentCrate == self then
+				Unloaded = true
+
+				Weapon:Unload()
+			end
+		end
+
+		if Unloaded then
+			Notify.EntityWarning(self, "Weapons unloaded.", "Crate updated while weapons were loaded with its ammo")
+		end
+	end
+
 	function ENT:ACF_PreSpawn(_, _, _, ClientData)
-		self.ACF         = {}
-		self.Weapons     = {}
-		self.IsExplosive = true
+		self.ACF             = {}
+		self.Weapons         = {}
+		self.IsExplosive     = true
+		self.RoundSelect     = 0
+		self.RoundMixVersion = 0
+		self.ProfileKeys     = {} -- Network keys each round profile's last round wrote
 
 		local ShapeClass = Classes.GetTypeByName(ClientData.Shape)
 		local Model      = GetAmmoModel(ShapeClass)
@@ -401,18 +472,7 @@ do -- Spawn/Update/Remove
 			FoldWeaponSubInstance(WeaponInst, "Fuze",     "ACF.Missiles.Fuze",     Data)
 		end
 
-		-- The ammo round inputs (Projectile/Propellant/Tracer + type-specific like FillerRatio) live
-		-- on the ammo instance, which reads the weapon via this back-reference. On a menu spawn
-		-- ClientData carries the inputs flat; copy any present keys onto the instance. Dupes already
-		-- have them deserialized into the instance (nested under the AmmoType field), so nil keys are
-		-- skipped to preserve those. Ammo:ServerConvert() then reads everything off the instance.
-		Ammo.Weapon = WeaponInst
-
-		for _, Field in ipairs(Classes.GetTypeFields(Ammo:GetType())) do
-			if Field.Menu and Data[Field.Name] ~= nil then
-				Ammo[Field.Name] = Data[Field.Name]
-			end
-		end
+		self:PrepareAmmo(Ammo, Data)
 
 		-- Derive the flat tool data UpdateCrate consumes from the authoritative instances.
 		Data.Weapon   = Classes.GetTypeName(Class)
@@ -425,6 +485,13 @@ do -- Spawn/Update/Remove
 		Data.CrateProjectilesY = self:ACF_GetUserVar("CrateProjectilesY")
 		Data.CrateProjectilesZ = self:ACF_GetUserVar("CrateProjectilesZ")
 		Data.AmmoStage         = self:ACF_GetUserVar("AmmoStage")
+
+		local IsUpdate = self.RoundKinds ~= nil -- Spawning builds them after this
+
+		-- Updating fills the crate with only the round applied, unless the data carries a mix like the copy tool's
+		if IsUpdate then
+			self:SetRoundsFromData(Data)
+		end
 
 		-- Legacy "Weapon" param meant a concrete non-scalable group item (nil for scalables); the
 		-- non-scalable weapon instance fills that role now.
@@ -441,6 +508,13 @@ do -- Spawn/Update/Remove
 		self:ACF_SetUserVar("CrateProjectilesX", Data.CrateProjectilesX)
 		self:ACF_SetUserVar("CrateProjectilesY", Data.CrateProjectilesY)
 		self:ACF_SetUserVar("CrateProjectilesZ", Data.CrateProjectilesZ)
+
+		-- Autoloaders can only feed from mechanized crates
+		if self.Autoloaders and not self:ACF_GetUserVar("Shape").IsMechanized then
+			for Autoloader in pairs(self.Autoloaders) do
+				Autoloader:Unlink(self)
+			end
+		end
 
 		-- Unlink weapons that can no longer use this crate (legacy ENT:Update tail).
 		if self.Weapons and next(self.Weapons) then
@@ -492,82 +566,4 @@ do -- Spawn/Update/Remove
 
 
 	ACF.RegisterLinkSource("acf_ammo", "Weapons")
-end
-
-do -- Overlay
-	function ENT:ACF_UpdateOverlayState(State)
-		local Tracer = self.BulletData.Tracer ~= 0 and "-T" or ""
-		local AmmoType = ACF.GetLegacyStyleClassName(self.BulletData.AmmoType) .. Tracer
-
-		-- The destroyed line is added by the base overlay
-		if not ACF.IsDestroyed(self) and next(self.Weapons) then
-			if self:CanConsume() then
-				State:AddSuccess("Providing Ammo")
-			elseif self.Amount ~= 0 then
-				State:AddWarning("Idle")
-			else
-				State:AddError("Empty")
-			end
-		end
-
-		local CountX = self.CrateProjectilesX
-		local CountY = self.CrateProjectilesY
-		local CountZ = self.CrateProjectilesZ
-
-		State:AddDivider()
-		State:AddSize("Storage (in projectiles)", CountX, CountY, CountZ)
-		State:AddKeyValue("Ammo Type", AmmoType)
-		State:AddKeyValue("Two Piece", self.BulletData.TwoPiece and "Yes" or "No")
-		State:AddKeyValue("Hex Packing", self:ACF_GetUserVar("HexPacking") and "Yes" or "No")
-
-		local Layout = ACF.GetDrumLayout(self:ACF_GetUserVar("Shape"))
-		if Layout then
-			State:AddKeyValue("Layout", Layout.Name)
-		end
-		State:AddProgressBar("Contents", self.Amount, self.Capacity)
-
-		local BulletData = self.BulletData
-		local Projectile = math.Round(BulletData.ProjMass, 2)
-		local Cartridge  = math.Round(BulletData.CartMass, 2)
-		State:AddHeader("Bullet Info", 2)
-
-		local Caliber = math.Round(BulletData.Caliber * 10, 2)
-		local ShellDiameter = math.Round(BulletData.CaseDiameter * 10, 2)
-		local Length  = math.Round(BulletData.RoundLength or (BulletData.ProjLength + BulletData.PropLength), 2)
-		if self.IsMissileAmmo then
-			local MissileClass = Classes.GetSubtypeByName("ACF.Missiles.BaseMissile", BulletData.WeaponType)
-			local Round        = MissileClass and MissileClass.Round
-
-			if Round and Round.ActualLength then
-				Length = Round.ActualLength * ACF.InchToCm
-			end
-
-			-- Use estimated missile muzzle velocity instead
-			if Round then
-				BulletData.MuzzleVel = ACF.MissileMuzzleVel(MissileClass.NoThrust, Round, BulletData.ProjMass, BulletData.PropMass)
-			end
-		end
-
-		State:AddKeyValue("Shell dimensions", ShellDiameter .. "mm x " .. Length .. "cm")
-
-		local HasMag = ACF.GetWeaponValue("MagReload", Caliber, self.ClassData, self.WeaponData)
-
-		-- Per-round reload only matters without a magazine, and not for belt feds (cyclic RPM is their only timing)
-		if not HasMag and not self.IsBelted then
-			local IdealReloadTime = math.Round(ACF.CalcReloadTime(Caliber, self.ClassData, self.WeaponData, self.BulletData, self.Override), 2)
-			State:AddKeyValue("Ideal Reload Time", IdealReloadTime .. " s")
-		end
-
-		if HasMag then
-			local IdealMagReloadTime = math.Round(ACF.CalcReloadTimeMag(self.Caliber, self.ClassData, self.WeaponData, self.BulletData, {MagSize = self.Amount}), 2)
-			State:AddKeyValue("Ideal Mag Reload Time", IdealMagReloadTime .. " s")
-		end
-
-		State:AddNumber("Cartridge Mass", Cartridge, " kg", 2)
-		State:AddNumber("Projectile Mass", Projectile, " kg", 2)
-
-		State:AddHeader("Ammo Info", 2)
-		self.RoundData:UpdateCrateOverlay(self.BulletData, State)
-		ACF.AddAdditionalOverlays(self, State)
-	end
 end

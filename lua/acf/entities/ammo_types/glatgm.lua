@@ -14,6 +14,35 @@ Classes.DefineClass("ACF.Ammunition.GLATGM", "ACF.Ammunition.HEATFS", function(C
 
 	CLASS.MaxStandoffRatio = .4
 
+	--- Picks the missile model for a given caliber, matching the model used by the entity in flight.
+	local function GetFlightModel(Caliber)
+		if Caliber < 12 then
+			return "models/missiles/glatgm/9m117.mdl"
+		elseif Caliber >= 14 then
+			return "models/missiles/glatgm/mgm51.mdl"
+		else
+			return "models/missiles/glatgm/9m112.mdl"
+		end
+	end
+
+	function CLASS:ResolveModel(Context, Class, Weapon, TwoPiece)
+		if Context == "Crate" and self.BulletData then
+			local ModelPath = GetFlightModel(self.BulletData.Caliber)
+			local ModelData = ACF.ModelData.GetModelData(ModelPath)
+			local Offset    = ModelData and ModelData.Center and Vector(-ModelData.Center.x, 0, 0) or Vector()
+
+			return {
+				Model         = ModelPath,
+				Offset        = Offset,
+				Bodygroup     = self.Bodygroup,
+				NeedsRotation = false,
+				FOV           = self.MenuFOV,
+			}
+		end
+
+		return BASE.ResolveModel(self, Context, Class, Weapon, TwoPiece)
+	end
+
 	function CLASS:BaseConvert()
 		self.BulletData = {}
 
@@ -108,21 +137,18 @@ Classes.DefineClass("ACF.Ammunition.GLATGM", "ACF.Ammunition.HEATFS", function(C
 			BASE.OnCreateAmmoPreview(self, Preview, Setup)
 
 			local Caliber = BulletData.Caliber
-			local Model, FOV, Height
+			local FOV, Height
 
 			if Caliber < 12 then
-				Model = "models/missiles/glatgm/9m117.mdl"
 				FOV   = 65
 			elseif Caliber >= 14 then
-				Model  = "models/missiles/glatgm/mgm51.mdl"
 				Height = 100
 				FOV    = 60
 			else
-				Model = "models/missiles/glatgm/9m112.mdl"
-				FOV   = 80
+				FOV = 80
 			end
 
-			Setup.Model  = Model
+			Setup.Model  = GetFlightModel(Caliber)
 			Setup.FOV    = FOV
 			Setup.Height = Height or Setup.Height
 		end

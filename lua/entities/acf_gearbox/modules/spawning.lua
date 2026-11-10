@@ -40,8 +40,6 @@ do -- Spawn and Update functions -----------------------
 		end
 
 		local MaxGears = Class.CanSetGears and (Class.MaxGear or ClientData.GearAmount or Class.Gears.Max) or Class.Gears.Max
-		local Invert = Class.InvertGearRatios or ClientData.InvertGearRatios
-		ClientData.InvertGearRatios = nil
 
 		local Gears = istable(ClientData.Gears) and ClientData.Gears or {}
 
@@ -53,12 +51,7 @@ do -- Spawn and Update functions -----------------------
 				ClientData["Gear" .. I] = nil
 			end
 
-			-- Invert pre-scalable gear ratios (compat only; never set on V2 gearboxes).
-			if Invert and Gear ~= 0 and abs(Gear) < 1 then
-				Gear = Round(1 / Gear, 2)
-			end
-
-			Gears[I] = Round(Gear, 3)
+			Gears[I] = Round(Gear, ACF.GearRatioDecimals)
 		end
 
 		for I = MaxGears + 1, #Gears do Gears[I] = nil end
@@ -71,11 +64,7 @@ do -- Spawn and Update functions -----------------------
 			ClientData.Gear0 = nil
 		end
 
-		if Invert and Final ~= 0 and abs(Final) < 1 then
-			Final = Round(1 / Final, 2)
-		end
-
-		ClientData.FinalDrive = Round(Final, 3)
+		ClientData.FinalDrive = Round(Final, ACF.GearRatioDecimals)
 
 		-- Class-specific verification (automatic ShiftPoints/Reverse, CVT MinRPM/MaxRPM).
 		if Class.VerifyData then Class.VerifyData(ClientData, Class) end
@@ -123,7 +112,7 @@ do -- Spawn and Update functions -----------------------
 		Entity.MaxRPM             = Entity:ACF_GetUserVar("MaxRPM")
 		Entity.GearboxScale       = Scale
 		Entity.GearAmount         = MaxGear
-		Entity.GearboxLegacyRatio = Entity:ACF_GetUserVar("GearboxLegacyRatio")
+		Entity.GearboxRealisticRatio = Entity:ACF_GetUserVar("GearboxRealisticRatio")
 
 		Entity.Name         = Gearbox.Name
 		Entity.ShortName    = ShortName(Gearbox:GetType())

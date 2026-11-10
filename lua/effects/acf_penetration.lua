@@ -23,7 +23,6 @@ function EFFECT:Init(Data)
 	local Velocity = Data:GetScale() -- Velocity of the projectile in gmod units
 	local Mass     = Data:GetMagnitude() -- Mass of the projectile in kg
 	local Index    = Data:GetDamageType()
-	local Emitter  = ParticleEmitter(Origin)
 	local Scale    = math.max(Mass * (Velocity * ACF.InchToMeter) * 0.01, 1) ^ 0.3
 
 	TraceData.start = Origin - Normal
@@ -37,10 +36,26 @@ function EFFECT:Init(Data)
 	local SoundData = Sounds.GetHitSoundPath(Data, Trace, "penetration")
 	Sounds.PlaySound(Trace.HitPos, SoundData.SoundPath:format(math.random(0, 4)), 100, SoundData.SoundPitch, 1)
 
-	if MetalMaterials[MatType] then
-		self:Metal(Emitter, Origin, Scale, Normal, DebrisColor)
-	else -- Nonspecific
-		self:Concrete(Emitter, Origin, Scale, Normal, DebrisColor)
+	local EffectTable = {
+		Origin = Origin,
+		Normal = Normal,
+		Magnitude = Scale,
+		Scale = Scale,
+		Radius = Scale,
+	}
+
+	Effects.CreateEffect("Sparks", EffectTable)
+
+	-- Nonspecific materials get concrete
+	local Effect = CreateParticleSystemNoEntity(MetalMaterials[MatType] and "acf_penetration_metal" or "acf_penetration_concrete", Origin, angle_zero)
+
+	if Effect then
+		Effect:SetControlPoint(1, Vector(Scale, Scale, Scale))
+		Effect:SetControlPoint(2, Vector(Scale, Scale, 1))
+		Effect:SetControlPoint(3, Vector(DebrisColor.r, DebrisColor.g, DebrisColor.b))
+		Effect:SetControlPoint(4, Normal * 225) -- Debris
+		Effect:SetControlPoint(5, Normal * 55 * Scale) -- Embers
+		Effect:SetControlPoint(6, Normal * 30 * Scale) -- Smoke
 	end
 
 	if IsValid(Trace.Entity) or Trace.HitWorld then
@@ -49,152 +64,6 @@ function EFFECT:Init(Data)
 
 		util.DecalEx(GetDecal(Type), Trace.Entity, Trace.HitPos, HitNormal, White, Size, Size)
 	end
-end
-
-function EFFECT:Metal(Emitter, Origin, Scale, HitNormal, DebrisColor)
-	local EffectTable = {
-		Origin = Origin,
-		Normal = HitNormal,
-		Magnitude = Scale,
-		Scale = Scale,
-		Radius = Scale,
-	}
-
-	Effects.CreateEffect("Sparks", EffectTable)
-
-	if not IsValid(Emitter) then return end
-
-	for _ = 0, 10 * Scale do
-		local Debris = Emitter:Add("effects/fleck_tile" .. math.random(1, 2), Origin)
-
-		if Debris then
-			-- Limit the z offset to keep the particles from being directed below the hit point
-			local VelOffset = Vector(math.Rand(-1, 1), math.Rand(-1, 1), math.Rand(0, 1))
-
-			Debris:SetVelocity((HitNormal + VelOffset) * 150 * 1.5)
-			Debris:SetLifeTime(0)
-			Debris:SetDieTime(math.Rand(1.5, 3) * Scale * 0.3333)
-			Debris:SetStartAlpha(255)
-			Debris:SetEndAlpha(0)
-			Debris:SetStartSize(1 * Scale)
-			Debris:SetEndSize(1 * Scale)
-			Debris:SetRoll(math.Rand(0, 360))
-			Debris:SetRollDelta(math.Rand(-3, 3))
-			Debris:SetAirResistance(100)
-			Debris:SetGravity(Vector(0, 0, -650))
-			Debris:SetColor(DebrisColor.r, DebrisColor.g, DebrisColor.b)
-		end
-	end
-
-	for _ = 0, 5 * Scale do
-		local Embers = Emitter:Add("particles/flamelet" .. math.random(1, 5), Origin)
-
-		if Embers then
-			-- Limit the z offset to keep the particles from being directed below the hit point
-			local VelOffset = Vector(math.Rand(-1, 1), math.Rand(-1, 1), math.Rand(-1, 0))
-
-			Embers:SetVelocity((HitNormal - VelOffset) * math.random(30 * Scale, 80 * Scale))
-			Embers:SetLifeTime(0)
-			Embers:SetDieTime(math.Rand(0.3, 1) * Scale * 0.2)
-			Embers:SetStartAlpha(255)
-			Embers:SetEndAlpha(0)
-			Embers:SetStartSize(2 * Scale)
-			Embers:SetEndSize(0 * Scale)
-			Embers:SetStartLength(5 * Scale)
-			Embers:SetEndLength(0 * Scale)
-			Embers:SetRoll(math.Rand(0, 360))
-			Embers:SetRollDelta(math.Rand(-0.2, 0.2))
-			Embers:SetAirResistance(20)
-			Embers:SetGravity(VectorRand() * 10)
-			Embers:SetColor(200, 200, 200)
-		end
-	end
-
-	Emitter:Finish()
-end
-
-function EFFECT:Concrete(Emitter, Origin, Scale, HitNormal, DebrisColor)
-	local EffectTable = {
-		Origin = Origin,
-		Normal = HitNormal,
-		Magnitude = Scale,
-		Scale = Scale,
-		Radius = Scale,
-	}
-
-	Effects.CreateEffect("Sparks", EffectTable)
-
-	if not IsValid(Emitter) then return end
-
-	for _ = 0, 10 * Scale do
-		local Debris = Emitter:Add("effects/fleck_tile" .. math.random(1, 2), Origin)
-
-		if Debris then
-			-- Limit the z offset to keep the particles from being directed below the hit point
-			local VelOffset = Vector(math.Rand(-1, 1), math.Rand(-1, 1), math.Rand(0, 1))
-
-			Debris:SetVelocity((HitNormal + VelOffset) * 150 * 1.5)
-			Debris:SetLifeTime(0)
-			Debris:SetDieTime(math.Rand(1.5, 3) * Scale * 0.3333)
-			Debris:SetStartAlpha(255)
-			Debris:SetEndAlpha(0)
-			Debris:SetStartSize(1 * Scale)
-			Debris:SetEndSize(1 * Scale)
-			Debris:SetRoll(math.Rand(0, 360))
-			Debris:SetRollDelta(math.Rand(-3, 3))
-			Debris:SetAirResistance(100)
-			Debris:SetGravity(Vector(0, 0, -650))
-			Debris:SetColor(DebrisColor.r, DebrisColor.g, DebrisColor.b)
-		end
-	end
-
-	for _ = 0, 3 * Scale do
-		local Smoke = Emitter:Add("particle/smokesprites_000" .. math.random(1, 9), Origin)
-
-		if Smoke then
-			-- Limit the z offset to keep the particles from being directed below the hit point
-			local VelOffset = Vector(math.Rand(-1, 1), math.Rand(-1, 1), math.Rand(0, 1))
-
-			Smoke:SetVelocity(HitNormal * math.random(20, 40 * Scale) + VelOffset * math.random(25, 50 * Scale))
-			Smoke:SetLifeTime(0)
-			Smoke:SetDieTime(math.Rand(1, 2) * Scale * 0.3333)
-			Smoke:SetStartAlpha(math.Rand(50, 150))
-			Smoke:SetEndAlpha(0)
-			Smoke:SetStartSize(1 * Scale)
-			Smoke:SetEndSize(2 * Scale)
-			Smoke:SetRoll(math.Rand(150, 360))
-			Smoke:SetRollDelta(math.Rand(-0.2, 0.2))
-			Smoke:SetAirResistance(200)
-			Smoke:SetGravity(Vector(math.random(-5, 5) * Scale, math.random(-5, 5) * Scale, -50))
-			Smoke:SetColor(DebrisColor.r, DebrisColor.g, DebrisColor.b)
-		end
-	end
-
-	for _ = 0, 5 * Scale do
-		local Embers = Emitter:Add("particles/flamelet" .. math.random(1, 5), Origin)
-
-		if Embers then
-			-- Limit the z offset to keep the particles from being directed below the hit point
-			local VelOffset = Vector(math.Rand(-1, 1), math.Rand(-1, 1), math.Rand(-1, 0))
-
-			Embers:SetVelocity((HitNormal - VelOffset) * math.random(30 * Scale, 80 * Scale))
-			Embers:SetLifeTime(0)
-			Embers:SetDieTime(math.Rand(0.3, 1) * Scale * 0.2)
-			Embers:SetStartAlpha(255)
-			Embers:SetEndAlpha(0)
-			Embers:SetStartSize(5 * Scale)
-			Embers:SetEndSize(0 * Scale)
-			Embers:SetStartLength(5 * Scale)
-			Embers:SetEndLength(0 * Scale)
-			Embers:SetRoll(math.Rand(0, 360))
-			Embers:SetRollDelta(math.Rand(-0.2, 0.2))
-			Embers:SetAirResistance(20)
-			Embers:SetGravity(VectorRand() * 10)
-			Embers:SetColor(200, 200, 200)
-		end
-	end
-
-	Emitter:Finish()
 end
 
 function EFFECT:Think()

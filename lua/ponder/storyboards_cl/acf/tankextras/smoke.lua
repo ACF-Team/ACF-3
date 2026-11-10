@@ -100,3 +100,24 @@ Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "A radar doesn't rely
 Chapter:AddInstruction("RemoveDebugOverlay", {Name = "IRSTTrace"})
 Chapter:AddInstruction("RemoveDebugOverlay", {Name = "RadarTrace"})
 Chapter:AddInstruction("RemoveDebugOverlay", {Name = "Cloud"})
+
+-------------------------------------------------------------------------------------------------
+local Chapter = Storyboard:Chapter("AIO Controller")
+Chapter:AddDelay(Chapter:AddInstruction("RemoveModels", {Models = {{Name = "IRST"}, {Name = "Radar"}, {Name = "TargetBase"}, {Name = "TargetCrate"}, {Name = "TargetCannon"}}}))
+Chapter:AddInstruction("MoveCameraLookAt", {Length = 1, Angle = -225, Distance = 800}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("PlaceModels", {
+    Length = 0.5,
+    Models = {
+        {Name = "AIO", IdentifyAs = "AIO Controller", Model = "models/hunter/plates/plate025x025.mdl", Angles = Angle(0, 0, 0), Position = Vector(0, 0, 3), ComeFrom = Vector(0, 0, 50), },
+        {Name = "Receiver", IdentifyAs = "Laser Warning Receiver", Model = "models/bluemetaknight/laser_detector.mdl", Angles = Angle(0, -90, 0), Position = Vector(-40, 0, 15), ComeFrom = Vector(0, 0, 50), },
+        {Name = "Launcher", IdentifyAs = "Smoke Launcher", Model = "models/launcher/40mmsl.mdl", Angles = Angle(-30, 90, 0), Position = Vector(40, 0, 15), ComeFrom = Vector(0, 0, 50), },
+    }
+}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Link warning receivers and smoke launchers to an AIO controller. Warnings show on its HUD, and Shift fires the launchers."}))
+Chapter:AddInstruction("ShowToolgun", {Tool = language.GetPhrase("tool.acf_menu.menu_name")}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("ACF Menu", {Children = {"Receiver", "Launcher"}, Target = "AIO", Easing = math.ease.InOutQuad, Length = 2}))
+Chapter:AddInstruction("HideToolgun", {}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("ACF.ShowAIOMenu", {Target = "AIO"}))
+Chapter:AddInstruction("ACF.SetAIOSetting", {Name = "AIOMenu", Setting = "SmokeFuse"}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "SmokeFuse sets how many seconds after firing the smoke bursts."}))
+Chapter:AddInstruction("RemovePanel", {Name = "AIOMenu", Length = 0.5}):DelayByLength()

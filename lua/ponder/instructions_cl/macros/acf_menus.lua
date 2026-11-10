@@ -114,15 +114,28 @@ local RecursiveFindPanelByName function RecursiveFindPanelByName(Parent, Select)
     end
 end
 
+-- Finds the first combo box offering the given choice, so menus need no panel names
+local RecursiveFindComboByChoice function RecursiveFindComboByChoice(Parent, Choice)
+    for _, Panel in ipairs(Parent:GetChildren()) do
+        if Panel.Choices then
+            for Index, Text in ipairs(Panel.Choices) do
+                if Text == Choice then return Panel, Index end
+            end
+        end
+        local Combo, Index = RecursiveFindComboByChoice(Panel, Choice)
+        if Combo then return Combo, Index end
+    end
+end
+
 local SetACFPanelComboBox = Ponder.API.NewInstruction("ACF.SetPanelComboBox")
 SetACFPanelComboBox.Length = 1
 
 function SetACFPanelComboBox:First(playback)
     local panel = playback.Environment:GetNamedObject("VGUIPanel", self.Name)
-    local ComboBox = RecursiveFindPanelByName(panel.Base, language.GetPhrase(self.ComboBoxName))
-    if IsValid(ComboBox) and ComboBox.ChooseOptionID then
+    local ComboBox, Index = RecursiveFindComboByChoice(panel.Base, language.GetPhrase(self.Choice))
+    if IsValid(ComboBox) then
         ACF.DisableClientData = true
-        ComboBox:ChooseOptionID(self.OptionID)
+        ComboBox:ChooseOptionID(Index)
         ACF.DisableClientData = false
     end
 end

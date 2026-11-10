@@ -1,0 +1,8 @@
+"SpriteCard"
+{
+	"$basetexture" "acf/particles/dust_soft"
+	"$vertexcolor" "1"
+	"$vertexalpha" "1"
+	"$depthblend" "1"
+	"$depthblendscale" "300"
+}

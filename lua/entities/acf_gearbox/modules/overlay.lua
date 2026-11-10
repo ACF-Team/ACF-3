@@ -4,7 +4,7 @@ local floor = math.floor
 
 -- Overlay Text 
 function ENT:ACF_UpdateOverlayState(State)
-    local Final  = ACF.ConvertGearRatio(self.FinalDrive, self.GearboxLegacyRatio)
+    local Final  = ACF.ConvertGearRatio(self.FinalDrive, self.GearboxRealisticRatio)
     local Torque = Round(self.MaxTorque * ACF.TorqueMult * ACF.NmToFtLb)
     local Input  = Round(self.TorqueInput * ACF.TorqueMult * ACF.NmToFtLb)
     local Output = Round(self.TorqueOutput * ACF.TorqueMult * ACF.NmToFtLb)
@@ -15,12 +15,12 @@ function ENT:ACF_UpdateOverlayState(State)
         GearsText = ""
 
         for I = 1, self.MaxGear do
-            local Ratio = ACF.ConvertGearRatio(Gears[I], self.GearboxLegacyRatio)
+            local Ratio = ACF.ConvertGearRatio(Gears[I], self.GearboxRealisticRatio)
             GearsText = GearsText .. "Gear " .. I .. ": " .. Ratio .. "\n"
         end
     end
 
-    local RatioFormat = self.GearboxLegacyRatio and "Driven/Driver (Legacy)" or "Driver/Driven (Realistic)"
+    local RatioFormat = self.GearboxRealisticRatio and "Driver/Driven (Realistic)" or "Driven/Driver (Legacy)"
     State:AddNumber("Scale", self.ScaleMult)
     State:AddNumber("Current Gear", self.Gear)
     State:AddDivider()
@@ -30,8 +30,8 @@ function ENT:ACF_UpdateOverlayState(State)
         local Gears = self.Gears
 
         for I = 1, self.MaxGear do
-            local Ratio = ACF.ConvertGearRatio(Gears[I], self.GearboxLegacyRatio)
-            State:AddGearRatio("Gear " .. I, Ratio, "", self.GearboxLegacyRatio)
+            local Ratio = ACF.ConvertGearRatio(Gears[I], self.GearboxRealisticRatio)
+            State:AddGearRatio("Gear " .. I, Ratio, "", not self.GearboxRealisticRatio)
         end
     end
     State:AddDivider()

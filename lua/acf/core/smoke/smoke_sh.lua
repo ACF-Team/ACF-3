@@ -9,9 +9,12 @@ ACF.SmokeBlockShare = 0.85 -- Portion of a cloud's visual lifetime it blocks for
 local MaxRadius = 800 -- Inches, ~20 m
 local MaxLife   = 30
 local WindDrift = Vector(0.5, 0, 0) -- Inches per second per point of SmokeWind
+-- Clouds burst out to Bloom of their max radius, easing out with time constant Settle, then keep growing slowly to
+-- their max radius over their life. Settle is also how fast carried velocity dies down and drift picks up, the
+-- particles' drag does all of that the same way on the client
 local Types     = {
-	Smoke = { Offset = 0, MinScale = 0.075, Deploy = 1.5, BaseLife = 5, LifeScale = 0.125 }, -- Slow build but long lasting
-	WP    = { Offset = 1, MinScale = 0.5, Deploy = 0.5, BaseLife = 2.5, LifeScale = 0.05 }, -- Quick build and dissipate
+	Smoke = { Offset = 0, Bloom = 0.65, Settle = 0.75, BaseLife = 5, LifeScale = 0.125 }, -- Long lasting
+	WP    = { Offset = 1, Bloom = 0.75, Settle = 0.3, BaseLife = 2.5, LifeScale = 0.05 }, -- Quick build and dissipate
 }
 
 -- Drives lifetime, which flattens out quickly with mass
@@ -30,13 +33,13 @@ function ACF.GetSmokeRadius(Mass)
 	return math.min(math.max(LogRadius, CubeRadius), MaxRadius)
 end
 
---- Returns the min radius, max radius, lifetime and burst duration of a cloud of the given filler type ("Smoke" or "WP").
+--- Returns the bloom radius, max radius, lifetime and settle time of a cloud of the given filler type ("Smoke" or "WP").
 function ACF.GetSmokeCloudStats(Mass, Type)
 	local Data   = Types[Type]
 	local Radius = ACF.GetSmokeRadius(Mass)
 	local Life   = math.Clamp(Data.BaseLife + ACF.GetSmokeFiller(Mass) * Data.LifeScale, 1, MaxLife)
 
-	return Radius * Data.MinScale, Radius, Life, Data.Deploy
+	return Radius * Data.Bloom, Radius, Life, Data.Settle
 end
 
 --- Builds and registers the clouds of one smoke impact. Runs identically on the server and every client from the
@@ -49,23 +52,24 @@ function ACF.AddSmokeClouds(ImpactID, Base, FillerMass, WPMass)
 	for Type, Mass in pairs({ Smoke = FillerMass, WP = WPMass }) do
 		if Mass <= 0 then continue end
 
-		local MinRadius, MaxRadius, Life, Deploy = ACF.GetSmokeCloudStats(Mass, Type)
+		local BloomRadius, MaxRadius, Life, Settle = ACF.GetSmokeCloudStats(Mass, Type)
 		local ID = ImpactID * 2 + Types[Type].Offset
 
 		local Cloud = {
-			ID        = ID,
-			Center    = Base.Center,
-			Normal    = Base.Normal,
-			Grounded  = Base.Grounded,
-			Carry     = Base.Carry,
-			FloorZ    = Base.FloorZ,
-			Start     = Base.Start,
-			Color     = Base.Color,
-			Drift     = Drift,
-			Life      = Life,
-			Deploy    = Deploy,
-			MinRadius = MinRadius,
-			MaxRadius = MaxRadius,
+			ID          = ID,
+			Type        = Type,
+			Center      = Base.Center,
+			Normal      = Base.Normal,
+			Grounded    = Base.Grounded,
+			Carry       = Base.Carry,
+			FloorZ      = Base.FloorZ,
+			Start       = Base.Start,
+			Color       = Base.Color,
+			Drift       = Base.Grounded and Drift or Drift - Vector(0, 0, ACF.SmokeFallRate),
+			Life        = Life,
+			Settle      = Settle,
+			BloomRadius = BloomRadius,
+			MaxRadius   = MaxRadius,
 		}
 
 		Clouds[ID]          = Cloud
@@ -83,45 +87,28 @@ function ACF.IsSmokeCloudBlocking(Cloud, Time)
 	return Time <= Cloud.Start + Cloud.Life * ACF.SmokeBlockShare
 end
 
--- Velocity carried over from an airbursting round winds down linearly to zero over this many seconds
-ACF.SmokeCarryTime = 1.5
-ACF.SmokeFallRate  = 20 -- Inches per second airborne clouds sink at until they reach the ground
+ACF.SmokeFallRate = 20 -- Inches per second airborne clouds sink at until they reach the ground
 
--- Bursts out from the center to MinRadius with an ease out over Deploy, then grows linearly to MaxRadius.
--- Airborne clouds coast to a stop on their carried velocity, and sink until they reach FloorZ
+--- How far a cloud coasts on its carried velocity before coming to a stop, for the slowest settling type.
+function ACF.GetSmokeCarryDistance(Carry)
+	return Carry * Types.Smoke.Settle
+end
+
+-- Bursts out to BloomRadius easing out over a few Settle times, then grows linearly to MaxRadius by the end of its life.
+-- Carried velocity (along the surface for grounded clouds) dies down and drift (wind, and sinking for airborne clouds)
+-- picks up with the same time constant, exactly how the particles' drag moves them. Airborne clouds stop sinking at FloorZ
 function ACF.GetSmokeCloudState(Cloud, Time)
 	local Elapsed = math.Clamp(Time - Cloud.Start, 0, Cloud.Life)
-	local Deploy  = Cloud.Deploy
-	local Center  = Cloud.Center + Cloud.Drift * Elapsed
-	local Radius
-
-	if Elapsed < Deploy then
-		local Remaining = 1 - Elapsed / Deploy
-
-		Radius = Cloud.MinRadius * (1 - Remaining * Remaining)
-	else
-		Radius = Lerp((Elapsed - Deploy) / (Cloud.Life - Deploy), Cloud.MinRadius, Cloud.MaxRadius)
-	end
+	local Settle  = Cloud.Settle
+	local Settled = Settle * (1 - math.exp(-Elapsed / Settle)) -- Distance covered at a unit starting speed under drag
+	local Radius  = Cloud.BloomRadius * Settled / Settle + (Cloud.MaxRadius - Cloud.BloomRadius) * Elapsed / Cloud.Life
+	local Center  = Cloud.Center + Cloud.Drift * (Elapsed - Settled) + Cloud.Carry * Settled
 
 	if not Cloud.Grounded then
-		local CarryTime = ACF.SmokeCarryTime
-		local Remaining = 1 - math.min(Elapsed / CarryTime, 1)
-
-		Center   = Center + Cloud.Carry * (CarryTime * 0.5 * (1 - Remaining * Remaining))
-		Center.z = math.max(Center.z - ACF.SmokeFallRate * Elapsed, Cloud.FloorZ)
+		Center.z = math.max(Center.z, Cloud.FloorZ)
 	end
 
 	return Center, Radius
-end
-
---- Seconds after its creation an airborne cloud settles onto the ground, or nil if it never moves vertically.
---- Only valid once its carried velocity has run out, which is when anything needs to know.
-function ACF.GetSmokeLandTime(Cloud)
-	if Cloud.Grounded then return end
-
-	local Height = Cloud.Center.z + Cloud.Carry.z * ACF.SmokeCarryTime * 0.5 - Cloud.FloorZ
-
-	return math.max(Height / ACF.SmokeFallRate, 0)
 end
 
 --- Returns the fraction along Start -> End where the segment first enters a smoke cloud, or nil if it never does.

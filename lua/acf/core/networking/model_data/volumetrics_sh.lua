@@ -12,7 +12,7 @@ local function GetArmorType(ID) return Classes.GetSubtypeByName("ACF.ArmorTypes.
 
 -- Networking: whenever a convex's material is set (serverside), the new material is sent straight to
 -- every client. No request/refresh cycle -- just send it the moment it changes.
-local MAX_CONVEXES  = 5 -- bits for the convex index and count fields
+local MAX_CONVEXES  = 12 -- bits for the convex index and count fields
 local MAX_MATERIALS = 5 -- bits for the material index field
 
 local ArmorTypeByIndex   = {} -- index (1-based int) -> armor type ID string
@@ -503,6 +503,29 @@ local function RayHitsBounds(Start, InvX, InvY, InvZ, Mins, Maxs, MaxDist)
     return TMax >= max(TMin, 0) and TMin <= MaxDist
 end
 
+local FullDist = 1e5 -- past any mesh's extent
+
+-- Adds the hits of one convex's triangles along LocalStart + LocalDir * [0, Dist], only its exits if ExitsOnly
+local function CastConvex(Hits, Entity, Convex, ConvexID, LocalStart, LocalDir, Dist, EntAngles, ExitsOnly)
+    local LocalEnd = LocalStart + LocalDir * Dist
+
+    for _, Tri in ipairs(Convex.Tris) do
+        local A, B, C = Tri[1], Tri[2], Tri[3]
+
+        local P, Frac = util.IntersectRayWithTriangle(LocalStart, LocalEnd, A, B, C)
+        if not P then continue end
+
+        -- GetMeshConvexes triangles wind such that (C-A)x(B-A) points outward (same as ProcessConvexes)
+        local Normal  = (C - A):Cross(B - A):GetNormalized()
+        local IsEntry = LocalDir:Dot(Normal) < 0 -- Both still local, and rotation preserves the sign
+        if ExitsOnly and IsEntry then continue end
+
+        Normal:Rotate(EntAngles)
+
+        Hits[#Hits + 1] = { Pos = Entity:LocalToWorld(P), Normal = Normal, ConvexID = ConvexID, T = Frac * Dist, Entity = Entity, IsEntry = IsEntry }
+    end
+end
+
 -- Returns every triangle the ray pierces as { Pos, Normal, ConvexID, T, Entity, IsEntry }, unsorted.
 -- IsEntry is true when the ray crosses into the face. The ray is a forward half-line bounded by MaxDist
 -- (default 1e5, which is past any mesh's extent), so a convex the ray began inside only yields its exit
@@ -512,7 +535,7 @@ function ACF.RayIntersectMesh(Entity, Start, Direction, IncludeDead, Filter, Max
     local MeshData = Entity.ACF_Volumetric_Mesh
     if not MeshData then return {} end
 
-    MaxDist = MaxDist or 1e5
+    MaxDist = MaxDist or FullDist
 
     -- The ray moves into the entity's frame once rather than every triangle being dragged out into world
     -- space: two engine calls per entity instead of three per triangle. The transform is rigid, so lengths,
@@ -520,7 +543,6 @@ function ACF.RayIntersectMesh(Entity, Start, Direction, IncludeDead, Filter, Max
     local NormDir    = Direction:GetNormalized()
     local LocalStart = Entity:WorldToLocal(Start)
     local LocalDir   = Entity:WorldToLocal(Start + NormDir) - LocalStart
-    local LocalEnd   = LocalStart + LocalDir * MaxDist
     local EntAngles  = Entity:GetAngles()
 
     -- A zero direction component would divide to inf and poison the slab comparisons with nan, so it
@@ -540,25 +562,16 @@ function ACF.RayIntersectMesh(Entity, Start, Direction, IncludeDead, Filter, Max
 
         local HitsBefore = #Hits
 
-        for _, Tri in ipairs(Convex.Tris) do
-            local A, B, C = Tri[1], Tri[2], Tri[3]
+        CastConvex(Hits, Entity, Convex, ConvexID, LocalStart, LocalDir, MaxDist, EntAngles)
 
-            local P, Frac = util.IntersectRayWithTriangle(LocalStart, LocalEnd, A, B, C)
-            if not P then continue end
-
-            -- GetMeshConvexes triangles wind such that (C-A)x(B-A) points outward (same as ProcessConvexes)
-            local Normal  = (C - A):Cross(B - A):GetNormalized()
-            local IsEntry = LocalDir:Dot(Normal) < 0 -- Both still local, and rotation preserves the sign
-            local T       = Frac * MaxDist
-
-            Normal:Rotate(EntAngles)
-
-            Hits[#Hits + 1] = { Pos = Entity:LocalToWorld(P), Normal = Normal, ConvexID = ConvexID, T = T, Entity = Entity, IsEntry = IsEntry }
-        end
-
-        -- Started inside this convex: only the exit hit came back. Add the missing entry at T = 0.
         if #Hits - HitsBefore == 1 then
-            Hits[#Hits + 1] = { Pos = Start, Normal = -NormDir, ConvexID = ConvexID, T = 0, Entity = Entity, IsEntry = true }
+            if Hits[#Hits].IsEntry then
+                -- Carries on past MaxDist, its exit still bounds how thick it is
+                if MaxDist < FullDist then CastConvex(Hits, Entity, Convex, ConvexID, LocalStart, LocalDir, FullDist, EntAngles, true) end
+            else
+                -- Started inside this convex: only the exit hit came back. Add the missing entry at T = 0.
+                Hits[#Hits + 1] = { Pos = Start, Normal = -NormDir, ConvexID = ConvexID, T = 0, Entity = Entity, IsEntry = true }
+            end
         end
     end
 

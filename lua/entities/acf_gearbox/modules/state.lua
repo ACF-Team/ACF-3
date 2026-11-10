@@ -63,7 +63,7 @@ local function CalcWheel(Entity, Link, Wheel, ChassisAngVel)
 	if GearRatio == 0 then return 0 end
 
 	-- We get degrees per second and is also inverted, so we have to convert to RPM (deg/s -> RPM (1 RPM = 6 deg/s))
-	return RelAngVel * GearRatio / -6
+	return RelAngVel / GearRatio / -6
 end
 
 local function BrakeWheel(Link, Wheel, BrakeTq, MaxBrakeTq, DeltaTime, ChassisAV)
@@ -150,7 +150,7 @@ do -- Gear Shifting ------------------------------------
 
 		WireLib.TriggerOutput(self, "Current Gear", Value)
 
-		local Ratio = ACF.ConvertGearRatio(self.GearRatio, self.GearboxLegacyRatio)
+		local Ratio = ACF.ConvertGearRatio(self.GearRatio, self.GearboxRealisticRatio)
 		WireLib.TriggerOutput(self, "Ratio", Ratio)
 	end
 end ----------------------------------------------------
@@ -204,7 +204,7 @@ do -- Movement -----------------------------------------
 				Gears[1] = SelfTbl.CVTRatio
 			else
 				local MinRPM  = SelfTbl.MinRPM
-				Gears[1] = 1 / Clamp((InputRPM - MinRPM) / (SelfTbl.MaxRPM - MinRPM), 0.05, 1)
+				Gears[1] = Clamp((InputRPM - MinRPM) / (SelfTbl.MaxRPM - MinRPM), 0.05, 1)
 			end
 
 			local GearRatio = Gears[1] * SelfTbl.FinalDrive
@@ -212,7 +212,7 @@ do -- Movement -----------------------------------------
 
 			if SelfTbl.LastRatio ~= GearRatio then
 				SelfTbl.LastRatio = GearRatio
-				local Ratio = ACF.ConvertGearRatio(GearRatio, SelfTbl.GearboxLegacyRatio)
+				local Ratio = ACF.ConvertGearRatio(GearRatio, SelfTbl.GearboxRealisticRatio)
 				WireLib.TriggerOutput(self, "Ratio", Ratio)
 			end
 		end
@@ -248,9 +248,9 @@ do -- Movement -----------------------------------------
 			return 0
 		end
 
-		-- Inputs scaled for downstream (divide RPM, multiply inertia)
-		local ScaledRPM     = InputRPM / GearRatio
-		local ScaledInertia = InputInertia * GearRatio
+		-- Inputs scaled for downstream (multiply RPM, divide inertia)
+		local ScaledRPM     = InputRPM * GearRatio
+		local ScaledInertia = InputInertia / GearRatio
 
 		local DoubleDiff = SelfTbl.DoubleDiff
 		local SteerRate  = SelfTbl.SteerRate
@@ -280,10 +280,10 @@ do -- Movement -----------------------------------------
 				Gearbox:Calc(ScaledRPM, ScaledInertia) -- measurement pull, just to update gearboxes downstream
 			end
 
-			MeasuredRPMSum    = MeasuredRPMSum + (EntTbl.MeasuredRPM or ScaledRPM) * GearRatio
+			MeasuredRPMSum    = MeasuredRPMSum + (EntTbl.MeasuredRPM or ScaledRPM) / GearRatio
 			MeasuredCount     = MeasuredCount + 1
 			OutputInertia     = OutputInertia + (EntTbl.OutputInertia or 0)
-			TotalRatioSum     = TotalRatioSum + abs(GearRatio) * (EntTbl.TotalRatio or 1)
+			TotalRatioSum     = TotalRatioSum + (1 / abs(GearRatio)) / (EntTbl.TotalRatio or 1)
 		end
 
 		-- Wheels
@@ -347,9 +347,8 @@ do -- Movement -----------------------------------------
 		local Slop = SelfTbl.Automatic and 0.9 or 1.0
 		-- Capacity ceiling: this gearbox's own rated torque, a gearbox cannot transmit more than it's rated for, even if the engine sends more.
 		local ClampedTorque = Clamp(Torque, -MaxTorque, MaxTorque)
-		local InputTorque = ClampedTorque
 		-- Reflect through this stage's own ratio, same direction gearboxes already scale torque.
-		local StageTorque = ClampedTorque * GearRatio * Loss * Slop
+		local StageTorque = (ClampedTorque * Loss * Slop) / GearRatio
 
 		local TotalInertia = SelfTbl.OutputInertia
 		if TotalInertia <= 0 then return end
@@ -425,7 +424,7 @@ do -- Movement -----------------------------------------
 			if ReactTq > SelfTbl.MaxTorque then SelfTbl.CappedTicks = (SelfTbl.CappedTicks or 0) + 1 end
 
 			SelfTbl.TorqueOutput = ReactTq
-			SelfTbl.TorqueInput = InputTorque
+			SelfTbl.TorqueInput = ClampedTorque
 
 			SelfTbl.UpdateOutputs(self, SelfTbl)
 		end
@@ -652,8 +651,8 @@ do -- Inputs -------------------------------------------
 	ACF.AddInputAction("acf_gearbox", "CVT Ratio", function(Entity, Value)
 		if not Entity.CVT then return end
 
-		if Entity.GearboxLegacyRatio and Value ~= 0 then Value = 1 / Value end
-		Entity.CVTRatio = Value ~= 0 and Clamp(Value, ACF.MinCVTRatio, ACF.MaxCVTRatio) or Value
+		if Entity.GearboxRealisticRatio and Value ~= 0 then Value = 1 / Value end
+		Entity.CVTRatio = Value ~= 0 and Clamp(Value, ACF.MinCVTRatioLegacy, ACF.MaxCVTRatioLegacy) or Value
 	end)
 
 	ACF.AddInputAction("acf_gearbox", "Steer Rate", function(Entity, Value)

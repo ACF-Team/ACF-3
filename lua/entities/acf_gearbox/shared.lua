@@ -8,16 +8,16 @@ ACF.Entities.AutoRegister(2026091001, function(CLASS)
 	-- a flat per-entity setting validated by the serializer.
 	MENU_FIELD("Number",  "GearboxScale",       {Min = ACF.GearboxMinSize, Max = ACF.GearboxMaxSize, Default = 1, Decimals = 2})
 	MENU_FIELD("Number",  "GearAmount",         {Min = 1, Max = 10, Default = 2, Decimals = 0})
-	MENU_FIELD("Number",  "FinalDrive",         {Min = ACF.MinGearRatio, Max = ACF.MaxGearRatio, Default = 1, Decimals = 3})
-	MENU_FIELD("Number",  "Reverse",            {Min = ACF.MinGearRatio, Max = ACF.MaxGearRatio, Default = -1, Decimals = 3})
-	MENU_FIELD("Number",  "MinRPM",             {Min = 1, Max = 9900, Default = 3000, Decimals = 0})
-	MENU_FIELD("Number",  "MaxRPM",             {Min = 1, Max = 10000, Default = 5000, Decimals = 0})
-	MENU_FIELD("Boolean", "DualClutch",         {Default = false})
-	MENU_FIELD("Boolean", "GearboxLegacyRatio", {Default = false})
+	MENU_FIELD("Number",  "FinalDrive",            {Min = ACF.MinGearRatioLegacy, Max = ACF.MaxGearRatioLegacy, Default = 1, Decimals = ACF.GearRatioDecimals})
+	MENU_FIELD("Number",  "Reverse",               {Min = ACF.MinGearRatioLegacy, Max = ACF.MaxGearRatioLegacy, Default = -1, Decimals = ACF.GearRatioDecimals})
+	MENU_FIELD("Number",  "MinRPM",                {Min = 1, Max = 9900, Default = 3000, Decimals = 0})
+	MENU_FIELD("Number",  "MaxRPM",                {Min = 1, Max = 10000, Default = 5000, Decimals = 0})
+	MENU_FIELD("Boolean", "DualClutch",            {Default = false})
+	MENU_FIELD("Boolean", "GearboxRealisticRatio", {Default = false})
 
 	-- Per-gear ratios (1-based) and automatic shift points. The serializer clamps each entry; the entity
-	-- reconstructs the legacy [0] sentinel slots at runtime.
-	MENU_FIELD("Number[]", "Gears",       {Min = ACF.MinGearRatio, Max = ACF.MaxGearRatio, Default = 0, Decimals = 3})
+	-- reconstructs the legacy [0] sentinel slots at runtime. Storage is always the legacy format.
+	MENU_FIELD("Number[]", "Gears",       {Min = ACF.MinGearRatioLegacy, Max = ACF.MaxGearRatioLegacy, Default = 0, Decimals = ACF.GearRatioDecimals})
 	MENU_FIELD("Number[]", "ShiftPoints", {Min = 0, Max = 9999, Default = 0, Decimals = 0})
 
 	-- The per-gear assembly + ratio conversion happens in ACF_OnVerifyClientData (see init.lua); the
