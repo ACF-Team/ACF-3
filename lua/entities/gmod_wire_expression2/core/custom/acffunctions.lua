@@ -330,7 +330,7 @@ e2function string entity:acfConvexMaterial(number ConvexID)
 	return Convex.Material or ""
 end
 
--- Returns the materials of all convexes of an entity, indexed by convex IDfLinkTo
+-- Returns the materials of all convexes of an entity, indexed by convex ID
 e2function array entity:acfConvexMaterials()
 	if not validPhysics(this) then return {} end
 	if RestrictInfo(self, this) then return {} end
