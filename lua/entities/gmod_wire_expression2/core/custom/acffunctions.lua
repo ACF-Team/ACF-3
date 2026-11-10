@@ -18,6 +18,7 @@ local Notify    = ACF.Utilities.Notify
 local match     = string.match
 local floor     = math.floor
 local Round     = math.Round
+local Remap     = math.Remap
 local newE2Table	= E2Lib.newE2Table
 
 local function IsACFEntity(Entity)
@@ -590,6 +591,40 @@ e2function number entity:acfFlyMass()
 	return this.FlywheelMass or 0
 end
 
+-- Returns the power in kW at the specified RPM
+e2function number entity:acfPowerRPM(number N)
+	if not IsACFEntity(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+
+	local Idle = this.IdleRPM 
+	local Redline = this.LimitRPM
+
+	if N < 0 or N > Redline then return 0 end
+
+	local PeakTorque = this.PeakTorqueHeld
+	local Percent = Remap(N, Idle, Redline, 0, 1)
+	local Power = (ACF.GetTorque(this.TorqueCurve, Percent) * PeakTorque * N) / 9548.8
+
+	return Power
+end
+
+-- Returns the torque in N/m at the specified RPM
+e2function number entity:acfTorqueRPM(number N)
+	if not IsACFEntity(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+
+	local Idle = this.IdleRPM 
+	local Redline = this.LimitRPM
+
+	if N < 0 or N > Redline then return 0 end
+
+	local PeakTorque = this.PeakTorqueHeld
+	local Percent = Remap(N, Idle, Redline, 0, 1)
+	local Torque = ACF.GetTorque(this.TorqueCurve, Percent) * PeakTorque
+
+	return Torque
+end
+
 -- Returns the current power of an ACF engine
 e2function number entity:acfPower()
 	if not IsACFEntity(this) then return 0 end
@@ -598,6 +633,24 @@ e2function number entity:acfPower()
 	if not this.FlyRPM then return 0 end
 
 	return floor(this.Torque * this.FlyRPM / 9548.8)
+end
+
+-- Returns the RPM at the peak power of an ACF engine
+e2function number entity:acfPeakPowerRPM()
+	if not IsACFEntity(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+	if not this.PeakPowerRPM then return 0 end
+
+	return Round(this.PeakPowerRPM)
+end
+
+-- Returns the RPM at the peak torque of an ACF engine
+e2function number entity:acfPeakTorqueRPM()
+	if not IsACFEntity(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+	if not this.PeakTqRPM then return 0 end
+
+	return Round(this.PeakTqRPM)
 end
 
 -- Returns 1 if the RPM of an ACF engine is inside the powerband
