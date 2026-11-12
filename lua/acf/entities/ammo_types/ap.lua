@@ -85,7 +85,7 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 			end
 
 			local ModelData = ACF.ModelData.GetModelData(ModelPath)
-			local Offset    = ModelData.Center and Vector(-ModelData.Center.x, 0, 0) or Vector()
+			local Offset    = ModelData and ModelData.Center and Vector(-ModelData.Center.x, 0, 0) or Vector()
 
 			return {
 				Model         = ModelPath,
@@ -103,7 +103,7 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 		if IsMortar and MortarBodygroup then
 			local ModelPath = "models/acf/munitions/projectile_mortar.mdl"
 			local ModelData = ACF.ModelData.GetModelData(ModelPath)
-			local Offset    = ModelData.Center and Vector(-ModelData.Center.x, 0, 0) or Vector()
+			local Offset    = ModelData and ModelData.Center and Vector(-ModelData.Center.x, 0, 0) or Vector()
 
 			return {
 				Model         = ModelPath,
@@ -132,7 +132,7 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 		if not ModelPath then return nil end
 
 		local ModelData = ACF.ModelData.GetModelData(ModelPath)
-		local Offset = ModelData.Center and Vector(-ModelData.Center.x, 0, 0) or Vector()
+		local Offset = ModelData and ModelData.Center and Vector(-ModelData.Center.x, 0, 0) or Vector()
 		local NeedsRotation = StockCrateModels[ModelPath] or false
 
 		return {
