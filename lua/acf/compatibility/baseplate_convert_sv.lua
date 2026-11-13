@@ -73,7 +73,7 @@ end
 
 --- Returns the entities a conversion of Target removes and pastes back, by EntIndex.
 --- Fails unless Player owns every one of them. The paste makes them all Player's.
-function ACF.GetConversionEntities(Player, Target)
+function ACF.GetConversionEntities(Target)
     local EntsByIndex = {}
     local Contraption = Target:CFW_GetContraption()
     if Contraption then
