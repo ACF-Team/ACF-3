@@ -1510,6 +1510,20 @@ if SERVER then
 		return This.Gears[math.floor(gear)] or 0
 	end
 
+	-- Returns whether a gearbox is using realistic or legacy ratios
+	-- @server
+	-- @return boolean True if a gearbox is using realistic ratios.
+	function ents_methods:acfIsRealisticRatio()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return 0 end
+
+		return This.GearboxRealisticRatio
+	end
+
 	--- Returns the current torque output for an ACF gearbox
 	-- @server
 	-- @return number The current torque output, in N⋅m
