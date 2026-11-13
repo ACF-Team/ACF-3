@@ -771,6 +771,14 @@ e2function number entity:acfGearRatio(number Gear)
 	return this.Gears[floor(Gear)] or 0
 end
 
+-- Returns whether a gearbox is using realistic or legacy ratios
+e2function number entity:acfIsRealisticRatio()
+	if not IsACFEntity(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+
+	return this.GearboxRealisticRatio and 1 or 0
+end
+
 -- Returns the current torque output for an ACF gearbox
 e2function number entity:acfTorqueOut()
 	if not IsACFEntity(this) then return 0 end
