@@ -330,7 +330,7 @@ e2function string entity:acfConvexMaterial(number ConvexID)
 	return Convex.Material or ""
 end
 
--- Returns the materials of all convexes of an entity, indexed by convex ID
+-- Returns the materials of all convexes of an entity, indexed by convex IDfLinkTo
 e2function array entity:acfConvexMaterials()
 	if not validPhysics(this) then return {} end
 	if RestrictInfo(self, this) then return {} end
@@ -769,6 +769,14 @@ e2function number entity:acfGearRatio(number Gear)
 	if not this.Gears then return 0 end
 
 	return this.Gears[floor(Gear)] or 0
+end
+
+-- Returns whether a gearbox is using realistic or legacy ratios
+e2function number entity:acfIsRealisticRatio()
+	if not IsACFEntity(this) then return 0 end
+	if RestrictInfo(self, this) then return 0 end
+
+	return this.GearboxRealisticRatio and 1 or 0
 end
 
 -- Returns the current torque output for an ACF gearbox
