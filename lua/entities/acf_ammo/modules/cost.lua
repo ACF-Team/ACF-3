@@ -1,25 +1,29 @@
 
 --	Used for figuring costs for gamemode related activities
-function ENT:GetCost()
-	local selftbl	= self:GetTable()
 
-	--PrintTable(selftbl.BulletData)
+-- Cost of one round of a kind the crate holds. Per-round so a big crate can't dilute the seeker's cost away.
+local function GetRoundCost(Entity, Kind)
+	local Cost = Kind.Ammo:GetCost(Kind.BulletData)
 
-	--print(selftbl.Capacity, selftbl.BulletData.AmmoType)
-
-	if selftbl.IsMissileAmmo then
-		local Cost	= selftbl.Capacity * selftbl.RoundData:GetCost(selftbl.BulletData)
-
-		if selftbl.GuidanceData then
-			Cost = Cost + selftbl.GuidanceData:GetCost()
+	if Entity.IsMissileAmmo then
+		if Entity.GuidanceData then
+			Cost = Cost + Entity.GuidanceData:GetCost()
 		end
 
-		if selftbl.FuzeData then
-			Cost = Cost + selftbl.FuzeData:GetCost()
+		if Entity.FuzeData then
+			Cost = Cost + Entity.FuzeData:GetCost()
 		end
-
-		return Cost
-	else
-		return selftbl.Capacity * selftbl.RoundData:GetCost(selftbl.BulletData)
 	end
+
+	return Cost
+end
+
+function ENT:GetCost()
+	local Cost = 0
+
+	for _, Kind in ipairs(self.RoundKinds) do
+		Cost = Cost + Kind.Target * GetRoundCost(self, Kind)
+	end
+
+	return Cost
 end

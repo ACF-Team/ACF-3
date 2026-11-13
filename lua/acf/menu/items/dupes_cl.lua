@@ -58,7 +58,7 @@ local function LoadDupe(name, path)
 			local InvalidConditions = (SysTime() - Start > 5) or not IsValid(Player)
 			local Weapon = Player:GetActiveWeapon()
 			local IsToolGun = IsValid(Weapon) and Weapon:GetClass() == "gmod_tool"
-			local ValidConditions = IsToolGun and Weapon:GetMode() == "advdupe2"
+			local ValidConditions = IsToolGun and Weapon:GetMode() == "advdupe2" and AdvDupe2.Info ~= nil
 
 			if InvalidConditions or ValidConditions then
 				if ValidConditions then
@@ -102,11 +102,12 @@ local function CreateMenu(Menu)
 
 		local SW, SH = ScrW(), ScrH()
 		-- Window: fixed proportion of the actual screen, works at any resolution
-		local WinW = math.max(560, math.Round(SW * 0.633))
+		local RefWinW = math.max(560, math.Round(SW * 0.633))
 		local WinH = math.Round(SH * 0.778)
 		local FontScale = math.Clamp(math.min(SW / 1920, SH / 1080), 0.75, 1)
-		local SideW = math.max(150, math.Round(WinW * 0.22))
-		local IconSz = math.max(60, math.floor((WinW - 2 * SideW - 40) / 3))
+		local SideW = math.max(150, math.Round(RefWinW * 0.22))
+		local IconSz = math.max(60, math.floor((RefWinW - 2 * SideW - 40) / 3))
+		local WinW = 2 * SideW + 40 + 5 * IconSz
 
 		surface.CreateFont("ACF_Dupe_Title", { font = "Roboto", size = math.max(10, math.Round(18 * FontScale)), weight = 850, antialias = true })
 		surface.CreateFont("ACF_Dupe_Label", { font = "Roboto", size = math.max(10, math.Round(14 * FontScale)), weight = 650, antialias = true })
@@ -161,13 +162,7 @@ local function CreateMenu(Menu)
 		local DupeSheet = vgui.Create("DPropertySheet", SelectPanel)
 		DupeSheet:Dock(FILL)
 
-		local ListContainer = vgui.Create("DPanel")
-		DupeSheet:AddSheet("All Dupes", ListContainer, "icon16/shape_square.png")
-
-		local DupeList = vgui.Create("DPanelSelect", ListContainer)
-		DupeList:Dock(FILL)
-
-		function DupeList:OnActivePanelChanged(_, New)
+		local function OnDupeSelected(_, _, New)
 			if not New or not New.Data then return end
 
 			local FilePath = DupePath .. "/" .. New.Data.packid .. "/" .. New.Data.path .. ".txt"
@@ -194,6 +189,28 @@ local function CreateMenu(Menu)
 
 				CurrentDupeName = New.Data.name
 				CurrentDupePath = FilePath
+			end
+		end
+
+		local ListContainer = vgui.Create("DPanel")
+		DupeSheet:AddSheet("All Dupes", ListContainer, "icon16/shape_square.png")
+
+		local DupeList = vgui.Create("DPanelSelect", ListContainer)
+		DupeList:Dock(FILL)
+		DupeList.OnActivePanelChanged = OnDupeSelected
+
+		local PackLists = {}
+		local Packs = sql.Query("SELECT packid, packname FROM PackData")
+		if Packs then
+			for _, pack in ipairs(Packs) do
+				local PackContainer = vgui.Create("DPanel")
+				DupeSheet:AddSheet(pack.packname, PackContainer, "icon16/shape_square.png")
+
+				local PackList = vgui.Create("DPanelSelect", PackContainer)
+				PackList:Dock(FILL)
+				PackList.OnActivePanelChanged = OnDupeSelected
+
+				PackLists[pack.packid] = PackList
 			end
 		end
 
@@ -263,6 +280,16 @@ local function CreateMenu(Menu)
 			for _, option in ipairs(MobilityOptions) do FilterMobility:AddChoice(option.mobility, option.mobility) end
 		end
 
+		local function CreateDupeIcon(dupe, sz)
+			local FilePath = ImagePath .. "/" .. dupe.packid .. "/" .. dupe.path
+			local Icon = vgui.Create("DImageButton")
+			Icon:SetSize(sz, sz)
+			Icon:SetMaterial(Material(FilePath .. ".jpg"))
+			Icon:SetTooltip(dupe.name)
+			Icon.Data = dupe
+			return Icon
+		end
+
 		local ApplyFilter = FilterPanel:AddButton("Apply Filters")
 		ApplyFilter:SetFont("ACF_Dupe_Control")
 		ApplyFilter:SetTall(ElemH)
@@ -283,14 +310,13 @@ local function CreateMenu(Menu)
 
 			local dupes = sql.Query(query) or {}
 			DupeList:Clear()
+			for _, PackList in pairs(PackLists) do PackList:Clear() end
+
 			for _, dupe in ipairs(dupes) do
-				local FilePath = ImagePath .. "/" .. dupe.packid .. "/" .. dupe.path
-				local Icon = vgui.Create("DImageButton")
-				Icon:SetSize(sz, sz)
-				Icon:SetMaterial(Material(FilePath .. ".jpg"))
-				Icon:SetTooltip(dupe.name)
-				Icon.Data = dupe
-				DupeList:AddPanel(Icon)
+				DupeList:AddPanel(CreateDupeIcon(dupe, sz))
+
+				local PackList = PackLists[dupe.packid]
+				if PackList then PackList:AddPanel(CreateDupeIcon(dupe, sz)) end
 			end
 		end
 

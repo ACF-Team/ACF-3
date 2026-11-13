@@ -1,12 +1,254 @@
 local ACF = ACF
 
 include( "shared.lua" )
+include( "modules_cl/round_counts.lua" )
 
 killicon.Add( "acf_ammo", "HUD/killicons/acf_ammo", ACF.KillIconColor )
 
+local ChargeModelPath    = "models/acf/munitions/charge.mdl"    -- propellant bag model, alternated in for two-piece rounds
+-- charge.mdl's casing bodygroup: 0 full, 1 half, 2 combustible, 3 mortar
+local ChargeBodygroup    = 0
+local CartridgeModelPath = "models/acf/munitions/cartridge.mdl" -- last-resort fallback; the server normally names the model
+
+do --MARK: Cookoff
+	-- The server only flips the crate's "Cookoff" value on and off, everything else is a particle system
+	-- that runs on its own, a looping sound and one flickering light per fire, so a burning tank costs next to nothing
+	local Effects     = ACF.Utilities.Effects
+	local SmokeTint   = Color( 60, 56, 52 )
+	local Fires       = {} -- Burning crates and the fires they leave behind, for the lights
+	local MaxLights   = 4
+	local LightRange  = 5000 ^ 2
+
+	-- Total propellant mass in kg to effect size, from a few machinegun belts (~0.3) up to a full tank rack (~2.5)
+	local function GetScale( Propellant )
+		return math.Clamp( Propellant ^ ( 1 / 3 ) / 3, 0.3, 2.5 )
+	end
+
+	local function SetControlPoints( Effect, Scale, Pos )
+		Effect:SetControlPoint( 1, Vector( Scale, Scale, Scale ) )
+		Effect:SetControlPoint( 2, Vector( 1, LocalPlayer():GetInfoNum( "acf_cl_particlemul", 1 ), 1 ) )
+		Effect:SetControlPoint( 3, Effects.GetLitColor( SmokeTint, Pos + Vector( 0, 0, 100 ) ) )
+	end
+
+	local function UpdateLights()
+		local Now    = CurTime()
+		local Eye    = EyePos()
+		local Lights = 0
+
+		for Fire in pairs( Fires ) do
+			local Pos = Fire.Entity and ( IsValid( Fire.Entity ) and Fire.Entity:LocalToWorld( Fire.Entity:OBBCenter() ) ) or Fire.Pos
+
+			if not Pos or ( Fire.Until and Fire.Until < Now ) then
+				Fires[Fire] = nil
+			elseif Lights < MaxLights and Pos:DistToSqr( Eye ) < LightRange then
+				local Light = DynamicLight( 0x7100 + Lights ) -- One slot per light, refreshed in place
+
+				Lights = Lights + 1
+
+				if Light then
+					Light.pos        = Pos + Vector( 0, 0, 40 * Fire.Scale )
+					Light.r          = 255
+					Light.g          = 140
+					Light.b          = 60
+					Light.brightness = Fire.Brightness * math.Rand( 0.7, 1.2 )
+					Light.Size       = 350 * Fire.Scale * math.Rand( 0.9, 1.1 )
+					Light.Decay      = 0
+					Light.DieTime    = Now + 0.1
+				end
+			end
+		end
+
+		if not next( Fires ) then
+			timer.Remove( "ACF Cookoff Lights" )
+		end
+	end
+
+	local function AddFire( Fire )
+		Fires[Fire] = true
+
+		if not timer.Exists( "ACF Cookoff Lights" ) then
+			timer.Create( "ACF Cookoff Lights", 0.05, 0, UpdateLights )
+		end
+	end
+
+	-- A particle system on the crate with its sound and light
+	local function StartFire( Entity, Name, Scale, SoundPath, Volume, Brightness )
+		local Center = Entity:OBBCenter()
+		local Effect = CreateParticleSystem( Entity, Name, PATTACH_ABSORIGIN_FOLLOW, 0, Center )
+
+		if Effect then
+			SetControlPoints( Effect, Scale, Entity:LocalToWorld( Center ) )
+		end
+
+		local Fire = { Entity = Entity, Effect = Effect, Scale = Scale, Brightness = Brightness, Sound = CreateSound( Entity, SoundPath ) }
+
+		Fire.Sound:PlayEx( Volume, 100 )
+
+		AddFire( Fire )
+
+		return Fire
+	end
+
+	-- No more flames come out, the ones already burning are left to die out
+	local function StopFire( Fire )
+		if not Fire then return end
+
+		if Fire.Effect and Fire.Effect:IsValid() then
+			Fire.Effect:StopEmission()
+		end
+
+		Fire.Sound:Stop()
+
+		Fires[Fire] = nil
+	end
+
+	function ENT:StartCookoff( Propellant )
+		local Scale = GetScale( Propellant )
+
+		self.CookoffScale = Scale
+
+		if self.CookoffFire then return end
+
+		StopFire( self.LingeringFire )
+
+		self.LingeringFire = nil
+		self.CookoffFire   = StartFire( self, "acf_cookoff", Scale, "ambient/fire/fire_big_loop1.wav", math.Clamp( 0.5 + Scale * 0.25, 0.5, 1 ), 3 )
+	end
+
+	function ENT:StopCookoff( Linger )
+		if not self.CookoffFire then return end
+
+		StopFire( self.CookoffFire )
+
+		self.CookoffFire = nil
+
+		if not Linger then return end
+
+		-- Whatever is left of the crate keeps burning for a while
+		local Fire = StartFire( self, "acf_cookoff_linger", self.CookoffScale * 0.8, "ambient/fire/fire_small_loop2.wav", 0.6, 1.5 )
+
+		self.LingeringFire = Fire
+
+		timer.Simple( math.Rand( 10, 20 ), function()
+			StopFire( Fire )
+
+			if IsValid( self ) and self.LingeringFire == Fire then
+				self.LingeringFire = nil
+			end
+		end )
+	end
+
+	-- The crate is gone, so are its fires
+	function ENT:RemoveFires()
+		self:StopCookoff( false )
+
+		StopFire( self.LingeringFire )
+
+		self.LingeringFire = nil
+	end
+
+	function ENT:OnCookoffChanged( Propellant )
+		if Propellant > 0 then
+			self:StartCookoff( Propellant )
+		else
+			self:StopCookoff( true )
+		end
+	end
+end
+
+local function removeModels( models )
+	for _, model in ipairs( models ) do
+		if IsValid( model ) then model:Remove() end
+	end
+end
+
+local function cleanupRoundModels( entity )
+	if not entity._RoundModels then return end
+
+	for _, models in pairs( entity._RoundModels ) do
+		removeModels( models )
+	end
+
+	entity._RoundModels = nil
+	entity._RoundBoxes  = nil
+	entity._RoundKinds  = nil
+end
+
 do --MARK: Networking
-	local MaxRounds = GetConVar( "acf_maxroundsdisplay" )
+	local MaxRounds = GetConVar( "acf_maxroundsdrawn" )
 	local Queued    = {}
+
+	-- Crate space placement of the pieces of every round that can be drawn. A two piece round takes a charge cell
+	-- and the projectile cell after it along the shape's pairing axis, the same pairing the server counts by.
+	local function buildRoundPieces( entity )
+		local rounds    = {}
+		local limit     = math.min( entity.Capacity, ACF.MaxRoundsDrawn )
+		local pieces    = entity.IsTwoPiece and 2 or 1
+		local roundSize = entity.RoundSize
+
+		local function addPiece( round, pos, ang, modelPos, modelAng )
+			local list = rounds[round] or {}
+
+			list[#list + 1] = { Pos = pos, Ang = ang, ModelPos = modelPos, ModelAng = modelAng, Charge = pieces == 2 and #list == 0 }
+			rounds[round]   = list
+		end
+
+		if entity.IsDrum then
+			local layout  = ACF.GetDrumLayout( entity.DrumShape )
+			local primary = entity.DrumPrimary
+			local perDisk = layout.GetPerDisk( primary )
+
+			-- Drums pair a disk with the one above it
+			for round = 1, limit do
+				local layer = math.floor( ( round - 1 ) / perDisk )
+				local spot  = ( round - 1 ) % perDisk
+
+				for piece = 1, pieces do
+					local index    = ( layer * pieces + piece - 1 ) * perDisk + spot + 1
+					local pos, ang = layout.GetRoundOffset( index, primary, entity.DrumStacks, roundSize, entity.IsHexPacked )
+					local modelPos, modelAng, boxAng = layout.GetRenderTransform(
+						pos, ang.yaw, entity.CachedLocalAngle, entity.LocalAng, roundSize, entity.CachedNeedsRotation
+					)
+
+					addPiece( round, pos, boxAng, modelPos, modelAng )
+				end
+			end
+
+			return rounds
+		end
+
+		-- Box crates pair a layer with the one above it, cassettes pair end to end along their length
+		local axis  = entity.IsCassette and "x" or "z"
+		local units = Vector( entity.ProjectileCounts )
+		local round = 0
+
+		units[axis] = math.floor( units[axis] / pieces )
+
+		for x = 1, units.x do
+			for y = 1, units.y do
+				for z = 1, units.z do
+					if round >= limit then return rounds end
+
+					-- The cassette's conveyor runs through these cells, so they hold no rounds
+					if not ( entity.IsCassette and ACF.IsCassetteVoid( y, z, entity.CassetteCounts:Unpack() ) ) then
+						round = round + 1
+
+						for piece = 1, pieces do
+							local cell = Vector( x, y, z )
+
+							cell[axis] = ( cell[axis] - 1 ) * pieces + piece
+
+							local pos = entity.CachedLocalStartPos + ACF.GetRoundOffset( cell.x, cell.y, cell.z, roundSize, entity.IsHexPacked )
+
+							addPiece( round, pos, entity.LocalAng, pos + entity.CachedModelOffset, entity.CachedLocalAngle )
+						end
+					end
+				end
+			end
+		end
+
+		return rounds
+	end
 
 	local function updateAmmoCount( entity, ammo )
 		if not IsValid( entity ) then return end
@@ -39,7 +281,7 @@ do --MARK: Networking
 
 		if not entity.HasData then return end
 
-		entity.Capacity         = net.ReadUInt( 25 )
+		entity.Capacity         = net.ReadUInt( entity.CountBits )
 		entity.IsRound          = net.ReadBool()
 		entity.RoundSize        = net.ReadVector()
 		entity.LocalAng         = net.ReadAngle()
@@ -53,8 +295,9 @@ do --MARK: Networking
 		entity.IsDrum = net.ReadBool()
 
 		if entity.IsDrum then
-			entity.RoundsPerRing = net.ReadUInt( 8 )
-			entity.DrumLayers    = net.ReadUInt( 8 )
+			entity.DrumShape   = net.ReadString()
+			entity.DrumPrimary = net.ReadUInt( 8 )
+			entity.DrumStacks  = net.ReadUInt( 8 )
 		end
 
 		local hasCustomModel = net.ReadBool()
@@ -67,33 +310,69 @@ do --MARK: Networking
 		-- Read rotation flag (cartridge models need -90 degree rotation)
 		local needsRotation = net.ReadBool()
 
+		entity.IsTwoPiece  = net.ReadBool()
+		entity.IsHexPacked = net.ReadBool()
+		entity.IsCassette  = net.ReadBool()
+
+		-- Cassette counts are stacks and conveyor size; render from the full grid they wrap into
+		if entity.IsCassette then
+			local counts = entity.ProjectileCounts
+
+			entity.CassetteCounts   = counts
+			entity.ProjectileCounts = ACF.GetCassetteGrid( counts.x, counts.y, counts.z, entity.IsTwoPiece )
+		end
+
+		-- Each kind of round top first
+		local kinds = {}
+
+		entity.RoundMixVersion = net.ReadUInt( entity.MixVersionBits )
+
+		for index = 1, net.ReadUInt( ACF.ProfileBits ) + 1 do
+			kinds[index] = {
+				Bodygroup = net.ReadUInt( 4 ),
+				Target    = net.ReadUInt( entity.CountBits ),
+				Name      = net.ReadString(),
+				Icon      = net.ReadString(),
+				ProjMass  = net.ReadFloat(),
+				MuzzleVel = net.ReadFloat(),
+			}
+		end
+
+		entity.RoundKinds = kinds
+
 		-- Resolve model path - use cartridge model with bodygroups for ammo visualization
 		local modelPath = entity.RoundModel
 
 		if not modelPath then
 			-- Use the unified cartridge model with bodygroups
-			modelPath = "models/acf/munitions/cartridge.mdl"
+			modelPath = CartridgeModelPath
 		end
 
-		-- Calculate model scale
-		local modelSize  = ACF.ModelData.GetModelSize( modelPath )
-		local modelScale = Vector( 1, 1, 1 )
+		-- Calculate a scale matrix that fits a given model's bounding box into the round's cell size
+		local function getScaleMatrix( path )
+			local size  = ACF.ModelData.GetModelSize( path )
+			local scale = Vector( 1, 1, 1 )
 
-		if modelSize then
-			if needsRotation then
-				-- Cartridge model needs axis swap due to rotation
-				modelScale = Vector(
-					entity.RoundSize.y / modelSize.x,
-					entity.RoundSize.z / modelSize.y,
-					entity.RoundSize.x / modelSize.z
-				)
-			else
-				modelScale = Vector(
-					entity.RoundSize.x / modelSize.x,
-					entity.RoundSize.y / modelSize.y,
-					entity.RoundSize.z / modelSize.z
-				)
+			if size then
+				if needsRotation then
+					-- Cartridge model needs axis swap due to rotation
+					scale = Vector(
+						entity.RoundSize.y / size.x,
+						entity.RoundSize.z / size.y,
+						entity.RoundSize.x / size.z
+					)
+				else
+					scale = Vector(
+						entity.RoundSize.x / size.x,
+						entity.RoundSize.y / size.y,
+						entity.RoundSize.z / size.z
+					)
+				end
 			end
+
+			local matrix = Matrix()
+			matrix:SetScale( scale )
+			return matrix
 		end
 
 		-- Calculate projectile angle
@@ -106,10 +385,12 @@ do --MARK: Networking
 		entity.CachedModelPath      = modelPath
 		entity.CachedLocalAngle     = localAngle
 		entity.CachedNeedsRotation  = needsRotation
+		entity.CachedScaleMatrix    = getScaleMatrix( modelPath )
 
-		local scaleMatrix = Matrix()
-		scaleMatrix:SetScale( modelScale )
-		entity.CachedScaleMatrix = scaleMatrix
+		-- Two-piece rounds alternate in a propellant bag model between projectiles; cache its scale too
+		if entity.IsTwoPiece then
+			entity.CachedChargeScaleMatrix = getScaleMatrix( ChargeModelPath )
+		end
 
 		-- Cache model offset for box positioning (base-origin models need centering)
 		local modelOffset = Vector( 0, 0, 0 )
@@ -124,7 +405,7 @@ do --MARK: Networking
 
 		-- Cache crate start position for box crates
 		if not entity.IsDrum then
-			local crateDimensions = ACF.GetCrateDimensions( entity.ProjectileCounts, entity.RoundSize )
+			local crateDimensions = ACF.GetCrateDimensions( entity.ProjectileCounts, entity.RoundSize, entity.IsHexPacked )
 			entity.CachedLocalStartPos = Vector(
 				-crateDimensions.x * 0.5 + entity.RoundSize.x * 0.5,
 				-crateDimensions.y * 0.5 + entity.RoundSize.y * 0.5,
@@ -132,18 +413,13 @@ do --MARK: Networking
 			)
 		end
 
-		-- Reset model state
-		if entity._RoundModels then
-			for _, model in pairs( entity._RoundModels ) do
-				if IsValid( model ) then
-					model:Remove()
-				end
-			end
-		end
+		entity.CachedRounds = buildRoundPieces( entity )
 
-		entity._RoundModels      = nil
-		entity.DisplayAmmo       = nil
+		-- Reset model state
+		cleanupRoundModels( entity )
+
 		entity.TargetDisplayAmmo = nil
+		entity.Ammo              = nil -- Forces a recount, the data can change without the ammo count changing
 
 		if Queued[entity] then
 			Queued[entity] = nil
@@ -157,7 +433,18 @@ do --MARK: Networking
 			updateAmmoCount( self, ammo )
 		end )
 
-		cvars.AddChangeCallback( "acf_maxroundsdisplay", function()
+		self:SetNWVarProxy( "Cookoff", function( _, _, _, propellant )
+			self:OnCookoffChanged( propellant )
+		end )
+
+		-- Crates that were already burning when they came into view
+		local cookoff = self:GetNWFloat( "Cookoff", 0 )
+
+		if cookoff > 0 then
+			self:StartCookoff( cookoff )
+		end
+
+		cvars.AddChangeCallback( "acf_maxroundsdrawn", function()
 			updateAmmoCount( self )
 		end, "Ammo Crate " .. self:EntIndex() )
 
@@ -183,128 +470,84 @@ end
 
 do --MARK: Ammo rendering
 	local drawBoxes      = GetConVar( "acf_drawboxes" )
-	local getRoundOffset = ACF.GetRoundOffset
 	local WireRender     = Wire_Render
 
-	local function cleanupRoundModels( entity )
-		if not entity._RoundModels then return end
+	-- Kind of each drawn round, every kind in one block in list order
+	function ENT:GetDrawnKinds( count )
+		local drawn = self._DrawnKinds or {} -- Reused, this runs every frame the crate is looked at
+		local total = 0
 
-		for _, model in pairs( entity._RoundModels ) do
-			if IsValid( model ) then
-				model:Remove()
-			end
+		self._DrawnKinds = drawn
+
+		for index = 1, #self.RoundKinds do
+			local left   = self:GetNW2Int( "RoundCount" .. ACF.GetCrateNWSuffix( index - 1 ) )
+			local rounds = math.min( left, count - total )
+
+			for round = total + 1, total + rounds do drawn[round] = index end
+
+			total = total + rounds
 		end
 
-		entity._RoundModels = nil
+		for round = total + 1, #drawn do drawn[round] = nil end
+
+		return drawn
 	end
 
-	function ENT:SetAmount( count )
+	-- Rebuilds the models of every drawn round whose kind changed, the rest are kept
+	function ENT:SetRounds( kinds )
 		if not self.HasData then return end
 
-		-- Models don't exist yet - create table from scratch
-		local previous
 		if not self._RoundModels then
 			self._RoundModels = {}
-			previous = 0
-		else
-			previous = self.DisplayAmmo or 0
-		end
-		self.DisplayAmmo = count
-
-		-- No change
-		if count == previous then return end
-
-		-- Decrease: remove excess models (includes going to 0)
-		if count < previous then
-			local models = self._RoundModels
-			for i = previous, count + 1, -1 do
-				local m = models[i]
-				models[i] = nil
-				if IsValid( m ) then m:Remove() end
-			end
-
-			return
+			self._RoundBoxes  = {}
+			self._RoundKinds  = {}
 		end
 
-		-- Increase: add new models from previous+1 to count
-		local modelPath     = self.CachedModelPath
-		local localAngle    = self.CachedLocalAngle
-		local roundSize     = self.RoundSize
-		local scaleMatrix   = self.CachedScaleMatrix
-		local modelOffset   = self.CachedModelOffset
-		local bodygroup     = self.RoundBodygroup or 0
+		local models  = self._RoundModels
+		local boxes   = self._RoundBoxes
+		local current = self._RoundKinds
 
-		local models = self._RoundModels
+		local modelPath         = self.CachedModelPath
+		local scaleMatrix       = self.CachedScaleMatrix
+		local chargeScaleMatrix = self.CachedChargeScaleMatrix
+		local roundSize         = self.RoundSize
 
-		if self.IsDrum then
-			-- MARK: Drum
-			-- Radial positioning with rounds pointing toward center
+		for round = 1, math.max( #current, #kinds ) do
+			local kind = kinds[round]
 
-			local roundsPerRing = self.RoundsPerRing
-			local numLayers     = self.DrumLayers
+			if current[round] ~= kind then
+				removeModels( models[round] or {} )
 
-			for index = previous + 1, count do
-				local localPos, localAng = ACF.GetDrumRoundOffset( index, roundsPerRing, numLayers, roundSize )
-
-				-- Compose angles: localAngle orients the model, localAng.yaw rotates around drum axis
-				local drumAngle = Angle( localAngle )
-				drumAngle:RotateAroundAxis( Vector( 0, 0, 1 ), localAng.yaw )
-
-				-- For cartridge models that need rotation, offset outward along radial direction
-				-- by half the round length to center the model at the calculated position
-				local finalPos = localPos
-				if self.CachedNeedsRotation then
-					local radialDir = Vector( localPos.x, localPos.y, 0 ):GetNormalized()
-					finalPos = localPos + radialDir * roundSize.x * 0.5
-				end
-
-				local model = ClientsideModel( modelPath, RENDERGROUP_OPAQUE )
-				if IsValid( model ) then
-					model:SetParent( self )
-					model:SetPos( self:LocalToWorld( finalPos ) )
-					model:SetAngles( self:LocalToWorldAngles( drumAngle ) )
-					model:SetNoDraw( true )
-					model:DrawShadow( false )
-					model:EnableMatrix( "RenderMultiply", scaleMatrix )
-					model:SetBodygroup( 0, bodygroup ) -- Apply ammo type bodygroup
-					models[index] = model
-				end
+				models[round], boxes[round], current[round] = nil, nil, kind
 			end
-		else
-			-- MARK: Box
-			local fits          = self.ProjectileCounts
-			local localStartPos = self.CachedLocalStartPos
 
-			-- WorldAngle must be recalculated as entity orientation can change
-			local worldAngle = self:LocalToWorldAngles( localAngle )
+			if kind and not models[round] then
+				local roundModels, roundBoxes = {}, {}
 
-			local index = 1
+				for _, piece in ipairs( self.CachedRounds[round] or {} ) do
+					local path, scale, group = modelPath, scaleMatrix, self.RoundKinds[kind].Bodygroup
 
-			for x = 1, fits.x do
-				for y = 1, fits.y do
-					for z = 1, fits.z do
-						-- Only create models we don't have yet
-						if index > previous and index <= count then
-							local localGridPos  = getRoundOffset( x, y, z, roundSize, fits )
-							local localModelPos = localStartPos + localGridPos + modelOffset
-
-							local model = ClientsideModel( modelPath, RENDERGROUP_OPAQUE )
-							if IsValid( model ) then
-								model:SetParent( self )
-								model:SetPos( self:LocalToWorld( localModelPos ) )
-								model:SetAngles( worldAngle )
-								model:SetNoDraw( true )
-								model:DrawShadow( false )
-								model:EnableMatrix( "RenderMultiply", scaleMatrix )
-								model:SetBodygroup( 0, bodygroup ) -- Apply ammo type bodygroup
-								models[index] = model
-							end
-						end
-
-						index = index + 1
-						if index > count then return end
+					if piece.Charge then
+						path, scale, group = ChargeModelPath, chargeScaleMatrix, ChargeBodygroup
 					end
+
+					local model = ClientsideModel( path, RENDERGROUP_OPAQUE )
+					if IsValid( model ) then
+						model:SetParent( self )
+						model:SetPos( self:LocalToWorld( piece.ModelPos ) )
+						model:SetAngles( self:LocalToWorldAngles( piece.ModelAng ) )
+						model:SetNoDraw( true )
+						model:DrawShadow( false )
+						model:EnableMatrix( "RenderMultiply", scale )
+						model:SetBodygroup( 0, group ) -- Apply ammo type bodygroup
+						roundModels[#roundModels + 1] = model
+					end
+
+					roundBoxes[#roundBoxes + 1] = { Pos = piece.Pos, Ang = piece.Ang, Size = roundSize }
 				end
+
+				models[round] = roundModels
+				boxes[round]  = roundBoxes
 			end
 		end
 	end
@@ -333,17 +576,27 @@ do --MARK: Ammo rendering
 			self:DrawEntityOutline()
 		end
 
-		-- Sync models with target ammo count (only when looking at crate)
-		local targetAmmo = self.TargetDisplayAmmo or 0
-		if self.DisplayAmmo ~= targetAmmo or not self._RoundModels then
-			self:SetAmount( targetAmmo )
-		end
+		-- Sync models with the rounds left (only when looking at crate)
+		self:SetRounds( self:GetDrawnKinds( self.TargetDisplayAmmo or 0 ) )
 
 		-- Draw models
 		if self._RoundModels then
-			for _, model in pairs( self._RoundModels ) do
-				if IsValid( model ) then
-					model:DrawModel()
+			for _, models in pairs( self._RoundModels ) do
+				for _, model in ipairs( models ) do
+					if IsValid( model ) then model:DrawModel() end
+				end
+			end
+		end
+
+		-- Draw a wireframe box around each piece showing the true space it occupies, colored by its round
+		if self._RoundBoxes then
+			for round, boxes in pairs( self._RoundBoxes ) do
+				local color = self.GetRoundKindColor( self._RoundKinds[round] )
+
+				for _, box in ipairs( boxes ) do
+					local Half = box.Size * 0.5
+
+					render.DrawWireframeBox( self:LocalToWorld( box.Pos ), self:LocalToWorldAngles( box.Ang ), -Half, Half, color, true )
 				end
 			end
 		end
@@ -357,17 +610,15 @@ do --MARK: Ammo rendering
 		end
 	end
 
+	-- Ammo data doesn't depend on the crate's size, only the models placed for the old size are stale
 	function ENT:OnResized( _ )
-		self.HasData = nil
-		self.DisplayAmmo = nil
-		self.TargetDisplayAmmo = nil
-
 		cleanupRoundModels(self)
 	end
 
 	function ENT:OnRemove()
 		cleanupRoundModels( self )
-		cvars.RemoveChangeCallback( "acf_maxroundsdisplay", "Ammo Crate " .. self:EntIndex() )
+		self:RemoveFires()
+		cvars.RemoveChangeCallback( "acf_maxroundsdrawn", "Ammo Crate " .. self:EntIndex() )
 	end
 
 	function ENT:CanDrawOverlay()

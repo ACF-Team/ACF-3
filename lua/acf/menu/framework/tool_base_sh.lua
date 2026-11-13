@@ -8,9 +8,11 @@ local function ResolveBind(Button)
 
 	local Shift  = Player:KeyDown(IN_SPEED)
 	local Reload = Player:KeyDown(IN_RELOAD)
+	local Alt    = Player:KeyDown(IN_WALK)
 
 	if Button == "left" then
 		if Shift then return "shift+left" end
+		if Alt then return "alt+left" end
 	elseif Button == "right" then
 		if Reload then return "r+right" end
 		if Shift then return "shift+right" end
@@ -52,9 +54,10 @@ function ACF.Menu.DoClientAction(Button)
 	local Action = FindAction(Page, ResolveBind(Button)) or FindAction(Page, Button)
 	if not Action then return end
 
+	-- A context action spawns unless it names its own Send
 	if Action.Context then
 		local Ctx = Page._Contexts and Page._Contexts[Action.Context]
-		if Ctx then ACF.Menu.SendSpawn(Ctx.ClassName, Ctx:Serialize()) end
+		if Ctx then (Action.Send or ACF.Menu.SendSpawn)(Ctx.ClassName, Ctx:Serialize()) end
 	elseif Action.Func then
 		ACF.Menu.SendFunc(Page.ID, Action._Index)
 	elseif Action.Commit == "link" then

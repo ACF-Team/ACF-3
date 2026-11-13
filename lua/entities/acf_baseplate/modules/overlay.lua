@@ -4,7 +4,7 @@ function ENT:ACF_UpdateOverlayState(State)
 
 	State:AddKeyValue("Type", BaseplateType.Name)
 	State:AddSize("Size", self.BaseplateSize[2], self.BaseplateSize[1], self.BaseplateSize[3])
-	State:AddHealth("Health", self.ACF.Health, self.ACF.MaxHealth)
+	State:AddHealth("Health", self.ACF.Health, self.ACF.MaxHealth, "", 1)
 
 	if TypeName == "ACF.Baseplates.Aircraft" then
 		State:AddNumber("G-Force Ticks", BaseplateType.GForceTicks)

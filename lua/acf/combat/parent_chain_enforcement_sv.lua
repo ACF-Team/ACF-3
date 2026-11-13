@@ -22,8 +22,7 @@ local PARENT_CHAIN_STATE_PARENT_CHAIN_OK  = 1;  ACF.PARENT_CHAIN_STATE_PARENT_CH
 
 local function LethalHasValidParentState(self)
     if self.ACF_ParentState ~= PARENT_CHAIN_STATE_PARENT_CHAIN_OK and ACF.LegalChecks and not ACF.AllowArbitraryParents then
-        -- This NEEDS a better message, I can't find a good way to explain it right now
-        ACF.DisableEntity(self, "Invalid Parent Chain", (self.PluralName or self:GetClass()) .. " must be parented to zero or more turret entities, ending in a baseplate root ancestor.", 5)
+        ACF.Legality.Report(self, "parent_chain")
         return false
     end
 end

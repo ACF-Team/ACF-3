@@ -162,7 +162,7 @@ timer.Simple(1, function()
                 local Getter, Setter, Hook = HookMethods.Getter, HookMethods.Setter, HookMethods.Hook
                 HookMethods.Original[Instance] = Getter(Instance)
                 local function NewHook(...)
-                    Hook(Instance, ...)
+                    return Hook(Instance, ...)
                 end
                 Setter(Instance, NewHook)
             end

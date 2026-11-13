@@ -13,6 +13,17 @@ function ENT.GetKeyState(SelfTbl, Key)
 	return SelfTbl.KeyStates[Key] or false
 end
 
+-- Rebindable action states, set from ACF_Controller_Action net messages instead of raw IN_* keys
+function ENT.RecacheActionState(SelfTbl, ActionID, Value)
+	if SelfTbl.ActionStates[ActionID] == Value then return false end
+	SelfTbl.ActionStates[ActionID] = Value
+	return true
+end
+
+function ENT.GetBindState(SelfTbl, ActionID)
+	return SelfTbl.ActionStates[ActionID] or false
+end
+
 --- Sets a networked variable if the cached value has changed
 function ENT.RecacheBindNW(Entity, SelfTbl, Key, Value, SetNWFunc)
 	SelfTbl.CacheNW = SelfTbl.CacheNW or {}

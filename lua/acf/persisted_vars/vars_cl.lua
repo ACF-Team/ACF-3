@@ -4,6 +4,7 @@
 ACF.PersistClientData("Volume", 0.5)
 ACF.PersistClientData("AmmoSupplyColor", Color(255, 255, 0, 10))
 ACF.PersistClientData("FuelSupplyColor", Color(76, 201, 250, 10))
+ACF.PersistClientData("CrewSupplyColor", Color(255, 80, 200, 10))
 ACF.PersistClientData("DualClutch", false)
 
 -- Crate projectile counts
@@ -24,4 +25,4 @@ ACF.PersistClientData("SupplySizeZ", 24)
 ACF.PersistClientData("SupplyShape", "Box")
 
 -- Gearbox
-ACF.PersistClientData("GearboxLegacyRatio", false)
+ACF.PersistClientData("GearboxRealisticRatio", false)

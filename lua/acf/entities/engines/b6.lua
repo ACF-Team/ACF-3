@@ -13,8 +13,8 @@ do
 		CLASS.Sound		 = "acf_base/engines/b6_petrolsmall.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
-		CLASS.Mass		 = 100
-		CLASS.Torque		 = 170
+		CLASS.Mass		 = 145
+		CLASS.Torque		 = 139
 		CLASS.FlywheelMass = 0.08
 		CLASS.RPM = {
 			Idle	= 750,
@@ -32,8 +32,8 @@ do
 		CLASS.Sound		 = "acf_base/engines/b6_petrolmedium.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
-		CLASS.Mass		 = 240
-		CLASS.Torque		 = 412
+		CLASS.Mass		 = 310
+		CLASS.Torque		 = 366
 		CLASS.FlywheelMass = 0.11
 		CLASS.RPM = {
 			Idle	= 900,
@@ -51,8 +51,8 @@ do
 		CLASS.Sound		 = "acf_base/engines/v8_diesel.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true, ["ACF.FuelTypes.Diesel"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericDiesel"
-		CLASS.Mass		 = 480
-		CLASS.Torque		 = 606
+		CLASS.Mass		 = 550
+		CLASS.Torque		 = 571
 		CLASS.FlywheelMass = 0.65
 		CLASS.RPM = {
 			Idle	= 500,
@@ -70,8 +70,8 @@ do
 		CLASS.Sound		 = "acf_base/engines/b6_petrollarge.wav"
 		CLASS.Fuel		 = { ["ACF.FuelTypes.Petrol"] = true }
 		CLASS.Type		 = "ACF.EngineTypes.GenericPetrol"
-		CLASS.Mass		 = 725
-		CLASS.Torque		 = 1375
+		CLASS.Mass		 = 770
+		CLASS.Torque		 = 1340
 		CLASS.FlywheelMass = 1
 		CLASS.RPM = {
 			Idle	= 620,

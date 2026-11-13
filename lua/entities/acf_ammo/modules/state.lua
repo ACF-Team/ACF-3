@@ -2,18 +2,25 @@ local TimerCreate = timer.Create
 local TimerExists = timer.Exists
 
 function ENT:CanConsume()
-	if self.Disabled then return false end
+	if not ACF.IsOperational(self) then return false end
 	if not self.Load then return false end
-	if self.Damaged then return false end
+	if self.Amount <= 0 then return false end
 
-	return self.Amount > 0
+	return self:FindNextKind() ~= nil
+end
+
+--- Sets the Loading output to whether weapons can take rounds from the crate now
+function ENT:UpdateLoading()
+	WireLib.TriggerOutput(self, "Loading", self:CanConsume() and 1 or 0)
 end
 
 function ENT:SetAmount(Amount)
 	local OldAmount = self.Amount or 0
 
-	-- Use base container logic
+	-- Counts first, the base container refreshes the overlay that draws them
+	self:SyncRoundCounts(math.Clamp(Amount or 0, 0, self.Capacity or 0))
 	self.BaseClass.SetAmount(self, Amount)
+	self:UpdateOverlay() -- The base skips changes soon after a refresh, so a resupply's last step could go unshown
 	self.Ammo = self.Amount
 
 	-- Play resupply sound when ammo increases
@@ -39,7 +46,7 @@ function ENT:Consume(Amount)
 
 	self.BaseClass.Consume(self, Amount)
 
-	WireLib.TriggerOutput(self, "Loading", self:CanConsume() and 1 or 0)
+	self:UpdateLoading()
 
 	self.ACF_InvisibleToTrace = self.Amount <= 0
 
@@ -54,7 +61,7 @@ function ENT:Consume(Amount)
 end
 
 function ENT:Enable()
-	WireLib.TriggerOutput(self, "Loading", self:CanConsume() and 1 or 0)
+	self:UpdateLoading()
 
 	self:UpdateMass(true)
 end

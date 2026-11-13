@@ -28,9 +28,9 @@ return {
         {
             name = "Keeps a valid class field",
             func = function()
-                local Data = Sanitize( "acf_radar", { Sensor = { Type = "ACF.Sensors.Radar.Targeting.SmallDirectional", Data = { Foo = 1 } } } )
+                local Data = Sanitize( "acf_radar", { Sensor = { Type = "ACF.Sensors.Radar.Standard.SmallDirectional", Data = { Foo = 1 } } } )
 
-                expect( Data.Sensor.Type ).to.equal( "ACF.Sensors.Radar.Targeting.SmallDirectional" )
+                expect( Data.Sensor.Type ).to.equal( "ACF.Sensors.Radar.Standard.SmallDirectional" )
                 expect( Data.Sensor.Data.Foo ).to.equal( 1 )
             end
         },
@@ -38,9 +38,9 @@ return {
         {
             name = "Converts a plain class name into a class field table",
             func = function()
-                local Data = Sanitize( "acf_radar", { Sensor = "ACF.Sensors.Radar.Targeting.SmallDirectional" } )
+                local Data = Sanitize( "acf_radar", { Sensor = "ACF.Sensors.Radar.Standard.SmallDirectional" } )
 
-                expect( Data.Sensor.Type ).to.equal( "ACF.Sensors.Radar.Targeting.SmallDirectional" )
+                expect( Data.Sensor.Type ).to.equal( "ACF.Sensors.Radar.Standard.SmallDirectional" )
                 expect( Data.Sensor.Data ).to.beA( "table" )
             end
         },
@@ -57,7 +57,7 @@ return {
         {
             name = "Drops group classes on leaf-only fields",
             func = function()
-                expect( Sanitize( "acf_radar", { Sensor = "ACF.Sensors.Radar.Targeting" } ).Sensor ).to.beNil()
+                expect( Sanitize( "acf_radar", { Sensor = "ACF.Sensors.Radar.Standard" } ).Sensor ).to.beNil()
                 expect( Sanitize( "acf_engine", { Engine = "ACF.Engines.V8" } ).Engine ).to.beNil()
                 expect( Sanitize( "acf_gun", { Weapon = "ACF.Guns.BaseScalableGun" } ).Weapon ).to.beNil()
                 expect( Sanitize( "acf_gun", { Weapon = "ACF.Guns.FlareLauncher" } ).Weapon ).to.beNil()
@@ -91,7 +91,7 @@ return {
         {
             name = "Replaces invalid class data with a table",
             func = function()
-                local Data = Sanitize( "acf_radar", { Sensor = { Type = "ACF.Sensors.Radar.Targeting.SmallDirectional", Data = "Junk" } } )
+                local Data = Sanitize( "acf_radar", { Sensor = { Type = "ACF.Sensors.Radar.Standard.SmallDirectional", Data = "Junk" } } )
 
                 expect( Data.Sensor.Data ).to.beA( "table" )
             end
@@ -110,7 +110,7 @@ return {
                 local Ent = ACF.Entities.DoSpawnInternal( "acf_radar", nil, Vector(), Angle(), { Sensor = { Type = "ACF.Ammunition.AP" } } )
 
                 expect( Ent ).to.beValid()
-                expect( ACF.Classes.GetTypeName( Ent:ACF_GetUserVar( "Sensor" ):GetType() ) ).to.equal( "ACF.Sensors.Radar.Targeting.SmallDirectional" )
+                expect( ACF.Classes.GetTypeName( Ent:ACF_GetUserVar( "Sensor" ):GetType() ) ).to.equal( "ACF.Sensors.Radar.Standard.SmallDirectional" )
 
                 Ent:Remove()
 

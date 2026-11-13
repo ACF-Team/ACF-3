@@ -155,21 +155,6 @@ return {
         },
 
         {
-            name = "Calls Activate if Entity.ACF.Mass differs from PhysObj",
-            func = function( State )
-                local Ent = State.Ent
-                Ent.ACF.Mass = Ent.ACF.Mass + 1
-
-                local Activate = stub( ACF, "Activate" ).with( function( e )
-                    e.ACF = { Type = "Test" }
-                end )
-
-                expect( ACF.Check( Ent ) ).to.equal( "Test" )
-                expect( Activate ).was.called()
-            end
-        },
-
-        {
             name = "Calls Activate if Entity.ACF.PhysObj differs from PhysObj",
             func = function( State )
                 local Ent = State.Ent

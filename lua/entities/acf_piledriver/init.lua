@@ -3,7 +3,6 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
-include "modules/activation.lua"
 include "modules/cfw.lua"
 include "modules/damage.lua"
 include "modules/spawning.lua"

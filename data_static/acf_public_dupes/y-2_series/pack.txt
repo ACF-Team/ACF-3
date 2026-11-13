@@ -1,0 +1,7 @@
+-- Insert pack
+INSERT INTO PackData (packid, packname, author, contact)
+VALUES ('y-2_series', 'Y-2 Series', 'Pomaxa', 'sorokabiloboka');
+
+-- Insert dupes using the string packid
+INSERT INTO DupeData (path, name, cost, weight, type, mobility, packid, description) VALUES
+('y-266_g', 'Y-266 G', 279.33, 28.5, 'LT', 'Tracked', 'y-2_series', 'Y-266 (Y-2 family): 28t light-medium tank, 13.5 hp/ton mobility, TRM 3 115mm gun (APDS/HE/HEATFS), 14.5mm MG, 384hp engine/601L fuel, stabilized electric turret. Multi-theater camo.');

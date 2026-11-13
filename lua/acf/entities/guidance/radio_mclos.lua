@@ -1,8 +1,14 @@
 local Classes 	= ACF.Classes
 Classes.DefineClass("ACF.Missiles.Guidance.RadioMCLOS", "ACF.Missiles.Guidance.Dumb", function(CLASS)
 	CLASS.Name = "Radio (MCLOS)"
+	-- Also runs on the crate holding the round, which has no launcher
 	function CLASS:Configure(Missile)
-		self.Source = Missile.Launcher
+		self.Source = ACF.Missiles.GetLauncherEntity(Missile)
+	end
+
+	-- Shared so the ammo menu can price missile rounds clientside.
+	function CLASS:GetCost()
+		return 4
 	end
 
 	if CLIENT then
@@ -11,12 +17,12 @@ Classes.DefineClass("ACF.Missiles.Guidance.RadioMCLOS", "ACF.Missiles.Guidance.D
 		local TraceData = { start = true, endpos = true, mask = MASK_SOLID_BRUSHONLY }
 		local Trace     = ACF.trace
 
-		function CLASS:GetCost()
-			return 3
-		end
 
 		function CLASS:OnLaunched(Missile)
-			self.InPos = Missile.MountPoint.Position
+			local Source = self.Source
+			local Origin = Missile:GetLaunchOrigin()
+
+			self.InPos = IsValid(Source) and Source:WorldToLocal(Origin) or nil
 			self.OutPos = Missile.ExhaustPos
 		end
 

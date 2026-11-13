@@ -3,25 +3,41 @@ Storyboard:WithName("Parenting & Linking")
 Storyboard:WithBaseEntity(nil)
 Storyboard:WithModelIcon("models/weapons/w_toolgun.mdl")
 Storyboard:WithDescription("Introducing parenting and linking")
-Storyboard:WithIndexOrder(98)
+Storyboard:WithIndexOrder(99.5)
 
 -------------------------------------------------------------------------------------------------
 local Chapter = Storyboard:Chapter("Setup")
-Chapter:AddInstruction("MoveCameraLookAt", {Length = 1,  Angle = -225, Distance = 2000}):DelayByLength()
+Chapter:AddInstruction("MoveCameraLookAt", {Length = 1,  Angle = -225, Distance = 1600}):DelayByLength()
 
-Chapter:AddDelay(Chapter:AddInstruction("PlaceModels", {
-    Length = 0.5,
-    Models = {
-        {Name = "Base", IdentifyAs = "Base", Model = "models/hunter/plates/plate2x5.mdl", Angles = Angle(0, 0, 0), Position = Vector(0, 0, 0), ComeFrom = Vector(0, 0, 50), Scale = Vector(1, 1.25, 1), },
-        {Name = "Engine", IdentifyAs = "Engine", Model = "models/engines/v12l.mdl", Angles = Angle(0, 90, 0), Position = Vector(0, -84, 3), ComeFrom = Vector(0, 0, 50), ParentTo = "Base", },
-        {Name = "Gearbox", IdentifyAs = "Gearbox", Model = "models/engines/transaxial_s.mdl", Angles = Angle(0, 90, 0), Position = Vector(0, -144, 3), ComeFrom = Vector(0, 0, 50), ParentTo = "Base", Scale = Vector(2, 2, 2)},
-        {Name = "FuelTank1", IdentifyAs = "Fuel Tank", Model = "models/holograms/hq_rcube.mdl", Angles = Angle(0, -90, 0), Position = Vector(36, -84, 15), ComeFrom = Vector(0, 0, 50), Scale = Vector(6, 2, 2), Material = "models/props_canal/metalcrate001d", ParentTo = "Base", },
-        {Name = "FuelTank2", IdentifyAs = "Fuel Tank", Model = "models/holograms/hq_rcube.mdl", Angles = Angle(0, -90, 0), Position = Vector(-36, -84, 15), ComeFrom = Vector(0, 0, 50), Scale = Vector(6, 2, 2), Material = "models/props_canal/metalcrate001d", ParentTo = "Base", },
-    }
-}))
+Chapter:AddInstruction("PlaceModel", {Name = "Base", IdentifyAs = "Base", Model = "models/hunter/plates/plate2x5.mdl", Angles = Angle(0, 0, 0), Position = Vector(0, 0, 0), ComeFrom = Vector(0, 0, 50), Scale = Vector(1, 1.25, 1)}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Now that you have a baseplate, let's give it a controller. Along the way you'll learn parenting and linking, which every other part of your tank needs."}))
 
+local Chapter = Storyboard:Chapter("AIO Controller")
+Chapter:AddInstruction("ShowToolgun", {Tool = language.GetPhrase("tool.acf_menu.menu_name")}):DelayByLength()
+Chapter:AddInstruction("PlacePanel", {
+    Name = "MainMenuCPanel",
+    Type = "DPanel",
+    Calls = {
+        {Method = "SetSize", Args = {300, 600}},
+        {Method = "SetPos", Args = {1500, 0}},
+        {Method = "CenterVertical", Args = {}},
+    },
+    Length = 0.25,
+}):DelayByLength()
+Chapter:AddInstruction("ACF.CreateMenuCPanel", {Name = "MainMenuCPanel", Label = "ACF Menu"}):DelayByLength()
+Chapter:AddInstruction("ACF.InitializeMainMenu", {Name = "MainMenuCPanel"}):DelayByLength()
+Chapter:AddInstruction("ACF.SelectMenuTreeNode", {Name = "MainMenuCPanel", Select = "Controllers"}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "An All In One (AIO) controller lets you drive and fight with your vehicle without any wiring. Select Controllers in the ACF menu."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Press Mouse1 (Left Click) to spawn one on your baseplate."}))
+Chapter:AddInstruction("MoveToolgunTo", {Target = "Base", Easing = math.ease.InOutQuad}):DelayByLength()
+Chapter:AddInstruction("ClickToolgun", {Target = "Base"}):DelayByLength()
+Chapter:AddInstruction("PlaceModel", {Name = "AIO", IdentifyAs = "AIO Controller", Model = "models/hunter/plates/plate025x025.mdl", Position = Vector(-30, 100, 3), ComeFrom = Vector(0, 0, 50), ParentTo = "Base"}):DelayByLength()
+Chapter:AddDelay(1)
+Chapter:AddInstruction("RemovePanel", {Name = "MainMenuCPanel", Length = 0.5}):DelayByLength()
+Chapter:AddInstruction("HideToolgun", {}):DelayByLength()
 
-local Chapter = Storyboard:Chapter("Parenting & Linking")
+-------------------------------------------------------------------------------------------------
+local Chapter = Storyboard:Chapter("Parenting")
 Chapter:AddInstruction("ShowToolgun", {Tool = language.GetPhrase("tool.multi_parent.listname")}):DelayByLength()
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "The Multi Parent tool can parent two entities together."}))
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Parented entities will move and rotate together."}))
@@ -71,19 +87,19 @@ Chapter:AddInstruction("RemovePanel", {Name = "MultiParentMenuCPanel"}):DelayByL
 
 local Chapter = Storyboard:Chapter("Parenting Usage")
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Left click all the entities except the baseplate, then right click the baseplate."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Left click every entity you want to parent, then right click the baseplate last. Here, that's just the controller."}))
 
 Chapter:AddDelay(Chapter:AddInstruction("Tools.MultiParent", {
-    Children = {"Engine", "FuelTank1", "FuelTank2", "Gearbox"},
+    Children = {"AIO"},
     Parent = "Base",
     Easing = math.ease.InOutQuad,
-    Length = 4,
+    Length = 2,
 }))
 Chapter:AddInstruction("HideToolgun", {}):DelayByLength()
 
 Chapter:AddDelay(1)
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "All entities are now parented to the baseplate.\nMoving or rotating the baseplate will also move and rotate the other entities."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "The controller is now parented to the baseplate.\nMoving or rotating the baseplate will also move and rotate it."}))
 
 Chapter:AddDelay(1)
 local Chapter = Storyboard:Chapter("Parenting Demonstration")
@@ -107,31 +123,25 @@ Chapter:AddDelay(1)
 
 Chapter:AddInstruction("ShowToolgun", {Tool = language.GetPhrase("tool.acf_menu.menu_name")}):DelayByLength()
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "The ACF Menu tool can link ACF entities to other entities."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Linking tells ACF entities how they work together. Parenting only holds them in place."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "With the ACF Menu tool, right click the baseplate, then right click the controller, to link them."}))
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Right click the engine and right click the gearbox to link them together."}))
+Chapter:AddDelay(Chapter:AddInstruction("ACF Menu", {Children = {"Base"}, Target = "AIO", Easing = math.ease.InOutQuad, Length = 2}))
 
-Chapter:AddDelay(Chapter:AddInstruction("ACF Menu", {
-    Children = {"Engine"},
-    Target = "Gearbox",
-    Easing = math.ease.InOutQuad,
-    Length = 2,
-}))
-
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Now the gearbox can receive power from the engine."}))
-
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Hold shift + right click on each fuel tank (multi select) and then right click the engine to link them together."}))
-
-Chapter:AddDelay(Chapter:AddInstruction("ACF Menu", {
-    Children = {"FuelTank1", "FuelTank2"},
-    Target = "Engine",
-    Easing = math.ease.InOutQuad,
-    Length = 3,
-}))
-
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Now the engine can receive fuel from the fuel tanks."}))
-
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "If you look at the engine, you can see a visualization of all linked entities in your drivetrain."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Now the controller uses the baseplate's seat. Sit in it with Alt + E."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "To link several entities at once, hold Shift while right clicking each of them, then right click the target."}))
 
 Chapter:AddInstruction("HideToolgun", {}):DelayByLength()
-Chapter:RecommendStoryboard("acf.tankbasics.suspension")
+
+-------------------------------------------------------------------------------------------------
+local Chapter = Storyboard:Chapter("AIO Settings")
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Hold C and right click the controller to change its settings."}))
+Chapter:AddDelay(Chapter:AddInstruction("ACF.ShowAIOMenu", {Target = "AIO"}))
+Chapter:AddInstruction("ACF.SetAIOSetting", {Name = "AIOMenu", Setting = "Cam1Offset"}):DelayByLength()
+Chapter:AddInstruction("ACF.SetAIOSetting", {Name = "AIOMenu", Setting = "Cam1Orbit"}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Cam1Offset and Cam1Orbit place the camera around the baseplate."}))
+Chapter:AddInstruction("ACF.SetAIOSetting", {Name = "AIOMenu", Setting = "SpeedUnit"}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "SpeedUnit picks how the baseplate's speed is shown on the HUD."}))
+Chapter:AddInstruction("RemovePanel", {Name = "AIOMenu", Length = 0.5}):DelayByLength()
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Each of the following tutorials links its new parts to this controller."}))
+Chapter:RecommendStoryboard("acf.tankbasics.drivetrain")

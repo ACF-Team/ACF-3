@@ -10,6 +10,8 @@ local function Build(Menu)
 	local Preview = Menu:AddModelPreview("models/hunter/plates/plate025x025.mdl", true, "Primary")
 	Preview:UpdateSettings({ FOV = 120, Height = 120 })
 
+	Menu:AddButton("Rebind Keys", function() ACF.OpenControllerBindsMenu() end)
+
 	local Instructions = Menu:AddCollapsible("Instructions", true, "icon16/computer_add.png")
 	Instructions:AddLabel("Place down the controller. Link each for the given effects: ")
 	Instructions:AddLabel("Seat -> Required to control anything")

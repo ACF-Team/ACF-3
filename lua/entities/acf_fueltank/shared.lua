@@ -7,6 +7,7 @@ ACF.Entities.AutoRegister(2026091001, function()
 	MENU_FIELD("Number",                 "FuelSizeX", {Min = ACF.ContainerMinSize or 6, Max = ACF.ContainerMaxSize or 96, Default = 24, Decimals = 0})
 	MENU_FIELD("Number",                 "FuelSizeY", {Min = ACF.ContainerMinSize or 6, Max = ACF.ContainerMaxSize or 96, Default = 24, Decimals = 0})
 	MENU_FIELD("Number",                 "FuelSizeZ", {Min = ACF.ContainerMinSize or 6, Max = ACF.ContainerMaxSize or 96, Default = 24, Decimals = 0})
+	MENU_FIELD("Number",                 "FuelPriority", {Min = ACF.FuelPriorityMin, Max = ACF.FuelPriorityMax, Default = 1, Decimals = 0})
 	-- Shape is inherited from acf_container.
 end, "Fuel Tank")
 

@@ -2,149 +2,10 @@
 
 -- Local Vars -----------------------------------
 local ACF          = ACF
-local Contraption  = ACF.Contraption
 local ModelData	   = ACF.ModelData
-local Notify       = ACF.Utilities.Notify
 local StringFind   = string.find
-local TimerSimple  = timer.Simple
 local Baddies	   = ACF.GlobalFilter
 local BaddiesLess  = ACF.ArmorableGlobalFilterExceptions
-local MinimumArmor = ACF.MinimumArmor
-local MaximumArmor = ACF.MaxThickness
-
-util.AddNetworkString("ACF_Error_Entity")
-
--- This particular message needs a delay in order to avoid erroneous shaming
-local function ShameNotSolid(Entity)
-	TimerSimple(1.1, function()
-		if not IsValid(Entity) then return end
-
-		ACF.Shame(Entity, "not being solid.")
-	end)
-end
-
---[[ ACF Legality Check
-	ALL SENTS MUST HAVE:
-	ENT.ACF.PhysObj defined when spawned
-	ENT.ACF.LegalMass defined when spawned
-	ENT.ACF.Model defined when spawned
-
-	ACF.CheckLegal(entity) called when finished spawning
-
-	function ENT:Enable()
-		<code>
-	end
-
-	function ENT:Disable()
-		<code>
-	end
-]]--
-function ACF.IsLegal(Entity)
-	if not ACF.LegalChecks then return true end -- Legal checks are disabled
-	if Entity.ACF_IsNotLegalityChecked then return true end -- This entity is exempt from legality checks
-
-	local EntTbl = Entity:GetTable()
-	local Phys = Entity:GetPhysicsObject()
-
-	if not IsValid(EntTbl.ACF.PhysObj) or EntTbl.ACF.PhysObj ~= Phys then
-		if Phys:GetVolume() then
-			EntTbl.ACF.PhysObj = Phys -- Updated PhysObj
-		else
-			ACF.Shame(Entity, "having a custom physics object (spherical).")
-			return false, "Invalid Physics", "Custom physics objects cannot be applied to ACF entities."
-		end
-	end
-	if not Entity:IsSolid() then ShameNotSolid(Entity) return false, "Not Solid", "The entity is invisible to projectiles." end
-	if EntTbl.ClipData and next(EntTbl.ClipData) then ACF.Shame(Entity, "having visclips.") return false, "Visual Clip", "Visual clip cannot be applied to ACF entities." end -- No visclip
-	if not ACF.GunsCanFire and EntTbl.IsACFGun then return false, "Cannot fire", "Firing disabled by the server's ACF settings." end
-	if not ACF.RacksCanFire and EntTbl.IsRack then return false, "Cannot fire", "Firing disabled by the server's ACF settings." end
-
-	local Legal, Reason, Message, Timeout
-	if EntTbl.ACF_IsLegal then
-		Legal, Reason, Message, Timeout = Entity:ACF_IsLegal()
-	end
-
-	-- Legal would only be false if ACF_IsLegal is present on the entity *and* it returned false
-	-- If it returned true, the hook should be allowed to override that
-
-	-- Additionally; add arguments to the hook from the entity check, in case whatever hooks into this
-	-- wants to stop if the entity said its legal, add a reason onto the reason, etc?
-	if Legal ~= false then
-		Legal, Reason, Message, Timeout = hook.Run("ACF_OnCheckLegal", Entity, Legal, Reason, Message, Timeout)
-	end
-
-	if not Legal then return Legal, Reason, Message, Timeout end
-
-	return true
-end
-
-function ACF.DisableEntity(Entity, Reason, Message, Timeout)
-	local DisableFn = Entity.Disable
-	if not DisableFn then return end
-
-	local Owner = Entity:CPPIGetOwner()
-
-	local Disabled = Entity.Disabled
-
-	if not Disabled or Reason ~= Disabled.Reason then
-		Entity.Disabled	= {
-			Reason  = Reason,
-			Message = Message
-		}
-
-		DisableFn(Entity) -- Let the entity know it's disabled
-		if Entity.UpdateOverlay then Entity:UpdateOverlay(true) end -- Update overlay if it has one (Passes true to update overlay instantly)
-		if IsValid(Owner) and tobool(Owner:GetInfo("acf_legalhints")) then -- Notify the owner
-			if Reason == "Not Solid" then -- Thank you garry, very cool
-				timer.Simple(1.1, function() -- Remover tool sets nodraw and removes 1 second later, causing annoying alerts
-					if not IsValid(Entity) then return end
-
-					Notify.EntityDisabledToPlayer(Entity, Owner, Message)
-				end)
-			else
-				Notify.EntityDisabledToPlayer(Entity, Owner, Message)
-			end
-		end
-		-- Send the entity to the client
-		net.Start("ACF_Error_Entity") net.WriteEntity(Entity) net.Send(Entity:CPPIGetOwner())
-	end
-
-	if Timeout then Timeout = math.max(Timeout, 1) end
-	TimerSimple(Timeout or ACF.IllegalDisableTime, function() -- Check if it's legal again in ACF.IllegalDisableTime
-		if not IsValid(Entity) then return end
-		if not ACF.CheckLegal(Entity) then return end
-
-		Entity.Disabled = nil
-
-		Entity:Enable()
-
-		if Entity.UpdateOverlay then Entity:UpdateOverlay(true) end
-	end)
-end
-
-function ACF.CheckLegal(Entity)
-	local Legal, Reason, Message, Timeout = ACF.IsLegal(Entity)
-
-	if not Legal then -- Not legal
-		local Disabled = Entity.Disabled
-
-		if not Disabled or Reason ~= Disabled.Reason then -- Only complain if the reason has changed
-			ACF.DisableEntity(Entity, Reason, Message, Timeout)
-		end
-
-		return false
-	end
-
-	if ACF.LegalChecks then
-		TimerSimple(math.Rand(1, 3), function() -- Entity is legal... test again in random 1 to 3 seconds
-			if not IsValid(Entity) then return end
-
-			ACF.CheckLegal(Entity)
-		end)
-	end
-
-	return true
-end
 
 --- Determines the type of damage that should be dealt to the given entity.
 --- @param Entity entity The entity to be checked
@@ -161,6 +22,10 @@ function ACF.GetEntityType(Entity)
 	return "Prop"
 end
 
+--- Computes and caches the entity's surface area, used by explosions to determine blast/fragment exposure.
+--- @param Entity entity The entity to compute the area for
+--- @param PhysObj PhysObj The entity's physics object
+--- @return number # The entity's surface area, in cm²
 function ACF.UpdateArea(Entity, PhysObj)
 	local Area = PhysObj:GetSurfaceArea()
 
@@ -181,49 +46,6 @@ function ACF.UpdateArea(Entity, PhysObj)
 
 	return Area
 end
-
-function ACF.UpdateThickness(Entity, PhysObj, Area, Ductility)
-	local EntMods   = Entity.EntityMods
-	local ArmorMod  = EntMods and EntMods.ACF_Armor
-	local Thickness = ArmorMod and ArmorMod.Thickness
-	local MassMod   = EntMods and EntMods.mass
-
-	if Entity.IsACFEntity and not Entity.ACF_UserWeighable then
-		MassMod = nil
-	end
-
-	if Thickness then
-		if not MassMod then
-			local Mass = Area * (1 + Ductility) ^ 0.5 * Thickness * 0.00078
-
-			if Mass ~= Entity.ACF.Mass then
-				Contraption.SetMass(Entity, Mass)
-			end
-
-			return Thickness
-		end
-
-		duplicator.ClearEntityModifier(Entity, "ACF_Armor")
-		duplicator.StoreEntityModifier(Entity, "ACF_Armor", { Thickness = Thickness, Ductility = Ductility * 100 })
-	end
-
-	local Mass  = MassMod and MassMod.Mass or PhysObj:GetMass()
-	local Armor = ACF.CalcArmor(Area, Ductility, Mass)
-
-	if Mass ~= Entity.ACF.Mass then
-		Contraption.SetMass(Entity, Mass)
-
-		duplicator.StoreEntityModifier(Entity, "mass", { Mass = Mass })
-	end
-
-	return math.Clamp(Armor, MinimumArmor, MaximumArmor)
-end
-
-hook.Add("ACF_OnUpdateServerData", "ACF_MaxThickness", function(_, Key, Value)
-	if Key ~= "MaxThickness" then return end
-
-	MaximumArmor = math.floor(ACF.CheckNumber(Value, ACF.MaxThickness))
-end)
 
 -- Global Funcs ---------------------------------
 
@@ -247,17 +69,14 @@ function ACF.Check(Entity, ForceUpdate) -- IsValid but for ACF
 
 		ACF.Activate(Entity)
 		EntACF = Entity.ACF
-	elseif ForceUpdate or EntACF.Mass ~= PhysObj:GetMass() or (not IsValid(EntACF.PhysObj) or EntACF.PhysObj ~= PhysObj) then
-		ACF.Activate(Entity, true)
+	elseif ForceUpdate or not IsValid(EntACF.PhysObj) or EntACF.PhysObj ~= PhysObj then
+		ACF.Activate(Entity)
 	end
 
 	return EntACF.Type
 end
 
---- Initializes the entity's armor properties. If ACF_Activate is defined by the entity, that method is called as well.
---- @param Recalc boolean Whether or not to recalculate the health
-function ACF.Activate(Entity, Recalc)
-	-- Density of steel = 7.8g cm3 so 7.8kg for a 1mx1m plate 1m thick
+function ACF.Activate(Entity)
 	local PhysObj = Entity:GetPhysicsObject()
 	local EntTbl  = Entity:GetTable()
 
@@ -266,28 +85,14 @@ function ACF.Activate(Entity, Recalc)
 
 	ModelData.Populate(Entity:GetModel())
 
-	EntTbl.ACF.Type    = ACF.GetEntityType(Entity)
-	EntTbl.ACF.PhysObj = PhysObj
+	EntTbl.ACF.Type      = ACF.GetEntityType(Entity)
+	EntTbl.ACF.PhysObj   = PhysObj
 
-	-- Note that if the entity has its own ENT:ACF_Activate(Recalc) function, the rest of the code after this block won't be ran (instead the function should specify the rest)
-	if EntTbl.ACF_Activate then
-		Entity:ACF_Activate(Recalc)
-		return
-	end
+	-- Backwards compatibility placeholders. To remove later.
+	-- Only set when missing, ACF entities derive their health ratio from these when reactivated (see ComputeVolumetricMesh)
+	EntTbl.ACF.Health    = EntTbl.ACF.Health or 1
+	EntTbl.ACF.MaxHealth = EntTbl.ACF.MaxHealth or 1
 
-	local Area      = ACF.UpdateArea(Entity, PhysObj)
-	local Ductility = math.Clamp(EntTbl.ACF.Ductility or 0, -0.8, 0.8)
-	local Thickness = math.Clamp(ACF.UpdateThickness(Entity, PhysObj, Area, Ductility) * ACF.ArmorMod, ACF.MinimumArmor, ACF.MaxThickness)
-	local Health    = (Area / ACF.Threshold) * (1 + Ductility) -- Setting the threshold of the prop Area gone
-	local Percent   = 1
-
-	if Recalc and EntTbl.ACF.Health and EntTbl.ACF.MaxHealth then
-		Percent = EntTbl.ACF.Health / EntTbl.ACF.MaxHealth
-	end
-
-	EntTbl.ACF.Health    = Health * Percent
-	EntTbl.ACF.MaxHealth = Health
-	EntTbl.ACF.Armour    = Thickness * (0.5 + Percent * 0.5)
-	EntTbl.ACF.MaxArmour = Thickness
-	EntTbl.ACF.Ductility = Ductility
+	ACF.UpdateArea(Entity, PhysObj)
+	ACF.ComputeVolumetricMesh(Entity)
 end

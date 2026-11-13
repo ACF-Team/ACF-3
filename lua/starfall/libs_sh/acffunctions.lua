@@ -136,6 +136,21 @@ local function RestrictInfo(Entity)
 	return not isOwner(instance, Entity)
 end
 
+-- Round data of a gun's loaded round, or of a crate's round at Position (the one it feeds next if 0 or nil)
+local function GetBulletData(Entity, Position)
+	Position = math.floor(Position or 0)
+
+	if Position > 0 and Entity.GetRoundAt then return (Entity:GetRoundAt(Position)) end
+	if Entity.PeekRound then return (Entity:PeekRound()) end
+
+	return Entity.BulletData
+end
+
+-- Type check for the optional crate position the round data functions take
+local function CheckPosition(Position)
+	if Position ~= nil then CheckLuaType(Position, TYPE_NUMBER, 2) end
+end
+
 local function WrapTable(Table, Ignore, Checked)
 	local Result = {}
 
@@ -723,22 +738,6 @@ if SERVER then
 		return Health and math.Round(Health, 2) or 0
 	end
 
-	--- Returns the current armor of an entity
-	-- @server
-	-- @return number The entity's armor
-	function ents_methods:acfPropArmor()
-		CheckType(self, ents_metatable)
-
-		local This = unwrap(self)
-
-		if not ACF.Check(This) then SF.Throw("Entity is not valid", 2) end
-		if RestrictInfo(This) then return 0 end
-
-		local Armor = This.ACF.Armour
-
-		return Armor and math.Round(Armor, 2) or 0
-	end
-
 	--- Returns the max health of an entity
 	-- @server
 	-- @return number The entity's max health
@@ -753,22 +752,6 @@ if SERVER then
 		local MaxHealth = This.ACF.MaxHealth
 
 		return MaxHealth and math.Round(MaxHealth, 2) or 0
-	end
-
-	--- Returns the max armor of an entity
-	-- @server
-	-- @return number The entity's max armor
-	function ents_methods:acfPropArmorMax()
-		CheckType(self, ents_metatable)
-
-		local This = unwrap(self)
-
-		if not ACF.Check(This) then SF.Throw("Entity is not valid", 2) end
-		if RestrictInfo(This) then return 0 end
-
-		local MaxArmor = This.ACF.MaxArmour
-
-		return MaxArmor and math.Round(MaxArmor, 2) or 0
 	end
 
 	--- Returns the current health percentage of an entity
@@ -787,36 +770,132 @@ if SERVER then
 		return PercHealth and math.Round(PercHealth, 2) or 0
 	end
 
-	--- Returns the current armor percentage of an entity
+	--- Returns the current health of a specific convex of an entity
 	-- @server
-	-- @return number The entity's percentage of armor
-	function ents_methods:acfPropArmorPercent()
+	-- @param number convexid The convex ID
+	-- @return number The convex's current health
+	function ents_methods:acfConvexHealth(convexid)
 		CheckType(self, ents_metatable)
+		CheckLuaType(convexid, TYPE_NUMBER)
 
 		local This = unwrap(self)
 
-		if not ACF.Check(This) then SF.Throw("Entity is not valid", 2) end
+		if not IsValid(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return 0 end
 
-		local PercArmor = This.ACF.Armour / This.ACF.MaxArmour
+		local MeshData = This.ACF_Volumetric_Mesh
+		if not MeshData then return 0 end
 
-		return PercArmor and math.Round(PercArmor, 2) or 0
+		local Convex = MeshData.Convexes[math.floor(convexid)]
+		if not Convex then return 0 end
+
+		return math.Round(Convex.Health, 2)
 	end
 
-	--- Returns the ductility of an entity
+	--- Returns the max health of a specific convex of an entity
 	-- @server
-	-- @return number The entity's ductility
-	function ents_methods:acfPropDuctility()
+	-- @param number convexid The convex ID
+	-- @return number The convex's max health
+	function ents_methods:acfConvexHealthMax(convexid)
+		CheckType(self, ents_metatable)
+		CheckLuaType(convexid, TYPE_NUMBER)
+
+		local This = unwrap(self)
+
+		if not IsValid(This) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return 0 end
+
+		local MeshData = This.ACF_Volumetric_Mesh
+		if not MeshData then return 0 end
+
+		local Convex = MeshData.Convexes[math.floor(convexid)]
+		if not Convex then return 0 end
+
+		return math.Round(Convex.MaxHealth, 2)
+	end
+
+	--- Returns the health percentage of a specific convex of an entity
+	-- @server
+	-- @param number convexid The convex ID
+	-- @return number The convex's health as a fraction of its max health
+	function ents_methods:acfConvexHealthPercent(convexid)
+		CheckType(self, ents_metatable)
+		CheckLuaType(convexid, TYPE_NUMBER)
+
+		local This = unwrap(self)
+
+		if not IsValid(This) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return 0 end
+
+		local MeshData = This.ACF_Volumetric_Mesh
+		if not MeshData then return 0 end
+
+		local Convex = MeshData.Convexes[math.floor(convexid)]
+		if not Convex or Convex.MaxHealth == 0 then return 0 end
+
+		return math.Round(Convex.Health / Convex.MaxHealth, 2)
+	end
+
+	--- Returns the number of convexes of an entity
+	-- @server
+	-- @return number The number of convexes
+	function ents_methods:acfConvexCount()
 		CheckType(self, ents_metatable)
 
 		local This = unwrap(self)
 
-		if not ACF.Check(This) then SF.Throw("Entity is not valid", 2) end
+		if not IsValid(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return 0 end
 
-		local Ductility = This.ACF.Ductility
+		local MeshData = This.ACF_Volumetric_Mesh
+		if not MeshData then return 0 end
 
-		return Ductility and math.Round(Ductility * 100, 2) or 0
+		return #MeshData.Convexes
+	end
+
+	--- Returns the material of a specific convex of an entity
+	-- @server
+	-- @param number convexid The convex ID
+	-- @return string The convex's material
+	function ents_methods:acfConvexMaterial(convexid)
+		CheckType(self, ents_metatable)
+		CheckLuaType(convexid, TYPE_NUMBER)
+
+		local This = unwrap(self)
+
+		if not IsValid(This) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return "" end
+
+		local MeshData = This.ACF_Volumetric_Mesh
+		if not MeshData then return "" end
+
+		local Convex = MeshData.Convexes[math.floor(convexid)]
+		if not Convex then return "" end
+
+		return Convex.Material or ""
+	end
+
+	--- Returns the materials of all convexes of an entity
+	-- @server
+	-- @return table The materials of each convex, indexed by convex ID
+	function ents_methods:acfConvexMaterials()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not IsValid(This) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return {} end
+
+		local MeshData = This.ACF_Volumetric_Mesh
+		if not MeshData then return {} end
+
+		local Result = {}
+
+		for ConvexID, Convex in ipairs(MeshData.Convexes) do
+			Result[ConvexID] = Convex.Material or ""
+		end
+
+		return Result
 	end
 
 	--- Returns true if hitpos is on a clipped part of prop
@@ -1144,6 +1223,54 @@ if SERVER then
 		return This.FlywheelMass or 0
 	end
 
+	--- Returns the power at a specified RPM, of an ACF engine
+	-- @server
+	-- @return number The power at the specified RPM, in kW
+	function ents_methods:acfPowerRPM(n)
+		CheckType(self, ents_metatable)
+		CheckLuaType(n, TYPE_NUMBER)
+
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return 0 end
+
+		local Idle = This.IdleRPM
+		local Redline = This.LimitRPM
+
+		if n < 0 or n > Redline then return 0 end
+
+		local PeakTorque = This.PeakTorqueHeld
+		local Percent = math.Remap(n, Idle, Redline, 0, 1)
+		local Power = (ACF.GetTorque(This.TorqueCurve, Percent) * PeakTorque * n) / 9548.8
+
+		return Power
+	end
+
+	--- Returns the torque at a specified RPM, of an ACF engine
+	-- @server
+	-- @return number The torque at the specified RPM, in N/m
+	function ents_methods:acfTorqueRPM(n)
+		CheckType(self, ents_metatable)
+		CheckLuaType(n, TYPE_NUMBER)
+
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return 0 end
+
+		local Idle = This.IdleRPM
+		local Redline = This.LimitRPM
+
+		if n < 0 or n > Redline then return 0 end
+
+		local PeakTorque = This.PeakTorqueHeld
+		local Percent = math.Remap(n, Idle, Redline, 0, 1)
+		local Torque = ACF.GetTorque(This.TorqueCurve, Percent) * PeakTorque
+
+		return Torque
+	end
+
 	--- Returns the current power of an ACF engine
 	-- @server
 	-- @return number The current power, in kW
@@ -1158,6 +1285,36 @@ if SERVER then
 		if not This.FlyRPM then return 0 end
 
 		return math.floor(This.Torque * This.FlyRPM / 9548.8)
+	end
+
+	-- Returns the RPM at the peak power of an ACF engine
+	-- @server
+	-- @return number The RPM at peak power, in kW
+	function ents_methods:acfPeakPowerRPM()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return 0 end
+		if not This.PeakPowerRPM then return 0 end
+
+		return math.Round(This.PeakPowerRPM)
+	end
+
+	-- Returns the RPM at the peak torque of an ACF engine
+	-- @server
+	-- @return number The RPM at peak torque, in N/m
+	function ents_methods:acfPeakTorqueRPM()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return 0 end
+		if not This.PeakTqRPM then return 0 end
+
+		return math.Round(This.PeakTqRPM)
 	end
 
 	--- Returns true if the RPM of an ACF engine is inside the powerband
@@ -1627,7 +1784,7 @@ if SERVER then
 		return math.Round(Fuel, 2)
 	end
 
-	--- Returns the amount of fuel in an ACF fuel tank or linked to engine as a percentage of capacity
+	--- Returns the amount of fuel in an ACF fuel tank or available to an engine as a percentage of capacity
 	-- @server
 	-- @return number The fuel percentage
 	function ents_methods:acfFuelLevel()
@@ -1783,7 +1940,7 @@ if SERVER then
 		return This.MagReload or 0
 	end
 
-	--- Returns the magazine size for an ACF gun
+	--- Returns the magazine size for an ACF gun, or the rounds it can currently fire if it has no magazine (belt feds, single-shot)
 	-- @server
 	-- @return number The magazine size
 	function ents_methods:acfMagSize()
@@ -1794,14 +1951,16 @@ if SERVER then
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return 0 end
 
-		return This.MagSize or 0
+		return This.MagSize or This.CurrentShot or 0
 	end
 
 	--- Returns the spread for an ACF gun or flechette ammo
+	-- @param number? position Position in an ammo crate's list to read, top is 1. Omitted or 0 reads the round it feeds next
 	-- @server
 	-- @return number The spread
-	function ents_methods:acfSpread()
+	function ents_methods:acfSpread(position)
 		CheckType(self, ents_metatable)
+		CheckPosition(position)
 
 		local This = unwrap(self)
 
@@ -1809,9 +1968,10 @@ if SERVER then
 		if RestrictInfo(This) then return 0 end
 
 		local Spread = (This.GetSpread and This:GetSpread()) or This.Spread or 0
+		local BulletData = GetBulletData(This, position)
 
-		if This.BulletData and This.BulletData.AmmoType == "ACF.Ammunition.FL" then -- TODO: Replace this hardcoded bit
-			return Spread + (This.BulletData.FlechetteSpread or 0)
+		if BulletData and BulletData.AmmoType == "ACF.Ammunition.FL" then -- TODO: Replace this hardcoded bit
+			return Spread + (BulletData.FlechetteSpread or 0)
 		end
 
 		return Spread
@@ -1923,33 +2083,37 @@ if SERVER then
 	end
 
 	--- Returns the type of weapon the ammo in an ACF ammo crate loads into
+	-- @param number? position Position in an ammo crate's list to read, top is 1. Omitted or 0 reads the round it feeds next
 	-- @server
 	-- @return string The type of weapon
-	function ents_methods:acfRoundType()
+	function ents_methods:acfRoundType(position)
 		CheckType(self, ents_metatable)
+		CheckPosition(position)
 
 		local This = unwrap(self)
 
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return "" end
 
-		local BulletData = This.BulletData
+		local BulletData = GetBulletData(This, position)
 
 		return ACF.GetLegacyStyleClassName(BulletData and BulletData.WeaponType or "")
 	end
 
 	--- Returns the BulletData table of the ammo in an ACF ammo crate
+	-- @param number? position Position in an ammo crate's list to read, top is 1. Omitted or 0 reads the round it feeds next
 	-- @server
 	-- @return table The BulletData table
-	function ents_methods:acfBulletData()
+	function ents_methods:acfBulletData(position)
 		CheckType(self, ents_metatable)
+		CheckPosition(position)
 
 		local This = unwrap(self)
 
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return {} end
 
-		local BulletData = This.BulletData
+		local BulletData = GetBulletData(This, position)
 
 		return BulletData and shallowCopy(BulletData) or {}
 	end
@@ -1993,19 +2157,65 @@ if SERVER then
 	end
 
 	--- Returns the type of ammo in a crate or gun
+	-- @param number? position Position in an ammo crate's list to read, top is 1. Omitted or 0 reads the round it feeds next
 	-- @server
 	-- @return string The type of ammo
-	function ents_methods:acfAmmoType()
+	function ents_methods:acfAmmoType(position)
 		CheckType(self, ents_metatable)
+		CheckPosition(position)
 
 		local This = unwrap(self)
 
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return "" end
 
-		local BulletData = This.BulletData
+		local BulletData = GetBulletData(This, position)
 
 		return ACF.GetLegacyStyleClassName(BulletData and BulletData.AmmoType or "")
+	end
+
+	--- Returns the rounds left in an ammo crate by position in its list
+	-- @server
+	-- @return table The rounds left of each kind, top of the list first
+	function ents_methods:acfRoundCounts()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and This.IsACFAmmo) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return {} end
+
+		return This:GetPositionCounts()
+	end
+
+	--- Returns the type of ammo that will leave an ammo crate next
+	-- @server
+	-- @return string The type of ammo
+	function ents_methods:acfNextRoundType()
+		CheckType(self, ents_metatable)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and This.IsACFAmmo) then SF.Throw("Entity is not valid", 2) end
+		if RestrictInfo(This) then return "" end
+
+		return This:GetNextAmmoType()
+	end
+
+	--- Limits an ammo crate to feeding the round at one position in its list
+	-- @param number position The position to feed, top of the list is 1, 0 lets it feed all of them
+	-- @server
+	function ents_methods:acfSetRoundFilter(position)
+		CheckType(self, ents_metatable)
+		CheckLuaType(position, TYPE_NUMBER)
+
+		local This = unwrap(self)
+
+		if not (IsACFEntity(This) and This.IsACFAmmo) then SF.Throw("Entity is not valid", 2) end
+
+		CheckPerms(instance, This, "entities.acf")
+
+		This:SetPositionFilter(position)
 	end
 
 	--- Returns the caliber of an ammo or gun
@@ -2023,50 +2233,56 @@ if SERVER then
 	end
 
 	--- Returns the muzzle velocity of the ammo in a crate or gun
+	-- @param number? position Position in an ammo crate's list to read, top is 1. Omitted or 0 reads the round it feeds next
 	-- @server
 	-- @return number The muzzle velocity
-	function ents_methods:acfMuzzleVel()
+	function ents_methods:acfMuzzleVel(position)
 		CheckType(self, ents_metatable)
+		CheckPosition(position)
 
 		local This = unwrap(self)
 
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return 0 end
 
-		local BulletData = This.BulletData
+		local BulletData = GetBulletData(This, position)
 		local MuzzleVel  = BulletData and BulletData.MuzzleVel
 
 		return MuzzleVel and MuzzleVel * ACF.Scale or 0
 	end
 
 	--- Returns the mass of the projectile in a crate or gun
+	-- @param number? position Position in an ammo crate's list to read, top is 1. Omitted or 0 reads the round it feeds next
 	-- @server
 	-- @return number The projectile mass
-	function ents_methods:acfProjectileMass()
+	function ents_methods:acfProjectileMass(position)
 		CheckType(self, ents_metatable)
+		CheckPosition(position)
 
 		local This = unwrap(self)
 
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return 0 end
 
-		local BulletData = This.BulletData
+		local BulletData = GetBulletData(This, position)
 
 		return BulletData and BulletData.ProjMass or 0
 	end
 
 	--- Returns the drag coef of the ammo in a crate or gun
+	-- @param number? position Position in an ammo crate's list to read, top is 1. Omitted or 0 reads the round it feeds next
 	-- @server
 	-- @return number The drag coef
-	function ents_methods:acfDragCoef()
+	function ents_methods:acfDragCoef(position)
 		CheckType(self, ents_metatable)
+		CheckPosition(position)
 
 		local This = unwrap(self)
 
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return 0 end
 
-		local BulletData = This.BulletData
+		local BulletData = GetBulletData(This, position)
 		local DragCoef   = BulletData and BulletData.DragCoef
 
 		return DragCoef and DragCoef / ACF.DragDiv or 0
@@ -2115,66 +2331,74 @@ if SERVER then
 	end
 
 	--- Returns the number of projectiles in a flechette round
+	-- @param number? position Position in an ammo crate's list to read, top is 1. Omitted or 0 reads the round it feeds next
 	-- @server
 	-- @return number The number of projectiles
-	function ents_methods:acfFLSpikes()
+	function ents_methods:acfFLSpikes(position)
 		CheckType(self, ents_metatable)
+		CheckPosition(position)
 
 		local This = unwrap(self)
 
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return 0 end
 
-		local BulletData = This.BulletData
+		local BulletData = GetBulletData(This, position)
 
 		return BulletData and BulletData.Flechettes or 0
 	end
 
 	--- Returns the mass of a single spike in a FL round in a crate or gun
+	-- @param number? position Position in an ammo crate's list to read, top is 1. Omitted or 0 reads the round it feeds next
 	-- @server
 	-- @return number The mass of a single spike
-	function ents_methods:acfFLSpikeMass()
+	function ents_methods:acfFLSpikeMass(position)
 		CheckType(self, ents_metatable)
+		CheckPosition(position)
 
 		local This = unwrap(self)
 
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return 0 end
 
-		local BulletData = This.BulletData
+		local BulletData = GetBulletData(This, position)
 
 		return BulletData and BulletData.FlechetteMass or 0
 	end
 
 	--- Returns the radius of the spikes in a flechette round in mm
+	-- @param number? position Position in an ammo crate's list to read, top is 1. Omitted or 0 reads the round it feeds next
 	-- @server
 	-- @return number The radius of the spikes
-	function ents_methods:acfFLSpikeRadius()
+	function ents_methods:acfFLSpikeRadius(position)
 		CheckType(self, ents_metatable)
+		CheckPosition(position)
 
 		local This = unwrap(self)
 
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return 0 end
 
-		local BulletData = This.BulletData
+		local BulletData = GetBulletData(This, position)
 		local Radius     = BulletData and BulletData.FlechetteRadius
 
 		return Radius and math.Round(Radius * 10, 2) or 0
 	end
 
 	--- Returns the penetration of an AP, APHE, or HEAT round
+	-- @param number? position Position in an ammo crate's list to read, top is 1. Omitted or 0 reads the round it feeds next
 	-- @server
 	-- @return number The penetration
-	function ents_methods:acfPenetration()
+	function ents_methods:acfPenetration(position)
 		CheckType(self, ents_metatable)
+		CheckPosition(position)
 
 		local This = unwrap(self)
 
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return 0 end
 
-		local BulletData = This.BulletData
+		local BulletData = GetBulletData(This, position)
 		local AmmoType   = BulletData and Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.AmmoType)
 
 		if not AmmoType then return 0 end
@@ -2186,17 +2410,19 @@ if SERVER then
 	end
 
 	--- Returns the blast radius of an HE, APHE, or HEAT round
+	-- @param number? position Position in an ammo crate's list to read, top is 1. Omitted or 0 reads the round it feeds next
 	-- @server
 	-- @return number The blast radius
-	function ents_methods:acfBlastRadius()
+	function ents_methods:acfBlastRadius(position)
 		CheckType(self, ents_metatable)
+		CheckPosition(position)
 
 		local This = unwrap(self)
 
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return 0 end
 
-		local BulletData = This.BulletData
+		local BulletData = GetBulletData(This, position)
 		local AmmoType   = BulletData and Classes.GetSubtypeByName("ACF.Ammunition.BaseAmmo", BulletData.AmmoType)
 
 		if not AmmoType then return 0 end

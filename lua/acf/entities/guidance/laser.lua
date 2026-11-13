@@ -13,6 +13,11 @@ Classes.DefineClass("ACF.Missiles.Guidance.Laser", "ACF.Missiles.Guidance.RadioM
 		State:AddSubKeyValue("Tracking", math.Round(self.ViewCone * 2, 2) .. " deg")
 	end
 
+	-- Shared so the ammo menu can price missile rounds clientside.
+	function CLASS:GetCost()
+		return 5
+	end
+
 	if CLIENT then
 		CLASS.Description = "This guidance package reads a target-position from the launcher and guides the munition towards it."
 	else
@@ -20,9 +25,6 @@ Classes.DefineClass("ACF.Missiles.Guidance.Laser", "ACF.Missiles.Guidance.RadioM
 		local Trace     = ACF.trace
 		local Lasers    = ACF.ActiveLasers
 
-		function CLASS:GetCost()
-			return 3
-		end
 
 		function CLASS.GetDirectionDot(Missile, TargetPos)
 			local Position = Missile.ACF_Position

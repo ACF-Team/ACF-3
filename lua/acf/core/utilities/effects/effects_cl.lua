@@ -20,6 +20,57 @@ Effects.MaterialColors = {
 	[MAT_FLESH]    = Color(114, 50, 50),
 }
 
+-- How much dust each surface throws up, anything missing barely makes any
+Effects.DustAmount = {
+	[MAT_DIRT]     = 1,
+	[MAT_SAND]     = 1,
+	[MAT_GRASS]    = 0.8,
+	[MAT_SNOW]     = 0.9,
+	[MAT_SLOSH]    = 0.9,
+	[MAT_FOLIAGE]  = 0.7,
+	[MAT_CONCRETE] = 0.45,
+	[MAT_TILE]     = 0.35,
+}
+
+do -- Lighting for particle effects
+	-- The light is linear, the world is drawn with overbright and gamma on top, so match that or smoke comes out far darker than the walls around it
+	local function GetBrightness(Light)
+		return math.Clamp((Light * 2) ^ (1 / 2.2), 0.05, 1)
+	end
+
+	--- Returns a tint as a 0-255 vector, darkened by the light at a position.
+	-- Unlit sprites glow in the dark, so particle effects tint themselves with this.
+	-- ComputeLighting picks up dynamic lights such as muzzle flashes and lights smoke for seconds after they're gone, so only static light is used.
+	-- @param Tint The colour in full light.
+	-- @param Pos The position to sample the light at.
+	-- @return The lit colour, ready to be passed as a control point.
+	function Effects.GetLitColor(Tint, Pos)
+		local Light = render.GetLightColor(Pos) + render.GetAmbientLightColor()
+
+		return Vector(
+			Tint.r * GetBrightness(Light.x),
+			Tint.g * GetBrightness(Light.y),
+			Tint.b * GetBrightness(Light.z)
+		)
+	end
+end
+
+do -- Particle system orientation
+	local Up   = Vector(0, 0, 1)
+	local Side = Vector(1, 0, 0)
+
+	--- Returns angles whose up is the given direction, for particle systems that use local Z as their direction.
+	-- @param Dir The direction, doesn't need to be normalized.
+	-- @return The angles to create the particle system with.
+	function Effects.GetSurfaceAngles(Dir)
+		Dir = Dir:GetNormalized()
+
+		local Other = math.abs(Dir.z) < 0.9 and Up or Side
+
+		return Other:Cross(Dir):GetNormalized():AngleEx(Dir)
+	end
+end
+
 do -- Resupply effect
 	local render   = render
 	local Distance = ACF.SupplyDistance
@@ -58,14 +109,14 @@ do -- Resupply effect
 		end
 	end
 
-	local function Add(Entity, RefilledAmmo, RefilledFuel)
+	local function Add(Entity, RefilledAmmo, RefilledFuel, RevivedCrew)
 		if not IsValid(Entity) then return end
 
 		if not next(Supplies) then
 			hook.Add("PostDrawOpaqueRenderables", "ACF_Supply", DrawSpheres)
 		end
 
-		Supplies[Entity] = { Ammo = RefilledAmmo, Fuel = RefilledFuel }
+		Supplies[Entity] = { Ammo = RefilledAmmo, Fuel = RefilledFuel, Crew = RevivedCrew }
 
 		Entity:CallOnRemove("ACF_Supply", Remove)
 	end
@@ -74,8 +125,9 @@ do -- Resupply effect
 		local Entity = net.ReadEntity()
 		local RefilledAmmo = net.ReadBool()
 		local RefilledFuel = net.ReadBool()
+		local RevivedCrew = net.ReadBool()
 
-		Add(Entity, RefilledAmmo, RefilledFuel)
+		Add(Entity, RefilledAmmo, RefilledFuel, RevivedCrew)
 	end)
 
 	net.Receive("ACF_StopSupplyEffect", function()

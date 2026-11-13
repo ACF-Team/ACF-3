@@ -10,7 +10,8 @@ Classes.DefineClass("ACF.Ammunition.HEATFS", "ACF.Ammunition.HEAT", function(CLA
 		["ACF.Guns.Cannon"] = true,
 		["ACF.Guns.Mortar"] = true, -- This was just M before... made it mortar, not sure if intentional but I doubt it
 		["ACF.Guns.Howitzer"] = true,
-		["ACF.Guns.ShortBarrelledCannon"] = true
+		["ACF.Guns.ShortBarrelledCannon"] = true,
+		["ACF.Guns.SemiautomaticCannon"] = true
 	})
 
 	CLASS.MaxStandoffRatio = 0.75
@@ -29,7 +30,20 @@ Classes.DefineClass("ACF.Ammunition.HEATFS", "ACF.Ammunition.HEAT", function(CLA
 		local WarheadLength   = FreeLength * (1 - self.StandoffRatio)
 		local WarheadDiameter = 2 * FreeRadius
 		local MinConeAng      = math.deg(math.atan(FreeRadius / WarheadLength))
-		local LinerAngle      = math.Clamp(self.LinerAngle, MinConeAng, 90) -- Cone angle is angle between cone walls, not between a wall and the center line
+
+		-- Migrates rounds saved with an absolute LinerAngle in degrees. Needs MinConeAng, so it can
+		-- only run here rather than in VerifyData. Runs once, LinerAngle is cleared right after.
+		if not isnumber(self.LinerAngleRatio) then
+			if isnumber(self.LinerAngle) then
+				self.LinerAngleRatio = math.Remap(math.Clamp(self.LinerAngle, MinConeAng, 90), MinConeAng, 90, 0, 1)
+				self.LinerAngle = nil
+			else
+				self.LinerAngleRatio = 1
+			end
+		end
+
+		local LinerAngleRatio = math.Clamp(self.LinerAngleRatio, 0, 1)
+		local LinerAngle      = math.Remap(LinerAngleRatio, 0, 1, MinConeAng, 90) -- Cone angle is angle between cone walls, not between a wall and the center line
 		local LinerMass, ConeVol, ConeLength = self:ConeCalc(LinerAngle, FreeRadius)
 
 		-- Charge length increases jet velocity, but with diminishing returns. All explosive sorrounding the cone has 100% effectiveness,
@@ -61,9 +75,10 @@ Classes.DefineClass("ACF.Ammunition.HEATFS", "ACF.Ammunition.HEAT", function(CLA
 
 		GUIData.MinConeAng = MinConeAng
 
-		Data.ConeAng        = LinerAngle
-		Data.MinConeAng     = MinConeAng
-		Data.FillerMass     = FillerMass
+		Data.ConeAng         = LinerAngle
+		Data.MinConeAng      = MinConeAng
+		Data.LinerAngleRatio = LinerAngleRatio
+		Data.FillerMass      = FillerMass
 		local NonCasingVol  = ACF.RoundShellCapacity(Data.PropMass, Data.ProjArea, Data.Caliber, Data.ProjLength)
 		Data.CasingMass		= (GUIData.ProjVolume - NonCasingVol) * ACF.SteelDensity
 		Data.ProjMass       = Data.FillerMass + Data.CasingMass + LinerMass
@@ -107,17 +122,24 @@ Classes.DefineClass("ACF.Ammunition.HEATFS", "ACF.Ammunition.HEAT", function(CLA
 			Data.JetAvgVel	  	= _JetAvgVel
 		end
 
+		-- Jet's cross-sectional area (cm^2), same role as ProjArea for a kinetic round.
+		Data.JetArea = (Data.JetMass / ACF.CopperDensity) / (Data.BreakupDist * 100)
+
 		for K, V in pairs(self:GetDisplayData(Data)) do
 			GUIData[K] = V
 		end
 	end
 
-	if SERVER then
-		local Conversion	= ACF.PointConversion
+	-- Shared with the client so the spawn menu can price a crate without spawning it.
+	local Conversion = ACF.PointConversion
 
-		function CLASS:GetCost(BulletData)
-			return (BulletData.CasingMass * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.Octol) + (BulletData.LinerMass * Conversion.Copper)
-		end
+	function CLASS:GetCost(BulletData)
+		return (BulletData.CasingMass * Conversion.Steel) + (BulletData.PropMass * Conversion.Propellant) + (BulletData.FillerMass * Conversion.Octol) + (BulletData.LinerMass * Conversion.Copper)
+	end
+
+	if SERVER then
+
+
 
 		function CLASS:Network(Entity, BulletData)
 			BASE.Network(self, Entity, BulletData)
@@ -127,14 +149,10 @@ Classes.DefineClass("ACF.Ammunition.HEATFS", "ACF.Ammunition.HEAT", function(CLA
 	else
 		ACF.RegisterAmmoDecal("ACF.Ammunition.HEATFS", "damage/heat_pen", "damage/heat_rico", function(Caliber) return Caliber * 0.1667 end)
 
-		function CLASS:OnCreateAmmoControls(Base, _, BulletData)
-			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.liner_angle", self.GUIData.MinConeAng, 90, 1, "LinerAngle", function(Value)
-				self.LinerAngle = math.Round(Value, 2)
+		function CLASS:OnCreateAmmoControls(Base)
+			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.liner_angle_ratio", 0, 1, 2, "LinerAngleRatio", function(Value)
+				self.LinerAngleRatio = math.Round(Value, 2)
 				self:UpdateRoundData()
-			end, function(Panel)
-				-- Min cone angle + clamped value depend on the round; re-clamp on any change.
-				Panel:SetMin(self.GUIData.MinConeAng)
-				Panel:SetValue(BulletData.ConeAng)
 			end)
 
 			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.standoff_ratio", 0, 0.75, 2, "StandoffRatio", function(Value)

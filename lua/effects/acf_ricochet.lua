@@ -15,39 +15,19 @@ function EFFECT:Init(Data)
 	local Mass = Data:GetMagnitude() -- Mass of the projectile in kg
 	local Type = Data:GetDamageType()
 
-	local Emitter = ParticleEmitter(Origin)
-
 	TraceData.start = Origin
 	TraceData.endpos = Origin - DirVec * Velocity
 
 	local Trace = TraceLine(TraceData)
-	local Radius = 3
 
 	-- Ricochet sparks
-	if IsValid(Emitter) then
+	local Effect = CreateParticleSystemNoEntity("acf_ricochet", Origin, angle_zero)
+
+	if Effect then
 		local DebrisColor = Colors[Trace.MatType] or Colors.Default
 
-		for _ = 0, math.Rand(12, 24) do
-			local Debris = Emitter:Add("effects/fleck_tile" .. math.random(1, 2), Origin)
-
-			if Debris then
-				-- Limit the z offset to keep the particles from being directed below the hit point
-				local VelOffset = Vector(math.Rand(-1, 1), math.Rand(-1, 1), math.Rand(0, 1))
-
-				Debris:SetVelocity((DirVec + VelOffset) * 150 * Radius)
-				Debris:SetLifeTime(0)
-				Debris:SetDieTime(math.Rand(0.5, 1) * Radius)
-				Debris:SetStartAlpha(255)
-				Debris:SetEndAlpha(0)
-				Debris:SetStartSize(math.Clamp(Radius, 1, 7))
-				Debris:SetEndSize(math.Clamp(Radius, 1, 7))
-				Debris:SetRoll(math.Rand(0, 360))
-				Debris:SetRollDelta(math.Rand(-3, 3))
-				Debris:SetAirResistance(30)
-				Debris:SetGravity(Vector(0, 0, -1200))
-				Debris:SetColor(DebrisColor.r, DebrisColor.g, DebrisColor.b)
-			end
-		end
+		Effect:SetControlPoint(3, Vector(DebrisColor.r, DebrisColor.g, DebrisColor.b))
+		Effect:SetControlPoint(4, DirVec * 450)
 
 		local EffectTable = {
 			Radius = Caliber,

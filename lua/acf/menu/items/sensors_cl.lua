@@ -2,7 +2,7 @@ local ACF     = ACF
 local Classes = ACF.Classes
 local PAGE    = "acf_sensor"
 
-local GroupBases = { "ACF.Sensors.Radar", "ACF.Sensors.Receiver" }
+local GroupBases = { "ACF.Sensors.Radar", "ACF.Sensors.Receiver", "ACF.Sensors.IRST" }
 
 local function GetGroups()
 	local Groups = {}
@@ -41,8 +41,10 @@ local function Build(Menu, Contexts)
 	local SensorPreview = Base:AddModelPreview(nil, true, "Primary")
 
 	-- Which entity context a group spawns into.
+	local EntityContexts = { acf_receiver = Contexts.Receiver, acf_irst = Contexts.IRST }
+
 	local function ContextFor(Group)
-		return Group.Entity == "acf_receiver" and Contexts.Receiver or Contexts.Radar
+		return EntityContexts[Group.Entity] or Contexts.Radar
 	end
 
 	function SensorClass:OnSelect(Index, _, Data)
@@ -75,7 +77,7 @@ local function Build(Menu, Contexts)
 
 		Menu:ClearTemporal(Base)
 		Menu:StartTemporal(Base)
-		if Group.CreateMenu then Group.CreateMenu(Base, Data) end -- informational labels only
+		if Group.CreateMenu then Group.CreateMenu(Data, Base, Ctx) end
 		Menu:EndTemporal(Base)
 	end
 
@@ -90,7 +92,7 @@ ACF.Menu.RegisterPage({
 	Icon     = "transmit",
 	Order    = 401,
 
-	Contexts     = { Radar = "acf_radar", Receiver = "acf_receiver" },
+	Contexts     = { Radar = "acf_radar", Receiver = "acf_receiver", IRST = "acf_irst" },
 	LinkContexts = function(Contexts) Contexts.Active = Contexts.Radar end, -- default committed context
 
 	Actions = {

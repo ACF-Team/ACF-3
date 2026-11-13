@@ -32,6 +32,7 @@ function Notify.Start()
     CurrentNotification.Icon            = "icon16/lightbulb.png"
     CurrentNotification.Sound           = ""
     CurrentNotification.Buttons         = {}
+    CurrentNotification.HelpId          = ""
     CurrentNotification.TargetEntity    = 0
     CurrentNotification.TargetPhysObj   = -1
     if SERVER then
@@ -43,6 +44,7 @@ end
 function Notify.WithTitle(Title, ...) CurrentNotification.Title = {tostring(Title) or "", ...} end
 function Notify.WithDescription(Text, ...) CurrentNotification.Text = {tostring(Text) or "", ...} end
 function Notify.Duration(Duration) CurrentNotification.Duration = Duration or 0 end
+function Notify.WithHelpId(Id) CurrentNotification.HelpId = Id or "" end -- Hint or restriction id whose help the client can show
 function Notify.WithIcon(Icon) CurrentNotification.Icon = Icon or "" end
 function Notify.WithSound(Sound) CurrentNotification.Sound = Sound or "" end
 function Notify.WithErrorSound() CurrentNotification.Sound = "buttons/button10.wav" end
@@ -134,6 +136,7 @@ function Notify.Transmit()
         net.WriteFloat(CurrentNotification.Duration)
         net.WriteString(CurrentNotification.Icon)
         net.WriteString(CurrentNotification.Sound)
+        net.WriteString(CurrentNotification.HelpId)
         net.WriteUInt(CurrentNotification.TargetEntity, MAX_EDICT_BITS)
         net.WriteInt(CurrentNotification.TargetPhysObj, 10)
         net.WriteUInt(#CurrentNotification.Buttons, MAX_BUTTON_BITS)
@@ -213,6 +216,14 @@ do
     end
 
     do
+        local ReadMore = Notify.RegisterAction("ReadMore")
+
+        function ReadMore.DoClickCL(Context, Id)
+            Notify.ToggleHelpWindow(Context, Id)
+        end
+    end
+
+    do
         local OpenWiki = Notify.RegisterAction("OpenWiki")
 
         function OpenWiki.DoClickCL(_, Article)
@@ -238,11 +249,12 @@ do
     --
     -- Disabled warnings
     --
-    function Notify.EntityDisabledToPlayer(Ent, Player, Reason, Ponder, WikiArticle)
+    function Notify.EntityDisabledToPlayer(Ent, Player, Reason, Ponder, WikiArticle, HelpId)
         if not IsValid(Ent) then return end
 
         local Name = (Ent.WireDebugName or Ent:GetClass()) .. " [" .. Ent:EntIndex() .. "]"
         Notify.Start()
+        Notify.WithHelpId(HelpId)
         Notify.WithTitle(string.format("%s has been disabled.", Name))
         Notify.WithSilkIcon("exclamation")
         Notify.WithTargetEntity(Ent)
