@@ -118,14 +118,14 @@ end, "Parented props should not have physical constraints")
 RegisterTest("Optimization", "Physical Prop Visibility", "Optimization/PhysicalVisibility", function(Env)
     local Faults = {}
     for _, v in pairs(Env.Physical) do
-        if v ~= Env.Baseplate and v:GetColor().a ~= 0 and not v:GetNoDraw() then
+        if v ~= Env.Baseplate and not v._IsSpherical and v:GetColor().a ~= 0 and not v:GetNoDraw() then
             table.insert(Faults, {Ent = v, Msg = "Physical prop should be alpha 0 or NoDraw"})
         end
     end
     return #Faults == 0, Faults
 end, function(Env)
     for _, v in pairs(Env.Physical) do
-        if v ~= Env.Baseplate and v:GetColor().a ~= 0 then
+        if v ~= Env.Baseplate and not v._IsSpherical and v:GetColor().a ~= 0 then
             v:SetColor(Color(255, 255, 255, 0))
             v:SetRenderMode(RENDERMODE_TRANSCOLOR)
         end
