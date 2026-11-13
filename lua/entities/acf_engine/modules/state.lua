@@ -323,7 +323,7 @@ function ENT:CalcRPM(SelfTbl)
 	FlyRPM = max(FlyRPM + EngineTorque / IncomingInertia, 0)
 
 	-- Net engine torque distributed to the rest of the gearboxes.
-	local DriveTorque = Clamp(-FeedbackTq, 0, Torque) + CompressionBrakeTorque * BrakeToWheels
+	local DriveTorque = Clamp(Torque - FeedbackTq, 0, Torque) + CompressionBrakeTorque * BrakeToWheels
 
 	-- The resulting torque output would be 0 when there's no gearboxes linked anyways, so we'll just skip the calculations entirely.
 	if GearboxCount > 0 then
