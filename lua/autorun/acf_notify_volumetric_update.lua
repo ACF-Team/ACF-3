@@ -22,6 +22,8 @@ local DESCRIPTION = [=[
 		<ul><li><b>Replaces <a href="https://steamcommunity.com/sharedfiles/filedetails/?id=457478322">Precision Alignment</a></b></li></ul></li>
 	<li><a href="https://steamcommunity.com/sharedfiles/filedetails/?id=2840295308">Primitives</a>
 		<ul><li>Help with building volumetric armor, since they can be scaled.</li></ul></li>
+	<li><a href="https://steamcommunity.com/workshop/filedetails/?id=3404950276">Ponder</a>
+		<ul><li>In game tutorial system addon that ACF has tutorials for. May help explain some things.</li></ul></li>
 </ul>
 <p>That being said, if things do break, please make a <a href="https://github.com/ACF-Team/ACF-3/issues">GitHub issue</a> (ideally,) or if you don't have GitHub, talk to us in the <a href="https://discord.com/invite/jf4cwarPUG">issues-and-suggestions channel of the acf discord</a>.</p>
 <p>Extra links:</p>
