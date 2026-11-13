@@ -4,6 +4,10 @@ local Tests = {}    -- Tests by category name
 local TestList = {} -- Every test in registration order. Both realms register identically, so positions are used on the wire
 local TestByID = {}
 
+-- Functional tests find things that may break the vehicle, optimizational ones find things that add lag
+local Severity = {Functional = 0, Optimizational = 1}
+ACF.AutotestSeverity = Severity
+
 local function RegisterTestCategory(CategoryName)
     if not Tests[CategoryName] then
         table.insert(TestCategories, CategoryName)
@@ -12,7 +16,7 @@ local function RegisterTestCategory(CategoryName)
 end
 
 -- TestID is what gets saved in dupes (e.g. paste suppressions), so it must never change or be reused once released
-local function RegisterTest(CategoryName, TestName, TestID, TestFunc, FixFunc, Advice)
+local function RegisterTest(CategoryName, TestName, TestID, TestSeverity, TestFunc, FixFunc, Advice)
     assert(isstring(TestID) and TestID:match("^[%w/]+$"), "Autotest IDs may only contain letters, numbers and slashes: " .. tostring(TestID))
     assert(not TestByID[TestID], "Duplicate autotest ID: " .. TestID)
 
@@ -21,6 +25,7 @@ local function RegisterTest(CategoryName, TestName, TestID, TestFunc, FixFunc, A
     local testData = {
         Name = TestName,
         ID = TestID,
+        Severity = TestSeverity,
         Index = #TestList + 1,
         Func = TestFunc,
         Advice = Advice or "",
@@ -85,7 +90,7 @@ end
 -- TEST DEFINITIONS
 ---------------------------------------------------------------------------------------------------------------------------
 
-RegisterTest("Optimization", "Physical Entity Constraints", "Optimization/PhysicalConstraints", function(Env)
+RegisterTest("Optimization", "Physical Entity Constraints", "Optimization/PhysicalConstraints", Severity.Optimizational, function(Env)
     local Max = 9
     local Faults = {}
     for _, v in pairs(Env.Physical) do
@@ -100,7 +105,7 @@ RegisterTest("Optimization", "Physical Entity Constraints", "Optimization/Physic
 end, nil, "Try to remove unnecessary constraints in your suspension or between props.")
 
 -- 2. Parenting vs Constraints Check
-RegisterTest("Optimization", "Parented Entity Constraints", "Optimization/ParentedConstraints", function(Env)
+RegisterTest("Optimization", "Parented Entity Constraints", "Optimization/ParentedConstraints", Severity.Optimizational, function(Env)
     local Faults = {}
     for _, v in pairs(Env.Physical) do
         if v ~= Env.Baseplate and IsValid(v:GetParent()) then
@@ -115,7 +120,7 @@ end, function(Env)
 end, "Parented props should not have physical constraints")
 
 -- 3. Physical Prop Visibility
-RegisterTest("Optimization", "Physical Prop Visibility", "Optimization/PhysicalVisibility", function(Env)
+RegisterTest("Optimization", "Physical Prop Visibility", "Optimization/PhysicalVisibility", Severity.Optimizational, function(Env)
     local Faults = {}
     for _, v in pairs(Env.Physical) do
         if v ~= Env.Baseplate and not v._IsSpherical and v:GetColor().a ~= 0 and not v:GetNoDraw() then
@@ -133,7 +138,7 @@ end, function(Env)
 end, "Physical props should be invisible")
 
 -- 4. Parented Prop Visibility (General)
-RegisterTest("Optimization", "Parented Prop Visibility", "Optimization/ParentedVisibility", function(Env)
+RegisterTest("Optimization", "Parented Prop Visibility", "Optimization/ParentedVisibility", Severity.Optimizational, function(Env)
     local Faults = {}
     for v in pairs(Env.Contraption.ents) do
         if IsValid(v:GetParent()) and ParentedVisibilityWhitelist[v:GetClass()] and not IsModelVisibilityWhitelisted(v:GetModel()) and v:GetColor().a ~= 0 and not v:GetNoDraw() then
@@ -150,7 +155,7 @@ end, function(Env)
     end
 end, "Parented armor props should be invisible")
 
-RegisterTest("Optimization", "Total Entity Count", "Optimization/EntityCount", function(Env)
+RegisterTest("Optimization", "Total Entity Count", "Optimization/EntityCount", Severity.Optimizational, function(Env)
     local MaxEntities = 150
     local TotalEnts = Env.Contraption.count
     if TotalEnts > MaxEntities then
@@ -159,7 +164,7 @@ RegisterTest("Optimization", "Total Entity Count", "Optimization/EntityCount", f
     return true, "Entity count OK"
 end, nil, "Use prop to mesh to merge detail props")
 
-RegisterTest("Optimization", "Total Physical Entity Count", "Optimization/PhysicalCount", function(Env)
+RegisterTest("Optimization", "Total Physical Entity Count", "Optimization/PhysicalCount", Severity.Optimizational, function(Env)
     local MaxPhysicals = 11
     local TotalPhysical = table.Count(Env.Physical)
     if TotalPhysical > MaxPhysicals then
@@ -168,7 +173,7 @@ RegisterTest("Optimization", "Total Physical Entity Count", "Optimization/Physic
     return true, "Physical count OK"
 end, nil, "Only your baseplate, wheels and possibly steer plate need to be physical")
 
-RegisterTest("Optimization", "Total Constraints", "Optimization/ConstraintCount", function(Env)
+RegisterTest("Optimization", "Total Constraints", "Optimization/ConstraintCount", Severity.Optimizational, function(Env)
     -- Check max total constraint count
     local MaxConstraintsTotal = 50
     local TotalConstraints = table.Count(Env.UniqueConstraints or {})
@@ -178,14 +183,14 @@ RegisterTest("Optimization", "Total Constraints", "Optimization/ConstraintCount"
     return true, "Constraint count OK"
 end, nil, "Try to remove unnecessary constraints in your suspension or between props")
 
-RegisterTest("Optimization", "P2M Controller", "Optimization/P2MController", function(Env)
+RegisterTest("Optimization", "P2M Controller", "Optimization/P2MController", Severity.Optimizational, function(Env)
     if table.IsEmpty(Env.Contraption.entsbyclass.sent_prop2mesh or {}) then
         return false, {{Ent = Env.Baseplate, Msg = "Missing p2m controller for visual optimization"}}
     end
     return true, "P2M found"
 end, nil, "Use prop to mesh to merge detail props")
 
-RegisterTest("Crew", "Basic Crew", "Crew/Required", function(Env)
+RegisterTest("Crew", "Basic Crew", "Crew/Required", Severity.Functional, function(Env)
     local Necessary = {}
     if Env.Contraption:ACF_IsGroundVehicle() then
         if not table.IsEmpty(Env.Contraption.entsbyclass.acf_turret or {}) then Necessary.Gunner = true end
@@ -204,7 +209,7 @@ RegisterTest("Crew", "Basic Crew", "Crew/Required", function(Env)
     return #Faults == 0, Faults
 end, nil, "Ensure all necessary crew members are present")
 
-RegisterTest("Crew", "Crew Efficiency", "Crew/Efficiency", function(Env)
+RegisterTest("Crew", "Crew Efficiency", "Crew/Efficiency", Severity.Functional, function(Env)
     local MinEff = 0.25
     local Faults = {}
     for _, v in ipairs(Env.Contraption.Crews or {}) do
@@ -215,7 +220,7 @@ RegisterTest("Crew", "Crew Efficiency", "Crew/Efficiency", function(Env)
     return #Faults == 0, Faults
 end, nil, "Ensure crew members have adequate efficiency")
 
-RegisterTest("Links", "Guns, Racks and Ammo", "Links/Ammo", function(Env)
+RegisterTest("Links", "Guns, Racks and Ammo", "Links/Ammo", Severity.Functional, function(Env)
     local Faults = {}
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_gun, {"Crates"})) do table.insert(Faults, {Ent = e, Msg = "Gun needs link to ammo crate"}) end
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_rack, {"Crates"})) do table.insert(Faults, {Ent = e, Msg = "Rack needs link to ammo crate"}) end
@@ -242,7 +247,7 @@ end, function(Env)
     end
 end, "Ensure all guns and racks are linked to ammo crates, and all ammo crates are linked to guns or racks")
 
-RegisterTest("Links", "Guidance", "Links/Guidance", function(Env)
+RegisterTest("Links", "Guidance", "Links/Guidance", Severity.Functional, function(Env)
     local Faults = {}
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_rack, {"Computer"})) do
         for crate in pairs(e.Crates or {}) do
@@ -255,7 +260,7 @@ end, function(Env)
     LinkAll(Env, "acf_computer", "acf_rack")
 end, "Ensure all ground loaders are linked to racks and ammo crates")
 
-RegisterTest("Links", "Engines, Fuel and Gearboxes", "Links/Drivetrain", function(Env)
+RegisterTest("Links", "Engines, Fuel and Gearboxes", "Links/Drivetrain", Severity.Functional, function(Env)
     local Faults = {}
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_fueltank, {"Engines"})) do table.insert(Faults, {Ent = e, Msg = "Fuel Tank shares no parent with a compatible engine"}) end
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_engine, {"FuelTanks"})) do table.insert(Faults, {Ent = e, Msg = "Engine shares no parent with a compatible fuel tank"}) end
@@ -265,7 +270,7 @@ RegisterTest("Links", "Engines, Fuel and Gearboxes", "Links/Drivetrain", functio
     return #Faults == 0, Faults
 end, nil, "Ensure engines share a parent with compatible fuel tanks, engines are linked to gearboxes, and all gearboxes have proper input and output links")
 
-RegisterTest("Baseplate", "Orientation", "Baseplate/Orientation", function(Env)
+RegisterTest("Baseplate", "Orientation", "Baseplate/Orientation", Severity.Functional, function(Env)
     local Deviation = math.deg(math.acos(Env.Baseplate:GetForward():Dot(Vector(0, 1, 0))))
     if Deviation > 0.05 then
         return false, {{Ent = Env.Baseplate, Msg = "Baseplate is misaligned with north by " .. math.Round(Deviation, 2) .. " degrees"}}
@@ -275,7 +280,7 @@ end, function(Env)
     Env.Baseplate:SetAngles(Angle(0, 90, 0))
 end, "The smile paint / sprays face north")
 
-RegisterTest("AIO", "Drivetrain Discovery", "AIO/DrivetrainDiscovery", function(Env)
+RegisterTest("AIO", "Drivetrain Discovery", "AIO/DrivetrainDiscovery", Severity.Functional, function(Env)
     local AIO = next(Env.Contraption.entsbyclass.acf_controller or {})
     if not AIO then return true, "No AIO controller found" end
 
@@ -362,13 +367,13 @@ if SERVER then
         return Test.Func(Env)
     end
 
-    -- Runs every test on a baseplate, except those whose IDs are in Skip.
+    -- Runs every test on a baseplate (only of the given severity if set), except those whose IDs are in Skip.
     -- Returns a list of {Test, OK, Results} and the total number of faults.
-    function ACF.RunAllBaseplateAutotests(Baseplate, Skip)
+    function ACF.RunAllBaseplateAutotests(Baseplate, Skip, OnlySeverity)
         local AllResults, FaultCount = {}, 0
 
         for _, Test in ipairs(TestList) do
-            if not (Skip and Skip[Test.ID]) then
+            if not (Skip and Skip[Test.ID]) and (not OnlySeverity or Test.Severity == OnlySeverity) then
                 -- One broken test shouldn't stop the rest from running
                 local Success, OK, Results = xpcall(ACF.RunBaseplateAutotest, function(Err)
                     ErrorNoHaltWithStack(Err)
@@ -524,7 +529,7 @@ if SERVER then
             for _, Baseplate in ipairs(Baseplates) do
                 if IsValid(Baseplate) then
                     local Suppressed = ACF.GetBaseplateSuppressedTests(Baseplate)
-                    local AllResults, FaultCount = ACF.RunAllBaseplateAutotests(Baseplate, Suppressed)
+                    local AllResults, FaultCount = ACF.RunAllBaseplateAutotests(Baseplate, Suppressed, Severity.Functional)
 
                     if FaultCount > 0 then
                         net.Start("ACF_Baseplate_AutotestReport")
