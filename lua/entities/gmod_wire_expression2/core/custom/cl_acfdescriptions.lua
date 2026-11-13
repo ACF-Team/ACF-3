@@ -59,6 +59,7 @@ E2Desc["acfThrottle(e:)"] = "Gets the throttle input (0-100) of an ACF entity."
 E2Desc["acfThrottle(e:n)"] = "Sets the throttle input (0-100) of an ACF entity."
 
 E2Desc["acfGear(e:)"] = "Returns the current gear of an ACF entity."
+E2Desc["acfIsRealisticRatio(e:)"] = "Returns 1 if gearbox is using realistic ratios or 0 if using legacy ratios."
 E2Desc["acfNumGears(e:)"] = "Returns the number of gears of an ACF entity."
 E2Desc["acfFinalRatio(e:)"] = "Returns the final ratio of an ACF entity."
 E2Desc["acfTorqueRating(e:)"] = "Returns the maximum torque (in N/m) an ACF entity can handle."
