@@ -263,9 +263,7 @@ RegisterTest("Links", "Engines, Fuel and Gearboxes", "Links/Drivetrain", functio
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_gearbox, {"GearboxIn", "Engines"})) do table.insert(Faults, {Ent = e, Msg = "Gearbox missing Input link"}) end
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_gearbox, {"GearboxOut", "Wheels", "Effectors"})) do table.insert(Faults, {Ent = e, Msg = "Gearbox missing Output link"}) end
     return #Faults == 0, Faults
-end, function(Env)
-    LinkAll(Env, "acf_engine", "acf_gearbox") -- Fuel can't be fixed by linking; tanks must share the engine's parent
-end, "Ensure engines share a parent with compatible fuel tanks, engines are linked to gearboxes, and all gearboxes have proper input and output links")
+end, nil, "Ensure engines share a parent with compatible fuel tanks, engines are linked to gearboxes, and all gearboxes have proper input and output links")
 
 RegisterTest("Baseplate", "Orientation", "Baseplate/Orientation", function(Env)
     local Deviation = math.deg(math.acos(Env.Baseplate:GetForward():Dot(Vector(0, 1, 0))))
