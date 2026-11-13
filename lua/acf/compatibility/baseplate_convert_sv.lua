@@ -84,13 +84,6 @@ function ACF.GetConversionEntities(Player, Target)
         EntsByIndex[Target:EntIndex()] = Target
     end
 
-    for _, Ent in pairs(EntsByIndex) do
-        -- Turret rotators are ownerless
-        if not Ent.DoNotDuplicate and Ent:CPPIGetOwner() ~= Player then
-            return nil, "The contraption contains entities you do not own (" .. tostring(Ent) .. ")"
-        end
-    end
-
     return EntsByIndex
 end
 
