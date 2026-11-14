@@ -282,7 +282,9 @@ do -- Random timer crew stuff
 		TraceConfig.start = ReferenceBreechPos
 		TraceConfig.endpos = CurrentBreechPos
 		TraceConfig.filter = function(x) return not (x == self or x == ENTITY.GetParent(self) or x.noradius or ENTITY.GetOwner(x) ~= ENTITY.GetOwner(self) or x:IsPlayer() or ACF.GlobalFilter[ENTITY.GetClass(x)] or SelfTbl.RotationFilter[x] or ACF.IsPrimitivePending(x)) end
+		TraceConfig.ignoreworld = true -- The config is shared with crew traces that must hit the world
 		TraceLine(TraceConfig)
+		TraceConfig.ignoreworld = false
 
 		if Debug.SetDeveloperLevel(2) then
 			Debug.SetTarget(self:CPPIGetOwner())
