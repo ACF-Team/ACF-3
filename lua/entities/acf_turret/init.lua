@@ -130,6 +130,13 @@ do -- Random timer crew stuff
 		local SelfTbl = ENTITY.GetTable(self)
 		SelfTbl.CrewsByType = SelfTbl.CrewsByType or {}
 
+		if not ACF.CrewRequired then -- No crew needed, so skip control propagation
+			SelfTbl.IsControlled = true
+			self:SetRequirement("turret_aim_control", true)
+
+			return true
+		end
+
 		local Controlled = IsGrantedControl(self, false)
 		local Cascade, CascadeFrom = false, self
 
@@ -150,7 +157,7 @@ do -- Random timer crew stuff
 		SelfTbl.IsControlled = Controlled
 
 		-- Only weaponized turrets need someone aiming them
-		local Met = Controlled or not ACF.CrewRequired or not SelfTbl.IsWeaponized or SelfTbl.IsPassthrough
+		local Met = Controlled or not SelfTbl.IsWeaponized or SelfTbl.IsPassthrough
 
 		self:SetRequirement("turret_aim_control", Met, not Met and { Crews = GetIdleAimers(CascadeFrom, Cascade) })
 
