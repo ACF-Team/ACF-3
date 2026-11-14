@@ -18,24 +18,28 @@ local IsPhysObjValid = ACF.Optimizations.IsPhysObjValid
 
 local BrakeDelta     = Vector()
 
--- Get the chassis' angular velocity 
-local function GetChassisAngularVelocity(Entity)
+-- Get the ancestor/base angular velocity in world space (deg/s).
+local function GetBaseAngularVelocity(Entity)
 	local Ancestor = ENTITY.GetAncestor(Entity)
 	local IsValid = IsEntityValid(Ancestor)
 
 	-- Fast path if its a reliable entity, like a baseplate.
-	if IsValid and ENTITY.GetClass(Ancestor) == "acf_baseplate" then
-		local Phys = ENTITY.GetPhysicsObject(Ancestor)
-		return PHYSOBJ.GetAngleVelocity(Phys)
+	if IsValid then
+		local Provider = Ancestor.GetAngularVelocity
+
+		if Provider then
+			local AngVel = Provider(Ancestor)
+			if AngVel then return AngVel end
+		end
 	end
 
 	-- No baseplate detected, lets keep checking if the parent is still a valid entity.
 	local Phys = IsValid and ENTITY.GetPhysicsObject(Ancestor)
 
-	-- Returns the chassis' angular velocity in world space (deg/s).
+	-- Returns the ancestor/base angular velocity
 	if IsPhysObjValid(Phys) then return PHYSOBJ.GetAngleVelocity(Phys) end
 
-	-- In case our gearbox is not parented, we return the gearbox's angular velocity instead.
+	-- In case our gearbox is not parented, we return the gearbox's own angular velocity instead.
 	Phys = ENTITY.GetPhysicsObject(Entity)
 	if IsPhysObjValid(Phys) then return PHYSOBJ.GetAngleVelocity(Phys) end
 
@@ -66,7 +70,7 @@ local function CalcWheel(Entity, Link, Wheel, ChassisAngVel)
 	return RelAngVel / GearRatio / -6
 end
 
-local function BrakeWheel(Link, Wheel, BrakeTq, MaxBrakeTq, DeltaTime, ChassisAV)
+local function BrakeWheel(Link, Wheel, BrakeTq, MaxBrakeTq, DeltaTime, BaseAV)
 	if BrakeTq <= 0 then Link.IsBraking = false ; return end
 
 	local WheelPhys = ENTITY.GetPhysicsObject(Wheel)
@@ -78,7 +82,7 @@ local function BrakeWheel(Link, Wheel, BrakeTq, MaxBrakeTq, DeltaTime, ChassisAV
 	-- Get the angular velocity of the wheel relative to the chassis or ancestor
 	local WheelAngVel  = PHYSOBJ.GetAngleVelocity(WheelPhys)
 	local WheelVelDiff = PHYSOBJ.LocalToWorldVector(WheelPhys, WheelAngVel)
-	VECTOR.Sub(WheelVelDiff, ChassisAV)
+	VECTOR.Sub(WheelVelDiff, BaseAV)
 
 	-- Get the angular velocity relative to the drive axis
 	local AxisW    = PHYSOBJ.LocalToWorldVector(WheelPhys, Link.Axis)
@@ -227,15 +231,13 @@ do -- Movement -----------------------------------------
 			end
 		end
 
-		local LClutch = SelfTbl.LClutch
-		local RClutch = SelfTbl.RClutch
-		-- TODO: Optimize this func!
-		local ChassisAV = GetChassisAngularVelocity(self)
+		local LClutch   = SelfTbl.LClutch
+		local RClutch   = SelfTbl.RClutch
+		local BaseAV    = GetBaseAngularVelocity(self)
 		local GearRatio = SelfTbl.GearRatio
 
 		if GearRatio == 0 then
 			SelfTbl.TotalRatio        = 0
-			SelfTbl.DownstreamInertia = 0
 			SelfTbl.OutputInertia     = 0
 			SelfTbl.TorqueInput       = 0
 			SelfTbl.TorqueOutput      = 0
@@ -280,15 +282,15 @@ do -- Movement -----------------------------------------
 				Gearbox:Calc(ScaledRPM, ScaledInertia) -- measurement pull, just to update gearboxes downstream
 			end
 
-			MeasuredRPMSum    = MeasuredRPMSum + (EntTbl.MeasuredRPM or ScaledRPM) / GearRatio
-			MeasuredCount     = MeasuredCount + 1
-			OutputInertia     = OutputInertia + (EntTbl.OutputInertia or 0)
-			TotalRatioSum     = TotalRatioSum + (1 / abs(GearRatio)) / (EntTbl.TotalRatio or 1)
+			MeasuredRPMSum = MeasuredRPMSum + (EntTbl.MeasuredRPM or ScaledRPM) / GearRatio
+			MeasuredCount  = MeasuredCount + 1
+			OutputInertia  = OutputInertia + (EntTbl.OutputInertia or 0)
+			TotalRatioSum  = TotalRatioSum + (1 / abs(GearRatio)) / (EntTbl.TotalRatio or 1)
 		end
 
 		-- Wheels
 		for Wheel, Link in pairs(SelfTbl.Wheels) do
-			local WheelRPM = CalcWheel(self, Link, Wheel, ChassisAV)
+			local WheelRPM = CalcWheel(self, Link, Wheel, BaseAV)
 			local WheelInertia = GetRotationalInertia(Link, Wheel)
 			Link.CachedInertia = WheelInertia
 
@@ -317,11 +319,11 @@ do -- Movement -----------------------------------------
 		end
 
 		SelfTbl.OutputInertia = OutputInertia -- Every linked entity receive this inertia, as torque shares are fractions of this.
-		SelfTbl.TotalRatio = max(TotalRatioSum, 1) -- Must be higher than 1, otherwise it just dips way too low and it just doesn't work.
-		SelfTbl.MeasuredRPM = MeasuredCount > 0 and (MeasuredRPMSum / MeasuredCount) or InputRPM
-		SelfTbl.LeftRPM  = LeftCount  > 0 and (LeftRPMSum  / LeftCount)  or SelfTbl.MeasuredRPM
-		SelfTbl.RightRPM = RightCount > 0 and (RightRPMSum / RightCount) or SelfTbl.MeasuredRPM
-		SelfTbl.Load = (LClutch + RClutch) * 0.5
+		SelfTbl.TotalRatio    = max(TotalRatioSum, 1) -- Must be higher than 1, otherwise it just dips way too low and it just doesn't work.
+		SelfTbl.MeasuredRPM   = MeasuredCount > 0 and (MeasuredRPMSum / MeasuredCount) or InputRPM
+		SelfTbl.LeftRPM       = LeftCount  > 0 and (LeftRPMSum  / LeftCount)  or SelfTbl.MeasuredRPM
+		SelfTbl.RightRPM      = RightCount > 0 and (RightRPMSum / RightCount) or SelfTbl.MeasuredRPM
+		SelfTbl.Load          = (LClutch + RClutch) * 0.5
 
 		self:UpdateOverlay()
 
@@ -421,7 +423,7 @@ do -- Movement -----------------------------------------
 			-- Sampled by the clock to tell when the torque rating keeps holding the vehicle back
 			-- TODO: Check if this works correctly once again!
 			SelfTbl.LoadTicks = (SelfTbl.LoadTicks or 0) + 1
-			if ReactTq > SelfTbl.MaxTorque then SelfTbl.CappedTicks = (SelfTbl.CappedTicks or 0) + 1 end
+			if Torque > SelfTbl.MaxTorque then SelfTbl.CappedTicks = (SelfTbl.CappedTicks or 0) + 1 end
 
 			SelfTbl.TorqueOutput = ReactTq
 			SelfTbl.TorqueInput = ClampedTorque
@@ -509,7 +511,7 @@ do -- Braking ------------------------------------------
 		local LBrake     = SelfTbl.LBrake
 		local RBrake     = SelfTbl.RBrake
 		local MaxBrakeTq = 500000 -- SelfTbl.MaxTorque * 2 -- Twice as strong as the torque rating of the gearbox
-		local ChassisAV  = GetChassisAngularVelocity(self)
+		local BaseAV     = GetBaseAngularVelocity(self)
 		SelfTbl.Braking  = false
 
 		-- Calculate brake power for every wheel linked to our gearbox
@@ -518,8 +520,8 @@ do -- Braking ------------------------------------------
 				local Brake   = Link.Side == 0 and LBrake or RBrake
 				local BrakeTq = Brake * Loss -- Requested brake torque
 
-				CalcWheel(self, Link, Wheel, ChassisAV)  -- Updating the link velocity
-				BrakeWheel(Link, Wheel, BrakeTq, MaxBrakeTq, DeltaTime, ChassisAV)
+				CalcWheel(self, Link, Wheel, BaseAV)  -- Updating the link velocity
+				BrakeWheel(Link, Wheel, BrakeTq, MaxBrakeTq, DeltaTime, BaseAV)
 
 				if Link.IsBraking then SelfTbl.Braking = true end
 			end

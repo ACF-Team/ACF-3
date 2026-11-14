@@ -203,6 +203,7 @@ do -- ACF global vars
 	ACF.MobilityLinkDistance = 650 -- Maximum distance, in inches, at which mobility-related components will remain linked with each other
 	ACF.LinkDistance         = 650 -- Maximum distance, in inches, at which components will remain linked with each other
 	ACF.KillIconColor        = Color(200, 200, 48)
+	ACF.BaseAngVelSampleRate = 0.1 -- Time between angular velocity samples, in seconds.
 
 	ACF.ColorArray = {
 		Color(255, 0, 0),
