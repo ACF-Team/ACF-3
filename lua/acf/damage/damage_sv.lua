@@ -43,11 +43,29 @@ local function SendQueue()
 	net.Broadcast()
 end
 
+local MinFinEfficiency = 0.1 -- Fin3's own lower efficiency clamp
+
+-- Scales a Fin3 wing's efficiency by its remaining convex health, since Fin3 has no per convex model.
+local function UpdateFin(Entity)
+	local Fin = Fin3 and Fin3.fins[Entity]
+
+	if not Fin then return end
+
+	local Health, MaxHealth = ACF.GetEntityHealth(Entity)
+
+	if MaxHealth <= 0 then return end
+
+	Fin.ACF_BaseEfficiency = Fin.ACF_BaseEfficiency or Fin.efficiency
+	Fin.efficiency         = math.max(Fin.ACF_BaseEfficiency * Health / MaxHealth, MinFinEfficiency)
+end
+
 --- Helper function used to efficiently network visual damage updates on individual convexes.
 --- Updates are quantized to 10% health steps to reduce network traffic (you can't really tell the difference with smaller steps anyway)
 --- @param Entity entity The entity owning the convex.
 --- @param ConvexID number The convex's index into the entity's volumetric mesh.
 function Damage.NetworkConvex(Entity, ConvexID)
+	UpdateFin(Entity)
+
 	local MeshData = Entity.ACF_Volumetric_Mesh
 	local Convex    = MeshData and MeshData.Convexes[ConvexID]
 
