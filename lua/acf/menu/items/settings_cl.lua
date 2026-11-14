@@ -199,8 +199,8 @@ do -- Serverside settings
 		Base:AddSlider("#acf.menu.settings.general.fuel_factor"):              LinkToServerData("FuelFactor")
 		Base:AddSlider("#acf.menu.settings.general.max_driveshaft_angle"):     LinkToServerData("MaxDriveshaftAngle")
 
-		Base:AddSlider("#acf.menu.settings.general.min_crew_efficiency"):      LinkToServerData("CrewFallbackCoef")
-		Base:AddHelp("#acf.menu.settings.general.min_crew_efficiency_desc")
+		Base:AddCheckBox("#acf.menu.settings.general.crew_required"):         LinkToServerData("CrewRequired")
+		Base:AddHelp("#acf.menu.settings.general.crew_required_desc")
 
 		Base:AddSlider("#acf.menu.settings.general.torque_multiplier"):        LinkToServerData("TorqueMult")
 			Base:AddHelp("#acf.menu.settings.general.torque_multiplier_desc")

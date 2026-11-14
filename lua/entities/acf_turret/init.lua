@@ -150,7 +150,7 @@ do -- Random timer crew stuff
 		SelfTbl.IsControlled = Controlled
 
 		-- Only weaponized turrets need someone aiming them
-		local Met = Controlled or not SelfTbl.IsWeaponized or SelfTbl.IsPassthrough
+		local Met = Controlled or not ACF.CrewRequired or not SelfTbl.IsWeaponized or SelfTbl.IsPassthrough
 
 		self:SetRequirement("turret_aim_control", Met, not Met and { Crews = GetIdleAimers(CascadeFrom, Cascade) })
 
