@@ -202,6 +202,9 @@ do -- Serverside settings
 		Base:AddCheckBox("#acf.menu.settings.general.crew_required"):         LinkToServerData("CrewRequired")
 		Base:AddHelp("#acf.menu.settings.general.crew_required_desc")
 
+		Base:AddCheckBox("#acf.menu.settings.general.crew_morale_deaths"):     LinkToServerData("CrewMoraleDeathEnabled")
+		Base:AddHelp("#acf.menu.settings.general.crew_morale_deaths_desc")
+
 		Base:AddSlider("#acf.menu.settings.general.torque_multiplier"):        LinkToServerData("TorqueMult")
 			Base:AddHelp("#acf.menu.settings.general.torque_multiplier_desc")
 
