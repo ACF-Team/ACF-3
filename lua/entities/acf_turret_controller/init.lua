@@ -104,7 +104,7 @@ do -- Updating
 	-- Lightweight controllers link to a turret and remote ones to a crew member, so only the hint for this kind can apply
 	function ENT:UpdateLinkHints()
 		ACF.Hints.Set(self, "turret_controller_no_turret", not self.IsRemote and not IsValid(self.Turret))
-		ACF.Hints.Set(self, "turret_controller_no_crew", self.IsRemote and not IsValid(self.Crew))
+		ACF.Hints.Set(self, "turret_controller_no_crew", self.IsRemote and ACF.CrewRequired and not IsValid(self.Crew))
 	end
 end
 
