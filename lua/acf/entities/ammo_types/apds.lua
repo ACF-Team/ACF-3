@@ -14,7 +14,7 @@ Classes.DefineClass("ACF.Ammunition.APDS", "ACF.Ammunition.AP", function(CLASS, 
 		["ACF.Guns.LightAutocannon"] = true,
 	})
 
-	CLASS.CorePenFactor = 1.3 -- Below APCR's, as max propellant drives APDS past real speeds where the carbide fit overshoots
+	CLASS.CorePenFactor = 1 -- Penetrates like steel, which real 25 to 35mm APDS supports better than the carbide factor
 
 	-- Core diameter from 0 (thinnest) to 1 (thickest)
 	MENU_FIELD("Number", "CoreScale", {Default = 0.5})
