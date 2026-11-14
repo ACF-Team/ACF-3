@@ -190,6 +190,39 @@ RegisterTest("Optimization", "P2M Controller", "Optimization/P2MController", Sev
     return true, "P2M found"
 end, nil, "Use prop to mesh to merge detail props")
 
+local function IsArmorSet(Material)
+    return Material ~= nil and Material ~= "Default"
+end
+
+local function IsConvexArmored(Ent, ConvexID, Convex)
+    local Mods   = Ent.EntityMods
+    local Stored = Mods and Mods.ACF_ArmorMesh
+
+    if IsArmorSet(Ent.ACF_Volumetric_Material_Override) then return true end
+    if Ent.ACF_Volumetric_Materials and IsArmorSet(Ent.ACF_Volumetric_Materials[ConvexID]) then return true end
+    if Stored and Stored.Materials and IsArmorSet(Stored.Materials[ConvexID]) then return true end
+    if Mods and Mods.ACF_Armor then return true end
+
+    return IsArmorSet(Convex.Material)
+end
+
+RegisterTest("Armor", "Unarmored Convexes", "Armor/Unarmored", Severity.Functional, function(Env)
+    local Faults = {}
+    for Ent in pairs(Env.Contraption.ents) do
+        local Mesh = Ent.ACF_Volumetric_Mesh
+
+        if Mesh and not Ent.ACF_PreventArmoring then
+            for ConvexID, Convex in ipairs(Mesh.Convexes) do
+                if not IsConvexArmored(Ent, ConvexID, Convex) then
+                    table.insert(Faults, {Ent = Ent, Msg = "Convex " .. ConvexID .. " has no armor material set"})
+                    break
+                end
+            end
+        end
+    end
+    return #Faults == 0, Faults
+end, nil, "Set an armor material on the entity with the armor tool")
+
 RegisterTest("Crew", "Basic Crew", "Crew/Required", Severity.Functional, function(Env)
     local Necessary = {}
     if Env.Contraption:ACF_IsGroundVehicle() then
