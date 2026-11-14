@@ -813,7 +813,7 @@ do
 		end
 
 		-- Destroy the vehicle once all crew are dead, or after enough are dead at once to discourage spamming disposable crew.
-		if Alive <= 0 or Dead >= ACF.CrewFatalDeathCount then
+		if Alive <= 0 or (ACF.CrewMoraleDeathEnabled and Dead >= ACF.CrewMoraleDeathCount) then
 			local Baseplate = Contraption.ACF_Baseplate
 			local Position = IsValid(Baseplate) and Baseplate:GetPos() or self:GetPos()
 
