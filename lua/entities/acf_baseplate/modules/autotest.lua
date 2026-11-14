@@ -211,7 +211,7 @@ RegisterTest("Armor", "Unarmored Convexes", "Armor/Unarmored", Severity.Function
     for Ent in pairs(Env.Contraption.ents) do
         local Mesh = Ent.ACF_Volumetric_Mesh
 
-        if Mesh and not Ent.ACF_PreventArmoring then
+        if Mesh and not Ent.IsACFEntity and not Ent.ACF_PreventArmoring then
             for ConvexID, Convex in ipairs(Mesh.Convexes) do
                 if not IsConvexArmored(Ent, ConvexID, Convex) then
                     table.insert(Faults, {Ent = Ent, Msg = "Convex " .. ConvexID .. " has no armor material set"})
