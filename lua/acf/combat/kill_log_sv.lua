@@ -208,6 +208,24 @@ local function GetLogStats()
     return Count, Bytes + Count * BytesPerRow, GetDatabaseSize()
 end
 
+local ChunkSize = 60000
+
+-- A net message caps at 64KB and a big session's rows are well past that
+local function SendRows(Name, Player, Rows)
+    local Data = util.Compress(util.TableToJSON(Rows))
+    local Length = #Data
+
+    for Start = 1, Length, ChunkSize do
+        local Chunk = string.sub(Data, Start, Start + ChunkSize - 1)
+
+        net.Start(Name)
+            net.WriteBool(Start + ChunkSize > Length) -- last chunk
+            net.WriteUInt(#Chunk, 16)
+            net.WriteData(Chunk, #Chunk)
+        net.Send(Player)
+    end
+end
+
 local function WriteSize(Value)
     net.WriteUInt(math.floor(math.Clamp(Value, 0, 4294967295)), 32)
 end
@@ -288,7 +306,5 @@ net.Receive("ACF_KillLog_Query", function(_, Player)
 
     local Rows = RunSelect("SELECT * FROM acf_kill_log WHERE " .. table.concat(Conditions, " AND ") .. " ORDER BY Time DESC LIMIT " .. MaxResultRows)
 
-    net.Start("ACF_KillLog_Query")
-        net.WriteString(util.TableToJSON(Rows))
-    net.Send(Player)
+    SendRows("ACF_KillLog_Query", Player, Rows)
 end)
