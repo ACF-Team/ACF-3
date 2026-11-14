@@ -126,7 +126,7 @@ do -- ACF global vars
 	ACF.DefineSetting("NameAndShame",         true,   "Console messages for failed legality checks have been %s.", ACF.BooleanDataCallback(), false)
 	ACF.DefineSetting("CostLimitGround",      500,    "Ground vehicle cost limit has been set to %s.", ACF.FloatDataCallback(0, 5000, 0), 0)
 	ACF.DefineSetting("CostLimitAir",         200,    "Aircraft cost limit has been set to %s.", ACF.FloatDataCallback(0, 2000, 0), 0)
-	ACF.DefineSetting("MaxArmorVolumeAir",    32000,  "Aircraft max armor volume has been set to %s.", ACF.FloatDataCallback(0, 100000, 0), 0)
+	ACF.DefineSetting("MaxArmorVolumeAir",    44000,  "Aircraft max armor volume has been set to %s.", ACF.FloatDataCallback(0, 100000, 0), 0)
 	ACF.DefineSetting("VehicleLegalChecks",   true,   "Legality checks for vehicles has been %s.", ACF.BooleanDataCallback(), false)
 	ACF.DefineSetting("LegalityDetours",      true,   "Legality detours have been %s.", ACF.BooleanDataCallback(), false)
 
@@ -392,7 +392,9 @@ do -- ACF global vars
 
 	-- Crew
 	-- Total efficiency = clamp(CommanderEff * CommanderCoef + SelfEff * SelfCoef, FallBackCoef, 1)
-	ACF.DefineSetting("CrewFallbackCoef", 0.1, nil, ACF.FloatDataCallback(0.1, 1, 2)) -- Minimum possible efficiency
+	ACF.CrewFallbackCoef = 0.1 -- Minimum possible efficiency, becomes 1 when crew is not required
+	ACF.DefineSetting("CrewRequired", true, "Crew requirement has been %s.", ACF.BooleanDataCallback(function(Value) ACF.CrewFallbackCoef = Value and 0.1 or 1 end))
+	ACF.DefineSetting("CrewMoraleDeathEnabled", true, "Morale deaths have been %s.", ACF.BooleanDataCallback())
 	ACF.CrewCommanderCoef 	= 0.3	-- Portion of a crew's efficiency the commander provides
 	ACF.CrewSelfCoef 		= 1.0	-- Portion of a crew's efficiency they provide
 
@@ -414,7 +416,7 @@ do -- ACF global vars
 
 	ACF.CrewRegenFraction	= 0.05	-- Fraction of max health a living, non-full-health crew member regenerates roughly every 10 seconds
 
-	ACF.CrewFatalDeathCount	= 4		-- Number of currently-dead crew on a contraption before the vehicle is destroyed
+	ACF.CrewMoraleDeathCount	= 4		-- Number of currently-dead crew on a contraption before the vehicle is destroyed
 
 	ACF.CrewSpaceLengthMod 	= 0.425	-- Changes contribution of shell length to ideal crew space
 	ACF.CrewSpaceCaliberMod = 1.0	-- Changes contribution of shell caliber to ideal crew space

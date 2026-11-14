@@ -85,7 +85,7 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 			end
 
 			local ModelData = ACF.ModelData.GetModelData(ModelPath)
-			local Offset    = ModelData.Center and Vector(-ModelData.Center.x, 0, 0) or Vector()
+			local Offset    = ModelData and ModelData.Center and Vector(-ModelData.Center.x, 0, 0) or Vector()
 
 			return {
 				Model         = ModelPath,
@@ -103,7 +103,7 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 		if IsMortar and MortarBodygroup then
 			local ModelPath = "models/acf/munitions/projectile_mortar.mdl"
 			local ModelData = ACF.ModelData.GetModelData(ModelPath)
-			local Offset    = ModelData.Center and Vector(-ModelData.Center.x, 0, 0) or Vector()
+			local Offset    = ModelData and ModelData.Center and Vector(-ModelData.Center.x, 0, 0) or Vector()
 
 			return {
 				Model         = ModelPath,
@@ -132,7 +132,7 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 		if not ModelPath then return nil end
 
 		local ModelData = ACF.ModelData.GetModelData(ModelPath)
-		local Offset = ModelData.Center and Vector(-ModelData.Center.x, 0, 0) or Vector()
+		local Offset = ModelData and ModelData.Center and Vector(-ModelData.Center.x, 0, 0) or Vector()
 		local NeedsRotation = StockCrateModels[ModelPath] or false
 
 		return {
@@ -144,9 +144,11 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 		}
 	end
 
+	CLASS.CorePenFactor = ACF.CarbideCorePenFactor -- Penetration of a carbide core over steel AP of its mass
+
 	-- Carbide core rounds penetrate with the core alone
-	local function GetPenetratorMass(Bullet)
-		if Bullet.CoreMass then return Bullet.CoreMass, ACF.CarbideCorePenFactor end
+	local function GetPenetratorMass(Ammo, Bullet)
+		if Bullet.CoreMass then return Bullet.CoreMass, Ammo.CorePenFactor end
 
 		return Bullet.ProjMass, 1
 	end
@@ -156,14 +158,14 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 			Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * ACF.InchToMeter or Bullet.MuzzleVel
 		end
 
-		local Mass, Factor = GetPenetratorMass(Bullet)
+		local Mass, Factor = GetPenetratorMass(self, Bullet)
 
 		return ACF.Penetration(Speed, Mass, Bullet.Diameter * 10) * Factor
 	end
 
 	--- Inverse of GetPenetration, solved for Speed; override alongside GetPenetration for other formulas.
 	function CLASS:CalcSpeed(Bullet, Penetration)
-		local Mass, Factor = GetPenetratorMass(Bullet)
+		local Mass, Factor = GetPenetratorMass(self, Bullet)
 
 		return ACF.CalcSpeed(Penetration / Factor, Mass, Bullet.Diameter * 10)
 	end

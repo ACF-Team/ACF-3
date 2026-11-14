@@ -11,8 +11,8 @@ TOOL.Information = {
 
 if CLIENT then
 	language.Add("tool.acfvolumetrizedupe.name", "ACF Volumetrize Dupe")
-	language.Add("tool.acfvolumetrizedupe.desc", "Area copies and pastes the targeted ACF baseplate's contraption through Advanced Duplicator 2")
-	language.Add("tool.acfvolumetrizedupe.right0", "Area copy and paste the targeted ACF baseplate's contraption")
+	language.Add("tool.acfvolumetrizedupe.desc", "Converts a dupe using its BASEPLATE by changing props into primitives and setting their thickness to match.")
+	language.Add("tool.acfvolumetrizedupe.right0", "Convert a dupe using the BASEPLATE")
 elseif SERVER then
 	local Notify = ACF.Utilities.Notify
 
@@ -254,7 +254,7 @@ elseif SERVER then
 
 	-- TODO: What can we merge between this and ACF.ConvertBaseplate?
 
-	-- Round-trips the targeted baseplate's contraption through an AdvDupe2 area copy/paste, converting any
+	-- Round-trips the targeted entity's contraption through an AdvDupe2 area copy/paste, converting any
 	-- legacy sprop armor entities into primitives along the way.
 	function ACF.ConvertVolumetric(Player, Target)
 		if not AdvDupe2 then return false, "Advanced Duplicator 2 is not installed" end
@@ -267,11 +267,7 @@ elseif SERVER then
 		local PhysObj = Target:GetPhysicsObject()
 		if not IsValid(PhysObj) then return false, "Entity is not physical" end
 
-		if Target:GetClass() ~= "acf_baseplate" then
-			return false, "Incompatible entity class '" .. Target:GetClass() .. "'"
-		end
-
-		local EntsByIndex, Error = ACF.GetConversionEntities(Player, Target)
+		local EntsByIndex, Error = ACF.GetConversionEntities(Target)
 		if not EntsByIndex then return false, Error end
 
 		-- Perform the area copy and retrieve the dupe table

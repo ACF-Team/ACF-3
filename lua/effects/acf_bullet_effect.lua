@@ -9,6 +9,9 @@ local White = Vector(255, 255, 255)
 -- Tracer -> bullet, every tracer that hasn't been destroyed yet
 local Tracers = {}
 
+-- Tracer -> frame it was made on
+local Born = {}
+
 -- Tracers burn at full brightness whatever the crate is painted, so only the hue is kept (black just burns white)
 local function GetTracerColors(Color)
 	local Max = math.max(Color.r, Color.g, Color.b)
@@ -42,6 +45,7 @@ local function CreateTracer(Bullet, Pos, Color)
 	Effect:SetControlPoint(7, Vector(1, 0, 0))
 
 	Tracers[Effect] = Bullet
+	Born[Effect]    = FrameNumber()
 
 	return Effect
 end
@@ -79,17 +83,31 @@ local function UpdateTracer(Bullet)
 	Tracer:SetControlPoint(7, Vector(HeadScale, 0, 0))
 end
 
+local function DestroyTracer(Tracer)
+	if Tracer:IsValid() then
+		-- Stopping a tracer in its first couple frames does nothing, it starts up anyway and stays forever
+		-- Young ones stay hidden in the list until they can be stopped
+		if FrameNumber() - Born[Tracer] < 4 then
+			Tracer:SetShouldDraw(false)
+
+			return
+		end
+
+		Tracer:StopEmission(false, true)
+	end
+
+	Tracers[Tracer] = nil
+	Born[Tracer]    = nil
+end
+
 local function RemoveTracer(Bullet)
 	local Tracer = Bullet.Tracer
 
 	if not Tracer then return end
 
-	if Tracer:IsValid() then
-		Tracer:StopEmission(false, true)
-	end
+	Bullet.Tracer = nil
 
-	Tracers[Tracer] = nil
-	Bullet.Tracer   = nil
+	DestroyTracer(Tracer)
 end
 
 local function IsAlive(Bullet)
@@ -105,12 +123,8 @@ end
 -- Effects dont always think (or get removed without it), so tracers are handled here instead of in EFFECT:Think
 hook.Add("Think", "ACF_UpdateTracers", function()
 	for Tracer, Bullet in pairs(Tracers) do
-		if not Tracer:IsValid() then
-			Tracers[Tracer] = nil
-		elseif Bullet.Tracer ~= Tracer then
-			Tracer:StopEmission(false, true)
-
-			Tracers[Tracer] = nil
+		if Bullet.Tracer ~= Tracer then
+			DestroyTracer(Tracer)
 		elseif IsAlive(Bullet) then
 			UpdateTracer(Bullet)
 		else
