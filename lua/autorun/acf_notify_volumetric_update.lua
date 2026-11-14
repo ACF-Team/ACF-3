@@ -2,6 +2,8 @@ if SERVER then return end
 
 local COOKIE_NAME = "acf_notice_volumetric_update_dontshowagain"
 
+if cookie.GetString(COOKIE_NAME, "false") == "true" then return end
+
 local STYLE = [[
 	body { margin: 12px 16px; background: #2b2b2b; color: #dcdcdc; font-family: Arial, sans-serif; font-size: 15px; line-height: 1.4; }
 	p { margin: 0 0 12px; }
@@ -35,8 +37,6 @@ local DESCRIPTION = [=[
 ]=]
 
 local function ShowNotice()
-	if cookie.GetString(COOKIE_NAME, "false") == "true" then return end
-
 	local Frame = vgui.Create("DFrame")
 	Frame:SetTitle(TITLE)
 	Frame:SetSize(math.max(ScrW() / 2, 600), math.max(ScrH() * 0.65, 450))
@@ -75,4 +75,17 @@ local function ShowNotice()
 	end
 end
 
-hook.Add("InitPostEntity", "ACF_ShowVolumetricUpdateNotice", ShowNotice)
+-- Shown the first time the player equips one of the ACF tools
+hook.Add("Think", "ACF_ShowVolumetricUpdateNotice", function()
+	local Player = LocalPlayer()
+	if not IsValid(Player) then return end
+
+	local Weapon = Player:GetActiveWeapon()
+	if not IsValid(Weapon) or Weapon:GetClass() ~= "gmod_tool" then return end
+
+	local Mode = Weapon:GetMode() -- Nil until the tool gun has networked its mode
+	if not Mode or not string.StartWith(Mode, "acf") then return end
+
+	hook.Remove("Think", "ACF_ShowVolumetricUpdateNotice")
+	ShowNotice()
+end)
