@@ -206,22 +206,37 @@ local function IsConvexArmored(Ent, ConvexID, Convex)
     return IsArmorSet(Convex.Material)
 end
 
+-- Returns the IDs of an armorable entity's convexes that have no armor set
+local function GetUnarmoredConvexes(Ent)
+    local Mesh      = Ent.ACF_Volumetric_Mesh
+    local Unarmored = {}
+    if not Mesh or Ent.IsACFEntity or Ent.ACF_PreventArmoring or Ent:IsVehicle() then return Unarmored end
+
+    for ConvexID, Convex in ipairs(Mesh.Convexes) do
+        if not IsConvexArmored(Ent, ConvexID, Convex) then table.insert(Unarmored, ConvexID) end
+    end
+
+    return Unarmored
+end
+
 RegisterTest("Armor", "Unarmored Convexes", "Armor/Unarmored", Severity.Functional, function(Env)
     local Faults = {}
     for Ent in pairs(Env.Contraption.ents) do
-        local Mesh = Ent.ACF_Volumetric_Mesh
+        local Unarmored = GetUnarmoredConvexes(Ent)
 
-        if Mesh and not Ent.IsACFEntity and not Ent.ACF_PreventArmoring then
-            for ConvexID, Convex in ipairs(Mesh.Convexes) do
-                if not IsConvexArmored(Ent, ConvexID, Convex) then
-                    table.insert(Faults, {Ent = Ent, Msg = "Convex " .. ConvexID .. " has no armor material set"})
-                    break
-                end
-            end
+        if #Unarmored > 0 then
+            table.insert(Faults, {Ent = Ent, Msg = "Convex " .. Unarmored[1] .. " has no armor material set"})
         end
     end
     return #Faults == 0, Faults
-end, nil, "Set an armor material on the entity with the armor tool")
+end, function(Env)
+    for Ent in pairs(Env.Contraption.ents) do
+        local Materials = {}
+        for _, ConvexID in ipairs(GetUnarmoredConvexes(Ent)) do Materials[ConvexID] = "RHA" end
+
+        if next(Materials) then ACF.SetConvexMaterials(Ent, Materials) end
+    end
+end, "Set an armor material on the entity with the armor tool")
 
 RegisterTest("Crew", "Basic Crew", "Crew/Required", Severity.Functional, function(Env)
     local Necessary = {}
