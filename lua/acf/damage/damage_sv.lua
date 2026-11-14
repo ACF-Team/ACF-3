@@ -45,7 +45,7 @@ end
 
 local MinFinEfficiency = 0.1 -- Fin3's own lower efficiency clamp
 
--- Scales a Fin3 wing's efficiency by its remaining convex health, since Fin3 has no per convex model.
+-- Scales a Fin3 wing's efficiency by its health fraction
 local function UpdateFin(Entity)
 	local Fin = Fin3 and Fin3.fins[Entity]
 
