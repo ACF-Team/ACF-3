@@ -6,6 +6,7 @@ local Notify      = Utilities.Notify
 
 local Clamp = math.Clamp
 local Round = math.Round
+local floor = math.floor
 local max   = math.max
 
 local IsEntityValid  = ACF.Optimizations.IsEntityValid
@@ -264,7 +265,7 @@ do -- Spawn and Update functions -----------------------
 	end
 
 	local function AddBentShaft(Bent, Angle, From, FromPos, To, ToPos)
-		Bent[#Bent + 1] = { Angle = math.Round(Angle), From = From, FromPos = FromPos, To = To, ToPos = ToPos }
+		Bent[#Bent + 1] = { Angle = Round(Angle), From = From, FromPos = FromPos, To = To, ToPos = ToPos }
 	end
 
 	-- Covers the engines linked into this gearbox too, since engines only check their links while running
@@ -311,8 +312,8 @@ do -- Spawn and Update functions -----------------------
 		local Share = Capped / Ticks
 
 		ACF.Hints.Set(Entity, "gearbox_overloaded", Share >= LOAD_CAPPED, {
-			Percent = math.floor(Share * 10) * 10,
-			Rating  = math.Round(Entity.MaxTorque * ACF.TorqueMult),
+			Percent = floor(Share * 10) * 10,
+			Rating  = Round(Entity.MaxTorque * ACF.TorqueMult),
 		})
 	end
 

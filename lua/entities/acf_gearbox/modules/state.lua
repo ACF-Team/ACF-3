@@ -4,6 +4,7 @@ local ACF         	 = ACF
 local Utilities   	 = ACF.Utilities
 local Clock       	 = Utilities.Clock
 local Clamp       	 = math.Clamp
+local floor          = math.floor
 local abs         	 = math.abs
 local min         	 = math.min
 local max         	 = math.max
@@ -124,7 +125,7 @@ do -- Gear Shifting ------------------------------------
 
 	-- Handles gearing for automatic gearboxes. 0 = Neutral, 1 = Drive, 2 = Reverse
 	function ENT:ChangeDrive(Value)
-		Value = Clamp(math.floor(Value), 0, 2)
+		Value = Clamp(floor(Value), 0, 2)
 
 		if self.Drive == Value then return end
 
@@ -134,7 +135,7 @@ do -- Gear Shifting ------------------------------------
 	end
 
 	function ENT:ChangeGear(Value)
-		Value = Clamp(math.floor(Value), self.MinGear, self.GearCount)
+		Value = Clamp(floor(Value), self.MinGear, self.GearCount)
 
 		if self.Gear == Value then return end
 
@@ -197,6 +198,7 @@ do -- Movement -----------------------------------------
 		SelfTbl.CalcTick    = Now
 		SelfTbl.CalcRPM     = InputRPM
 		SelfTbl.CalcInertia = InputInertia
+		SelfTbl.CVTLoad     = 1
 
 		local BoxPhys = ENTITY.GetPhysicsObject(ENTITY.GetAncestor(self))
 		local Gear    = SelfTbl.Gear
@@ -212,6 +214,7 @@ do -- Movement -----------------------------------------
 			end
 
 			local GearRatio = Gears[1] * SelfTbl.FinalDrive
+			SelfTbl.CVTLoad = (Gears[1] > 0.05 and InputRPM >= SelfTbl.MinRPM) and 1 or 0.05
 			SelfTbl.GearRatio = GearRatio
 
 			if SelfTbl.LastRatio ~= GearRatio then
@@ -330,7 +333,7 @@ do -- Movement -----------------------------------------
 		SelfTbl.MeasuredRPM   = FitDen > 0 and FitNum / FitDen or InputRPM
 		SelfTbl.LeftRPM       = LeftCount  > 0 and (LeftRPMSum  / LeftCount)  or SelfTbl.MeasuredRPM
 		SelfTbl.RightRPM      = RightCount > 0 and (RightRPMSum / RightCount) or SelfTbl.MeasuredRPM
-		SelfTbl.Load          = (LClutch + RClutch) * 0.5
+		SelfTbl.Load          = (LClutch + RClutch) * 0.5 * SelfTbl.CVTLoad
 
 		self:UpdateOverlay()
 
