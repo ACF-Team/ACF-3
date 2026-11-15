@@ -26,6 +26,22 @@ do -- Primitives
 	end
 end
 
+do
+	--- Whether Other is part of Entity's contraption or owned by the same player.
+	--- Clipping checks ignore anything else.
+	--- @param Entity entity
+	--- @param Other entity
+	--- @return boolean
+	function ACF.SharesContraptionOrOwner(Entity, Other)
+		local Contraption = Entity:CFW_GetContraption()
+		if Contraption and Other:CFW_GetContraption() == Contraption then return true end
+
+		local Owner = Entity:CPPIGetOwner()
+
+		return IsValid(Owner) and Other:CPPIGetOwner() == Owner
+	end
+end
+
 -- 16 Segments font created by ThorType
 -- Huge thanks to LiddulBOFH to help me get it working
 -- Source: https://www.dafont.com/16-segments.font

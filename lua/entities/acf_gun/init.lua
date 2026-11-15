@@ -75,6 +75,19 @@ local ENT_UpdateLoadMod
 local ENT_FindPropagator
 
 do -- Random timer crew stuff
+	local FilterGun, FilterCrew, FilterParent, FilterFn
+	function FilterFn(x)
+		return not (
+			x == FilterGun
+			or x.noradius
+			or x == FilterCrew
+			or x == FilterParent
+			or not ACF.SharesContraptionOrOwner(FilterGun, x)
+			or x:IsPlayer()
+			or ACF.GlobalFilter[ENTITY.GetClass(x)]
+		)
+	end
+
 	local TraceResult  = {}
 	local TraceResult2 = {}
 	local TraceConfig = {start = Vector(), endpos = Vector(), filter = nil, output = TraceResult}
@@ -92,7 +105,10 @@ do -- Random timer crew stuff
 
 		TraceConfig.start = CrewPos
 		TraceConfig.endpos = BreechPos
-		TraceConfig.filter = function(x) return not (x == Gun or x.noradius or x == Crew or x == ENTITY.GetParent(Gun) or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[ENTITY.GetClass(x)]) end
+		TraceConfig.filter = FilterFn
+		FilterGun = Gun
+		FilterCrew = Crew
+		FilterParent = ENTITY.GetParent(Gun)
 		TraceLine(TraceConfig)
 
 		if Debug.SetDeveloperLevel(2) then
@@ -154,7 +170,7 @@ do -- Random timer crew stuff
 
 			TraceConfig.start = wp1
 			TraceConfig.endpos = wp2
-			TraceConfig.filter = function(x) return not (x == self or x == ENTITY.GetParent(self) or x.noradius or x.IsACFAutoloader or ENTITY.GetOwner(x) ~= ENTITY.GetOwner(self) or x:IsPlayer() or ACF.GlobalFilter[ENTITY.GetClass(x)]) end
+			TraceConfig.filter = function(x) return not (x == self or x == ENTITY.GetParent(self) or x.noradius or x.IsACFAutoloader or not ACF.SharesContraptionOrOwner(self, x) or x:IsPlayer() or ACF.GlobalFilter[ENTITY.GetClass(x)]) end
 			TraceLine(TraceConfig)
 
 			if Debug.SetDeveloperLevel(2) then
@@ -281,7 +297,7 @@ do -- Random timer crew stuff
 
 		TraceConfig.start = ReferenceBreechPos
 		TraceConfig.endpos = CurrentBreechPos
-		TraceConfig.filter = function(x) return not (x == self or x == ENTITY.GetParent(self) or x.noradius or ENTITY.GetOwner(x) ~= ENTITY.GetOwner(self) or x:IsPlayer() or ACF.GlobalFilter[ENTITY.GetClass(x)] or SelfTbl.RotationFilter[x] or ACF.IsPrimitivePending(x)) end
+		TraceConfig.filter = function(x) return not (x == self or x == ENTITY.GetParent(self) or x.noradius or not ACF.SharesContraptionOrOwner(self, x) or x:IsPlayer() or ACF.GlobalFilter[ENTITY.GetClass(x)] or SelfTbl.RotationFilter[x] or ACF.IsPrimitivePending(x)) end
 		TraceConfig.ignoreworld = true -- The config is shared with crew traces that must hit the world
 		TraceLine(TraceConfig)
 		TraceConfig.ignoreworld = false
