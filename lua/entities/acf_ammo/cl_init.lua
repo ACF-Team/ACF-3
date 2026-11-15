@@ -433,8 +433,11 @@ do --MARK: Networking
 			updateAmmoCount( self, ammo )
 		end )
 
-		self:SetNWVarProxy( "Cookoff", function( _, _, _, propellant )
-			self:OnCookoffChanged( propellant )
+		-- crate can be gone by the time the last value lands
+		self:SetNWVarProxy( "Cookoff", function( entity, _, _, propellant )
+			if not IsValid( entity ) or not entity.OnCookoffChanged then return end
+
+			entity:OnCookoffChanged( propellant )
 		end )
 
 		-- Crates that were already burning when they came into view

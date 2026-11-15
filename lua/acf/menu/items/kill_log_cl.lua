@@ -43,6 +43,11 @@ end
 -- the real limit.
 local NextQueryTime = 0 -- CurTime() we're next allowed to query; persists across menu rebuilds
 
+-- The server starts its cooldown when the query arrives, a bit after we sent it
+local CooldownPadding = 1
+
+local QueryChunks = {}
+
 local function CreateMenu(Menu)
     Menu:AddTitle("Kill Log")
     Menu:AddLabel("Pick a session, then optionally check specific players to narrow the results. Leaving all players unchecked matches everyone in the session.")
@@ -61,9 +66,19 @@ local function CreateMenu(Menu)
     local CurrentSession = nil
     local LastNames = {} -- Names used for the query currently on screen, for the kills/deaths split below
 
+    local Queued = nil -- query waiting for the cooldown, the server drops anything sent early
+
     local function RunQuery(Names, Session)
+        if CurTime() < NextQueryTime then
+            Queued = { Names = Names or {}, Session = Session }
+            return
+        end
+
+        Queued = nil
         LastNames = Names or {}
         RequestQuery(LastNames, Session)
+
+        NextQueryTime = CurTime() + ACF.KillLogQueryCooldown + CooldownPadding
     end
 
     local QueryButton = Menu:AddButton("Run Query", function()
@@ -76,19 +91,21 @@ local function CreateMenu(Menu)
         end
 
         RunQuery(Selected, CurrentSession)
-
-        NextQueryTime = CurTime() + ACF.KillLogQueryCooldown
     end)
 
     function QueryButton:Think()
-        self:SetEnabled(CurTime() >= NextQueryTime)
+        local Ready = CurTime() >= NextQueryTime
+
+        self:SetEnabled(Ready)
+
+        if Ready and Queued then RunQuery(Queued.Names, Queued.Session) end
     end
 
     function QueryButton:PaintOver(w, h)
         local Remaining = NextQueryTime - CurTime()
         if Remaining <= 0 then return end
 
-        local Frac = 1 - (Remaining / ACF.KillLogQueryCooldown)
+        local Frac = 1 - (Remaining / (ACF.KillLogQueryCooldown + CooldownPadding))
 
         surface.SetDrawColor(50, 200, 50, 60)
         surface.DrawRect(0, 0, w * Frac, h)
@@ -169,7 +186,15 @@ local function CreateMenu(Menu)
     end)
 
     net.Receive("ACF_KillLog_Query", function()
-        local Kills = util.JSONToTable(net.ReadString()) or {}
+        local Last = net.ReadBool()
+
+        QueryChunks[#QueryChunks + 1] = net.ReadData(net.ReadUInt(16))
+        if not Last then return end
+
+        local Data = util.Decompress(table.concat(QueryChunks))
+        QueryChunks = {}
+
+        local Kills = Data and util.JSONToTable(Data) or {}
         if not IsValid(KillList) then return end
 
         KillList:Clear()
