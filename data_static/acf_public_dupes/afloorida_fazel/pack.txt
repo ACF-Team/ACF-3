@@ -1,0 +1,26 @@
+-- Insert pack
+INSERT INTO PackData (packid, packname, author, contact)
+VALUES ('afloorida_fazel', 'Afloorida Fazel', 'juls', 'julshno');
+
+-- Insert dupes using the string packid
+INSERT INTO DupeData (path, name, cost, weight, type, mobility, packid, description) VALUES
+('boomba_porjee_lt1', 'Boomba Porjee LT1', 197, 3.4, 'ATGM', 'Other', 'afloorida_fazel', 'The aliens have taken to the water.
+
+WASD
+Mouse 1 HMG
+Mouse 2 ATGMs'),
+
+('boomba_randee_lt1', 'Boomba Randee LT1', 203, 8.9, 'SPG', 'Other', 'afloorida_fazel', 'A makeshift mortar emplacement.
+Mouse 1 to fire
+CTRL to change view'),
+
+('bandidisonikgynaeboombalt2', 'BandidiSonikGynaeBoombaLT2', 81, 1.8, 'MBT', 'Tracked', 'afloorida_fazel', 'H to enable mouse aim mode
+Space/Shift to increase/decrease collective
+ALT A/D for Yaw
+W/S Pitch
+Mouse 1 for guns
+Mouse 2 for rockets'),
+
+('didikruppididldoboombarolla_lt2', 'didikruppididldoboombarolla LT2', 124, 6, 'SPG', 'Tracked', 'afloorida_fazel', 'WASD movement.
+Mouse 1 main gun.
+Mouse 2 for mg.');
