@@ -266,10 +266,11 @@ do -- Movement -----------------------------------------
 			SelfTbl.LMult, SelfTbl.RMult = 1, 1
 		end
 
-		local MeasuredRPMSum = 0
 		local MeasuredCount = 0
 		local OutputInertia = 0
 		local TotalRatioSum = 0
+		-- Continous least square fit for double diffs
+		local FitNum, FitDen = 0, 0
 		-- Per-side RPM tracking, future work for LSD/locked diffs. 
 		local LeftRPMSum, LeftCount = 0, 0
 		local RightRPMSum, RightCount = 0, 0
@@ -279,10 +280,12 @@ do -- Movement -----------------------------------------
 			local EntTbl = ENTITY.GetTable(Gearbox)
 
 			if not Gearbox.Disabled then
-				Gearbox:Calc(ScaledRPM, ScaledInertia) -- measurement pull, just to update gearboxes downstream
+				Gearbox:Calc(ScaledRPM, ScaledInertia) -- Measurement pull, just to update gearboxes downstream
 			end
 
-			MeasuredRPMSum = MeasuredRPMSum + (EntTbl.MeasuredRPM or ScaledRPM) / GearRatio
+			FitNum = FitNum + (EntTbl.MeasuredRPM or ScaledRPM) / GearRatio
+			FitDen = FitDen + 1
+
 			MeasuredCount  = MeasuredCount + 1
 			OutputInertia  = OutputInertia + (EntTbl.OutputInertia or 0)
 			TotalRatioSum  = TotalRatioSum + (1 / abs(GearRatio)) / (EntTbl.TotalRatio or 1)
@@ -294,10 +297,11 @@ do -- Movement -----------------------------------------
 			local WheelInertia = GetRotationalInertia(Link, Wheel)
 			Link.CachedInertia = WheelInertia
 
-			MeasuredRPMSum = MeasuredRPMSum + WheelRPM
-			MeasuredCount  = MeasuredCount + 1
-			OutputInertia  = OutputInertia + WheelInertia
+			local Mult = Link.Side == 0 and SelfTbl.LMult or SelfTbl.RMult
+			FitNum = FitNum + Mult * WheelRPM
+			FitDen = FitDen + Mult * Mult
 
+			-- Per side sums, for LSD diffs (Potential, not done yet)
 			if Link.Side == 0 then
 				LeftRPMSum = LeftRPMSum + WheelRPM
 				LeftCount  = LeftCount + 1
@@ -305,6 +309,9 @@ do -- Movement -----------------------------------------
 				RightRPMSum = RightRPMSum + WheelRPM
 				RightCount  = RightCount + 1
 			end
+
+			MeasuredCount  = MeasuredCount + 1
+			OutputInertia  = OutputInertia + WheelInertia
 		end
 
 		-- Effectors
@@ -320,7 +327,7 @@ do -- Movement -----------------------------------------
 
 		SelfTbl.OutputInertia = OutputInertia -- Every linked entity receive this inertia, as torque shares are fractions of this.
 		SelfTbl.TotalRatio    = max(TotalRatioSum, 1) -- Must be higher than 1, otherwise it just dips way too low and it just doesn't work.
-		SelfTbl.MeasuredRPM   = MeasuredCount > 0 and (MeasuredRPMSum / MeasuredCount) or InputRPM
+		SelfTbl.MeasuredRPM   = FitDen > 0 and FitNum / FitDen or InputRPM
 		SelfTbl.LeftRPM       = LeftCount  > 0 and (LeftRPMSum  / LeftCount)  or SelfTbl.MeasuredRPM
 		SelfTbl.RightRPM      = RightCount > 0 and (RightRPMSum / RightCount) or SelfTbl.MeasuredRPM
 		SelfTbl.Load          = (LClutch + RClutch) * 0.5
