@@ -260,9 +260,9 @@ end, nil, "Ensure all necessary crew members are present")
 RegisterTest("Crew", "Crew Efficiency", "Crew/Efficiency", Severity.Functional, function(Env)
     local MinEff = 0.25
     local Faults = {}
-    for _, v in ipairs(Env.Contraption.Crews or {}) do
-        if v.TotalEff <= MinEff then
-            table.insert(Faults, {Ent = v.Ent or Env.Baseplate, Msg = "Efficiency " .. math.Round(v.TotalEff, 2) .. " is too low"})
+    for Crew in pairs(Env.Contraption.Crews or {}) do
+        if Crew.TotalEff <= MinEff then
+            table.insert(Faults, {Ent = Crew, Msg = "Efficiency " .. math.Round(Crew.TotalEff, 2) .. " is too low"})
         end
     end
     return #Faults == 0, Faults
@@ -286,11 +286,10 @@ RegisterTest("Links", "Guns, Racks and Ammo", "Links/Ammo", Severity.Functional,
 end, function(Env)
     LinkAll(Env, "acf_gun", "acf_ammo")
     LinkAll(Env, "acf_rack", "acf_ammo")
-    for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_gun, {"Crew", "Autoloader"})) do
+    local Loaders = Env.Contraption.CrewsByType and Env.Contraption.CrewsByType.Loader or {}
+    for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_gun, {"Crews", "Autoloader"})) do
         if not e.IsBelted and e.Weapon ~= "ACF.Guns.SmokeLauncher" and e.Weapon ~= "40mmFGL" then
-            for _, crew in pairs(Env.Contraption.Crews or {}) do
-                if crew.Type == "Loader" then e:Link(crew.Ent) end
-            end
+            for Crew in pairs(Loaders) do e:Link(Crew) end
         end
     end
 end, "Ensure all guns and racks are linked to ammo crates, and all ammo crates are linked to guns or racks")
