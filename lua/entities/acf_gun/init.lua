@@ -1008,6 +1008,23 @@ do -- Metamethods --------------------------------
 			Entity.NextFire = Clock.CurTime + math.max(Config.Goal - Config.Progress, 0) / Eff
 		end
 
+		--- Whether linked crew are spending their focus on loading this gun right now
+		function ENT:IsCrewLoading()
+			local SelfTbl = ENTITY.GetTable(self)
+
+			return SelfTbl.CrewLoading == true and not SelfTbl.AutoloaderFeeding
+		end
+
+		-- Crew are re-rated straight away, since the reload samples their efficiency the moment it starts
+		function ENT:SetCrewLoading(Loading)
+			local SelfTbl = ENTITY.GetTable(self)
+			if SelfTbl.CrewLoading == Loading then return end
+
+			SelfTbl.CrewLoading = Loading
+
+			ACF.RefreshLinkedCrews(self)
+		end
+
 		--- Finds the next crate
 		--- @param Current any Optionally specified current crate to check against (optimization measure)
 		--- @param Check any Function used to check if a crate meets our criteria
@@ -1049,6 +1066,7 @@ do -- Metamethods --------------------------------
 
 			self:ReloadEffect(Reload and Time * 2 or Time)
 			self:SetState("Unloading")
+			self:SetCrewLoading(Manual)
 			Sounds.SendSound(self, "weapons/357/357_reload4.wav", 70, 100, 1)
 			SelfTbl.CurrentShot = 0
 			SelfTbl.BulletData  = EMPTY
@@ -1091,6 +1109,7 @@ do -- Metamethods --------------------------------
 
 				local IdealTime, Manual = ACF.CalcReloadTime(SelfTbl.Caliber, SelfTbl.ClassData, SelfTbl.WeaponData, BulletData, self)
 				if SelfTbl.TargetReloadTime then IdealTime = math.max(IdealTime, SelfTbl.TargetReloadTime) end
+				self:SetCrewLoading(Manual) -- Automatics cycle without the crew
 				local Time = Manual and IdealTime / SelfTbl.LoadCrewMod or IdealTime
 
 				SelfTbl.ReloadTime   = Time
@@ -1206,6 +1225,7 @@ do -- Metamethods --------------------------------
 				WireLib.TriggerOutput(self, "Shots Left", SelfTbl.CurrentShot)
 
 				local IdealTime, Manual = ACF.CalcReloadTimeMag(SelfTbl.Caliber, SelfTbl.ClassData, SelfTbl.WeaponData, SelfTbl.BulletData, SelfTbl)
+				self:SetCrewLoading(Manual)
 				local Time = Manual and IdealTime / SelfTbl.LoadCrewMod or IdealTime
 
 				SelfTbl.NextFire = Clock.CurTime + Time
@@ -1372,6 +1392,8 @@ do -- Metamethods --------------------------------
 
 		function ENT:SetState(State)
 			self.State = State
+
+			if State ~= "Loading" and State ~= "Unloading" then self:SetCrewLoading(false) end
 
 			self:UpdateOverlay()
 

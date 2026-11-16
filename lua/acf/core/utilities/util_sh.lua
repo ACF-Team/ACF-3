@@ -968,6 +968,18 @@ do -- Crew related
 		return Sum, Count
 	end
 
+	--- Re-rates every crew linked to Entity at once, for when what Entity asks of them changes.
+	--- Server only.
+	--- @param Entity entity The entity the crew are linked to
+	function ACF.RefreshLinkedCrews(Entity)
+		local Crews = Entity.Crews
+		if not Crews then return end
+
+		for Crew in pairs(Crews) do
+			if IsValid(Crew) then Crew:UpdateHighFreq() end
+		end
+	end
+
 	--- Normalizes a value from [inMin,inMax] to [0,1]
 	--- Values outside the input range are clamped to the output range
 	--- @param Value number The value to normalize
