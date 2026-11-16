@@ -208,6 +208,9 @@ do -- Serverside settings
 		Base:AddSlider("#acf.menu.settings.general.torque_multiplier"):        LinkToServerData("TorqueMult")
 			Base:AddHelp("#acf.menu.settings.general.torque_multiplier_desc")
 
+		Base:AddSlider("#acf.menu.settings.general.massratio_compensation"):	LinkToServerData("MassRatioCompFactor")
+			Base:AddHelp("#acf.menu.settings.general.massratio_compensation_desc")
+
 		Base:AddSlider("#acf.menu.settings.general.smoke_wind"):               LinkToServerData("SmokeWind")
 			Base:AddHelp("#acf.menu.settings.general.smoke_wind_desc")
 

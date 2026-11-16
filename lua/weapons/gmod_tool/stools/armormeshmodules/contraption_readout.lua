@@ -89,7 +89,7 @@ local function GetReadoutMode(Tool)
 end
 
 local Text1 = "--- Contraption Readout (Owner: %s) ---"
-local Text2 = "Mass: %s kg total | %s kg physical (%s%%) | %s kg parented"
+local Text2 = "Mass: %s kg total | %s kg physical (%s%% + %s%%) | %s kg parented"
 local Text3 = "Mobility: %s hp/ton @ %s hp | %s liters of fuel"
 local Text4 = "Entities: %s (%s physical, %s parented, %s other entities) | %s constraints"
 local Text5 = "Name: %s | Type: %s"
@@ -139,13 +139,14 @@ function TOOL:GetContraptionReadout(Trace, UseCostBreakdown)
 		local Power, Fuel, PhysNum, ParNum, ConNum, Name, OtherNum, Total, PhysTotal = Mode.GetResult(self, Trace)
 		local HorsePower = math.Round(Power / math.max(Total * 0.001, 0.001), 1)
 		local PhysRatio = math.Round(100 * PhysTotal / math.max(Total, 0.001))
+		local CompRatio = math.Round(((PhysRatio / 100) ^ ACF.MassRatioCompFactor) * 100 - PhysRatio)
 		local ParentTotal = Total - PhysTotal
 		local Player = self:GetOwner()
 		local BaseplateName, BaseplateType, AmmoTypes = Contraption.GetMiscInfo(Trace.Entity)
 		local AmmoList = next(AmmoTypes) and table.concat(AmmoTypes, ", ") or "N/A"
 
 		Messages.SendChat(Player, nil, Text1:format(Name))
-		Messages.SendChat(Player, nil, Text2:format(math.Round(Total, 2), math.Round(PhysTotal, 2), PhysRatio, math.Round(ParentTotal, 2)))
+		Messages.SendChat(Player, nil, Text2:format(math.Round(Total, 2), math.Round(PhysTotal, 2), PhysRatio, CompRatio, math.Round(ParentTotal, 2)))
 		Messages.SendChat(Player, nil, Text3:format(HorsePower, math.Round(Power), math.Round(Fuel)))
 		Messages.SendChat(Player, nil, Text4:format(PhysNum + ParNum + OtherNum, PhysNum, ParNum, OtherNum, ConNum))
 		Messages.SendChat(Player, nil, Text5:format(BaseplateName, BaseplateType))

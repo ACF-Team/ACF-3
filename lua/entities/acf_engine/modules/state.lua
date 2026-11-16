@@ -139,9 +139,11 @@ function ENT:CalcMassRatio(SelfTbl)
 		end
 	end
 
-	local TotalMass = Con and Con.totalMass or PhysMass
+	local TotalMass    = Con and Con.totalMass or PhysMass
+	local RawMassRatio = PhysMass / TotalMass
+	local Compensated  = RawMassRatio ^ ACF.MassRatioCompFactor
+	SelfTbl.MassRatio  = Compensated
 
-	SelfTbl.MassRatio = PhysMass / TotalMass
 	TotalMass = Round(TotalMass, 2)
 	PhysMass = Round(PhysMass, 2)
 
