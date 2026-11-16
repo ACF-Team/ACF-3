@@ -308,17 +308,20 @@ do -- Random timer stuff
 
 		if SelfTbl.Disabled then return end
 
+		local Contraption = ENTITY.CFW_GetContraption(self) or {}
+
 		-- If specified, affect crew ergonomics based on lean angle
 		local LeanInfo = SelfTbl.CrewType.LeanInfo
 		if LeanInfo then
-			local LeanDot = VECTOR.Dot(VectorUp, ENTITY.GetUp(self))
+			local Baseplate = Contraption.ACF_Baseplate
+			local Up = IsEntityValid(Baseplate) and ENTITY.GetUp(Baseplate) or VectorUp -- Crew sit relative to the vehicle, so slopes and rolls don't count
+			local LeanDot = math.Clamp(VECTOR.Dot(Up, ENTITY.GetUp(self)), -1, 1)
 			local Angle = math.deg(math.acos(LeanDot))
 			SelfTbl.LeanEff = 1 - ACF.Normalize(Angle, LeanInfo.Min, LeanInfo.Max)
 			WireLib.TriggerOutput(self, "LeanEff", SelfTbl.LeanEff * 100)
 		end
 
 		-- TODO: Clean this shit up man
-		local Contraption = ENTITY.CFW_GetContraption(self) or {}
 		local CrewsByType = Contraption.CrewsByType or {}
 		local Commanders = CrewsByType.Commander or {}
 		local Commander = next(Commanders)

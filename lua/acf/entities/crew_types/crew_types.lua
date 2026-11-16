@@ -80,7 +80,7 @@ Classes.DefineClass("ACF.CrewTypes.Loader", "ACF.CrewTypes.BaseCrewType", functi
 		Text	= "Maximum number of loaders a player can have."
 	}
 	CLASS.Mass = 80				-- Mass (kg) of a single crew member
-	CLASS.LeanInfo = {			-- Specifying this table enables leaning efficiency calculations (deviation from world up)
+	CLASS.LeanInfo = {			-- Specifying this table enables leaning efficiency calculations (deviation from the baseplate's up)
 		Min = 15,			-- Best efficiency before this angle (Degs)
 		Max = 90,			-- Worst efficiency after this angle (Degs)
 	}
@@ -133,7 +133,7 @@ Classes.DefineClass("ACF.CrewTypes.Gunner", "ACF.CrewTypes.BaseCrewType", functi
 		Text	= "Maximum number of gunners a player can have."
 	}
 	CLASS.Mass = 80
-	CLASS.LeanInfo = {			-- Specifying this table enables leaning efficiency calculations (deviation from world up)
+	CLASS.LeanInfo = {			-- Specifying this table enables leaning efficiency calculations (deviation from the baseplate's up)
 		Min = 15,			-- Best efficiency before this angle (Degs)
 		Max = 90,			-- Worst efficiency after this angle (Degs)
 	}
@@ -199,7 +199,7 @@ Classes.DefineClass("ACF.CrewTypes.Driver", "ACF.CrewTypes.BaseCrewType", functi
 		Text	= "Maximum number of drivers a player can have."
 	}
 	CLASS.Mass = 80
-	CLASS.LeanInfo = {			-- Specifying this table enables leaning efficiency calculations (deviation from world up)
+	CLASS.LeanInfo = {			-- Specifying this table enables leaning efficiency calculations (deviation from the baseplate's up)
 		Min = 60,			-- Best efficiency before this angle (Degs)
 		Max = 90,			-- Worst efficiency after this angle (Degs)
 	}
@@ -253,7 +253,7 @@ Classes.DefineClass("ACF.CrewTypes.Commander", "ACF.CrewTypes.BaseCrewType", fun
 		Text	= "Maximum number of commanders a player can have."
 	}
 	CLASS.Mass = 80
-	CLASS.LeanInfo = {			-- Specifying this table enables leaning efficiency calculations (deviation from world up)
+	CLASS.LeanInfo = {			-- Specifying this table enables leaning efficiency calculations (deviation from the baseplate's up)
 		Min = 15,			-- Best efficiency before this angle (Degs)
 		Max = 90,			-- Worst efficiency after this angle (Degs)
 	}
