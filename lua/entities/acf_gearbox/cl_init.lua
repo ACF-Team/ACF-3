@@ -14,15 +14,18 @@ end
 
 do	-- NET SURFER 2.0
 	net.Receive("ACF_InvalidateGearboxInfo", function()
-		local Gearbox	= net.ReadEntity()
+		local Gearbox	= ACF.ReadEntity()
 
-		if not IsValid(Gearbox) then return end
+		if not Gearbox then return end
 
 		Gearbox.HasData	= false
 	end)
 
 	net.Receive("ACF_RequestGearboxInfo", function()
-		local Gearbox	= net.ReadEntity()
+		local Gearbox	= ACF.ReadEntity()
+
+		if not Gearbox then return end
+
 		local InPos		= net.ReadVector()
 		local OutLPos	= net.ReadVector()
 		local OutRPos	= net.ReadVector()
@@ -119,7 +122,7 @@ do	-- NET SURFER 2.0
 		timer.Simple(5, function() Queued[self] = nil end)
 
 		net.Start("ACF_RequestGearboxInfo")
-			net.WriteEntity(self)
+			ACF.WriteEntity(self)
 		net.SendToServer()
 	end
 end

@@ -1519,3 +1519,29 @@ do
 		return 1
 	end
 end
+
+do -- Entity references in net messages
+	-- Creation IDs go up to 10,000,000 before resetting to 0
+	local CREATION_ID_BITS = 24
+
+	--- Writes an entity along with its creation ID, for ACF.ReadEntity.
+	--- @param Entity Entity The entity to write
+	function ACF.WriteEntity(Entity)
+		local Valid = IsValid(Entity)
+
+		net.WriteEntity(Entity)
+		net.WriteUInt(Valid and Entity:GetCreationID() or 0, CREATION_ID_BITS)
+	end
+
+	--- Reads an entity written by ACF.WriteEntity.
+	--- Returns nil if the entity at that index here isn't the one that was sent, like when the index got reused.
+	--- @return Entity? # The entity, or nil
+	function ACF.ReadEntity()
+		local Entity     = net.ReadEntity()
+		local CreationID = net.ReadUInt(CREATION_ID_BITS)
+
+		if not IsValid(Entity) or Entity:GetCreationID() ~= CreationID then return end
+
+		return Entity
+	end
+end

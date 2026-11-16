@@ -170,14 +170,14 @@ do	-- NET SURFER 2.0
 
 	function ENT:InvalidateClientInfo()
 		net.Start("ACF_InvalidateFuelTankInfo")
-			net.WriteEntity(self)
+			ACF.WriteEntity(self)
 		net.Broadcast()
 	end
 
 	net.Receive("ACF_RequestFuelTankInfo", function(_, Ply)
-		local Entity = net.ReadEntity()
+		local Entity = ACF.ReadEntity()
 
-		if IsValid(Entity) then
+		if Entity and Entity:GetClass() == "acf_fueltank" then
 			local Engines = {}
 
 			if Entity.Engines and next(Entity.Engines) then
@@ -187,7 +187,7 @@ do	-- NET SURFER 2.0
 			end
 
 			net.Start("ACF_RequestFuelTankInfo")
-				net.WriteEntity(Entity)
+				ACF.WriteEntity(Entity)
 				net.WriteUInt(#Engines, 6)
 
 				if next(Engines) then
