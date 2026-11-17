@@ -22,7 +22,7 @@ net.Receive("ACF_KillFeed_ContraptionCost", function()
     PendingCost[Victim:Name()] = { VictimCost = VictimCost, AttackerCost = AttackerCost, Time = RealTime() }
 end)
 
-local MaxNameLength = 10
+local MaxNameLength = 32
 local function ClipName(Name)
     return isstring(Name) and string.sub(Name, 1, MaxNameLength) or Name
 end
