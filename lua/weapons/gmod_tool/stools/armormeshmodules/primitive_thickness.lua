@@ -6,6 +6,14 @@
 -- rebuild automatically (see primitive/entities/base.lua's NetworkVarNotify wiring), so no
 -- explicit rebuild call is needed here.
 return function()
+	if not Primitive then
+		return {
+			RegisterThicknessApply = function() return false end,
+			GetThicknessApply      = function() return false end,
+			GetThickness           = function() return false end,
+		}
+	end
+
 	local Notify  = ACF.Utilities.Notify
 	local MinSize = Primitive.minSize
 
