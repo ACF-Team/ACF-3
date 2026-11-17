@@ -93,10 +93,13 @@ do	-- Turret drive drawing
 		end
 
 		local Rotator = self:GetNWEntity("ACF.Rotator")
-		local RenderMatrix = self.Matrix
+		if IsValid(Rotator) and self.Scale then
+			local RenderMatrix = self.RotatedMatrix or Matrix()
 
-		if IsValid(Rotator) and RenderMatrix then
+			self.RotatedMatrix = RenderMatrix
+
 			RenderMatrix:SetAngles(self:WorldToLocalAngles(Rotator:GetAngles()))
+			RenderMatrix:SetScale(self.Scale)
 			self:EnableMatrix("RenderMultiply", RenderMatrix)
 		end
 
