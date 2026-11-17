@@ -6,15 +6,15 @@ include("shared.lua")
 
 do	-- NET SURFER
 	net.Receive("ACF_InvalidateTurretInfo", function()
-		local Turret	= net.ReadEntity()
+		local Turret	= ACF.ReadEntity()
 
-		if not IsValid(Turret) then return end
+		if not Turret then return end
 
 		Turret.HasData	= false
 	end)
 
 	net.Receive("ACF_RequestTurretInfo", function()
-		local Entity	= net.ReadEntity()
+		local Entity	= ACF.ReadEntity()
 		local Rotator	= net.ReadEntity()
 		local Data		= {
 			LocalCoM	= net.ReadVector(),
@@ -25,7 +25,7 @@ do	-- NET SURFER
 			Type		= net.ReadString()
 		}
 
-		if not IsValid(Entity) then return end
+		if not Entity then return end
 
 		Entity.Rotator	= Rotator
 		Entity.LocalCoM = Data.LocalCoM
@@ -75,7 +75,7 @@ do	-- NET SURFER
 		timer.Simple(5, function() Queued[self] = nil end)
 
 		net.Start("ACF_RequestTurretInfo")
-			net.WriteEntity(self)
+			ACF.WriteEntity(self)
 		net.SendToServer()
 	end
 end

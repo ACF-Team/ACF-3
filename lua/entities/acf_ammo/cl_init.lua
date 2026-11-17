@@ -274,8 +274,8 @@ do --MARK: Networking
 	end
 
 	net.Receive( "ACF_RequestAmmoData", function()
-		local entity = net.ReadEntity()
-		if not IsValid( entity ) then return end
+		local entity = ACF.ReadEntity()
+		if not entity then return end
 
 		entity.HasData = net.ReadBool()
 
@@ -451,6 +451,8 @@ do --MARK: Networking
 			updateAmmoCount( self )
 		end, "Ammo Crate " .. self:EntIndex() )
 
+		self:RequestAmmoData()
+
 		self.BaseClass.Initialize( self )
 	end
 
@@ -460,13 +462,13 @@ do --MARK: Networking
 		Queued[self] = true
 
 		net.Start( "ACF_RequestAmmoData" )
-			net.WriteEntity( self )
+			ACF.WriteEntity( self )
 		net.SendToServer()
 	end
 
 	function ENT:OnFullUpdate()
 		net.Start( "ACF_RequestAmmoData" )
-			net.WriteEntity( self )
+			ACF.WriteEntity( self )
 		net.SendToServer()
 	end
 end

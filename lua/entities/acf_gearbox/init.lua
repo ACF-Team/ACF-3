@@ -1194,14 +1194,14 @@ do	-- NET SURFER 2.0
 
 	function ENT:InvalidateClientInfo()
 		net.Start("ACF_InvalidateGearboxInfo")
-			net.WriteEntity(self)
+			ACF.WriteEntity(self)
 		net.Broadcast()
 	end
 
 	net.Receive("ACF_RequestGearboxInfo", function(_, Ply)
-		local Entity = net.ReadEntity()
+		local Entity = ACF.ReadEntity()
 
-		if IsEntityValid(Entity) then
+		if IsEntityValid(Entity) and Entity:GetClass() == "acf_gearbox" then
 			local Inputs = {}
 			local OutputL = {}
 			local OutputR = {}
@@ -1240,7 +1240,7 @@ do	-- NET SURFER 2.0
 			end
 
 			net.Start("ACF_RequestGearboxInfo")
-				net.WriteEntity(Entity)
+				ACF.WriteEntity(Entity)
 
 				net.WriteVector(In)
 				net.WriteVector(OutL)

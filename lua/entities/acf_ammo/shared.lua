@@ -79,7 +79,7 @@ properties.Add("acf_ammo_counts", {
 	--- Sends an edit made against mix Version: Order lists kind indices top first, Counts their counts
 	SendCounts = function(self, Entity, Version, Order, Counts)
 		self:MsgStart()
-			net.WriteEntity(Entity)
+			ACF.WriteEntity(Entity)
 			net.WriteUInt(Version, MIX_VERSION_BITS)
 			net.WriteUInt(#Order - 1, ACF.ProfileBits)
 
@@ -91,7 +91,7 @@ properties.Add("acf_ammo_counts", {
 	end,
 
 	Receive = function(self, _, Player)
-		local Entity        = net.ReadEntity()
+		local Entity        = ACF.ReadEntity()
 		local Version       = net.ReadUInt(MIX_VERSION_BITS)
 		local Order, Counts = {}, {}
 
@@ -100,7 +100,7 @@ properties.Add("acf_ammo_counts", {
 			Counts[Position] = net.ReadUInt(COUNT_BITS)
 		end
 
-		if not properties.CanBeTargeted(Entity, Player) or not self:Filter(Entity, Player) then return end
+		if not Entity or not properties.CanBeTargeted(Entity, Player) or not self:Filter(Entity, Player) then return end
 
 		if Version ~= Entity.RoundMixVersion then
 			ACF.Utilities.Messages.SendChat(Player, "Error", "The crate's rounds changed while the window was open, reopen it.")
