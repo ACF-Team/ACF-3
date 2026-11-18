@@ -275,10 +275,10 @@ do	-- Metamethods
 		end
 
 		function ENT:PostEntityPaste(_, Ent, CreatedEntities)
-			local EntMods = Ent.EntityMods
+			local EntMods = ACF.DupeTable(Ent.EntityMods)
 
 			if EntMods.ACFCrew then
-				self:Link(CreatedEntities[EntMods.ACFCrew[1]])
+				self:Link(CreatedEntities[ACF.DupeTable(EntMods.ACFCrew)[1]])
 
 				EntMods.ACFCrew = nil
 			end

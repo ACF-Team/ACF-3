@@ -1237,28 +1237,28 @@ do -- Metamethods
 		end
 
 		function ENT:PostEntityPaste(_, Ent, CreatedEntities)
-			local EntMods = Ent.EntityMods
+			local EntMods = ACF.DupeTable(Ent.EntityMods)
 
 			if EntMods.ACFMotor then
-				self:Link(CreatedEntities[EntMods.ACFMotor[1]])
+				self:Link(CreatedEntities[ACF.DupeTable(EntMods.ACFMotor)[1]])
 
 				EntMods.ACFMotor = nil
 			end
 
 			if EntMods.ACFGyro then
-				self:Link(CreatedEntities[EntMods.ACFGyro[1]])
+				self:Link(CreatedEntities[ACF.DupeTable(EntMods.ACFGyro)[1]])
 
 				EntMods.ACFGyro = nil
 			end
 
 			if EntMods.ACFRadar then
-				self:Link(CreatedEntities[EntMods.ACFRadar[1]])
+				self:Link(CreatedEntities[ACF.DupeTable(EntMods.ACFRadar)[1]])
 
 				EntMods.ACFRadar = nil
 			end
 
 			if EntMods.ACFLightweightControllers then
-				for _, Index in ipairs(EntMods.ACFLightweightControllers) do
+				for _, Index in ipairs(ACF.DupeTable(EntMods.ACFLightweightControllers)) do
 					local Controller = CreatedEntities[Index]
 					if IsValid(Controller) then Controller:Link(self) end
 				end
