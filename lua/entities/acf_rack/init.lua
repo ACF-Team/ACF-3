@@ -227,6 +227,17 @@ do
 	function ENT:SetLoadModOverride(Efficiency)
 		self.LoadCrewModOverride = Efficiency
 	end
+
+	--- Whether linked crew are spending their focus on loading this rack right now
+	function ENT:IsCrewLoading()
+		if self.AutoloaderFeeding then return false end
+
+		for _, Point in pairs(self.MountPoints) do
+			if Point.State == "Loading" then return true end
+		end
+
+		return false
+	end
 end
 
 do -- Spawning and Updating --------------------
@@ -902,6 +913,7 @@ do -- Loading ----------------------------------
 			Point.State    = "Loading"
 
 			self:UpdateLoad(Point, Missile)
+			ACF.RefreshLinkedCrews(self) -- Before the reload samples their efficiency
 
 			self.CurrentCrate = Crate
 			self.ReloadTime   = ReloadTime
@@ -948,6 +960,7 @@ do -- Loading ----------------------------------
 				self.HasCompletedInitialLoad = true
 
 				self:UpdateLoad(Point, Missile)
+				ACF.RefreshLinkedCrews(self)
 			end
 
 			if Instant then
