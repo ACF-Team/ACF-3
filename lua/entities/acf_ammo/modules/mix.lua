@@ -53,10 +53,6 @@ do -- MARK: Validation
 			return false, "Two piece setting must match the crate's."
 		end
 
-		if GetCrateModel(self, Ammo, BulletData).Model ~= GetCrateModel(self, self.RoundData, Base).Model then
-			return false, "This round uses a different model than the crate's."
-		end
-
 		local Data = { Caliber = self.Caliber }
 		local Size = ACF.GetRoundProperties(self.ClassData, Data, BulletData)
 		local Slot = ACF.GetRoundProperties(self.ClassData, Data, Base)

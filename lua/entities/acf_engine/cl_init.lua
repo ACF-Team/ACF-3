@@ -10,15 +10,18 @@ end
 
 do	-- NET SURFER 2.0
 	net.Receive("ACF_InvalidateEngineInfo", function()
-		local Engine	= net.ReadEntity()
+		local Engine	= ACF.ReadEntity()
 
-		if not IsValid(Engine) then return end
+		if not Engine then return end
 
 		Engine.HasData	= false
 	end)
 
 	net.Receive("ACF_RequestEngineInfo", function()
-		local Engine		= net.ReadEntity()
+		local Engine		= ACF.ReadEntity()
+
+		if not Engine then return end
+
 		local Driveshaft	= net.ReadVector()
 		local Outputs		= {}
 		local Fuel			= {}
@@ -76,7 +79,7 @@ do	-- NET SURFER 2.0
 		timer.Simple(5, function() Queued[self] = nil end)
 
 		net.Start("ACF_RequestEngineInfo")
-			net.WriteEntity(self)
+			ACF.WriteEntity(self)
 		net.SendToServer()
 	end
 end

@@ -75,6 +75,19 @@ local ENT_UpdateLoadMod
 local ENT_FindPropagator
 
 do -- Random timer crew stuff
+	local FilterGun, FilterCrew, FilterParent, FilterFn
+	function FilterFn(x)
+		return not (
+			x == FilterGun
+			or x.noradius
+			or x == FilterCrew
+			or x == FilterParent
+			or not ACF.SharesContraptionOrOwner(FilterGun, x)
+			or x:IsPlayer()
+			or ACF.GlobalFilter[ENTITY.GetClass(x)]
+		)
+	end
+
 	local TraceResult  = {}
 	local TraceResult2 = {}
 	local TraceConfig = {start = Vector(), endpos = Vector(), filter = nil, output = TraceResult}
@@ -92,7 +105,10 @@ do -- Random timer crew stuff
 
 		TraceConfig.start = CrewPos
 		TraceConfig.endpos = BreechPos
-		TraceConfig.filter = function(x) return not (x == Gun or x.noradius or x == Crew or x == ENTITY.GetParent(Gun) or x:GetOwner() ~= Gun:GetOwner() or x:IsPlayer() or ACF.GlobalFilter[ENTITY.GetClass(x)]) end
+		TraceConfig.filter = FilterFn
+		FilterGun = Gun
+		FilterCrew = Crew
+		FilterParent = ENTITY.GetParent(Gun)
 		TraceLine(TraceConfig)
 
 		if Debug.SetDeveloperLevel(2) then
@@ -154,7 +170,7 @@ do -- Random timer crew stuff
 
 			TraceConfig.start = wp1
 			TraceConfig.endpos = wp2
-			TraceConfig.filter = function(x) return not (x == self or x == ENTITY.GetParent(self) or x.noradius or x.IsACFAutoloader or ENTITY.GetOwner(x) ~= ENTITY.GetOwner(self) or x:IsPlayer() or ACF.GlobalFilter[ENTITY.GetClass(x)]) end
+			TraceConfig.filter = function(x) return not (x == self or x == ENTITY.GetParent(self) or x.noradius or x.IsACFAutoloader or not ACF.SharesContraptionOrOwner(self, x) or x:IsPlayer() or ACF.GlobalFilter[ENTITY.GetClass(x)]) end
 			TraceLine(TraceConfig)
 
 			if Debug.SetDeveloperLevel(2) then
@@ -281,7 +297,7 @@ do -- Random timer crew stuff
 
 		TraceConfig.start = ReferenceBreechPos
 		TraceConfig.endpos = CurrentBreechPos
-		TraceConfig.filter = function(x) return not (x == self or x == ENTITY.GetParent(self) or x.noradius or ENTITY.GetOwner(x) ~= ENTITY.GetOwner(self) or x:IsPlayer() or ACF.GlobalFilter[ENTITY.GetClass(x)] or SelfTbl.RotationFilter[x] or ACF.IsPrimitivePending(x)) end
+		TraceConfig.filter = function(x) return not (x == self or x == ENTITY.GetParent(self) or x.noradius or not ACF.SharesContraptionOrOwner(self, x) or x:IsPlayer() or ACF.GlobalFilter[ENTITY.GetClass(x)] or SelfTbl.RotationFilter[x] or ACF.IsPrimitivePending(x)) end
 		TraceConfig.ignoreworld = true -- The config is shared with crew traces that must hit the world
 		TraceLine(TraceConfig)
 		TraceConfig.ignoreworld = false
@@ -992,6 +1008,23 @@ do -- Metamethods --------------------------------
 			Entity.NextFire = Clock.CurTime + math.max(Config.Goal - Config.Progress, 0) / Eff
 		end
 
+		--- Whether linked crew are spending their focus on loading this gun right now
+		function ENT:IsCrewLoading()
+			local SelfTbl = ENTITY.GetTable(self)
+
+			return SelfTbl.CrewLoading == true and not SelfTbl.AutoloaderFeeding
+		end
+
+		-- Crew are re-rated straight away, since the reload samples their efficiency the moment it starts
+		function ENT:SetCrewLoading(Loading)
+			local SelfTbl = ENTITY.GetTable(self)
+			if SelfTbl.CrewLoading == Loading then return end
+
+			SelfTbl.CrewLoading = Loading
+
+			ACF.RefreshLinkedCrews(self)
+		end
+
 		--- Finds the next crate
 		--- @param Current any Optionally specified current crate to check against (optimization measure)
 		--- @param Check any Function used to check if a crate meets our criteria
@@ -1033,6 +1066,7 @@ do -- Metamethods --------------------------------
 
 			self:ReloadEffect(Reload and Time * 2 or Time)
 			self:SetState("Unloading")
+			self:SetCrewLoading(Manual)
 			Sounds.SendSound(self, "weapons/357/357_reload4.wav", 70, 100, 1)
 			SelfTbl.CurrentShot = 0
 			SelfTbl.BulletData  = EMPTY
@@ -1075,6 +1109,7 @@ do -- Metamethods --------------------------------
 
 				local IdealTime, Manual = ACF.CalcReloadTime(SelfTbl.Caliber, SelfTbl.ClassData, SelfTbl.WeaponData, BulletData, self)
 				if SelfTbl.TargetReloadTime then IdealTime = math.max(IdealTime, SelfTbl.TargetReloadTime) end
+				self:SetCrewLoading(Manual) -- Automatics cycle without the crew
 				local Time = Manual and IdealTime / SelfTbl.LoadCrewMod or IdealTime
 
 				SelfTbl.ReloadTime   = Time
@@ -1190,6 +1225,7 @@ do -- Metamethods --------------------------------
 				WireLib.TriggerOutput(self, "Shots Left", SelfTbl.CurrentShot)
 
 				local IdealTime, Manual = ACF.CalcReloadTimeMag(SelfTbl.Caliber, SelfTbl.ClassData, SelfTbl.WeaponData, SelfTbl.BulletData, SelfTbl)
+				self:SetCrewLoading(Manual)
 				local Time = Manual and IdealTime / SelfTbl.LoadCrewMod or IdealTime
 
 				SelfTbl.NextFire = Clock.CurTime + Time
@@ -1356,6 +1392,8 @@ do -- Metamethods --------------------------------
 
 		function ENT:SetState(State)
 			self.State = State
+
+			if State ~= "Loading" and State ~= "Unloading" then self:SetCrewLoading(false) end
 
 			self:UpdateOverlay()
 

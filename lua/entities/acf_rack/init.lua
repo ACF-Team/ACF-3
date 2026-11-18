@@ -104,7 +104,7 @@ do
 
 		TraceConfig.start = CrewPos
 		TraceConfig.endpos = BreechPos
-		TraceConfig.filter = function(x) return not (x == Rack or x == Crew or x.noradius or x:GetOwner() ~= Rack:GetOwner() or x:IsPlayer() or x:GetClass() == "acf_missile" or ACF.GlobalFilter[x:GetClass()]) end
+		TraceConfig.filter = function(x) return not (x == Rack or x == Crew or x.noradius or not ACF.SharesContraptionOrOwner(Rack, x) or x:IsPlayer() or x:GetClass() == "acf_missile" or ACF.GlobalFilter[x:GetClass()]) end
 		local tr = util.TraceLine(TraceConfig)
 
 		if ACF.Debug.SetDeveloperLevel(2) then
@@ -167,7 +167,7 @@ do
 
 			TraceConfig.start = wp1
 			TraceConfig.endpos = wp2
-			TraceConfig.filter = function(x) return not (x == self or x.noradius or x.IsACFAutoloader or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or x:GetClass() == "acf_missile" or ACF.GlobalFilter[x:GetClass()]) end
+			TraceConfig.filter = function(x) return not (x == self or x.noradius or x.IsACFAutoloader or not ACF.SharesContraptionOrOwner(self, x) or x:IsPlayer() or x:GetClass() == "acf_missile" or ACF.GlobalFilter[x:GetClass()]) end
 			local tr = TraceLine(TraceConfig)
 
 			if ACF.Debug.SetDeveloperLevel(2) then
@@ -226,6 +226,17 @@ do
 
 	function ENT:SetLoadModOverride(Efficiency)
 		self.LoadCrewModOverride = Efficiency
+	end
+
+	--- Whether linked crew are spending their focus on loading this rack right now
+	function ENT:IsCrewLoading()
+		if self.AutoloaderFeeding then return false end
+
+		for _, Point in pairs(self.MountPoints) do
+			if Point.State == "Loading" then return true end
+		end
+
+		return false
 	end
 end
 
@@ -902,6 +913,7 @@ do -- Loading ----------------------------------
 			Point.State    = "Loading"
 
 			self:UpdateLoad(Point, Missile)
+			ACF.RefreshLinkedCrews(self) -- Before the reload samples their efficiency
 
 			self.CurrentCrate = Crate
 			self.ReloadTime   = ReloadTime
@@ -948,6 +960,7 @@ do -- Loading ----------------------------------
 				self.HasCompletedInitialLoad = true
 
 				self:UpdateLoad(Point, Missile)
+				ACF.RefreshLinkedCrews(self)
 			end
 
 			if Instant then

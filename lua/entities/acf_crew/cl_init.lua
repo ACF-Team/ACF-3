@@ -50,11 +50,20 @@ net.Receive("ACF_Crew_Spawn", function()
 	Ent:CreateCrewHolo(PoseID)
 end)
 
+local DefaultPlayerModel = "models/player/dod_german.mdl"
+
 function ENT:CreateCrewHolo(PoseID)
 	local ClassData = GetCrewPose(PoseID)
-	if self.CrewHolo then self.CrewHolo:Remove() end -- Remove existing crew holo if it exists
+	if IsValid(self.CrewHolo) then self.CrewHolo:Remove() end -- Remove existing crew holo if it exists
+	self.CrewHolo = nil
 	if not ClassData then return end
-	self.CrewHolo = ClientsideModel(self.PlayerModel)
+
+	-- ClientsideModel gives nil for bad model paths
+	local Holo = ClientsideModel(self.PlayerModel or DefaultPlayerModel)
+	if not IsValid(Holo) then Holo = ClientsideModel(DefaultPlayerModel) end
+	if not IsValid(Holo) then return end
+
+	self.CrewHolo = Holo
 	self.CrewHolo:SetPos(self:LocalToWorld(ClassData.Position))
 	self.CrewHolo:SetAngles(self:LocalToWorldAngles(ClassData.Angle))
 	self.CrewHolo:Spawn()
@@ -68,7 +77,7 @@ end
 
 -- Remove crew holo when the crew entity is removed
 function ENT:OnRemove()
-	if self.CrewHolo then self.CrewHolo:Remove() end
+	if IsValid(self.CrewHolo) then self.CrewHolo:Remove() end
 end
 
 -- Initialize the crew holo if it doesn't already exist (PVS stuff)

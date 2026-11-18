@@ -159,6 +159,20 @@ end)
 
 local TraceConfig = {start = Vector(), endpos = Vector(), filter = nil}
 
+local FilterSelf, FilterGun, FilterAmmo, FilterParent, FilterFn
+function FilterFn(x)
+	return not (
+		x == FilterSelf
+		or x == FilterGun
+		or x == FilterAmmo
+		or x == FilterParent
+		or x.noradius
+		or not ACF.SharesContraptionOrOwner(FilterSelf, x)
+		or x:IsPlayer()
+		or x.IsACFMissile
+		or ACF.GlobalFilter[x:GetClass()])
+end
+
 --- Calculates the reload efficiency of this autoloader for a gun and an ammo crate
 --- @return number # The reload efficiency, always a usable value
 --- @return boolean # Whether the autoloader currently can't load at all, which stalls the reload
@@ -186,7 +200,11 @@ function ENT:GetReloadEffAuto(Gun, Ammo)
 	self:SetRequirement("autoloader_breech_alignment", GunArmAngleAligned,
 		{ Angle = math.Round(GunArmAngle), Limit = ACF.AutoloaderMaxAngleDiff, Weapon = Gun })
 
-	TraceConfig.filter = function(x) return not (x == self or x == Gun or x == Ammo or x == self:GetParent() or x.noradius or x:GetOwner() ~= self:GetOwner() or x:IsPlayer() or x.IsACFMissile or ACF.GlobalFilter[x:GetClass()]) end
+	TraceConfig.filter = FilterFn
+	FilterSelf = self
+	FilterGun = Gun
+	FilterAmmo = Ammo
+	FilterParent = self:GetParent()
 
 	-- Check LOS from arm to breech is unobstructed
 	TraceConfig.start = AutoloaderPos

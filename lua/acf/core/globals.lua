@@ -394,8 +394,8 @@ do -- ACF global vars
 	-- Crew
 	-- Total efficiency = clamp(CommanderEff * CommanderCoef + SelfEff * SelfCoef, FallBackCoef, 1)
 	ACF.CrewFallbackCoef = 0.1 -- Minimum possible efficiency, becomes 1 when crew is not required
-	ACF.DefineSetting("CrewRequired", true, "Crew requirement has been %s.", ACF.BooleanDataCallback(function(Value) ACF.CrewFallbackCoef = Value and 0.1 or 1 end))
-	ACF.DefineSetting("CrewMoraleDeathEnabled", true, "Morale deaths have been %s.", ACF.BooleanDataCallback())
+	ACF.DefineSetting("CrewRequired", true, "Crew requirement has been %s.", ACF.BooleanDataCallback(function(Value) ACF.CrewFallbackCoef = Value and 0.1 or 1 end), false)
+	ACF.DefineSetting("CrewMoraleDeathEnabled", true, "Morale deaths have been %s.", ACF.BooleanDataCallback(), false)
 	ACF.CrewCommanderCoef 	= 0.3	-- Portion of a crew's efficiency the commander provides
 	ACF.CrewSelfCoef 		= 1.0	-- Portion of a crew's efficiency they provide
 

@@ -558,7 +558,7 @@ elseif SERVER then
 			local Player = self:GetOwner()
 
 			if Entity:GetClass() ~= "primitive_shape" then
-				Notify.WarningToPlayer(Player, "Cannot set thickness", "This is not a primitive entity.")
+				Notify.WarningToPlayer(Player, "Cannot set thickness", "Thickness can only be set on a primitive entity.")
 				return false
 			end
 

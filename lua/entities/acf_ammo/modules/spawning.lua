@@ -233,7 +233,7 @@ do -- Spawn/Update/Remove
 	local function NetworkAmmoData(Entity, Player)
 		if IsValid(Entity) and Entity.ExtraData then
 			net.Start("ACF_RequestAmmoData")
-				net.WriteEntity(Entity)
+				ACF.WriteEntity(Entity)
 
 				local ExtraData = Entity.ExtraData
 				local Enabled = ExtraData.Enabled
@@ -317,7 +317,8 @@ do -- Spawn/Update/Remove
 	util.AddNetworkString("ACF_RequestAmmoData")
 
 	net.Receive("ACF_RequestAmmoData", function(_, Player)
-		local Entity = net.ReadEntity()
+		local Entity = ACF.ReadEntity()
+		if not Entity or Entity:GetClass() ~= "acf_ammo" then return end
 
 		NetworkAmmoData(Entity, Player)
 	end)
@@ -388,7 +389,8 @@ do -- Spawn/Update/Remove
 
 		Entity.ExtraData = CalculateExtraData(Entity, Data, Class, Weapon)
 
-		NetworkAmmoData(Entity)
+		-- New crates ask for it themselves once they exist clientside
+		if OldAmmo then NetworkAmmoData(Entity) end
 
 		Entity:UnloadWeapons()
 

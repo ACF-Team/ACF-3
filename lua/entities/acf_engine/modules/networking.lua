@@ -11,14 +11,14 @@ util.AddNetworkString("ACF_InvalidateEngineInfo")
 
 function ENT:InvalidateClientInfo()
     net.Start("ACF_InvalidateEngineInfo")
-        net.WriteEntity(self)
+        ACF.WriteEntity(self)
     net.Broadcast()
 end
 
 net.Receive("ACF_RequestEngineInfo", function(_, Ply)
-    local Entity = net.ReadEntity()
+    local Entity = ACF.ReadEntity()
 
-    if IsEntityValid(Entity) then
+    if IsEntityValid(Entity) and Entity:GetClass() == "acf_engine" then
         local Outputs    = {}
         local FuelTanks  = {}
         local Driveshaft = Entity.Out.Pos
@@ -36,7 +36,7 @@ net.Receive("ACF_RequestEngineInfo", function(_, Ply)
         end
 
         net.Start("ACF_RequestEngineInfo")
-            net.WriteEntity(Entity)
+            ACF.WriteEntity(Entity)
             net.WriteVector(Driveshaft)
             net.WriteUInt(#Outputs, 6)
             net.WriteUInt(#FuelTanks, 6)

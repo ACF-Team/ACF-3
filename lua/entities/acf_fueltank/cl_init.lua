@@ -6,14 +6,17 @@ include("shared.lua")
 
 do	-- NET SURFER 2.0
 	net.Receive("ACF_InvalidateFuelTankInfo", function()
-		local FuelTank = net.ReadEntity()
-		if not IsValid(FuelTank) then return end
+		local FuelTank = ACF.ReadEntity()
+		if not FuelTank then return end
 
 		FuelTank.HasData	= false
 	end)
 
 	net.Receive("ACF_RequestFuelTankInfo", function()
-		local FuelTank		= net.ReadEntity()
+		local FuelTank		= ACF.ReadEntity()
+
+		if not FuelTank then return end
+
 		local Engines		= {}
 		local EnginesLen	= net.ReadUInt(6)
 
@@ -48,7 +51,7 @@ do	-- NET SURFER 2.0
 		timer.Simple(5, function() Queued[self] = nil end)
 
 		net.Start("ACF_RequestFuelTankInfo")
-			net.WriteEntity(self)
+			ACF.WriteEntity(self)
 		net.SendToServer()
 	end
 end

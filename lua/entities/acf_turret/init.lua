@@ -233,7 +233,9 @@ local ENT_GetTurretMassCenter
 local ENT_UpdateTurretSlew
 
 do	-- Spawn and Update funcs
-	CFW.addParentDetour("acf_turret", "Rotator")
+	-- Children attach to the rotator in the engine, but CFW treats the turret as their parent and keeps the rotator
+	-- out of links, families and contraptions entirely
+	CFW.addTransformProxy("acf_turret", "Rotator", "acf_turret_rotator", "Turret")
 
 	local DefaultType = "ACF.Turrets.Drive.Horizontal"
 
@@ -584,14 +586,14 @@ do	-- Spawn and Update funcs
 
 	function ENT:InvalidateClientInfo()
 		net.Start("ACF_InvalidateTurretInfo")
-			net.WriteEntity(self)
+			ACF.WriteEntity(self)
 		net.Broadcast()
 	end
 
 	net.Receive("ACF_RequestTurretInfo", function(_, Player)
-		local Entity = net.ReadEntity()
+		local Entity = ACF.ReadEntity()
 
-		if IsValid(Entity) then
+		if Entity and Entity:GetClass() == "acf_turret" then
 			local CoM = Entity.TurretData.LocalCoM
 			local Data = {
 				LocalCoM	= Vector(math_Round(CoM.x, 1), math_Round(CoM.y, 1), math_Round(CoM.z, 1)),
@@ -603,7 +605,7 @@ do	-- Spawn and Update funcs
 			}
 
 			net.Start("ACF_RequestTurretInfo")
-				net.WriteEntity(Entity)
+				ACF.WriteEntity(Entity)
 				net.WriteEntity(Entity.Rotator)
 				net.WriteVector(Data.LocalCoM)
 				net.WriteFloat(Data.Mass)
