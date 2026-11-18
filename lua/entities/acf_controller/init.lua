@@ -125,6 +125,8 @@ do
 		self.Active       = false
 		self.KeyStates    = {}
 		self.ActionStates = {}
+		self.ActionLatches = {}
+		self.ActionMask   = 0
 
 		self.ACF.Model = "models/hunter/plates/plate025x025.mdl"
 		self:SetModel("models/hunter/plates/plate025x025.mdl")

@@ -10,6 +10,14 @@ end
 
 -- Camera related
 do
+	local function ApplyCamMode(Entity, CamMode)
+		CamMode = math.Clamp(CamMode, 1, Entity:GetCamCount())
+		Entity.CamMode = CamMode
+		Entity.CamOffset = Entity["GetCam" .. CamMode .. "Offset"]()
+		Entity.CamOrbit = Entity["GetCam" .. CamMode .. "Orbit"]()
+		Entity:SetCamParent(Entity["GetCam" .. CamMode .. "Parent"]())
+	end
+
 	net.Receive("ACF_Controller_CamInfo", function(_, ply)
 		local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
 		local CamMode = net.ReadUInt(2)
@@ -17,22 +25,21 @@ do
 		if not IsValid(Entity) then return end
 		if Entity.Driver ~= ply then return end
 		if Entity:GetDisableAIOCam() then return end
-		Entity.CamMode = math.Clamp(CamMode, 1, Entity:GetCamCount())
-		Entity.CamOffset = Entity["GetCam" .. CamMode .. "Offset"]()
-		Entity.CamOrbit = Entity["GetCam" .. CamMode .. "Orbit"]()
-		Entity:SetCamParent(Entity["GetCam" .. CamMode .. "Parent"]())
+		ApplyCamMode(Entity, CamMode)
 	end)
 
 	net.Receive("ACF_Controller_CamData", function(_, ply)
 		local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
 		local CamAngPitch = net.ReadFloat()
 		local CamAngYaw = net.ReadFloat()
+		local CamMode = net.ReadUInt(2)
 		local CamAng = Angle(CamAngPitch, CamAngYaw, 0)
 		local Entity = Entity(EntIndex)
 		if not IsValid(Entity) then return end
 		if Entity.Driver ~= ply then return end
 		if Entity:GetDisableAIOCam() then return end
 		Entity.CamAng = CamAng
+		if Entity.CamMode ~= math.Clamp(CamMode, 1, Entity:GetCamCount()) then ApplyCamMode(Entity, CamMode) end
 	end)
 
 	net.Receive("ACF_Controller_Zoom", function(_, ply)

@@ -1,5 +1,5 @@
 local RecacheBindOutput = ENT.RecacheBindOutput
-local GetBindState = ENT.GetBindState
+local ConsumeBindState = ENT.ConsumeBindState
 
 local NUM_WEAPONS = ENT.NUM_WEAPONS
 
@@ -195,9 +195,12 @@ do
 	end
 
 	function ENT:ProcessGuns(SelfTbl)
+		-- Consumed even with firing disabled, or old presses would fire once it's enabled
+		local Fires = {ConsumeBindState(SelfTbl, "Fire1"), ConsumeBindState(SelfTbl, "Fire2"), ConsumeBindState(SelfTbl, "Fire3")}
+		local FireSmoke = ConsumeBindState(SelfTbl, "FireSmoke")
+
 		if SelfTbl:GetDisableFiring() then return end
 
-		local Fires = {GetBindState(SelfTbl, "Fire1"), GetBindState(SelfTbl, "Fire2"), GetBindState(SelfTbl, "Fire3")}
 		local Delays = {SelfTbl:GetFire1Delay(), SelfTbl:GetFire2Delay(), SelfTbl:GetFire3Delay()}
 
 		for i = 1, NUM_WEAPONS do
@@ -206,7 +209,7 @@ do
 		end
 
 		local SmokeDelay = SelfTbl:GetSmokeDelay()
-		HandleFire(self, SelfTbl.FireState.Smoke, GetBindState(SelfTbl, "FireSmoke"), SelfTbl.GunsSmoke, SmokeDelay > 0 and SmokeDelay or nil)
+		HandleFire(self, SelfTbl.FireState.Smoke, FireSmoke, SelfTbl.GunsSmoke, SmokeDelay > 0 and SmokeDelay or nil)
 	end
 
 	function ENT:ToggleTurretLock(SelfTbl)

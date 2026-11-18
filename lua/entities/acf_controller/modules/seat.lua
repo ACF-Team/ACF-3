@@ -1,5 +1,6 @@
 local RecacheBindOutput = ENT.RecacheBindOutput
 local RecacheBindState  = ENT.RecacheBindState
+local TrackDriver       = ENT.TrackDriver
 
 local function Init(Entity)
 	Entity.Seat = nil  -- The single seat
@@ -17,6 +18,8 @@ local function OnActiveChanged(Controller, Ply, Active)
 	-- Reset all key states and outputs when getting in or out of the vehicle
 	Controller.KeyStates = {}
 	Controller.ActionStates = {}
+	Controller.ActionLatches = {}
+	Controller.ActionMask = 0
 	for Key, Output in pairs(IN_ENUM_TO_WIRE_OUTPUT) do
 		RecacheBindOutput(Controller, SelfTbl, Output, 0)
 		RecacheBindState(SelfTbl, Key, false)
@@ -30,6 +33,7 @@ local function OnActiveChanged(Controller, Ply, Active)
 
 	Controller.Active = Active
 	Controller.Driver = Active and Ply or NULL
+	TrackDriver(Ply, Active and Controller or nil)
 	if Active then Controller:AnalyzeCams() end -- Recalculate filter for the cameras
 
 	for Turret in pairs(Controller.Turrets) do

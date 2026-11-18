@@ -7,8 +7,6 @@ return function(State)
     State.CamOffset = vector_origin
     State.CamOrbit = 0
 
-    State.LastCamAng = angle_zero
-
     -- Camera related
     local WorldCamMins = Vector(-4, -4, -4)
     local WorldCamMaxs = Vector(4, 4, 4)
@@ -72,17 +70,16 @@ return function(State)
         State.CamAng = Angle(math.Clamp(State.CamAng.pitch + y * TrueSlew, -90, 90), State.CamAng.yaw - x * TrueSlew, 0)
     end)
 
-    -- Transmit in a loop, if the angle changed
+    -- Sent even when nothing changed, any of these can get dropped
     timer.Create("AimTransmit", CamAngleUpdateDelay, 0, function()
         if not IsValid(State.MyController) then return end
-        if State.LastCamAng ~= State.CamAng then
-            State.LastCamAng = State.CamAng
-            net.Start("ACF_Controller_CamData", true)
-            net.WriteUInt(State.MyController:EntIndex(), MAX_EDICT_BITS)
-            net.WriteFloat(State.CamAng.pitch)
-            net.WriteFloat(State.CamAng.yaw)
-            net.SendToServer()
-        end
+
+        net.Start("ACF_Controller_CamData", true)
+        net.WriteUInt(State.MyController:EntIndex(), MAX_EDICT_BITS)
+        net.WriteFloat(State.CamAng.pitch)
+        net.WriteFloat(State.CamAng.yaw)
+        net.WriteUInt(State.Mode, 2)
+        net.SendToServer()
     end)
 
     local LastFOV = State.FOV
