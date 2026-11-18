@@ -60,8 +60,10 @@ local function CreateMenu(Menu)
     end
     PopulatePlayerList()
 
-    net.Receive("ACF.Scanning.PlayerListChanged", function()
+    net.Receive("ACF_Scanning_PlayerListChanged", function()
         timer.Simple(1, function()
+            if not IsValid(playerList) then return end
+
             PopulatePlayerList()
         end)
     end)

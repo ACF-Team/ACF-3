@@ -210,10 +210,10 @@ if SERVER then
         scanner_blockedFromACFDamage[playerScanning] = nil
     end
 
-    hook.Add("ACF_PreDamageEntity", "ACF_Scanning_BlockDamageAfterScanner", function(ent, _, _)
+    hook.Add("ACF_PreDamageEntity", "ACF_Scanning_BlockDamageAfterScanner", function(ent, _, dmgInfo)
         if not IsValid(ent) then return end
-        local owner = ent:CPPIGetOwner()
-        if not IsValid(owner) then return end
+        local attacker = dmgInfo and dmgInfo:GetAttacker()
+        if not IsValid(attacker) or not attacker:IsPlayer() then return end
 
         local tickNow = engine.TickCount()
         local doNotNotify = false
@@ -222,12 +222,12 @@ if SERVER then
             scanner_acfDamage_lastTick = tickNow
             table.Empty(scanner_acfDamage_notifiedThisTick)
         else
-            if scanner_acfDamage_notifiedThisTick[owner] then
+            if scanner_acfDamage_notifiedThisTick[attacker] then
                 doNotNotify = true
             end
         end
 
-        local started = scanner_blockedFromACFDamage[owner]
+        local started = scanner_blockedFromACFDamage[attacker]
 
         if started then -- started is boolean true if active, number started (in curtime) if left scanning
             local now = CurTime()
@@ -235,18 +235,18 @@ if SERVER then
             if started == true or (now - started < scanner_damageCooldown) then
                 if not doNotNotify then
                     local msg
-                    if started then
+                    if started == true then
                         msg = "ACF damage is currently blocked due to current use of the contraption scanner."
                     else
                         msg = "ACF damage is currently blocked due to recent use of the contraption scanner. Please try again in " .. math.Round(scanner_damageCooldown - (now - started), 2) .. " seconds."
                     end
 
-                    Notify.WarningToPlayer(owner, msg)
+                    Notify.WarningToPlayer(attacker, msg)
                 end
-                scanner_acfDamage_notifiedThisTick[owner] = true
+                scanner_acfDamage_notifiedThisTick[attacker] = true
                 return false
             else -- No longer blocked by scanner, time-delta > cooldown
-                scanning.UnblockACFDamage(owner)
+                scanning.UnblockACFDamage(attacker)
             end
         end
     end)
@@ -279,7 +279,7 @@ if SERVER then
 
     function scanning.BeginScanning(playerScanning, targetPlayer)
         if not IsValid(playerScanning) then return end
-        if not IsValid(targetPlayer) then scanning.EndScanning() return end
+        if not IsValid(targetPlayer) or not targetPlayer:IsPlayer() then scanning.EndScanning(playerScanning) return end
         if not hook.Run("ACF_PreBeginScanning", playerScanning) then return end
         if playerScanning:InVehicle() then return end
 
