@@ -19,9 +19,12 @@ local function ReplaceSound(_, Entity, Data)
 	if not IsValid(Entity) then return end
 
 	local Support = Sounds[Entity:GetClass()]
+
+	if not Support or not istable(Data) then return end
+
 	local Sound, Pitch, Volume = unpack(Data)
 
-	if not Support then return end
+	if not isstring(Sound) then return end
 
 	Support.SetSound(Entity, {
 		Sound  = Sound,
@@ -78,14 +81,18 @@ function TOOL:RightClick(trace)
 	local support = ACF.SoundToolSupport[class]
 	if not support then return false end
 	local soundData = support.GetSound(trace.Entity)
-	owner:ConCommand("wire_soundemitter_sound " .. soundData.Sound)
+	-- Can come from a dupe
+	local Sound = string.gsub(soundData.Sound or "", "[%c\";]", "")
+	local Pitch, Volume = tonumber(soundData.Pitch), tonumber(soundData.Volume)
 
-	if soundData.Pitch then
-		owner:ConCommand("acfsound_pitch " .. soundData.Pitch)
+	owner:ConCommand("wire_soundemitter_sound \"" .. Sound .. "\"")
+
+	if Pitch then
+		owner:ConCommand("acfsound_pitch " .. Pitch)
 	end
 
-	if soundData.Volume then
-		owner:ConCommand("acfsound_volume " .. soundData.Volume)
+	if Volume then
+		owner:ConCommand("acfsound_volume " .. Volume)
 	end
 
 	return true
