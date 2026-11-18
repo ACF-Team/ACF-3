@@ -9,6 +9,28 @@ Classes.DefineClass("base_scalable",      "base_wire_entity", function() end)
 Classes.DefineClass("acf_base_simple",    "base_wire_entity", function() end)
 Classes.DefineClass("acf_base_scalable",  "base_scalable",    function() end)
 
+Entities.BaseOnlyClasses = Entities.BaseOnlyClasses or {}
+
+local BaseOnlyClasses = Entities.BaseOnlyClasses
+
+-- ENT.ACF_IsBaseClass = only meant to be inherited from
+hook.Add("PreRegisterSENT", "ACF_BaseOnlyClasses", function(ENT, Class)
+    if not ENT.ACF_IsBaseClass then return end
+
+    BaseOnlyClasses[Class] = true
+
+    ENT.Spawnable      = false
+    ENT.AdminSpawnable = false
+
+    if SERVER then duplicator.RegisterEntityClass(Class, function() end) end
+end)
+
+if SERVER then
+    hook.Add("PlayerSpawnSENT", "ACF_BaseOnlyClasses", function(_, Class)
+        if BaseOnlyClasses[Class] then return false end
+    end)
+end
+
 -- Same as the rack's, Player:AddCount has no counterpart
 local function RemoveCount(Player, Str, Entity)
     local Key = Player:UniqueID()
@@ -266,6 +288,8 @@ local function PrepareSpawnFunctions(ENT, ClassName)
 
         return Result, InitReason
     end
+
+    if ENT.ACF_IsBaseClass then return end
 
     Entities.SpawnFuncs[ClassName] = DoSpawn
 

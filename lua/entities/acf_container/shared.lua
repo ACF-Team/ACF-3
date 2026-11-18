@@ -1,5 +1,7 @@
 DEFINE_BASECLASS("acf_base_scalable")
 
+ENT.ACF_IsBaseClass = true
+
 ACF.Entities.AutoRegister(2026091001, function()
 	-- Shape is shared by all containers. Size is NOT stored here: each child declares its own size
 	-- fields (ammo = projectile counts, supply/fuel = absolute dimensions).

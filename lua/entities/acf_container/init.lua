@@ -9,8 +9,6 @@ local TimerCreate = timer.Create
 local TimerExists = timer.Exists
 local Clamp       = math.Clamp
 
-ENT.Spawnable      = false
-ENT.AdminSpawnable = false
 ENT.WireAmountName = "Amount" -- Default wire output name for amount (Can be aliased to "Fuel" or "Ammo" or whatever)
 
 function ENT:GetUnitMass()

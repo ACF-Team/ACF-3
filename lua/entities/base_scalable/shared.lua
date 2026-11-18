@@ -4,6 +4,7 @@ ENT.PrintName      = "Base Scalable Entity"
 ENT.WireDebugName  = "Base Scalable Entity"
 ENT.Contact        = "Don't"
 ENT.IsScalable     = true
+ENT.ACF_IsBaseClass = true
 ENT.ScaleData      = { Type = false, Path = false }
 ENT.IsACFEntity    = true
 ENT.ACF_PreventArmoring = true
