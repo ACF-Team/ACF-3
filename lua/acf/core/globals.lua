@@ -129,6 +129,7 @@ do -- ACF global vars
 	ACF.DefineSetting("MaxArmorVolumeAir",    44000,  "Aircraft max armor volume has been set to %s.", ACF.FloatDataCallback(0, 100000, 0), 0)
 	ACF.DefineSetting("VehicleLegalChecks",   true,   "Legality checks for vehicles has been %s.", ACF.BooleanDataCallback(), false)
 	ACF.DefineSetting("LegalityDetours",      true,   "Legality detours have been %s.", ACF.BooleanDataCallback(), false)
+	ACF.DefineSetting("MassRatioCompFactor",  0.6,    "Mass ratio compensation factor has been set to %s", ACF.FloatDataCallback(0.5, 1, 2))
 
 	ACF.DefineSetting("GunsCanFire",          true,   "Gunfire has been %s.", ACF.BooleanDataCallback())
 	ACF.DefineSetting("GunsCanSmoke",         true,   "Gun sounds and particles have been %s.", ACF.BooleanDataCallback())
@@ -203,6 +204,7 @@ do -- ACF global vars
 	ACF.MobilityLinkDistance = 650 -- Maximum distance, in inches, at which mobility-related components will remain linked with each other
 	ACF.LinkDistance         = 650 -- Maximum distance, in inches, at which components will remain linked with each other
 	ACF.KillIconColor        = Color(200, 200, 48)
+	ACF.BaseAngVelSampleRate = 0.1 -- Time between angular velocity samples, in seconds.
 
 	ACF.ColorArray = {
 		Color(255, 0, 0),
@@ -235,6 +237,7 @@ do -- ACF global vars
 	ACF.NmToFtLb             = 0.73756 -- Newton meters to foot-pounds
 	ACF.KwToHp               = 1.341 -- Kilowatts to horsepower
 	ACF.LToGal               = 0.264172 -- Liters to gallons
+	ACF.RPMToRads            = 0.10472 -- Revolutions Per Minute to Radians
 
 	-- Fuzes
 	ACF.MinFuzeCaliber       = 25 -- Minimum caliber in millimeters that can be fuzed

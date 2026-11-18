@@ -152,6 +152,11 @@ do -- Overlay text
 
 		State:AddKeyValue("Fuel Type", FuelType and FuelType.ID or self.FuelType)
 		State:AddNumber("Priority", self.FuelPriority)
+		State:AddSize("Size",
+			self:ACF_GetUserVar("FuelSizeX"),
+			self:ACF_GetUserVar("FuelSizeY"),
+			self:ACF_GetUserVar("FuelSizeZ")
+		)
 
 		if FuelType and FuelType.FuelTankOverlay then
 			FuelType.FuelTankOverlay(self.Amount, State)
