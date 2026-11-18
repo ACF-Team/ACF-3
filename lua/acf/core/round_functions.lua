@@ -272,11 +272,6 @@ function ACF.FindWeaponrySource(ID)
 	end
 end
 
--- changes here will be automatically reflected in the armor properties tool
-function ACF.CalcArmor(Area, Ductility, Mass)
-	return (Mass * 1000 / Area / 0.78) / (1 + Ductility) ^ 0.5 * ACF.ArmorMod
-end
-
 local BlacklistCount = 0
 -- This is suboptimal. It works similarly to how engines do iirc for performance data, but still...
 -- TODO: Redo this as to be dynamic? Is that possible?
