@@ -394,9 +394,9 @@ e2function array entity:acfLinks()
 end
 
 --allows e2 to perform ACF links
-e2function number entity:acfLinkTo(entity Target, number Notify)
+e2function number entity:acfLinkTo(entity Target, number ShouldNotify)
 	if not ACF.AllowDynamicLinking then
-		if Notify ~= 0 then
+		if ShouldNotify ~= 0 then
 			Notify.EntityWarningToPlayer(Target, self.player, "Dynamic linking has been disabled on this server.")
 		end
 
@@ -406,7 +406,7 @@ e2function number entity:acfLinkTo(entity Target, number Notify)
 	if not validPhysics(this) then return 0 end
 	if not validPhysics(Target) then return 0 end
 	if not (isOwner(self, this) and isOwner(self, Target)) then
-		if Notify ~= 0 then
+		if ShouldNotify ~= 0 then
 			Notify.EntityWarningToPlayer(Target, self.player, "Must be called on entities you own.")
 		end
 
@@ -414,7 +414,7 @@ e2function number entity:acfLinkTo(entity Target, number Notify)
 	end
 
 	if not this.Link then
-		if Notify ~= 0 then
+		if ShouldNotify ~= 0 then
 			Notify.EntityWarningToPlayer(Target, self.player, "This entity is not linkable.")
 		end
 
@@ -423,7 +423,7 @@ e2function number entity:acfLinkTo(entity Target, number Notify)
 
 	local Success, Message = this:Link(Target, true)
 
-	if Notify ~= 0 then
+	if ShouldNotify ~= 0 then
 		if Success then
 			Notify.EntityNoticeToPlayer(Target, self.player, Message)
 		else
@@ -435,11 +435,11 @@ e2function number entity:acfLinkTo(entity Target, number Notify)
 end
 
 --allows e2 to perform ACF unlinks
-e2function number entity:acfUnlinkFrom(entity Target, number Notify)
+e2function number entity:acfUnlinkFrom(entity Target, number ShouldNotify)
 	if not validPhysics(this) then return 0 end
 	if not validPhysics(Target) then return 0 end
 	if not (isOwner(self, this) and isOwner(self, Target)) then
-		if Notify ~= 0 then
+		if ShouldNotify ~= 0 then
 			Notify.EntityWarningToPlayer(Target, self.player, "Must be called on entities you own.")
 		end
 
@@ -447,7 +447,7 @@ e2function number entity:acfUnlinkFrom(entity Target, number Notify)
 	end
 
 	if not this.Unlink then
-		if Notify ~= 0 then
+		if ShouldNotify ~= 0 then
 			Notify.EntityWarningToPlayer(Target, self.player, "This entity is not linkable.")
 		end
 
@@ -456,7 +456,7 @@ e2function number entity:acfUnlinkFrom(entity Target, number Notify)
 
 	local Success, Message = this:Unlink(Target)
 
-	if Notify > 0 then
+	if ShouldNotify > 0 then
 		if Success then
 			Notify.EntityNoticeToPlayer(Target, self.player, Message)
 		else
@@ -595,6 +595,7 @@ end
 e2function number entity:acfPowerRPM(number N)
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
+	if not this.IsACFEngine then return 0 end
 
 	local Idle = this.IdleRPM 
 	local Redline = this.LimitRPM
@@ -612,6 +613,7 @@ end
 e2function number entity:acfTorqueRPM(number N)
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
+	if not this.IsACFEngine then return 0 end
 
 	local Idle = this.IdleRPM 
 	local Redline = this.LimitRPM
