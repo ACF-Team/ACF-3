@@ -1287,11 +1287,11 @@ do -- Metamethods --------------------------------
 		end
 
 		function ENT:PostEntityPaste(_, Ent, CreatedEntities)
-			local EntMods = Ent.EntityMods
+			local EntMods = ACF.DupeTable(Ent.EntityMods)
 
 			-- Backwards compatibility
 			if EntMods.ACFAmmoLink then
-				local Entities = EntMods.ACFAmmoLink.entities
+				local Entities = ACF.DupeTable(ACF.DupeTable(EntMods.ACFAmmoLink).entities)
 
 				for _, EntID in ipairs(Entities) do
 					self:Link(CreatedEntities[EntID])
@@ -1301,15 +1301,15 @@ do -- Metamethods --------------------------------
 			end
 
 			if EntMods.ACFCrates then
-				for _, EntID in pairs(EntMods.ACFCrates) do
+				for _, EntID in pairs(ACF.DupeTable(EntMods.ACFCrates)) do
 					self:Link(CreatedEntities[EntID])
 				end
 
 				EntMods.ACFCrates = nil
 			end
 
-			if EntMods.ACFTurret and next(EntMods.ACFTurret) then
-				self:Link(CreatedEntities[EntMods.ACFTurret[1]])
+			if EntMods.ACFTurret and next(ACF.DupeTable(EntMods.ACFTurret)) then
+				self:Link(CreatedEntities[ACF.DupeTable(EntMods.ACFTurret)[1]])
 			end
 
 			-- AutoRegisterV2 wraps this as the original PostEntityPaste and handles the wire/base dupe info.
@@ -1357,7 +1357,7 @@ do -- Metamethods --------------------------------
 		util.AddNetworkString("ACF.RequestGunInfo")
 		net.Receive("ACF.RequestGunInfo", function(_, Ply)
 			local Gun = net.ReadEntity()
-			if not IsValid(Gun) then return end
+			if not IsValid(Gun) or Gun:GetClass() ~= "acf_gun" then return end
 
 			local AmmoCrates = {}
 

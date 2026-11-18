@@ -781,17 +781,6 @@ do -- Overlay Text -------------------------------------
 		local Torque    = math.Round(self.MaxTorque * ACF.TorqueMult * ACF.NmToFtLb)
 		local Output    = math.Round(self.TorqueOutput * ACF.TorqueMult * ACF.NmToFtLb)
 
-		if not GearsText or GearsText == "" then
-			local Gears = self.Gears
-
-			GearsText = ""
-
-			for I = 1, self.MaxGear do
-				local Ratio = ACF.ConvertGearRatio(Gears[I], self.GearboxRealisticRatio)
-				GearsText = GearsText .. "Gear " .. I .. ": " .. Ratio .. "\n"
-			end
-		end
-
 		local RatioFormat = self.GearboxRealisticRatio and "Driver/Driven (Realistic)" or "Driven/Driver (Legacy)"
 		State:AddNumber("Scale", self.ScaleMult)
 		State:AddNumber("Current Gear", self.Gear)
@@ -1147,11 +1136,11 @@ do -- Duplicator Support -------------------------------
 	end
 
 	function ENT:PostEntityPaste(_, Ent, CreatedEntities)
-		local EntMods = Ent.EntityMods
+		local EntMods = ACF.DupeTable(Ent.EntityMods)
 
 		-- Backwards compatibility
 		if EntMods.WheelLink then
-			local Entities = EntMods.WheelLink.entities
+			local Entities = ACF.DupeTable(ACF.DupeTable(EntMods.WheelLink).entities)
 
 			for _, EntID in ipairs(Entities) do
 				self:Link(CreatedEntities[EntID])
@@ -1161,7 +1150,7 @@ do -- Duplicator Support -------------------------------
 		end
 
 		if EntMods.ACFWheels then
-			for _, EntID in ipairs(EntMods.ACFWheels) do
+			for _, EntID in ipairs(ACF.DupeTable(EntMods.ACFWheels)) do
 				self:Link(CreatedEntities[EntID])
 			end
 
@@ -1169,7 +1158,7 @@ do -- Duplicator Support -------------------------------
 		end
 
 		if EntMods.ACFGearboxes then
-			for _, EntID in ipairs(EntMods.ACFGearboxes) do
+			for _, EntID in ipairs(ACF.DupeTable(EntMods.ACFGearboxes)) do
 				self:Link(CreatedEntities[EntID])
 			end
 
@@ -1177,7 +1166,7 @@ do -- Duplicator Support -------------------------------
 		end
 
 		if EntMods.ACFEffectors then
-			for _, EntID in ipairs(EntMods.ACFEffectors) do
+			for _, EntID in ipairs(ACF.DupeTable(EntMods.ACFEffectors)) do
 				self:Link(CreatedEntities[EntID])
 			end
 

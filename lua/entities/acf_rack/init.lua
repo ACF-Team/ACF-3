@@ -1016,10 +1016,10 @@ do -- Duplicator Support -----------------------
 	end
 
 	function ENT:PostEntityPaste(_, Ent, CreatedEntities)
-		local EntMods = Ent.EntityMods
+		local EntMods = ACF.DupeTable(Ent.EntityMods)
 
 		if EntMods.ACFRadar then
-			local _, EntIndex = next(EntMods.ACFRadar)
+			local _, EntIndex = next(ACF.DupeTable(EntMods.ACFRadar))
 
 			self:Link(CreatedEntities[EntIndex])
 
@@ -1027,7 +1027,7 @@ do -- Duplicator Support -----------------------
 		end
 
 		if EntMods.ACFComputer then
-			local _, EntIndex = next(EntMods.ACFComputer)
+			local _, EntIndex = next(ACF.DupeTable(EntMods.ACFComputer))
 
 			self:Link(CreatedEntities[EntIndex])
 
@@ -1036,7 +1036,7 @@ do -- Duplicator Support -----------------------
 
 		-- Backwards compatibility
 		if EntMods.ACFAmmoLink then
-			local Entities = EntMods.ACFAmmoLink.entities
+			local Entities = ACF.DupeTable(ACF.DupeTable(EntMods.ACFAmmoLink).entities)
 			local Entity
 
 			for _, EntID in pairs(Entities) do
@@ -1049,7 +1049,7 @@ do -- Duplicator Support -----------------------
 		end
 
 		if EntMods.ACFCrates then
-			for _, EntID in pairs(EntMods.ACFCrates) do
+			for _, EntID in pairs(ACF.DupeTable(EntMods.ACFCrates)) do
 				self:Link(CreatedEntities[EntID])
 			end
 
@@ -1065,7 +1065,7 @@ do	-- Overlay/networking
 
 	net.Receive("ACF.RequestRackInfo", function(_, Ply)
 		local Rack = net.ReadEntity()
-		if not IsValid(Rack) then return end
+		if not IsValid(Rack) or Rack:GetClass() ~= "acf_rack" then return end
 
 		local RackInfo	= {}
 		local Crates	= {}

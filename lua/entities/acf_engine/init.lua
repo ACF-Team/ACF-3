@@ -41,7 +41,6 @@ do
 
 		Link:SetOrigin(Engine.Out)
 		Link:SetTargetPos(Target.In)
-		Link:SetAxis(Direction)
 
 		Link.RopeLen = (OutPos - InPos):Length()
 
@@ -699,11 +698,11 @@ function ENT:PreEntityCopy()
 end
 
 function ENT:PostEntityPaste(_, Ent, CreatedEntities)
-	local EntMods = Ent.EntityMods
+	local EntMods = ACF.DupeTable(Ent.EntityMods)
 
 	-- Backwards compatibility
 	if EntMods.GearLink then
-		local Entities = EntMods.GearLink.entities
+		local Entities = ACF.DupeTable(ACF.DupeTable(EntMods.GearLink).entities)
 
 		for _, EntID in ipairs(Entities) do
 			self:Link(CreatedEntities[EntID])
@@ -717,7 +716,7 @@ function ENT:PostEntityPaste(_, Ent, CreatedEntities)
 	EntMods.ACFFuelTanks = nil
 
 	if EntMods.ACFGearboxes then
-		for _, EntID in ipairs(EntMods.ACFGearboxes) do
+		for _, EntID in ipairs(ACF.DupeTable(EntMods.ACFGearboxes)) do
 			self:Link(CreatedEntities[EntID])
 		end
 
