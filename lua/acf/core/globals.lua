@@ -568,6 +568,10 @@ do -- Player loaded hook
 		util.AddNetworkString("ACF_PlayerLoaded")
 
 		net.Receive("ACF_PlayerLoaded", function(_, Player)
+			if Player.ACF_PlayerLoaded then return end
+
+			Player.ACF_PlayerLoaded = true
+
 			hook.Run("ACF_OnLoadPlayer", Player)
 		end)
 	else
