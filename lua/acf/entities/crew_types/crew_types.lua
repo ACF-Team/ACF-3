@@ -100,6 +100,7 @@ Classes.DefineClass("ACF.CrewTypes.Loader", "ACF.CrewTypes.BaseCrewType", functi
 	CLASS.LeanInfo = {			-- Specifying this table enables leaning efficiency calculations (deviation from the baseplate's up)
 		Min = 15,			-- Best efficiency before this angle (Degs)
 		Max = 90,			-- Worst efficiency after this angle (Degs)
+		WorldUp = true,		-- Measure against world up instead, since loading fights gravity
 	}
 	CLASS.GForceInfo = {
 		Efficiencies = {	-- Specifying this table enables G-force efficiency calculations
@@ -150,7 +151,7 @@ Classes.DefineClass("ACF.CrewTypes.Gunner", "ACF.CrewTypes.BaseCrewType", functi
 		Text	= "Maximum number of gunners a player can have."
 	}
 	CLASS.Mass = 80
-	CLASS.LeanInfo = {			-- Specifying this table enables leaning efficiency calculations (deviation from the baseplate's up)
+	CLASS.LeanInfo = {			-- Specifying this table enables leaning efficiency calculations (deviation from the baseplate's up, or world up while loading a gun/rack)
 		Min = 15,			-- Best efficiency before this angle (Degs)
 		Max = 90,			-- Worst efficiency after this angle (Degs)
 	}
@@ -270,7 +271,7 @@ Classes.DefineClass("ACF.CrewTypes.Commander", "ACF.CrewTypes.BaseCrewType", fun
 		Text	= "Maximum number of commanders a player can have."
 	}
 	CLASS.Mass = 80
-	CLASS.LeanInfo = {			-- Specifying this table enables leaning efficiency calculations (deviation from the baseplate's up)
+	CLASS.LeanInfo = {			-- Specifying this table enables leaning efficiency calculations (deviation from the baseplate's up, or world up while loading a gun/rack)
 		Min = 15,			-- Best efficiency before this angle (Degs)
 		Max = 90,			-- Worst efficiency after this angle (Degs)
 	}

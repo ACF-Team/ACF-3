@@ -334,13 +334,23 @@ do -- Random timer stuff
 
 		if SelfTbl.Disabled then return end
 
+		-- First, since lean is measured differently while loading
+		if SelfTbl.IsAlive then UpdateDuty(self, SelfTbl) end
+
 		local Contraption = ENTITY.CFW_GetContraption(self) or {}
 
 		-- If specified, affect crew ergonomics based on lean angle
 		local LeanInfo = SelfTbl.CrewType.LeanInfo
 		if LeanInfo then
-			local Baseplate = Contraption.ACF_Baseplate
-			local Up = IsEntityValid(Baseplate) and ENTITY.GetUp(Baseplate) or VectorUp -- Crew sit relative to the vehicle, so slopes and rolls don't count
+			local Up = VectorUp
+
+			-- Loading lifts rounds against gravity, so slopes and rolls hinder it even with the crew upright in the vehicle.
+			-- Other duties are done seated relative to the vehicle, where they don't count.
+			if not (LeanInfo.WorldUp or SelfTbl.IsLoading) then
+				local Baseplate = Contraption.ACF_Baseplate
+				if IsEntityValid(Baseplate) then Up = ENTITY.GetUp(Baseplate) end
+			end
+
 			local LeanDot = math.Clamp(VECTOR.Dot(Up, ENTITY.GetUp(self)), -1, 1)
 			local Angle = math.deg(math.acos(LeanDot))
 			SelfTbl.LeanEff = 1 - ACF.Normalize(Angle, LeanInfo.Min, LeanInfo.Max)
@@ -352,12 +362,8 @@ do -- Random timer stuff
 		local Commanders = CrewsByType.Commander or {}
 		local Commander = next(Commanders)
 
-		if SelfTbl.IsAlive then
-			UpdateDuty(self, SelfTbl)
-			SelfTbl.CrewType.UpdateEfficiency(self, Commander, SelfTbl.IsAlive)
-		else
-			SelfTbl.TotalEff = ACF.CrewFallbackCoef
-		end
+		if SelfTbl.IsAlive then SelfTbl.CrewType.UpdateEfficiency(self, Commander, SelfTbl.IsAlive)
+		else SelfTbl.TotalEff = ACF.CrewFallbackCoef end
 
 		WireLib.TriggerOutput(self, "TotalEff", SelfTbl.TotalEff * 100)
 
