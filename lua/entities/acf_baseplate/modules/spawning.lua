@@ -17,8 +17,8 @@ function ENT:ACF_PreSpawn()
 end
 
 function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
-	local EntMods = ClientData.EntityMods
-	if EntMods and EntMods.mass then
+	local EntMods = ACF.DupeTable(ClientData.EntityMods)
+	if EntMods.mass then
 		ACF.Contraption.SetMass(self, self.ACF.Mass or 1)
 	else
 		ACF.Contraption.SetMass(self, 1000)
@@ -102,9 +102,7 @@ end
 
 function ENT:PostEntityPaste(_, _, CreatedEntities)
 	-- Pod should be valid since this runs after all entities are created
-	local LuaSeatID = self.EntityMods
-	LuaSeatID = LuaSeatID and LuaSeatID.LuaSeatID
-	LuaSeatID = LuaSeatID and LuaSeatID[1]
+	local LuaSeatID = ACF.DupeTable(ACF.DupeTable(self.EntityMods).LuaSeatID)[1]
 
 	if LuaSeatID then
 		self.Pod = CreatedEntities[LuaSeatID]
