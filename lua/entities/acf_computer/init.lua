@@ -277,10 +277,10 @@ function ENT:PreEntityCopy()
 end
 
 function ENT:PostEntityPaste(_, Ent, CreatedEntities)
-	local EntMods = Ent.EntityMods
+	local EntMods = ACF.DupeTable(Ent.EntityMods)
 
 	if EntMods.ACFWeapons then
-		for _, EntID in pairs(EntMods.ACFWeapons) do
+		for _, EntID in pairs(ACF.DupeTable(EntMods.ACFWeapons)) do
 			self:Link(CreatedEntities[EntID])
 		end
 

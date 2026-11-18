@@ -349,16 +349,16 @@ do
 	end
 
 	function ENT:PostEntityPaste(_, Ent, CreatedEntities)
-		local EntMods = Ent.EntityMods
+		local EntMods = ACF.DupeTable(Ent.EntityMods)
 
 		for _, Data in pairs(ControllerLinkRegistry) do
 			local Field = Data.Field
 			if EntMods[Field] then
 				if Data.Single then
-					local Target = CreatedEntities[EntMods[Field][1]]
+					local Target = CreatedEntities[ACF.DupeTable(EntMods[Field])[1]]
 					if IsValid(Target) then self:Link(Target) end
 				else
-					for _, EntID in pairs(EntMods[Field]) do self:Link(CreatedEntities[EntID]) end
+					for _, EntID in pairs(ACF.DupeTable(EntMods[Field])) do self:Link(CreatedEntities[EntID]) end
 				end
 				EntMods[Field] = nil
 			end
@@ -366,17 +366,19 @@ do
 
 		-- Handle camera parent entities
 		if EntMods.CamParents then
-			self:SetCam1Parent(CreatedEntities[EntMods.CamParents[1]])
-			self:SetCam2Parent(CreatedEntities[EntMods.CamParents[2]])
-			self:SetCam3Parent(CreatedEntities[EntMods.CamParents[3]])
+			local CamParents = ACF.DupeTable(EntMods.CamParents)
+			self:SetCam1Parent(CreatedEntities[CamParents[1]])
+			self:SetCam2Parent(CreatedEntities[CamParents[2]])
+			self:SetCam3Parent(CreatedEntities[CamParents[3]])
 			EntMods.CamParents = nil
 		end
 
 		-- Handle manually linked weapon selection
 		if EntMods.Guns123 then
-			self:SetGun1(CreatedEntities[EntMods.Guns123[1]])
-			self:SetGun2(CreatedEntities[EntMods.Guns123[2]])
-			self:SetGun3(CreatedEntities[EntMods.Guns123[3]])
+			local Guns123 = ACF.DupeTable(EntMods.Guns123)
+			self:SetGun1(CreatedEntities[Guns123[1]])
+			self:SetGun2(CreatedEntities[Guns123[2]])
+			self:SetGun3(CreatedEntities[Guns123[3]])
 			EntMods.Guns123 = nil
 		end
 
