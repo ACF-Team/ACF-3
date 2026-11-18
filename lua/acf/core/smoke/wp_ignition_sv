@@ -12,18 +12,10 @@ timer.Create("ACF WP Player Ignition", 0.1, 0, function()
 		for _, Player in ipairs(player.GetAll()) do
 			if not Player:Alive() or Player:IsOnFire() then continue end
 
-			local Mins, Maxs = Player:WorldSpaceAABB()
-			local DX = math.max(Mins.x - Center.x, 0, Center.x - Maxs.x)
-			local DY = math.max(Mins.y - Center.y, 0, Center.y - Maxs.y)
-			local DZ = math.max(Mins.z - Center.z, 0, Center.z - Maxs.z)
+			local Target = Player:GetPos()
 
-			if DX * DX + DY * DY + DZ * DZ > RadiusSqr then continue end
+			if Center:DistToSqr(Target) > RadiusSqr then continue end
 
-			local Target = Vector(
-				math.Clamp(Center.x, Mins.x, Maxs.x),
-				math.Clamp(Center.y, Mins.y, Maxs.y),
-				math.Clamp(Center.z, Mins.z, Maxs.z)
-			)
 			local LOS = util.TraceLine({
 				start  = Center + Cloud.Normal * 4,
 				endpos = Target,
