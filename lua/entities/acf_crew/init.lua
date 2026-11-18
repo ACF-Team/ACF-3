@@ -362,8 +362,11 @@ do -- Random timer stuff
 		local Commanders = CrewsByType.Commander or {}
 		local Commander = next(Commanders)
 
-		if SelfTbl.IsAlive then SelfTbl.CrewType.UpdateEfficiency(self, Commander, SelfTbl.IsAlive)
-		else SelfTbl.TotalEff = ACF.CrewFallbackCoef end
+		if SelfTbl.IsAlive then
+			SelfTbl.CrewType.UpdateEfficiency(self, Commander, SelfTbl.IsAlive)
+		else
+			SelfTbl.TotalEff = ACF.CrewFallbackCoef
+		end
 
 		WireLib.TriggerOutput(self, "TotalEff", SelfTbl.TotalEff * 100)
 

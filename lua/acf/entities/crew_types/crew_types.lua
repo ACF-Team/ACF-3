@@ -97,7 +97,7 @@ Classes.DefineClass("ACF.CrewTypes.Loader", "ACF.CrewTypes.BaseCrewType", functi
 		Text	= "Maximum number of loaders a player can have."
 	}
 	CLASS.Mass = 80				-- Mass (kg) of a single crew member
-	CLASS.LeanInfo = {			-- Specifying this table enables leaning efficiency calculations (deviation from the baseplate's up)
+	CLASS.LeanInfo = {			-- Specifying this table enables leaning efficiency calculations (deviation from world up)
 		Min = 15,			-- Best efficiency before this angle (Degs)
 		Max = 90,			-- Worst efficiency after this angle (Degs)
 		WorldUp = true,		-- Measure against world up instead, since loading fights gravity
