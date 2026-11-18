@@ -231,6 +231,32 @@ local Vector6  = Vector(6, 6, 6)
 local VectorUp = Vector(0, 0, 1)
 
 do -- Random timer stuff
+	-- Loading is as sensitive to movement as an actual Loader's job, regardless of the crew's usual tolerance
+	local function UpdateMoveEff(self, SelfTbl)
+		local GForceInfo = SelfTbl.CrewType.GForceInfo
+		local Effs = SelfTbl.IsLoading and GForceInfo.LoaderEfficiencies or GForceInfo.Efficiencies
+		if not Effs then return end
+
+		SelfTbl.MoveEff = 1 - ACF.Normalize(SelfTbl.GForce or 0, Effs.Min, Effs.Max)
+		WireLib.TriggerOutput(self, "MoveEff", SelfTbl.MoveEff * 100)
+	end
+
+	-- Linked weapons only weigh on a crew while it's loading one of them
+	local function UpdateDuty(self, SelfTbl)
+		local Loading = false
+
+		for Target in pairs(SelfTbl.Targets) do
+			if IsEntityValid(Target) and Target.IsCrewLoading and Target:IsCrewLoading() then
+				Loading = true
+				break
+			end
+		end
+
+		SelfTbl.IsLoading = Loading
+		SelfTbl.CrewType.UpdateFocus(self)
+		UpdateMoveEff(self, SelfTbl)
+	end
+
 	function ENT_UpdateUltraLowFreq(self, cfg)
 		local SelfTbl = ENTITY.GetTable(self)
 
@@ -326,8 +352,12 @@ do -- Random timer stuff
 		local Commanders = CrewsByType.Commander or {}
 		local Commander = next(Commanders)
 
-		if SelfTbl.IsAlive then SelfTbl.CrewType.UpdateEfficiency(self, Commander, SelfTbl.IsAlive)
-		else SelfTbl.TotalEff = ACF.CrewFallbackCoef end
+		if SelfTbl.IsAlive then
+			UpdateDuty(self, SelfTbl)
+			SelfTbl.CrewType.UpdateEfficiency(self, Commander, SelfTbl.IsAlive)
+		else
+			SelfTbl.TotalEff = ACF.CrewFallbackCoef
+		end
 
 		WireLib.TriggerOutput(self, "TotalEff", SelfTbl.TotalEff * 100)
 
@@ -399,28 +429,13 @@ do -- Random timer stuff
 		-- Debug.Cross(NewPos, 4, 1, Red, true)
 		local GForce = ACF.UpdateGForceTracker(SelfTbl.GForceTracker, NewPos, SampleRate)
 
-		-- If specified, affect crew ergonomics based on G-forces
-		local GForceInfo = SelfTbl.CrewType.GForceInfo
-		local Effs = GForceInfo.Efficiencies
-
-		-- Commanders take Loader-accurate G-force penalties while performing Loader duty
-		if GForceInfo.LoaderEfficiencies then
-			local TargetsByType = SelfTbl.TargetsByType
-			local LinkedToGun = TargetsByType and TargetsByType.acf_gun and next(TargetsByType.acf_gun)
-			local LinkedToRack = TargetsByType and TargetsByType.acf_rack and next(TargetsByType.acf_rack)
-			if LinkedToGun or LinkedToRack then
-				Effs = GForceInfo.LoaderEfficiencies
-			end
-		end
-
-		if Effs then
-			SelfTbl.MoveEff = 1 - ACF.Normalize(GForce, Effs.Min, Effs.Max)
-			WireLib.TriggerOutput(self, "MoveEff", SelfTbl.MoveEff * 100)
-		end
+		-- Kept so a change of duty can re-rate movement without waiting for the next sample
+		SelfTbl.GForce = GForce
+		UpdateMoveEff(self, SelfTbl)
 		WireLib.TriggerOutput(self, "GForce", GForce)
 
 		-- If specified, apply damage to crew based on G-forces
-		local Damages = GForceInfo.Damages
+		local Damages = SelfTbl.CrewType.GForceInfo.Damages
 		if Damages and GForce > Damages.Min and SelfTbl.IsAlive then
 			local Damage = ACF.Normalize(GForce, Damages.Min, Damages.Max) * DeltaTime * SampleRate
 			SelfTbl.GForceStrain = SelfTbl.GForceStrain + Damage

@@ -37,6 +37,7 @@ do -- MARK: Core restrictions
 		Check = function(Entity, EntTbl)
 			local Phys = Entity:GetPhysicsObject()
 
+			if not IsValid(Phys) then return true end
 			if IsValid(EntTbl.ACF.PhysObj) and EntTbl.ACF.PhysObj == Phys then return true end
 			if not Phys:GetVolume() then return false end
 
