@@ -209,7 +209,7 @@ do
 
     do
         local OpenPonder = Notify.RegisterAction("OpenPonder")
-        function OpenPonder.DoClickCL(_, UUID)
+        function OpenPonder.DoClickCL(Context, UUID)
             if not Ponder then return Context:DoButtonError("Ponder is not installed.") end -- This shouldn't even show up in the future
             Ponder.Open(UUID)
         end
