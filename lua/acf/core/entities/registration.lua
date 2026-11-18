@@ -234,6 +234,8 @@ local function PrepareSpawnFunctions(ENT, ClassName)
     end
 
     local function DoSpawn(Player, Pos, Angle, ClientData, _, IsMenuSpawn)
+        if not istable(ClientData) then ClientData = {} end
+
         Serialization.SanitizeClassFields(ClassDef, ClientData)
 
         if IsValid(Player) then
@@ -312,7 +314,7 @@ local function PrepareSerializationFunctions(ENT, ClassName)
         -- Resolve entity references ONCE, at the leaf class only (the leaf ClassDef covers every inherited
         -- field). Mirrors the leaf-only guard in PreEntityCopy so base autoreg methods don't redo it.
         if self:GetClass() == ClassName and self.ACF_LiveData then
-            local Data = Ent.ACF_UserData or {}
+            local Data = ACF.DupeTable(Ent.ACF_UserData)
             ACF.Classes.Serialization.ResolveEntities(ClassDef, self.ACF_LiveData, Data, CreatedEntities, self)
         end
         if OrigPostEntityPaste then OrigPostEntityPaste(self, Player, Ent, CreatedEntities) end

@@ -1,6 +1,11 @@
 local ACF = ACF
 local Notify = ACF.Utilities.Notify
 
+-- Anything can be in a dupe file
+function ACF.DupeTable(Value)
+	return istable(Value) and Value or {}
+end
+
 do -- Combat state
 	local CombatTimeout = 30 / engine.TickInterval() -- 30 seconds
 
@@ -518,7 +523,7 @@ do -- Entity linking
 			if not ExpectFn then
 				return true, nil, false
 			else
-				return false, ExpectFn:format(SourceClass, TargetClass)
+				return false, ExpectFn:format(Source:GetClass(), Target:GetClass())
 			end
 		end
 
@@ -758,7 +763,7 @@ do -- Wheel torque axes
 
 	-- A paste can run this before or after the gearboxes relink, so links built first get redone
 	duplicator.RegisterEntityModifier("ACF_TorqueAxis", function(_, Wheel, Data)
-		if not IsValid(Wheel) or not ACF.WheelAxes[Data.Axis] then return end
+		if not IsValid(Wheel) or not istable(Data) or not ACF.WheelAxes[Data.Axis] then return end
 
 		StoreAxis(Wheel, Data.Axis, Data.Sign)
 		ACF.UpdateWheelAxes(Wheel)
