@@ -79,6 +79,6 @@ Chapter:AddInstruction("ACF.SetAIOSetting", {Name = "AIOMenu", Setting = "SteerR
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "SteerRate is how fast the wheels turn towards their angle. At 0 they never move."}))
 Chapter:AddInstruction("ACF.SetAIOSetting", {Name = "AIOMenu", Setting = "SteerLow", Value = 30}):DelayByLength()
 Chapter:AddInstruction("ACF.SetAIOSetting", {Name = "AIOMenu", Setting = "SteerTop", Value = 10}):DelayByLength()
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "SteerLow and SteerTop are the steering angles at SpeedLow and SpeedTop. Left at 0, BrakeStrength is used as the angle instead."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "SteerLow and SteerTop are the steering angles at SpeedLow and SpeedTop."}))
 Chapter:AddInstruction("RemovePanel", {Name = "AIOMenu", Length = 0.5}):DelayByLength()
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Sit in the baseplate and drive with W, A, S and D."}))

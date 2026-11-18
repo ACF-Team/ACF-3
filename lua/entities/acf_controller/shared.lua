@@ -12,7 +12,7 @@ end
 -- The controller's live settings are NetworkVars (see below). The only serialized field is a request
 -- for the default config, applied by init.lua's ACF_OnVerifyClientData on spawn (always true from the
 -- menu, matching the previous behavior).
-ACF.Entities.AutoRegister(2026091001, function()
+ACF.Entities.AutoRegister(2026111701, function()
 	MENU_FIELD("Boolean", "AIOUseDefaults", {Default = true})
 end, "Controller", "Controllers")
 
@@ -71,8 +71,8 @@ function ENT:SetupDataTables()
 
 	self:NetworkVar( "Int", "BrakeEngagement", { KeyName = "brakeengagement", Edit = { type = "Combo", order = 701, category = "Brake Settings", values = {Manual = 0, Automatic = 1}, tooltip = "How the brake is used to stop" } } )
 	self:NetworkVar( "Int", "DisableWeldBrake", { KeyName = "disableweldbrake", Edit = { type = "Bool", order = 702, category = "Brake Settings", tooltip = "Disables weld brake and only uses ACF brakes to stop the vehicle (useful for very light cars)"  } } )
-	self:NetworkVar( "Int", "BrakeStrength", { KeyName = "brakestrength", Edit = { type = "Int", order = 703, category = "Brake Settings", min = 0.001, max = 1000, tooltip = "Brake strength (at low speed) (used as steer angle for cars)"  } } )
-	self:NetworkVar( "Int", "BrakeStrengthTop", { KeyName = "brakestrengthtop", Edit = { type = "Int", order = 704, category = "Brake Settings", min = 0.001, max = 1000, tooltip = "Brake strength (at top speed) (used as steer angle for cars)"  } } )
+	self:NetworkVar( "Int", "BrakeStrength", { KeyName = "brakestrength", Edit = { type = "Int", order = 703, category = "Brake Settings", min = 0.001, max = 1000, tooltip = "Brake strength (at low speed)"  } } )
+	self:NetworkVar( "Int", "BrakeStrengthTop", { KeyName = "brakestrengthtop", Edit = { type = "Int", order = 704, category = "Brake Settings", min = 0.001, max = 1000, tooltip = "Brake strength (at top speed)"  } } )
 	self:NetworkVar( "Int", "SpeedLow", { KeyName = "speedlow", Edit = { type = "Int", order = 705, category = "Brake Settings", min = 0.001, max = 1000, tooltip = "low speed for brake setting"  } } )
 	self:NetworkVar( "Int", "SpeedTop", { KeyName = "speedtop", Edit = { type = "Int", order = 706, category = "Brake Settings", min = 0.001, max = 1000, tooltip = "top speed for brake setting"  } } )
 
@@ -80,13 +80,13 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "Int", "ShiftMinRPM", { KeyName = "shiftminrpm", Edit = { type = "Int", order = 801, category = "Shifting Settings", min = 0, max = 10000, tooltip = "Shifts gear down at this RPM"  } } )
 	self:NetworkVar( "Int", "ShiftMaxRPM", { KeyName = "shiftmaxrpm", Edit = { type = "Int", order = 802, category = "Shifting Settings", min = 0, max = 10000, tooltip = "Shifts gear up at this RPM"  } } )
 
-	self:NetworkVar( "Float", "SteerPercent1", { KeyName = "steerpercent1", Edit = { type = "Float", order = 900, category = "Car Steering Settings", min = -1, max = 1, tooltip = "Percent of brake strength used to steer 1st wheel pair" } } )
-	self:NetworkVar( "Float", "SteerPercent2", { KeyName = "steerpercent2", Edit = { type = "Float", order = 901, category = "Car Steering Settings", min = -1, max = 1, tooltip = "Percent of brake strength used to steer 2nd wheel pair" } } )
-	self:NetworkVar( "Float", "SteerPercent3", { KeyName = "steerpercent3", Edit = { type = "Float", order = 902, category = "Car Steering Settings", min = -1, max = 1, tooltip = "Percent of brake strength used to steer 3rd wheel pair" } } )
-	self:NetworkVar( "Float", "SteerPercent4", { KeyName = "steerpercent4", Edit = { type = "Float", order = 903, category = "Car Steering Settings", min = -1, max = 1, tooltip = "Percent of brake strength used to steer 4th wheel pair" } } )
+	self:NetworkVar( "Float", "SteerPercent1", { KeyName = "steerpercent1", Edit = { type = "Float", order = 900, category = "Car Steering Settings", min = -1, max = 1, tooltip = "Percent of the steer angle used to steer 1st wheel pair" } } )
+	self:NetworkVar( "Float", "SteerPercent2", { KeyName = "steerpercent2", Edit = { type = "Float", order = 901, category = "Car Steering Settings", min = -1, max = 1, tooltip = "Percent of the steer angle used to steer 2nd wheel pair" } } )
+	self:NetworkVar( "Float", "SteerPercent3", { KeyName = "steerpercent3", Edit = { type = "Float", order = 902, category = "Car Steering Settings", min = -1, max = 1, tooltip = "Percent of the steer angle used to steer 3rd wheel pair" } } )
+	self:NetworkVar( "Float", "SteerPercent4", { KeyName = "steerpercent4", Edit = { type = "Float", order = 903, category = "Car Steering Settings", min = -1, max = 1, tooltip = "Percent of the steer angle used to steer 4th wheel pair" } } )
 	self:NetworkVar( "Float", "SteerRate", { KeyName = "steerrate", Edit = { type = "Float", order = 904, category = "Car Steering Settings", min = -45, max = 45, tooltip = "Speed wheels are steered at" } } )
-	self:NetworkVar( "Int", "SteerLow", { KeyName = "steerlow", Edit = { type = "Int", order = 905, category = "Car Steering Settings", min = 0, max = 1000, tooltip = "Steer angle at low speed, if 0 and SteerTop is 0 the brake strength is used instead" } } )
-	self:NetworkVar( "Int", "SteerTop", { KeyName = "steertop", Edit = { type = "Int", order = 906, category = "Car Steering Settings", min = 0, max = 1000, tooltip = "Steer angle at top speed, if 0 and SteerLow is 0 the brake strength is used instead" } } )
+	self:NetworkVar( "Int", "SteerLow", { KeyName = "steerlow", Edit = { type = "Int", order = 905, category = "Car Steering Settings", min = 0, max = 1000, tooltip = "Steer angle at low speed" } } )
+	self:NetworkVar( "Int", "SteerTop", { KeyName = "steertop", Edit = { type = "Int", order = 906, category = "Car Steering Settings", min = 0, max = 1000, tooltip = "Steer angle at top speed" } } )
 end
 
 -- Thank you march (https://github.com/marchc1/imagestickers/blob/master/lua/imagestickers/properties.lua)
