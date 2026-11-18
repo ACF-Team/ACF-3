@@ -6,7 +6,12 @@ ENT.ACF_InvisibleToBallistics = true
 ENT.NUM_WEAPONS = 3
 
 function ENT:GetWeapon(Slot)
-	return self["GetGun" .. Slot](self)
+	local Getter = self["GetGun" .. Slot]
+	if not Getter then return NULL end
+
+	local Gun = Getter(self)
+
+	return IsValid(Gun) and Gun.IsACFWeapon and Gun or NULL
 end
 
 -- The controller's live settings are NetworkVars (see below). The only serialized field is a request

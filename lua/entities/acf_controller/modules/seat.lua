@@ -134,6 +134,9 @@ local function OnLinkedSeat(Controller, Target)
 end
 
 local function OnUnlinkedSeat(Controller)
+	local Driver = Controller.Driver
+	if Controller.Active and IsValid(Driver) then OnActiveChanged(Controller, Driver, false) end
+
 	-- Remove the hooks when the seat is unlinked
 	hook.Remove("PlayerEnteredVehicle", "ACFControllerSeatEnter" .. Controller:EntIndex())
 	hook.Remove("PlayerLeaveVehicle", "ACFControllerSeatExit" .. Controller:EntIndex())

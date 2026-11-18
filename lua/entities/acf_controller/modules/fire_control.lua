@@ -51,7 +51,7 @@ do
 
 		-- Either way, each slot's group is everything sharing that slot's weapon identity
 		for i = 1, NUM_WEAPONS do
-			local Gun = self["GetGun" .. i](self)
+			local Gun = self:GetWeapon(i)
 			self.FireGroups[i] = IsValid(Gun) and self.WeaponGroups[Gun.Name] or {}
 		end
 	end
@@ -227,12 +227,15 @@ do
 	-- Records range and pitch to the lased point, which ProcessTurrets corrects drop and drift against
 	function ENT:LaseTarget(SelfTbl)
 		local TurretComputer = SelfTbl.TurretComputer
-		if not IsValid(TurretComputer) then return end
+		if not IsValid(TurretComputer) or not SelfTbl.HitPos then return end
 
 		TurretComputer.Inputs.Position.Value = SelfTbl.HitPos
 		TurretComputer:TriggerInput("Calculate Superelevation", 1)
 
-		local Diff = self:GetGun1():GetPos() - SelfTbl.HitPos
+		local Gun = self:GetWeapon(1)
+		if not IsValid(Gun) then return end
+
+		local Diff = Gun:GetPos() - SelfTbl.HitPos
 		SelfTbl.LasePitch = math.deg(math.asin(Diff.z / Diff:Length()))
 		SelfTbl.LaseDist = Diff:Length()
 	end
@@ -254,7 +257,7 @@ do
 		if SelfTbl.TurretLocked then return end
 		if self:GetDisableAIOCam() then return end -- I guess bro
 
-		local Primary = self:GetGun1()
+		local Primary = self:GetWeapon(1)
 		local BreechReference = IsValid(Primary) and Primary.BreechReference
 		local ReloadAngle = self:GetReloadAngle()
 		local ReloadAngleHorizontal = self:GetReloadAngleHorizontal()

@@ -15,11 +15,12 @@ do
 		self.RadarUpdateRate = math.ceil(Radar.Outputs["Think Delay"].Value / (1 / 66))
 	end
 
-	net.Receive("ACF_Controller_Radar", function()
+	net.Receive("ACF_Controller_Radar", function(_, ply)
 		local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
 		local SelectedID = net.ReadUInt(16)
 		local Entity = Entity(EntIndex)
 		if not IsValid(Entity) then return end
+		if Entity.Driver ~= ply then return end
 		Entity.SelectedTargetID = SelectedID ~= 0 and SelectedID or nil
 	end)
 

@@ -579,6 +579,16 @@ do -- Native type verification functions
 	end
 end
 
+do -- Numerical validation functions
+	function ACF.IsNumberFinite(Value)
+		return Value == Value and Value ~= math.huge and Value ~= -math.huge
+	end
+
+	function ACF.IsNumberNaN(Value)
+		return Value ~= Value
+	end
+end
+
 do -- Hitbox storing and retrieval functions
 	ACF.Hitboxes = ACF.Hitboxes or {}
 

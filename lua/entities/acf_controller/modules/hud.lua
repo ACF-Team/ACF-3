@@ -22,7 +22,7 @@ do
 
 	function ENT:ProcessHUDs(SelfTbl)
 		-- Network various statistics
-		local Primary = self:GetGun1()
+		local Primary = self:GetWeapon(1)
 		if IsValid(Primary) then
 			RecacheBindNW(self, SelfTbl, "AHS_Primary_SL", Primary.TotalAmmo or 0, self.SetNWInt)
 			RecacheBindNW(self, SelfTbl, "AHS_Primary_AT", ACF.GetLegacyStyleClassName(Primary.BulletData.AmmoType), self.SetNWString)
@@ -33,7 +33,7 @@ do
 			RecacheBindNW(self, SelfTbl, "AHS_Primary_MV", Primary.BulletData.MuzzleVel or 0, self.SetNWFloat)
 		end
 
-		local Secondary = self:GetGun2()
+		local Secondary = self:GetWeapon(2)
 		if IsValid(Secondary) then
 			RecacheBindNW(self, SelfTbl, "AHS_Secondary_SL", Secondary.TotalAmmo or 0, self.SetNWInt)
 			RecacheBindNW(self, SelfTbl, "AHS_Secondary_AT", ACF.GetLegacyStyleClassName(Secondary.BulletData.AmmoType), self.SetNWString)
@@ -43,7 +43,7 @@ do
 			RecacheBindNW(self, SelfTbl, "AHS_Secondary", Secondary, self.SetNWEntity)
 		end
 
-		local Tertiary = self:GetGun3()
+		local Tertiary = self:GetWeapon(3)
 		if IsValid(Tertiary) then
 			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_SL", Tertiary.TotalAmmo or 0, self.SetNWInt)
 			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_AT", ACF.GetLegacyStyleClassName(Tertiary.BulletData.AmmoType), self.SetNWString)
