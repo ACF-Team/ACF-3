@@ -51,6 +51,7 @@ local function GetEntsMissingLinks(Entities, LinkStores)
         local found = false
         for _, LinkStore in ipairs(LinkStores) do
             local Links = Ent[LinkStore]
+            if Links == nil and Ent.ACF_GetUserVar then Links = Ent:ACF_GetUserVar(LinkStore) end
             if istable(Links) then
                 if not table.IsEmpty(Links) then found = true end
             elseif IsValid(Links) then
@@ -297,7 +298,7 @@ end, "Ensure all guns and racks are linked to ammo crates, and all ammo crates a
 RegisterTest("Links", "Guidance", "Links/Guidance", Severity.Functional, function(Env)
     local Faults = {}
     for _, e in ipairs(GetEntsMissingLinks(Env.Contraption.entsbyclass.acf_rack, {"Computer"})) do
-        for crate in pairs(e.Crates or {}) do
+        for crate in pairs(e:ACF_GetUserVar("Crates") or {}) do
             if crate.Guidance ~= "Dumb" then table.insert(Faults, {Ent = e, Msg = "Guided rack needs link to guidance computer"}) break end
         end
     end

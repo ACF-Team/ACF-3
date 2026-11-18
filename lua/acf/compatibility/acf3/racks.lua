@@ -52,3 +52,12 @@ ACF.Entities.RegisterCompatPatch("acf_rack", 2026062801, function(Data)
 		BreechIndex = Data.BreechIndex,
 	}
 end)
+
+ACF.Entities.RegisterCompatPatch("acf_rack", 2026111801, function(Data)
+	local Move = ACF.Entities.MoveLinkModToUserData
+
+	Move(Data, "ACFAmmoLink", "Crates", false, "entities")
+	Move(Data, "ACFCrates", "Crates")
+	Move(Data, "ACFRadar", "Radar", true)
+	Move(Data, "ACFComputer", "Computer", true)
+end)

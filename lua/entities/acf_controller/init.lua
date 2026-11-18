@@ -225,11 +225,13 @@ for Class, Data in pairs(ControllerLinkRegistry) do
 	-- Register the link/unlink functions for each class
 	ACF.RegisterClassLink("acf_controller", Class, function(Controller, Target)
 		if Controller:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then return false, "The controller is too far from this entity." end
-		if Single and IsValid(Controller[Field]) then return false, "This controller is already linked to another entity of this type." end
-		if not Single and Controller[Field][Target] then return false, "This controller is already linked to this entity." end
+		local Linked = Controller:ACF_GetUserVar(Field)
 
-		if Single then Controller[Field] = Target
-		else Controller[Field][Target] = true end
+		if Single and IsValid(Linked) then return false, "This controller is already linked to another entity of this type." end
+		if not Single and Linked[Target] then return false, "This controller is already linked to this entity." end
+
+		if Single then Controller:ACF_SetUserVar(Field, Target)
+		else Linked[Target] = true end
 
 		if PreLink then
 			local PreLinkResult, PreLinkMsg = PreLink(Controller, Target)
@@ -247,11 +249,13 @@ for Class, Data in pairs(ControllerLinkRegistry) do
 	end)
 
 	ACF.RegisterClassUnlink("acf_controller", Class, function(Controller, Target)
-		if Single and Controller[Field] ~= Target then return false, "This controller is not linked to this entity." end
-		if not Single and not Controller[Field][Target] then return false, "This controller is not linked to this entity." end
+		local Linked = Controller:ACF_GetUserVar(Field)
 
-		if Single then Controller[Field] = nil
-		else Controller[Field][Target] = nil end
+		if Single and Linked ~= Target then return false, "This controller is not linked to this entity." end
+		if not Single and not Linked[Target] then return false, "This controller is not linked to this entity." end
+
+		if Single then Controller:ACF_SetUserVar(Field, nil)
+		else Linked[Target] = nil end
 
 		if OnUnlinked then OnUnlinked(Controller, Target) end
 
@@ -316,73 +320,25 @@ end
 
 -- Adv Dupe 2 Related
 do
-	-- Hopefully we can improve this when the codebase is refactored.
+	local EntityVars = {"Gun1", "Gun2", "Gun3", "Cam1Parent", "Cam2Parent", "Cam3Parent"}
+
 	function ENT:PreEntityCopy()
-		for _, Data in pairs(ControllerLinkRegistry) do
-			local Field = Data.Field
-			if Data.Single then
-				if IsValid(self[Field]) then
-					duplicator.StoreEntityModifier(self, Field, {self[Field]:EntIndex()})
-				end
-			else
-				if next(self[Field]) then
-					local Entities = {}
-					for Ent in pairs(self[Field]) do Entities[#Entities + 1] = Ent:EntIndex() end
-					duplicator.StoreEntityModifier(self, Field, Entities)
-				end
-			end
+		local UserData = self.ACF_UserData
+		if not UserData then return end
+
+		for _, Name in ipairs(EntityVars) do
+			local Target = self["Get" .. Name](self)
+
+			UserData[Name] = IsValid(Target) and Target:EntIndex() or -1
 		end
-
-		-- Handle camera entity selection
-		local Parent1 = IsValid(self:GetCam1Parent()) and self:GetCam1Parent():EntIndex() or 0
-		local Parent2 = IsValid(self:GetCam2Parent()) and self:GetCam2Parent():EntIndex() or 0
-		local Parent3 = IsValid(self:GetCam3Parent()) and self:GetCam3Parent():EntIndex() or 0
-		duplicator.StoreEntityModifier(self, "CamParents", {Parent1, Parent2, Parent3})
-
-		-- Handle manually linked weapon selection
-		local Gun1 = IsValid(self:GetGun1()) and self:GetGun1():EntIndex() or 0
-		local Gun2 = IsValid(self:GetGun2()) and self:GetGun2():EntIndex() or 0
-		local Gun3 = IsValid(self:GetGun3()) and self:GetGun3():EntIndex() or 0
-		duplicator.StoreEntityModifier(self, "Guns123", {Gun1, Gun2, Gun3})
-
-		-- AutoRegisterV2 wraps this as the original PreEntityCopy and handles the wire/base dupe info.
 	end
 
-	function ENT:PostEntityPaste(_, Ent, CreatedEntities)
-		local EntMods = ACF.DupeTable(Ent.EntityMods)
+	function ENT:PostEntityPaste(_, Ent)
+		local UserData = ACF.DupeTable(Ent.ACF_UserData)
 
-		for _, Data in pairs(ControllerLinkRegistry) do
-			local Field = Data.Field
-			if EntMods[Field] then
-				if Data.Single then
-					local Target = CreatedEntities[ACF.DupeTable(EntMods[Field])[1]]
-					if IsValid(Target) then self:Link(Target) end
-				else
-					for _, EntID in pairs(ACF.DupeTable(EntMods[Field])) do self:Link(CreatedEntities[EntID]) end
-				end
-				EntMods[Field] = nil
-			end
+		for _, Name in ipairs(EntityVars) do
+			if UserData[Name] ~= nil then self["Set" .. Name](self, self:ACF_GetUserVar(Name)) end
 		end
-
-		-- Handle camera parent entities
-		if EntMods.CamParents then
-			local CamParents = ACF.DupeTable(EntMods.CamParents)
-			self:SetCam1Parent(CreatedEntities[CamParents[1]])
-			self:SetCam2Parent(CreatedEntities[CamParents[2]])
-			self:SetCam3Parent(CreatedEntities[CamParents[3]])
-			EntMods.CamParents = nil
-		end
-
-		-- Handle manually linked weapon selection
-		if EntMods.Guns123 then
-			local Guns123 = ACF.DupeTable(EntMods.Guns123)
-			self:SetGun1(CreatedEntities[Guns123[1]])
-			self:SetGun2(CreatedEntities[Guns123[2]])
-			self:SetGun3(CreatedEntities[Guns123[3]])
-			EntMods.Guns123 = nil
-		end
-
-		-- AutoRegisterV2 wraps this as the original PostEntityPaste and handles the wire/base dupe info.
 	end
 
 	function ENT:OnRemove(IsFullUpdate)
@@ -391,9 +347,11 @@ do
 		for _, Data in pairs(ControllerLinkRegistry) do
 			local Field = Data.Field
 			if Data.Single then
-				if IsValid(self[Field]) then self:Unlink(self[Field]) end
+				local Linked = self:ACF_GetUserVar(Field)
+
+				if IsValid(Linked) then self:Unlink(Linked) end
 			else
-				for Ent in pairs(self[Field]) do self:Unlink(Ent) end
+				for Ent in pairs(self:ACF_GetUserVar(Field) or {}) do self:Unlink(Ent) end
 			end
 		end
 	end

@@ -37,7 +37,7 @@ local COLOR_GREEN = Color(0, 255, 0)
 local function UpdateTotalAmmo(Entity)
 	local Total = 0
 
-	for Crate in pairs(Entity.Crates) do
+	for Crate in pairs(Entity:ACF_GetUserVar("Crates") or {}) do
 		if Crate:CanConsume() then
 			Total = Total + Crate:CountSelectedRounds()
 		end
@@ -467,7 +467,6 @@ do -- Spawn and Update functions --------------------------------
 		self.ACF                = {}
 		self.BarrelFilter       = { self }
 		self.State              = "Empty"
-		self.Crates             = {}
 		self.CurrentShot        = 0
 		self.TotalAmmo          = 0
 		self.BulletData         = EMPTY
@@ -522,10 +521,8 @@ do -- Spawn and Update functions --------------------------------
 		UpdateWeapon(self, self.ACF_LiveData, Class, WeaponItem)
 
 		-- A reconfigure invalidates existing links (no-op on a fresh spawn).
-		if next(self.Crates) then
-			for Crate in pairs(self.Crates) do
-				self:Unlink(Crate)
-			end
+		for Crate in pairs(self:ACF_GetUserVar("Crates")) do
+			self:Unlink(Crate)
 		end
 
 		if self.Crews and next(self.Crews) then
@@ -565,7 +562,7 @@ do -- Spawn and Update functions --------------------------------
 		end)
 	end
 
-	ACF.RegisterLinkSource("acf_gun", "Crates")
+	ACF.RegisterLinkSource("acf_gun", "Crates", nil, true)
 end ---------------------------------------------
 
 do -- Metamethods --------------------------------
@@ -619,7 +616,7 @@ do -- Metamethods --------------------------------
 		end
 
 		ACF.RegisterClassPreLinkCheck("acf_gun", "acf_ammo", function(This, Crate)
-			if This.Crates[Crate] then return false, "This weapon is already linked to this crate." end
+			if This:ACF_GetUserVar("Crates")[Crate] then return false, "This weapon is already linked to this crate." end
 			if Crate.Weapons[This] then return false, "This weapon is already linked to this crate." end
 
 			-- The crate must be built for a weapon compatible with this one (type + caliber).
@@ -650,7 +647,7 @@ do -- Metamethods --------------------------------
 		end)
 
 		ACF.RegisterClassLink("acf_gun", "acf_ammo", function(This, Crate)
-			This.Crates[Crate]  = true
+			This:ACF_GetUserVar("Crates")[Crate] = true
 			Crate.Weapons[This] = true
 
 			ACF.Hints.Set(This, "weapon_no_ammo", false)
@@ -683,8 +680,10 @@ do -- Metamethods --------------------------------
 		end)
 
 		ACF.RegisterClassUnlink("acf_gun", "acf_ammo", function(This, Crate)
-			if This.Crates[Crate] or Crate.Weapons[This] then
-				This.Crates[Crate]  = nil
+			local Crates = This:ACF_GetUserVar("Crates")
+
+			if Crates[Crate] or Crate.Weapons[This] then
+				Crates[Crate]       = nil
 				Crate.Weapons[This] = nil
 
 				-- Since we removed the references, this should ignore the removed crate.
@@ -693,7 +692,7 @@ do -- Metamethods --------------------------------
 					if IsValid(This.CurrentCrate) then This:SetNW2Int("CurCrate", This.CurrentCrate:EntIndex()) end
 				end
 
-				ACF.Hints.Set(This, "weapon_no_ammo", not next(This.Crates))
+				ACF.Hints.Set(This, "weapon_no_ammo", not next(Crates))
 				ACF.Hints.Set(Crate, "ammo_no_weapon", not next(Crate.Weapons))
 
 				This:UpdateOverlay(true)
@@ -709,14 +708,14 @@ do -- Metamethods --------------------------------
 			if Turret.IsActuator then return false, "Actuators don't aim, so weapons can't be linked to them." end
 
 			This.TurretLink = true
-			This.Turret	= Turret
+			This:ACF_SetUserVar("Turret", Turret)
 
 			return true, "Weapon linked successfully."
 		end)
 
 		ACF.RegisterClassUnlink("acf_gun", "acf_turret", function(This, _)
 			This.TurretLink	= false
-			This.Turret	= nil
+			This:ACF_SetUserVar("Turret", nil)
 
 			return true, "Weapon unlinked successfully."
 		end)
@@ -1031,8 +1030,8 @@ do -- Metamethods --------------------------------
 		--- @param ... unknown Varargs passed to the check function after the crew entity
 		--- @return any # The next crate that matches the check function or nil if none are found
 		function ENT:FindNextCrate(Current, Check, ...)
-			local SelfTbl = ENTITY.GetTable(self)
-			if not next(SelfTbl.Crates) then return end
+			local Crates = self:ACF_GetUserVar("Crates")
+			if not next(Crates) then return end
 
 			-- If the current crate is still satisfactory, why bother searching?
 			if Current and Check(Current, ...) then return Current end
@@ -1042,7 +1041,7 @@ do -- Metamethods --------------------------------
 
 			-- This is not performant... but people may be unhappy if I don't do this
 			if not Crate then
-				for k in pairs(SelfTbl.Crates) do
+				for k in pairs(Crates) do
 					if Check(k, ...) then
 						Crate = k
 						break
@@ -1267,55 +1266,6 @@ do -- Metamethods --------------------------------
 		end
 	end -----------------------------------------
 
-	do -- Duplicator Support --------------------
-		function ENT:PreEntityCopy()
-			if next(self.Crates) then
-				local Entities = {}
-
-				for Crate in pairs(self.Crates) do
-					Entities[#Entities + 1] = Crate:EntIndex()
-				end
-
-				duplicator.StoreEntityModifier(self, "ACFCrates", Entities)
-			end
-
-			if IsValid(self.Turret) then
-				duplicator.StoreEntityModifier(self, "ACFTurret", {self.Turret:EntIndex()})
-			end
-
-			-- AutoRegisterV2 wraps this as the original PreEntityCopy and handles the wire/base dupe info.
-		end
-
-		function ENT:PostEntityPaste(_, Ent, CreatedEntities)
-			local EntMods = ACF.DupeTable(Ent.EntityMods)
-
-			-- Backwards compatibility
-			if EntMods.ACFAmmoLink then
-				local Entities = ACF.DupeTable(ACF.DupeTable(EntMods.ACFAmmoLink).entities)
-
-				for _, EntID in ipairs(Entities) do
-					self:Link(CreatedEntities[EntID])
-				end
-
-				EntMods.ACFAmmoLink = nil
-			end
-
-			if EntMods.ACFCrates then
-				for _, EntID in pairs(ACF.DupeTable(EntMods.ACFCrates)) do
-					self:Link(CreatedEntities[EntID])
-				end
-
-				EntMods.ACFCrates = nil
-			end
-
-			if EntMods.ACFTurret and next(ACF.DupeTable(EntMods.ACFTurret)) then
-				self:Link(CreatedEntities[ACF.DupeTable(EntMods.ACFTurret)[1]])
-			end
-
-			-- AutoRegisterV2 wraps this as the original PostEntityPaste and handles the wire/base dupe info.
-		end
-	end -----------------------------------------
-
 	do -- Overlay -------------------------------
 		-- Loading requirements are only worth listing while something is actually waiting on them
 		function ENT:ACF_ShowRequirements()
@@ -1361,10 +1311,8 @@ do -- Metamethods --------------------------------
 
 			local AmmoCrates = {}
 
-			if next(Gun.Crates) then
-				for Crate in pairs(Gun.Crates) do
-					AmmoCrates[#AmmoCrates + 1] = Crate:EntIndex()
-				end
+			for Crate in pairs(Gun:ACF_GetUserVar("Crates")) do
+				AmmoCrates[#AmmoCrates + 1] = Crate:EntIndex()
 			end
 
 			net.Start("ACF.RequestGunInfo")
@@ -1380,7 +1328,7 @@ do -- Metamethods --------------------------------
 			local CrateAmmo    = 0
 			local StageOneAmmo = false
 
-			for Crate in pairs(self.Crates) do
+			for Crate in pairs(self:ACF_GetUserVar("Crates")) do
 				if Crate:CanConsume() then
 					CrateAmmo = CrateAmmo + Crate:CountSelectedRounds()
 					if Crate.AmmoStage == ACF.AmmoStageMin then StageOneAmmo = true end
@@ -1406,7 +1354,7 @@ do -- Metamethods --------------------------------
 		function ENT:Think()
 			local SelfTbl = ENTITY.GetTable(self)
 
-			local Crates = SelfTbl.Crates
+			local Crates = SelfTbl.ACF_LiveData.Crates
 
 			if next(Crates) then
 				local Pos = ENTITY.GetPos(self)
@@ -1479,7 +1427,7 @@ do -- Metamethods --------------------------------
 				Class.OnLast(self, Class)
 			end
 
-			for Crate in pairs(self.Crates) do
+			for Crate in pairs(self:ACF_GetUserVar("Crates") or {}) do
 				self:Unlink(Crate)
 			end
 

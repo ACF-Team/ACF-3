@@ -12,6 +12,7 @@ ACF.Entities.AutoRegister(2026091001, function(CLASS)
 	MENU_FIELD("String",  "CrewPlayerModel",           {Default = "models/player/dod_german.mdl"})
 	MENU_FIELD("String",  "CrewPlayerModelBodygroups", {Default = ""})
 	MENU_FIELD("Number",  "CrewPlayerModelSkin",       {Min = 0, Max = 63, Default = 0, Decimals = 0})
+	LINKED_ENTITY_ARRAY_FIELD("Targets",               {WarnOnLinkFail = true})
 
 	function CLASS:VerifyData()
 	end

@@ -202,7 +202,9 @@ local function LinkEntities(Player, Target)
 		if not ACF.Check(Source) then continue end
 
 		-- Already linked, so setting the axis was all there was to do
-		if Axis and Source.Wheels and Source.Wheels[Target] then
+		local Wheels = Source.ACF_GetUserVar and Source:ACF_GetUserVar("Wheels")
+
+		if Axis and Wheels and Wheels[Target] then
 			Done, GearboxDone, LinkedBox = Done + 1, GearboxDone + 1, LinkedBox or Source
 
 			UnselectEntity(Source, Player)
@@ -260,7 +262,7 @@ local function LinkEntities(Player, Target)
 
 		if Axis then
 			-- The link applies its own sign, which only follows the facing direction when the axle is too perpendicular to tell
-			local Link = LinkedBox.Wheels[Target]
+			local Link = LinkedBox:ACF_GetUserVar("Wheels")[Target]
 			local Applied = Link and (Link.Axis[Axis] < 0 and -1 or 1) or Sign
 
 			Suffix = " Torque axis: " .. (Applied < 0 and "-" or "+") .. ACF.WheelAxisName[Axis] .. "."

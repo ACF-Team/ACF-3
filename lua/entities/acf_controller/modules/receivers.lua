@@ -1,5 +1,4 @@
 local function Init(Entity)
-	Entity.Receivers          = {}  -- LWR/RWRs
 	Entity.ReceiverDirections = {}  -- LWS/RWS receiver angles
 	Entity.ReceiverDetecteds  = {}  -- LWS/RWS receiver detected states
 end
@@ -7,7 +6,7 @@ end
 -- Receiver related
 do
 	function ENT:ProcessReceivers(SelfTbl)
-		for Receiver, _ in pairs(SelfTbl.Receivers) do
+		for Receiver, _ in pairs(SelfTbl.ACF_LiveData.Receivers) do
 			if IsValid(Receiver) then
 				local Detected = Receiver.Outputs.Detected.Value
 				local Direction = Receiver.Outputs.Direction.Value

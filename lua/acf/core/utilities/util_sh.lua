@@ -1201,7 +1201,7 @@ do -- Crew related
 	function ACF.FindLongestBullet(Gun)
 		local LongestLength = 0
 		local LongestBullet = nil
-		for Crate in pairs(Gun.Crates) do
+		for Crate in pairs(Gun:ACF_GetUserVar("Crates") or {}) do
 			local BulletData = Crate.BulletData
 			local Length = BulletData.RoundLength or (BulletData.PropLength + BulletData.ProjLength)
 			if Length > LongestLength then

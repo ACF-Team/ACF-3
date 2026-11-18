@@ -14,11 +14,32 @@ function ENT:GetWeapon(Slot)
 	return IsValid(Gun) and Gun.IsACFWeapon and Gun or NULL
 end
 
--- The controller's live settings are NetworkVars (see below). The only serialized field is a request
--- for the default config, applied by init.lua's ACF_OnVerifyClientData on spawn (always true from the
--- menu, matching the previous behavior).
+-- The controller's live settings are NetworkVars (see below). AIOUseDefaults is a request for the default
+-- config, applied by init.lua's ACF_OnVerifyClientData on spawn (always true from the menu, matching the
+-- previous behavior).
 ACF.Entities.AutoRegister(2026111701, function()
 	MENU_FIELD("Boolean", "AIOUseDefaults", {Default = true})
+
+	LINKED_ENTITY_FIELD("Seat",             {AcceptableClasses = {prop_vehicle_prisoner_pod = true}})
+	LINKED_ENTITY_FIELD("Baseplate",        {AcceptableClasses = {acf_baseplate = true}})
+	LINKED_ENTITY_FIELD("Gearbox",          {AcceptableClasses = {acf_gearbox = true}})
+	LINKED_ENTITY_FIELD("TurretComputer",   {AcceptableClasses = {acf_turret_computer = true}})
+	LINKED_ENTITY_FIELD("GuidanceComputer", {AcceptableClasses = {acf_computer = true}})
+	LINKED_ENTITY_FIELD("Radar",            {AcceptableClasses = {acf_radar = true, acf_irst = true}})
+
+	LINKED_ENTITY_ARRAY_FIELD("SteerPlates", {AcceptableClasses = {prop_physics = true}})
+	LINKED_ENTITY_ARRAY_FIELD("Turrets",     {AcceptableClasses = {acf_turret = true}})
+	LINKED_ENTITY_ARRAY_FIELD("Guns",        {AcceptableClasses = {acf_gun = true}})
+	LINKED_ENTITY_ARRAY_FIELD("Racks",       {AcceptableClasses = {acf_rack = true}})
+	LINKED_ENTITY_ARRAY_FIELD("Receivers",   {AcceptableClasses = {acf_receiver = true}})
+
+	-- Saved from and restored to the network vars with the same names
+	FIELD("Entity", "Gun1")
+	FIELD("Entity", "Gun2")
+	FIELD("Entity", "Gun3")
+	FIELD("Entity", "Cam1Parent")
+	FIELD("Entity", "Cam2Parent")
+	FIELD("Entity", "Cam3Parent")
 end, "Controller", "Controllers")
 
 ENT.Editable = true

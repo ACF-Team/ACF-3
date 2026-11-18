@@ -373,6 +373,17 @@ function Serialization.DeserializePartial(Class, Data)
     return Instance
 end
 
+local function LinkResolvedEntity(Entity, Target, Options)
+    local Resolved = ValidateEntity(Target, Options)
+    local Linked, Reason = false, "Attempted to link to an invalid entity."
+
+    if IsValid(Resolved) then Linked, Reason = Entity:Link(Resolved) end
+
+    if not Linked and Options.WarnOnLinkFail then
+        ACF.Utilities.Notify.EntityWarning(Entity, (Entity.PrintName or Entity:GetClass()) .. ":PostEntityPaste failure", Reason)
+    end
+end
+
 function Serialization.ResolveEntities(Class, Instance, Data, CreatedEntities, Entity)
     if not Instance or not Data then return end
 
@@ -387,13 +398,11 @@ function Serialization.ResolveEntities(Class, Instance, Data, CreatedEntities, E
                 if IsArray then
                     if type(Raw) == "table" then
                         for _, Idx in ipairs(Raw) do
-                            local Ent = ValidateEntity(CreatedEntities[Idx], Options)
-                            if IsValid(Ent) then Entity:Link(Ent) end
+                            LinkResolvedEntity(Entity, CreatedEntities[Idx], Options)
                         end
                     end
-                else
-                    local Ent = ValidateEntity(CreatedEntities[Raw], Options)
-                    if IsValid(Ent) then Entity:Link(Ent) end
+                elseif Raw ~= nil then
+                    LinkResolvedEntity(Entity, CreatedEntities[Raw], Options)
                 end
             elseif IsArray then
                 local Arr = {}
@@ -405,7 +414,12 @@ function Serialization.ResolveEntities(Class, Instance, Data, CreatedEntities, E
                 end
                 Instance[Field.Name] = Arr
             else
-                Instance[Field.Name] = ValidateEntity(CreatedEntities[Raw], Options)
+                local Resolved = ValidateEntity(CreatedEntities[Raw], Options)
+
+                -- Dont wipe something the entity made for itself while spawning
+                if IsValid(Resolved) or not IsValid(Instance[Field.Name]) then
+                    Instance[Field.Name] = Resolved
+                end
             end
         elseif GetTypeByName(ElemType) then
             if IsArray then

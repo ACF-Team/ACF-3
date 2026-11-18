@@ -14,6 +14,9 @@ ACF.Entities.AutoRegister(2026091001, function(CLASS)
 	MENU_FIELD("Number",  "MaxRPM",                {Min = 1, Max = 10000, Default = 5000, Decimals = 0})
 	MENU_FIELD("Boolean", "DualClutch",            {Default = false})
 	MENU_FIELD("Boolean", "GearboxRealisticRatio", {Default = false})
+	LINKED_ENTITY_ARRAY_FIELD("Wheels")
+	LINKED_ENTITY_ARRAY_FIELD("GearboxOut", {AcceptableClasses = {acf_gearbox = true}})
+	LINKED_ENTITY_ARRAY_FIELD("Effectors")
 
 	-- Per-gear ratios (1-based) and automatic shift points. The serializer clamps each entry; the entity
 	-- reconstructs the legacy [0] sentinel slots at runtime. Storage is always the legacy format.

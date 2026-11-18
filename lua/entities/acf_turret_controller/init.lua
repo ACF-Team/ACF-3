@@ -299,8 +299,7 @@ do	-- Lightweight Turret Controllers link to acf_turret directly, no crew involv
 	ACF.RegisterClassLink("acf_turret_controller", "acf_turret", function(This, Turret)
 		This.Turret = Turret
 
-		Turret.LightweightControllers = Turret.LightweightControllers or {}
-		Turret.LightweightControllers[This] = true
+		Turret:ACF_GetUserVar("LightweightControllers")[This] = true
 
 		This:UpdateLinkHints()
 		This:UpdateOverlay(true)
@@ -314,7 +313,7 @@ do	-- Lightweight Turret Controllers link to acf_turret directly, no crew involv
 
 		This.Turret = nil
 
-		if Turret.LightweightControllers then Turret.LightweightControllers[This] = nil end
+		Turret:ACF_GetUserVar("LightweightControllers")[This] = nil
 
 		This:UpdateLinkHints()
 		This:UpdateOverlay(true)

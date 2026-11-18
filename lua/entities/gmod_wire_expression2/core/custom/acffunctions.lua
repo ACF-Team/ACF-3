@@ -1422,7 +1422,9 @@ e2function entity entity:acfGetTurretGyro()
 	if not this.IsACFTurret then return end
 	if RestrictInfo(self, this) then return end
 
-	return IsValid(this.Gyro) and this.Gyro or nil
+	local Gyro = this:ACF_GetUserVar("Gyro")
+
+	return IsValid(Gyro) and Gyro or nil
 end
 
 -- Returns the turret's linked gyroscope
@@ -1430,7 +1432,9 @@ e2function entity entity:acfGetTurretMotor()
 	if not this.IsACFTurret then return end
 	if RestrictInfo(self, this) then return end
 
-	return IsValid(this.Motor) and this.Motor or nil
+	local Motor = this:ACF_GetUserVar("Motor")
+
+	return IsValid(Motor) and Motor or nil
 end
 
 -- Returns the turret's loaded mass, in kg
@@ -1528,13 +1532,17 @@ e2function table entity:acfGetTurretData()
 
 	ret.size = 12
 
-	if IsValid(this.Motor) then
-		Data.Motor = this.Motor
+	local Motor = this:ACF_GetUserVar("Motor")
+
+	if IsValid(Motor) then
+		Data.Motor = Motor
 		ret.size = ret.size + 1
 	end
 
-	if IsValid(this.Gyro) then
-		Data.Gyro = this.Gyro
+	local Gyro = this:ACF_GetUserVar("Gyro")
+
+	if IsValid(Gyro) then
+		Data.Gyro = Gyro
 		ret.size = ret.size + 1
 	end
 

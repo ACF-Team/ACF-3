@@ -17,7 +17,8 @@ Classes.DefineClass("ACF.Missiles.Guidance.AntiMissile", "ACF.Missiles.Guidance.
 		function CLASS:GetRadar()
 			if not IsValid(self.Source) then return end
 
-			local Radar = self.Source.Radar
+			local Source = self.Source
+			local Radar  = Source.ACF_GetUserVar and Source:ACF_GetUserVar("Radar")
 
 			if not IsValid(Radar) then return end
 			if not Radar.Scanning then return end

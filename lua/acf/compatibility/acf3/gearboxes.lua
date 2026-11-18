@@ -654,3 +654,12 @@ ACF.Entities.RegisterCompatPatch("acf_gearbox", 2026110701, function(Data)
 	-- Keep showing these gearboxes the way their builder saw them, which also keeps wired Ratio outputs unchanged
 	UserData.GearboxRealisticRatio = LegacyFlag == nil or not tobool(LegacyFlag)
 end)
+
+ACF.Entities.RegisterCompatPatch("acf_gearbox", 2026111801, function(Data)
+	local Move = ACF.Entities.MoveLinkModToUserData
+
+	Move(Data, "WheelLink", "Wheels", false, "entities")
+	Move(Data, "ACFWheels", "Wheels")
+	Move(Data, "ACFGearboxes", "GearboxOut")
+	Move(Data, "ACFEffectors", "Effectors")
+end)

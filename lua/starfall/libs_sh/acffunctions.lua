@@ -2564,7 +2564,9 @@ if SERVER then
 
 		CheckPerms(instance, This, "entities.acf")
 
-		return IsValid(This.Gyro) and wrap(This.Gyro) or nil
+		local Gyro = This:ACF_GetUserVar("Gyro")
+
+		return IsValid(Gyro) and wrap(Gyro) or nil
 	end
 
 	--- Returns the motor linked to the turret
@@ -2580,7 +2582,9 @@ if SERVER then
 
 		CheckPerms(instance, This, "entities.acf")
 
-		return IsValid(This.Motor) and wrap(This.Motor) or nil
+		local Motor = This:ACF_GetUserVar("Motor")
+
+		return IsValid(Motor) and wrap(Motor) or nil
 	end
 
 	--- Returns the turret's current loaded mass, in kg
@@ -2714,8 +2718,8 @@ if SERVER then
 			TotalMass		= td.TotalMass,
 			LocalMassCenter	= IsValid(This.Rotator) and This:WorldToLocal(This.Rotator:LocalToWorld(This.TurretData.LocalCoM)) or Vector(),
 
-			Motor			= IsValid(This.Motor) and wrap(This.Motor) or nil,
-			Gyro			= IsValid(This.Gyro) and wrap(This.Gyro) or nil,
+			Motor			= IsValid(This:ACF_GetUserVar("Motor")) and wrap(This:ACF_GetUserVar("Motor")) or nil,
+			Gyro			= IsValid(This:ACF_GetUserVar("Gyro")) and wrap(This:ACF_GetUserVar("Gyro")) or nil,
 		}
 
 		return Data

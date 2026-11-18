@@ -1,5 +1,4 @@
 local function Init(Entity)
-	Entity.Radar                  = nil      -- Radar, if any
 	Entity.RadarVertical          = nil      -- Radar vertical turret, if any
 	Entity.RadarUpdateRate        = 7        -- How often to update the radar, in ticks.
 	Entity.SelectedTargetID       = nil      -- Currently selected radar target ID
@@ -25,7 +24,7 @@ do
 	end)
 
 	function ENT:ProcessRadars(SelfTbl)
-		local Radar = SelfTbl.Radar
+		local Radar = SelfTbl.ACF_LiveData.Radar
 		if not IsValid(Radar) then return end
 
 		-- A synced sensor's own outputs stay empty, the Synchronizer reports for it
@@ -64,7 +63,7 @@ do
 
 	-- Slaves the turret and guidance computers to the radar's selected target.
 	function ENT:ProcessRadarSlaving(SelfTbl)
-		local Radar = SelfTbl.Radar
+		local Radar = SelfTbl.ACF_LiveData.Radar
 		if not IsValid(Radar) then return end
 
 		-- The IRST gimbal follows HitPos while it is non-zero, so release it once the selection clears
@@ -80,7 +79,7 @@ do
 		if not SelfTbl.SelectedTargetID then return end
 
 		local HasTurrets = Radar.Turrets and next(Radar.Turrets)
-		local GuideComp = SelfTbl.GuidanceComputer
+		local GuideComp = SelfTbl.ACF_LiveData.GuidanceComputer
 		if not HasTurrets and not Radar.InputHitPos and not IsValid(GuideComp) then return end
 
 		local Elapsed = CurTime() - SelfTbl.SelectedTargetSampleAt

@@ -177,3 +177,11 @@ ACF.Entities.RegisterCompatPatch("acf_gun", 2026062601, function(Data)
 		BreechIndex = Data.BreechIndex,
 	}
 end)
+
+ACF.Entities.RegisterCompatPatch("acf_gun", 2026111801, function(Data)
+	local Move = ACF.Entities.MoveLinkModToUserData
+
+	Move(Data, "ACFAmmoLink", "Crates", false, "entities")
+	Move(Data, "ACFCrates", "Crates")
+	Move(Data, "ACFTurret", "Turret", true)
+end)

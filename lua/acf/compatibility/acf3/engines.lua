@@ -14,3 +14,16 @@ ACF.Entities.RegisterCompatPatch("acf_engine", 2026062801, function(Data)
 		Engine = {Type = FQN, Data = {}},
 	}
 end)
+
+ACF.Entities.RegisterCompatPatch("acf_engine", 2026111801, function(Data)
+	local Move = ACF.Entities.MoveLinkModToUserData
+
+	Move(Data, "GearLink", "Gearboxes", false, "entities")
+	Move(Data, "ACFGearboxes", "Gearboxes")
+
+	-- Fuel tanks are found through shared parents now
+	if istable(Data.EntityMods) then
+		Data.EntityMods.FuelLink     = nil
+		Data.EntityMods.ACFFuelTanks = nil
+	end
+end)

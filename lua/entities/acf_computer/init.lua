@@ -14,10 +14,10 @@ ACF.RegisterClassLink("acf_computer", "acf_rack", function(Computer, Target)
 	local Weapons = Computer:ACF_GetUserVar("Weapons")
 
 	if Weapons[Target] then return false, "This rack is already linked to this computer!" end
-	if Target.Computer == Computer then return false, "This rack is already linked to this computer!" end
+	if Target:ACF_GetUserVar("Computer") == Computer then return false, "This rack is already linked to this computer!" end
 
 	Weapons[Target] = true
-	Target.Computer = Computer
+	Target:ACF_SetUserVar("Computer", Computer)
 
 	Computer:UpdateOverlay()
 	Target:UpdateOverlay()
@@ -28,9 +28,9 @@ end)
 ACF.RegisterClassUnlink("acf_computer", "acf_rack", function(Computer, Target)
 	local Weapons = Computer:ACF_GetUserVar("Weapons")
 
-	if Weapons[Target] or Target.Computer == Computer then
+	if Weapons[Target] or Target:ACF_GetUserVar("Computer") == Computer then
 		Weapons[Target] = nil
-		Target.Computer = nil
+		Target:ACF_SetUserVar("Computer", nil)
 
 		Computer:UpdateOverlay()
 		Target:UpdateOverlay()
@@ -45,10 +45,10 @@ ACF.RegisterClassLink("acf_computer", "acf_gun", function(Computer, Target)
 	local Weapons = Computer:ACF_GetUserVar("Weapons")
 
 	if Weapons[Target] then return false, "This computer is already linked to this weapon!" end
-	if Target.Computer == Computer then return false, "This computer is already linked to this weapon!" end
+	if Target:ACF_GetUserVar("Computer") == Computer then return false, "This computer is already linked to this weapon!" end
 
 	Weapons[Target] = true
-	Target.Computer = Computer
+	Target:ACF_SetUserVar("Computer", Computer)
 
 	Computer:UpdateOverlay()
 	Target:UpdateOverlay()
@@ -59,9 +59,9 @@ end)
 ACF.RegisterClassUnlink("acf_computer", "acf_gun", function(Computer, Target)
 	local Weapons = Computer:ACF_GetUserVar("Weapons")
 
-	if Weapons[Target] or Target.Computer == Computer then
+	if Weapons[Target] or Target:ACF_GetUserVar("Computer") == Computer then
 		Weapons[Target] = nil
-		Target.Computer = nil
+		Target:ACF_SetUserVar("Computer", nil)
 
 		Computer:UpdateOverlay()
 		Target:UpdateOverlay()

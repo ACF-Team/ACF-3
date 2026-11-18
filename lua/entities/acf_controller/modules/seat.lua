@@ -2,10 +2,6 @@ local RecacheBindOutput = ENT.RecacheBindOutput
 local RecacheBindState  = ENT.RecacheBindState
 local TrackDriver       = ENT.TrackDriver
 
-local function Init(Entity)
-	Entity.Seat = nil  -- The single seat
-end
-
 local IN_ENUM_TO_WIRE_OUTPUT = {}
 for _, Binding in ipairs(ACF.ControllerKeyBindings) do
 	IN_ENUM_TO_WIRE_OUTPUT[Binding[1]] = Binding[2]
@@ -36,7 +32,7 @@ local function OnActiveChanged(Controller, Ply, Active)
 	TrackDriver(Ply, Active and Controller or nil)
 	if Active then Controller:AnalyzeCams() end -- Recalculate filter for the cameras
 
-	for Turret in pairs(Controller.Turrets) do
+	for Turret in pairs(Controller:ACF_GetUserVar("Turrets")) do
 		if IsValid(Turret) then Turret:TriggerInput("Active", Active and not Controller.TurretLocked) end
 	end
 
@@ -44,7 +40,7 @@ local function OnActiveChanged(Controller, Ply, Active)
 		if IsValid(Engine) then Engine:TriggerInput("Active", Active) end
 	end
 
-	if IsValid(Controller.Gearbox) then Controller.Gearbox:TriggerInput("Gear", Active and 1 or 0) end
+	if IsValid(Controller:ACF_GetUserVar("Gearbox")) then Controller:ACF_GetUserVar("Gearbox"):TriggerInput("Gear", Active and 1 or 0) end
 
 	for Gearbox in pairs(Controller.GearboxEnds) do
 		if IsValid(Gearbox) then Gearbox:TriggerInput("Gear", Active and 1 or 0) end
@@ -151,4 +147,3 @@ ACF.RegisterControllerLink("prop_vehicle_prisoner_pod", {
 	OnUnlinked = function(Controller, _) OnUnlinkedSeat(Controller) end,
 })
 
-return Init

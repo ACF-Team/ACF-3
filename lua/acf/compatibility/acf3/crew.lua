@@ -44,3 +44,7 @@ ACF.Entities.RegisterCompatPatch("acf_crew", 2026062801, function(Data)
 		CrewPlayerModelSkin       = Pick("CrewPlayerModelSkin"),
 	}
 end)
+
+ACF.Entities.RegisterCompatPatch("acf_crew", 2026111801, function(Data)
+	ACF.Entities.MoveLinkModToUserData(Data, "CrewTargets", "Targets")
+end)

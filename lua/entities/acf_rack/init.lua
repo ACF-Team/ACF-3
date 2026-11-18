@@ -60,7 +60,7 @@ end
 local function UpdateTotalAmmo(Entity)
 	local Total = 0
 
-	for Crate in pairs(Entity.Crates) do
+	for Crate in pairs(Entity:ACF_GetUserVar("Crates") or {}) do
 		if Crate:CanConsume() then
 			Total = Total + Crate:CountSelectedRounds()
 		end
@@ -372,7 +372,6 @@ do -- Spawning and Updating --------------------
 		self.FireDelay    = 1
 		self.MountPoints  = {}
 		self.Missiles     = {}
-		self.Crates       = {}
 		self.ReloadTimers = {}
 
 		duplicator.ClearEntityModifier(self, "mass")
@@ -393,9 +392,7 @@ do -- Spawning and Updating --------------------
 		if Rack.OnUpdate then Rack.OnUpdate(self, nil, Rack) end
 
 		-- A reconfigure invalidates linked crates (no-op on a fresh spawn).
-		if next(self.Crates) then
-			for Crate in pairs(self.Crates) do self:Unlink(Crate) end
-		end
+		for Crate in pairs(self:ACF_GetUserVar("Crates")) do self:Unlink(Crate) end
 	end
 
 	function ENT:ACF_PostSpawn()
@@ -413,7 +410,7 @@ do -- Spawning and Updating --------------------
 			if not IsValid(self) then return end
 
 			local Position = self:GetPos()
-			for Link in pairs(self.Crates) do CheckDistantLink(self, Link, Position) end
+			for Link in pairs(self:ACF_GetUserVar("Crates")) do CheckDistantLink(self, Link, Position) end
 		end)
 
 		timer.Create("ACF Rack Ammo " .. self:EntIndex(), 1, 0, function()
@@ -430,9 +427,9 @@ do -- Spawning and Updating --------------------
 		end
 	end
 
-	ACF.RegisterLinkSource("acf_rack", "Crates")
-	ACF.RegisterLinkSource("acf_rack", "Computer", true)
-	ACF.RegisterLinkSource("acf_rack", "Radar", true)
+	ACF.RegisterLinkSource("acf_rack", "Crates", nil, true)
+	ACF.RegisterLinkSource("acf_rack", "Computer", true, true)
+	ACF.RegisterLinkSource("acf_rack", "Radar", true, true)
 
 	hook.Add("cfw.contraption.entityAdded", "ACF_CFWRackIndex", function(contraption, ent)
 		if ent:GetClass() == "acf_rack" then
@@ -547,7 +544,9 @@ end ---------------------------------------------
 
 do -- Entity Link/Unlink -----------------------
 	ACF.RegisterClassLink("acf_rack", "acf_ammo", function(Weapon, Target)
-		if Weapon.Crates[Target] then return false, "This rack is already linked to this crate." end
+		local Crates = Weapon:ACF_GetUserVar("Crates")
+
+		if Crates[Target] then return false, "This rack is already linked to this crate." end
 		if Target.Weapons[Weapon] then return false, "This rack is already linked to this crate." end
 		if Target.IsRefill then return false, "Refill crates cannot be linked!" end
 		if Target:GetPos():DistToSqr(Weapon:GetPos()) > MaxDistance then return false, "This crate is too far away from this rack." end
@@ -566,7 +565,7 @@ do -- Entity Link/Unlink -----------------------
 		if not Result then return Result, Message end
 
 		Target.Weapons[Weapon] = true
-		Weapon.Crates[Target] = true
+		Crates[Target] = true
 
 		ACF.Hints.Set(Weapon, "weapon_no_ammo", false)
 		ACF.Hints.Set(Target, "ammo_no_weapon", false)
@@ -602,15 +601,17 @@ do -- Entity Link/Unlink -----------------------
 	end)
 
 	ACF.RegisterClassUnlink("acf_rack", "acf_ammo", function(Weapon, Target)
-		if Weapon.Crates[Target] or Target.Weapons[Weapon] then
+		local Crates = Weapon:ACF_GetUserVar("Crates")
+
+		if Crates[Target] or Target.Weapons[Weapon] then
 			if Weapon.CurrentCrate == Target then
-				Weapon.CurrentCrate = next(Weapon.Crates, Target)
+				Weapon.CurrentCrate = next(Crates, Target)
 			end
 
 			Target.Weapons[Weapon] = nil
-			Weapon.Crates[Target] = nil
+			Crates[Target] = nil
 
-			ACF.Hints.Set(Weapon, "weapon_no_ammo", not next(Weapon.Crates))
+			ACF.Hints.Set(Weapon, "weapon_no_ammo", not next(Crates))
 			ACF.Hints.Set(Target, "ammo_no_weapon", not next(Target.Weapons))
 
 			Weapon:UpdateOverlay()
@@ -827,15 +828,17 @@ do -- Loading ----------------------------------
 	end
 
 	local function GetNextCrate(Rack)
-		if not next(Rack.Crates) then return end -- No crates linked to this gun
+		local Crates = Rack:ACF_GetUserVar("Crates")
 
-		local Select = next(Rack.Crates, Rack.CurrentCrate) or next(Rack.Crates)
+		if not next(Crates) then return end -- No crates linked to this gun
+
+		local Select = next(Crates, Rack.CurrentCrate) or next(Crates)
 		local Start = Select
 
 		repeat
 			if Select:CanConsume() then return Select end
 
-			Select = next(Rack.Crates, Select) or next(Rack.Crates)
+			Select = next(Crates, Select) or next(Crates)
 		until Select == Start -- If we've looped back around to the start then there's nothing to use
 	end
 
@@ -992,74 +995,6 @@ do -- Unloading --------------------------------
 	end
 end ---------------------------------------------
 
-do -- Duplicator Support -----------------------
-	function ENT:PreEntityCopy()
-		if IsValid(self.Radar) then
-			duplicator.StoreEntityModifier(self, "ACFRadar", { self.Radar:EntIndex() })
-		end
-
-		if IsValid(self.Computer) then
-			duplicator.StoreEntityModifier(self, "ACFComputer", { self.Computer:EntIndex() })
-		end
-
-		if next(self.Crates) then
-			local Entities = {}
-
-			for Crate in pairs(self.Crates) do
-				Entities[#Entities + 1] = Crate:EntIndex()
-			end
-
-			duplicator.StoreEntityModifier(self, "ACFCrates", Entities)
-		end
-
-		-- AutoRegisterV2 wraps this as the original PreEntityCopy and handles the wire/base dupe info.
-	end
-
-	function ENT:PostEntityPaste(_, Ent, CreatedEntities)
-		local EntMods = ACF.DupeTable(Ent.EntityMods)
-
-		if EntMods.ACFRadar then
-			local _, EntIndex = next(ACF.DupeTable(EntMods.ACFRadar))
-
-			self:Link(CreatedEntities[EntIndex])
-
-			EntMods.ACFRadar = nil
-		end
-
-		if EntMods.ACFComputer then
-			local _, EntIndex = next(ACF.DupeTable(EntMods.ACFComputer))
-
-			self:Link(CreatedEntities[EntIndex])
-
-			EntMods.ACFComputer = nil
-		end
-
-		-- Backwards compatibility
-		if EntMods.ACFAmmoLink then
-			local Entities = ACF.DupeTable(ACF.DupeTable(EntMods.ACFAmmoLink).entities)
-			local Entity
-
-			for _, EntID in pairs(Entities) do
-				Entity = CreatedEntities[EntID]
-
-				self:Link(Entity)
-			end
-
-			EntMods.ACFAmmoLink = nil
-		end
-
-		if EntMods.ACFCrates then
-			for _, EntID in pairs(ACF.DupeTable(EntMods.ACFCrates)) do
-				self:Link(CreatedEntities[EntID])
-			end
-
-			EntMods.ACFCrates = nil
-		end
-
-		-- AutoRegisterV2 wraps this as the original PostEntityPaste and handles the wire/base dupe info.
-	end
-end ---------------------------------------------
-
 do	-- Overlay/networking
 	util.AddNetworkString("ACF.RequestRackInfo")
 
@@ -1070,14 +1005,16 @@ do	-- Overlay/networking
 		local RackInfo	= {}
 		local Crates	= {}
 
-		if IsValid(Rack.Computer) then
+		local Computer, Radar = Rack:ACF_GetUserVar("Computer"), Rack:ACF_GetUserVar("Radar")
+
+		if IsValid(Computer) then
 			RackInfo.HasComputer	= true
-			RackInfo.Computer	= Rack.Computer:EntIndex()
+			RackInfo.Computer	= Computer:EntIndex()
 		end
 
-		if IsValid(Rack.Radar) then
+		if IsValid(Radar) then
 			RackInfo.HasRadar	= true
-			RackInfo.Radar	= Rack.Radar:EntIndex()
+			RackInfo.Radar	= Radar:EntIndex()
 		end
 
 		RackInfo.MountPoints	= {}
@@ -1086,10 +1023,8 @@ do	-- Overlay/networking
 			RackInfo.MountPoints[#RackInfo.MountPoints + 1] = {Pos = Point.Position, Ang = Point.Angle, Index = Point.Index}
 		end
 
-		if next(Rack.Crates) then
-			for Crate in pairs(Rack.Crates) do
-				Crates[#Crates + 1] = Crate:EntIndex()
-			end
+		for Crate in pairs(Rack:ACF_GetUserVar("Crates")) do
+			Crates[#Crates + 1] = Crate:EntIndex()
 		end
 
 		net.Start("ACF.RequestRackInfo")
@@ -1241,12 +1176,12 @@ do -- Misc -------------------------------------
 	function ENT:OnRemove(IsFullUpdate)
 		if IsFullUpdate then return end
 
-		for Crate in pairs(self.Crates) do
+		for Crate in pairs(self:ACF_GetUserVar("Crates") or {}) do
 			self:Unlink(Crate)
 		end
 
-		self:Unlink(self.Radar)
-		self:Unlink(self.Computer)
+		self:Unlink(self:ACF_GetUserVar("Radar"))
+		self:Unlink(self:ACF_GetUserVar("Computer"))
 
 		for _, Point in pairs(self.MountPoints) do
 			local Missile = Point.Missile

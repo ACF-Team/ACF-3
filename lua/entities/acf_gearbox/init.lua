@@ -197,7 +197,7 @@ do -- Spawn and Update functions -----------------------
 		self.DriverCrewMod = Clamp(Val, ACF.CrewFallbackCoef, 1)
 
 		-- Only the torque sent to wheels and effectors is cut, so gearboxes feeding other gearboxes are left alone
-		local Penalized = self.DriverCrewMod < 1 and (next(self.Wheels) or next(self.Effectors))
+		local Penalized = self.DriverCrewMod < 1 and (next(self:ACF_GetUserVar("Wheels") or {}) or next(self:ACF_GetUserVar("Effectors") or {}))
 
 		if Penalized then
 			local Penalty = HasBaseplate and Baseplate.DriverPenalty
@@ -218,7 +218,7 @@ do -- Spawn and Update functions -----------------------
 
 	local function CheckRopes(Entity, Target)
 		local NiceName = Target == "Wheels" and "Prop" or "Gearbox"
-		local Ropes = Entity[Target]
+		local Ropes = Entity:ACF_GetUserVar(Target)
 
 		if not next(Ropes) then return end
 
@@ -270,11 +270,11 @@ do -- Spawn and Update functions -----------------------
 	local function CheckWheels(Entity)
 		local Unusable
 
-		if next(Entity.Wheels) then
+		if next(Entity:ACF_GetUserVar("Wheels")) then
 			local BoxPhys = Entity:GetAncestor():GetPhysicsObject()
 			local Moving  = IsPhysObjValid(BoxPhys) and BoxPhys:IsMotionEnabled()
 
-			for Wheel in pairs(Entity.Wheels) do
+			for Wheel in pairs(Entity:ACF_GetUserVar("Wheels")) do
 				local Reason
 
 				if IsValid(Wheel:GetParent()) then
@@ -315,7 +315,7 @@ do -- Spawn and Update functions -----------------------
 			end
 		end
 
-		for _, Links in ipairs({ Entity.GearboxOut, Entity.Wheels }) do
+		for _, Links in ipairs({ Entity:ACF_GetUserVar("GearboxOut"), Entity:ACF_GetUserVar("Wheels") }) do
 			for Ent, Link in pairs(Links) do
 				local _, Angle = ACF.IsDriveshaftAngleExcessive(Ent, Ent.In, Link)
 
@@ -382,10 +382,7 @@ do -- Spawn and Update functions -----------------------
 	function ENT:ACF_PreSpawn(_, _, _, ClientData)
 		self.ACF            = {}
 		self.Engines        = {}
-		self.Wheels         = {} -- a "Link" has these components: Ent, Side, Axis, Rope, RopeLen, Output, ReqTq, Vel
-		self.Effectors      = {}
 		self.GearboxIn      = {}
-		self.GearboxOut     = {}
 		self.TotalReqTq     = 0
 		self.TorqueOutput   = 0
 		self.LoadTicks      = 0
@@ -444,16 +441,16 @@ do -- Spawn and Update functions -----------------------
 			for Engine in pairs(self.Engines) do self:Unlink(Engine) self:Link(Engine) end
 		end
 
-		if next(self.Wheels) then
-			for Wheel in pairs(self.Wheels) do self:Unlink(Wheel) self:Link(Wheel) end
+		if next(self:ACF_GetUserVar("Wheels")) then
+			for Wheel in pairs(self:ACF_GetUserVar("Wheels")) do self:Unlink(Wheel) self:Link(Wheel) end
 		end
 
 		if next(self.GearboxIn) then
 			for Box in pairs(self.GearboxIn) do Box:Unlink(self) Box:Link(self) end
 		end
 
-		if next(self.GearboxOut) then
-			for Box in pairs(self.GearboxOut) do self:Unlink(Box) self:Link(Box) end
+		if next(self:ACF_GetUserVar("GearboxOut")) then
+			for Box in pairs(self:ACF_GetUserVar("GearboxOut")) do self:Unlink(Box) self:Link(Box) end
 		end
 
 		self:UpdateLinkHints()
@@ -475,9 +472,9 @@ do -- Spawn and Update functions -----------------------
 	end
 
 	ACF.RegisterLinkSource("acf_gearbox", "GearboxIn")
-	ACF.RegisterLinkSource("acf_gearbox", "GearboxOut")
+	ACF.RegisterLinkSource("acf_gearbox", "GearboxOut", nil, true)
 	ACF.RegisterLinkSource("acf_gearbox", "Engines")
-	ACF.RegisterLinkSource("acf_gearbox", "Wheels")
+	ACF.RegisterLinkSource("acf_gearbox", "Wheels", nil, true)
 end ----------------------------------------------------
 
 do -- Inputs -------------------------------------------
@@ -601,7 +598,7 @@ do -- Linking ------------------------------------------
 			Checked[Entity] = true
 			Queued[Entity]  = nil
 
-			for Gearbox in pairs(Entity.GearboxOut) do
+			for Gearbox in pairs(Entity:ACF_GetUserVar("GearboxOut")) do
 				if not Checked[Gearbox] then
 					Queued[Gearbox] = true
 				end
@@ -647,7 +644,7 @@ do -- Linking ------------------------------------------
 	end
 
 	local function LinkWheel(Gearbox, Wheel)
-		if Gearbox.Wheels[Wheel] then return false, "This wheel is already linked to this gearbox!" end
+		if Gearbox:ACF_GetUserVar("Wheels")[Wheel] then return false, "This wheel is already linked to this gearbox!" end
 		if Gearbox:GetPos():DistToSqr(Wheel:GetPos()) > MaxDistance then
 			Mobility.LinkFailure.Distance(Gearbox, Wheel)
 
@@ -662,7 +659,7 @@ do -- Linking ------------------------------------------
 		Link.AntiSpazz = 0
 		Link.IsBraking = false
 
-		Gearbox.Wheels[Wheel] = Link
+		Gearbox:ACF_GetUserVar("Wheels")[Wheel] = Link
 		if not Wheel.ACF_Gearboxes then Wheel.ACF_Gearboxes = {} end
 		Wheel.ACF_Gearboxes[Gearbox] = Link
 
@@ -683,7 +680,7 @@ do -- Linking ------------------------------------------
 	end
 
 	local function LinkGearbox(Gearbox, Target)
-		if Gearbox.GearboxOut[Target] then return false, "These gearboxes are already linked to each other!" end
+		if Gearbox:ACF_GetUserVar("GearboxOut")[Target] then return false, "These gearboxes are already linked to each other!" end
 		if Target.GearboxIn[Gearbox] then return false, "These gearboxes are already linked to each other!" end
 		if Gearbox:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then
 			Mobility.LinkFailure.Distance(Gearbox, Target)
@@ -696,7 +693,7 @@ do -- Linking ------------------------------------------
 
 		if not Link then return false, "Cannot link due to excessive driveshaft angle! (" .. math.Round(DriveshaftAngle) .. " deg)" end
 
-		Gearbox.GearboxOut[Target] = Link
+		Gearbox:ACF_GetUserVar("GearboxOut")[Target] = Link
 		Target.GearboxIn[Gearbox]  = true
 
 		Mobility.BrokenLinks.Clear(Gearbox, Target)
@@ -715,14 +712,14 @@ end ----------------------------------------------------
 
 do -- Unlinking ----------------------------------------
 	local function UnlinkWheel(Gearbox, Wheel)
-		if Gearbox.Wheels[Wheel] then
-			local Link = Gearbox.Wheels[Wheel]
+		if Gearbox:ACF_GetUserVar("Wheels")[Wheel] then
+			local Link = Gearbox:ACF_GetUserVar("Wheels")[Wheel]
 
 			if IsValid(Link.Rope) then
 				Link.Rope:Remove()
 			end
 
-			Gearbox.Wheels[Wheel] = nil
+			Gearbox:ACF_GetUserVar("Wheels")[Wheel] = nil
 
 			-- The axis is derived from this table
 			if Wheel.ACF_Gearboxes then Wheel.ACF_Gearboxes[Gearbox] = nil end
@@ -745,20 +742,20 @@ do -- Unlinking ----------------------------------------
 	end
 
 	local function UnlinkGearbox(Gearbox, Target)
-		local GearboxToTarget = Gearbox.GearboxOut[Target] or Target.GearboxIn[Gearbox]
-		local TargetToGearbox = Target.GearboxOut[Gearbox] or Gearbox.GearboxIn[Target]
+		local GearboxToTarget = Gearbox:ACF_GetUserVar("GearboxOut")[Target] or Target.GearboxIn[Gearbox]
+		local TargetToGearbox = Target:ACF_GetUserVar("GearboxOut")[Gearbox] or Gearbox.GearboxIn[Target]
 
 		if GearboxToTarget or TargetToGearbox then
-			local Link = Gearbox.GearboxOut[Target] or Target.GearboxOut[Gearbox]
+			local Link = Gearbox:ACF_GetUserVar("GearboxOut")[Target] or Target:ACF_GetUserVar("GearboxOut")[Gearbox]
 
 			if IsValid(Link.Rope) then
 				Link.Rope:Remove()
 			end
 
 			Gearbox.GearboxIn[Target]  = nil
-			Gearbox.GearboxOut[Target] = nil
+			Gearbox:ACF_GetUserVar("GearboxOut")[Target] = nil
 			Target.GearboxIn[Gearbox]  = nil
-			Target.GearboxOut[Gearbox] = nil
+			Target:ACF_GetUserVar("GearboxOut")[Gearbox] = nil
 
 			Gearbox:UpdateLinkHints()
 			Target:UpdateLinkHints()
@@ -897,7 +894,7 @@ do -- Movement -----------------------------------------
 
 		if GearRatio == 0 then return 0 end
 
-		for Ent, Link in pairs(SelfTbl.GearboxOut) do
+		for Ent, Link in pairs(SelfTbl.ACF_LiveData.GearboxOut) do
 			local Clutch = Link.Side == 0 and LClutch or RClutch
 
 			Link.ReqTq = 0
@@ -917,7 +914,7 @@ do -- Movement -----------------------------------------
 		local DoubleDiff = SelfTbl.DoubleDiff
 		local SteerRate  = SelfTbl.SteerRate
 
-		for Wheel, Link in pairs(SelfTbl.Wheels) do
+		for Wheel, Link in pairs(SelfTbl.ACF_LiveData.Wheels) do
 			Link.ReqTq = 0
 
 			if GearRatio ~= 0 then
@@ -947,7 +944,7 @@ do -- Movement -----------------------------------------
 			end
 		end
 
-		for Effector, Link in pairs(SelfTbl.Effectors) do
+		for Effector, Link in pairs(SelfTbl.ACF_LiveData.Effectors) do
 			local Clutch = Link.Side == 0 and LClutch or RClutch
 
 			Link.ReqTq = 0
@@ -997,7 +994,7 @@ do -- Movement -----------------------------------------
 			AvailTq = min(abs(Torque) / SelfTbl.TotalReqTq, 1) / GearRatio * -(-Torque / abs(Torque)) * Loss * Slop
 		end
 
-		for Ent, Link in pairs(SelfTbl.GearboxOut) do
+		for Ent, Link in pairs(SelfTbl.ACF_LiveData.GearboxOut) do
 			Link:TransferGearbox(Ent, Link.ReqTq * AvailTq, DeltaTime, MassRatio, FlyRPM)
 			--Ent:Act(Link.ReqTq * AvailTq, DeltaTime, MassRatio)
 		end
@@ -1005,7 +1002,7 @@ do -- Movement -----------------------------------------
 		local Braking = SelfTbl.Braking
 		local DriverCrewMod = SelfTbl.DriverCrewMod or 1
 
-		for Ent, Link in pairs(SelfTbl.Wheels) do
+		for Ent, Link in pairs(SelfTbl.ACF_LiveData.Wheels) do
 			-- If the gearbox is braking, always
 			if not Braking or not Link.IsBraking then
 				-- Applied here, not to AvailTq, so gearbox-to-gearbox transfer stays unaffected
@@ -1027,7 +1024,7 @@ do -- Movement -----------------------------------------
 			end
 		end
 
-		for Effector, Link in pairs(SelfTbl.Effectors) do
+		for Effector, Link in pairs(SelfTbl.ACF_LiveData.Effectors) do
 			Link:TransferEffector(Effector, Link.ReqTq * AvailTq * DriverCrewMod, DeltaTime, MassRatio, FlyRPM)
 		end
 
@@ -1068,7 +1065,7 @@ do -- Braking ------------------------------------------
 
 		if SelfTbl.Disabled then return end -- Illegal brakes man
 		if not SelfTbl.Braking then return end -- Kills the whole thing if its not supposed to be running
-		if not next(SelfTbl.Wheels) then return end -- No brakes for the non-wheel users
+		if not next(SelfTbl.ACF_LiveData.Wheels) then return end -- No brakes for the non-wheel users
 		if SelfTbl.LastBrake == Clock.CurTime then return end -- Don't run this twice in a tick
 
 		local BoxPhys = ENTITY.GetPhysicsObject(ENTITY.GetAncestor(self))
@@ -1077,7 +1074,7 @@ do -- Braking ------------------------------------------
 		local SelfWorld = PHYSOBJ.LocalToWorldVector(BoxPhys, PHYSOBJ.GetAngleVelocity(BoxPhys))
 		local DeltaTime = Clock.DeltaTime
 
-		for Wheel, Link in pairs(SelfTbl.Wheels) do
+		for Wheel, Link in pairs(SelfTbl.ACF_LiveData.Wheels) do
 			local Brake = Link.Side == 0 and SelfTbl.LBrake or SelfTbl.RBrake
 
 			if Brake > 0 then -- regular ol braking
@@ -1098,83 +1095,6 @@ do -- Braking ------------------------------------------
 		end)
 	end
 	ENT.ApplyBrakes = ENT_ApplyBrakes
-end ----------------------------------------------------
-
-do -- Duplicator Support -------------------------------
-	function ENT:PreEntityCopy()
-		if next(self.Wheels) then
-			local Wheels = {}
-
-			for Ent in pairs(self.Wheels) do
-				Wheels[#Wheels + 1] = Ent:EntIndex()
-			end
-
-			duplicator.StoreEntityModifier(self, "ACFWheels", Wheels)
-		end
-
-		if next(self.GearboxOut) then
-			local Entities = {}
-
-			for Ent in pairs(self.GearboxOut) do
-				Entities[#Entities + 1] = Ent:EntIndex()
-			end
-
-			duplicator.StoreEntityModifier(self, "ACFGearboxes", Entities)
-		end
-
-		if next(self.Effectors) then
-			local Entities = {}
-
-			for Ent in pairs(self.Effectors) do
-				Entities[#Entities + 1] = Ent:EntIndex()
-			end
-
-			duplicator.StoreEntityModifier(self, "ACFEffectors", Entities)
-		end
-
-		-- AutoRegisterV2 wraps this as the original PreEntityCopy and handles the wire/base dupe info.
-	end
-
-	function ENT:PostEntityPaste(_, Ent, CreatedEntities)
-		local EntMods = ACF.DupeTable(Ent.EntityMods)
-
-		-- Backwards compatibility
-		if EntMods.WheelLink then
-			local Entities = ACF.DupeTable(ACF.DupeTable(EntMods.WheelLink).entities)
-
-			for _, EntID in ipairs(Entities) do
-				self:Link(CreatedEntities[EntID])
-			end
-
-			EntMods.WheelLink = nil
-		end
-
-		if EntMods.ACFWheels then
-			for _, EntID in ipairs(ACF.DupeTable(EntMods.ACFWheels)) do
-				self:Link(CreatedEntities[EntID])
-			end
-
-			EntMods.ACFWheels = nil
-		end
-
-		if EntMods.ACFGearboxes then
-			for _, EntID in ipairs(ACF.DupeTable(EntMods.ACFGearboxes)) do
-				self:Link(CreatedEntities[EntID])
-			end
-
-			EntMods.ACFGearboxes = nil
-		end
-
-		if EntMods.ACFEffectors then
-			for _, EntID in ipairs(ACF.DupeTable(EntMods.ACFEffectors)) do
-				self:Link(CreatedEntities[EntID])
-			end
-
-			EntMods.ACFEffectors = nil
-		end
-
-		-- AutoRegisterV2 wraps this as the original PostEntityPaste and handles the wire/base dupe info.
-	end
 end ----------------------------------------------------
 
 do	-- NET SURFER 2.0
@@ -1200,7 +1120,7 @@ do	-- NET SURFER 2.0
 
 			local SingleTargets, CoupleTargets =
 				{ Entity.GearboxIn, Entity.Engines },
-				{ Entity.GearboxOut, Entity.Wheels, Entity.Effectors }
+				{ Entity:ACF_GetUserVar("GearboxOut"), Entity:ACF_GetUserVar("Wheels"), Entity:ACF_GetUserVar("Effectors") }
 
 			for _, Singles in ipairs(SingleTargets) do
 				if next(Singles) then
@@ -1292,7 +1212,7 @@ do -- Miscellaneous ------------------------------------
 
 	function ENT:UpdateLinkHints()
 		ACF.Hints.Set(self, "gearbox_no_input", not (next(self.Engines) or next(self.GearboxIn)))
-		ACF.Hints.Set(self, "gearbox_no_output", not (next(self.Wheels) or next(self.GearboxOut) or next(self.Effectors)))
+		ACF.Hints.Set(self, "gearbox_no_output", not (next(self:ACF_GetUserVar("Wheels")) or next(self:ACF_GetUserVar("GearboxOut")) or next(self:ACF_GetUserVar("Effectors"))))
 	end
 
 	-- Prevent people from changing bodygroup
@@ -1309,7 +1229,7 @@ do -- Miscellaneous ------------------------------------
 			self:Unlink(Engine)
 		end
 
-		for Wheel in pairs(self.Wheels) do
+		for Wheel in pairs(self:ACF_GetUserVar("Wheels") or {}) do
 			self:Unlink(Wheel)
 
 			-- Only when no other gearbox drives it, since a defined axis is shared by all of a wheel's gearboxes
@@ -1322,11 +1242,11 @@ do -- Miscellaneous ------------------------------------
 			Gearbox:Unlink(self)
 		end
 
-		for Gearbox in pairs(self.GearboxOut) do
+		for Gearbox in pairs(self:ACF_GetUserVar("GearboxOut") or {}) do
 			self:Unlink(Gearbox)
 		end
 
-		for Effector in pairs(self.Effectors) do
+		for Effector in pairs(self:ACF_GetUserVar("Effectors") or {}) do
 			self:Unlink(Effector)
 		end
 

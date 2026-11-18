@@ -8,6 +8,9 @@ ACF.Entities.AutoRegister(2026091001, function(CLASS)
 	-- linked crates, not from a field here.
 	MENU_FIELD("ACF.Racks.BaseRack", "Rack", {OnlyAllowSubtypes = true, InstantiateTypeForDefault = "ACF.Racks.1xRK"})
 	MENU_FIELD("Number", "BreechIndex", {Min = 1, Default = 1, Decimals = 0})
+	LINKED_ENTITY_FIELD("Radar", {AcceptableClasses = {acf_radar = true}})
+	LINKED_ENTITY_FIELD("Computer", {AcceptableClasses = {acf_computer = true}})
+	LINKED_ENTITY_ARRAY_FIELD("Crates", {AcceptableClasses = {acf_ammo = true}})
 
 	function CLASS:VerifyData()
 	end

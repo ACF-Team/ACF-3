@@ -174,8 +174,8 @@ function ENT:CFW_PreParentedTo(OldParent, _)
 	-- Force unlinks if OldParent is valid
 	if IsValid(OldParent) and not self:IsMarkedForDeletion() then
 		Notify.EntityWarning(self, "Crew parent has changed", "This crew member was reparented. All links have been removed, please relink.")
-		if next(self.Targets) then
-			for Target in pairs(self.Targets) do
+		if next(self:ACF_GetUserVar("Targets") or {}) then
+			for Target in pairs(self:ACF_GetUserVar("Targets") or {}) do
 				self:Unlink(Target)
 			end
 
@@ -189,7 +189,7 @@ end
 
 --- Shows the not linked hint while a crew that needs links has none, with why its links were removed if they were.
 function ENT:UpdateLinkHint()
-	local Targets   = self.Targets
+	local Targets   = self:ACF_GetUserVar("Targets")
 	local Unlinked  = Targets == nil or next(Targets) == nil
 	local NeedsLink = self.CrewTypeID ~= "Commander" and self.CrewTypeID ~= "Driver"
 
@@ -245,7 +245,7 @@ do -- Random timer stuff
 	local function UpdateDuty(self, SelfTbl)
 		local Loading = false
 
-		for Target in pairs(SelfTbl.Targets) do
+		for Target in pairs(self:ACF_GetUserVar("Targets") or {}) do
 			if IsEntityValid(Target) and Target.IsCrewLoading and Target:IsCrewLoading() then
 				Loading = true
 				break
@@ -377,7 +377,7 @@ do -- Random timer stuff
 	function ENT_EnforceLimits(self)
 		local SelfTbl = ENTITY.GetTable(self)
 
-		local Targets = SelfTbl.Targets
+		local Targets = self:ACF_GetUserVar("Targets")
 		local SelfContraption = ENTITY.CFW_GetContraption(self)
 		local IsParented = CheckParentState(self)
 
@@ -559,7 +559,6 @@ do
 		self.EntType = "Crew"
 
 		-- Stored links
-		self.Targets       = {} -- Targets linked to this crew (LUT)
 		self.TargetsByType = {} -- Targets linked to this crew by type (LUT)
 
 		-- Various state variables
@@ -592,8 +591,8 @@ do
 
 		Notify.EntityWarning(self, "Crew occupation has changed", "This crew member's occupation was changed. All links have been removed, please relink.")
 
-		if next(self.Targets) then
-			for Target in pairs(self.Targets) do
+		if next(self:ACF_GetUserVar("Targets") or {}) then
+			for Target in pairs(self:ACF_GetUserVar("Targets") or {}) do
 				self:Unlink(Target)
 			end
 
@@ -991,7 +990,7 @@ do
 	local function CanLinkCrew(Crew, Target)
 		if not Target.Crews then Target.Crews = {} end -- Safely make sure the link Target has a crew list
 		if Target.Crews[Crew] then return false, "This entity is already linked to this crewmate!" end
-		if Crew.Targets[Target] then return false, "This entity is already linked to this crewmate!" end
+		if Crew:ACF_GetUserVar("Targets")[Target] then return false, "This entity is already linked to this crewmate!" end
 
 		local Handlers = Crew.CrewType.LinkHandlers[Target:GetClass()]
 		if not Handlers then return false, "This entity cannot be linked with this occupation" end
@@ -1009,7 +1008,7 @@ do
 		if not Success then return end
 
 		-- Update crew and Target's records of each other
-		Crew.Targets[Target] = true
+		Crew:ACF_GetUserVar("Targets")[Target] = true
 		Crew.TargetsByType = Crew.TargetsByType or {}
 		Crew.TargetsByType[TargetClass] = Crew.TargetsByType[TargetClass] or {}
 		Crew.TargetsByType[TargetClass][Target] = true
@@ -1035,7 +1034,7 @@ do
 	local function UnlinkCrew(Crew, Target)
 		local TargetClass = Target:GetClass()
 		-- Update crew and Target's records of each other
-		Crew.Targets[Target] = nil
+		Crew:ACF_GetUserVar("Targets")[Target] = nil
 		Crew.TargetsByType = Crew.TargetsByType or {}
 		Crew.TargetsByType[TargetClass] = Crew.TargetsByType[TargetClass] or {}
 		Crew.TargetsByType[TargetClass][Target] = nil
@@ -1074,7 +1073,7 @@ do
 		end)
 
 		ACF.RegisterClassUnlink(v, "acf_crew", function(Target, Crew)
-			if not (Target.Crews and Target.Crews[Crew]) or not Crew.Targets[Target] then return false, "This acf entity is not linked to this crewmate."	end
+			if not (Target.Crews and Target.Crews[Crew]) or not Crew:ACF_GetUserVar("Targets")[Target] then return false, "This acf entity is not linked to this crewmate."	end
 
 			UnlinkCrew(Crew, Target)
 
@@ -1085,35 +1084,6 @@ end
 
 -- Adv Dupe 2 Related
 do
-	function ENT:PreEntityCopy()
-		if next(self.Targets) then
-			local Entities = {}
-			for Ent in pairs(self.Targets) do
-				Entities[#Entities + 1] = Ent:EntIndex()
-			end
-			duplicator.StoreEntityModifier(self, "CrewTargets", Entities)
-		end
-
-		-- AutoRegisterV2 wraps this as the original PreEntityCopy and handles the wire/base dupe info.
-	end
-
-	function ENT:PostEntityPaste(_, Ent, CreatedEntities)
-		local EntMods = ACF.DupeTable(Ent.EntityMods)
-
-		-- Restore previous links
-		if EntMods.CrewTargets then
-			for _, EntID in pairs(ACF.DupeTable(EntMods.CrewTargets)) do
-				local ActualEnt = CreatedEntities[EntID]
-				local result, err = self:Link(ActualEnt)
-				if not result then Notify.EntityWarning(Ent, "ACF Crew:PostEntityPaste failure", err) end
-			end
-
-			EntMods.CrewTargets = nil
-		end
-
-		-- AutoRegisterV2 wraps this as the original PostEntityPaste and handles the wire/base dupe info.
-	end
-
 	-- Remove-only teardown. Captured by AutoRegisterV2 as OrigOnRemove; the generated OnRemove still runs
 	-- ACF_OnEntityLast + WireLib cleanup around this.
 	function ENT:OnRemove(IsFullUpdate)
@@ -1122,7 +1092,7 @@ do
 		ACF.ActiveCrews[self] = nil
 
 		-- Unlink Target entities
-		for v in pairs(self.Targets) do
+		for v in pairs(self:ACF_GetUserVar("Targets") or {}) do
 			if IsValid(v) then self:Unlink(v) end
 		end
 	end

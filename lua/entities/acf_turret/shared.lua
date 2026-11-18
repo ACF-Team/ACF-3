@@ -14,6 +14,10 @@ ACF.Entities.AutoRegister(2026100201, function()
 	MENU_FIELD("Number", "MaxSpeed", {Min = 0,    Max = 120, Default = 0,    Decimals = 2})
 	MENU_FIELD("Number", "OnAngle",  {Min = -180, Max = 180, Default = 15,   Decimals = 1}) -- Servos only
 	MENU_FIELD("Number", "Stroke",   {Min = 4,    Max = 72,  Default = 24,   Decimals = 1}) -- Actuators only
+	LINKED_ENTITY_FIELD("Motor", {AcceptableClasses = {acf_turret_motor = true}})
+	LINKED_ENTITY_FIELD("Gyro", {AcceptableClasses = {acf_turret_gyro = true}})
+	LINKED_ENTITY_FIELD("Radar", {AcceptableClasses = {acf_radar = true}})
+	LINKED_ENTITY_ARRAY_FIELD("LightweightControllers", {AcceptableClasses = {acf_turret_controller = true}})
 end, "Turret Drive", "Turret Drives")
 
 ENT.ACF_StaticWireInputs = {

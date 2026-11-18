@@ -2,9 +2,6 @@ local RecacheBindOutput = ENT.RecacheBindOutput
 local GetBindState = ENT.GetBindState
 
 local function Init(Entity)
-	Entity.Gearbox              = nil  -- Main gearbox of the vehicle
-	Entity.Baseplate            = nil  -- The baseplate of the vehicle
-	Entity.SteerPlates          = {}   -- Steering plates, if any
 	Entity.GearboxEnds          = {}   -- Gearboxes connected to a wheel
 	Entity.GearboxIntermediates = {}   -- Or otherwise
 	Entity.Wheels               = {}   -- Wheels
@@ -85,7 +82,7 @@ do
 		for Wheel in pairs(SelfTbl.Wheels) do
 			local AlreadyHasWeld = SelfTbl.ControllerWelds[Wheel]
 			if Engage and not AlreadyHasWeld then
-				SelfTbl.ControllerWelds[Wheel] = constraint.Weld(SelfTbl.Baseplate, Wheel, 0, 0, 0, true, true)
+				SelfTbl.ControllerWelds[Wheel] = constraint.Weld(SelfTbl.ACF_LiveData.Baseplate, Wheel, 0, 0, 0, true, true)
 			elseif not Engage and AlreadyHasWeld then
 				SelfTbl.ControllerWelds[Wheel]:Remove()
 				SelfTbl.ControllerWelds[Wheel] = nil
@@ -151,7 +148,7 @@ do
 		-- Need a list of all linked wheels
 		if not IsValid(MainGearbox) then return end
 
-		local baseplate = self.Baseplate
+		local baseplate = self:ACF_GetUserVar("Baseplate")
 		if not baseplate then return end
 
 		-- What this analysis was made from, so RefreshDrivetrain can tell when it goes stale
@@ -203,7 +200,7 @@ do
 		self.GearboxLeft, self.GearboxLeftDir = next(LeftGearboxes)
 		self.GearboxRight, self.GearboxRightDir = next(RightGearboxes)
 
-		for v in pairs(self.SteerPlates) do
+		for v in pairs(self:ACF_GetUserVar("SteerPlates")) do
 			local PhysObj = v:GetPhysicsObject()
 			if IsValid(PhysObj) then PhysObj:EnableGravity(false) end
 			self.SteerPlatesSorted[#self.SteerPlatesSorted + 1] = v
@@ -246,14 +243,14 @@ do
 	--- Analyzes the drivetrain again when it changed since the last analysis, such as wheels or steer plates linked later,
 	--- a baseplate linked after the gearbox or a reconfigured main gearbox
 	function ENT:RefreshDrivetrain()
-		local Gearbox = self.Gearbox
-		if not (IsValid(Gearbox) and IsValid(self.Baseplate)) then return end
+		local Gearbox = self:ACF_GetUserVar("Gearbox")
+		if not (IsValid(Gearbox) and IsValid(self:ACF_GetUserVar("Baseplate"))) then return end
 
-		if self.AnalyzedGearbox == Gearbox and self.AnalyzedBaseplate == self.Baseplate and self.AnalyzedGears == Gearbox.Gears then
+		if self.AnalyzedGearbox == Gearbox and self.AnalyzedBaseplate == self:ACF_GetUserVar("Baseplate") and self.AnalyzedGears == Gearbox.Gears then
 			local Wheels, Engines, Ends, Intermediates = DiscoverDriveTrain(Gearbox)
 
 			if SameKeys(Wheels, self.Wheels) and SameKeys(Engines, self.Engines) and SameKeys(Ends, self.GearboxEnds)
-				and SameKeys(Intermediates, self.GearboxIntermediates) and table.Count(self.SteerPlates) == #self.SteerPlatesSorted then
+				and SameKeys(Intermediates, self.GearboxIntermediates) and table.Count(self:ACF_GetUserVar("SteerPlates")) == #self.SteerPlatesSorted then
 				return
 			end
 		end
@@ -278,15 +275,15 @@ do
 	--- Handles driving, gearing, clutches, latches and brakes
 	function ENT:ProcessDrivetrain(SelfTbl)
 		-- Log speed even if drivetrain is invalid
-		if not IsValid(SelfTbl.Baseplate) then return end
+		if not IsValid(SelfTbl.ACF_LiveData.Baseplate) then return end
 
 		local Unit = self:GetSpeedUnit()
 		local Conv = Unit == 0 and 0.09144 or 0.05681 -- Converts u/s to km/h or mph (Assumes 1u = 1in)
-		local Speed = self.Baseplate:GetVelocity():Length() * Conv
+		local Speed = SelfTbl.ACF_LiveData.Baseplate:GetVelocity():Length() * Conv
 		SelfTbl.Speed = Speed
 		RecacheBindOutput(self, SelfTbl, "Speed", Speed)
 
-		if not IsValid(SelfTbl.Gearbox) then return end
+		if not IsValid(SelfTbl.ACF_LiveData.Gearbox) then return end
 		if self:GetDisableMobility() then return end
 
 		local W, A, S, D = GetBindState(SelfTbl, "MoveForward"), GetBindState(SelfTbl, "TurnLeft"), GetBindState(SelfTbl, "MoveBack"), GetBindState(SelfTbl, "TurnRight")
@@ -356,7 +353,7 @@ do
 			local SteerPercents = {self:GetSteerPercent1(), self:GetSteerPercent2(), self:GetSteerPercent3(), self:GetSteerPercent4()}
 			for Index, SteerPlate in ipairs(SelfTbl.SteerPlatesSorted) do
 				if IsValid(SteerPlate) then
-					SetSteerPlate(SelfTbl, SelfTbl.Baseplate, SteerPlate, TURN_ANGLE * SteerPercents[Index], TURN_RATE)
+					SetSteerPlate(SelfTbl, SelfTbl.ACF_LiveData.Baseplate, SteerPlate, TURN_ANGLE * SteerPercents[Index], TURN_RATE)
 					local PhysicsObject = SelfTbl.SteerPhysicsObjects[SteerPlate] or SteerPlate:GetPhysicsObject()
 					SelfTbl.SteerPhysicsObjects[SteerPlate] = PhysicsObject
 					PhysicsObject:EnableMotion(false)
@@ -367,7 +364,7 @@ do
 
 	--- Handles gear shifting
 	function ENT:ProcessDrivetrainLowFreq(SelfTbl)
-		local Gearbox = SelfTbl.Gearbox
+		local Gearbox = SelfTbl.ACF_LiveData.Gearbox
 		if not IsValid(Gearbox) then return end
 
 		local _, S = GetBindState(SelfTbl, "MoveForward"), GetBindState(SelfTbl, "MoveBack")
@@ -414,12 +411,12 @@ do
 
 	-- How well the driven wheels' axles line up with the baseplate's forward, 0 when they all roll forward
 	local function GetSidewaysness(Controller)
-		local Forward    = Controller.Baseplate:GetForward()
+		local Forward    = Controller:ACF_GetUserVar("Baseplate"):GetForward()
 		local Sum, Count = 0, 0
 
 		for Gearbox in pairs(Controller.GearboxEnds) do
 			if IsValid(Gearbox) then
-				for Wheel, Link in pairs(Gearbox.Wheels) do
+				for Wheel, Link in pairs(Gearbox:ACF_GetUserVar("Wheels")) do
 					local Phys = IsValid(Wheel) and Wheel:GetPhysicsObject()
 
 					if IsValid(Phys) then
@@ -450,15 +447,15 @@ do
 
 		Controller:SetRequirement("controller_wheel_sides", false, {
 			Reason    = Reason,
-			Baseplate = Controller.Baseplate,
+			Baseplate = Controller:ACF_GetUserVar("Baseplate"),
 			Left      = table.GetKeys(Controller.LeftWheels),
 			Right     = table.GetKeys(Controller.RightWheels),
 		})
 	end
 
 	function ENT:UpdateDrivetrainHints()
-		local Gearbox      = self.Gearbox
-		local HasBaseplate = IsValid(self.Baseplate)
+		local Gearbox      = self:ACF_GetUserVar("Gearbox")
+		local HasBaseplate = IsValid(self:ACF_GetUserVar("Baseplate"))
 		local HasGearbox   = IsValid(Gearbox)
 		local Contraption  = self:CFW_GetContraption()
 		local HasEngines   = Contraption and Contraption.Engines and next(Contraption.Engines) ~= nil
@@ -492,10 +489,12 @@ ACF.RegisterControllerLink("acf_baseplate", {
 	Field = "Baseplate",
 	Single = true,
 	OnLinked = function(Controller, Target)
-		if IsValid(Target.Pod) and not Controller.Seat then Controller:Link(Target.Pod) end
+		local Pod = Target:ACF_GetUserVar("Seat")
+		if IsValid(Pod) and not Controller:ACF_GetUserVar("Seat") then Controller:Link(Pod) end
 	end,
 	OnUnlinked = function(Controller, Target)
-		if IsValid(Target.Pod) and not Controller.Seat then Controller:Unlink(Target.Pod) end
+		local Pod = Target:ACF_GetUserVar("Seat")
+		if IsValid(Pod) and not Controller:ACF_GetUserVar("Seat") then Controller:Unlink(Pod) end
 	end,
 })
 

@@ -39,12 +39,6 @@ function ENT:ACF_PreSpawn(_, _, _, _)
 	ACF.Contraption.SetModel(self, "models/props_vehicles/generatortrailer01.mdl")
 end
 
-function ENT:PreEntityCopy()
-	if IsValid(self.Pod) then
-		duplicator.StoreEntityModifier(self, "LuaSeatID", {self.Pod:EntIndex()})
-	end
-end
-
 function ENT:ACF_PostSpawn(_, _, _, ClientData)
 	ACF.Contraption.SetMass(self, 200)
 	WireIO.SetupOutputs(self, Outputs, ClientData)

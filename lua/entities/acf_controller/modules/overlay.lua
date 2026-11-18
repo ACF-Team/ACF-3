@@ -11,6 +11,6 @@ do
 	function ENT:UpdateParentHint()
 		local Contraption = self:CFW_GetContraption()
 
-		ACF.Hints.Set(self, "controller_parent", Contraption == nil or Contraption.ACF_Baseplate ~= self.Baseplate)
+		ACF.Hints.Set(self, "controller_parent", Contraption == nil or Contraption.ACF_Baseplate ~= self:ACF_GetUserVar("Baseplate"))
 	end
 end

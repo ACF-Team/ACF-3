@@ -68,7 +68,7 @@ do -- Random timer crew stuff
 	-- Each turret only ever sets its own IsControlled (never a sub-turret's), to avoid two
 	-- UpdateControlled calls racing to overwrite the same field.
 	local function HasActiveLightweightController(Turret)
-		for Controller in pairs(Turret.LightweightControllers or {}) do
+		for Controller in pairs(Turret:ACF_GetUserVar("LightweightControllers") or {}) do
 			if IsValid(Controller) and Controller:IsActive() then return true end
 		end
 		return false
@@ -885,7 +885,7 @@ do	-- Spawn and Update funcs
 	function ENT:UpdateSound()
 		local SelfTbl = ENTITY.GetTable(self)
 
-		local Motor       = SelfTbl.Motor
+		local Motor       = self:ACF_GetUserVar("Motor")
 		local SoundPath   = (SelfTbl.PowerData or SelfTbl.HandGear).Sound
 		local SoundPitch  = 70
 		local SoundVolume = 0.1
@@ -911,29 +911,32 @@ do	-- Spawn and Update funcs
 		local SlewInput 	= SelfTbl.PowerData or SelfTbl.HandGear
 		local Stabilized	= false
 		local StabilizeAmount	= 0
-		local MotorDistance = IsValid(SelfTbl.Motor) and (SelfTbl.Motor.CompSize * 7.5) or 0
+		local Motor, Gyro	= self:ACF_GetUserVar("Motor"), self:ACF_GetUserVar("Gyro")
+		local MotorDistance = IsValid(Motor) and (Motor.CompSize * 7.5) or 0
 		local MaxDistance 	= (((SelfTbl.TurretData.RingSize / 2) * 1.2) + 12 + MotorDistance) ^ 2
 
-		if IsValid(SelfTbl.Motor) and SelfTbl.Motor:GetPos():DistToSqr(self:GetPos()) > MaxDistance then
+		if IsValid(Motor) and Motor:GetPos():DistToSqr(self:GetPos()) > MaxDistance then
 			local USound = UnlinkSound:format(math.random(1, 3))
 
 			Sounds.SendSound(self, USound, 70, 100, 1)
-			Sounds.SendSound(SelfTbl.Motor, USound, 70, 100, 1)
-			self:Unlink(SelfTbl.Motor)
+			Sounds.SendSound(Motor, USound, 70, 100, 1)
+			self:Unlink(Motor)
+			Motor = nil
 
 			-- No sense checking for this separately since it can't function without the motor anyway
 			-- Using separate link distance as gyros can be parented to other things
-			if IsValid(SelfTbl.Gyro) and ENTITY.GetPos(SelfTbl.Gyro):DistToSqr(ENTITY.GetPos(self)) > MaxLinkDistance then
+			if IsValid(Gyro) and ENTITY.GetPos(Gyro):DistToSqr(ENTITY.GetPos(self)) > MaxLinkDistance then
 				Sounds.SendSound(self, USound, 70, 100, 1)
-				Sounds.SendSound(SelfTbl.Gyro, USound, 70, 100, 1)
-				self:Unlink(SelfTbl.Gyro)
+				Sounds.SendSound(Gyro, USound, 70, 100, 1)
+				self:Unlink(Gyro)
+				Gyro = nil
 			end
 		end
 
-		if IsValid(SelfTbl.Motor) and SelfTbl.Motor:IsActive() then
-			SlewInput	= SelfTbl.Motor:GetInfo()
-			Stabilized	= IsValid(SelfTbl.Gyro) and SelfTbl.Gyro:IsActive()
-			if Stabilized then StabilizeAmount = SelfTbl.Gyro:GetInfo() end
+		if IsValid(Motor) and Motor:IsActive() then
+			SlewInput	= Motor:GetInfo()
+			Stabilized	= IsValid(Gyro) and Gyro:IsActive()
+			if Stabilized then StabilizeAmount = Gyro:GetInfo() end
 		end
 
 		-- Scale for being off-axis, further affects friction
@@ -1088,15 +1091,17 @@ do -- Overlay
 			end
 		end
 
-		if IsValid(SelfTbl.Motor) then
-			State:AddKeyValue("Motor", tostring(SelfTbl.Motor))
+		local Motor, Gyro = self:ACF_GetUserVar("Motor"), self:ACF_GetUserVar("Gyro")
+
+		if IsValid(Motor) then
+			State:AddKeyValue("Motor", tostring(Motor))
 		end
 
-		if IsValid(SelfTbl.Gyro) then
-			State:AddKeyValue("Gyro", tostring(SelfTbl.Gyro))
+		if IsValid(Gyro) then
+			State:AddKeyValue("Gyro", tostring(Gyro))
 		end
 
-		if SelfTbl.Stabilized and IsValid(SelfTbl.Gyro) and IsValid(SelfTbl.Motor) then
+		if SelfTbl.Stabilized and IsValid(Gyro) and IsValid(Motor) then
 			State:AddLabel("Motor stabilized at " .. math_Round(SelfTbl.StabilizeAmount * 100, 1) .. "%")
 		elseif SelfTbl.Stabilized then
 			State:AddLabel("Naturally stabilized at " .. math_Round(SelfTbl.StabilizeAmount * 100, 1) .. "%")
@@ -1106,19 +1111,19 @@ end
 
 do -- Metamethods
 	do	-- Links
-		ACF.RegisterLinkSource("acf_turret", "Motor", true)
-		ACF.RegisterLinkSource("acf_turret", "Gyro", true)
+		ACF.RegisterLinkSource("acf_turret", "Motor", true, true)
+		ACF.RegisterLinkSource("acf_turret", "Gyro", true, true)
 
 		-- Motor links
 
 		ACF.RegisterClassLink("acf_turret", "acf_turret_motor", function(This, Motor)
 			if This.IsPassthrough then return false, "Servos and actuators are self-powered and can't take a motor!" end
-			if IsValid(This.Motor) then return false, "This turret already has a motor linked!" end
+			if IsValid(This:ACF_GetUserVar("Motor")) then return false, "This turret already has a motor linked!" end
 			if IsValid(Motor.Turret) and (Motor.Turret ~= This) then return false, "This motor is already linked to different turret!" end
 			if IsValid(Motor.Turret) and (Motor.Turret == This) then return false, "This motor is already linked to this turret!" end
 			if This:GetPos():DistToSqr(Motor:GetPos()) > ((((This.TurretData.RingSize / 2) * 1.2) + 12 + Motor.CompSize * 7.5) ^ 2) then return false, "This motor is too far from the turret!" end
 
-			This.Motor		= Motor
+			This:ACF_SetUserVar("Motor", Motor)
 			Motor.Turret	= This
 
 			ACF.Hints.Set(Motor, "turret_motor_no_drive", false)
@@ -1133,11 +1138,13 @@ do -- Metamethods
 		end)
 
 		ACF.RegisterClassUnlink("acf_turret", "acf_turret_motor", function(This, Motor)
-			if not IsValid(This.Motor) then return false, "This turret doesn't have a motor linked!" end
-			if not IsValid(Motor.Turret) then return false, "This motor isn't linked to a turret!" end
-			if This.Motor ~= Motor then return false, "This turret isn't linked to this motor!" end
+			local Linked = This:ACF_GetUserVar("Motor")
 
-			This.Motor		= nil
+			if not IsValid(Linked) then return false, "This turret doesn't have a motor linked!" end
+			if not IsValid(Motor.Turret) then return false, "This motor isn't linked to a turret!" end
+			if Linked ~= Motor then return false, "This turret isn't linked to this motor!" end
+
+			This:ACF_SetUserVar("Motor", nil)
 			Motor.Turret	= nil
 
 			ACF.Hints.Set(Motor, "turret_motor_no_drive", true)
@@ -1155,7 +1162,7 @@ do -- Metamethods
 
 		ACF.RegisterClassLink("acf_turret", "acf_turret_gyro", function(This, Gyro)
 			if This.IsPassthrough then return false, "Servos and actuators can't be stabilized!" end
-			if IsValid(This.Gyro) then return false, "This turret already has a gyro linked!" end
+			if IsValid(This:ACF_GetUserVar("Gyro")) then return false, "This turret already has a gyro linked!" end
 			if Gyro.IsDual then
 				if IsValid(Gyro[This.ID]) then return false, "This gyro is already linked to this type of turret!" end
 				if This:GetPos():DistToSqr(Gyro:GetPos()) > MaxLinkDistance then return false, "This gyro is too far from the turret!" end
@@ -1168,7 +1175,7 @@ do -- Metamethods
 				Gyro.Turret		= This
 			end
 
-			This.Gyro	= Gyro
+			This:ACF_SetUserVar("Gyro", Gyro)
 
 			Gyro:UpdateLinkHints()
 			This:UpdateTurretSlew()
@@ -1180,7 +1187,9 @@ do -- Metamethods
 		end)
 
 		ACF.RegisterClassUnlink("acf_turret", "acf_turret_gyro", function(This, Gyro)
-			if not IsValid(This.Gyro) then return false, "This turret doesn't have a gyro linked!" end
+			local Linked = This:ACF_GetUserVar("Gyro")
+
+			if not IsValid(Linked) then return false, "This turret doesn't have a gyro linked!" end
 
 			if Gyro.IsDual then
 				if not IsValid(Gyro[This.ID]) then return false, "This gyro isn't linked to this type of turret!" end
@@ -1189,12 +1198,12 @@ do -- Metamethods
 				Gyro[This.ID]	= nil
 			else
 				if not IsValid(Gyro.Turret) then return false, "This gyro isn't linked to a turret!" end
-				if This.Gyro ~= Gyro then return false, "This turret isn't linked to this gyro!" end
+				if Linked ~= Gyro then return false, "This turret isn't linked to this gyro!" end
 
 				Gyro.Turret		= nil
 			end
 
-			This.Gyro	= nil
+			This:ACF_SetUserVar("Gyro", nil)
 
 			Gyro:UpdateLinkHints()
 			This:UpdateTurretSlew()
@@ -1204,68 +1213,6 @@ do -- Metamethods
 
 			return true, "Gyro unlinked successfully."
 		end)
-	end
-
-	do	-- Dupe Support
-		function ENT:PreEntityCopy()
-			local SelfTbl = ENTITY.GetTable(self)
-
-			if IsValid(SelfTbl.Motor) then
-				duplicator.StoreEntityModifier(self, "ACFMotor", {SelfTbl.Motor:EntIndex()})
-			end
-
-			-- Gyros!
-			if IsValid(SelfTbl.Gyro) then
-				duplicator.StoreEntityModifier(self, "ACFGyro", {SelfTbl.Gyro:EntIndex()})
-			end
-
-			if IsValid(SelfTbl.Radar) then
-				duplicator.StoreEntityModifier(self, "ACFRadar", {SelfTbl.Radar:EntIndex()})
-			end
-
-			-- Stored turret-side since the controller's periodic link Check would otherwise
-			-- gate the very first paste-time relink before contraption/mass data has settled
-			if SelfTbl.LightweightControllers and next(SelfTbl.LightweightControllers) then
-				local Indices = {}
-				for Controller in pairs(SelfTbl.LightweightControllers) do
-					if IsValid(Controller) then Indices[#Indices + 1] = Controller:EntIndex() end
-				end
-				if #Indices > 0 then
-					duplicator.StoreEntityModifier(self, "ACFLightweightControllers", Indices)
-				end
-			end
-		end
-
-		function ENT:PostEntityPaste(_, Ent, CreatedEntities)
-			local EntMods = ACF.DupeTable(Ent.EntityMods)
-
-			if EntMods.ACFMotor then
-				self:Link(CreatedEntities[ACF.DupeTable(EntMods.ACFMotor)[1]])
-
-				EntMods.ACFMotor = nil
-			end
-
-			if EntMods.ACFGyro then
-				self:Link(CreatedEntities[ACF.DupeTable(EntMods.ACFGyro)[1]])
-
-				EntMods.ACFGyro = nil
-			end
-
-			if EntMods.ACFRadar then
-				self:Link(CreatedEntities[ACF.DupeTable(EntMods.ACFRadar)[1]])
-
-				EntMods.ACFRadar = nil
-			end
-
-			if EntMods.ACFLightweightControllers then
-				for _, Index in ipairs(ACF.DupeTable(EntMods.ACFLightweightControllers)) do
-					local Controller = CreatedEntities[Index]
-					if IsValid(Controller) then Controller:Link(self) end
-				end
-
-				EntMods.ACFLightweightControllers = nil
-			end
-		end
 	end
 
 	do	-- Think
@@ -1608,7 +1555,6 @@ do -- Metamethods
 		end
 
 		function ENT:CFW_OnParented(Entity, _) -- Potentially called many times a second, so we won't force mass to update
-			local SelfTbl = ENTITY.GetTable(self)
 			local Class   = ENTITY.GetClass(self)
 
 			if Class == "acf_turret_rotator" then return end
@@ -1618,7 +1564,9 @@ do -- Metamethods
 			-- Should only be called when parenting, checks the position of the motor relative to the ring
 			-- Shooouuld be using CFW_OnParented as it was made with this in mind, but turret entities will overwrite it with the above function to ensure everything is captured
 			if Class == "acf_turret_motor" then Entity:ValidatePlacement() end
-			if IsValid(SelfTbl.Motor) then SelfTbl.Motor:ValidatePlacement() end
+			local Motor = self:ACF_GetUserVar("Motor")
+
+			if IsValid(Motor) then Motor:ValidatePlacement() end
 		end
 
 		function ENT:GetCost()
@@ -1642,12 +1590,14 @@ do -- Metamethods
 
 			ActiveTurrets[self] = nil
 
-			if IsValid(SelfTbl.Motor) then
-				SelfTbl.Motor:ValidatePlacement()
-				SelfTbl:Unlink(SelfTbl.Motor)
+			local Motor, Gyro = self:ACF_GetUserVar("Motor"), self:ACF_GetUserVar("Gyro")
+
+			if IsValid(Motor) then
+				Motor:ValidatePlacement()
+				self:Unlink(Motor)
 			end
 
-			if IsValid(SelfTbl.Gyro) then self:Unlink(SelfTbl.Gyro) end
+			if IsValid(Gyro) then self:Unlink(Gyro) end
 			if IsValid(SelfTbl.Rod) then SelfTbl.Rod:Remove() end
 
 			WireLib.Remove(self)

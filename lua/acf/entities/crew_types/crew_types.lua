@@ -20,7 +20,7 @@ end
 local function CountTasks(Crew)
 	local Count = 0
 
-	for Target in pairs(Crew.Targets) do
+	for Target in pairs(Crew:ACF_GetUserVar("Targets") or {}) do
 		local Idle = IsValid(Target) and Target.IsCrewLoading and not Target:IsCrewLoading()
 		if not Idle then Count = Count + 1 end
 	end
@@ -37,7 +37,7 @@ end
 --- Default count is 1
 local function CheckCount(Crew, Class, Count)
 	if not Class then
-		return table.Count(Crew.Targets) >= (Count or 1)
+		return table.Count(Crew:ACF_GetUserVar("Targets") or {}) >= (Count or 1)
 	end
 	local Targets = Crew.TargetsByType[Class]
 	return (Targets and table.Count(Targets) or 0) >= (Count or 1)
@@ -50,7 +50,7 @@ local function FindLongestBullet(Crew)
 	local LongestBullet = nil
 	for Gun in pairs(Crew.TargetsByType["acf_gun"] or Crew.TargetsByType["acf_rack"] or table_empty) do
 		if not IsValid(Gun) then continue end
-		for Crate in pairs(Gun.Crates) do
+		for Crate in pairs(Gun:ACF_GetUserVar("Crates") or {}) do
 			local BulletData = Crate.BulletData
 			local Length = BulletData.RoundLength or (BulletData.PropLength + BulletData.ProjLength)
 			if Length > LongestLength then
@@ -367,7 +367,7 @@ Classes.DefineClass("ACF.CrewTypes.Pilot", "ACF.CrewTypes.BaseCrewType", functio
 		Crew.TotalEff = math.Clamp(MyEff, ACF.CrewFallbackCoef, 1)
 	end
 	CLASS.UpdateFocus = function(Crew) -- Represents the fraction of efficiency a crew can give to its linked entities
-		local Count = table.Count(Crew.Targets)
+		local Count = table.Count(Crew:ACF_GetUserVar("Targets") or {})
 		Crew.Focus = (Count > 0) and (1 / Count) or 1
 	end
 	CLASS.EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, ACF.Classes.GetTypeByName("ACF.Baseplates.Aircraft")) end

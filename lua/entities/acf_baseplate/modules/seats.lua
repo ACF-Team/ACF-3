@@ -7,11 +7,11 @@ function ENT:ConfigureLuaSeat(Pod, Player)
 	ACF.ConfigureLuaSeat(self, Pod, Player)
 	self:ACF_SetUserVar("AlreadyHasSeat", true)
 
-	self.Pod = Pod
+	self:ACF_SetUserVar("Seat", Pod)
 
 	-- Regenerate the seat if it is removed unexpectedly
 	Pod:CallOnRemove("ACF_RegenerateVehiclePod", function()
-		if not IsValid(self) or self.Pod ~= Pod or Pod.ACF_ExpectedRemoval then return end
+		if not IsValid(self) or self:ACF_GetUserVar("Seat") ~= Pod or Pod.ACF_ExpectedRemoval then return end
 
 		timer.Simple(0, function()
 			if not IsValid(self) then return end
@@ -65,8 +65,9 @@ function ENT:ConfigureLuaSeat(Pod, Player)
 		--local Owner = self:CPPIGetOwner()
 		--if IsValid(Owner) then Owner:GodDisable() end
 
-		if IsValid(Ent.Pod) then Ent.Pod.ACF_ExpectedRemoval = true end
-		SafeRemoveEntity(Ent.Pod)
+		local Seat = Ent:ACF_GetUserVar("Seat")
+		if IsValid(Seat) then Seat.ACF_ExpectedRemoval = true end
+		SafeRemoveEntity(Seat)
 
 		if self.Crews and next(self.Crews) then
 			for Crew in pairs(self.Crews) do
@@ -137,4 +138,4 @@ end)
 
 -- Exposes Pod to util_sh and other things with a more unique name
 -- frankly, should rename Pod entirely
-function ENT:ACF_GetSeatProxy() return self.Pod end
+function ENT:ACF_GetSeatProxy() return self:ACF_GetUserVar("Seat") end
