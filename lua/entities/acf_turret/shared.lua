@@ -6,6 +6,7 @@ ACF.Entities.AutoRegister(2026100201, function()
 	MENU_FIELD("ACF.Turrets.Drive", "Turret", {
 		InstantiateTypeForDefault = "ACF.Turrets.Drive.Horizontal",
 		OnlyAllowSubtypes         = true,
+		OnlyAllowLeafTypes        = true,
 	})
 	MENU_FIELD("Number", "RingSize", {Min = 2,    Max = 512, Default = 60,   Decimals = 2}) -- Bore on actuators
 	MENU_FIELD("Number", "MinDeg",   {Min = -180, Max = 0,   Default = -180, Decimals = 1})
