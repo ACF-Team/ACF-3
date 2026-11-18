@@ -1067,14 +1067,14 @@ do
 		ACF.RegisterClassLink(v, "acf_crew", function(Target, Crew, FromChip)
 			local Result, Message = CanLinkCrew(Crew, Target)
 			if Result then
-				if FromChip then TimerSimple(10, function() LinkCrew(Crew, Target) end)
+				if FromChip then TimerSimple(10, function() if IsValid(Crew) and IsValid(Target) then LinkCrew(Crew, Target) end end)
 				else LinkCrew(Crew, Target) end
 			end
 			return Result, Message
 		end)
 
 		ACF.RegisterClassUnlink(v, "acf_crew", function(Target, Crew)
-			if not Target.Crews[Crew] or not Crew.Targets[Target] then return false, "This acf entity is not linked to this crewmate."	end
+			if not (Target.Crews and Target.Crews[Crew]) or not Crew.Targets[Target] then return false, "This acf entity is not linked to this crewmate."	end
 
 			UnlinkCrew(Crew, Target)
 
@@ -1098,17 +1098,15 @@ do
 	end
 
 	function ENT:PostEntityPaste(_, Ent, CreatedEntities)
-		local EntMods = Ent.EntityMods
+		local EntMods = ACF.DupeTable(Ent.EntityMods)
 
 		-- Restore previous links
 		if EntMods.CrewTargets then
-			for _, EntID in pairs(EntMods.CrewTargets) do
+			for _, EntID in pairs(ACF.DupeTable(EntMods.CrewTargets)) do
 				local ActualEnt = CreatedEntities[EntID]
 				local result, err = self:Link(ActualEnt)
 				if not result then Notify.EntityWarning(Ent, "ACF Crew:PostEntityPaste failure", err) end
 			end
-
-			self.RemainingLinks = RLs
 
 			EntMods.CrewTargets = nil
 		end
