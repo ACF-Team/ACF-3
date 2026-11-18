@@ -19,8 +19,20 @@ if CLIENT then
 	TOOL.BuildCPanel = ACF.CreateCopyMenu
 end
 
+-- Clients can use these before ACF_OnLoadPlayer runs for them
+local function GetPlayerData(Store, Player)
+	local Data = Store[Player]
+
+	if not Data then
+		Data = {}
+		Store[Player] = Data
+	end
+
+	return Data
+end
+
 local function GetDisabledData(Player, Class)
-	return Disabled[Player][Class]
+	return GetPlayerData(Disabled, Player)[Class]
 end
 
 if SERVER then
@@ -53,7 +65,7 @@ if SERVER then
 end
 
 local function GetCopyData(Player, Class)
-	return CopiedData[Player][Class]
+	return GetPlayerData(CopiedData, Player)[Class]
 end
 
 local function SaveCopyData(Player, Entity)
@@ -65,7 +77,7 @@ local function SaveCopyData(Player, Entity)
 	if not Data then
 		Data = {}
 
-		CopiedData[Player][Class] = Data
+		GetPlayerData(CopiedData, Player)[Class] = Data
 	else
 		for K in pairs(Data) do
 			Data[K] = nil
@@ -88,7 +100,7 @@ local function SaveCopyData(Player, Entity)
 	end
 
 	if not GetDisabledData(Player, Class) then
-		Disabled[Player][Class] = {}
+		GetPlayerData(Disabled, Player)[Class] = {}
 	end
 
 	return util.TableToJSON(List)
