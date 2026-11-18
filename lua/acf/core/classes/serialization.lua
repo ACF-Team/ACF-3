@@ -23,9 +23,10 @@ end
 
 local function ValidateNumericalPiece(Value, Default, Min, Max, Decimals)
     local N = tonumber(Value)
-    if N == nil then return Default end
+    if N == nil or N ~= N then return Default end
     if Min ~= nil then N = math.max(N, Min) end
     if Max ~= nil then N = math.min(N, Max) end
+    if N == math.huge or N == -math.huge then return Default end
     if Decimals ~= nil then N = math.Round(N, Decimals) end
     return N
 end
