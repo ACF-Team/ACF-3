@@ -5,6 +5,7 @@ ACF.Entities.AutoRegister(2026091001, function()
 		InstantiateTypeForDefault = "ACF.Turrets.Computer.Direct",
 		OnlyAllowSubtypes         = true,
 	})
+	LINKED_ENTITY_FIELD("Gun", {AcceptableClasses = {acf_gun = true}})
 end, "Ballistic Computer")
 
 ENT.ACF_StaticWireInputs = {

@@ -9,6 +9,7 @@ ACF.Entities.AutoRegister(2026091001, function()
 		InstantiateTypeForDefault = "ACF.Turrets.Controller.Lightweight",
 		OnlyAllowSubtypes         = true,
 	})
+	LINKED_ENTITY_FIELD("Crew", {AcceptableClasses = {acf_crew = true}})
 end, "Turret Controller", "Turret Controllers")
 
 ENT.ACF_StaticWireOutputs = {

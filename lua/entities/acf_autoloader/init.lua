@@ -19,10 +19,6 @@ local RefSize = Vector(43.233333587646, 7.2349619865417, 7.2349619865417)
 function ENT:ACF_PreSpawn()
 	self:SetScaledModel("models/acf/autoloader_tractorbeam.mdl")
 
-	-- Linked entities
-	self.Gun = nil
-	self.AmmoCrates = {}
-
 	-- State variables
 	self.AutoloaderGunBaseReloadTime = nil
 	self.AutoloaderAmmoBaseReloadTime = {}
@@ -40,9 +36,6 @@ function ENT:ACF_PostUpdateEntityData()
 	local R, H = self.AutoloaderSize.y, self.AutoloaderSize.x
 	local Volume = math.pi * R * R * H
 	ACF.Contraption.SetMass(self, Volume * 250)
-
-	-- Share the AmmoCrates LUT with ACF_LiveData so Serialize reads from Instance[Field.Name]
-	self.AmmoCrates = self.ACF_LiveData.AmmoCrates
 end
 
 local MaxDistance = ACF.LinkDistance * ACF.LinkDistance
@@ -57,7 +50,7 @@ end
 
 -- Arm to gun links
 ACF.RegisterClassPreLinkCheck("acf_autoloader", "acf_gun", function(This, Gun)
-	if IsValid(This.Gun) or Gun.Autoloader then return false, "Autoloader is already linked to that gun." end
+	if IsValid(This:ACF_GetUserVar("Gun")) or Gun.Autoloader then return false, "Autoloader is already linked to that gun." end
 	if Gun.IsBelted then return false, "Belt fed weapons don't link to autoloaders!" end
 	return true
 end)
@@ -68,25 +61,23 @@ ACF.RegisterClassLinkCheck("acf_autoloader", "acf_gun", function(This, Gun)
 end)
 
 ACF.RegisterClassLink("acf_autoloader", "acf_gun", function(This, Gun)
-	This.Gun = Gun
+	This:ACF_SetUserVar("Gun", Gun)
 	Gun.Autoloader = This
-	if This.ACF_LiveData then This.ACF_LiveData.Gun = Gun end
 	BroadcastEntity("ACF_Autoloader_Links", This, Gun, true)
 	return true, "Autoloader linked successfully."
 end)
 
 ACF.RegisterClassUnlink("acf_autoloader", "acf_gun", function(This, Gun)
-	if not IsValid(This.Gun) or not Gun.Autoloader then return false, "Autoloader was not linked to that gun." end
-	This.Gun = nil
+	if not IsValid(This:ACF_GetUserVar("Gun")) or not Gun.Autoloader then return false, "Autoloader was not linked to that gun." end
+	This:ACF_SetUserVar("Gun", nil)
 	Gun.Autoloader = nil
-	if This.ACF_LiveData then This.ACF_LiveData.Gun = nil end
 	BroadcastEntity("ACF_Autoloader_Links", This, Gun, false)
 	return true, "Autoloader unlinked successfully."
 end)
 
 -- Arm to rack links (missile compatibility)
 ACF.RegisterClassPreLinkCheck("acf_autoloader", "acf_rack", function(This, Rack)
-	if IsValid(This.Gun) or Rack.Autoloader then return false, "Autoloader is already linked to that rack." end
+	if IsValid(This:ACF_GetUserVar("Gun")) or Rack.Autoloader then return false, "Autoloader is already linked to that rack." end
 	return true
 end)
 
@@ -96,24 +87,22 @@ ACF.RegisterClassLinkCheck("acf_autoloader", "acf_rack", function(This, Rack)
 end)
 
 ACF.RegisterClassLink("acf_autoloader", "acf_rack", function(This, Rack)
-	This.Gun = Rack
+	This:ACF_SetUserVar("Gun", Rack)
 	Rack.Autoloader = This
-	if This.ACF_LiveData then This.ACF_LiveData.Gun = Rack end
 	return true, "Autoloader linked successfully."
 end)
 
 ACF.RegisterClassUnlink("acf_autoloader", "acf_rack", function(This, Rack)
-	if not IsValid(This.Gun) or not Rack.Autoloader then return false, "Autoloader was not linked to that rack." end
-	This.Gun = nil
+	if not IsValid(This:ACF_GetUserVar("Gun")) or not Rack.Autoloader then return false, "Autoloader was not linked to that rack." end
+	This:ACF_SetUserVar("Gun", nil)
 	Rack.Autoloader = nil
-	if This.ACF_LiveData then This.ACF_LiveData.Gun = nil end
 	return true, "Autoloader unlinked successfully."
 end)
 
 -- Arm to ammo links
 ACF.RegisterClassPreLinkCheck("acf_autoloader", "acf_ammo", function(This, Ammo)
 	Ammo.Autoloaders = Ammo.Autoloaders or {}
-	if This.AmmoCrates[Ammo] or Ammo.Autoloaders[This] then return false, "Autoloader is already linked to that ammo." end
+	if This:ACF_GetUserVar("AmmoCrates")[Ammo] or Ammo.Autoloaders[This] then return false, "Autoloader is already linked to that ammo." end
 	if not Ammo:ACF_GetUserVar("Shape").IsMechanized then return false, "Autoloaders can only feed from drums, carousels and cassettes." end
 
 	return true
@@ -142,7 +131,7 @@ ACF.RegisterClassLinkCheck("acf_autoloader", "acf_ammo", function(This, Ammo)
 end)
 
 ACF.RegisterClassLink("acf_autoloader", "acf_ammo", function(This, Ammo)
-	This.AmmoCrates[Ammo] = true
+	This:ACF_GetUserVar("AmmoCrates")[Ammo] = true
 	Ammo.Autoloaders[This] = true
 	BroadcastEntity("ACF_Autoloader_AmmoLinks", This, Ammo, true)
 	return true, "Autoloader linked successfully."
@@ -150,8 +139,10 @@ end)
 
 ACF.RegisterClassUnlink("acf_autoloader", "acf_ammo", function(This, Ammo)
 	Ammo.Autoloaders = Ammo.Autoloaders or {}
-	if not This.AmmoCrates[Ammo] or not Ammo.Autoloaders[This] then return false, "Autoloader was not linked to that ammo." end -- TODO: refactor when link API is refactored
-	This.AmmoCrates[Ammo] = nil
+	local AmmoCrates = This:ACF_GetUserVar("AmmoCrates")
+
+	if not AmmoCrates[Ammo] or not Ammo.Autoloaders[This] then return false, "Autoloader was not linked to that ammo." end -- TODO: refactor when link API is refactored
+	AmmoCrates[Ammo] = nil
 	Ammo.Autoloaders[This] = nil
 	BroadcastEntity("ACF_Autoloader_AmmoLinks", This, Ammo, false)
 	return true, "Autoloader unlinked successfully."
@@ -266,8 +257,8 @@ function ENT:GetCost()
 end
 
 function ENT:Think()
-	local Gun = self.Gun
-	local AmmoCrate = next(self.AmmoCrates)
+	local Gun = self:ACF_GetUserVar("Gun")
+	local AmmoCrate = next(self:ACF_GetUserVar("AmmoCrates"))
 	local LinkedToGun = Gun and IsValid(Gun)
 	local LinkedToCrate = AmmoCrate and IsValid(AmmoCrate)
 
@@ -296,7 +287,7 @@ end
 
 -- Requirements only mean something while linked, the link hints explain the rest
 function ENT:ACF_ShowRequirements()
-	return IsValid(self.Gun) and next(self.AmmoCrates) ~= nil
+	return IsValid(self:ACF_GetUserVar("Gun")) and next(self:ACF_GetUserVar("AmmoCrates")) ~= nil
 end
 
 function ENT:ACF_UpdateOverlayState(State)
@@ -309,6 +300,8 @@ function ENT:ACF_UpdateOverlayState(State)
 end
 
 function ENT:OnRemove()
-	if IsValid(self.Gun) then self:Unlink(self.Gun) end
-	for Ammo in pairs(self.AmmoCrates) do self:Unlink(Ammo) end
+	local Gun = self:ACF_GetUserVar("Gun")
+
+	if IsValid(Gun) then self:Unlink(Gun) end
+	for Ammo in pairs(self:ACF_GetUserVar("AmmoCrates") or {}) do self:Unlink(Ammo) end
 end

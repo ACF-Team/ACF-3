@@ -341,17 +341,26 @@ do -- Entity linking
 	--- @param Entity table The entity to check
 	--- @param VarName string The field of the entity that stores link sources (e.g. "Entity.FuelTanks" for engines)
 	--- @param SingleEntry boolean | nil Whether the entity supports a single source link or multiple
+	--- @param IsUserVar boolean | nil Whether the links are stored in ACF_LiveData instead of the entity table
 	--- @return table<table, true> # A table whose keys are the link source entities and whose values are all true
-	local function GetEntityLinks(Entity, VarName, SingleEntry)
-		if not Entity[VarName] then return {} end
+	local function GetEntityLinks(Entity, VarName, SingleEntry, IsUserVar)
+		local Links
+
+		if IsUserVar then
+			Links = Entity:ACF_GetUserVar(VarName)
+		else
+			Links = Entity[VarName]
+		end
+
+		if not Links then return {} end
 
 		if SingleEntry then
-			return { [Entity[VarName]] = true }
+			return { [Links] = true }
 		end
 
 		local Result = {}
 
-		for K in pairs(Entity[VarName]) do
+		for K in pairs(Links) do
 			Result[K] = true
 		end
 
@@ -365,18 +374,19 @@ do -- Entity linking
 	--- @param Class string The name of the class
 	--- @param VarName string The field referencing one of the class's link source(s)
 	--- @param SingleEntry boolean | nil Whether the entity supports a single source link or multiple
-	function ACF.RegisterLinkSource(Class, VarName, SingleEntry)
+	--- @param IsUserVar boolean | nil Whether the links are stored in ACF_LiveData instead of the entity table
+	function ACF.RegisterLinkSource(Class, VarName, SingleEntry, IsUserVar)
 		local Data = EntityLink[Class]
 
 		if not Data then
 			EntityLink[Class] = {
 				[VarName] = function(Entity)
-					return GetEntityLinks(Entity, VarName, SingleEntry)
+					return GetEntityLinks(Entity, VarName, SingleEntry, IsUserVar)
 				end
 			}
 		else
 			Data[VarName] = function(Entity)
-				return GetEntityLinks(Entity, VarName, SingleEntry)
+				return GetEntityLinks(Entity, VarName, SingleEntry, IsUserVar)
 			end
 		end
 	end
