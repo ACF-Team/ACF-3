@@ -163,6 +163,14 @@ local function Build(Menu, Contexts)
 	ACF.Menu.LoadClassCombo(MissileTypes, Entries, "ID", "Model", PAGE, "group")
 end
 
+--- Whether serialized ammo crate data is for a missile
+function ACF.Menu.IsMissileAmmo(Data)
+	local Weapon = Data.Weapon
+	local Type   = Classes.GetTypeByName(istable(Weapon) and Weapon.Type or Weapon)
+
+	return Type ~= nil and Classes.IsAssignableTo(Type, Classes.GetTypeByName(MISSILE_BASE))
+end
+
 ACF.Menu.RegisterPage({
 	ID       = "acf_rack",
 	Category = "#acf.menu.entities",
@@ -171,6 +179,20 @@ ACF.Menu.RegisterPage({
 	Order    = 101,
 
 	Contexts = { Rack = "acf_rack", Ammo = "acf_ammo" },
+
+	AcceptsCopy = function(ClassName, Data)
+		return ClassName ~= "acf_ammo" or ACF.Menu.IsMissileAmmo(Data)
+	end,
+
+	-- Missile crates remember their ammo per missile group
+	PrepareCopy = function(Name, Data, Context)
+		if Name ~= "Ammo" then return end
+
+		local Weapon  = Data.Weapon
+		local Missile = Classes.GetTypeByName(istable(Weapon) and Weapon.Type or Weapon)
+
+		if Missile then ACF.AmmoMenu.SetScope(Context, Classes.GetBaseClass(Missile)) end
+	end,
 
 	Actions = {
 		{ Bind = "left",       Context = "Rack", Preview = true, Desc = "Spawn a new missile rack, or update the one you're aiming at." },

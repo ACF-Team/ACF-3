@@ -195,6 +195,20 @@ local function ScopeAmmo(WeaponType)
 	end
 end
 
+--- Saves the crate's ammo under its current weapon class, then points it at another one
+--- For copying a crate in, so the copied ammo isn't saved under the old weapon class
+function ACF.AmmoMenu.SetScope(Ctx, WeaponType)
+	local Scope = WeaponType and Classes.GetTypeName(WeaponType)
+	if not Scope or Scope == Ctx.AmmoScope then return end
+
+	if Ctx.AmmoScope then
+		if timer.Exists(SaveTimer) then timer.Remove(SaveTimer) end
+		SaveScopedAmmo(Ctx, Ctx.AmmoScope)
+	end
+
+	Ctx.AmmoScope = Scope
+end
+
 -- Builds a flat snapshot of the current config for the pure round-math helpers (which expect the old
 -- ToolData shape). Read-only: the context remains the source of truth for writes.
 local function BuildToolData()

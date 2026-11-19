@@ -16,6 +16,21 @@ local function GetTorqueMult() return acf_menu_multiplytorquemult:GetBool() and 
 local function GetEngineType(FQN) return Classes.GetSubtypeByName("ACF.EngineTypes.BaseEngineType", FQN) end
 local function GetFuelType(FQN)   return Classes.GetSubtypeByName("ACF.FuelTypes.FuelType", FQN) end
 
+-- A fuel tank copied into the menu keeps its fuel, even one this engine doesn't use
+local function GetFuelChoices(Fuels)
+	local Choices = {}
+
+	for Name, Fuel in pairs(Fuels) do Choices[Name] = Fuel end
+
+	for _, Type in ipairs(ACF.Menu.PreferredTypes or {}) do
+		local Name = Classes.GetTypeName(Type)
+
+		if GetFuelType(Name) then Choices[Name] = Type end
+	end
+
+	return Choices
+end
+
 local function UpdateEngineStats(Label, Data)
 	local RPM        = Data.RPM
 	local PeakTqRPM  = math.Round(Data.PeakTqRPM)
@@ -82,6 +97,7 @@ local function Build(Menu, Contexts)
 	PowerGraph:SetFidelity(24)
 
 	Menu:AddTitle("#acf.menu.fuel.settings")
+
 	local FuelType  = Menu:AddComboBox()
 	local FuelShape = Menu:AddComboBox()
 	FuelShape:AddChoice("Box", "ACF.ContainerShapes.Box")
@@ -174,7 +190,7 @@ local function Build(Menu, Contexts)
 
 		PowerGraph:PlotLimitLine(language.GetPhrase("acf.menu.engines.idle_rpm"), false, Data.RPM.Idle, IdleColor)
 
-		ACF.Menu.LoadClassCombo(FuelType, Data.Fuel, "ID", nil, PAGE, "fuel")
+		ACF.Menu.LoadClassCombo(FuelType, GetFuelChoices(Data.Fuel), "ID", nil, PAGE, "fuel")
 	end
 
 	function FuelType:OnSelect(Index, _, Data)
