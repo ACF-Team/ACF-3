@@ -1,6 +1,5 @@
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
-AddCSLuaFile("modules_cl/round_counts.lua")
 
 include("shared.lua")
 

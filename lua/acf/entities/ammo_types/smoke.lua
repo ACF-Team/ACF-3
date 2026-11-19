@@ -168,7 +168,7 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function(CLASS, BA
 			local Airburst = Bullet.DetByFuze
 			local Origin   = Airburst and Bullet.Pos or Trace.HitPos
 			local Crate    = Entity(Bullet.Crate or 0)
-			local Color    = IsValid(Crate) and Crate:GetColor() or nil
+			local Color    = IsValid(Crate) and ACF.GetKindColor(Crate, Bullet.CrateProfile) or nil
 
 			ACF.CreateSmokeScreen(Origin, Bullet.FillerMass or 0, Bullet.WPMass or 0, Color, Bullet.Flight, not Airburst and Trace.HitNormal or nil)
 

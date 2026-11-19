@@ -1,7 +1,6 @@
 local ACF = ACF
 
 include( "shared.lua" )
-include( "modules_cl/round_counts.lua" )
 
 killicon.Add( "acf_ammo", "HUD/killicons/acf_ammo", ACF.KillIconColor )
 

@@ -68,31 +68,28 @@ Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Spawn the carousel u
 
 -------------------------------------------------------------------------------------------------
 local Chapter = Storyboard:Chapter("Mixing Rounds")
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "A carousel can hold other rounds too. Pick another ammo type, then hold Alt and left click the carousel to add one."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "A carousel can hold other rounds too. Click Add Round in the round list, then pick an ammo type for the new row."}))
 Chapter:AddInstruction("ACF.ScrollToMenuPanel", {Name = "MainMenuCPanel", Scroll = "#acf.menu.ammo.ammo_info"}):DelayByLength()
+Chapter:AddInstruction("ACF.AddMenuRound", {Name = "MainMenuCPanel"}):DelayByLength()
 Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", Choice = "High Explosive"}):DelayByLength()
 
+Chapter:AddInstruction("Caption", {Text = "Type how many of each it holds, or drag the divider on the bar. The arrows reorder them, and rounds load in turn in that order."})
+Chapter:AddInstruction("ACF.DragRoundDivider", {Name = "MainMenuCPanel", Count = 40}):DelayByLength()
+Chapter:AddDelay(1.5)
+
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Shift and left click the carousel to give it the whole list. Its slots fit the longest round in the list."}))
 Chapter:AddInstruction("MoveToolgunTo", {Target = "Carousel", Easing = math.ease.InOutQuad}):DelayByLength()
-local Alt = Chapter:AddInstruction("KeyPress", {Name = "AltKey", Key = "Alt", Position = Vector(0.5, 0.8, 0), Hold = 0.8})
-Chapter:AddDelay(Alt.PressedAt)
+local Shift = Chapter:AddInstruction("KeyPress", {Name = "ShiftKey", Key = "Shift", Position = Vector(0.5, 0.8, 0), Hold = 0.8})
+Chapter:AddDelay(Shift.PressedAt)
 Chapter:AddInstruction("ClickToolgun", {Target = "Carousel"}):DelayByLength()
 Chapter:AddDelay(0.8)
-Chapter:AddInstruction("HideToolgun", {}):DelayByLength()
-
-Chapter:AddDelay(Chapter:AddInstruction("ACF.ShowRoundCounts", {Target = "Carousel", Capacity = 60, Kinds = {{Name = "AP", Count = 59, Icon = "acf/icons/shell_ap.png"}, {Name = "HE", Count = 1, Icon = "acf/icons/shell_he.png"}}}))
-Chapter:AddInstruction("Caption", {Text = "Drag the divider to set how many it holds of each. The arrows reorder them, and rounds load in turn in that order."})
-Chapter:AddInstruction("ACF.DragRoundDivider", {Name = "RoundCounts", Count = 40}):DelayByLength()
-Chapter:AddDelay(1.5)
-Chapter:AddInstruction("ACF.ClickRoundCountsApply", {Name = "RoundCounts"}):DelayByLength()
-Chapter:AddInstruction("RemovePanel", {Name = "RoundCounts", Length = 0.5}):DelayByLength()
-Chapter:AddInstruction("ShowToolgun", {Tool = language.GetPhrase("tool.acf_menu.menu_name")}):DelayByLength()
 
 -------------------------------------------------------------------------------------------------
 local Chapter = Storyboard:Chapter("Fitting the Autoloader")
 Chapter:AddInstruction("ACF.SelectMenuTreeNode", {Name = "MainMenuCPanel", Select = "#acf.menu.components"}):DelayByLength()
 Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", Choice = "Autoloader"}):DelayByLength()
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Under Components, pick Autoloader and size it to the round. Bigger autoloaders weigh more, so don't oversize it."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Under Components, pick Autoloader and size it to the longest round in the carousel. Bigger autoloaders weigh more, so don't oversize it."}))
 Chapter:AddInstruction("ACF.ScrollToMenuPanel", {Name = "MainMenuCPanel", Scroll = "Max Caliber (mm)"}):DelayByLength()
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "Max Caliber (mm)", Value = 125}):DelayByLength()
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "Length (cm)", Value = 45}):DelayByLength()

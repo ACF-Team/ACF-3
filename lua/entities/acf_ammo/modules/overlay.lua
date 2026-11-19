@@ -42,14 +42,12 @@ do -- MARK: Overlay
 		Kind.Ammo:UpdateCrateOverlay(BulletData, State)
 	end
 
-	local MIXED_HELP = "Open the context menu and right click this crate, then pick Edit Round Counts "
-		.. "to change how many of each round it holds and the order they load in."
-	local SINGLE_HELP = "Hold Alt while applying a round from the ACF menu to add it to this crate. "
-		.. "How many of each round it holds can then be edited from its context menu."
+	local MIX_HELP = "The round list in the ACF menu sets which rounds this crate holds and how many of each. "
+		.. "Shift + Left Click the crate to apply it."
 
 	-- The contents bar's data: a section per kind in list order, sized by its share and filled by its rounds left
 	local function GetContentsBar(Entity, Kinds)
-		local Help = not Entity:CanMixRounds() and "" or #Kinds > 1 and MIXED_HELP or SINGLE_HELP
+		local Help = Entity:CanMixRounds() and MIX_HELP or ""
 		local Bar  = { "Contents", Entity.Capacity, Help }
 
 		for Index, Kind in ipairs(Kinds) do

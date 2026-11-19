@@ -105,12 +105,26 @@ do -- MARK: Round access
 		return Kind.BulletData, Kind.Ammo
 	end
 
-	-- The kind a round goes back into, one equal to it that is short of its count
-	local function FindReturnKind(Entity, BulletData)
-		for Index, Kind in ipairs(Entity.RoundKinds) do
-			local Own = Kind.BulletData
+	local function CanTakeBack(Kind, BulletData)
+		local Own = Kind.BulletData
 
-			if Kind.Count < Kind.Target and Own.AmmoType == BulletData.AmmoType and ACF.BulletEquality(Own, BulletData) then return Index, Kind end
+		return Kind.Count < Kind.Target and Own.AmmoType == BulletData.AmmoType and ACF.BulletEquality(Own, BulletData)
+	end
+
+	-- The kind a round goes back into, one equal to it that is short of its count.
+	-- The kind it came from first, two kinds can hold the same round under different names or colors
+	local function FindReturnKind(Entity, BulletData)
+		local Kinds = Entity.RoundKinds
+
+		if BulletData.Crate == Entity:EntIndex() then
+			local Index = (BulletData.CrateProfile or -1) + 1
+			local Kind  = Kinds[Index]
+
+			if Kind and CanTakeBack(Kind, BulletData) then return Index, Kind end
+		end
+
+		for Other, OtherKind in ipairs(Kinds) do
+			if CanTakeBack(OtherKind, BulletData) then return Other, OtherKind end
 		end
 	end
 

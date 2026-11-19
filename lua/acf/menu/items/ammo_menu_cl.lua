@@ -18,7 +18,9 @@ end
 -- Menu state. AmmoCtx is the acf_ammo EntityContext this menu edits; Sub wraps its nested "AmmoType"
 -- field (the live ammo-type instance, which holds Projectile/Propellant/Tracer/... ). BulletData is the
 -- converted round data, recomputed whenever the config changes.
+-- AmmoType is always the selected row of the round list (the same instance), so everything below edits that row
 local AmmoCtx, Sub, Ammo, BulletData
+local RoundList, TypeList, MenuRoot
 local CountSliders = {}
 
 local GhostData = {Secondary = {
@@ -103,6 +105,60 @@ function ACF.AmmoMenu.Slider(Base, Title, Min, Max, Dec, Field, Apply, Snap)
 	return Panel
 end
 
+-- MARK: Round list helpers
+
+local function GetRounds() return AmmoCtx:Get("Rounds") end
+local function GetRoundCounts() return AmmoCtx:Get("RoundCounts") end
+
+---Points AmmoType at the selected row. Settings saved before the round list only have AmmoType, that becomes the list
+local function Rebind()
+	local Rounds = GetRounds()
+
+	if not (Rounds and Rounds[1]) then
+		AmmoCtx:Set("Rounds", { AmmoCtx:Get("AmmoType") }, true)
+		AmmoCtx:Set("RoundCounts", { 1 }, true)
+
+		Rounds = GetRounds()
+	end
+
+	local Counts = GetRoundCounts()
+
+	for Index = 1, #Rounds do Counts[Index] = Counts[Index] or 1 end
+	for Index = #Counts, #Rounds + 1, -1 do Counts[Index] = nil end
+
+	local Selected = math.Clamp(AmmoCtx.RoundSelected or 1, 1, #Rounds)
+
+	AmmoCtx.RoundSelected     = Selected
+	AmmoCtx.Instance.AmmoType = Rounds[Selected]
+
+	Sub  = ACF.Menu.SubContext(AmmoCtx, "AmmoType")
+	Ammo = Rounds[Selected]
+
+	Ammo.Weapon = AmmoCtx:Get("Weapon")
+	BulletData  = Ammo:ClientConvert()
+end
+
+ACF.AmmoMenu.Rebind = function() if AmmoCtx then Rebind() end end
+
+-- Picking another ammo type makes a new instance, it takes the row's place and keeps the row's name and color
+local function SyncSelectedRound(Ctx)
+	local Rounds  = Ctx:Get("Rounds")
+	local Current = Ctx.Instance.AmmoType
+	local Old     = Rounds and Rounds[Ctx.RoundSelected or 1]
+
+	if not Old or Old == Current or not (Current and Current.GetType) then return end
+
+	Current.KindName      = Old.KindName
+	Current.OverrideColor = Old.OverrideColor
+	Current.KindColor     = Old.KindColor
+
+	if Old.TwoPiece ~= nil and Classes.GetTypeFieldByName(Current:GetType(), "TwoPiece") then
+		Current.TwoPiece = Old.TwoPiece
+	end
+
+	Rounds[Ctx.RoundSelected or 1] = Current
+end
+
 ---Gets a key-value table of all the ammo type objects a given weapon class can make use of.
 local function GetAmmoList(WeaponType)
 	local Entries = Classes.GetSubtypes("ACF.Ammunition.BaseAmmo")
@@ -140,8 +196,10 @@ local SaveTimer = "acf_menu_ammo_scope_save"
 local function SaveScopedAmmo(Ctx, Scope)
 	if ACF.AmmoMenu.SuppressPersist then return end -- dev selftest builds menus offscreen; don't touch the store
 	if not (Ctx and Scope) then return end
-	local Data = Ctx:Serialize().AmmoType
-	if Data then ACF.Menu.SetAmmoForWeapon(Scope, Data) end
+	local Data = Ctx:Serialize()
+	if not Data.Rounds then return end
+
+	ACF.Menu.SetAmmoForWeapon(Scope, { Rounds = Data.Rounds, RoundCounts = Data.RoundCounts, Selected = Ctx.RoundSelected })
 end
 
 -- Debounced so dragging a slider doesn't hammer the disk (mirrors persist_cl's 0.5s gate). Binds the
@@ -173,25 +231,52 @@ local function ScopeAmmo(WeaponType)
 	AmmoCtx.AmmoScope = Scope
 
 	local Saved = ACF.Menu.GetAmmoForWeapon(Scope)
-	if Saved then
-		-- Visited class: restore its remembered ammo type + tuned params (silent -- LoadEntries rebuilds
+	if Saved and Saved.Rounds then
+		-- Visited class: restore its remembered round list + tuned params (silent -- LoadEntries rebuilds
 		-- the controls right after).
-		AmmoCtx:Set("AmmoType", Saved, true)
+		AmmoCtx:Set("Rounds", Saved.Rounds, true)
+		AmmoCtx:Set("RoundCounts", Saved.RoundCounts or {}, true)
+		AmmoCtx.RoundSelected = Saved.Selected
+	elseif Saved then
+		-- Remembered before the round list, a single { Type, Data }
+		AmmoCtx:Set("Rounds", { Saved }, true)
+		AmmoCtx:Set("RoundCounts", { 1 }, true)
+		AmmoCtx.RoundSelected = 1
 	elseif not First then
-		-- Unseen class after a switch: keep the ammo TYPE the user is on (e.g. HE -> HE), but drop the
+		-- Unseen class after a switch: keep the ammo TYPES the user is on (e.g. HE -> HE), but drop the
 		-- previous class's tuned params so each class starts from defaults and diverges independently.
-		local Cur     = AmmoCtx:Get("AmmoType")
-		local CurType = (Cur and Cur.GetType) and Classes.GetTypeName(Cur:GetType()) or nil
-		if CurType then AmmoCtx:Set("AmmoType", { Type = CurType, Data = {} }, true) end
+		local Rows = {}
+
+		for _, Round in ipairs(GetRounds() or {}) do
+			Rows[#Rows + 1] = {
+				Type = Classes.GetTypeName(Round:GetType()),
+				Data = { KindName = Round.KindName, OverrideColor = Round.OverrideColor, KindColor = Round.KindColor, TwoPiece = Round.TwoPiece },
+			}
+		end
+
+		if Rows[1] then AmmoCtx:Set("Rounds", Rows, true) end
 	end
 	-- First open with no saved data keeps whatever the context hydrated; it's saved under this class on edit.
 
-	Sub  = ACF.Menu.SubContext(AmmoCtx, "AmmoType")
-	Ammo = AmmoCtx:Get("AmmoType")
+	Rebind()
 
-	if Ammo then
-		Ammo.Weapon = AmmoCtx:Get("Weapon")
-		BulletData  = Ammo:ClientConvert()
+	-- Rounds this weapon can't fire are dropped, as long as one is left
+	local Allowed = GetAmmoList(WeaponType)
+	local Rounds, Counts = GetRounds(), GetRoundCounts()
+	local Kept, KeptCounts = {}, {}
+
+	for Index, Round in ipairs(Rounds) do
+		if Allowed[Classes.GetTypeName(Round:GetType())] then
+			Kept[#Kept + 1], KeptCounts[#KeptCounts + 1] = Round, Counts[Index]
+		end
+	end
+
+	if Kept[1] and #Kept < #Rounds then
+		AmmoCtx:Set("Rounds", Kept, true)
+		AmmoCtx:Set("RoundCounts", KeptCounts, true)
+		AmmoCtx.RoundSelected = 1
+
+		Rebind()
 	end
 end
 
@@ -268,9 +353,93 @@ local function GetRoundCount(CountX, CountY, CountZ)
 	return ACF.GetCrateCapacity(GetShapeName(), CountX, CountY, CountZ, BulletData and BulletData.TwoPiece)
 end
 
+local function GetCapacity()
+	return GetRoundCount(GetCount("X"), GetCount("Y"), GetCount("Z"))
+end
+
+-- The weapon can't fire these, they're left out of the crate
+local function GetInvalidReason(Round)
+	local Weapon = AmmoCtx:Get("Weapon")
+
+	if not (Weapon and Weapon.GetType) then return end
+	if GetAmmoList(Weapon:GetType())[Classes.GetTypeName(Round:GetType())] then return end
+
+	return "This weapon can't fire " .. (Round.Name or "this round") .. ", it's left out of the crate."
+end
+
+---Each row's round count once fitted to the crate, 0 for rows left out
+local function GetFittedCounts()
+	local Rounds, Counts = GetRounds(), GetRoundCounts()
+	local Valid, Weights = {}, {}
+
+	for Index, Round in ipairs(Rounds) do
+		if not GetInvalidReason(Round) then
+			Valid[#Valid + 1]     = Index
+			Weights[#Weights + 1] = Counts[Index] or 1
+		end
+	end
+
+	local Fitted = {}
+
+	for Index in ipairs(Rounds) do Fitted[Index] = 0 end
+	for Position, Count in ipairs(ACF.FitRoundCounts(Weights, GetCapacity())) do Fitted[Valid[Position]] = Count end
+
+	return Fitted, Valid
+end
+
+---Converted round data of a row, the selected row's is the one the menu keeps up to date
+local function GetRowBullet(Round)
+	if Round == Ammo then return BulletData end
+
+	Round.Weapon = AmmoCtx:Get("Weapon")
+
+	return Round:ClientConvert()
+end
+
+---The round the crate's slots are sized for, the longest and widest of the rows the crate holds
+local function GetSlotBullet()
+	local List = {}
+
+	for _, Round in ipairs(GetRounds() or {}) do
+		if not GetInvalidReason(Round) then List[#List + 1] = GetRowBullet(Round) end
+	end
+
+	return List[1] and ACF.GetSlotBulletData(List) or BulletData
+end
+
+-- Rows as the round list shows them, named the way the crate will name them
+local function GetListKinds()
+	local Fitted = GetFittedCounts()
+	local Kinds  = {}
+	local Seen   = {}
+
+	for Index, Round in ipairs(GetRounds()) do
+		local AutoName = ACF.GetLegacyStyleClassName(Classes.GetTypeName(Round:GetType())) .. (Round.Tracer and "-T" or "")
+		local Custom   = string.Trim(Round.KindName or "")
+
+		if Custom == "" then
+			Seen[AutoName] = (Seen[AutoName] or 0) + 1
+
+			if Seen[AutoName] > 1 then AutoName = AutoName .. " (" .. Seen[AutoName] .. ")" end
+		end
+
+		Kinds[Index] = {
+			Name          = Round.KindName or "",
+			AutoName      = AutoName,
+			Icon          = Round.SpawnIcon or "",
+			Count         = Fitted[Index],
+			OverrideColor = Round.OverrideColor,
+			KindColor     = Round.KindColor,
+			Invalid       = GetInvalidReason(Round),
+		}
+	end
+
+	return Kinds
+end
+
 ---Returns the cost of a single round, including any per-round missile components.
-local function GetRoundCost()
-	local Cost = Ammo:GetCost(BulletData)
+local function GetRoundCost(Round, RoundBullet)
+	local Cost = (Round or Ammo):GetCost(RoundBullet or BulletData)
 
 	-- Only missile ammo carries guidance and fuze, and both are charged per round. They live as
 	-- nested instances on the weapon rather than as flat tool data.
@@ -296,7 +465,7 @@ local function CalculateMaxCounts(ToolData)
 	local Class = GetWeaponClass(ToolData)
 	if not (Class and BulletData) then return 50, 50, 50 end
 
-	local roundSize = ACF.GetCrateSizeFromProjectileCounts(1, 1, 1, Class, ToolData, BulletData, GetHexPacking())
+	local roundSize = ACF.GetCrateSizeFromProjectileCounts(1, 1, 1, Class, ToolData, GetSlotBullet(), GetHexPacking())
 	if not roundSize then return 50, 50, 50 end
 
 	return ACF.GetMaxCounts(roundSize, ACF.AmmoMaxLength, ACF.AmmoMaxWidth, GetHexPacking())
@@ -320,7 +489,7 @@ local function UpdateProjectileCountLimits(ToolData, SkipMissiles)
 
 	if Layout then
 		local Class     = GetWeaponClass(ToolData)
-		local roundSize = Class and BulletData and ACF.GetRoundProperties(Class, ToolData, BulletData)
+		local roundSize = Class and BulletData and ACF.GetRoundProperties(Class, ToolData, GetSlotBullet())
 
 		if roundSize then
 			local HexPack = GetHexPacking()
@@ -379,14 +548,16 @@ local function UpdateBoxSizeFromProjectileCounts(ToolData)
 	local Class  = GetWeaponClass(ToolData)
 
 	if Class and BulletData then
+		local Slot = GetSlotBullet()
+
 		if IsDrum() then
-			BoxSize = ACF.GetDrumCrateSizeFromProjectileCounts(CountX, CountZ, Class, ToolData, BulletData, GetHexPacking(), GetShapeName())
+			BoxSize = ACF.GetDrumCrateSizeFromProjectileCounts(CountX, CountZ, Class, ToolData, Slot, GetHexPacking(), GetShapeName())
 		elseif IsCassette() then
 			local Grid = ACF.GetCassetteGrid(CountX, CountY, CountZ, BulletData.TwoPiece)
 
-			BoxSize = ACF.GetCrateSizeFromProjectileCounts(Grid.x, Grid.y, Grid.z, Class, ToolData, BulletData, false)
+			BoxSize = ACF.GetCrateSizeFromProjectileCounts(Grid.x, Grid.y, Grid.z, Class, ToolData, Slot, false)
 		else
-			BoxSize = ACF.GetCrateSizeFromProjectileCounts(CountX, CountY, CountZ, Class, ToolData, BulletData, GetHexPacking())
+			BoxSize = ACF.GetCrateSizeFromProjectileCounts(CountX, CountY, CountZ, Class, ToolData, Slot, GetHexPacking())
 		end
 
 		GhostData.Secondary.Scale = BoxSize
@@ -497,6 +668,11 @@ local function AddTracer(Base, ToolData)
 
 		Ammo.TwoPiece = Value
 		Ammo:UpdateRoundData()
+
+		-- One setting for the whole crate
+		for _, Round in ipairs(GetRounds()) do
+			if Round ~= Ammo and Classes.GetTypeFieldByName(Round:GetType(), "TwoPiece") then Round.TwoPiece = Value end
+		end
 
 		Sub:Set("TwoPiece", Value)
 
@@ -611,14 +787,25 @@ local function AddCrateInformation(Base, ToolData)
 		UpdateBoxSizeFromProjectileCounts(Data)
 
 		local CrateText = language.GetPhrase("acf.menu.ammo.crate_stats")
-		local Rounds = GetRoundCount(GetCount("X"), GetCount("Y"), GetCount("Z"))
+		local Rounds    = GetCapacity()
+		local Fitted    = GetFittedCounts()
+		local Load, Cost = 0, 0
 
 		-- CartMass is the mass of a whole round, so it multiplies complete rounds, not cells
-		local Load = math.floor(BulletData.CartMass * Rounds)
-		local Mass = ACF.FormatMass(math.floor(GetEmptyMass() + Load))
-		local Cost = ACF.FormatCost(Rounds * GetRoundCost())
+		for Index, Round in ipairs(GetRounds()) do
+			local Count = Fitted[Index]
 
-		return CrateText:format(Mass, Cost, Rounds)
+			if Count > 0 then
+				local RoundBullet = GetRowBullet(Round)
+
+				Load = Load + RoundBullet.CartMass * Count
+				Cost = Cost + GetRoundCost(Round, RoundBullet) * Count
+			end
+		end
+
+		local Mass = ACF.FormatMass(math.floor(GetEmptyMass() + math.floor(Load)))
+
+		return CrateText:format(Mass, ACF.FormatCost(Cost), Rounds)
 	end
 
 	Crate:SetText(UpdateCrateText())
@@ -817,16 +1004,242 @@ local function UpdateShapeSelector(Menu)
 	ShapeList:SetVisible(true)
 end
 
+-- MARK: Round list
+
+-- The rows are live instances AmmoType points at, so a deep copy would lose them
+local function CopyList(List)
+	local Copy = {}
+
+	for Index, Value in ipairs(List) do Copy[Index] = Value end
+
+	return Copy
+end
+
+local function RefreshRoundList()
+	if not IsValid(RoundList) then return end
+
+	RoundList:SetCanAdd(AmmoCtx.Destiny ~= "Missiles") -- Missile crates hold one kind of round
+	RoundList:SetCapacity(GetCapacity())
+	RoundList:SetSelected(AmmoCtx.RoundSelected or 1)
+	RoundList:SetKinds(GetListKinds())
+end
+
+-- Shows the selected row in the type combo and the controls below it
+local function ShowSelectedRound(Menu)
+	if not IsValid(TypeList) then return end
+
+	local Choices = TypeList.ListData and TypeList.ListData.Choices
+	local Want    = Classes.GetTypeName(Ammo:GetType())
+
+	for Index, Data in ipairs(Choices or {}) do
+		if Classes.GetTypeName(Data) == Want then
+			TypeList.Selected = nil
+			TypeList:ChooseOptionID(Index)
+
+			return
+		end
+	end
+
+	-- The weapon can't fire it, so it isn't in the combo
+	TypeList.Selected = Ammo:GetType()
+	TypeList:SetValue(Ammo.Name or Want)
+
+	ACF.UpdateAmmoMenu(Menu)
+end
+
+-- Stores a new list of rows, the counts are weights the crate scales to fit
+local function SetRows(Menu, Rounds, Counts, Selected)
+	AmmoCtx.RoundSelected = Selected
+
+	AmmoCtx:Set("Rounds", Rounds, true)
+	AmmoCtx:Set("RoundCounts", Counts, true)
+
+	Rebind()
+	ShowSelectedRound(Menu)
+
+	AmmoCtx:Set("RoundCounts", GetRoundCounts()) -- Now everything listening sees the new list
+end
+
+-- Counts as the list shows them, rows left out of the crate keep their weight
+local function MergeCounts(Shown)
+	local Counts = CopyList(GetRoundCounts())
+
+	for Index, Round in ipairs(GetRounds()) do
+		if not GetInvalidReason(Round) then Counts[Index] = Shown[Index] end
+	end
+
+	return Counts
+end
+
+local function SetupRoundList(Menu, Panel)
+	local Serialization = Classes.Serialization
+
+	function Panel:OnSelectRound(Index)
+		AmmoCtx.RoundSelected = Index
+
+		Rebind()
+		ShowSelectedRound(Menu)
+		RefreshRoundList()
+	end
+
+	-- A copy of the row goes under it and takes half its rounds
+	function Panel:OnAddRound(DupeOf)
+		local Rounds = CopyList(GetRounds())
+
+		if #Rounds >= ACF.MaxRoundKinds then return end
+
+		local Source = Rounds[DupeOf] or Ammo
+		local Type   = Source:GetType()
+		local Copy   = Serialization.DeserializePartial(Type, Serialization.Serialize(Type, Source))
+		local Counts = MergeCounts(GetFittedCounts())
+		local Half   = math.max(1, math.floor((Counts[DupeOf] or 2) * 0.5))
+
+		Copy.KindName = ""
+
+		Counts[DupeOf] = math.max(1, (Counts[DupeOf] or 2) - Half)
+
+		table.insert(Rounds, DupeOf + 1, Copy)
+		table.insert(Counts, DupeOf + 1, Half)
+
+		SetRows(Menu, Rounds, Counts, DupeOf + 1)
+	end
+
+	function Panel:OnRemoveRound(Index)
+		local Rounds, Counts = CopyList(GetRounds()), CopyList(GetRoundCounts())
+
+		if #Rounds < 2 then return end
+
+		table.remove(Rounds, Index)
+		table.remove(Counts, Index)
+
+		local Selected = AmmoCtx.RoundSelected or 1
+
+		if Selected > Index or Selected == Index and Selected > #Rounds then Selected = Selected - 1 end
+
+		SetRows(Menu, Rounds, Counts, math.max(Selected, 1))
+	end
+
+	function Panel:OnMoveRound(Index, Step)
+		local Rounds, Counts = CopyList(GetRounds()), CopyList(GetRoundCounts())
+		local Other          = Index + Step
+
+		if not Rounds[Other] then return end
+
+		Rounds[Index], Rounds[Other] = Rounds[Other], Rounds[Index]
+		Counts[Index], Counts[Other] = Counts[Other], Counts[Index]
+
+		local Selected = AmmoCtx.RoundSelected or 1
+
+		if Selected == Index then Selected = Other elseif Selected == Other then Selected = Index end
+
+		SetRows(Menu, Rounds, Counts, Selected)
+	end
+
+	-- The typed row gets exactly that many, the others share the rest
+	function Panel:OnCountTyped(Index, Value)
+		local Fitted, Valid = GetFittedCounts()
+		local Shown, Position = {}, nil
+
+		for Slot, Row in ipairs(Valid) do
+			Shown[Slot] = Fitted[Row]
+
+			if Row == Index then Position = Slot end
+		end
+
+		if not Position then return end
+
+		local Counts = CopyList(GetRoundCounts())
+
+		for Slot, Count in ipairs(ACF.SetRoundCount(Shown, Position, Value, GetCapacity())) do
+			Counts[Valid[Slot]] = Count
+		end
+
+		AmmoCtx:Set("RoundCounts", Counts)
+	end
+
+	function Panel:OnCountsChanged(Shown)
+		AmmoCtx:Set("RoundCounts", MergeCounts(Shown))
+	end
+
+	-- Names and colors don't change anything else the menu shows
+	function Panel:OnRename(Index, Name)
+		local Round = GetRounds()[Index]
+
+		if not Round then return end
+
+		Round.KindName = Name
+
+		ACF.Menu.QueuePersist(AmmoCtx)
+		QueueScopedSave()
+		RefreshRoundList()
+	end
+
+	function Panel:OnColor(Index, Override, Packed)
+		local Round = GetRounds()[Index]
+
+		if not Round then return end
+
+		Round.OverrideColor = Override
+		Round.KindColor     = Packed
+
+		ACF.Menu.QueuePersist(AmmoCtx)
+		QueueScopedSave()
+		RefreshRoundList()
+	end
+
+	AmmoCtx:OnChange(Panel, nil, RefreshRoundList)
+	BindCleanup(Panel, AmmoCtx)
+end
+
+-- Settings loaded over the context (Hydrate) bring their own rows and AmmoType, so AmmoType has to point at the selected row again
+local function RepairSelectedRound(Ctx)
+	local Rounds = Ctx:Get("Rounds")
+
+	if Ctx ~= AmmoCtx or not (Rounds and Rounds[1]) then return end
+	if Ctx.Instance.AmmoType == Rounds[Ctx.RoundSelected or 1] then return end
+
+	Rebind()
+	ShowSelectedRound(MenuRoot)
+	RefreshRoundList()
+end
+
+--- Sends the crate with only the rows it can hold, counted to fill it. AmmoType is the first row
+function ACF.AmmoMenu.SendCrate(ClassName, Data)
+	if AmmoCtx and istable(Data.Rounds) then
+		local Fitted = GetFittedCounts()
+		local Rounds, Counts = {}, {}
+
+		for Index in ipairs(GetRounds()) do
+			if Fitted[Index] > 0 and Data.Rounds[Index] then
+				Rounds[#Rounds + 1] = Data.Rounds[Index]
+				Counts[#Counts + 1] = Fitted[Index]
+			end
+		end
+
+		if Rounds[1] then
+			Data.Rounds      = Rounds
+			Data.RoundCounts = Counts
+			Data.AmmoType    = table.Copy(Rounds[1])
+		end
+	end
+
+	ACF.Menu.SendSpawn(ClassName, Data)
+end
+
 ---Creates the basic information and panels on the ammunition menu.
 ---@param Menu userdata The panel in which the entire ACF menu is being placed on.
 ---@param Context table The acf_ammo EntityContext this menu edits.
 function ACF.CreateAmmoMenu(Menu, Context)
-	AmmoCtx = Context
-	Sub     = ACF.Menu.SubContext(AmmoCtx, "AmmoType")
-	Ammo    = AmmoCtx:Get("AmmoType")
+	AmmoCtx  = Context
+	MenuRoot = Menu
 
-	-- Mirror the ammo type + its params into the active weapon class's memory whenever they change.
+	Rebind()
+
+	-- Mirror the round list + its params into the active weapon class's memory whenever they change.
 	AmmoCtx:OnChange("ScopedAmmoSave", "AmmoType", QueueScopedSave)
+	AmmoCtx:OnChange("ScopedAmmoSave", "Rounds", QueueScopedSave)
+	AmmoCtx:OnChange("ScopedAmmoSave", "RoundCounts", QueueScopedSave)
+	AmmoCtx:OnChange("RoundRepair", RepairSelectedRound)
 
 	local ContainerBase = Menu:AddCollapsible("Container Settings", true, "icon16/box.png")
 
@@ -963,7 +1376,12 @@ function ACF.CreateAmmoMenu(Menu, Context)
 		Keep  = function() return Context.Destiny == "Missiles" and CrateFields or GunFields end,
 	})
 
+	RoundList = Base:AddPanel("ACF_RoundList")
+
+	SetupRoundList(Menu, RoundList)
+
 	local List  = Base:AddComboBox()
+	TypeList    = List
 	local Title = Base:AddTitle()
 	local Desc  = Base:AddLabel()
 	Desc:SetText("")
@@ -1008,6 +1426,7 @@ function ACF.CreateAmmoMenu(Menu, Context)
 		if Choices and Choices[1] ~= nil then self:ChooseOptionID(Target) end
 
 		UpdateShapeSelector(Menu)
+		RefreshRoundList()
 	end
 
 	function List:OnSelect(Index, _, Data)
@@ -1023,7 +1442,11 @@ function ACF.CreateAmmoMenu(Menu, Context)
 		local CurType = (Current and Current.GetType) and Current:GetType() or nil
 
 		if CurType ~= Data then
-			AmmoCtx:Set("AmmoType", { Type = Classes.GetTypeName(Data), Data = {} })
+			AmmoCtx:Set("AmmoType", { Type = Classes.GetTypeName(Data), Data = {} }, true)
+
+			SyncSelectedRound(AmmoCtx)
+
+			AmmoCtx:Set("Rounds", GetRounds()) -- Now everything listening sees the new round
 		end
 
 		Sub  = ACF.Menu.SubContext(AmmoCtx, "AmmoType")
@@ -1033,6 +1456,7 @@ function ACF.CreateAmmoMenu(Menu, Context)
 		Desc:SetText(Data.Description)
 
 		ACF.UpdateAmmoMenu(Menu)
+		RefreshRoundList()
 	end
 
 	Menu.AmmoBase = Base

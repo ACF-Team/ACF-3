@@ -24,7 +24,8 @@ local function GetAmmoName(BulletData, Ammo)
 	local Display = Ammo:GetDisplayData(BulletData)
 	local MaxPen  = math.max(math.Round(Display.MaxPen or 0), 0)
 	local Short   = string.match(Type, "[^.]+$") or Type
-	local Name    = MaxPen > 0 and Short .. " " .. MaxPen .. "mm" or Short
+	local Custom  = string.Trim(Ammo.KindName or "") -- Named in the round list, rounds with the same name are listed together
+	local Name    = Custom ~= "" and Custom or MaxPen > 0 and Short .. " " .. MaxPen .. "mm" or Short
 
 	NameCache[BulletData] = { Name, Type, MaxPen }
 
