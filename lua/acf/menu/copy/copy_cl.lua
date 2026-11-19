@@ -29,7 +29,7 @@ hook.Add("ACF_OnMenuCopy", "ACF Menu Copy", function(ClassName, Data, Pick)
 	end
 
 	local _, Page = Copy.ToMenu(ClassName, Data)
-	local PageName = language.GetPhrase((Page.Name:gsub("^#", "")))
+	local PageName = language.GetPhrase(Page.Name:gsub("^#", ""))
 
 	Messages.PrintChat("Info", language.GetPhrase("acf.menu.copy.copied"):format(PageName))
 end)
