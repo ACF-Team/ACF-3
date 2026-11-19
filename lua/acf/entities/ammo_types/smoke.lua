@@ -16,8 +16,8 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function(CLASS, BA
 		["ACF.Guns.RotaryAutocannon"] = true,
 	}
 
-	MENU_FIELD("Number", "FillerRatio", {Default = 0})
-	MENU_FIELD("Number", "SmokeWPRatio", {Default = 0})
+	MENU_FIELD("Number", "FillerRatio", {Title = "#acf.menu.fields.ammunition.filler_ratio", Default = 0})
+	MENU_FIELD("Number", "SmokeWPRatio", {Title = "#acf.menu.fields.ammunition.smoke_wp_ratio", Default = 0})
 
 	function CLASS:GetPenetration()
 		return 0

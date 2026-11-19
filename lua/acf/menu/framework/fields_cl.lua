@@ -354,7 +354,7 @@ function ACF.Menu.AddField(Menu, Context, FieldName, Overrides)
 
 	local ElemType = BaseType(FieldDef.Type)
 	local Options  = FieldDef.Options or {}
-	local Title    = Overrides.Title or FieldName
+	local Title    = Overrides.Title or Options.Title or FieldName
 
 	if ElemType == "Number" then
 		return AddNumber(Menu, Context, FieldName, Options, Title, Overrides)

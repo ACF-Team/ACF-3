@@ -7,7 +7,7 @@ Classes.DefineClass("ACF.Missiles.Fuze.Contact", "ACF.Missiles.Fuze", function(C
 	CLASS.MinDelay = 0
 	CLASS.MaxDelay = 10
 
-	MENU_FIELD("Number", "ArmingDelay", {Default = 0})
+	MENU_FIELD("Number", "ArmingDelay", {Title = "#acf.menu.fields.fuzes.arming_delay", Default = 0})
 
 	function CLASS:OnLoaded()
 		self.Name = self.ID -- Workaround

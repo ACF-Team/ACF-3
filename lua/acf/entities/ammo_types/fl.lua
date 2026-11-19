@@ -18,8 +18,8 @@ Classes.DefineClass("ACF.Ammunition.FL", "ACF.Ammunition.AP", function(CLASS, BA
 		["ACF.Guns.RotaryAutocannon"] = true,
 	}
 
-	MENU_FIELD("Number", "Flechettes", {Default = 0})
-	MENU_FIELD("Number", "Spread", {Default = 0})
+	MENU_FIELD("Number", "Flechettes", {Title = "#acf.menu.fields.ammunition.flechettes", Default = 0})
+	MENU_FIELD("Number", "Spread", {Title = "#acf.menu.fields.ammunition.spread", Default = 0})
 
 	-- Packing function to get the rough caliber of a flechette
 	-- based on the caliber of the full round and the amount of them

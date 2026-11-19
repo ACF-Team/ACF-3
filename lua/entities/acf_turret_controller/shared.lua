@@ -6,6 +6,7 @@ ENT.PluralName    = "ACF Turret Controllers"
 
 ACF.Entities.AutoRegister(2026091001, function()
 	MENU_FIELD("ACF.Turrets.Controller", "Controller", {
+		Title                     = "#acf.menu.fields.acf_turret_controller.controller",
 		InstantiateTypeForDefault = "ACF.Turrets.Controller.Lightweight",
 		OnlyAllowSubtypes         = true,
 	})

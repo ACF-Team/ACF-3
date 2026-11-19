@@ -18,7 +18,7 @@ end
 -- config, applied by init.lua's ACF_OnVerifyClientData on spawn (always true from the menu, matching the
 -- previous behavior).
 ACF.Entities.AutoRegister(2026111701, function()
-	MENU_FIELD("Boolean", "AIOUseDefaults", {Default = true})
+	MENU_FIELD("Boolean", "AIOUseDefaults", {Title = "#acf.menu.fields.acf_controller.aio_use_defaults", Default = true})
 
 	LINKED_ENTITY_FIELD("Seat",             {AcceptableClasses = {prop_vehicle_prisoner_pod = true}})
 	LINKED_ENTITY_FIELD("Baseplate",        {AcceptableClasses = {acf_baseplate = true}})

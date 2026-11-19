@@ -19,9 +19,9 @@ Classes.DefineClass("ACF.Ammunition.APHE", "ACF.Ammunition.AP", function(CLASS, 
 		["ACF.Guns.RotaryAutocannon"] = true,
 	}
 
-	MENU_FIELD("Number", "FillerRatio", {Default = 0})
-	MENU_FIELD("Number", "PenFuze",     {Default = 0})
-	MENU_FIELD("Number", "FuzeDelay",   {Default = 0})
+	MENU_FIELD("Number", "FillerRatio", {Title = "#acf.menu.fields.ammunition.filler_ratio", Default = 0})
+	MENU_FIELD("Number", "PenFuze",     {Title = "#acf.menu.fields.ammunition.pen_fuze", Default = 0})
+	MENU_FIELD("Number", "FuzeDelay",   {Title = "#acf.menu.fields.ammunition.fuze_delay", Default = 0})
 
 	function CLASS:GetPenetration(Bullet, Speed)
 		if not isnumber(Speed) then

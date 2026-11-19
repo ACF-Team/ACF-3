@@ -19,7 +19,7 @@ ACF.Classes.DefineClass("ACF.Piledrivers.Piledriver", function(CLASS)
 	}
 	CLASS.BaseCaliber 	= 100
 
-	MENU_FIELD("Number", "Caliber", {Min = 50, Max = 300, Default = CLASS.BaseCaliber, Decimals = 2})
+	MENU_FIELD("Number", "Caliber", {Title = "#acf.menu.fields.piledrivers.caliber", Min = 50, Max = 300, Default = CLASS.BaseCaliber, Decimals = 2})
 end)
 
 ACF.SetCustomAttachments("models/piledriver/piledriver_100mm.mdl", {

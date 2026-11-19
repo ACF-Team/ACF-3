@@ -4,14 +4,15 @@ ENT.Author    = "Bubbus"
 
 ACF.Entities.AutoRegister(2026091001, function()
 	MENU_FIELD("ACF.Sensors.Radar", "Sensor", {
+		Title                     = "#acf.menu.fields.acf_radar.sensor",
 		InstantiateTypeForDefault = "ACF.Sensors.Radar.Standard.SmallDirectional",
 		OnlyAllowSubtypes         = true,
 		OnlyAllowLeafTypes        = true,
 	})
 
 	-- One radar class detects both target types, so what it looks for is set per entity.
-	MENU_FIELD("Boolean", "DetectContraptions", {Default = true})
-	MENU_FIELD("Boolean", "DetectMissiles",     {Default = true})
+	MENU_FIELD("Boolean", "DetectContraptions", {Title = "#acf.menu.fields.acf_radar.detect_contraptions", Default = true})
+	MENU_FIELD("Boolean", "DetectMissiles",     {Title = "#acf.menu.fields.acf_radar.detect_missiles", Default = true})
 end, "Radar")
 
 ENT.ACF_StaticWireInputs = {

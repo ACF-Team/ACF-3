@@ -3,11 +3,11 @@ DEFINE_BASECLASS("acf_container")
 ENT.ACF_Limit = 32
 
 ACF.Entities.AutoRegister(2026091001, function()
-	MENU_FIELD("ACF.FuelTypes.FuelType", "FuelType",  {OnlyAllowSubtypes = true, InstantiateTypeForDefault = "ACF.FuelTypes.Petrol"})
-	MENU_FIELD("Number",                 "FuelSizeX", {Min = ACF.ContainerMinSize or 6, Max = ACF.ContainerMaxSize or 96, Default = 24, Decimals = 0})
-	MENU_FIELD("Number",                 "FuelSizeY", {Min = ACF.ContainerMinSize or 6, Max = ACF.ContainerMaxSize or 96, Default = 24, Decimals = 0})
-	MENU_FIELD("Number",                 "FuelSizeZ", {Min = ACF.ContainerMinSize or 6, Max = ACF.ContainerMaxSize or 96, Default = 24, Decimals = 0})
-	MENU_FIELD("Number",                 "FuelPriority", {Min = ACF.FuelPriorityMin, Max = ACF.FuelPriorityMax, Default = 1, Decimals = 0})
+	MENU_FIELD("ACF.FuelTypes.FuelType", "FuelType",  {Title = "#acf.menu.fields.acf_fueltank.fuel_type", OnlyAllowSubtypes = true, InstantiateTypeForDefault = "ACF.FuelTypes.Petrol"})
+	MENU_FIELD("Number",                 "FuelSizeX", {Title = "#acf.menu.fields.acf_fueltank.fuel_size_x", Min = ACF.ContainerMinSize or 6, Max = ACF.ContainerMaxSize or 96, Default = 24, Decimals = 0})
+	MENU_FIELD("Number",                 "FuelSizeY", {Title = "#acf.menu.fields.acf_fueltank.fuel_size_y", Min = ACF.ContainerMinSize or 6, Max = ACF.ContainerMaxSize or 96, Default = 24, Decimals = 0})
+	MENU_FIELD("Number",                 "FuelSizeZ", {Title = "#acf.menu.fields.acf_fueltank.fuel_size_z", Min = ACF.ContainerMinSize or 6, Max = ACF.ContainerMaxSize or 96, Default = 24, Decimals = 0})
+	MENU_FIELD("Number",                 "FuelPriority", {Title = "#acf.menu.fields.acf_fueltank.fuel_priority", Min = ACF.FuelPriorityMin, Max = ACF.FuelPriorityMax, Default = 1, Decimals = 0})
 	-- Shape is inherited from acf_container.
 end, "Fuel Tank")
 
