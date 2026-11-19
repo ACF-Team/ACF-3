@@ -510,7 +510,7 @@ local function AddControls(Base, ToolData)
 	local function UpdateRoundLength()
 		local Text = language.GetPhrase("acf.menu.ammo.round_length")
 		-- Not ProjLength + PropLength, those overlap on telescoped rounds
-		return Text:format(BulletData.RoundLength, Ammo.GUIData.MaxRoundLength)
+		return Text:format(math.Round(BulletData.RoundLength, 2), Ammo.GUIData.MaxRoundLength)
 	end
 	RoundLength:SetText(UpdateRoundLength())
 	AmmoCtx:OnChange(RoundLength, nil, function() if IsValid(RoundLength) then RoundLength:SetText(UpdateRoundLength()) end end)

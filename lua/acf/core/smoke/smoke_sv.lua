@@ -131,6 +131,42 @@ function ACF.CreateSmokeScreen(Origin, FillerMass, WPMass, Color, Velocity, HitN
 	net.Broadcast()
 end
 
+function ACF.HandleWhitePhosphorus()
+	if not next(ACF.SmokeClouds) then return end
+
+	local Time = CurTime()
+
+	for _, Cloud in pairs(ACF.SmokeClouds) do
+		if Cloud.Type ~= "WP" or Time > Cloud.Start + Cloud.Life then continue end
+
+		local Center, Radius = ACF.GetSmokeCloudState(Cloud, Time)
+		local RadiusSqr = Radius * Radius
+
+		for _, Ent in ipairs(ents.FindInSphere(Center, Radius)) do
+			if not IsValid(Ent) or not Ent:Alive() or Ent:IsOnFire() then continue end
+			if not Ent:IsPlayer() and not Ent:IsNPC() and not Ent:IsNextBot() then continue end
+
+			local Target = Ent:GetPos()
+			if Center:DistToSqr(Target) > RadiusSqr then continue end
+
+			local LOS = util.TraceLine({
+				start  = Center + Cloud.Normal * 4,
+				endpos = Target,
+				filter = Ent,
+				mask   = MASK_SOLID,
+			})
+
+			if LOS.Hit then continue end
+
+			Ent:Ignite(5)
+		end
+	end
+end
+
+timer.Create("ACF WP Player Ignition", 0.5, 0, function()
+	ACF.HandleWhitePhosphorus()
+end)
+
 hook.Add("ACF_OnLoadPlayer", "ACF Smoke Cloud Sync", function(Player)
 	for ID, Impact in pairs(Impacts) do
 		net.Start("ACF_SmokeImpact")
