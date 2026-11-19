@@ -170,7 +170,7 @@ do -- Movement -----------------------------------------
 		return VECTOR.Length(Inertia)
 	end
 
-	function ENT:Calc(InputRPM, InputInertia)
+	function ENT:Calc(InputRPM, InputInertia, InputThrottle, IdleRPM)
 		local SelfTbl = self:GetTable()
 		if not ACF.IsOperational(self, SelfTbl) then return 0 end -- Not operational, either was destroyed or disabled by legality checks.
 
@@ -205,16 +205,24 @@ do -- Movement -----------------------------------------
 
 		if SelfTbl.CVT and Gear == 1 then
 			local Gears = SelfTbl.Gears
+			local MinRPM = SelfTbl.MinRPM
+			local MaxRPM = SelfTbl.MaxRPM
 
 			if SelfTbl.CVTRatio > 0 then
 				Gears[1] = SelfTbl.CVTRatio
 			else
-				local MinRPM  = SelfTbl.MinRPM
-				Gears[1] = Clamp((InputRPM - MinRPM) / (SelfTbl.MaxRPM - MinRPM), 0.05, 1)
+				local Band = Clamp(InputThrottle / 0.25, 0, 1)
+				MinRPM = IdleRPM + Band * (MinRPM - IdleRPM)
+				MaxRPM = IdleRPM + 1 + Band * (MaxRPM - IdleRPM - 1)
+
+				Gears[1] = Clamp((InputRPM - MinRPM) / (MaxRPM - MinRPM), 0.05, 1)
 			end
 
 			local GearRatio = Gears[1] * SelfTbl.FinalDrive
-			SelfTbl.CVTLoad = (Gears[1] > 0.05 and InputRPM >= SelfTbl.MinRPM) and 1 or 0.05
+			local LowerBand = InputRPM <= MinRPM and 0.05 or 1
+			local UpperBand = (Gears[1] > 0.05 and InputRPM >= MinRPM) and 1 or 0
+
+			SelfTbl.CVTLoad = LowerBand or UpperBand
 			SelfTbl.GearRatio = GearRatio
 
 			if SelfTbl.LastRatio ~= GearRatio then
@@ -283,7 +291,8 @@ do -- Movement -----------------------------------------
 			local EntTbl = ENTITY.GetTable(Gearbox)
 
 			if not Gearbox.Disabled then
-				Gearbox:Calc(ScaledRPM, ScaledInertia) -- Measurement pull, just to update gearboxes downstream
+				-- Measurement pull, just to update gearboxes downstream
+				Gearbox:Calc(ScaledRPM, ScaledInertia, InputThrottle, IdleRPM and IdleRPM * abs(GearRatio) or 0)
 			end
 
 			FitNum = FitNum + (EntTbl.MeasuredRPM or ScaledRPM) / GearRatio
@@ -322,14 +331,14 @@ do -- Movement -----------------------------------------
 			local EntTbl = ENTITY.GetTable(Effector)
 
 			if not Effector.Disabled then
-				Effector:Calc(ScaledRPM, ScaledInertia)
+				Effector:Calc(ScaledRPM, ScaledInertia, InputThrottle, IdleRPM and IdleRPM * abs(GearRatio) or 0)
 			end
 
 			OutputInertia = OutputInertia + (EntTbl.OutputInertia or 0)
 		end
 
 		SelfTbl.OutputInertia = OutputInertia -- Every linked entity receive this inertia, as torque shares are fractions of this.
-		SelfTbl.TotalRatio    = max(TotalRatioSum, 1) -- Must be higher than 1, otherwise it just dips way too low and it just doesn't work.
+		SelfTbl.TotalRatio    = max(TotalRatioSum, 1) -- Must be 1, otherwise it just dips way too low and it just doesn't work.
 		SelfTbl.MeasuredRPM   = FitDen > 0 and FitNum / FitDen or InputRPM
 		SelfTbl.LeftRPM       = LeftCount  > 0 and (LeftRPMSum  / LeftCount)  or SelfTbl.MeasuredRPM
 		SelfTbl.RightRPM      = RightCount > 0 and (RightRPMSum / RightCount) or SelfTbl.MeasuredRPM

@@ -281,7 +281,7 @@ function ENT:CalcRPM(SelfTbl)
 		local EntTbl = ENTITY.GetTable(Ent)
 
 		if not EntTbl.Disabled then
-			EntTbl.Calc(Ent, FlyRPM, FlyInertia)
+			EntTbl.Calc(Ent, FlyRPM, FlyInertia, InputThr, IdleRPM) -- Measurement pull, also serves to update the linked gearboxes 
 
 			GearboxCount      = GearboxCount + 1
 			GearboxLoad       = GearboxLoad + (EntTbl.Load or 0)
@@ -335,7 +335,7 @@ function ENT:CalcRPM(SelfTbl)
 			if not EntTbl.Disabled then
 				-- Split the torque fairly between the gearboxes who need it.
 				local Share = (EntTbl.OutputInertia or 0) / max(GearboxInertia, 1e-6)
-				Link:TransferGearbox(Ent, DriveTorque * Share * (MassRatio ^ 0.6), DeltaTime, MassRatio, FlyRPM)
+				Link:TransferGearbox(Ent, DriveTorque * Share * MassRatio, DeltaTime, MassRatio, FlyRPM)
 			end
 		end
 	end
