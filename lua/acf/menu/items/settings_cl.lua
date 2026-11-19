@@ -191,7 +191,6 @@ do -- Serverside settings
 		Base:AddCheckBox("#acf.menu.settings.general.allow_dynamic_linking"):LinkToServerData("AllowDynamicLinking")
 			Base:AddHelp("#acf.menu.settings.general.allow_dynamic_linking_desc")
 
-		Base:AddSlider("#acf.menu.settings.general.max_thickness"):            LinkToServerData("MaxThickness")
 		Base:AddSlider("#acf.menu.settings.general.fuel_factor"):              LinkToServerData("FuelFactor")
 		Base:AddSlider("#acf.menu.settings.general.max_driveshaft_angle"):     LinkToServerData("MaxDriveshaftAngle")
 

@@ -187,7 +187,7 @@ do
 
             Convex.Material    = ArmorType.ID
             Convex.Mass        = Convex.Volume * ArmorType.Density * GCmToKgIn -- Volume is in^3, Density is g/cm^3
-            Convex.MaxHealth   = Convex.Volume * ArmorType.HealthMul * ACF.HealthCoef * ArmorHealthScale -- HealthMul bakes in material density
+            Convex.MaxHealth   = Convex.Volume * ArmorType.HealthMul * ArmorHealthScale -- HealthMul bakes in material density
             Convex.Health      = Convex.MaxHealth * HealthRatio
             Convex.IsExplosive = ArmorType.IsExplosive or nil -- Reactive armor; see Ballistics.DoReactiveArmor
 
