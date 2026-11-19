@@ -62,7 +62,7 @@ return {
                 local Ent = State.Ent
                 Ent.ACF.PhysObj = {}
                 Ent.GetPhysicsObject = function()
-                    return { GetVolume = function() return nil end }
+                    return { IsValid = function() return true end, GetVolume = function() return nil end }
                 end
 
                 local Failure = ACF.Legality.Evaluate( Ent )[1]
