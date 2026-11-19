@@ -954,6 +954,15 @@ function ACF.CreateAmmoMenu(Menu, Context)
 
 	local Base = Menu:AddCollapsible("#acf.menu.ammo.ammo_info", true, "icon16/chart_bar_edit.png")
 
+	-- Listed per weapon class. Presets leave the crate's size alone, and gun crates keep the menu's caliber
+	local CrateFields = { "Shape", "CrateProjectilesX", "CrateProjectilesY", "CrateProjectilesZ", "HexPacking" }
+	local GunFields   = { "Weapon", unpack(CrateFields) }
+
+	local Presets = Base:AddPresets(Context, {
+		Group = function() return Context.AmmoScope end,
+		Keep  = function() return Context.Destiny == "Missiles" and CrateFields or GunFields end,
+	})
+
 	local List  = Base:AddComboBox()
 	local Title = Base:AddTitle()
 	local Desc  = Base:AddLabel()
@@ -971,6 +980,7 @@ function ACF.CreateAmmoMenu(Menu, Context)
 	function List:LoadEntries(WeaponType)
 		-- Point the ammo memory at this weapon class first, so we restore this class's ammo (see ScopeAmmo).
 		ScopeAmmo(WeaponType)
+		Presets:Refresh()
 
 		-- Populate WITHOUT auto-firing OnSelect: AddChoice's select flag would otherwise fire OnSelect for
 		-- the first ammo type and reset the restored type's params (see ACF.Menu.PopulateCombo).

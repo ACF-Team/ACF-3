@@ -12,6 +12,7 @@ local function Build(Menu, Contexts)
 	local Ammo        = AmmoType()
 
 	Menu:AddTitle("#acf.menu.fun.piledrivers.settings")
+	Menu:AddPresets(Gun)
 
 	local Caliber = Menu:AddSlider("#acf.menu.caliber", CaliberOpts.Min, CaliberOpts.Max, CaliberOpts.Decimals)
 

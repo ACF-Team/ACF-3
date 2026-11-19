@@ -77,6 +77,7 @@ local function Build(Menu, Contexts)
 
 	Menu:AddTitle("#acf.menu.engines.settings")
 	Menu:AddWikiLink("Engines", "docs/acf_tutorials/engines.html")
+	Menu:AddPresets(Engine)
 
 	local EngineClass = Menu:AddComboBox()
 	local EngineList  = Menu:AddComboBox()
@@ -97,6 +98,7 @@ local function Build(Menu, Contexts)
 	PowerGraph:SetFidelity(24)
 
 	Menu:AddTitle("#acf.menu.fuel.settings")
+	Menu:AddPresets(Fuel, { Keep = { "Shape", "FuelSizeX", "FuelSizeY", "FuelSizeZ" } }) -- Presets leave the tank's size alone
 
 	local FuelType  = Menu:AddComboBox()
 	local FuelShape = Menu:AddComboBox()

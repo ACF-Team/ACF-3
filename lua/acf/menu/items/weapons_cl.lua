@@ -204,6 +204,8 @@ local function Build(Menu, Contexts)
 
 	local WeaponBase = Menu:AddCollapsible("#acf.menu.weapons.weapon_info", true, "icon16/monitor_edit.png")
 
+	WeaponBase:AddPresets(Gun)
+
 	local ClassList   = WeaponBase:AddComboBox()
 	local ClassBase   = WeaponBase:AddPanel("ACF_Panel")
 	local EntName     = WeaponBase:AddTitle()

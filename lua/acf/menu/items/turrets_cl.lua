@@ -38,6 +38,7 @@ local function Build(Menu, Contexts)
 	local ClassList      = Menu:AddComboBox()
 	local ClassDesc      = Menu:AddLabel()
 	local ComponentClass = Menu:AddComboBox()
+	local Presets        = Menu:AddPresets(Contexts.Active)
 
 	local Base             = Menu:AddCollapsible("#acf.menu.turrets.components", nil, "icon16/cd_edit.png")
 	local ComponentName    = Base:AddTitle()
@@ -67,6 +68,8 @@ local function Build(Menu, Contexts)
 		local Group = ClassList.Selected
 		local Ctx   = ContextFor(Group)
 		Contexts.Active = Ctx
+
+		Presets:SetContext(Ctx)
 
 		ComponentName:SetText(Data.Name)
 		ComponentDesc:SetText(Data.Description or "#acf.menu.no_description_provided")

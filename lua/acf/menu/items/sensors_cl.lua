@@ -34,6 +34,7 @@ local function Build(Menu, Contexts)
 
 	local SensorClass = Menu:AddComboBox()
 	local SensorList  = Menu:AddComboBox()
+	local Presets     = Menu:AddPresets(Contexts.Active)
 
 	local Base          = Menu:AddCollapsible("#acf.menu.sensors.sensor_info", nil, "icon16/transmit_edit.png")
 	local SensorName    = Base:AddTitle()
@@ -66,6 +67,8 @@ local function Build(Menu, Contexts)
 		local Group = SensorClass.Selected
 		local Ctx   = ContextFor(Group)
 		Contexts.Active = Ctx
+
+		Presets:SetContext(Ctx)
 
 		-- Write the concrete sensor into the entity's nested "Sensor" field.
 		Ctx:Set("Sensor", { Type = Classes.GetTypeName(Data), Data = {} })

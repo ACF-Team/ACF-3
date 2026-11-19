@@ -77,6 +77,7 @@ local function Build(Menu, Contexts)
 	local MissileInfo    = MissileBase:AddLabel()
 
 	Menu:AddTitle("Rack Settings")
+	Menu:AddPresets(Rack)
 
 	local RackList = Menu:AddComboBox()
 

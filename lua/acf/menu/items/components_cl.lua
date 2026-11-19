@@ -40,6 +40,7 @@ local function Build(Menu, Contexts)
 
 	local ComponentClass = Menu:AddComboBox()
 	local ComponentList  = Menu:AddComboBox()
+	local Presets        = Menu:AddPresets(Contexts.Active)
 
 	local Base             = Menu:AddCollapsible("#acf.menu.components.component_info", nil, "icon16/drive_edit.png")
 	local ComponentName    = Base:AddTitle()
@@ -70,6 +71,8 @@ local function Build(Menu, Contexts)
 		local ClassData = ComponentClass.Selected
 		local Ctx       = ContextFor(Contexts, ClassData)
 		Contexts.Active = Ctx
+
+		Presets:SetContext(Ctx)
 
 		SetNestedType(Ctx, Data)
 
