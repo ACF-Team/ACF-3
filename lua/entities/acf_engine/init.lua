@@ -701,10 +701,6 @@ function ENT:OnRemove(IsFullUpdate)
 
 	self:DestroySound()
 
-	for Gearbox in pairs(self:ACF_GetUserVar("Gearboxes") or {}) do
-		self:Unlink(Gearbox)
-	end
-
 	Fuel.Leave(self)
 
 	TimerRemove("ACF Engine Clock " .. self:EntIndex())

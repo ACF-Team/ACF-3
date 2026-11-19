@@ -1590,14 +1590,9 @@ do -- Metamethods
 
 			ActiveTurrets[self] = nil
 
-			local Motor, Gyro = self:ACF_GetUserVar("Motor"), self:ACF_GetUserVar("Gyro")
+			local Motor = self:ACF_GetUserVar("Motor")
 
-			if IsValid(Motor) then
-				Motor:ValidatePlacement()
-				self:Unlink(Motor)
-			end
-
-			if IsValid(Gyro) then self:Unlink(Gyro) end
+			if IsValid(Motor) then Motor:ValidatePlacement() end
 			if IsValid(SelfTbl.Rod) then SelfTbl.Rod:Remove() end
 
 			WireLib.Remove(self)

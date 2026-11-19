@@ -354,6 +354,7 @@ local function PrepareSerializationFunctions(ENT, ClassName)
 
         if OrigOnRemove then OrigOnRemove(self, IsFullUpdate) end
         if SERVER then
+            ACF.Classes.Serialization.UnlinkEntities(ClassDef, self.ACF_LiveData, self)
             WireLib.Remove(self)
         end
     end

@@ -340,19 +340,4 @@ do
 			if UserData[Name] ~= nil then self["Set" .. Name](self, self:ACF_GetUserVar(Name)) end
 		end
 	end
-
-	function ENT:OnRemove(IsFullUpdate)
-		if IsFullUpdate then return end
-
-		for _, Data in pairs(ControllerLinkRegistry) do
-			local Field = Data.Field
-			if Data.Single then
-				local Linked = self:ACF_GetUserVar(Field)
-
-				if IsValid(Linked) then self:Unlink(Linked) end
-			else
-				for Ent in pairs(self:ACF_GetUserVar(Field) or {}) do self:Unlink(Ent) end
-			end
-		end
-	end
 end

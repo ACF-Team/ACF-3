@@ -1242,14 +1242,6 @@ do -- Miscellaneous ------------------------------------
 			Gearbox:Unlink(self)
 		end
 
-		for Gearbox in pairs(self:ACF_GetUserVar("GearboxOut") or {}) do
-			self:Unlink(Gearbox)
-		end
-
-		for Effector in pairs(self:ACF_GetUserVar("Effectors") or {}) do
-			self:Unlink(Effector)
-		end
-
 		timer.Remove("ACF Gearbox Clock " .. self:EntIndex())
 	end
 end ----------------------------------------------------

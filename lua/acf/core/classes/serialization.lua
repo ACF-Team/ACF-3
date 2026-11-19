@@ -384,6 +384,25 @@ local function LinkResolvedEntity(Entity, Target, Options)
     end
 end
 
+function Serialization.UnlinkEntities(Class, Instance, Entity)
+    if not Instance then return end
+
+    for _, Field in ipairs(Classes.GetTypeFields(Class)) do
+        if Field.Linked then
+            local Value = Instance[Field.Name]
+            local _, IsArray = ParseType(Field.Type)
+
+            if not IsArray then
+                if IsValid(Value) then Entity:Unlink(Value) end
+            elseif type(Value) == "table" then
+                for Target in pairs(Value) do
+                    if IsValid(Target) then Entity:Unlink(Target) end
+                end
+            end
+        end
+    end
+end
+
 function Serialization.ResolveEntities(Class, Instance, Data, CreatedEntities, Entity)
     if not Instance or not Data then return end
 

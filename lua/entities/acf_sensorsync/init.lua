@@ -265,10 +265,6 @@ function ENT:RefreshRateGroups()
 end
 
 function ENT:OnRemove()
-	for Sensor in pairs(self.Sensors) do
-		self:Unlink(Sensor)
-	end
-
 	ActiveSyncs[self] = nil
 
 	WireLib.Remove(self)

@@ -298,10 +298,3 @@ function ENT:ACF_UpdateOverlayState(State)
 		State:AddNumber("Estimated Magazine Reload (s)", math.Round(self.EstimatedReloadMag, 4))
 	end
 end
-
-function ENT:OnRemove()
-	local Gun = self:ACF_GetUserVar("Gun")
-
-	if IsValid(Gun) then self:Unlink(Gun) end
-	for Ammo in pairs(self:ACF_GetUserVar("AmmoCrates") or {}) do self:Unlink(Ammo) end
-end

@@ -1090,10 +1090,5 @@ do
 		if IsFullUpdate then return end
 
 		ACF.ActiveCrews[self] = nil
-
-		-- Unlink Target entities
-		for v in pairs(self:ACF_GetUserVar("Targets") or {}) do
-			if IsValid(v) then self:Unlink(v) end
-		end
 	end
 end

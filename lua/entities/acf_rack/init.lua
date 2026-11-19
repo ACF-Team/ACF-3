@@ -1176,13 +1176,6 @@ do -- Misc -------------------------------------
 	function ENT:OnRemove(IsFullUpdate)
 		if IsFullUpdate then return end
 
-		for Crate in pairs(self:ACF_GetUserVar("Crates") or {}) do
-			self:Unlink(Crate)
-		end
-
-		self:Unlink(self:ACF_GetUserVar("Radar"))
-		self:Unlink(self:ACF_GetUserVar("Computer"))
-
 		for _, Point in pairs(self.MountPoints) do
 			local Missile = Point.Missile
 

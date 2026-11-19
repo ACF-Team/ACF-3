@@ -1427,10 +1427,6 @@ do -- Metamethods --------------------------------
 				Class.OnLast(self, Class)
 			end
 
-			for Crate in pairs(self:ACF_GetUserVar("Crates") or {}) do
-				self:Unlink(Crate)
-			end
-
 			if self.Crews and next(self.Crews) then
 				for Crew in pairs(self.Crews) do
 					if IsValid(Crew) then self:Unlink(Crew) end

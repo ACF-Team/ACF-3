@@ -268,13 +268,3 @@ function ENT:Think()
 
 	return true
 end
-
--- Remove-only teardown. Captured by AutoRegisterV2 as OrigOnRemove; the generated OnRemove runs
--- ACF_OnEntityLast (which fires the component's OnLast) + WireLib cleanup around this.
-function ENT:OnRemove(IsFullUpdate)
-	if IsFullUpdate then return end
-
-	for Weapon in pairs(self:ACF_GetUserVar("Weapons") or {}) do
-		self:Unlink(Weapon)
-	end
-end
