@@ -289,7 +289,7 @@ end
 -- @return The output of the DamageResult object.
 function Damage.doPropDamage(Entity, DmgResult, DmgInfo)
 	local IsBlast         = DmgInfo and DmgInfo:GetType() == DMG_BLAST
-	local Coef            = IsBlast and ACF.DamageBlastCoef or ACF.DamageCoef
+	local Coef            = IsBlast and 0.1 or 1
 	local FeatherExponent = ACF.PenetrationFeatherExponent
 
 	local Inflictor = DmgInfo and DmgInfo:GetInflictor()

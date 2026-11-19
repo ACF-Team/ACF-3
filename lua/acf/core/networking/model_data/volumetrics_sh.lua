@@ -588,7 +588,7 @@ local function BuildGapHit(Left, Right, Source, Direction)
     return {
         Entity      = Entity,
         ConvexID    = ConvexID,
-        GeoThick    = (Right.T - Left.T) * 25.4 * ACF.ArmorCoef, -- inches to mm
+        GeoThick    = (Right.T - Left.T) * 25.4, -- inches to mm
         ArmorType   = ArmorType,
         HitAngle    = math.deg(math.acos(math.min(1, math.max(-1, -Direction:Dot(Left.Normal))))),
         EntryPos    = Left.Pos,
