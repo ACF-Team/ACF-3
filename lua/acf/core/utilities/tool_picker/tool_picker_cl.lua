@@ -236,8 +236,7 @@ hook.Add("Think", "ACF_ToolPicker", function()
 	SlideScroll = Lerp(Ease, SlideScroll, Scroll)
 end)
 
--- Weapon selectors take the scroll too, ULib runs this before them
-hook.Add("PlayerBindPress", "ACF_ToolPicker", function(_, Bind, Pressed)
+local function OnBindPress(_, Bind, Pressed)
 	if not Pressed or not Target or not Rows then return end
 
 	local Step = (Bind == "invnext" and 1) or (Bind == "invprev" and -1)
@@ -253,7 +252,16 @@ hook.Add("PlayerBindPress", "ACF_ToolPicker", function(_, Bind, Pressed)
 	end
 
 	return true
-end, HOOK_HIGH)
+end
+
+-- Weapon selectors take the scroll too, ULib runs this before them.
+-- ULib loads after ACF and puts hooks it finds at normal priority, added again once it's in
+local function AddBindHook()
+	hook.Add("PlayerBindPress", "ACF_ToolPicker", OnBindPress, HOOK_HIGH)
+end
+
+AddBindHook()
+hook.Add("Initialize", "ACF_ToolPicker", AddBindHook)
 
 local function GetTextColor(Index, Selected)
 	local Col = TextColors[Index]
