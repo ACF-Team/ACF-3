@@ -19,6 +19,10 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function(CLASS, BA
 	MENU_FIELD("Number", "FillerRatio", {Title = "#acf.menu.fields.ammunition.filler_ratio", Default = 0})
 	MENU_FIELD("Number", "SmokeWPRatio", {Title = "#acf.menu.fields.ammunition.smoke_wp_ratio", Default = 0})
 
+	-- Set from the round list like the tracer color
+	FIELD("Boolean", "OverrideSmokeColor", {Default = false})
+	FIELD("Number",  "SmokeColor",         {Default = 0xFFFFFF, Min = 0, Max = 0xFFFFFF, Decimals = 0}) -- 0xRRGGBB, tracer color unless OverrideSmokeColor
+
 	function CLASS:GetPenetration()
 		return 0
 	end
@@ -168,7 +172,7 @@ Classes.DefineClass("ACF.Ammunition.SM", "ACF.Ammunition.AP", function(CLASS, BA
 			local Airburst = Bullet.DetByFuze
 			local Origin   = Airburst and Bullet.Pos or Trace.HitPos
 			local Crate    = Entity(Bullet.Crate or 0)
-			local Color    = IsValid(Crate) and ACF.GetKindColor(Crate, Bullet.CrateProfile) or nil
+			local Color    = IsValid(Crate) and ACF.GetSmokeColor(Crate, Bullet.CrateProfile) or nil
 
 			ACF.CreateSmokeScreen(Origin, Bullet.FillerMass or 0, Bullet.WPMass or 0, Color, Bullet.Flight, not Airburst and Trace.HitNormal or nil)
 

@@ -130,23 +130,29 @@ do -- MARK: Building
 		end
 	end
 
-	-- Read by ACF.GetKindColor, -1 follows the crate's color
+	-- Read by ACF.GetTracerColor and ACF.GetSmokeColor, -1 follows the color under it
 	local function NetworkKindColor(Entity, Index, Ammo)
-		Entity:SetNW2Int("KindColor" .. ACF.GetCrateNWSuffix(Index - 1), Ammo.OverrideColor and Ammo.KindColor or -1)
+		local Suffix = ACF.GetCrateNWSuffix(Index - 1)
+
+		Entity:SetNW2Int("TracerColor" .. Suffix, Ammo.OverrideTracerColor and Ammo.TracerColor or -1)
+		Entity:SetNW2Int("SmokeColor" .. Suffix, Ammo.OverrideSmokeColor and Ammo.SmokeColor or -1)
 	end
 
-	--- Sets the tracer color of a kind of round, Override false makes it the crate's color again.
+	--- Sets the "Tracer" or "Smoke" color of a kind of round, Override false makes it follow the color under it again.
 	--- Packed is 0xRRGGBB, left out it keeps the color it had
-	function ENT:SetKindColor(Index, Override, Packed)
+	function ENT:SetKindColor(Index, Which, Override, Packed)
 		local Kind = self.RoundKinds and self.RoundKinds[Index]
 
 		if not Kind then return false end
+		if Which ~= "Tracer" and Which ~= "Smoke" then return false end
 
 		local Ammo = Kind.Ammo -- The same instance as in the Rounds user var, dupes keep it
 
-		Ammo.OverrideColor = Override
+		if not ACF.HasKindColor(Ammo:GetType(), Which) then return false end
 
-		if Packed then Ammo.KindColor = math.Clamp(math.floor(Packed), 0, 0xFFFFFF) end
+		Ammo["Override" .. Which .. "Color"] = Override
+
+		if Packed then Ammo[Which .. "Color"] = math.Clamp(math.floor(Packed), 0, 0xFFFFFF) end
 
 		NetworkKindColor(self, Index, Ammo)
 

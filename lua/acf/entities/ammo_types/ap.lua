@@ -27,6 +27,10 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 	MENU_FIELD("Boolean", "TwoPiece",    {Title = "#acf.menu.fields.ammunition.two_piece", Default = false})
 	MENU_FIELD("Boolean", "Tracer", 	 {Title = "#acf.menu.fields.ammunition.tracer", Default = false})
 
+	-- Set from the round list, not menu fields so they don't count when comparing or converting rounds
+	FIELD("Boolean", "OverrideTracerColor", {Default = false})
+	FIELD("Number",  "TracerColor",         {Default = 0xFFFFFF, Min = 0, Max = 0xFFFFFF, Decimals = 0}) -- 0xRRGGBB, crate color unless OverrideTracerColor
+
 	-- NOTE: round inputs are the MENU_FIELDs above. A runtime back-reference to the weapon
 	-- instance (self.Weapon) is assigned by the crate/menu before convert; it is intentionally
 	-- NOT a declared field (it's a live class instance, not serialized).

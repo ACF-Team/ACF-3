@@ -153,10 +153,15 @@ local function SyncSelectedRound(Ctx)
 
 	if not Old or Old == Current or not (Current and Current.GetType) then return end
 
-	Current.KindName      = Old.KindName
-	Current.OverrideColor = Old.OverrideColor
-	Current.KindColor     = Old.KindColor
-	Locks[Current]        = Locks[Old]
+	Current.KindName            = Old.KindName
+	Current.OverrideTracerColor = Old.OverrideTracerColor
+	Current.TracerColor         = Old.TracerColor
+	Locks[Current]              = Locks[Old]
+
+	if ACF.HasSmokeColor(Current:GetType()) and ACF.HasSmokeColor(Old:GetType()) then
+		Current.OverrideSmokeColor = Old.OverrideSmokeColor
+		Current.SmokeColor         = Old.SmokeColor
+	end
 
 	if Old.TwoPiece ~= nil and Classes.GetTypeFieldByName(Current:GetType(), "TwoPiece") then
 		Current.TwoPiece = Old.TwoPiece
@@ -256,7 +261,14 @@ local function ScopeAmmo(WeaponType)
 		for _, Round in ipairs(GetRounds() or {}) do
 			Rows[#Rows + 1] = {
 				Type = Classes.GetTypeName(Round:GetType()),
-				Data = { KindName = Round.KindName, OverrideColor = Round.OverrideColor, KindColor = Round.KindColor, TwoPiece = Round.TwoPiece },
+				Data = {
+					KindName            = Round.KindName,
+					OverrideTracerColor = Round.OverrideTracerColor,
+					TracerColor         = Round.TracerColor,
+					OverrideSmokeColor  = Round.OverrideSmokeColor,
+					SmokeColor          = Round.SmokeColor,
+					TwoPiece            = Round.TwoPiece,
+				},
 			}
 		end
 
@@ -458,14 +470,17 @@ local function GetListKinds()
 		end
 
 		Kinds[Index] = {
-			Name          = Round.KindName or "",
-			AutoName      = AutoName,
-			Icon          = Round.SpawnIcon or "",
-			Count         = Fitted[Index],
-			OverrideColor = Round.OverrideColor,
-			KindColor     = Round.KindColor,
-			Invalid       = GetInvalidReason(Round),
-			Locked        = IsLocked(Round),
+			Name                = Round.KindName or "",
+			AutoName            = AutoName,
+			Icon                = Round.SpawnIcon or "",
+			Count               = Fitted[Index],
+			OverrideTracerColor = Round.OverrideTracerColor,
+			TracerColor         = Round.TracerColor,
+			HasSmoke            = ACF.HasSmokeColor(Round:GetType()),
+			OverrideSmokeColor  = Round.OverrideSmokeColor,
+			SmokeColor          = Round.SmokeColor,
+			Invalid             = GetInvalidReason(Round),
+			Locked              = IsLocked(Round),
 		}
 	end
 
@@ -1256,13 +1271,14 @@ local function SetupRoundList(Menu, Panel)
 		RefreshRoundList()
 	end
 
-	function Panel:OnColor(Index, Override, Packed)
+	function Panel:OnColor(Index, Which, Override, Packed)
 		local Round = GetRounds()[Index]
 
 		if not Round then return end
+		if not ACF.HasKindColor(Round:GetType(), Which) then return end
 
-		Round.OverrideColor = Override
-		Round.KindColor     = Packed
+		Round["Override" .. Which .. "Color"] = Override
+		Round[Which .. "Color"]               = Packed
 
 		ACF.Menu.QueuePersist(AmmoCtx)
 		QueueScopedSave()

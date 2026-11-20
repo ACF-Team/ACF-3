@@ -17,11 +17,11 @@ local ROW_INVALID  = Color(220, 60, 60, 60)
 
 -- A crate's kinds of rounds as a list, with a bar to split the crate between them by dragging dividers.
 -- Only shows and reports, whoever owns it decides what an edit does.
---   Kinds: { Name, AutoName, Icon, Count, OverrideColor, KindColor, Invalid, Locked } top first. Invalid is the
---   reason the crate can't hold it, those rows sit out of the bar
+--   Kinds: { Name, AutoName, Icon, Count, OverrideTracerColor, TracerColor, HasSmoke, OverrideSmokeColor, SmokeColor,
+--   Invalid, Locked } top first. Invalid is the reason the crate can't hold it, those rows sit out of the bar
 --   Callbacks: OnSelectRound(Index), OnAddRound(DupeOf), OnRemoveRound(Index), OnMoveRound(Index, Step),
---   OnCountsChanged(Counts), OnCountTyped(Index, Value), OnRename(Index, Name), OnColor(Index, Override, Packed),
---   OnLockRound(Index, Locked).
+--   OnCountsChanged(Counts), OnCountTyped(Index, Value), OnRename(Index, Name),
+--   OnColor(Index, Which = "Tracer" or "Smoke", Override, Packed), OnLockRound(Index, Locked).
 --   Not OnRemove and the like, those are vgui's own
 local PANEL = {}
 
@@ -207,41 +207,35 @@ do -- MARK: Rows
 		return Button
 	end
 
-	-- Opens a small window to pick a kind's tracer color, or let it follow the crate's
-	local function OpenColorPicker(List, Index, Button)
-		local Kind  = List.Kinds[Index]
-		local Frame = vgui.Create("DFrame")
+	local PICKER_WIDTH   = 260
+	local PICKER_SECTION = 220
 
-		Frame:SetTitle("Tracer Color")
-		Frame:SetSize(260, 250)
-		Frame:DockPadding(6, 30, 6, 6)
+	-- A checkbox to follow the color under it and a mixer for its own
+	local function AddColorSection(List, Index, Parent, Which, InheritText)
+		local Kind     = List.Kinds[Index]
+		local Override = Kind["Override" .. Which .. "Color"] or false
 
-		local X, Y = Button:LocalToScreen(0, Button:GetTall())
-
-		Frame:SetPos(math.min(X, ScrW() - 260), math.min(Y, ScrH() - 250))
-		Frame:MakePopup()
-
-		local Inherit = Frame:Add("DCheckBoxLabel")
+		local Inherit = Parent:Add("DCheckBoxLabel")
 		Inherit:Dock(TOP)
 		Inherit:DockMargin(0, 0, 0, GAP)
-		Inherit:SetText("Same as the crate's color")
-		Inherit:SetValue(not Kind.OverrideColor)
+		Inherit:SetText(InheritText)
+		Inherit:SetValue(not Override)
 
-		local Mixer = Frame:Add("DColorMixer")
-		Mixer:Dock(FILL)
+		local Mixer = Parent:Add("DColorMixer")
+		Mixer:Dock(TOP)
+		Mixer:SetTall(PICKER_SECTION - 20 - GAP * 2)
+		Mixer:DockMargin(0, 0, 0, GAP)
 		Mixer:SetPalette(false)
 		Mixer:SetAlphaBar(false)
 		Mixer:SetWangs(true)
-		Mixer:SetColor(ACF.UnpackColor(Kind.KindColor or 0xFFFFFF))
-		Mixer:SetEnabled(Kind.OverrideColor or false)
-		Mixer:SetAlpha(Kind.OverrideColor and 255 or 90)
+		Mixer:SetColor(ACF.UnpackColor(Kind[Which .. "Color"] or 0xFFFFFF))
+		Mixer:SetEnabled(Override)
+		Mixer:SetAlpha(Override and 255 or 90)
 
 		local function Send()
 			if not IsValid(List) or not List.OnColor then return end
 
-			local Override = not Inherit:GetChecked()
-
-			List:OnColor(Index, Override, ACF.PackColor(Mixer:GetColor()))
+			List:OnColor(Index, Which, not Inherit:GetChecked(), ACF.PackColor(Mixer:GetColor()))
 		end
 
 		function Inherit:OnChange(Value)
@@ -255,6 +249,40 @@ do -- MARK: Rows
 
 			Send()
 		end
+	end
+
+	-- Opens a small window to pick a kind's tracer color, and smoke color if it has smoke
+	local function OpenColorPicker(List, Index, Button)
+		local Kind   = List.Kinds[Index]
+		local Frame  = vgui.Create("DFrame")
+		local Height = 30 + 6 + PICKER_SECTION * (Kind.HasSmoke and 2 or 1)
+
+		Frame:SetTitle(Kind.HasSmoke and "Tracer and Smoke Color" or "Tracer Color")
+		Frame:SetSize(PICKER_WIDTH, Height)
+		Frame:DockPadding(6, 30, 6, 6)
+
+		local X, Y = Button:LocalToScreen(0, Button:GetTall())
+
+		Frame:SetPos(math.min(X, ScrW() - PICKER_WIDTH), math.min(Y, ScrH() - Height))
+		Frame:MakePopup()
+
+		if Kind.HasSmoke then
+			AddColorSection(List, Index, Frame, "Tracer", "Tracer same as the crate's color")
+			AddColorSection(List, Index, Frame, "Smoke", "Smoke same as the tracer color")
+		else
+			AddColorSection(List, Index, Frame, "Tracer", "Same as the crate's color")
+		end
+	end
+
+	-- The kind's own colors, nil where it follows the crate's
+	local function GetButtonColors(Kind)
+		local Tracer = Kind.OverrideTracerColor and ACF.UnpackColor(Kind.TracerColor or 0xFFFFFF) or nil
+
+		if not Kind.HasSmoke then return Tracer, Tracer end
+
+		local Smoke = Kind.OverrideSmokeColor and ACF.UnpackColor(Kind.SmokeColor or 0xFFFFFF) or Tracer
+
+		return Tracer, Smoke
 	end
 
 	function PANEL:BuildRows()
@@ -343,18 +371,34 @@ do -- MARK: Rows
 			ColorButton:SetText("")
 			ColorButton:SetTooltip("Tracer color")
 
+			-- Top half tracer, bottom half smoke
 			function ColorButton:Paint(W, H)
 				local Kind = List.Kinds[Index]
 
 				derma.SkinHook("Paint", "Button", self, W, H)
 
-				if Kind and Kind.OverrideColor then
-					surface.SetDrawColor(ACF.UnpackColor(Kind.KindColor or 0xFFFFFF))
-					surface.DrawRect(4, 4, W - 8, H - 8)
-				else
+				if not Kind then return end
+
+				local Tracer, Smoke = GetButtonColors(Kind)
+
+				if not (Tracer or Smoke) then
 					surface.SetDrawColor(255, 255, 255)
 					surface.SetMaterial(List.InheritIcon)
 					surface.DrawTexturedRect(W * 0.5 - 8, H * 0.5 - 8, 16, 16)
+
+					return
+				end
+
+				local Half = math.floor((H - 8) * 0.5)
+
+				if Tracer then
+					surface.SetDrawColor(Tracer)
+					surface.DrawRect(4, 4, W - 8, Half)
+				end
+
+				if Smoke then
+					surface.SetDrawColor(Smoke)
+					surface.DrawRect(4, 4 + Half, W - 8, H - 8 - Half)
 				end
 			end
 
@@ -402,6 +446,7 @@ do -- MARK: Rows
 
 			local Buttons = Row.Buttons
 
+			Buttons[1]:SetTooltip(Kind.HasSmoke and "Tracer and smoke color" or "Tracer color")
 			Buttons[2]:SetEnabled(self.CanAdd and Amount < self.MaxKinds)
 			Buttons[3]:SetEnabled(Index > 1)
 			Buttons[4]:SetEnabled(Index < Amount)

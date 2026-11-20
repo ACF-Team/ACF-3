@@ -5,6 +5,27 @@ do
 		return math.Clamp(math.floor(Tool:GetClientNumber(Name, 255)), 0, 255)
 	end
 
+	-- Every row after the crate, a kind of round with smoke gets a second one
+	local function GetTargets(Crate)
+		local Targets = {}
+
+		for Index in ipairs(Crate.RoundKinds or {}) do
+			Targets[#Targets + 1] = { Index = Index, Which = "Tracer" }
+
+			if ACF.KindHasSmokeColor(Crate, Index - 1) then
+				Targets[#Targets + 1] = { Index = Index, Which = "Smoke" }
+			end
+		end
+
+		return Targets
+	end
+
+	local function GetColor(Crate, Target)
+		local Getter = Target.Which == "Smoke" and ACF.GetSmokeColor or ACF.GetTracerColor
+
+		return Getter(Crate, Target.Index - 1)
+	end
+
 	ACF.ToolPicker.Register("colour", "acf_ammo", {
 		Title = "Apply Color To",
 
@@ -15,32 +36,45 @@ do
 
 			local Rows = { { Text = "Crate", Swatch = Crate:GetColor() } }
 
-			for Index, Kind in ipairs(Kinds) do
-				local Inherits = Crate:GetNW2Int("KindColor" .. ACF.GetCrateNWSuffix(Index - 1), -1) < 0
+			for _, Target in ipairs(GetTargets(Crate)) do
+				local Kind     = Kinds[Target.Index]
+				local Smoke    = Target.Which == "Smoke"
+				local Inherits = Crate:GetNW2Int(Target.Which .. "Color" .. ACF.GetCrateNWSuffix(Target.Index - 1), -1) < 0
+				local Text     = Kind.Name
 
-				Rows[Index + 1] = {
-					Text   = Kind.Name,
+				if Smoke or ACF.KindHasSmokeColor(Crate, Target.Index - 1) then
+					Text = Text .. " " .. Target.Which
+				end
+
+				Rows[#Rows + 1] = {
+					Text   = Text,
 					Icon   = Kind.Icon ~= "" and Kind.Icon or nil,
-					Stripe = ACF.GetRoundKindColor(Index),
-					Swatch = ACF.GetKindColor(Crate, Index - 1),
-					Note   = Inherits and "Crate" or nil,
+					Stripe = ACF.GetRoundKindColor(Target.Index),
+					Swatch = GetColor(Crate, Target),
+					Note   = Inherits and (Smoke and "Tracer" or "Crate") or nil,
 				}
 			end
 
 			return Rows
 		end,
 
-		LeftClick = function(Tool, Crate, Index)
+		LeftClick = function(Tool, Crate, Row)
+			local Target = GetTargets(Crate)[Row]
+
+			if not Target then return false end
+
 			local Col = { r = GetChannel(Tool, "r"), g = GetChannel(Tool, "g"), b = GetChannel(Tool, "b") }
 
-			return Crate:SetKindColor(Index, true, ACF.PackColor(Col))
+			return Crate:SetKindColor(Target.Index, Target.Which, true, ACF.PackColor(Col))
 		end,
 
-		RightClick = function(Tool, Crate, Index)
-			if not Crate.RoundKinds[Index] then return false end
+		RightClick = function(Tool, Crate, Row)
+			local Target = GetTargets(Crate)[Row]
+
+			if not Target then return false end
 
 			local Owner = Tool:GetOwner()
-			local Col = ACF.GetKindColor(Crate, Index - 1)
+			local Col   = GetColor(Crate, Target)
 
 			Owner:ConCommand("colour_r " .. Col.r)
 			Owner:ConCommand("colour_g " .. Col.g)
@@ -49,8 +83,12 @@ do
 			return true
 		end,
 
-		Reload = function(_, Crate, Index)
-			return Crate:SetKindColor(Index, false)
+		Reload = function(_, Crate, Row)
+			local Target = GetTargets(Crate)[Row]
+
+			if not Target then return false end
+
+			return Crate:SetKindColor(Target.Index, Target.Which, false)
 		end,
 	})
 end

@@ -491,13 +491,38 @@ do -- MARK: Mixed crates
 		return Color(bit.band(bit.rshift(Packed, 16), 255), bit.band(bit.rshift(Packed, 8), 255), bit.band(Packed, 255))
 	end
 
-	--- Color a crate's kind of round flies in, the crate's own color unless the kind overrides it
-	function ACF.GetKindColor(Entity, Profile)
-		local Packed = Entity:GetNW2Int("KindColor" .. ACF.GetCrateNWSuffix(Profile), -1)
+	--- Tracer color of a crate's kind of round, the crate's own color unless the kind overrides it
+	function ACF.GetTracerColor(Entity, Profile)
+		local Packed = Entity:GetNW2Int("TracerColor" .. ACF.GetCrateNWSuffix(Profile), -1)
 
 		if Packed < 0 then return Entity:GetColor() end
 
 		return ACF.UnpackColor(Packed)
+	end
+
+	--- Smoke color of a crate's kind of round, its tracer color unless the kind overrides it
+	function ACF.GetSmokeColor(Entity, Profile)
+		local Packed = Entity:GetNW2Int("SmokeColor" .. ACF.GetCrateNWSuffix(Profile), -1)
+
+		if Packed < 0 then return ACF.GetTracerColor(Entity, Profile) end
+
+		return ACF.UnpackColor(Packed)
+	end
+
+	--- Whether an ammo type has a "Tracer" or "Smoke" color you can pick
+	function ACF.HasKindColor(Type, Which)
+		return Type ~= nil and Classes.GetTypeFieldByName(Type, Which .. "Color") ~= nil
+	end
+
+	function ACF.HasSmokeColor(Type)
+		return ACF.HasKindColor(Type, "Smoke")
+	end
+
+	--- Same as ACF.HasSmokeColor, for a crate's kind of round
+	function ACF.KindHasSmokeColor(Entity, Profile)
+		local Name = Entity:GetNW2String("AmmoType" .. ACF.GetCrateNWSuffix(Profile), "")
+
+		return ACF.HasSmokeColor(Classes.GetTypeByName(Name))
 	end
 end
 
