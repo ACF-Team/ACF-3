@@ -144,30 +144,26 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 		}
 	end
 
-	CLASS.CorePenFactor = ACF.CarbideCorePenFactor -- Penetration of a carbide core over steel AP of its mass
+	CLASS.PenFactor    = 1 -- Penetration over ACF.Penetration, approached by large penetrators
+	CLASS.PenSizeScale = ACF.SteelPenSizeScale -- Penetrator diameter in cm the factor scales with, as tanh(diameter / this)
 
-	-- Carbide core rounds penetrate with the core alone
-	local function GetPenetratorMass(Ammo, Bullet)
-		if Bullet.CoreMass then return Bullet.CoreMass, Ammo.CorePenFactor end
+	--- The mass that penetrates, the whole shot for steel AP
+	function CLASS:GetPenetratorMass(Bullet) return Bullet.ProjMass end
 
-		return Bullet.ProjMass, 1
-	end
+	-- Small penetrators fall short of ACF.Penetration, which was fitted to naval shells
+	local function GetPenFactor(Ammo, Bullet) return Ammo.PenFactor * math.tanh(Bullet.Diameter / Ammo.PenSizeScale) end
 
 	function CLASS:GetPenetration(Bullet, Speed)
 		if not isnumber(Speed) then
 			Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * ACF.InchToMeter or Bullet.MuzzleVel
 		end
 
-		local Mass, Factor = GetPenetratorMass(self, Bullet)
-
-		return ACF.Penetration(Speed, Mass, Bullet.Diameter * 10) * Factor
+		return ACF.Penetration(Speed, self:GetPenetratorMass(Bullet), Bullet.Diameter * 10) * GetPenFactor(self, Bullet)
 	end
 
 	--- Inverse of GetPenetration, solved for Speed; override alongside GetPenetration for other formulas.
 	function CLASS:CalcSpeed(Bullet, Penetration)
-		local Mass, Factor = GetPenetratorMass(self, Bullet)
-
-		return ACF.CalcSpeed(Penetration / Factor, Mass, Bullet.Diameter * 10)
+		return ACF.CalcSpeed(Penetration / GetPenFactor(self, Bullet), self:GetPenetratorMass(Bullet), Bullet.Diameter * 10)
 	end
 
 	--- Mass and speed used to report the round's kinetic energy; override for ammo types that deal damage

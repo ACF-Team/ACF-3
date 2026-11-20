@@ -310,7 +310,10 @@ do -- ACF global vars
 	ACF.CopperDensity        = 8.96e-3	-- kg/cm^3
 	ACF.TungstenDensity		 = 19.25e-3	-- kg/cm^3
 	ACF.TungstenCarbideDensity = 12.5e-3 -- kg/cm^3, as in real penetrator cores
-	ACF.CarbideCorePenFactor   = 1.69 -- Carbide core penetration over steel AP
+	ACF.SteelPenSizeScale      = 1.67 -- Steel shot diameter in cm its penetration scales with, as tanh(diameter / this)
+	ACF.CarbideCorePenFactor   = 1.66 -- Carbide core penetration over the steel formula, approached by large cores
+	ACF.CarbideCoreSizeScale   = 1.9 -- Core diameter in cm the factor scales with, as tanh(diameter / this)
+	-- Fitted weighting the 2cm Pzgr.40 over the modern small APDS rounds; weighting those instead gives 1.91 and 3
 
 	-- Mass of pointed AP shot over a full diameter cylinder
 	ACF.APNoseFactor         = 0.84

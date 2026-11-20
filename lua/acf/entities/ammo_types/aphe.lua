@@ -24,11 +24,7 @@ Classes.DefineClass("ACF.Ammunition.APHE", "ACF.Ammunition.AP", function(CLASS, 
 	MENU_FIELD("Number", "FuzeDelay",   {Title = "#acf.menu.fields.ammunition.fuze_delay", Default = 0})
 
 	function CLASS:GetPenetration(Bullet, Speed)
-		if not isnumber(Speed) then
-			Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * ACF.InchToMeter or Bullet.MuzzleVel
-		end
-
-		return ACF.Penetration(Speed, Bullet.ProjMass, Bullet.Diameter * 10) * (1 - Bullet.FillerRatio)
+		return BASE.GetPenetration(self, Bullet, Speed) * (1 - Bullet.FillerRatio)
 	end
 
 	--- Inverse of GetPenetration; undoes the filler penalty so recovered speed doesn't lose pen per layer.
@@ -37,7 +33,7 @@ Classes.DefineClass("ACF.Ammunition.APHE", "ACF.Ammunition.AP", function(CLASS, 
 
 		if Solid <= 0 then return 0 end
 
-		return ACF.CalcSpeed(Penetration / Solid, Bullet.ProjMass, Bullet.Diameter * 10)
+		return BASE.CalcSpeed(self, Bullet, Penetration / Solid)
 	end
 
 	function CLASS:GetDisplayData(Data)
