@@ -23,7 +23,6 @@ local ROW_INVALID  = Color(220, 60, 60, 60)
 --   OnCountsChanged(Counts), OnCountTyped(Index, Value), OnRename(Index, Name), OnColor(Index, Override, Packed).
 --   Not OnRemove and the like, those are vgui's own
 local PANEL = {}
-local PANEL = {}
 
 function PANEL:Init()
 	self.Kinds    = {}
@@ -289,7 +288,11 @@ do -- MARK: Rows
 			Name:SetFont(ENTRY_FONT)
 			Name:SetUpdateOnType(true)
 
-			function Name:OnGetFocus() List:Select(Index) end
+			-- The base one gives the spawn menu keyboard focus
+			function Name:OnGetFocus()
+				DTextEntry.OnGetFocus(self)
+				List:Select(Index)
+			end
 
 			function Name:OnValueChange(Value)
 				-- Cut to the field's limit as you type, the server cuts the same way
@@ -308,7 +311,10 @@ do -- MARK: Rows
 			Count:SetNumeric(true)
 			Count:SetTooltip("How many rounds of this kind the crate holds")
 
-			function Count:OnGetFocus() List:Select(Index) end
+			function Count:OnGetFocus()
+				DTextEntry.OnGetFocus(self)
+				List:Select(Index)
+			end
 
 			local function SendCount()
 				local Value = tonumber(Count:GetValue())
