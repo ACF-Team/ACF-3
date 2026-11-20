@@ -93,6 +93,11 @@ function PANEL:AddField(Context, FieldName, Overrides)
 	return ACF.Menu.AddField(self, Context, FieldName, Overrides)
 end
 
+--- Adds a row to load, save and delete presets of an EntityContext's entity (see lua/acf/menu/framework/presets_cl.lua)
+function PANEL:AddPresets(Context, Options)
+	return ACF.Menu.AddPresets(self, Context, Options)
+end
+
 function PANEL:AddCheckBox(Text, ConVar)
 	local Panel = self:AddPanel("DCheckBoxLabel")
 	Panel:SetText(Text or "Checkbox")

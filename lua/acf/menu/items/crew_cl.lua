@@ -187,6 +187,7 @@ local function Build(Menu, Contexts)
 
 	Menu:AddTitle("#acf.menu.crew.settings")
 	Menu:AddPonderAddonCategory("acf", "tankbasics")
+	Menu:AddPresets(Crew)
 
 	local CrewJob      = Menu:AddComboBox()
 	local CrewJobDesc  = Menu:AddLabel()

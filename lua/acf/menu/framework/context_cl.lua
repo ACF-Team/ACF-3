@@ -56,7 +56,7 @@ function Context:_Persist()
 	if self.Parent then
 		self.Parent:_Fire(self.ParentField, self.Parent.Instance[self.ParentField])
 		self.Parent:_Persist()
-	elseif ACF.Menu.QueuePersist then
+	elseif self.PersistKey and ACF.Menu.QueuePersist then
 		ACF.Menu.QueuePersist(self)
 	end
 end
@@ -88,6 +88,16 @@ end
 function Context:RemoveCallback(Id, Field)
 	local Store = self._Callbacks[Field or ANY]
 	if Store then Store[Id] = nil end
+end
+
+--- Removes every callback registered by a panel.
+--- Removed panels stay valid until the end of the frame, so a page rebuilding itself would still fire its old ones
+function Context:RemovePanelCallbacks()
+	for _, Store in pairs(self._Callbacks) do
+		for Id in pairs(Store) do
+			if ispanel(Id) then Store[Id] = nil end
+		end
+	end
 end
 
 --- Serializes the live instance into the flat/nested table used for networking and disk storage.
@@ -124,6 +134,7 @@ end
 
 --- Creates a new EntityContext for the given entity class name (e.g. "acf_gun").
 --- PersistKey defaults to the class name and controls the on-disk settings file.
+--- PersistKey = false keeps the context off disk entirely.
 function ACF.Menu.Context(ClassName, PersistKey)
 	local Class = Classes.GetTypeByName(ClassName)
 
@@ -132,16 +143,18 @@ function ACF.Menu.Context(ClassName, PersistKey)
 		return nil
 	end
 
+	if PersistKey == nil then PersistKey = ClassName end
+
 	local New = setmetatable({
 		ClassName  = ClassName,
 		Class      = Class,
 		Instance   = Class(),
-		PersistKey = PersistKey or ClassName,
+		PersistKey = PersistKey,
 		_Callbacks = {},
 	}, Context)
 
 	-- Restore the user's last-used settings from disk, if any.
-	if ACF.Menu.LoadPersisted then
+	if PersistKey and ACF.Menu.LoadPersisted then
 		ACF.Menu.LoadPersisted(New)
 	end
 

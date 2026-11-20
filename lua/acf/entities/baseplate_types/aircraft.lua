@@ -3,7 +3,7 @@ ACF.Classes.DefineClass("ACF.Baseplates.Aircraft", "ACF.Baseplates.BaseplateType
 	CLASS.Icon        = "icon16/weather_clouds.png"
 	CLASS.Description = "A baseplate designed for aircraft."
 
-	MENU_FIELD("Number", "GForceTicks", {Min = 1, Max = 7, Default = 1, Decimals = 0})
+	MENU_FIELD("Number", "GForceTicks", {Title = "#acf.menu.fields.baseplates.g_force_ticks", Min = 1, Max = 7, Default = 1, Decimals = 0})
 
 	function CLASS.CreateMenu(SubMenu, NestedData, PushData)
 		local Opts  = ACF.Classes.GetTypeFieldByName(CLASS, "GForceTicks").Options

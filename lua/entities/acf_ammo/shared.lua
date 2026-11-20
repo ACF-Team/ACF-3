@@ -3,13 +3,13 @@ DEFINE_BASECLASS("acf_container")
 ENT.ACF_Limit = 32
 
 ACF.Entities.AutoRegister(2026091001, function(CLASS)
-	MENU_FIELD("ACF.Weapons.BaseWeapon", 	"Weapon",            	{OnlyAllowSubtypes = true, OnlyAllowLeafTypes = true, InstantiateTypeForDefault = "ACF.Guns.Cannon"})
-	MENU_FIELD("ACF.Ammunition.BaseAmmo", 	"AmmoType",          	{OnlyAllowSubtypes = true, InstantiateTypeForDefault = "ACF.Ammunition.AP"})
-	MENU_FIELD("Number", 					"AmmoStage",         	{Min = ACF.AmmoStageMin or 1, Max = ACF.AmmoStageMax or 5, Default = 1, Decimals = 0})
-	MENU_FIELD("Number", 					"CrateProjectilesX", 	{Min = 1, Default = 3, Decimals = 0})
-	MENU_FIELD("Number", 					"CrateProjectilesY", 	{Min = 1, Default = 3, Decimals = 0})
-	MENU_FIELD("Number", 					"CrateProjectilesZ", 	{Min = 1, Default = 3, Decimals = 0})
-	MENU_FIELD("Boolean", 					"HexPacking",        	{Default = false})
+	MENU_FIELD("ACF.Weapons.BaseWeapon", 	"Weapon",            	{Title = "#acf.menu.fields.acf_ammo.weapon", OnlyAllowSubtypes = true, OnlyAllowLeafTypes = true, InstantiateTypeForDefault = "ACF.Guns.Cannon"})
+	MENU_FIELD("ACF.Ammunition.BaseAmmo", 	"AmmoType",          	{Title = "#acf.menu.fields.acf_ammo.ammo_type", OnlyAllowSubtypes = true, InstantiateTypeForDefault = "ACF.Ammunition.AP"})
+	MENU_FIELD("Number", 					"AmmoStage",         	{Title = "#acf.menu.fields.acf_ammo.ammo_stage", Min = ACF.AmmoStageMin or 1, Max = ACF.AmmoStageMax or 5, Default = 1, Decimals = 0})
+	MENU_FIELD("Number", 					"CrateProjectilesX", 	{Title = "#acf.menu.fields.acf_ammo.crate_projectiles_x", Min = 1, Default = 3, Decimals = 0})
+	MENU_FIELD("Number", 					"CrateProjectilesY", 	{Title = "#acf.menu.fields.acf_ammo.crate_projectiles_y", Min = 1, Default = 3, Decimals = 0})
+	MENU_FIELD("Number", 					"CrateProjectilesZ", 	{Title = "#acf.menu.fields.acf_ammo.crate_projectiles_z", Min = 1, Default = 3, Decimals = 0})
+	MENU_FIELD("Boolean", 					"HexPacking",        	{Title = "#acf.menu.fields.acf_ammo.hex_packing", Default = false})
 
 	-- The rounds the crate holds top first and how many of each. AmmoType sizes the slots and fills an empty list
 	FIELD("ACF.Ammunition.BaseAmmo[]", 		"Rounds",            	{OnlyAllowSubtypes = true})

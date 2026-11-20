@@ -4,6 +4,7 @@ ENT.Author    = "LiddulBOFH"
 
 ACF.Entities.AutoRegister(2026091001, function()
 	MENU_FIELD("ACF.Sensors.Receiver", "Sensor", {
+		Title                     = "#acf.menu.fields.acf_receiver.sensor",
 		InstantiateTypeForDefault = "ACF.Sensors.Receiver.Warning.Laser",
 		OnlyAllowSubtypes         = true,
 		OnlyAllowLeafTypes        = true,

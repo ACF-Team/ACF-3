@@ -2,7 +2,7 @@ DEFINE_BASECLASS("acf_base_simple")
 
 ACF.Entities.AutoRegister(2026091001, function(CLASS)
 	-- The engine type this entity represents. Engines aren't scalable, so this is the only config field.
-	MENU_FIELD("ACF.Engines.BaseEngine", "Engine", {OnlyAllowSubtypes = true, OnlyAllowLeafTypes = true, InstantiateTypeForDefault = "ACF.Engines.5.7-V8"})
+	MENU_FIELD("ACF.Engines.BaseEngine", "Engine", {Title = "#acf.menu.fields.acf_engine.engine", OnlyAllowSubtypes = true, OnlyAllowLeafTypes = true, InstantiateTypeForDefault = "ACF.Engines.5.7-V8"})
 	LINKED_ENTITY_ARRAY_FIELD("Gearboxes", {AcceptableClasses = {acf_gearbox = true}})
 
 	-- Nothing to validate: the Engine field is constrained to ACF.Engines.* subtypes by the serializer.

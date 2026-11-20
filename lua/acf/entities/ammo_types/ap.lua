@@ -19,13 +19,13 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 	CLASS.Bodygroup   = 0 -- Bodygroup index for crate and menu models
 	CLASS.MenuFOV     = 60 -- Default FOV for menu preview
 
-	MENU_FIELD("Number",  "RoundLength", {Default = 0})
-	MENU_FIELD("Number",  "PropRatio",   {Default = 0})
-	MENU_FIELD("Number",  "PropellantScale", {Default = -1}) -- Negative until derived from PropRatio
-	MENU_FIELD("Number",  "CaseScale",   {Default = 1})
-	MENU_FIELD("Number",  "NeckingScale", {Default = -1}) -- Negative until derived from CaseScale
-	MENU_FIELD("Boolean", "TwoPiece",    {Default = false})
-	MENU_FIELD("Boolean", "Tracer", 	 {Default = false})
+	MENU_FIELD("Number",  "RoundLength", {Title = "#acf.menu.fields.ammunition.round_length", Default = 0})
+	MENU_FIELD("Number",  "PropRatio",   {Title = "#acf.menu.fields.ammunition.prop_ratio", Default = 0})
+	MENU_FIELD("Number",  "PropellantScale", {Title = "#acf.menu.fields.ammunition.propellant_scale", Default = -1}) -- Negative until derived from PropRatio
+	MENU_FIELD("Number",  "CaseScale",   {Title = "#acf.menu.fields.ammunition.case_scale", Default = 1})
+	MENU_FIELD("Number",  "NeckingScale", {Title = "#acf.menu.fields.ammunition.necking_scale", Default = -1}) -- Negative until derived from CaseScale
+	MENU_FIELD("Boolean", "TwoPiece",    {Title = "#acf.menu.fields.ammunition.two_piece", Default = false})
+	MENU_FIELD("Boolean", "Tracer", 	 {Title = "#acf.menu.fields.ammunition.tracer", Default = false})
 
 	-- NOTE: round inputs are the MENU_FIELDs above. A runtime back-reference to the weapon
 	-- instance (self.Weapon) is assigned by the crate/menu before convert; it is intentionally

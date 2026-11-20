@@ -11,7 +11,7 @@ local function ResolveBind(Button)
 	local Alt    = Player:KeyDown(IN_WALK)
 
 	if Button == "left" then
-		if Shift then return "shift+left" end
+		if Shift then return Alt and "alt+shift+left" or "shift+left" end
 		if Alt then return "alt+left" end
 	elseif Button == "right" then
 		if Reload then return "r+right" end
@@ -62,6 +62,8 @@ function ACF.Menu.DoClientAction(Button)
 		ACF.Menu.SendFunc(Page.ID, Action._Index)
 	elseif Action.Commit == "link" then
 		ACF.Menu.SendLink()
+	elseif Action.Commit == "copy" then
+		ACF.Menu.RequestCopy(Action.Pick)
 	end
 end
 

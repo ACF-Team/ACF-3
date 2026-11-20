@@ -6,7 +6,7 @@ ACF.Classes.DefineClass("ACF.Baseplates.Recreational", "ACF.Baseplates.Baseplate
 	CLASS.Icon        = "icon16/car_add.png"
 	CLASS.Description = "A baseplate designed for non combat use (e.g. cars).\nWeapons and ammo will be removed. Fuel consumption rate set to 1."
 
-	MENU_FIELD("Boolean", "ExplodeOnCollisions", {Default = false})
+	MENU_FIELD("Boolean", "ExplodeOnCollisions", {Title = "#acf.menu.fields.baseplates.explode_on_collisions", Default = false})
 
 	function CLASS.CreateMenu(SubMenu, NestedData, PushData)
 		local Opts = ACF.Classes.GetTypeFieldByName(CLASS, "ExplodeOnCollisions").Options

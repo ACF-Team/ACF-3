@@ -17,8 +17,8 @@ Classes.DefineClass("ACF.Ammunition.HEAT", "ACF.Ammunition.AP", function(CLASS, 
 		["ACF.Guns.RotaryAutocannon"] = true,
 	}
 
-	MENU_FIELD("Number", "LinerAngleRatio", {Default = 0}) -- Narrowest cone, as LinerAngle's default of 0 clamped to on master
-	MENU_FIELD("Number", "StandoffRatio", {Default = 0})
+	MENU_FIELD("Number", "LinerAngleRatio", {Title = "#acf.menu.fields.ammunition.liner_angle_ratio", Default = 0}) -- Narrowest cone, as LinerAngle's default of 0 clamped to on master
+	MENU_FIELD("Number", "StandoffRatio", {Title = "#acf.menu.fields.ammunition.standoff_ratio", Default = 0})
 
 	function CLASS:ConeCalc(ConeAngle, Radius)
 		local Height     = Radius / math.tan(math.rad(ConeAngle))

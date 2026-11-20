@@ -80,16 +80,6 @@ local function DoSpawn(Player, Trace, ClassName, Data)
 	end
 end
 
--- Adds one round to the aimed entity, which must be of the class the data was made for
-local function DoOverride(Player, Trace, ClassName, Data)
-	local Entity = Trace.Entity
-
-	if not IsValid(Entity) or Entity:GetClass() ~= ClassName or not Entity.ACF_AddRound then return end
-
-	local Result, Message = Entity:ACF_AddRound(Player, Data)
-	Messages.SendChat(Player, Result and "Info" or "Error", Message)
-end
-
 -- =============================================================================================
 -- Link / unlink (ported from operations/acf_menu.lua; state kept per player, no ClientData)
 -- =============================================================================================
@@ -338,14 +328,16 @@ net.Receive("ACF_MenuCommit", function(_, Player)
 	local Kind = net.ReadString()
 
 	-- Read the payload BEFORE the CanCommit gate so the message is always fully consumed.
-	local ClassName, Data, PageID, ActionIndex
+	local ClassName, Data, PageID, ActionIndex, Pick
 
-	if Kind == "spawn" or Kind == "override" then
+	if Kind == "spawn" then
 		ClassName = net.ReadString()
 		Data      = net.ReadTable()
 	elseif Kind == "func" then
 		PageID      = net.ReadString()
 		ActionIndex = net.ReadUInt(8)
+	elseif Kind == "copy" then
+		Pick = net.ReadBool()
 	end
 
 	if not CanCommit(Player) then return end
@@ -355,11 +347,11 @@ net.Receive("ACF_MenuCommit", function(_, Player)
 		if not Trace then return end
 
 		DoSpawn(Player, Trace, ClassName, Data)
-	elseif Kind == "override" then
+	elseif Kind == "copy" then
 		local Trace = ACF.Menu.GetCommitTrace(Player, 1)
 		if not Trace then return end
 
-		DoOverride(Player, Trace, ClassName, Data)
+		ACF.Menu.Copy.CopyFrom(Player, Trace.Entity, Pick)
 	elseif Kind == "func" then
 		local Action = GetFuncAction(PageID, ActionIndex)
 		if not Action then return end
@@ -391,8 +383,8 @@ hook.Add("PlayerDisconnected", "ACF_Menu_Commit", function(Player)
 	PlayerEnts[Player] = nil
 end)
 
---- Server->client: push an existing entity's serialized config to a player (future copy feature).
-function ACF.Menu.SendCopy(Player, Entity)
+--- Sends an entity's settings to a player's menu. Pick opens the window to choose which ones
+function ACF.Menu.SendCopy(Player, Entity, Pick)
 	if not IsValid(Player) or not IsValid(Entity) then return end
 
 	local Class = ACF.Classes.GetTypeByName(Entity:GetClass())
@@ -403,5 +395,6 @@ function ACF.Menu.SendCopy(Player, Entity)
 	net.Start("ACF_MenuCopy")
 		net.WriteString(Entity:GetClass())
 		net.WriteTable(Data)
+		net.WriteBool(Pick or false)
 	net.Send(Player)
 end

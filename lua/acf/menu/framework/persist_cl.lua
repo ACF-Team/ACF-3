@@ -10,12 +10,33 @@ local function FileFor(Context)
 	return Context.PersistKey .. ".json"
 end
 
+--- The version an entity class saves its data with, as stored in dupes
+function ACF.Menu.GetEntityVersion(ClassName)
+	local Stored = scripted_ents.GetStored(ClassName)
+
+	return Stored and Stored.t.ACF_Version
+end
+
+--- Runs saved settings through the same compatibility patches as dupes.
+--- Returns the patched settings and the class they're for now, nil if a patch failed
+function ACF.Menu.PatchSaved(ClassName, Data, Version)
+	local Entry = { Class = ClassName, ACF_UserData = Data, ACF_Version = Version }
+
+	if not ProtectedCall(ACF.Entities.RunCompatPatches, ClassName, Entry) then return end
+	if not istable(Entry.ACF_UserData) then return end
+
+	return Entry.ACF_UserData, Entry.Class
+end
+
 --- Immediately writes a context's current serialized state to disk.
 local function Write(Context)
 	Pending[Context] = nil
 	if not Context.Instance then return end
 
-	ACF.SaveToJSON(Folder, FileFor(Context), Context:Serialize(), true)
+	ACF.SaveToJSON(Folder, FileFor(Context), {
+		ACF_Version  = ACF.Menu.GetEntityVersion(Context.ClassName),
+		ACF_UserData = Context:Serialize(),
+	}, true)
 end
 
 --- Queues a debounced write for a context. Reads the context's state at fire time, so the latest
@@ -34,9 +55,22 @@ end
 --- Loads a context's saved settings from disk into its instance, if a file exists.
 function ACF.Menu.LoadPersisted(Context)
 	local Saved = ACF.LoadFromFile(Folder, FileFor(Context))
-	if not Saved then return end
+	if not istable(Saved) then return end
 
-	Context:Hydrate(Saved)
+	local ClassName     = Context.ClassName
+	local Data, Version = Saved.ACF_UserData, Saved.ACF_Version
+
+	-- Saved before the menu stored a version. These are recent, so they count as current
+	if not istable(Data) then
+		Data, Version = Saved, ACF.Menu.GetEntityVersion(ClassName)
+	end
+
+	local Patched, NewClass = ACF.Menu.PatchSaved(ClassName, Data, Version)
+
+	-- Settings a patch moved to another entity don't belong in this one
+	if not Patched or NewClass ~= ClassName then return end
+
+	Context:Hydrate(Patched)
 end
 
 -- ------------------------------------------------------------------------------------------------

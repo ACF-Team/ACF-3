@@ -5,6 +5,7 @@ ENT.ACF_Limit = 2
 
 ACF.Entities.AutoRegister(2026091001, function()
 	MENU_FIELD("ACF.Sensors.IRST", "Sensor", {
+		Title                     = "#acf.menu.fields.acf_irst.sensor",
 		InstantiateTypeForDefault = "ACF.Sensors.IRST.Infrared.Standard",
 		OnlyAllowSubtypes         = true,
 	})

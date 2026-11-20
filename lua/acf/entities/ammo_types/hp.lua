@@ -10,7 +10,7 @@ Classes.DefineClass("ACF.Ammunition.HP", "ACF.Ammunition.AP", function(CLASS, BA
 		["ACF.Guns.Machinegun"] = true,
 	})
 
-	MENU_FIELD("Number", "HollowRatio", {Default = 0})
+	MENU_FIELD("Number", "HollowRatio", {Title = "#acf.menu.fields.ammunition.hollow_ratio", Default = 0})
 
 	function CLASS:GetDisplayData(Data)
 		local Display = BASE.GetDisplayData(self, Data)

@@ -202,7 +202,10 @@ do -- ACF Menu context panel
 
 	local function PopulateTree(Tree)
 		local OptionList = GetSortedList(Options)
-		local First
+		local Wanted     = ACF.MenuItemToOpen
+		local First, Open
+
+		ACF.MenuItemToOpen = nil
 
 		Tree.BaseHeight = 0.5
 		Tree.VBar:SetSize(0, 0)
@@ -237,6 +240,9 @@ do -- ACF Menu context panel
 				local Child = Parent:AddNode(Item.Name, Item.Icon)
 				Child.Action = Item.Action
 				Child.Parent = Parent
+				Child.Item   = Item
+
+				if Wanted and Item.Option == Wanted.Option and Item.Name == Wanted.Name then Open = Child end
 
 				Parent.Count = Parent.Count + 1
 
@@ -257,12 +263,16 @@ do -- ACF Menu context panel
 			end
 		end
 
-		Tree:SetSelectedItem(First)
+		Tree:SetSelectedItem(Open or First)
 	end
 
 	local function SetupMenuTree(Menu, Tree)
+		Menu.Tree = Tree
+
 		function Tree:OnNodeSelected(Node)
-			if self.Selected == Node then return end
+			if self.Selected == Node and not self.Reopen then return end
+
+			self.Reopen = nil
 
 			if Node.Master then
 				self:SetSelectedItem(Node.Selected)
@@ -308,6 +318,33 @@ do -- ACF Menu context panel
 	end
 
 	ACF.SetupMenuTree = SetupMenuTree
+
+	--- Opens an item of the main menu, rebuilding it if it's already open.
+	--- If the menu isn't built yet it opens on that item once it is
+	function ACF.OpenMenuItem(Option, Name)
+		local Menu = ACF.SpawnMenu
+		local Tree = IsValid(Menu) and Menu.Tree
+
+		if not IsValid(Tree) then
+			ACF.MenuItemToOpen = { Option = Option, Name = Name }
+			return false
+		end
+
+		for _, Parent in ipairs(Tree:Root():GetChildNodes()) do
+			for _, Child in ipairs(Parent:GetChildNodes()) do
+				local Item = Child.Item
+
+				if Item and Item.Option == Option and Item.Name == Name then
+					Tree.Reopen = true
+					Tree:SetSelectedItem(Child)
+
+					return true
+				end
+			end
+		end
+
+		return false
+	end
 end
 
 do -- Client and server settings

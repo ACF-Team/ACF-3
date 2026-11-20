@@ -4,7 +4,7 @@ ENT.Author = "Polymorphic Turtle"
 
 ACF.Entities.AutoRegister(2026091001, function(CLASS)
 	-- The component (computer) type this entity represents (ACF.Components.* guidance computers).
-	MENU_FIELD("ACF.Components.GuidanceComputer", "Computer", {OnlyAllowSubtypes = true, InstantiateTypeForDefault = "ACF.Components.LaserGuidanceComputer"})
+	MENU_FIELD("ACF.Components.GuidanceComputer", "Computer", {Title = "#acf.menu.fields.acf_computer.computer", OnlyAllowSubtypes = true, InstantiateTypeForDefault = "ACF.Components.LaserGuidanceComputer"})
 	LINKED_ENTITY_ARRAY_FIELD("Weapons", {AcceptableClasses = {acf_gun = true, acf_rack = true}})
 
 	function CLASS:VerifyData()

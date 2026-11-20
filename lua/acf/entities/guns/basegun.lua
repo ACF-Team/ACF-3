@@ -33,7 +33,7 @@ end)
 Classes.DefineClass("ACF.Guns.BaseScalableGun", "ACF.Guns.BaseGun", function(CLASS, BASE)
 	CLASS.IsScalable = true
 
-	MENU_FIELD("Number", "Caliber",	{Default = 50})
+	MENU_FIELD("Number", "Caliber",	{Title = "#acf.menu.fields.guns.caliber", Default = 50})
 	CLASS.CaliberLimits = {Base = 50, Min = 25, Max = 75}
 
 	function CLASS.__inherited()

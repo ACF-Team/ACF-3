@@ -16,7 +16,7 @@ Classes.DefineClass("ACF.Ammunition.APCR", "ACF.Ammunition.AP", function(CLASS, 
 	})
 
 	-- Core diameter from thinnest to thickest, negative keeps the legacy full length steel core
-	MENU_FIELD("Number", "CoreScale", {Default = -1})
+	MENU_FIELD("Number", "CoreScale", {Title = "#acf.menu.fields.ammunition.core_scale", Default = -1})
 
 	local MinCoreRatio, MaxCoreRatio = 0.32, 0.531 -- Core over bore diameter, BR-365P to M304
 	local CoreLengthRatio = 3.3 -- Core length in calibers

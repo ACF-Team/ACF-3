@@ -17,7 +17,7 @@ Classes.DefineClass("ACF.Ammunition.APDS", "ACF.Ammunition.AP", function(CLASS, 
 	CLASS.CorePenFactor = 1 -- Penetrates like steel, which real 25 to 35mm APDS supports better than the carbide factor
 
 	-- Core diameter from 0 (thinnest) to 1 (thickest)
-	MENU_FIELD("Number", "CoreScale", {Default = 0.5})
+	MENU_FIELD("Number", "CoreScale", {Title = "#acf.menu.fields.ammunition.core_scale", Default = 0.5})
 
 	local MinCoreRatio, MaxCoreRatio = 0.40, 0.58 -- Core over bore diameter, L28 to War Thunder's 120mm
 	local MinCoreLength, MaxCoreLength = 3.3, 5 -- Core length in core diameters, 17pdr/20pdr to the ~5:1 spin stability limit

@@ -195,6 +195,20 @@ local function ScopeAmmo(WeaponType)
 	end
 end
 
+--- Saves the crate's ammo under its current weapon class, then points it at another one
+--- For copying a crate in, so the copied ammo isn't saved under the old weapon class
+function ACF.AmmoMenu.SetScope(Ctx, WeaponType)
+	local Scope = WeaponType and Classes.GetTypeName(WeaponType)
+	if not Scope or Scope == Ctx.AmmoScope then return end
+
+	if Ctx.AmmoScope then
+		if timer.Exists(SaveTimer) then timer.Remove(SaveTimer) end
+		SaveScopedAmmo(Ctx, Ctx.AmmoScope)
+	end
+
+	Ctx.AmmoScope = Scope
+end
+
 -- Builds a flat snapshot of the current config for the pure round-math helpers (which expect the old
 -- ToolData shape). Read-only: the context remains the source of truth for writes.
 local function BuildToolData()
@@ -940,6 +954,15 @@ function ACF.CreateAmmoMenu(Menu, Context)
 
 	local Base = Menu:AddCollapsible("#acf.menu.ammo.ammo_info", true, "icon16/chart_bar_edit.png")
 
+	-- Listed per weapon class. Presets leave the crate's size alone, and gun crates keep the menu's caliber
+	local CrateFields = { "Shape", "CrateProjectilesX", "CrateProjectilesY", "CrateProjectilesZ", "HexPacking" }
+	local GunFields   = { "Weapon", unpack(CrateFields) }
+
+	local Presets = Base:AddPresets(Context, {
+		Group = function() return Context.AmmoScope end,
+		Keep  = function() return Context.Destiny == "Missiles" and CrateFields or GunFields end,
+	})
+
 	local List  = Base:AddComboBox()
 	local Title = Base:AddTitle()
 	local Desc  = Base:AddLabel()
@@ -957,6 +980,7 @@ function ACF.CreateAmmoMenu(Menu, Context)
 	function List:LoadEntries(WeaponType)
 		-- Point the ammo memory at this weapon class first, so we restore this class's ammo (see ScopeAmmo).
 		ScopeAmmo(WeaponType)
+		Presets:Refresh()
 
 		-- Populate WITHOUT auto-firing OnSelect: AddChoice's select flag would otherwise fire OnSelect for
 		-- the first ammo type and reset the restored type's params (see ACF.Menu.PopulateCombo).

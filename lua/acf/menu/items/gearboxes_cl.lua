@@ -19,6 +19,7 @@ local function Build(Menu, Contexts)
 
 	Menu:AddTitle("#acf.menu.gearboxes.settings")
 	Menu:AddWikiLink("Gearboxes", "docs/acf_tutorials/gearboxes.html")
+	Menu:AddPresets(Ctx)
 
 	local GearboxInverted = Menu:AddCheckBox("#acf.menu.gearboxes.inverted")
 	Menu:AddHelp("#acf.menu.gearboxes.inverted_desc")
