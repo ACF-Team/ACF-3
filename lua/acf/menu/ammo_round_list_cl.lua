@@ -17,10 +17,11 @@ local ROW_INVALID  = Color(220, 60, 60, 60)
 
 -- A crate's kinds of rounds as a list, with a bar to split the crate between them by dragging dividers.
 -- Only shows and reports, whoever owns it decides what an edit does.
---   Kinds: { Name, AutoName, Icon, Count, OverrideColor, KindColor, Invalid } top first. Invalid is the
+--   Kinds: { Name, AutoName, Icon, Count, OverrideColor, KindColor, Invalid, Locked } top first. Invalid is the
 --   reason the crate can't hold it, those rows sit out of the bar
 --   Callbacks: OnSelectRound(Index), OnAddRound(DupeOf), OnRemoveRound(Index), OnMoveRound(Index, Step),
---   OnCountsChanged(Counts), OnCountTyped(Index, Value), OnRename(Index, Name), OnColor(Index, Override, Packed).
+--   OnCountsChanged(Counts), OnCountTyped(Index, Value), OnRename(Index, Name), OnColor(Index, Override, Packed),
+--   OnLockRound(Index, Locked).
 --   Not OnRemove and the like, those are vgui's own
 local PANEL = {}
 
@@ -114,11 +115,13 @@ do -- MARK: Bar
 		-- The rightmost divider under the cursor, so dividers bunched together can still be pulled apart
 		local function DividerAt(X)
 			local Capacity = math.max(List.Capacity, 1)
+			local Valid    = List:GetValidRows()
 
 			for Section = #List.BarCounts - 1, 1, -1 do
 				local DividerX = Bar:GetWide() * List:Boundary(Section) / Capacity
+				local Locked   = List.Kinds[Valid[Section]].Locked or List.Kinds[Valid[Section + 1]].Locked
 
-				if math.abs(DividerX - X) <= DIVIDER_GRAB then return Section end
+				if not Locked and math.abs(DividerX - X) <= DIVIDER_GRAB then return Section end
 			end
 		end
 
@@ -306,6 +309,12 @@ do -- MARK: Rows
 				if List.OnRename then List:OnRename(Index, Cut) end
 			end
 
+			local Lock = SquareButton(Row, "icon16/lock_open.png", "", function()
+				local Kind = List.Kinds[Index]
+
+				if Kind and List.OnLockRound then List:OnLockRound(Index, not Kind.Locked) end
+			end)
+
 			local Count = Row:Add("DTextEntry")
 			Count:SetFont(ENTRY_FONT)
 			Count:SetNumeric(true)
@@ -353,6 +362,7 @@ do -- MARK: Rows
 
 			Row.Icon   = Icon
 			Row.Name   = Name
+			Row.Lock   = Lock
 			Row.Count  = Count
 			Row.Buttons = {
 				ColorButton,
@@ -381,6 +391,14 @@ do -- MARK: Rows
 			if not Row.Count:HasFocus() then Row.Count:SetText(Kind.Invalid and "-" or tostring(Kind.Count or 0)) end
 
 			Row.Count:SetEnabled(not Kind.Invalid and Amount > 1)
+
+			local Lock = Row.Lock
+
+			Lock:SetImage(Kind.Locked and "icon16/lock.png" or "icon16/lock_open.png")
+			Lock:SetTooltip(Kind.Locked and "Unlock this count" or "Lock this count, the other rounds won't take from or give to it")
+			Lock:SetEnabled(not Kind.Invalid and Amount > 1)
+			Lock:SetAlpha(not Lock:IsEnabled() and 60 or Kind.Locked and 255 or 130)
+			Lock:SetVisible(self.CanAdd)
 
 			local Buttons = Row.Buttons
 
@@ -492,6 +510,13 @@ function PANEL:PerformLayout(W)
 
 		Row.Count:SetPos(Right, 0)
 		Row.Count:SetSize(COUNT_WIDTH, ROW_HEIGHT)
+
+		if Row.Lock:IsVisible() then
+			Right = Right - GAP - ROW_HEIGHT
+
+			Row.Lock:SetPos(Right, 0)
+			Row.Lock:SetSize(ROW_HEIGHT, ROW_HEIGHT)
+		end
 
 		local Left = SWATCH_WIDTH + GAP
 

@@ -1,7 +1,9 @@
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
+AddCSLuaFile("modules/tool_picker.lua")
 
 include("shared.lua")
+include("modules/tool_picker.lua")
 
 include("modules/cfw.lua")
 include("modules/damage.lua")

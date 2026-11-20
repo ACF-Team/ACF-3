@@ -1,6 +1,7 @@
 local ACF = ACF
 
 include( "shared.lua" )
+include( "modules/tool_picker.lua" )
 
 killicon.Add( "acf_ammo", "HUD/killicons/acf_ammo", ACF.KillIconColor )
 

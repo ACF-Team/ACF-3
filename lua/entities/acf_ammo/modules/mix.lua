@@ -130,6 +130,29 @@ do -- MARK: Building
 		end
 	end
 
+	-- Read by ACF.GetKindColor, -1 follows the crate's color
+	local function NetworkKindColor(Entity, Index, Ammo)
+		Entity:SetNW2Int("KindColor" .. ACF.GetCrateNWSuffix(Index - 1), Ammo.OverrideColor and Ammo.KindColor or -1)
+	end
+
+	--- Sets the tracer color of a kind of round, Override false makes it the crate's color again.
+	--- Packed is 0xRRGGBB, left out it keeps the color it had
+	function ENT:SetKindColor(Index, Override, Packed)
+		local Kind = self.RoundKinds and self.RoundKinds[Index]
+
+		if not Kind then return false end
+
+		local Ammo = Kind.Ammo -- The same instance as in the Rounds user var, dupes keep it
+
+		Ammo.OverrideColor = Override
+
+		if Packed then Ammo.KindColor = math.Clamp(math.floor(Packed), 0, 0xFFFFFF) end
+
+		NetworkKindColor(self, Index, Ammo)
+
+		return true
+	end
+
 	-- Fills in what the rest of the crate reads off each kind and networks its round data
 	local function PrepareKinds(Entity, Kinds)
 		NameKinds(Kinds)
@@ -137,7 +160,6 @@ do -- MARK: Building
 		for Index, Kind in ipairs(Kinds) do
 			local BulletData = Kind.BulletData
 			local Ammo       = Kind.Ammo
-			local Suffix     = ACF.GetCrateNWSuffix(Index - 1)
 
 			BulletData.Crate        = Entity:EntIndex()
 			BulletData.CrateProfile = Index - 1
@@ -146,8 +168,7 @@ do -- MARK: Building
 			Kind.Count     = 0 -- The rounds are dealt out again, so a new mix applies straight away
 
 			NetworkProfile(Entity, Ammo, BulletData, Index - 1)
-
-			Entity:SetNW2Int("KindColor" .. Suffix, Ammo.OverrideColor and Ammo.KindColor or -1)
+			NetworkKindColor(Entity, Index, Ammo)
 		end
 	end
 

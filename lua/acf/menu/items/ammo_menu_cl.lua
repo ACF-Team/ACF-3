@@ -110,6 +110,11 @@ end
 local function GetRounds() return AmmoCtx:Get("Rounds") end
 local function GetRoundCounts() return AmmoCtx:Get("RoundCounts") end
 
+-- Rows whose count is locked. Not saved anywhere
+local Locks = setmetatable({}, { __mode = "k" })
+
+local function IsLocked(Round) return Locks[Round] == true end
+
 ---Points AmmoType at the selected row. Settings saved before the round list only have AmmoType, that becomes the list
 local function Rebind()
 	local Rounds = GetRounds()
@@ -151,6 +156,7 @@ local function SyncSelectedRound(Ctx)
 	Current.KindName      = Old.KindName
 	Current.OverrideColor = Old.OverrideColor
 	Current.KindColor     = Old.KindColor
+	Locks[Current]        = Locks[Old]
 
 	if Old.TwoPiece ~= nil and Classes.GetTypeFieldByName(Current:GetType(), "TwoPiece") then
 		Current.TwoPiece = Old.TwoPiece
@@ -367,22 +373,50 @@ local function GetInvalidReason(Round)
 	return "This weapon can't fire " .. (Round.Name or "this round") .. ", it's left out of the crate."
 end
 
+-- Locked weights are exact counts, the rest scale to fill what's left
+local function FitLockedCounts(Weights, Locked, Capacity)
+	local Free, FreeWeights, Taken = {}, {}, 0
+
+	for Position, Weight in ipairs(Weights) do
+		if Locked[Position] then
+			Taken = Taken + math.max(1, math.floor(Weight))
+		else
+			Free[#Free + 1]               = Position
+			FreeWeights[#FreeWeights + 1] = Weight
+		end
+	end
+
+	-- Nothing to scale, or the locked ones don't fit anymore
+	if not Free[1] or Taken + #Free > Capacity then return ACF.FitRoundCounts(Weights, Capacity) end
+
+	local Fitted = {}
+
+	for Position, Weight in ipairs(Weights) do
+		if Locked[Position] then Fitted[Position] = math.max(1, math.floor(Weight)) end
+	end
+
+	for Slot, Count in ipairs(ACF.FitRoundCounts(FreeWeights, Capacity - Taken)) do Fitted[Free[Slot]] = Count end
+
+	return Fitted
+end
+
 ---Each row's round count once fitted to the crate, 0 for rows left out
 local function GetFittedCounts()
 	local Rounds, Counts = GetRounds(), GetRoundCounts()
-	local Valid, Weights = {}, {}
+	local Valid, Weights, Locked = {}, {}, {}
 
 	for Index, Round in ipairs(Rounds) do
 		if not GetInvalidReason(Round) then
 			Valid[#Valid + 1]     = Index
 			Weights[#Weights + 1] = Counts[Index] or 1
+			Locked[#Locked + 1]   = IsLocked(Round)
 		end
 	end
 
 	local Fitted = {}
 
 	for Index in ipairs(Rounds) do Fitted[Index] = 0 end
-	for Position, Count in ipairs(ACF.FitRoundCounts(Weights, GetCapacity())) do Fitted[Valid[Position]] = Count end
+	for Position, Count in ipairs(FitLockedCounts(Weights, Locked, GetCapacity())) do Fitted[Valid[Position]] = Count end
 
 	return Fitted, Valid
 end
@@ -431,6 +465,7 @@ local function GetListKinds()
 			OverrideColor = Round.OverrideColor,
 			KindColor     = Round.KindColor,
 			Invalid       = GetInvalidReason(Round),
+			Locked        = IsLocked(Round),
 		}
 	end
 
@@ -1096,6 +1131,32 @@ local function SetupRoundList(Menu, Panel)
 
 		Copy.KindName = ""
 
+		-- Locked, so the unlocked rows pay for the copy instead
+		if IsLocked(Source) and not GetInvalidReason(Source) then
+			local Rows, Shown, Pool = {}, {}, 0
+
+			for Index, Round in ipairs(Rounds) do
+				if not IsLocked(Round) and not GetInvalidReason(Round) then
+					Rows[#Rows + 1]   = Index
+					Shown[#Shown + 1] = Counts[Index]
+					Pool              = Pool + Counts[Index]
+				end
+			end
+
+			if Pool > #Rows then
+				Shown[#Shown + 1] = 0
+
+				local Split = ACF.SetRoundCount(Shown, #Shown, math.min(Half, Pool - #Rows), Pool)
+
+				for Slot, Row in ipairs(Rows) do Counts[Row] = Split[Slot] end
+
+				table.insert(Rounds, DupeOf + 1, Copy)
+				table.insert(Counts, DupeOf + 1, Split[#Split])
+
+				return SetRows(Menu, Rounds, Counts, DupeOf + 1)
+			end
+		end
+
 		Counts[DupeOf] = math.max(1, (Counts[DupeOf] or 2) - Half)
 
 		table.insert(Rounds, DupeOf + 1, Copy)
@@ -1135,26 +1196,47 @@ local function SetupRoundList(Menu, Panel)
 		SetRows(Menu, Rounds, Counts, Selected)
 	end
 
-	-- The typed row gets exactly that many, the others share the rest
+	-- The typed row gets exactly that many, the unlocked others share the rest
 	function Panel:OnCountTyped(Index, Value)
 		local Fitted, Valid = GetFittedCounts()
-		local Shown, Position = {}, nil
+		local Rounds        = GetRounds()
+		local Capacity      = GetCapacity()
+		local Rows, Shown, Position = {}, {}, nil
 
-		for Slot, Row in ipairs(Valid) do
-			Shown[Slot] = Fitted[Row]
+		for _, Row in ipairs(Valid) do
+			if Row == Index or not IsLocked(Rounds[Row]) then
+				Rows[#Rows + 1]   = Row
+				Shown[#Shown + 1] = Fitted[Row]
 
-			if Row == Index then Position = Slot end
+				if Row == Index then Position = #Rows end
+			else
+				Capacity = Capacity - Fitted[Row]
+			end
 		end
 
 		if not Position then return end
 
 		local Counts = CopyList(GetRoundCounts())
 
-		for Slot, Count in ipairs(ACF.SetRoundCount(Shown, Position, Value, GetCapacity())) do
-			Counts[Valid[Slot]] = Count
+		for Slot, Count in ipairs(ACF.SetRoundCount(Shown, Position, Value, Capacity)) do
+			Counts[Rows[Slot]] = Count
 		end
 
 		AmmoCtx:Set("RoundCounts", Counts)
+	end
+
+	-- Counts go exact first so the locked row keeps the number it shows
+	function Panel:OnLockRound(Index, Locked)
+		local Round = GetRounds()[Index]
+
+		if not Round then return end
+
+		local Counts = MergeCounts(GetFittedCounts())
+
+		Locks[Round] = Locked or nil
+
+		AmmoCtx:Set("RoundCounts", Counts)
+		RefreshRoundList()
 	end
 
 	function Panel:OnCountsChanged(Shown)
