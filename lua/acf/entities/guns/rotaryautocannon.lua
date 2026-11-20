@@ -14,7 +14,7 @@ ACF.Classes.DefineClass("ACF.Guns.RotaryAutocannon", "ACF.Guns.BaseScalableGun",
 	CLASS.Spread      	= 0.48
 	CLASS.Mass        	= 212
 	CLASS.Cyclic      	= {
-		Min = 4000,
+		Min = 2000,
 		Max = 2000,
 	}
 	CLASS.ScaleFactor 	= 1.0 -- Corrective factor to account for improperly scaled base models
@@ -29,7 +29,7 @@ ACF.Classes.DefineClass("ACF.Guns.RotaryAutocannon", "ACF.Guns.BaseScalableGun",
 	}
 	CLASS.CaliberLimits	= {
 		Base = 20,
-		Min  = 12.7,
+		Min  = 7.62,
 		Max  = 37,
 	}
 	CLASS.LimitConVar 	= {
