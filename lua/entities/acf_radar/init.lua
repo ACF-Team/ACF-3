@@ -9,10 +9,10 @@ local Contraption	= ACF.Contraption
 
 ACF.RegisterClassLink("acf_radar", "acf_rack", function(Radar, Target)
 	if Radar.Weapons[Target] then return false, "This rack is already linked to this radar!" end
-	if Target.Radar == Radar then return false, "This rack is already linked to this radar!" end
+	if Target:ACF_GetUserVar("Radar") == Radar then return false, "This rack is already linked to this radar!" end
 
 	Radar.Weapons[Target] = true
-	Target.Radar = Radar
+	Target:ACF_SetUserVar("Radar", Radar)
 
 	Radar:UpdateOverlay()
 	Target:UpdateOverlay()
@@ -21,9 +21,9 @@ ACF.RegisterClassLink("acf_radar", "acf_rack", function(Radar, Target)
 end)
 
 ACF.RegisterClassUnlink("acf_radar", "acf_rack", function(Radar, Target)
-	if Radar.Weapons[Target] or Target.Radar == Radar then
+	if Radar.Weapons[Target] or Target:ACF_GetUserVar("Radar") == Radar then
 		Radar.Weapons[Target] = nil
-		Target.Radar = nil
+		Target:ACF_SetUserVar("Radar", nil)
 
 		Radar:UpdateOverlay()
 		Target:UpdateOverlay()
@@ -37,10 +37,10 @@ end)
 -- Linked turrets are slaved to this radar's locked target (see acf_controller/modules/radar.lua)
 ACF.RegisterClassLink("acf_radar", "acf_turret", function(Radar, Turret)
 	if Radar.Turrets[Turret] then return false, "This turret is already linked to this radar!" end
-	if Turret.Radar == Radar then return false, "This turret is already linked to this radar!" end
+	if Turret:ACF_GetUserVar("Radar") == Radar then return false, "This turret is already linked to this radar!" end
 
 	Radar.Turrets[Turret] = true
-	Turret.Radar = Radar
+	Turret:ACF_SetUserVar("Radar", Radar)
 
 	Radar:UpdateOverlay()
 	Turret:UpdateOverlay()
@@ -49,9 +49,9 @@ ACF.RegisterClassLink("acf_radar", "acf_turret", function(Radar, Turret)
 end)
 
 ACF.RegisterClassUnlink("acf_radar", "acf_turret", function(Radar, Turret)
-	if Radar.Turrets[Turret] or Turret.Radar == Radar then
+	if Radar.Turrets[Turret] or Turret:ACF_GetUserVar("Radar") == Radar then
 		Radar.Turrets[Turret] = nil
-		Turret.Radar = nil
+		Turret:ACF_SetUserVar("Radar", nil)
 
 		Radar:UpdateOverlay()
 		Turret:UpdateOverlay()

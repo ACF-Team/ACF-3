@@ -24,7 +24,8 @@ local function GetAmmoName(BulletData, Ammo)
 	local Display = Ammo:GetDisplayData(BulletData)
 	local MaxPen  = math.max(math.Round(Display.MaxPen or 0), 0)
 	local Short   = string.match(Type, "[^.]+$") or Type
-	local Name    = MaxPen > 0 and Short .. " " .. MaxPen .. "mm" or Short
+	local Custom  = string.Trim(Ammo.KindName or "") -- Named in the round list, rounds with the same name are listed together
+	local Name    = Custom ~= "" and Custom or MaxPen > 0 and Short .. " " .. MaxPen .. "mm" or Short
 
 	NameCache[BulletData] = { Name, Type, MaxPen }
 
@@ -48,7 +49,7 @@ do
 		local function IsSelected(BulletData, Ammo) return GetAmmoName(BulletData, Ammo) == SelectAmmoName end
 
 		-- Crates loaded with the selected round feed only that round, the rest stop feeding
-		for Crate, _ in pairs(Gun.Crates) do
+		for Crate, _ in pairs(Gun:ACF_GetUserVar("Crates")) do
 			if IsValid(Crate) then
 				local HasRound = false
 
@@ -72,7 +73,7 @@ do
 			if not IsValid(Gun) then continue end
 
 			local AmmoByName = {}
-			for Crate, _ in pairs(Gun.Crates) do
+			for Crate, _ in pairs(Gun:ACF_GetUserVar("Crates")) do
 				if IsValid(Crate) then
 					for _, Kind in ipairs(Crate:GetRoundCounts()) do
 						local AmmoName, RoundID, MaxPen = GetAmmoName(Kind.BulletData, Kind.Ammo)

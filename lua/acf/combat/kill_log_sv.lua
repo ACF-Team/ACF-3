@@ -241,9 +241,36 @@ net.Receive("ACF_KillLog_Wipe", function(_, Player)
     net.Broadcast() -- Any menu still open is showing rows that no longer exist
 end)
 
-net.Receive("ACF_KillLog_Sessions", function(_, Player)
-    if not IsValid(Player) then return end
+local ListCooldown = 1
 
+-- The menu waits on these replies, so the newest request is held until the cooldown ends
+local function Throttle(Handler)
+    local LastRun = setmetatable({}, {__mode = "k"})
+    local Pending = setmetatable({}, {__mode = "k"})
+
+    local function Run(Player, Value)
+        LastRun[Player] = CurTime()
+        Handler(Player, Value)
+    end
+
+    return function(Player, Value)
+        local Wait = (LastRun[Player] or 0) + ListCooldown - CurTime()
+        if Wait <= 0 then return Run(Player, Value) end
+
+        local Scheduled = Pending[Player] ~= nil
+        Pending[Player] = {Value}
+        if Scheduled then return end
+
+        timer.Simple(Wait, function()
+            local Request = Pending[Player]
+            Pending[Player] = nil
+
+            if Request and IsValid(Player) then Run(Player, Request[1]) end
+        end)
+    end
+end
+
+local SendSessions = Throttle(function(Player)
     FlushKillLog() -- Ensure the current session shows up before its first periodic write
 
     local Rows = RunSelect("SELECT DISTINCT Session FROM acf_kill_log ORDER BY Session DESC")
@@ -260,12 +287,14 @@ net.Receive("ACF_KillLog_Sessions", function(_, Player)
     net.Send(Player)
 end)
 
--- Returns the distinct player names seen in a session, for the client's filter checkboxes.
-net.Receive("ACF_KillLog_Players", function(_, Player)
+net.Receive("ACF_KillLog_Sessions", function(_, Player)
     if not IsValid(Player) then return end
 
-    local Session = net.ReadUInt(32)
+    SendSessions(Player)
+end)
 
+-- Returns the distinct player names seen in a session, for the client's filter checkboxes.
+local SendPlayers = Throttle(function(Player, Session)
     FlushKillLog()
 
     local Query = "SELECT DISTINCT Attacker AS Name FROM acf_kill_log WHERE Session = " .. Session .. " AND Attacker IS NOT NULL"
@@ -279,6 +308,12 @@ net.Receive("ACF_KillLog_Players", function(_, Player)
     net.Start("ACF_KillLog_Players")
         net.WriteString(util.TableToJSON(Names))
     net.Send(Player)
+end)
+
+net.Receive("ACF_KillLog_Players", function(_, Player)
+    if not IsValid(Player) then return end
+
+    SendPlayers(Player, net.ReadUInt(32))
 end)
 
 net.Receive("ACF_KillLog_Query", function(_, Player)

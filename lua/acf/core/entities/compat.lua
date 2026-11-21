@@ -32,6 +32,47 @@ function Entities.RunCompatPatches(ClassName, FullEntityData, AfterRevision)
 	end
 end
 
+-- For links that used to be saved as entity modifiers
+function Entities.MoveLinkModToUserData(Data, ModName, Field, SingleEntry, SubKey)
+	local EntityMods = Data.EntityMods
+	if not istable(EntityMods) or EntityMods[ModName] == nil then return end
+
+	local Mod = EntityMods[ModName]
+	EntityMods[ModName] = nil
+
+	if SubKey and istable(Mod) then Mod = Mod[SubKey] end
+	if not istable(Mod) then return end
+
+	local UserData = istable(Data.ACF_UserData) and Data.ACF_UserData or {}
+	Data.ACF_UserData = UserData
+
+	local Existing = UserData[Field]
+
+	if SingleEntry then
+		if Existing ~= nil then return end
+
+		local _, Index = next(Mod)
+		if isnumber(Index) then UserData[Field] = Index end
+
+		return
+	end
+
+	if Existing ~= nil and not istable(Existing) then return end
+
+	local Indices, Seen = Existing or {}, {}
+
+	for _, Index in ipairs(Indices) do Seen[Index] = true end
+
+	for _, Index in pairs(Mod) do
+		if isnumber(Index) and not Seen[Index] then
+			Seen[Index] = true
+			Indices[#Indices + 1] = Index
+		end
+	end
+
+	UserData[Field] = Indices
+end
+
 -- For regular duplicator, monkeypatch
 -- For advdupe2 though, we get a hook!
 -- If only the basegame was nice enough to provide this...

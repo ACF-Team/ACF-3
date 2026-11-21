@@ -6,14 +6,40 @@ ENT.ACF_InvisibleToBallistics = true
 ENT.NUM_WEAPONS = 3
 
 function ENT:GetWeapon(Slot)
-	return self["GetGun" .. Slot](self)
+	local Getter = self["GetGun" .. Slot]
+	if not Getter then return NULL end
+
+	local Gun = Getter(self)
+
+	return IsValid(Gun) and Gun.IsACFWeapon and Gun or NULL
 end
 
--- The controller's live settings are NetworkVars (see below). The only serialized field is a request
--- for the default config, applied by init.lua's ACF_OnVerifyClientData on spawn (always true from the
--- menu, matching the previous behavior).
-ACF.Entities.AutoRegister(2026091001, function()
-	MENU_FIELD("Boolean", "AIOUseDefaults", {Default = true})
+-- The controller's live settings are NetworkVars (see below). AIOUseDefaults is a request for the default
+-- config, applied by init.lua's ACF_OnVerifyClientData on spawn (always true from the menu, matching the
+-- previous behavior).
+ACF.Entities.AutoRegister(2026111701, function()
+	MENU_FIELD("Boolean", "AIOUseDefaults", {Title = "#acf.menu.fields.acf_controller.aio_use_defaults", Default = true})
+
+	LINKED_ENTITY_FIELD("Seat",             {AcceptableClasses = {prop_vehicle_prisoner_pod = true}})
+	LINKED_ENTITY_FIELD("Baseplate",        {AcceptableClasses = {acf_baseplate = true}})
+	LINKED_ENTITY_FIELD("Gearbox",          {AcceptableClasses = {acf_gearbox = true}})
+	LINKED_ENTITY_FIELD("TurretComputer",   {AcceptableClasses = {acf_turret_computer = true}})
+	LINKED_ENTITY_FIELD("GuidanceComputer", {AcceptableClasses = {acf_computer = true}})
+	LINKED_ENTITY_FIELD("Radar",            {AcceptableClasses = {acf_radar = true, acf_irst = true}})
+
+	LINKED_ENTITY_ARRAY_FIELD("SteerPlates", {AcceptableClasses = {prop_physics = true}})
+	LINKED_ENTITY_ARRAY_FIELD("Turrets",     {AcceptableClasses = {acf_turret = true}})
+	LINKED_ENTITY_ARRAY_FIELD("Guns",        {AcceptableClasses = {acf_gun = true}})
+	LINKED_ENTITY_ARRAY_FIELD("Racks",       {AcceptableClasses = {acf_rack = true}})
+	LINKED_ENTITY_ARRAY_FIELD("Receivers",   {AcceptableClasses = {acf_receiver = true}})
+
+	-- Saved from and restored to the network vars with the same names
+	FIELD("Entity", "Gun1")
+	FIELD("Entity", "Gun2")
+	FIELD("Entity", "Gun3")
+	FIELD("Entity", "Cam1Parent")
+	FIELD("Entity", "Cam2Parent")
+	FIELD("Entity", "Cam3Parent")
 end, "Controller", "Controllers")
 
 ENT.Editable = true
@@ -71,8 +97,8 @@ function ENT:SetupDataTables()
 
 	self:NetworkVar( "Int", "BrakeEngagement", { KeyName = "brakeengagement", Edit = { type = "Combo", order = 701, category = "Brake Settings", values = {Manual = 0, Automatic = 1}, tooltip = "How the brake is used to stop" } } )
 	self:NetworkVar( "Int", "DisableWeldBrake", { KeyName = "disableweldbrake", Edit = { type = "Bool", order = 702, category = "Brake Settings", tooltip = "Disables weld brake and only uses ACF brakes to stop the vehicle (useful for very light cars)"  } } )
-	self:NetworkVar( "Int", "BrakeStrength", { KeyName = "brakestrength", Edit = { type = "Int", order = 703, category = "Brake Settings", min = 0.001, max = 1000, tooltip = "Brake strength (at low speed) (used as steer angle for cars)"  } } )
-	self:NetworkVar( "Int", "BrakeStrengthTop", { KeyName = "brakestrengthtop", Edit = { type = "Int", order = 704, category = "Brake Settings", min = 0.001, max = 1000, tooltip = "Brake strength (at top speed) (used as steer angle for cars)"  } } )
+	self:NetworkVar( "Int", "BrakeStrength", { KeyName = "brakestrength", Edit = { type = "Int", order = 703, category = "Brake Settings", min = 0.001, max = 1000, tooltip = "Brake strength (at low speed)"  } } )
+	self:NetworkVar( "Int", "BrakeStrengthTop", { KeyName = "brakestrengthtop", Edit = { type = "Int", order = 704, category = "Brake Settings", min = 0.001, max = 1000, tooltip = "Brake strength (at top speed)"  } } )
 	self:NetworkVar( "Int", "SpeedLow", { KeyName = "speedlow", Edit = { type = "Int", order = 705, category = "Brake Settings", min = 0.001, max = 1000, tooltip = "low speed for brake setting"  } } )
 	self:NetworkVar( "Int", "SpeedTop", { KeyName = "speedtop", Edit = { type = "Int", order = 706, category = "Brake Settings", min = 0.001, max = 1000, tooltip = "top speed for brake setting"  } } )
 
@@ -80,13 +106,13 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "Int", "ShiftMinRPM", { KeyName = "shiftminrpm", Edit = { type = "Int", order = 801, category = "Shifting Settings", min = 0, max = 10000, tooltip = "Shifts gear down at this RPM"  } } )
 	self:NetworkVar( "Int", "ShiftMaxRPM", { KeyName = "shiftmaxrpm", Edit = { type = "Int", order = 802, category = "Shifting Settings", min = 0, max = 10000, tooltip = "Shifts gear up at this RPM"  } } )
 
-	self:NetworkVar( "Float", "SteerPercent1", { KeyName = "steerpercent1", Edit = { type = "Float", order = 900, category = "Car Steering Settings", min = -1, max = 1, tooltip = "Percent of brake strength used to steer 1st wheel pair" } } )
-	self:NetworkVar( "Float", "SteerPercent2", { KeyName = "steerpercent2", Edit = { type = "Float", order = 901, category = "Car Steering Settings", min = -1, max = 1, tooltip = "Percent of brake strength used to steer 2nd wheel pair" } } )
-	self:NetworkVar( "Float", "SteerPercent3", { KeyName = "steerpercent3", Edit = { type = "Float", order = 902, category = "Car Steering Settings", min = -1, max = 1, tooltip = "Percent of brake strength used to steer 3rd wheel pair" } } )
-	self:NetworkVar( "Float", "SteerPercent4", { KeyName = "steerpercent4", Edit = { type = "Float", order = 903, category = "Car Steering Settings", min = -1, max = 1, tooltip = "Percent of brake strength used to steer 4th wheel pair" } } )
+	self:NetworkVar( "Float", "SteerPercent1", { KeyName = "steerpercent1", Edit = { type = "Float", order = 900, category = "Car Steering Settings", min = -1, max = 1, tooltip = "Percent of the steer angle used to steer 1st wheel pair" } } )
+	self:NetworkVar( "Float", "SteerPercent2", { KeyName = "steerpercent2", Edit = { type = "Float", order = 901, category = "Car Steering Settings", min = -1, max = 1, tooltip = "Percent of the steer angle used to steer 2nd wheel pair" } } )
+	self:NetworkVar( "Float", "SteerPercent3", { KeyName = "steerpercent3", Edit = { type = "Float", order = 902, category = "Car Steering Settings", min = -1, max = 1, tooltip = "Percent of the steer angle used to steer 3rd wheel pair" } } )
+	self:NetworkVar( "Float", "SteerPercent4", { KeyName = "steerpercent4", Edit = { type = "Float", order = 903, category = "Car Steering Settings", min = -1, max = 1, tooltip = "Percent of the steer angle used to steer 4th wheel pair" } } )
 	self:NetworkVar( "Float", "SteerRate", { KeyName = "steerrate", Edit = { type = "Float", order = 904, category = "Car Steering Settings", min = -45, max = 45, tooltip = "Speed wheels are steered at" } } )
-	self:NetworkVar( "Int", "SteerLow", { KeyName = "steerlow", Edit = { type = "Int", order = 905, category = "Car Steering Settings", min = 0, max = 1000, tooltip = "Steer angle at low speed, if 0 and SteerTop is 0 the brake strength is used instead" } } )
-	self:NetworkVar( "Int", "SteerTop", { KeyName = "steertop", Edit = { type = "Int", order = 906, category = "Car Steering Settings", min = 0, max = 1000, tooltip = "Steer angle at top speed, if 0 and SteerLow is 0 the brake strength is used instead" } } )
+	self:NetworkVar( "Int", "SteerLow", { KeyName = "steerlow", Edit = { type = "Int", order = 905, category = "Car Steering Settings", min = 0, max = 1000, tooltip = "Steer angle at low speed" } } )
+	self:NetworkVar( "Int", "SteerTop", { KeyName = "steertop", Edit = { type = "Int", order = 906, category = "Car Steering Settings", min = 0, max = 1000, tooltip = "Steer angle at top speed" } } )
 end
 
 -- Thank you march (https://github.com/marchc1/imagestickers/blob/master/lua/imagestickers/properties.lua)

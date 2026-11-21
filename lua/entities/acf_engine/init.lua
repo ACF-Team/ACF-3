@@ -19,7 +19,7 @@ local IsPhysObjValid	= ACF.Optimizations.IsPhysObjValid
 --===============================================================================================--
 do
 	ACF.RegisterClassLink("acf_engine", "acf_gearbox", function(Engine, Target)
-		if Engine.Gearboxes[Target] then return false, "This engine is already linked to this gearbox." end
+		if Engine:ACF_GetUserVar("Gearboxes")[Target] then return false, "This engine is already linked to this gearbox." end
 		if Engine:GetPos():DistToSqr(Target:GetPos()) > MaxDistance then
 			Mobility.LinkFailure.Distance(Engine, Target)
 
@@ -41,11 +41,10 @@ do
 
 		Link:SetOrigin(Engine.Out)
 		Link:SetTargetPos(Target.In)
-		Link:SetAxis(Direction)
 
 		Link.RopeLen = (OutPos - InPos):Length()
 
-		Engine.Gearboxes[Target] = Link
+		Engine:ACF_GetUserVar("Gearboxes")[Target] = Link
 		Target.Engines[Engine]   = true
 
 		Mobility.BrokenLinks.Clear(Engine, Target)
@@ -61,15 +60,15 @@ do
 	end)
 
 	ACF.RegisterClassUnlink("acf_engine", "acf_gearbox", function(Engine, Target)
-		if not Engine.Gearboxes[Target] then
+		if not Engine:ACF_GetUserVar("Gearboxes")[Target] then
 			return false, "This engine is not linked to this gearbox."
 		end
 
-		local Rope = Engine.Gearboxes[Target].Rope
+		local Rope = Engine:ACF_GetUserVar("Gearboxes")[Target].Rope
 
 		if IsValid(Rope) then Rope:Remove() end
 
-		Engine.Gearboxes[Target] = nil
+		Engine:ACF_GetUserVar("Gearboxes")[Target] = nil
 		Target.Engines[Engine]	 = nil
 
 		Engine:UpdateLinkHints()
@@ -141,7 +140,7 @@ local function BreakLink(Engine, Gearbox, Reason)
 end
 
 local function CheckGearboxes(Engine)
-	for Ent, Link in pairs(Engine.Gearboxes) do
+	for Ent, Link in pairs(Engine:ACF_GetUserVar("Gearboxes")) do
 		local OutPos = Engine:LocalToWorld(Engine.Out.Pos)
 		local InPos = Ent:LocalToWorld(Ent.In.Pos)
 
@@ -284,7 +283,6 @@ do -- Spawn and Update functions
 	function ENT:ACF_PreSpawn(_, _, _, ClientData)
 		self.ACF               = {}
 		self.Active            = false
-		self.Gearboxes         = {}
 		self.FuelTanks         = {}
 		self.LastThink         = 0
 		self.MassRatio         = 1
@@ -323,8 +321,8 @@ do -- Spawn and Update functions
 		UpdateEngine(self, self:GetEngine())
 
 		-- A reconfigure can invalidate existing links (no-op on a fresh spawn).
-		if next(self.Gearboxes) then
-			for Gearbox in pairs(self.Gearboxes) do
+		if next(self:ACF_GetUserVar("Gearboxes")) then
+			for Gearbox in pairs(self:ACF_GetUserVar("Gearboxes")) do
 				self:Unlink(Gearbox)
 				self:Link(Gearbox)
 			end
@@ -338,7 +336,7 @@ do -- Spawn and Update functions
 	end
 
 	ACF.RegisterLinkSource("acf_engine", "FuelTanks")
-	ACF.RegisterLinkSource("acf_engine", "Gearboxes")
+	ACF.RegisterLinkSource("acf_engine", "Gearboxes", nil, true)
 
 end
 
@@ -368,7 +366,7 @@ function ENT:Disable()
 end
 
 function ENT:UpdateLinkHints()
-	ACF.Hints.Set(self, "engine_no_gearbox", not next(self.Gearboxes))
+	ACF.Hints.Set(self, "engine_no_gearbox", not next(self:ACF_GetUserVar("Gearboxes")))
 end
 
 function ENT:UpdateOutputs(SelfTbl)
@@ -653,7 +651,7 @@ function ENT:CalcRPM(SelfTbl)
 
 	-- The resulting torque output would be 0 when there's no throttle anyways, so we'll just skip the calculations entirely
 	if Throttle ~= 0 then
-		local BoxesTbl = SelfTbl.Gearboxes
+		local BoxesTbl = SelfTbl.ACF_LiveData.Gearboxes
 
 		-- Get the requirements for torque for the gearboxes (Max clutch rating minus any wheels currently spinning faster than the Flywheel)
 		for Ent, Link in pairs(BoxesTbl) do
@@ -684,49 +682,6 @@ function ENT:CalcRPM(SelfTbl)
 	SelfTbl.UpdateOutputs(self, SelfTbl)
 end
 
-function ENT:PreEntityCopy()
-	if next(self.Gearboxes) then
-		local Gearboxes = {}
-
-		for Gearbox in pairs(self.Gearboxes) do
-			Gearboxes[#Gearboxes + 1] = Gearbox:EntIndex()
-		end
-
-		duplicator.StoreEntityModifier(self, "ACFGearboxes", Gearboxes)
-	end
-
-	-- AutoRegisterV2 wraps this as the original PreEntityCopy and handles the wire/base dupe info.
-end
-
-function ENT:PostEntityPaste(_, Ent, CreatedEntities)
-	local EntMods = Ent.EntityMods
-
-	-- Backwards compatibility
-	if EntMods.GearLink then
-		local Entities = EntMods.GearLink.entities
-
-		for _, EntID in ipairs(Entities) do
-			self:Link(CreatedEntities[EntID])
-		end
-
-		EntMods.GearLink = nil
-	end
-
-	-- Fuel tanks are found through shared parents now; drop old link data
-	EntMods.FuelLink     = nil
-	EntMods.ACFFuelTanks = nil
-
-	if EntMods.ACFGearboxes then
-		for _, EntID in ipairs(EntMods.ACFGearboxes) do
-			self:Link(CreatedEntities[EntID])
-		end
-
-		EntMods.ACFGearboxes = nil
-	end
-
-	-- AutoRegisterV2 wraps this as the original PostEntityPaste and handles the wire/base dupe info.
-end
-
 function ENT:GetCost()
 	local selftbl = self:GetTable()
 
@@ -745,10 +700,6 @@ function ENT:OnRemove(IsFullUpdate)
 	end
 
 	self:DestroySound()
-
-	for Gearbox in pairs(self.Gearboxes) do
-		self:Unlink(Gearbox)
-	end
 
 	Fuel.Leave(self)
 
@@ -773,8 +724,8 @@ do	-- NET SURFER 2.0
 			local FuelTanks  = {}
 			local Driveshaft = Entity.Out.Pos
 
-			if next(Entity.Gearboxes) then
-				for E in pairs(Entity.Gearboxes) do
+			if next(Entity:ACF_GetUserVar("Gearboxes")) then
+				for E in pairs(Entity:ACF_GetUserVar("Gearboxes")) do
 					Outputs[#Outputs + 1] = E:EntIndex()
 				end
 			end

@@ -272,11 +272,6 @@ function ACF.FindWeaponrySource(ID)
 	end
 end
 
--- changes here will be automatically reflected in the armor properties tool
-function ACF.CalcArmor(Area, Ductility, Mass)
-	return (Mass * 1000 / Area / 0.78) / (1 + Ductility) ^ 0.5 * ACF.ArmorMod
-end
-
 local BlacklistCount = 0
 -- This is suboptimal. It works similarly to how engines do iirc for performance data, but still...
 -- TODO: Redo this as to be dynamic? Is that possible?
@@ -370,6 +365,217 @@ end
 --- Suffix of the network keys a crate's round data goes under, empty for its first kind of round
 function ACF.GetCrateNWSuffix(Profile)
 	return (Profile or 0) > 0 and "#" .. Profile or ""
+end
+
+do -- MARK: Mixed crates
+	local function GetLength(BulletData)
+		return BulletData.RoundLength or (BulletData.PropLength + BulletData.ProjLength)
+	end
+
+	-- Fields every kind has the same value for. Type specific ones like HEAT's standoff drop out
+	local function GetSharedFields(List)
+		local Shared = {}
+
+		for Key, Value in pairs(List[1]) do
+			local Same = true
+
+			for Index = 2, #List do
+				if List[Index][Key] ~= Value then Same = false break end
+			end
+
+			if Same then Shared[Key] = Value end
+		end
+
+		return Shared
+	end
+
+	--- Bullet data a crate's slots are sized for, the longest and widest of the kinds it holds.
+	--- Has what every kind shares and their biggest RoundLength, CaseScale and CaseDiameter, nothing type specific
+	function ACF.GetSlotBulletData(List)
+		local First = List[1]
+		local Slot  = GetSharedFields(List)
+
+		-- The crate's, not the kind's
+		Slot.Caliber     = First.Caliber
+		Slot.TwoPiece    = First.TwoPiece
+		Slot.CaseScale   = First.CaseScale
+		Slot.RoundLength = 0
+
+		for _, BulletData in ipairs(List) do
+			Slot.RoundLength = math.max(Slot.RoundLength, GetLength(BulletData))
+
+			-- No CaseScale means the class' widest case
+			if Slot.CaseScale and BulletData.CaseScale then
+				Slot.CaseScale = math.max(Slot.CaseScale, BulletData.CaseScale)
+			else
+				Slot.CaseScale = nil
+			end
+
+			if BulletData.CaseDiameter then
+				Slot.CaseDiameter = math.max(Slot.CaseDiameter or 0, BulletData.CaseDiameter)
+			end
+		end
+
+		return Slot
+	end
+
+	--- Scales round counts to fill Capacity exactly, keeping their proportions. The last one takes what's left
+	function ACF.FitRoundCounts(Counts, Capacity)
+		local Fitted, Total = {}, 0
+
+		for Index, Count in ipairs(Counts) do
+			Fitted[Index] = math.max(0, math.floor(Count))
+			Total         = Total + Fitted[Index]
+		end
+
+		if Total > 0 and Total ~= Capacity then
+			local Left = Capacity
+
+			for Index, Count in ipairs(Fitted) do
+				local Scaled = math.min(Left, math.Round(Count * Capacity / Total))
+
+				Fitted[Index] = Index == #Fitted and Left or Scaled
+				Left          = Left - Fitted[Index]
+			end
+		end
+
+		return Fitted
+	end
+
+	--- Sets one round count to an exact value, the others split what's left of Capacity in their proportions.
+	--- Every count keeps at least one round
+	function ACF.SetRoundCount(Counts, Index, Value, Capacity)
+		local Amount = #Counts
+		local Result = {}
+
+		if Amount == 1 then return { Capacity } end
+
+		Value = math.Clamp(math.Round(Value), 1, math.max(1, Capacity - (Amount - 1)))
+
+		local Left, Weight = math.max(0, Capacity - Value - (Amount - 1)), 0
+
+		for Other, Count in ipairs(Counts) do
+			if Other ~= Index then Weight = Weight + math.max(0, Count) end
+		end
+
+		-- Largest remainder, so the counts add up exactly
+		local Remainders = {}
+
+		for Other, Count in ipairs(Counts) do
+			if Other == Index then
+				Result[Other] = Value
+			else
+				local Share = Weight > 0 and Left * math.max(0, Count) / Weight or Left / (Amount - 1)
+
+				Result[Other]     = 1 + math.floor(Share)
+				Remainders[Other] = Share - math.floor(Share)
+			end
+		end
+
+		local Total = 0
+
+		for _, Count in ipairs(Result) do Total = Total + Count end
+
+		while Total < Capacity and next(Remainders) do
+			local Best
+
+			for Other, Remainder in pairs(Remainders) do
+				if not Best or Remainder > Remainders[Best] then Best = Other end
+			end
+
+			Result[Best]     = Result[Best] + 1
+			Remainders[Best] = nil
+			Total            = Total + 1
+		end
+
+		return Result
+	end
+
+	local KindColors = {}
+
+	--- Color a kind of round is shown in, by its position in the crate's list
+	function ACF.GetRoundKindColor(Index)
+		local KindColor = KindColors[Index]
+
+		if not KindColor then
+			KindColor = HSVToColor(((Index - 1) * 72 + 120) % 360, 0.6, 0.9)
+			KindColors[Index] = KindColor
+		end
+
+		return KindColor
+	end
+
+	function ACF.PackColor(Col)
+		return bit.lshift(Col.r, 16) + bit.lshift(Col.g, 8) + Col.b
+	end
+
+	function ACF.UnpackColor(Packed)
+		return Color(bit.band(bit.rshift(Packed, 16), 255), bit.band(bit.rshift(Packed, 8), 255), bit.band(Packed, 255))
+	end
+
+	-- The color each one follows, the crate's own if it isn't here
+	local InheritedColor = { Smoke = "Tracer" }
+
+	--- "Tracer" or "Smoke" color of a crate's kind of round, and whether the kind overrides it
+	function ACF.GetKindColor(Entity, Profile, Which)
+		local Packed = Entity:GetNW2Int(Which .. "Color" .. ACF.GetCrateNWSuffix(Profile), -1)
+
+		if Packed >= 0 then return ACF.UnpackColor(Packed), true end
+
+		local Inherited = InheritedColor[Which]
+
+		return Inherited and ACF.GetKindColor(Entity, Profile, Inherited) or Entity:GetColor(), false
+	end
+
+	--- Tracer color of a crate's kind of round, the crate's own color unless the kind overrides it
+	function ACF.GetTracerColor(Entity, Profile)
+		local Col = ACF.GetKindColor(Entity, Profile, "Tracer")
+
+		return Col
+	end
+
+	--- Smoke color of a crate's kind of round, its tracer color unless the kind overrides it
+	function ACF.GetSmokeColor(Entity, Profile)
+		local Col = ACF.GetKindColor(Entity, Profile, "Smoke")
+
+		return Col
+	end
+
+	--- What a crate calls each kind of round. Custom names stay as they are, the same auto name twice gets a number
+	function ACF.NameRoundKinds(CustomNames, AutoNames)
+		local Names, Seen = {}, {}
+
+		for Index, AutoName in ipairs(AutoNames) do
+			local Custom = string.Trim(CustomNames[Index] or "")
+
+			if Custom ~= "" then
+				Names[Index] = Custom
+			else
+				local Count = (Seen[AutoName] or 0) + 1
+
+				Seen[AutoName] = Count
+				Names[Index]   = Count > 1 and AutoName .. " (" .. Count .. ")" or AutoName
+			end
+		end
+
+		return Names
+	end
+
+	--- Whether an ammo type has a "Tracer" or "Smoke" color you can pick
+	function ACF.HasKindColor(Type, Which)
+		return Type ~= nil and Classes.GetTypeFieldByName(Type, Which .. "Color") ~= nil
+	end
+
+	function ACF.HasSmokeColor(Type)
+		return ACF.HasKindColor(Type, "Smoke")
+	end
+
+	--- Same as ACF.HasSmokeColor, for a crate's kind of round
+	function ACF.KindHasSmokeColor(Entity, Profile)
+		local Name = Entity:GetNW2String("AmmoType" .. ACF.GetCrateNWSuffix(Profile), "")
+
+		return ACF.HasSmokeColor(Classes.GetTypeByName(Name))
+	end
 end
 
 do -- MARK: Ammo capacity

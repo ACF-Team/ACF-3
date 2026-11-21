@@ -6,9 +6,11 @@ ENT.PluralName    = "ACF Turret Controllers"
 
 ACF.Entities.AutoRegister(2026091001, function()
 	MENU_FIELD("ACF.Turrets.Controller", "Controller", {
+		Title                     = "#acf.menu.fields.acf_turret_controller.controller",
 		InstantiateTypeForDefault = "ACF.Turrets.Controller.Lightweight",
 		OnlyAllowSubtypes         = true,
 	})
+	LINKED_ENTITY_FIELD("Crew", {AcceptableClasses = {acf_crew = true}})
 end, "Turret Controller", "Turret Controllers")
 
 ENT.ACF_StaticWireOutputs = {

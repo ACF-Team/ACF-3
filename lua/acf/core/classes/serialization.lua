@@ -23,9 +23,10 @@ end
 
 local function ValidateNumericalPiece(Value, Default, Min, Max, Decimals)
     local N = tonumber(Value)
-    if N == nil then return Default end
+    if N == nil or N ~= N then return Default end
     if Min ~= nil then N = math.max(N, Min) end
     if Max ~= nil then N = math.min(N, Max) end
+    if N == math.huge or N == -math.huge then return Default end
     if Decimals ~= nil then N = math.Round(N, Decimals) end
     return N
 end
@@ -70,10 +71,33 @@ local function ValidateBoolean(Value, Options)
     return Options.Default
 end
 
+-- MaxLength counts characters, not bytes
+local function LimitString(Value, Options)
+    if Options.SingleLine then Value = Value:gsub("%c", "") end
+
+    local MaxLength = Options.MaxLength
+
+    if not MaxLength or #Value <= MaxLength then return Value end
+    if not utf8.len(Value) then return Value:sub(1, MaxLength) end -- not valid utf8
+
+    -- gmod's utf8.offset doesn't count like Lua 5.3's
+    local Count = 0
+
+    for Position in utf8.codes(Value) do
+        Count = Count + 1
+
+        if Count > MaxLength then return Value:sub(1, Position - 1) end
+    end
+
+    return Value
+end
+
+Serialization.LimitString = LimitString
+
 local function ValidateString(Value, Options)
     local ValueType = type(Value)
-    if ValueType == "string" then return Value end
-    if ValueType == "number" or ValueType == "boolean" then return tostring(Value) end
+    if ValueType == "string" then return LimitString(Value, Options) end
+    if ValueType == "number" or ValueType == "boolean" then return LimitString(tostring(Value), Options) end
     return Options.Default
 end
 
@@ -372,6 +396,36 @@ function Serialization.DeserializePartial(Class, Data)
     return Instance
 end
 
+local function LinkResolvedEntity(Entity, Target, Options)
+    local Resolved = ValidateEntity(Target, Options)
+    local Linked, Reason = false, "Attempted to link to an invalid entity."
+
+    if IsValid(Resolved) then Linked, Reason = Entity:Link(Resolved) end
+
+    if not Linked and Options.WarnOnLinkFail then
+        ACF.Utilities.Notify.EntityWarning(Entity, (Entity.PrintName or Entity:GetClass()) .. ":PostEntityPaste failure", Reason)
+    end
+end
+
+function Serialization.UnlinkEntities(Class, Instance, Entity)
+    if not Instance then return end
+
+    for _, Field in ipairs(Classes.GetTypeFields(Class)) do
+        if Field.Linked then
+            local Value = Instance[Field.Name]
+            local _, IsArray = ParseType(Field.Type)
+
+            if not IsArray then
+                if IsValid(Value) then Entity:Unlink(Value) end
+            elseif type(Value) == "table" then
+                for Target in pairs(Value) do
+                    if IsValid(Target) then Entity:Unlink(Target) end
+                end
+            end
+        end
+    end
+end
+
 function Serialization.ResolveEntities(Class, Instance, Data, CreatedEntities, Entity)
     if not Instance or not Data then return end
 
@@ -386,13 +440,11 @@ function Serialization.ResolveEntities(Class, Instance, Data, CreatedEntities, E
                 if IsArray then
                     if type(Raw) == "table" then
                         for _, Idx in ipairs(Raw) do
-                            local Ent = ValidateEntity(CreatedEntities[Idx], Options)
-                            if IsValid(Ent) then Entity:Link(Ent) end
+                            LinkResolvedEntity(Entity, CreatedEntities[Idx], Options)
                         end
                     end
-                else
-                    local Ent = ValidateEntity(CreatedEntities[Raw], Options)
-                    if IsValid(Ent) then Entity:Link(Ent) end
+                elseif Raw ~= nil then
+                    LinkResolvedEntity(Entity, CreatedEntities[Raw], Options)
                 end
             elseif IsArray then
                 local Arr = {}
@@ -404,7 +456,12 @@ function Serialization.ResolveEntities(Class, Instance, Data, CreatedEntities, E
                 end
                 Instance[Field.Name] = Arr
             else
-                Instance[Field.Name] = ValidateEntity(CreatedEntities[Raw], Options)
+                local Resolved = ValidateEntity(CreatedEntities[Raw], Options)
+
+                -- Dont wipe something the entity made for itself while spawning
+                if IsValid(Resolved) or not IsValid(Instance[Field.Name]) then
+                    Instance[Field.Name] = Resolved
+                end
             end
         elseif GetTypeByName(ElemType) then
             if IsArray then

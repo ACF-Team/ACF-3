@@ -15,14 +15,15 @@ ACF.Menu.IPTYPE_TEXT  = IPTYPE_TEXT
 
 -- Maps an action Bind token to the key/mouse combo shown in its instruction line.
 local BIND_COMBO = {
-	["left"]         = { "lmb" },
-	["right"]        = { "rmb" },
-	["reload"]       = { "R" },
-	["shift+left"]   = { "SHIFT", "lmb" },
-	["alt+left"]     = { "ALT", "lmb" },
-	["shift+right"]  = { "SHIFT", "rmb" },
-	["r+right"]      = { "R", "rmb" },
-	["shift+reload"] = { "SHIFT", "R" },
+	["left"]           = { "lmb" },
+	["right"]          = { "rmb" },
+	["reload"]         = { "R" },
+	["shift+left"]     = { "SHIFT", "lmb" },
+	["alt+left"]       = { "ALT", "lmb" },
+	["alt+shift+left"] = { "ALT", "SHIFT", "lmb" },
+	["shift+right"]    = { "SHIFT", "rmb" },
+	["r+right"]        = { "R", "rmb" },
+	["shift+reload"]   = { "SHIFT", "R" },
 }
 
 surface.CreateFont("ACF.ToolMenu.Key", { font = "Tahoma", size = 13, weight = 900 })

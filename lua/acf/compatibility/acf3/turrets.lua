@@ -63,3 +63,18 @@ Entities.RegisterCompatPatch("acf_turret",          2026061701, MakeConverter("T
 Entities.RegisterCompatPatch("acf_turret_motor",    2026061701, MakeConverter("Motor",    "ACF.Turrets.Motor.Electric",   {"CompSize", "Teeth"}))
 Entities.RegisterCompatPatch("acf_turret_gyro",     2026061701, MakeConverter("Gyro",     "ACF.Turrets.Gyro.Single",      {}))
 Entities.RegisterCompatPatch("acf_turret_computer", 2026061701, MakeConverter("Computer", "ACF.Turrets.Computer.Direct",   {}))
+
+Entities.RegisterCompatPatch("acf_turret", 2026111801, function(Data)
+	Entities.MoveLinkModToUserData(Data, "ACFMotor", "Motor", true)
+	Entities.MoveLinkModToUserData(Data, "ACFGyro", "Gyro", true)
+	Entities.MoveLinkModToUserData(Data, "ACFRadar", "Radar", true)
+	Entities.MoveLinkModToUserData(Data, "ACFLightweightControllers", "LightweightControllers")
+end)
+
+Entities.RegisterCompatPatch("acf_turret_computer", 2026111801, function(Data)
+	Entities.MoveLinkModToUserData(Data, "ACFGun", "Gun", true)
+end)
+
+Entities.RegisterCompatPatch("acf_turret_controller", 2026111801, function(Data)
+	Entities.MoveLinkModToUserData(Data, "ACFCrew", "Crew", true)
+end)

@@ -187,7 +187,7 @@ do
 
             Convex.Material    = ArmorType.ID
             Convex.Mass        = Convex.Volume * ArmorType.Density * GCmToKgIn -- Volume is in^3, Density is g/cm^3
-            Convex.MaxHealth   = Convex.Volume * ArmorType.HealthMul * ACF.HealthCoef * ArmorHealthScale -- HealthMul bakes in material density
+            Convex.MaxHealth   = Convex.Volume * ArmorType.HealthMul * ArmorHealthScale -- HealthMul bakes in material density
             Convex.Health      = Convex.MaxHealth * HealthRatio
             Convex.IsExplosive = ArmorType.IsExplosive or nil -- Reactive armor; see Ballistics.DoReactiveArmor
 
@@ -588,7 +588,7 @@ local function BuildGapHit(Left, Right, Source, Direction)
     return {
         Entity      = Entity,
         ConvexID    = ConvexID,
-        GeoThick    = (Right.T - Left.T) * 25.4 * ACF.ArmorCoef, -- inches to mm
+        GeoThick    = (Right.T - Left.T) * 25.4, -- inches to mm
         ArmorType   = ArmorType,
         HitAngle    = math.deg(math.acos(math.min(1, math.max(-1, -Direction:Dot(Left.Normal))))),
         EntryPos    = Left.Pos,

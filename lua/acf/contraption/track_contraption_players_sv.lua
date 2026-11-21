@@ -14,7 +14,7 @@ local function ResetContraptionTimes(Contraption)
     end
 end
 
-ACF.ContraptionQueryTimes = ContraptionQueryTimes or {}
+ACF.ContraptionQueryTimes = ACF.ContraptionQueryTimes or {}
 local ContraptionQueryTimes = ACF.ContraptionQueryTimes
 
 function ResetTime(Entity)

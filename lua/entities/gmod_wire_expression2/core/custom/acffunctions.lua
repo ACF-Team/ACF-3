@@ -394,9 +394,9 @@ e2function array entity:acfLinks()
 end
 
 --allows e2 to perform ACF links
-e2function number entity:acfLinkTo(entity Target, number Notify)
+e2function number entity:acfLinkTo(entity Target, number ShouldNotify)
 	if not ACF.AllowDynamicLinking then
-		if Notify ~= 0 then
+		if ShouldNotify ~= 0 then
 			Notify.EntityWarningToPlayer(Target, self.player, "Dynamic linking has been disabled on this server.")
 		end
 
@@ -406,7 +406,7 @@ e2function number entity:acfLinkTo(entity Target, number Notify)
 	if not validPhysics(this) then return 0 end
 	if not validPhysics(Target) then return 0 end
 	if not (isOwner(self, this) and isOwner(self, Target)) then
-		if Notify ~= 0 then
+		if ShouldNotify ~= 0 then
 			Notify.EntityWarningToPlayer(Target, self.player, "Must be called on entities you own.")
 		end
 
@@ -414,7 +414,7 @@ e2function number entity:acfLinkTo(entity Target, number Notify)
 	end
 
 	if not this.Link then
-		if Notify ~= 0 then
+		if ShouldNotify ~= 0 then
 			Notify.EntityWarningToPlayer(Target, self.player, "This entity is not linkable.")
 		end
 
@@ -423,7 +423,7 @@ e2function number entity:acfLinkTo(entity Target, number Notify)
 
 	local Success, Message = this:Link(Target, true)
 
-	if Notify ~= 0 then
+	if ShouldNotify ~= 0 then
 		if Success then
 			Notify.EntityNoticeToPlayer(Target, self.player, Message)
 		else
@@ -435,11 +435,11 @@ e2function number entity:acfLinkTo(entity Target, number Notify)
 end
 
 --allows e2 to perform ACF unlinks
-e2function number entity:acfUnlinkFrom(entity Target, number Notify)
+e2function number entity:acfUnlinkFrom(entity Target, number ShouldNotify)
 	if not validPhysics(this) then return 0 end
 	if not validPhysics(Target) then return 0 end
 	if not (isOwner(self, this) and isOwner(self, Target)) then
-		if Notify ~= 0 then
+		if ShouldNotify ~= 0 then
 			Notify.EntityWarningToPlayer(Target, self.player, "Must be called on entities you own.")
 		end
 
@@ -447,7 +447,7 @@ e2function number entity:acfUnlinkFrom(entity Target, number Notify)
 	end
 
 	if not this.Unlink then
-		if Notify ~= 0 then
+		if ShouldNotify ~= 0 then
 			Notify.EntityWarningToPlayer(Target, self.player, "This entity is not linkable.")
 		end
 
@@ -456,7 +456,7 @@ e2function number entity:acfUnlinkFrom(entity Target, number Notify)
 
 	local Success, Message = this:Unlink(Target)
 
-	if Notify > 0 then
+	if ShouldNotify > 0 then
 		if Success then
 			Notify.EntityNoticeToPlayer(Target, self.player, Message)
 		else
@@ -595,6 +595,7 @@ end
 e2function number entity:acfPowerRPM(number N)
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
+	if not this.IsACFEngine then return 0 end
 
 	local Idle = this.IdleRPM 
 	local Redline = this.LimitRPM
@@ -612,6 +613,7 @@ end
 e2function number entity:acfTorqueRPM(number N)
 	if not IsACFEntity(this) then return 0 end
 	if RestrictInfo(self, this) then return 0 end
+	if not this.IsACFEngine then return 0 end
 
 	local Idle = this.IdleRPM 
 	local Redline = this.LimitRPM
@@ -1420,7 +1422,9 @@ e2function entity entity:acfGetTurretGyro()
 	if not this.IsACFTurret then return end
 	if RestrictInfo(self, this) then return end
 
-	return IsValid(this.Gyro) and this.Gyro or nil
+	local Gyro = this:ACF_GetUserVar("Gyro")
+
+	return IsValid(Gyro) and Gyro or nil
 end
 
 -- Returns the turret's linked gyroscope
@@ -1428,7 +1432,9 @@ e2function entity entity:acfGetTurretMotor()
 	if not this.IsACFTurret then return end
 	if RestrictInfo(self, this) then return end
 
-	return IsValid(this.Motor) and this.Motor or nil
+	local Motor = this:ACF_GetUserVar("Motor")
+
+	return IsValid(Motor) and Motor or nil
 end
 
 -- Returns the turret's loaded mass, in kg
@@ -1526,13 +1532,17 @@ e2function table entity:acfGetTurretData()
 
 	ret.size = 12
 
-	if IsValid(this.Motor) then
-		Data.Motor = this.Motor
+	local Motor = this:ACF_GetUserVar("Motor")
+
+	if IsValid(Motor) then
+		Data.Motor = Motor
 		ret.size = ret.size + 1
 	end
 
-	if IsValid(this.Gyro) then
-		Data.Gyro = this.Gyro
+	local Gyro = this:ACF_GetUserVar("Gyro")
+
+	if IsValid(Gyro) then
+		Data.Gyro = Gyro
 		ret.size = ret.size + 1
 	end
 

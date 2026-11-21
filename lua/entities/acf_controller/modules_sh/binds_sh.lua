@@ -21,21 +21,76 @@ ACF.ControllerBinds = {
 ACF.CONTROLLER_BIND_INDEX_BITS = 5
 assert(#ACF.ControllerBinds <= 2 ^ ACF.CONTROLLER_BIND_INDEX_BITS - 1, "ACF.ControllerBinds has outgrown its networked index bit width")
 
+-- Held actions ride in the usercmd's MouseX, tagged to tell them apart from real mouse movement
+local CMD_TAG         = 0x5000
+local CMD_TAG_MASK    = 0xF000
+local CMD_ACTION_MASK = 0x0FFF
+
+local CmdBinds = {}
+
 for Index, Bind in ipairs(ACF.ControllerBinds) do
 	Bind.Index = Index
+
+	if not Bind.Clientside then
+		Bind.CmdBit = bit.lshift(1, #CmdBinds)
+		CmdBinds[#CmdBinds + 1] = Bind
+	end
 end
+
+assert(#CmdBinds <= 12, "ACF.ControllerBinds has outgrown the usercmd action bits")
 
 if SERVER then
 	local RecacheActionState = ENT.RecacheActionState
 	local Handlers = {} -- ActionID -> Handler(Entity, SelfTbl), registered by the module owning the action
+	local Drivers  = setmetatable({}, {__mode = "k"}) -- Player -> the controller they're driving
 
 	--- Registers a handler run on an action's down edge, held actions use ENT.GetBindState instead.
 	function ENT.AddBindHandler(ActionID, Handler)
 		Handlers[ActionID] = Handler
 	end
 
-	-- Rebound keyboard actions from the driver's client, sent only when a combo's state actually changes
+	function ENT.TrackDriver(Ply, Entity)
+		Drivers[Ply] = Entity
+	end
+
+	local function SetAction(Entity, SelfTbl, Bind, Down)
+		if not RecacheActionState(SelfTbl, Bind.ID, Down) then return end
+		if not Down then return end
+
+		local Handler = Handlers[Bind.ID]
+		if Handler then Handler(Entity, SelfTbl) end
+	end
+
+	hook.Add("StartCommand", "ACFControllerActions", function(Ply, Cmd)
+		local Entity = Drivers[Ply]
+		if not Entity then return end
+
+		if not IsValid(Entity) or Entity.Driver ~= Ply then
+			Drivers[Ply] = nil
+			return
+		end
+
+		local Value = Cmd:GetMouseX()
+		if bit.band(Value, CMD_TAG_MASK) ~= CMD_TAG then return end
+
+		local SelfTbl = Entity:GetTable()
+		local Mask    = bit.band(Value, CMD_ACTION_MASK)
+		local Changed = bit.bxor(Mask, SelfTbl.ActionMask or 0)
+		if Changed == 0 then return end
+
+		SelfTbl.ActionMask = Mask
+
+		for _, Bind in ipairs(CmdBinds) do
+			if bit.band(Changed, Bind.CmdBit) ~= 0 then
+				SetAction(Entity, SelfTbl, Bind, bit.band(Mask, Bind.CmdBit) ~= 0)
+			end
+		end
+	end)
+
+	-- Singleplayer only
 	net.Receive("ACF_Controller_Action", function(_, ply)
+		if not game.SinglePlayer() then return end
+
 		local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
 		local Index = net.ReadUInt(ACF.CONTROLLER_BIND_INDEX_BITS)
 		local Down = net.ReadBool()
@@ -47,12 +102,7 @@ if SERVER then
 		local Bind = ACF.ControllerBinds[Index]
 		if not Bind then return end
 
-		local SelfTbl = Entity:GetTable()
-		if not RecacheActionState(SelfTbl, Bind.ID, Down) then return end
-		if not Down then return end
-
-		local Handler = Handlers[Bind.ID]
-		if Handler then Handler(Entity, SelfTbl) end
+		SetAction(Entity, Entity:GetTable(), Bind, Down)
 	end)
 end
 
@@ -96,11 +146,14 @@ if CLIENT then
 		local Entries = {}  -- One per bind with its combo and state, largest combo first
 		local Affected = {} -- BUTTON_CODE -> the only entries a change of it can affect, in Entries order
 		local Held = {}     -- BUTTON_CODE -> true while down, tracked from button events
+		local ActionMask  = 0
+		local PressedMask = 0 -- Presses since the last usercmd, a tap can start and end between two
 
 		local function ReloadBinds()
 			local Overrides = ACF.GetSavedControllerBinds() -- Via the global, this file is included more than once
 
 			Entries, Affected = {}, {}
+			ActionMask, PressedMask = 0, 0
 			for _, Bind in ipairs(ACF.ControllerBinds) do
 				Entries[#Entries + 1] = {Bind = Bind, Codes = Overrides[Bind.ID] or Bind.Default, Supersets = {}, Down = false}
 			end
@@ -148,12 +201,17 @@ if CLIENT then
 
 					if Bind.Clientside then
 						hook.Run("ACF_ControllerBindChanged", Bind.ID, Down)
-					else
+					elseif game.SinglePlayer() then
 						net.Start("ACF_Controller_Action", true)
 						net.WriteUInt(State.MyController:EntIndex(), MAX_EDICT_BITS)
 						net.WriteUInt(Bind.Index, ACF.CONTROLLER_BIND_INDEX_BITS)
 						net.WriteBool(Down)
 						net.SendToServer()
+					elseif Down then
+						ActionMask  = bit.bor(ActionMask, Bind.CmdBit)
+						PressedMask = bit.bor(PressedMask, Bind.CmdBit)
+					else
+						ActionMask = bit.band(ActionMask, bit.bnot(Bind.CmdBit))
 					end
 				end
 			end
@@ -182,6 +240,15 @@ if CLIENT then
 			OnButtonChanged(Code, false)
 		end)
 
+		hook.Add("CreateMove", "ACFControllerActions", function(Cmd)
+			if Cmd:CommandNumber() == 0 then return end
+			if not IsValid(State.MyController) then return end
+			if game.SinglePlayer() then return end
+
+			Cmd:SetMouseX(bit.bor(CMD_TAG, ActionMask, PressedMask))
+			PressedMask = 0
+		end)
+
 		-- Singleplayer fallback, PlayerButtonDown/Up don't fire client side there
 		net.Receive("ACF_Controller_Button", function()
 			OnButtonChanged(net.ReadUInt(8), net.ReadBool())
@@ -190,6 +257,7 @@ if CLIENT then
 		-- Reseed on sitting down, for keys already held and because the server clears its action states then
 		return function()
 			Held = {}
+			ActionMask, PressedMask = 0, 0
 
 			for _, Entry in ipairs(Entries) do
 				Entry.Down = false

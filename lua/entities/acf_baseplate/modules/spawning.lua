@@ -17,8 +17,8 @@ function ENT:ACF_PreSpawn()
 end
 
 function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
-	local EntMods = ClientData.EntityMods
-	if EntMods and EntMods.mass then
+	local EntMods = ACF.DupeTable(ClientData.EntityMods)
+	if EntMods.mass then
 		ACF.Contraption.SetMass(self, self.ACF.Mass or 1)
 	else
 		ACF.Contraption.SetMass(self, 1000)
@@ -94,27 +94,19 @@ function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 	end)
 end
 
-function ENT:PreEntityCopy()
-	if IsValid(self.Pod) then
-		duplicator.StoreEntityModifier(self, "LuaSeatID", {self.Pod:EntIndex()})
-	end
-end
+function ENT:PostEntityPaste()
+	if not self:ACF_GetUserVar("AlreadyHasSeat") then return end
 
-function ENT:PostEntityPaste(_, _, CreatedEntities)
-	-- Pod should be valid since this runs after all entities are created
-	local LuaSeatID = self.EntityMods
-	LuaSeatID = LuaSeatID and LuaSeatID.LuaSeatID
-	LuaSeatID = LuaSeatID and LuaSeatID[1]
+	local Owner = self:CPPIGetOwner()
+	local Pod   = self:ACF_GetUserVar("Seat")
 
-	if LuaSeatID then
-		self.Pod = CreatedEntities[LuaSeatID]
-		if not IsValid(self.Pod) then
-			Notify.EntityWarning(self, "The baseplate pod did not get duplicated correctly", "You may have to relink pod controllers, etc.")
-			local Pod = ACF.GenerateLuaSeat(self, self:CPPIGetOwner(), self:GetPos(), self:GetAngles(), self:GetModel(), true)
-			if IsValid(Pod) then self.Pod = Pod end
-		end
-		self:ConfigureLuaSeat(self.Pod, self:CPPIGetOwner())
+	if not IsValid(Pod) then
+		Notify.EntityWarning(self, "The baseplate pod did not get duplicated correctly", "You may have to relink pod controllers, etc.")
+		Pod = ACF.GenerateLuaSeat(self, Owner, self:GetPos(), self:GetAngles(), self:GetModel(), true)
+		if not IsValid(Pod) then return end
 	end
+
+	self:ConfigureLuaSeat(Pod, Owner)
 end
 
 function ENT:ACF_PostMenuSpawn()

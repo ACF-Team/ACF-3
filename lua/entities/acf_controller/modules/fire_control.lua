@@ -1,15 +1,10 @@
 local RecacheBindOutput = ENT.RecacheBindOutput
-local GetBindState = ENT.GetBindState
+local ConsumeBindState = ENT.ConsumeBindState
 
 local NUM_WEAPONS = ENT.NUM_WEAPONS
 
 local function Init(Entity)
-	Entity.Turrets          = {}    -- Turrets, both horizontal and vertical
-	Entity.Guns             = {}    -- All guns
-	Entity.Racks            = {}    -- All racks
 	Entity.Weapons          = {}    -- All guns and racks together
-	Entity.GuidanceComputer = nil   -- The guidance computer, if any
-	Entity.TurretComputer   = nil   -- The turret computer, if any
 	Entity.FireGroups       = {}    -- [1]/[2]/[3]: guns/racks sharing Gun1's/Gun2's/Gun3's ShortName
 	Entity.WeaponGroups     = {}    -- ShortName -> Set of every linked gun/rack of that type
 	Entity.GunsSmoke        = {}    -- Smoke and flare launchers
@@ -51,7 +46,7 @@ do
 
 		-- Either way, each slot's group is everything sharing that slot's weapon identity
 		for i = 1, NUM_WEAPONS do
-			local Gun = self["GetGun" .. i](self)
+			local Gun = self:GetWeapon(i)
 			self.FireGroups[i] = IsValid(Gun) and self.WeaponGroups[Gun.Name] or {}
 		end
 	end
@@ -95,7 +90,7 @@ do
 	end
 
 	function ENT:AnalyzeGuns(Gun)
-		self.Guns[Gun] = true
+		self:ACF_GetUserVar("Guns")[Gun] = true
 		self.Weapons[Gun] = true
 
 		if IsSmoke(Gun) then
@@ -110,7 +105,7 @@ do
 	end
 
 	function ENT:AnalyzeRacks(Rack)
-		self.Racks[Rack] = true
+		self:ACF_GetUserVar("Racks")[Rack] = true
 		self.Weapons[Rack] = true
 
 		AnalyzeWeapon(self, Rack)
@@ -122,7 +117,7 @@ do
 
 		for Key, Group in pairs(self.WeaponGroups) do
 			for Weapon in pairs(Group) do
-				if IsValid(Weapon) and (Weapon.Name ~= Key or self.Guns[Weapon] and IsSmoke(Weapon)) then
+				if IsValid(Weapon) and (Weapon.Name ~= Key or self:ACF_GetUserVar("Guns")[Weapon] and IsSmoke(Weapon)) then
 					Group[Weapon] = nil
 					Moved = Moved or {}
 					Moved[#Moved + 1] = Weapon
@@ -145,7 +140,7 @@ do
 		if not Moved then return end
 
 		for _, Weapon in ipairs(Moved) do
-			if self.Guns[Weapon] then self:AnalyzeGuns(Weapon) else self:AnalyzeRacks(Weapon) end
+			if self:ACF_GetUserVar("Guns")[Weapon] then self:AnalyzeGuns(Weapon) else self:AnalyzeRacks(Weapon) end
 		end
 
 		RefreshFireGroups(self)
@@ -195,9 +190,12 @@ do
 	end
 
 	function ENT:ProcessGuns(SelfTbl)
+		-- Consumed even with firing disabled, or old presses would fire once it's enabled
+		local Fires = {ConsumeBindState(SelfTbl, "Fire1"), ConsumeBindState(SelfTbl, "Fire2"), ConsumeBindState(SelfTbl, "Fire3")}
+		local FireSmoke = ConsumeBindState(SelfTbl, "FireSmoke")
+
 		if SelfTbl:GetDisableFiring() then return end
 
-		local Fires = {GetBindState(SelfTbl, "Fire1"), GetBindState(SelfTbl, "Fire2"), GetBindState(SelfTbl, "Fire3")}
 		local Delays = {SelfTbl:GetFire1Delay(), SelfTbl:GetFire2Delay(), SelfTbl:GetFire3Delay()}
 
 		for i = 1, NUM_WEAPONS do
@@ -206,13 +204,13 @@ do
 		end
 
 		local SmokeDelay = SelfTbl:GetSmokeDelay()
-		HandleFire(self, SelfTbl.FireState.Smoke, GetBindState(SelfTbl, "FireSmoke"), SelfTbl.GunsSmoke, SmokeDelay > 0 and SmokeDelay or nil)
+		HandleFire(self, SelfTbl.FireState.Smoke, FireSmoke, SelfTbl.GunsSmoke, SmokeDelay > 0 and SmokeDelay or nil)
 	end
 
 	function ENT:ToggleTurretLock(SelfTbl)
 		if self:GetDisableTurretLock() then return end
 
-		local Turrets = SelfTbl.Turrets
+		local Turrets = SelfTbl.ACF_LiveData.Turrets
 		SelfTbl.TurretLocked = not SelfTbl.TurretLocked
 		RecacheBindOutput(self, SelfTbl, "IsTurretLocked", SelfTbl.TurretLocked and 1 or 0)
 		for Turret, _ in pairs(Turrets) do
@@ -223,13 +221,16 @@ do
 
 	-- Records range and pitch to the lased point, which ProcessTurrets corrects drop and drift against
 	function ENT:LaseTarget(SelfTbl)
-		local TurretComputer = SelfTbl.TurretComputer
-		if not IsValid(TurretComputer) then return end
+		local TurretComputer = SelfTbl.ACF_LiveData.TurretComputer
+		if not IsValid(TurretComputer) or not SelfTbl.HitPos then return end
 
 		TurretComputer.Inputs.Position.Value = SelfTbl.HitPos
 		TurretComputer:TriggerInput("Calculate Superelevation", 1)
 
-		local Diff = self:GetGun1():GetPos() - SelfTbl.HitPos
+		local Gun = self:GetWeapon(1)
+		if not IsValid(Gun) then return end
+
+		local Diff = Gun:GetPos() - SelfTbl.HitPos
 		SelfTbl.LasePitch = math.deg(math.asin(Diff.z / Diff:Length()))
 		SelfTbl.LaseDist = Diff:Length()
 	end
@@ -246,12 +247,12 @@ do
 
 	-- Aim turrets
 	function ENT:ProcessTurrets(SelfTbl, HitPos)
-		local Turrets = SelfTbl.Turrets
-		if not IsValid(SelfTbl.Baseplate) then return end -- Needed for velocity
+		local Turrets = SelfTbl.ACF_LiveData.Turrets
+		if not IsValid(SelfTbl.ACF_LiveData.Baseplate) then return end -- Needed for velocity
 		if SelfTbl.TurretLocked then return end
 		if self:GetDisableAIOCam() then return end -- I guess bro
 
-		local Primary = self:GetGun1()
+		local Primary = self:GetWeapon(1)
 		local BreechReference = IsValid(Primary) and Primary.BreechReference
 		local ReloadAngle = self:GetReloadAngle()
 		local ReloadAngleHorizontal = self:GetReloadAngleHorizontal()
@@ -261,7 +262,7 @@ do
 		local ShouldLevel = ReloadAngle ~= 0 and IsValid(Primary) and not PrimaryInAir and Primary.State ~= "Loaded" and (not Primary.MagSize or Primary.MagazineReloading)
 
 		local AntiDrop, AntiDrift = vector_origin, vector_origin
-		local TurretComputer = self.TurretComputer
+		local TurretComputer = SelfTbl.ACF_LiveData.TurretComputer
 		if TurretComputer then
 			-- Liddul... if you can hear me...
 			local SuperElevation = nil
@@ -274,17 +275,17 @@ do
 				SelfTbl.TravelTime = SelfTbl.LaseDist ~= 0 and TurretComputer.Outputs["Flight Time"].Value or 0
 			end
 			AntiDrop = Vector(0, 0, SelfTbl.Drop or 0)
-			AntiDrift = -self.Baseplate:GetVelocity() * (SelfTbl.TravelTime or 0)
+			AntiDrift = -SelfTbl.ACF_LiveData.Baseplate:GetVelocity() * (SelfTbl.TravelTime or 0)
 		elseif self:GetEnableFCS() and not SelfTbl.SelectedTargetID then
 			local MuzzleVel = IsValid(Primary) and Primary.BulletData.MuzzleVel or 0
-			local Time = MuzzleVel > 0 and (self.Baseplate:GetPos():Distance(HitPos) / 39.37 / MuzzleVel) or 0
+			local Time = MuzzleVel > 0 and (SelfTbl.ACF_LiveData.Baseplate:GetPos():Distance(HitPos) / 39.37 / MuzzleVel) or 0
 			AntiDrop = Vector(0, 0, 300 * Time * Time)
-			AntiDrift = -self.Baseplate:GetVelocity() * Time
+			AntiDrift = -SelfTbl.ACF_LiveData.Baseplate:GetVelocity() * Time
 		end
 
 		if self:GetEnableTimeFuse() and IsValid(Primary) then
 			local MuzzleVel = Primary.BulletData.MuzzleVel or 0
-			local RadarTime = MuzzleVel > 0 and (self.Baseplate:GetPos():Distance(SelfTbl.SelectedTargetPos) / 39.37 / MuzzleVel) or 0
+			local RadarTime = MuzzleVel > 0 and (SelfTbl.ACF_LiveData.Baseplate:GetPos():Distance(SelfTbl.SelectedTargetPos) / 39.37 / MuzzleVel) or 0
 			local FuzeTime = RadarTime
 			for Weapon in pairs(SelfTbl.FireGroups[1]) do
 				if IsValid(Weapon) then Weapon:TriggerInput("Fuze", FuzeTime) end
@@ -316,7 +317,7 @@ do
 	-- Guidance related
 	do
 		function ENT:ProcessGuidance(SelfTbl)
-			local GuideComp = SelfTbl.GuidanceComputer
+			local GuideComp = SelfTbl.ACF_LiveData.GuidanceComputer
 			if not IsValid(GuideComp) then return end
 
 			-- We just want to know if there are any in air we should be lasing for...
@@ -347,11 +348,11 @@ local function OnWeaponLinked(Controller, Target, Analyze)
 	if not IsValid(Controller) or not Controller.Weapons then return end
 
 	if not IsValid(Target) then -- removed before this tick
-		Controller.Guns[Target], Controller.Racks[Target] = nil, nil
+		Controller:ACF_GetUserVar("Guns")[Target], Controller:ACF_GetUserVar("Racks")[Target] = nil, nil
 		return
 	end
 
-	if not (Controller.Guns[Target] or Controller.Racks[Target]) then return end -- unlinked before this tick
+	if not (Controller:ACF_GetUserVar("Guns")[Target] or Controller:ACF_GetUserVar("Racks")[Target]) then return end -- unlinked before this tick
 
 	Analyze(Controller, Target)
 

@@ -159,8 +159,9 @@ function ACF.ConvertBaseplate(Player, Target)
         Baseplate.Class = "prop_physics"
         Baseplate.Model = Model
         Baseplate.ACF_UserData = nil
-        Baseplate.EntityMods.LuaSeatID = nil
-        if IsValid(Target.Pod) then Entities[Target.Pod:EntIndex()] = nil end
+
+        local Pod = Target:ACF_GetUserVar("Seat")
+        if IsValid(Pod) then Entities[Pod:EntIndex()] = nil end
     end
 
     -- Delete everything now

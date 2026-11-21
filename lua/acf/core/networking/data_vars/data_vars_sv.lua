@@ -86,7 +86,7 @@ do
 	local function ProcessData(Player, Type, Values, Received)
 		local Data = Received[Type] -- The received data for this realm
 
-		if not Data then return end -- Nothing to process
+		if not istable(Data) then return end -- Nothing to process
 
 		local Hook = "ACF_OnUpdate" .. Type .. "Data"
 
@@ -106,6 +106,7 @@ do
 
 		if not IsValid(Player) then return end -- NOTE: Can this even happen? Probably not.
 		if not Client[Player] then return end -- Player no longer exists, discarding.
+		if not istable(Received) then return end
 
 		-- Process the server's record of this client's data
 		ProcessData(Player, "Client", Client[Player], Received)
@@ -118,7 +119,7 @@ do
 			-- The player isn't allowed to set server data, so we'll just re-send the correct values to them
 			local Data = Received.Server
 
-			if not Data then return end
+			if not istable(Data) then return end
 
 			for Key in pairs(Data) do
 				NetworkData(Key, Player)

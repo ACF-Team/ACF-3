@@ -40,6 +40,7 @@ ACF.Menu.RegisterPage({
 		Menu:AddTitle("#acf.menu.baseplates.settings")
 		Menu:AddWikiLink("Baseplates", "docs/getting_started/first_tank/baseplate_aio.html")
 		Menu:AddLabel("#acf.menu.baseplates.desc")
+		Menu:AddPresets(Plate)
 
 		-- Baseplate type: a nested class field -> subtype combobox + type-specific submenu, generated.
 		local TypeHandle = Menu:AddField(Plate, "BaseplateType")

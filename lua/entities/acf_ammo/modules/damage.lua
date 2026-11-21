@@ -19,7 +19,7 @@ local function StartCookoff(Entity, BurnTime)
 
 	Entity.Burning = Clock.CurTime + BurnTime
 
-	Entity:SetNWFloat("Cookoff", math.max(Entity.BulletData.PropMass * Entity.Ammo, 0.01)) -- How much propellant is burning, the clients scale the fire by it
+	Entity:SetNWFloat("Cookoff", math.max(Entity:SumRounds("PropMass"), 0.01)) -- How much propellant is burning, the clients scale the fire by it
 
 	local Interval = 0.01 + Entity.BulletData.RoundVolume ^ 0.5 / 100
 

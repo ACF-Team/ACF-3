@@ -216,7 +216,7 @@ function EFFECT:Init(Data)
 			WPMass        = Crate:GetNW2Float("WPMass" .. Suffix),
 			DragCoef      = Crate:GetNW2Float("DragCoef" .. Suffix, 1),
 			AmmoType      = Crate:GetNW2String("AmmoType" .. Suffix, "ACF.Ammunition.AP"),
-			Color         = Tracer and Crate:GetColor() or nil,
+			Color         = Tracer and ACF.GetTracerColor(Crate, Data:GetFlags()) or nil,
 			Accel         = Crate:GetNW2Vector("Accel" .. Suffix, ACF.Gravity),
 			LastThink     = Clock.CurTime,
 			Effect        = self,

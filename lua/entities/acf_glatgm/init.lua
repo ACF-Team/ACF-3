@@ -180,7 +180,7 @@ function ENT:GetComputer()
 
 	if not IsValid(Weapon) then return end
 
-	local Computer = Weapon.Computer
+	local Computer = Weapon.ACF_GetUserVar and Weapon:ACF_GetUserVar("Computer")
 
 	if not IsValid(Computer) then return end
 	if Computer.Disabled then return end

@@ -40,6 +40,7 @@ local function Build(Menu, Contexts)
 
 	local ComponentClass = Menu:AddComboBox()
 	local ComponentList  = Menu:AddComboBox()
+	local Presets        = Menu:AddPresets(Contexts.Active)
 
 	local Base             = Menu:AddCollapsible("#acf.menu.components.component_info", nil, "icon16/drive_edit.png")
 	local ComponentName    = Base:AddTitle()
@@ -70,6 +71,8 @@ local function Build(Menu, Contexts)
 		local ClassData = ComponentClass.Selected
 		local Ctx       = ContextFor(Contexts, ClassData)
 		Contexts.Active = Ctx
+
+		Presets:SetContext(Ctx)
 
 		SetNestedType(Ctx, Data)
 
@@ -113,6 +116,19 @@ ACF.Menu.RegisterPage({
 		SensorSync   = "acf_sensorsync",
 	},
 	LinkContexts = function(Contexts) Contexts.Active = Contexts.Computer end,
+
+	-- Some components have nothing in their settings to pick their group by
+	PrepareCopy = function(_, _, Context)
+		local Saved = Classes.GetTypeByName(ACF.Menu.GetUIState(PAGE, "group"))
+		if Saved and Saved.Entity == Context.ClassName then return end
+
+		for _, Group in pairs(Classes.GetChildren(Classes.GetTypeByName(COMPONENT_BASE))) do
+			if Group.Entity == Context.ClassName then
+				ACF.Menu.SaveClassCombo(PAGE, "group", Group)
+				return
+			end
+		end
+	end,
 
 	Actions = {
 		{ Bind = "left",  Context = "Active", Preview = true, Desc = "Spawn a new component, or update the one you're aiming at." },

@@ -19,13 +19,17 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 	CLASS.Bodygroup   = 0 -- Bodygroup index for crate and menu models
 	CLASS.MenuFOV     = 60 -- Default FOV for menu preview
 
-	MENU_FIELD("Number",  "RoundLength", {Default = 0})
-	MENU_FIELD("Number",  "PropRatio",   {Default = 0})
-	MENU_FIELD("Number",  "PropellantScale", {Default = -1}) -- Negative until derived from PropRatio
-	MENU_FIELD("Number",  "CaseScale",   {Default = 1})
-	MENU_FIELD("Number",  "NeckingScale", {Default = -1}) -- Negative until derived from CaseScale
-	MENU_FIELD("Boolean", "TwoPiece",    {Default = false})
-	MENU_FIELD("Boolean", "Tracer", 	 {Default = false})
+	MENU_FIELD("Number",  "RoundLength", {Title = "#acf.menu.fields.ammunition.round_length", Default = 0})
+	MENU_FIELD("Number",  "PropRatio",   {Title = "#acf.menu.fields.ammunition.prop_ratio", Default = 0})
+	MENU_FIELD("Number",  "PropellantScale", {Title = "#acf.menu.fields.ammunition.propellant_scale", Default = -1}) -- Negative until derived from PropRatio
+	MENU_FIELD("Number",  "CaseScale",   {Title = "#acf.menu.fields.ammunition.case_scale", Default = 1})
+	MENU_FIELD("Number",  "NeckingScale", {Title = "#acf.menu.fields.ammunition.necking_scale", Default = -1}) -- Negative until derived from CaseScale
+	MENU_FIELD("Boolean", "TwoPiece",    {Title = "#acf.menu.fields.ammunition.two_piece", Default = false})
+	MENU_FIELD("Boolean", "Tracer", 	 {Title = "#acf.menu.fields.ammunition.tracer", Default = false})
+
+	-- Set from the round list, not menu fields so they don't count when comparing or converting rounds
+	FIELD("Boolean", "OverrideTracerColor", {Default = false})
+	FIELD("Number",  "TracerColor",         {Default = 0xFFFFFF, Min = 0, Max = 0xFFFFFF, Decimals = 0}) -- 0xRRGGBB, crate color unless OverrideTracerColor
 
 	-- NOTE: round inputs are the MENU_FIELDs above. A runtime back-reference to the weapon
 	-- instance (self.Weapon) is assigned by the crate/menu before convert; it is intentionally
@@ -144,30 +148,26 @@ Classes.DefineClass("ACF.Ammunition.AP", "ACF.Ammunition.BaseAmmo", function(CLA
 		}
 	end
 
-	CLASS.CorePenFactor = ACF.CarbideCorePenFactor -- Penetration of a carbide core over steel AP of its mass
+	CLASS.PenFactor    = 1 -- Penetration over ACF.Penetration, approached by large penetrators
+	CLASS.PenSizeScale = ACF.SteelPenSizeScale -- Penetrator diameter in cm the factor scales with, as tanh(diameter / this)
 
-	-- Carbide core rounds penetrate with the core alone
-	local function GetPenetratorMass(Ammo, Bullet)
-		if Bullet.CoreMass then return Bullet.CoreMass, Ammo.CorePenFactor end
+	--- The mass that penetrates, the whole shot for steel AP
+	function CLASS:GetPenetratorMass(Bullet) return Bullet.ProjMass end
 
-		return Bullet.ProjMass, 1
-	end
+	-- Small penetrators fall short of ACF.Penetration, which was fitted to naval shells
+	local function GetPenFactor(Ammo, Bullet) return Ammo.PenFactor * math.tanh(Bullet.Diameter / Ammo.PenSizeScale) end
 
 	function CLASS:GetPenetration(Bullet, Speed)
 		if not isnumber(Speed) then
 			Speed = Bullet.Flight and Bullet.Flight:Length() / ACF.Scale * ACF.InchToMeter or Bullet.MuzzleVel
 		end
 
-		local Mass, Factor = GetPenetratorMass(self, Bullet)
-
-		return ACF.Penetration(Speed, Mass, Bullet.Diameter * 10) * Factor
+		return ACF.Penetration(Speed, self:GetPenetratorMass(Bullet), Bullet.Diameter * 10) * GetPenFactor(self, Bullet)
 	end
 
 	--- Inverse of GetPenetration, solved for Speed; override alongside GetPenetration for other formulas.
 	function CLASS:CalcSpeed(Bullet, Penetration)
-		local Mass, Factor = GetPenetratorMass(self, Bullet)
-
-		return ACF.CalcSpeed(Penetration / Factor, Mass, Bullet.Diameter * 10)
+		return ACF.CalcSpeed(Penetration / GetPenFactor(self, Bullet), self:GetPenetratorMass(Bullet), Bullet.Diameter * 10)
 	end
 
 	--- Mass and speed used to report the round's kinetic energy; override for ammo types that deal damage

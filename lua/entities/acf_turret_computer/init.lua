@@ -88,8 +88,10 @@ end
 do	-- Metamethods and other important stuff
 	do	-- Overlay stuff
 		function ENT:ACF_UpdateOverlayState(State)
-			if IsValid(self.Gun) then
-				State:AddKeyValue("Linked to", tostring(self.Gun))
+			local Gun = self:ACF_GetUserVar("Gun")
+
+			if IsValid(Gun) then
+				State:AddKeyValue("Linked to", tostring(Gun))
 			end
 
 			if self.Status then
@@ -101,18 +103,18 @@ do	-- Metamethods and other important stuff
 	end
 
 	do	-- Link/unlink
-		ACF.RegisterLinkSource("acf_turret_computer", "Gun", true)
+		ACF.RegisterLinkSource("acf_turret_computer", "Gun", true, true)
 
 		-- Gun links
 
 		ACF.RegisterClassLink("acf_turret_computer", "acf_gun", function(This, Gun)
-			if IsValid(This.Gun) then return false, "This computer already has a gun linked!" end
+			if IsValid(This:ACF_GetUserVar("Gun")) then return false, "This computer already has a gun linked!" end
 
-			This.Gun	= Gun
+			This:ACF_SetUserVar("Gun", Gun)
 
 			-- Removing the gun does not unlink it on its own
 			Gun:CallOnRemove("ACF_TurretComputer" .. This:EntIndex(), function()
-				if IsValid(This) and This.Gun == Gun then This:Unlink(Gun) end
+				if IsValid(This) and This:ACF_GetUserVar("Gun") == Gun then This:Unlink(Gun) end
 			end)
 
 			ACF.Hints.Set(This, "turret_computer_no_gun", false)
@@ -123,10 +125,12 @@ do	-- Metamethods and other important stuff
 		end)
 
 		ACF.RegisterClassUnlink("acf_turret_computer", "acf_gun", function(This, Gun)
-			if not IsValid(This.Gun) then return false, "This computer doesn't have a gun linked!" end
-			if This.Gun ~= Gun then return false, "This computer isn't linked to this gun!" end
+			local Linked = This:ACF_GetUserVar("Gun")
 
-			This.Gun	= nil
+			if not IsValid(Linked) then return false, "This computer doesn't have a gun linked!" end
+			if Linked ~= Gun then return false, "This computer isn't linked to this gun!" end
+
+			This:ACF_SetUserVar("Gun", nil)
 
 			Gun:RemoveCallOnRemove("ACF_TurretComputer" .. This:EntIndex())
 
@@ -164,9 +168,9 @@ do	-- Metamethods and other important stuff
 		-- Starts fresh simulation with fresh data
 		function ENT:StartSimulation(OneShot)
 			if Clock.CurTime < self.NextRun then return end
-			if not IsValid(self.Gun) then return end
+			local Gun = self:ACF_GetUserVar("Gun")
+			if not IsValid(Gun) then return end
 
-			local Gun = self.Gun
 			local BD = Gun.BulletData
 
 			if BD.AmmoType == "Empty" then return end
@@ -252,9 +256,9 @@ do	-- Metamethods and other important stuff
 
 					WireLib.TriggerOutput(self, "Angle", Sim.StartAngle)
 
-					if self.ComputerInfo.Constant and tobool(self.Inputs["Calculate"].Value) and IsValid(self.Gun) then
-						local Gun = self.Gun
+					local Gun = self:ACF_GetUserVar("Gun")
 
+					if self.ComputerInfo.Constant and tobool(self.Inputs["Calculate"].Value) and IsValid(Gun) then
 						Sim.AdjustedTargetPos = Sim.TargetPos + (Sim.RelativeVel * (ElapsedTime + Sim.FlightTime))
 
 						Sim.StartPos				= Gun:LocalToWorld(Gun.Muzzle)
@@ -492,13 +496,15 @@ do	-- Metamethods and other important stuff
 		local UnlinkSound = "physics/metal/metal_box_impact_bullet%s.wav"
 
 		function ENT:Think()
-			if IsValid(self.Gun) then
-				if self:GetPos():DistToSqr(self.Gun:GetPos()) > MaxDistance then
+			local Gun = self:ACF_GetUserVar("Gun")
+
+			if IsValid(Gun) then
+				if self:GetPos():DistToSqr(Gun:GetPos()) > MaxDistance then
 					local USound = UnlinkSound:format(math.random(1, 3))
 
 					Sounds.SendSound(self, USound, 70, 100, 1)
-					Sounds.SendSound(self.Gun, USound, 70, 100, 1)
-					self:Unlink(self.Gun)
+					Sounds.SendSound(Gun, USound, 70, 100, 1)
+					self:Unlink(Gun)
 
 					self:HaltSimulation("Gun unlinked!")
 
@@ -531,24 +537,6 @@ do	-- Metamethods and other important stuff
 
 			self:NextThink(Clock.CurTime + self.ComputerInfo.ThinkTime)
 			return true
-		end
-	end
-
-	do	-- Dupe support
-		function ENT:PreEntityCopy()
-			if self.Gun then
-				duplicator.StoreEntityModifier(self, "ACFGun", {self.Gun:EntIndex()})
-			end
-		end
-
-		function ENT:PostEntityPaste(_, Ent, CreatedEntities)
-			local EntMods = Ent.EntityMods
-
-			if EntMods.ACFGun then
-				self:Link(CreatedEntities[EntMods.ACFGun[1]])
-
-				EntMods.ACFGun = nil
-			end
 		end
 	end
 

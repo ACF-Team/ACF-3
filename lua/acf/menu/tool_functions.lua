@@ -244,9 +244,6 @@ do -- Ghost entity handling
 			if not IsValid(Entity) then return end
 			if not Entity.DrawOverlay then return end
 			if HoldOverlay[Entity] then HoldOverlay[Entity] = nil else HoldOverlay[Entity] = true end
-
-			local Weapon = Tool.Weapon
-			Weapon:DoShootEffect( Trace.HitPos, Trace.HitNormal, Trace.Entity, Trace.PhysicsBone, isFirstTimePredicted )
 		end
 	end
 end

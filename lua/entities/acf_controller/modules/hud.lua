@@ -22,7 +22,7 @@ do
 
 	function ENT:ProcessHUDs(SelfTbl)
 		-- Network various statistics
-		local Primary = self:GetGun1()
+		local Primary = self:GetWeapon(1)
 		if IsValid(Primary) then
 			RecacheBindNW(self, SelfTbl, "AHS_Primary_SL", Primary.TotalAmmo or 0, self.SetNWInt)
 			RecacheBindNW(self, SelfTbl, "AHS_Primary_AT", ACF.GetLegacyStyleClassName(Primary.BulletData.AmmoType), self.SetNWString)
@@ -33,7 +33,7 @@ do
 			RecacheBindNW(self, SelfTbl, "AHS_Primary_MV", Primary.BulletData.MuzzleVel or 0, self.SetNWFloat)
 		end
 
-		local Secondary = self:GetGun2()
+		local Secondary = self:GetWeapon(2)
 		if IsValid(Secondary) then
 			RecacheBindNW(self, SelfTbl, "AHS_Secondary_SL", Secondary.TotalAmmo or 0, self.SetNWInt)
 			RecacheBindNW(self, SelfTbl, "AHS_Secondary_AT", ACF.GetLegacyStyleClassName(Secondary.BulletData.AmmoType), self.SetNWString)
@@ -43,7 +43,7 @@ do
 			RecacheBindNW(self, SelfTbl, "AHS_Secondary", Secondary, self.SetNWEntity)
 		end
 
-		local Tertiary = self:GetGun3()
+		local Tertiary = self:GetWeapon(3)
 		if IsValid(Tertiary) then
 			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_SL", Tertiary.TotalAmmo or 0, self.SetNWInt)
 			RecacheBindNW(self, SelfTbl, "AHS_Tertiary_AT", ACF.GetLegacyStyleClassName(Tertiary.BulletData.AmmoType), self.SetNWString)
@@ -58,14 +58,14 @@ do
 			RecacheBindNW(self, SelfTbl, "AHS_Smoke_RD", SelfTbl.Smoke.State == "Loaded" or false, self.SetNWBool)
 		end
 
-		if IsValid(SelfTbl.TurretComputer) then
-			local Status = SelfTbl.TurretComputer.Status
+		if IsValid(SelfTbl.ACF_LiveData.TurretComputer) then
+			local Status = SelfTbl.ACF_LiveData.TurretComputer.Status
 			local Code = BallCompStatusToCode[Status] or 0
 			RecacheBindNW(self, SelfTbl, "AHS_TurretComp_Status", Code, self.SetNWInt)
 		end
 
 		RecacheBindNW(self, SelfTbl, "AHS_Speed", math.Round(SelfTbl.Speed or 0), self.SetNWInt)
-		if IsValid(SelfTbl.Gearbox) then RecacheBindNW(self, SelfTbl, "AHS_Gear", SelfTbl.Gearbox.Gear, self.SetNWInt) end
+		if IsValid(SelfTbl.ACF_LiveData.Gearbox) then RecacheBindNW(self, SelfTbl, "AHS_Gear", SelfTbl.ACF_LiveData.Gearbox.Gear, self.SetNWInt) end
 
 		-- Read live: engines' tanks follow parenting, which can change after the drivetrain was analyzed
 		local FuelLevel, FuelCapacity = 0, 0

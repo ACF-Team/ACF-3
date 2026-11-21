@@ -139,30 +139,14 @@ do -- ACF global vars
 
 	ACF.BlastAreaCoef = 1 / 264.7 -- Multiplier used to scale HE blast area against an entity's surface area. Kept separate from the convex armor health coefficient.
 
-	ACF.DefineSetting("HealthCoef",           1,       "Health coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
-
-	if SERVER then
-		-- Meant to be 1 by default. FCVAR_ARCHIVE and its consequences...
-		hook.Add("ACF_OnLoadPersistedData", "ACF HealthCoef Migration", function()
-			if ACF.GetServerData("HealthCoef") == 0.1 then ACF.SetServerData("HealthCoef", 1) end
-		end)
-	end
-
-	ACF.DefineSetting("ArmorCoef",           1,      "Armor coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 2, 2))
-
-	ACF.DefineSetting("DamageCoef",           1,      "Damage coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 1000, 2))
-
-	ACF.DefineSetting("DamageBlastCoef",      0.1,      "Blast damage coefficient has been set to %.2f.", ACF.FloatDataCallback(0.01, 1000, 2))
-
 	ACF.PenetrationFeatherExponent = 2 -- Feathers convex health loss against how much of the plate's thickness was actually traversed
 
 	ACF.FuelRate = 15 -- Multiplier for fuel usage, 1.0 is approx real world
 	ACF.DefineSetting("FuelFactor",           1,      "Fuel rate multiplier has been set to a factor of %.2f.", ACF.FactorDataCallback("FuelRate", 0.01, 2, 2))
 
-	ACF.MaxExplosiveConvexVolume = 10000 -- Maximum convex volume (in^3) that can be assigned an explosive armor material
-	ACF.MinExplosiveConvexVolume = 100   -- Minimum convex volume (in^3) that can be assigned an explosive armor material
-	ACF.MinimumMass          = 0.1   -- The minimum amount of mass that can be set on an entity
-	ACF.DefineSetting("MaxThickness",         300,    nil, ACF.FloatDataCallback(0.01, 5000, 0))
+	ACF.MaxExplosiveConvexVolume 	= 10000 -- Maximum convex volume (in^3) that can be assigned an explosive armor material
+	ACF.MinExplosiveConvexVolume 	= 100   -- Minimum convex volume (in^3) that can be assigned an explosive armor material
+	ACF.MinimumMass          		= 0.1   -- The minimum amount of mass that can be set on an entity
 
 	ACF.DefineSetting("SmokeWind",            20,     "Wind smoke multiplier has been set to a factor of %.2f.", ACF.FloatDataCallback(0, 1000, 2))
 
@@ -326,7 +310,10 @@ do -- ACF global vars
 	ACF.CopperDensity        = 8.96e-3	-- kg/cm^3
 	ACF.TungstenDensity		 = 19.25e-3	-- kg/cm^3
 	ACF.TungstenCarbideDensity = 12.5e-3 -- kg/cm^3, as in real penetrator cores
-	ACF.CarbideCorePenFactor   = 1.69 -- Carbide core penetration over steel AP
+	ACF.SteelPenSizeScale      = 1.67 -- Steel shot diameter in cm its penetration scales with, as tanh(diameter / this)
+	ACF.CarbideCorePenFactor   = 1.66 -- Carbide core penetration over the steel formula, approached by large cores
+	ACF.CarbideCoreSizeScale   = 1.9 -- Core diameter in cm the factor scales with, as tanh(diameter / this)
+	-- Fitted weighting the 2cm Pzgr.40 over the modern small APDS rounds; weighting those instead gives 1.91 and 3
 
 	-- Mass of pointed AP shot over a full diameter cylinder
 	ACF.APNoseFactor         = 0.84
@@ -568,6 +555,10 @@ do -- Player loaded hook
 		util.AddNetworkString("ACF_PlayerLoaded")
 
 		net.Receive("ACF_PlayerLoaded", function(_, Player)
+			if Player.ACF_PlayerLoaded then return end
+
+			Player.ACF_PlayerLoaded = true
+
 			hook.Run("ACF_OnLoadPlayer", Player)
 		end)
 	else

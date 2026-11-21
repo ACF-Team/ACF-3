@@ -1,6 +1,10 @@
 local Classes = ACF.Classes
 
 Classes.DefineClass("ACF.Ammunition.BaseAmmo", function(CLASS)
+	-- What a crate shows for this kind of round, set from the round list in the menu.
+	-- Not a menu field so it doesn't count when comparing or converting rounds
+	FIELD("String",  "KindName",      {Default = "", MaxLength = 24, SingleLine = true})
+
 	if SERVER then
 		-- Generic round-conversion wrapper shared by all ammo types. Operates on the instance:
 		-- reads its own round inputs + weapon back-reference (self.Weapon). Subtypes provide

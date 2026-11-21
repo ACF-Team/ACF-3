@@ -1,7 +1,7 @@
 local ACF = ACF
 
 include( "shared.lua" )
-include( "modules_cl/round_counts.lua" )
+include( "modules/tool_picker.lua" )
 
 killicon.Add( "acf_ammo", "HUD/killicons/acf_ammo", ACF.KillIconColor )
 
@@ -325,16 +325,11 @@ do --MARK: Networking
 		-- Each kind of round top first
 		local kinds = {}
 
-		entity.RoundMixVersion = net.ReadUInt( entity.MixVersionBits )
-
 		for index = 1, net.ReadUInt( ACF.ProfileBits ) + 1 do
 			kinds[index] = {
 				Bodygroup = net.ReadUInt( 4 ),
-				Target    = net.ReadUInt( entity.CountBits ),
 				Name      = net.ReadString(),
 				Icon      = net.ReadString(),
-				ProjMass  = net.ReadFloat(),
-				MuzzleVel = net.ReadFloat(),
 			}
 		end
 

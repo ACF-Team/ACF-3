@@ -104,7 +104,7 @@ do -- Updating
 	-- Lightweight controllers link to a turret and remote ones to a crew member, so only the hint for this kind can apply
 	function ENT:UpdateLinkHints()
 		ACF.Hints.Set(self, "turret_controller_no_turret", not self.IsRemote and not IsValid(self.Turret))
-		ACF.Hints.Set(self, "turret_controller_no_crew", self.IsRemote and ACF.CrewRequired and not IsValid(self.Crew))
+		ACF.Hints.Set(self, "turret_controller_no_crew", self.IsRemote and ACF.CrewRequired and not IsValid(self:ACF_GetUserVar("Crew")))
 	end
 end
 
@@ -112,7 +112,9 @@ do	-- Metamethods
 	do	-- Overlay stuff
 		function ENT:ACF_UpdateOverlayState(State)
 			if self.IsRemote then
-				State:AddKeyValue("Linked to", IsValid(self.Crew) and tostring(self.Crew) or "Not linked")
+				local Crew = self:ACF_GetUserVar("Crew")
+
+				State:AddKeyValue("Linked to", IsValid(Crew) and tostring(Crew) or "Not linked")
 			else
 				State:AddKeyValue("Linked to", IsValid(self.Turret) and tostring(self.Turret) or "Not linked")
 			end
@@ -154,7 +156,7 @@ do	-- Metamethods
 		end
 
 		function ENT:ACF_ShowRequirements()
-			return IsValid(self.IsRemote and self.Crew or self.Turret)
+			return IsValid(self.IsRemote and self:ACF_GetUserVar("Crew") or self.Turret)
 		end
 
 		-- Highest caliber among the weapons on a turret and any sub-turrets it carries
@@ -176,7 +178,7 @@ do	-- Metamethods
 		function ENT:IsActive()
 			if self.Disabled then return false end
 
-			local Linked = self.IsRemote and self.Crew or self.Turret
+			local Linked = self.IsRemote and self:ACF_GetUserVar("Crew") or self.Turret
 			if not IsValid(Linked) then self:SetActive(false) return false end
 
 			local Percent = self.ACF.Health / self.ACF.MaxHealth * 100
@@ -242,7 +244,7 @@ do	-- Metamethods
 		function ENT:GetCost()
 			if not self.IsRemote then return 5 end
 
-			local Crew    = self.Crew
+			local Crew    = self:ACF_GetUserVar("Crew")
 			local Turrets = IsValid(Crew) and Crew.TargetsByType and Crew.TargetsByType.acf_turret
 			if not Turrets then return 0 end
 
@@ -261,35 +263,12 @@ do	-- Metamethods
 			return Cost
 		end
 	end
-
-	do	-- Dupe support
-		-- Only the Remote variant's crew link is handled here. The Lightweight variant's
-		-- turret link is instead re-established by acf_turret's own dupe support, the same
-		-- way it already handles its motor/gyro links, since acf_turret is the side without
-		-- a periodic Check gate that could reject a paste-time relink before contraption/mass
-		-- data has settled
-		function ENT:PreEntityCopy()
-			if self.IsRemote and IsValid(self.Crew) then
-				duplicator.StoreEntityModifier(self, "ACFCrew", {self.Crew:EntIndex()})
-			end
-		end
-
-		function ENT:PostEntityPaste(_, Ent, CreatedEntities)
-			local EntMods = Ent.EntityMods
-
-			if EntMods.ACFCrew then
-				self:Link(CreatedEntities[EntMods.ACFCrew[1]])
-
-				EntMods.ACFCrew = nil
-			end
-		end
-	end
 end
 
 do	-- Lightweight Turret Controllers link to acf_turret directly, no crew involved
 	local MaxDistance = 24 * 24 -- Only close-proximity linking is allowed, tighter than standard ACF.LinkDistance
 
-	ACF.RegisterLinkSource("acf_turret_controller", "Turret")
+	ACF.RegisterLinkSource("acf_turret_controller", "Turret", true)
 
 	ACF.RegisterClassPreLinkCheck("acf_turret_controller", "acf_turret", function(This)
 		if This.IsRemote then return false, "Remote Turret Controllers link to crew, not turrets. Link the crew member instead." end
@@ -320,8 +299,7 @@ do	-- Lightweight Turret Controllers link to acf_turret directly, no crew involv
 	ACF.RegisterClassLink("acf_turret_controller", "acf_turret", function(This, Turret)
 		This.Turret = Turret
 
-		Turret.LightweightControllers = Turret.LightweightControllers or {}
-		Turret.LightweightControllers[This] = true
+		Turret:ACF_GetUserVar("LightweightControllers")[This] = true
 
 		This:UpdateLinkHints()
 		This:UpdateOverlay(true)
@@ -335,7 +313,7 @@ do	-- Lightweight Turret Controllers link to acf_turret directly, no crew involv
 
 		This.Turret = nil
 
-		if Turret.LightweightControllers then Turret.LightweightControllers[This] = nil end
+		Turret:ACF_GetUserVar("LightweightControllers")[This] = nil
 
 		This:UpdateLinkHints()
 		This:UpdateOverlay(true)
@@ -379,14 +357,14 @@ do	-- Remote Turret Controllers link to a Gunner-role crew member
 		return ToController:Dot(CrewForward) >= math.cos(math.rad(MaxViewAngle))
 	end
 
-	ACF.RegisterLinkSource("acf_turret_controller", "Crew")
+	ACF.RegisterLinkSource("acf_turret_controller", "Crew", true, true)
 
 	-- Distance/facing/LOS only need checking once, at link time: a shared parent means the
 	-- controller and crew move together afterwards, so their relative position never changes
 	-- on its own. Only the parent relationship itself needs to keep being checked periodically.
 	ACF.RegisterClassPreLinkCheck("acf_turret_controller", "acf_crew", function(This, Crew)
 		if not This.IsRemote then return false, "Lightweight Turret Controllers link to turrets, not crew." end
-		if IsValid(This.Crew) then return false, "This controller is already linked to a crew member." end
+		if IsValid(This:ACF_GetUserVar("Crew")) then return false, "This controller is already linked to a crew member." end
 		if Crew.CrewTypeID ~= "Gunner" and Crew.CrewTypeID ~= "Commander" and Crew.CrewTypeID ~= "Pilot" then
 			return false, "This controller can only link to Gunners, Commanders, or Pilots."
 		end
@@ -408,7 +386,7 @@ do	-- Remote Turret Controllers link to a Gunner-role crew member
 	end)
 
 	ACF.RegisterClassLink("acf_turret_controller", "acf_crew", function(This, Crew)
-		This.Crew = Crew
+		This:ACF_SetUserVar("Crew", Crew)
 		Crew.RemoteController = This
 
 		This:UpdateLinkHints()
@@ -419,9 +397,9 @@ do	-- Remote Turret Controllers link to a Gunner-role crew member
 	end)
 
 	ACF.RegisterClassUnlink("acf_turret_controller", "acf_crew", function(This, Crew)
-		if This.Crew ~= Crew then return false, "This controller isn't linked to this crew member." end
+		if This:ACF_GetUserVar("Crew") ~= Crew then return false, "This controller isn't linked to this crew member." end
 
-		This.Crew = nil
+		This:ACF_SetUserVar("Crew", nil)
 		if Crew.RemoteController == This then Crew.RemoteController = nil end
 
 		This:UpdateLinkHints()

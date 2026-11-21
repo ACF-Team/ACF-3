@@ -122,19 +122,6 @@ end
 
 --------------------------------------------------------------------------------
 
-local CostFilter = {}
-CostFilter["acf_radar"] = function(E)
-	local ID = E.ShortName
-
-	if CostSystem.ACFRadars[ID] then
-		return CostSystem.ACFRadars[ID]
-	else
-		return 50
-	end
-end
-
---------------------------------------------------------------------------------
-
 do	-- Actual cost functions
 	--- Computes cost and breakdown given a contraption
 	function CostSystem.CalcCostsFromContraption(Contraption)

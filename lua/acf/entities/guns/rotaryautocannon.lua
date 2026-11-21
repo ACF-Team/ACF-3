@@ -15,13 +15,13 @@ ACF.Classes.DefineClass("ACF.Guns.RotaryAutocannon", "ACF.Guns.BaseScalableGun",
 	CLASS.Mass        	= 212
 	CLASS.Cyclic      	= {
 		Min = 2000,
-		Max = 1000,
+		Max = 2000,
 	}
 	CLASS.ScaleFactor 	= 1.0 -- Corrective factor to account for improperly scaled base models
 	CLASS.Round 		= {
 		MaxLength  = 20, -- Relative to the Base caliber, in cm. 30x173mm rounds run 290mm, 9.7 calibers
 		PropLength = 12, -- Relative to the Base caliber, in cm. Reaches real energy of 20mm Mk149 and 30x173 PGU-14
-		CaseScale  = 1.46, -- 20x102mm: 29mm base over a 20mm projectile
+		CaseScale  = 1.37, -- Sized so a 395g 30mm shot leaves at the GAU-8 PGU-14's 1013 m/s
 	}
 	CLASS.Preview 		= {
 		Height = 90,
@@ -29,15 +29,16 @@ ACF.Classes.DefineClass("ACF.Guns.RotaryAutocannon", "ACF.Guns.BaseScalableGun",
 	}
 	CLASS.CaliberLimits	= {
 		Base = 20,
-		Min  = 12.7,
+		Min  = 7.62,
 		Max  = 37,
 	}
 	CLASS.LimitConVar 	= {
 		Name = "_acf_rotaryautocannon",
-		Amount = 2,
+		Amount = 1,
+		LegacyDefault = 2,
 		Text = "Maximum amount of ACF rotary auto cannons a player can create."
 	}
-	CLASS.CostScalar	= 1.68
+	CLASS.CostScalar	= 3
 end)
 
 ACF.SetCustomAttachment("models/rotarycannon/kw/20mmrac.mdl", "muzzle", Vector(59.6, 0, 1.74))

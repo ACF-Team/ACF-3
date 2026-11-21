@@ -6,7 +6,7 @@ Classes.DefineClass("ACF.Missiles.Fuze.Optical", "ACF.Missiles.Fuze.Contact", fu
 	CLASS.MinDistance = 40
 	CLASS.MaxDistance = 2500
 
-	MENU_FIELD("Number", "FuzeDistance", {Default = 0})
+	MENU_FIELD("Number", "FuzeDistance", {Title = "#acf.menu.fields.fuzes.fuze_distance", Default = 0})
 
 	function CLASS:WriteDisplayConfig(State)
 		BASE.WriteDisplayConfig(self, State)

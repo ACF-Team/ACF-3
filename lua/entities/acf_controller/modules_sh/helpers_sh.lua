@@ -17,11 +17,20 @@ end
 function ENT.RecacheActionState(SelfTbl, ActionID, Value)
 	if SelfTbl.ActionStates[ActionID] == Value then return false end
 	SelfTbl.ActionStates[ActionID] = Value
+	if Value then SelfTbl.ActionLatches[ActionID] = true end
 	return true
 end
 
 function ENT.GetBindState(SelfTbl, ActionID)
 	return SelfTbl.ActionStates[ActionID] or false
+end
+
+--- Same as GetBindState, but also true once for a press that was released before this was checked.
+function ENT.ConsumeBindState(SelfTbl, ActionID)
+	local Latched = SelfTbl.ActionLatches[ActionID]
+	SelfTbl.ActionLatches[ActionID] = nil
+
+	return Latched or SelfTbl.ActionStates[ActionID] or false
 end
 
 --- Sets a networked variable if the cached value has changed

@@ -104,6 +104,7 @@ Classes.DefineClass("ACF.Ammunition.GLATGM", "ACF.Ammunition.HEATFS", function(C
 		end
 	else
 		ACF.RegisterAmmoDecal("ACF.Ammunition.GLATGM", "damage/heat_pen", "damage/heat_rico", function(Caliber) return Caliber * 0.1667 end)
+		local DecalIndex = ACF.GetAmmoDecalIndex
 
 		function CLASS:PenetrationEffect(Effect, Bullet)
 			local Detonated = Bullet.Detonated

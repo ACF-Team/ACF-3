@@ -10,7 +10,7 @@ Classes.DefineClass("ACF.Ammunition.FLR", "ACF.Ammunition.AP", function(CLASS, B
 		["ACF.Guns.FlareLauncher"] = true,
 	})
 
-	MENU_FIELD("Number", "FillerRatio", {Default = 0})
+	MENU_FIELD("Number", "FillerRatio", {Title = "#acf.menu.fields.ammunition.filler_ratio", Default = 0})
 
 	function CLASS:GetDisplayData(Data)
 		local Display = {

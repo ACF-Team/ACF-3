@@ -174,8 +174,8 @@ function ENT:CFW_PreParentedTo(OldParent, _)
 	-- Force unlinks if OldParent is valid
 	if IsValid(OldParent) and not self:IsMarkedForDeletion() then
 		Notify.EntityWarning(self, "Crew parent has changed", "This crew member was reparented. All links have been removed, please relink.")
-		if next(self.Targets) then
-			for Target in pairs(self.Targets) do
+		if next(self:ACF_GetUserVar("Targets") or {}) then
+			for Target in pairs(self:ACF_GetUserVar("Targets") or {}) do
 				self:Unlink(Target)
 			end
 
@@ -189,7 +189,7 @@ end
 
 --- Shows the not linked hint while a crew that needs links has none, with why its links were removed if they were.
 function ENT:UpdateLinkHint()
-	local Targets   = self.Targets
+	local Targets   = self:ACF_GetUserVar("Targets")
 	local Unlinked  = Targets == nil or next(Targets) == nil
 	local NeedsLink = self.CrewTypeID ~= "Commander" and self.CrewTypeID ~= "Driver"
 
@@ -231,6 +231,32 @@ local Vector6  = Vector(6, 6, 6)
 local VectorUp = Vector(0, 0, 1)
 
 do -- Random timer stuff
+	-- Loading is as sensitive to movement as an actual Loader's job, regardless of the crew's usual tolerance
+	local function UpdateMoveEff(self, SelfTbl)
+		local GForceInfo = SelfTbl.CrewType.GForceInfo
+		local Effs = SelfTbl.IsLoading and GForceInfo.LoaderEfficiencies or GForceInfo.Efficiencies
+		if not Effs then return end
+
+		SelfTbl.MoveEff = 1 - ACF.Normalize(SelfTbl.GForce or 0, Effs.Min, Effs.Max)
+		WireLib.TriggerOutput(self, "MoveEff", SelfTbl.MoveEff * 100)
+	end
+
+	-- Linked weapons only weigh on a crew while it's loading one of them
+	local function UpdateDuty(self, SelfTbl)
+		local Loading = false
+
+		for Target in pairs(self:ACF_GetUserVar("Targets") or {}) do
+			if IsEntityValid(Target) and Target.IsCrewLoading and Target:IsCrewLoading() then
+				Loading = true
+				break
+			end
+		end
+
+		SelfTbl.IsLoading = Loading
+		SelfTbl.CrewType.UpdateFocus(self)
+		UpdateMoveEff(self, SelfTbl)
+	end
+
 	function ENT_UpdateUltraLowFreq(self, cfg)
 		local SelfTbl = ENTITY.GetTable(self)
 
@@ -308,23 +334,39 @@ do -- Random timer stuff
 
 		if SelfTbl.Disabled then return end
 
+		-- First, since lean is measured differently while loading
+		if SelfTbl.IsAlive then UpdateDuty(self, SelfTbl) end
+
+		local Contraption = ENTITY.CFW_GetContraption(self) or {}
+
 		-- If specified, affect crew ergonomics based on lean angle
 		local LeanInfo = SelfTbl.CrewType.LeanInfo
 		if LeanInfo then
-			local LeanDot = VECTOR.Dot(VectorUp, ENTITY.GetUp(self))
+			local Up = VectorUp
+
+			-- Loading lifts rounds against gravity, so slopes and rolls hinder it even with the crew upright in the vehicle.
+			-- Other duties are done seated relative to the vehicle, where they don't count.
+			if not (LeanInfo.WorldUp or SelfTbl.IsLoading) then
+				local Baseplate = Contraption.ACF_Baseplate
+				if IsEntityValid(Baseplate) then Up = ENTITY.GetUp(Baseplate) end
+			end
+
+			local LeanDot = math.Clamp(VECTOR.Dot(Up, ENTITY.GetUp(self)), -1, 1)
 			local Angle = math.deg(math.acos(LeanDot))
 			SelfTbl.LeanEff = 1 - ACF.Normalize(Angle, LeanInfo.Min, LeanInfo.Max)
 			WireLib.TriggerOutput(self, "LeanEff", SelfTbl.LeanEff * 100)
 		end
 
 		-- TODO: Clean this shit up man
-		local Contraption = ENTITY.CFW_GetContraption(self) or {}
 		local CrewsByType = Contraption.CrewsByType or {}
 		local Commanders = CrewsByType.Commander or {}
 		local Commander = next(Commanders)
 
-		if SelfTbl.IsAlive then SelfTbl.CrewType.UpdateEfficiency(self, Commander, SelfTbl.IsAlive)
-		else SelfTbl.TotalEff = ACF.CrewFallbackCoef end
+		if SelfTbl.IsAlive then
+			SelfTbl.CrewType.UpdateEfficiency(self, Commander, SelfTbl.IsAlive)
+		else
+			SelfTbl.TotalEff = ACF.CrewFallbackCoef
+		end
 
 		WireLib.TriggerOutput(self, "TotalEff", SelfTbl.TotalEff * 100)
 
@@ -335,7 +377,7 @@ do -- Random timer stuff
 	function ENT_EnforceLimits(self)
 		local SelfTbl = ENTITY.GetTable(self)
 
-		local Targets = SelfTbl.Targets
+		local Targets = self:ACF_GetUserVar("Targets")
 		local SelfContraption = ENTITY.CFW_GetContraption(self)
 		local IsParented = CheckParentState(self)
 
@@ -396,28 +438,13 @@ do -- Random timer stuff
 		-- Debug.Cross(NewPos, 4, 1, Red, true)
 		local GForce = ACF.UpdateGForceTracker(SelfTbl.GForceTracker, NewPos, SampleRate)
 
-		-- If specified, affect crew ergonomics based on G-forces
-		local GForceInfo = SelfTbl.CrewType.GForceInfo
-		local Effs = GForceInfo.Efficiencies
-
-		-- Commanders take Loader-accurate G-force penalties while performing Loader duty
-		if GForceInfo.LoaderEfficiencies then
-			local TargetsByType = SelfTbl.TargetsByType
-			local LinkedToGun = TargetsByType and TargetsByType.acf_gun and next(TargetsByType.acf_gun)
-			local LinkedToRack = TargetsByType and TargetsByType.acf_rack and next(TargetsByType.acf_rack)
-			if LinkedToGun or LinkedToRack then
-				Effs = GForceInfo.LoaderEfficiencies
-			end
-		end
-
-		if Effs then
-			SelfTbl.MoveEff = 1 - ACF.Normalize(GForce, Effs.Min, Effs.Max)
-			WireLib.TriggerOutput(self, "MoveEff", SelfTbl.MoveEff * 100)
-		end
+		-- Kept so a change of duty can re-rate movement without waiting for the next sample
+		SelfTbl.GForce = GForce
+		UpdateMoveEff(self, SelfTbl)
 		WireLib.TriggerOutput(self, "GForce", GForce)
 
 		-- If specified, apply damage to crew based on G-forces
-		local Damages = GForceInfo.Damages
+		local Damages = SelfTbl.CrewType.GForceInfo.Damages
 		if Damages and GForce > Damages.Min and SelfTbl.IsAlive then
 			local Damage = ACF.Normalize(GForce, Damages.Min, Damages.Max) * DeltaTime * SampleRate
 			SelfTbl.GForceStrain = SelfTbl.GForceStrain + Damage
@@ -532,7 +559,6 @@ do
 		self.EntType = "Crew"
 
 		-- Stored links
-		self.Targets       = {} -- Targets linked to this crew (LUT)
 		self.TargetsByType = {} -- Targets linked to this crew by type (LUT)
 
 		-- Various state variables
@@ -565,8 +591,8 @@ do
 
 		Notify.EntityWarning(self, "Crew occupation has changed", "This crew member's occupation was changed. All links have been removed, please relink.")
 
-		if next(self.Targets) then
-			for Target in pairs(self.Targets) do
+		if next(self:ACF_GetUserVar("Targets") or {}) then
+			for Target in pairs(self:ACF_GetUserVar("Targets") or {}) do
 				self:Unlink(Target)
 			end
 
@@ -964,7 +990,7 @@ do
 	local function CanLinkCrew(Crew, Target)
 		if not Target.Crews then Target.Crews = {} end -- Safely make sure the link Target has a crew list
 		if Target.Crews[Crew] then return false, "This entity is already linked to this crewmate!" end
-		if Crew.Targets[Target] then return false, "This entity is already linked to this crewmate!" end
+		if Crew:ACF_GetUserVar("Targets")[Target] then return false, "This entity is already linked to this crewmate!" end
 
 		local Handlers = Crew.CrewType.LinkHandlers[Target:GetClass()]
 		if not Handlers then return false, "This entity cannot be linked with this occupation" end
@@ -982,7 +1008,7 @@ do
 		if not Success then return end
 
 		-- Update crew and Target's records of each other
-		Crew.Targets[Target] = true
+		Crew:ACF_GetUserVar("Targets")[Target] = true
 		Crew.TargetsByType = Crew.TargetsByType or {}
 		Crew.TargetsByType[TargetClass] = Crew.TargetsByType[TargetClass] or {}
 		Crew.TargetsByType[TargetClass][Target] = true
@@ -1008,7 +1034,7 @@ do
 	local function UnlinkCrew(Crew, Target)
 		local TargetClass = Target:GetClass()
 		-- Update crew and Target's records of each other
-		Crew.Targets[Target] = nil
+		Crew:ACF_GetUserVar("Targets")[Target] = nil
 		Crew.TargetsByType = Crew.TargetsByType or {}
 		Crew.TargetsByType[TargetClass] = Crew.TargetsByType[TargetClass] or {}
 		Crew.TargetsByType[TargetClass][Target] = nil
@@ -1040,14 +1066,14 @@ do
 		ACF.RegisterClassLink(v, "acf_crew", function(Target, Crew, FromChip)
 			local Result, Message = CanLinkCrew(Crew, Target)
 			if Result then
-				if FromChip then TimerSimple(10, function() LinkCrew(Crew, Target) end)
+				if FromChip then TimerSimple(10, function() if IsValid(Crew) and IsValid(Target) then LinkCrew(Crew, Target) end end)
 				else LinkCrew(Crew, Target) end
 			end
 			return Result, Message
 		end)
 
 		ACF.RegisterClassUnlink(v, "acf_crew", function(Target, Crew)
-			if not Target.Crews[Crew] or not Crew.Targets[Target] then return false, "This acf entity is not linked to this crewmate."	end
+			if not (Target.Crews and Target.Crews[Crew]) or not Crew:ACF_GetUserVar("Targets")[Target] then return false, "This acf entity is not linked to this crewmate."	end
 
 			UnlinkCrew(Crew, Target)
 
@@ -1058,47 +1084,11 @@ end
 
 -- Adv Dupe 2 Related
 do
-	function ENT:PreEntityCopy()
-		if next(self.Targets) then
-			local Entities = {}
-			for Ent in pairs(self.Targets) do
-				Entities[#Entities + 1] = Ent:EntIndex()
-			end
-			duplicator.StoreEntityModifier(self, "CrewTargets", Entities)
-		end
-
-		-- AutoRegisterV2 wraps this as the original PreEntityCopy and handles the wire/base dupe info.
-	end
-
-	function ENT:PostEntityPaste(_, Ent, CreatedEntities)
-		local EntMods = Ent.EntityMods
-
-		-- Restore previous links
-		if EntMods.CrewTargets then
-			for _, EntID in pairs(EntMods.CrewTargets) do
-				local ActualEnt = CreatedEntities[EntID]
-				local result, err = self:Link(ActualEnt)
-				if not result then Notify.EntityWarning(Ent, "ACF Crew:PostEntityPaste failure", err) end
-			end
-
-			self.RemainingLinks = RLs
-
-			EntMods.CrewTargets = nil
-		end
-
-		-- AutoRegisterV2 wraps this as the original PostEntityPaste and handles the wire/base dupe info.
-	end
-
 	-- Remove-only teardown. Captured by AutoRegisterV2 as OrigOnRemove; the generated OnRemove still runs
 	-- ACF_OnEntityLast + WireLib cleanup around this.
 	function ENT:OnRemove(IsFullUpdate)
 		if IsFullUpdate then return end
 
 		ACF.ActiveCrews[self] = nil
-
-		-- Unlink Target entities
-		for v in pairs(self.Targets) do
-			if IsValid(v) then self:Unlink(v) end
-		end
 	end
 end

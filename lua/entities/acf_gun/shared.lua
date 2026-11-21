@@ -9,8 +9,11 @@ end
 
 ACF.Entities.AutoRegister(2026091001, function(CLASS)
 	-- The weapon type this entity represents.
-	MENU_FIELD("ACF.Guns.BaseGun", "Weapon", {OnlyAllowSubtypes = true, OnlyAllowLeafTypes = true, InstantiateTypeForDefault = "ACF.Guns.Cannon"})
-	MENU_FIELD("Number", "BreechIndex", {Min = 1, Default = 1, Decimals = 0})
+	MENU_FIELD("ACF.Guns.BaseGun", "Weapon", {Title = "#acf.menu.fields.acf_gun.weapon", OnlyAllowSubtypes = true, OnlyAllowLeafTypes = true, InstantiateTypeForDefault = "ACF.Guns.Cannon"})
+	MENU_FIELD("Number", "BreechIndex", {Title = "#acf.menu.fields.acf_gun.breech_index", Min = 1, Default = 1, Decimals = 0})
+	LINKED_ENTITY_ARRAY_FIELD("Crates", {AcceptableClasses = {acf_ammo = true}})
+	LINKED_ENTITY_FIELD("Turret", {AcceptableClasses = {acf_turret = true}})
+	LINKED_ENTITY_FIELD("Computer", {AcceptableClasses = {acf_computer = true}})
 
 	function CLASS:VerifyData()
 		self.Weapon:VerifyData()

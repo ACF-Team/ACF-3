@@ -10,6 +10,19 @@ end
 
 -- Camera related
 do
+	local function ClampCamMode(Entity, CamMode)
+		return math.Clamp(CamMode, 1, math.Clamp(Entity:GetCamCount(), 1, 3))
+	end
+
+
+	local function ApplyCamMode(Entity, CamMode)
+		CamMode = ClampCamMode(Entity, CamMode)
+		Entity.CamMode = CamMode
+		Entity.CamOffset = Entity["GetCam" .. CamMode .. "Offset"]()
+		Entity.CamOrbit = Entity["GetCam" .. CamMode .. "Orbit"]()
+		Entity:SetCamParent(Entity["GetCam" .. CamMode .. "Parent"]())
+	end
+
 	net.Receive("ACF_Controller_CamInfo", function(_, ply)
 		local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
 		local CamMode = net.ReadUInt(2)
@@ -17,22 +30,21 @@ do
 		if not IsValid(Entity) then return end
 		if Entity.Driver ~= ply then return end
 		if Entity:GetDisableAIOCam() then return end
-		Entity.CamMode = math.Clamp(CamMode, 1, Entity:GetCamCount())
-		Entity.CamOffset = Entity["GetCam" .. CamMode .. "Offset"]()
-		Entity.CamOrbit = Entity["GetCam" .. CamMode .. "Orbit"]()
-		Entity:SetCamParent(Entity["GetCam" .. CamMode .. "Parent"]())
+		ApplyCamMode(Entity, CamMode)
 	end)
 
 	net.Receive("ACF_Controller_CamData", function(_, ply)
 		local EntIndex = net.ReadUInt(MAX_EDICT_BITS)
 		local CamAngPitch = net.ReadFloat()
 		local CamAngYaw = net.ReadFloat()
-		local CamAng = Angle(CamAngPitch, CamAngYaw, 0)
+		local CamMode = net.ReadUInt(2)
 		local Entity = Entity(EntIndex)
 		if not IsValid(Entity) then return end
 		if Entity.Driver ~= ply then return end
 		if Entity:GetDisableAIOCam() then return end
-		Entity.CamAng = CamAng
+		if not ACF.IsNumberFinite(CamAngPitch) or not ACF.IsNumberFinite(CamAngYaw) then return end
+		Entity.CamAng = Angle(CamAngPitch, CamAngYaw, 0)
+		if Entity.CamMode ~= ClampCamMode(Entity, CamMode) then ApplyCamMode(Entity, CamMode) end
 	end)
 
 	net.Receive("ACF_Controller_Zoom", function(_, ply)
@@ -42,6 +54,8 @@ do
 		if not IsValid(Entity) then return end
 		if Entity.Driver ~= ply then return end
 		if Entity:GetDisableAIOCam() then return end
+		if FOV ~= FOV then return end
+		FOV = math.Clamp(FOV, Entity:GetZoomMin(), Entity:GetZoomMax())
 		Entity.FOV = FOV
 		ply:SetFOV(FOV, 0, nil)
 	end)

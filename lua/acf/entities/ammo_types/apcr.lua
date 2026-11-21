@@ -15,8 +15,14 @@ Classes.DefineClass("ACF.Ammunition.APCR", "ACF.Ammunition.AP", function(CLASS, 
 		["ACF.Guns.RotaryAutocannon"] = true,
 	})
 
-	-- Core diameter from thinnest to thickest, negative keeps the legacy full length steel core
-	MENU_FIELD("Number", "CoreScale", {Default = -1})
+	-- Core diameter from 0 (thinnest) to 1 (thickest)
+	MENU_FIELD("Number", "CoreScale", {Title = "#acf.menu.fields.ammunition.core_scale", Default = 0.5})
+
+	CLASS.PenFactor    = ACF.CarbideCorePenFactor
+	CLASS.PenSizeScale = ACF.CarbideCoreSizeScale
+
+	--- Only the carbide core penetrates
+	function CLASS:GetPenetratorMass(Bullet) return Bullet.CoreMass end
 
 	local MinCoreRatio, MaxCoreRatio = 0.32, 0.531 -- Core over bore diameter, BR-365P to M304
 	local CoreLengthRatio = 3.3 -- Core length in calibers
@@ -26,7 +32,8 @@ Classes.DefineClass("ACF.Ammunition.APCR", "ACF.Ammunition.AP", function(CLASS, 
 	function CLASS:VerifyData()
 		BASE.VerifyData(self)
 
-		if not isnumber(self.CoreScale) then self.CoreScale = -1 end
+		-- Saves from before the carbide core hold -1
+		if not isnumber(self.CoreScale) or self.CoreScale < 0 then self.CoreScale = 0.5 end
 	end
 
 	function CLASS:UpdateRoundData()
@@ -35,28 +42,15 @@ Classes.DefineClass("ACF.Ammunition.APCR", "ACF.Ammunition.AP", function(CLASS, 
 
 		ACF.UpdateRoundSpecs(self)
 
-		local DragArea = Data.ProjArea
+		-- Carbide core at the tip of a full bore carrier
+		local FullBoreArea = math.pi * (Data.Caliber * 0.5) ^ 2
 
-		if (self.CoreScale or -1) >= 0 then
-			-- Carbide core at the tip of a full bore carrier
-			local FullBoreArea = math.pi * (Data.Caliber * 0.5) ^ 2
-			local CarrierMass
-
-			Data.CoreLength     = math.min(CoreLengthRatio * Data.Diameter, Data.ProjLength)
-			Data.CoreMass       = Data.ProjArea * Data.CoreLength * ACF.TungstenCarbideDensity
-			CarrierMass         = (FullBoreArea * Data.ProjLength - Data.ProjArea * Data.CoreLength) * ACF.SteelDensity * CarrierFill
-			Data.ProjMass       = Data.CoreMass + CarrierMass
-			Data.CoreIsTungsten = true
-			DragArea            = FullBoreArea -- The carrier stays on in flight
-		else
-			Data.CoreLength = Data.ProjLength
-			Data.CoreMass   = nil
-			Data.ProjMass   = Data.ProjArea * Data.ProjLength * ACF.SteelDensity --Volume of the projectile as a cylinder * density of steel (kg/in3)
-			Data.CoreIsTungsten = false
-		end
+		Data.CoreLength = math.min(CoreLengthRatio * Data.Diameter, Data.ProjLength)
+		Data.CoreMass   = Data.ProjArea * Data.CoreLength * ACF.TungstenCarbideDensity
+		Data.ProjMass   = Data.CoreMass + (FullBoreArea * Data.ProjLength - Data.ProjArea * Data.CoreLength) * ACF.SteelDensity * CarrierFill
 
 		Data.MuzzleVel = ACF.MuzzleVelocity(Data.PropMass, Data.ProjMass, Data.Efficiency)
-		Data.DragCoef  = DragArea * 0.0001 / Data.ProjMass
+		Data.DragCoef  = FullBoreArea * 0.0001 / Data.ProjMass -- The carrier stays on in flight
 		Data.CartMass  = Data.PropMass + Data.ProjMass
 
 		hook.Run("ACF_OnUpdateRound", self, self, Data, GUIData)
@@ -68,20 +62,15 @@ Classes.DefineClass("ACF.Ammunition.APCR", "ACF.Ammunition.AP", function(CLASS, 
 
 	function CLASS:BaseConvert()
 		-- Mutated in place, the ammo menu preview holds this table
-		local CoreScale = self.CoreScale or -1
-
 		self.BulletData = self.BulletData or {}
-		self.BulletData.ProjScale = CoreScale >= 0 and Lerp(math.min(CoreScale, 1), MinCoreRatio, MaxCoreRatio) or 0.75
+		self.BulletData.ProjScale = Lerp(math.Clamp(self.CoreScale or 0.5, 0, 1), MinCoreRatio, MaxCoreRatio)
 
-		local Data = ACF.RoundBaseGunpowder(self) -- APCR has a smaller penetrator
+		local Data    = ACF.RoundBaseGunpowder(self) -- APCR has a smaller penetrator
+		local GUIData = self.GUIData
 
 		-- Without a floor the carrier shrinks to a ring around the core, flying far lighter than any real HVAP
-		if CoreScale >= 0 then
-			local GUIData = self.GUIData
-
-			GUIData.MinProjLength = math.min(math.Round(Data.Diameter * CoreLengthRatio * MinCarrierRatio, 2), GUIData.MaxProjLength)
-			GUIData.MaxPropLength = math.min(GUIData.MaxPropLength, GUIData.MaxRoundLength - GUIData.MinProjLength)
-		end
+		GUIData.MinProjLength = math.min(math.Round(Data.Diameter * CoreLengthRatio * MinCarrierRatio, 2), GUIData.MaxProjLength)
+		GUIData.MaxPropLength = math.min(GUIData.MaxPropLength, GUIData.MaxRoundLength - GUIData.MinProjLength)
 
 		Data.ShovePower = 0.2
 		Data.LimitVel   = 900 --Most efficient penetration speed in m/s
@@ -116,7 +105,6 @@ Classes.DefineClass("ACF.Ammunition.APCR", "ACF.Ammunition.AP", function(CLASS, 
 		ACF.RegisterAmmoDecal("ACF.Ammunition.APCR", "damage/apcr_pen", "damage/apcr_rico")
 
 		function CLASS:OnCreateAmmoControls(Base)
-			-- Negative CoreScale only comes from old saved data
 			ACF.AmmoMenu.Slider(Base, "#acf.menu.ammo.core_scale", 0, 1, 2, "CoreScale", function(Value)
 				self.CoreScale = Value
 				-- ProjScale is only set in BaseConvert, so it needs the full rebuild
@@ -124,7 +112,7 @@ Classes.DefineClass("ACF.Ammunition.APCR", "ACF.Ammunition.AP", function(CLASS, 
 			end)
 		end
 
-		-- Ammo menu visual: a subcaliber steel core fused inside a full-bore body for the round's entire length (never discarded, unlike APDS's sabot).
+		-- Ammo menu visual: a subcaliber carbide core at the tip of a full-bore body (never discarded, unlike APDS's sabot).
 		function CLASS:DrawAmmoVisual(Panel, w, h, _, BulletData)
 			local GeoPrim = ACF.GeoPrim
 			local Margin  = 10
@@ -151,10 +139,10 @@ Classes.DefineClass("ACF.Ammunition.APCR", "ACF.Ammunition.AP", function(CLASS, 
 			local Body = GeoPrim.New("Cylinder", { Radius = BulletData.Caliber * 0.5, Height = BulletData.ProjLength })
 			Body:SetMaterial("Steel Body (Fused)")
 
-			-- Core at the tip, shorter and tungsten when CoreScale is set, else the legacy full length steel core
+			-- Core at the tip of the body
 			local CoreLength = BulletData.CoreLength or BulletData.ProjLength
 			local Core = GeoPrim.New("Cylinder", { Radius = BulletData.Diameter * 0.5, Height = CoreLength })
-			Core:SetMaterial(BulletData.CoreIsTungsten and "Tungsten Core" or "Steel Core")
+			Core:SetMaterial("Tungsten Core")
 
 			local X = Margin
 			X = Propellant:Draw(Panel, X, CenterY, Scale, MaxDia, Color(180, 150, 60), Color(30, 30, 30))

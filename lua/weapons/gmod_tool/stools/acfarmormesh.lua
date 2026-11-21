@@ -470,7 +470,7 @@ elseif SERVER then
 	-- here is enough to survive any future rebuilds (e.g. primitives reinitializing their physics). Convexes
 	-- that already exist at restore time still need their materials applied directly.
 	duplicator.RegisterEntityModifier("ACF_ArmorMesh", function(_, Entity, Data)
-		if not Data or not Data.Materials then return end
+		if not istable(Data) or not istable(Data.Materials) then return end
 		if Entity.ACF_PreventArmoring then return end
 
 		Entity.ACF_Volumetric_Materials = Data.Materials
@@ -495,7 +495,7 @@ elseif SERVER then
 	-- data set at this point would be incomplete). The override is runtime-only; if the entity is re-duplicated
 	-- it goes through the normal pipeline with whatever ACF_Volumetric_Materials is set at that time.
 	duplicator.RegisterEntityModifier("ACF_Armor", function(_, Entity, Data)
-		if not Data then return end
+		if not istable(Data) then return end
 
 		duplicator.ClearEntityModifier(Entity, "ACF_Armor")
 
@@ -558,7 +558,7 @@ elseif SERVER then
 			local Player = self:GetOwner()
 
 			if Entity:GetClass() ~= "primitive_shape" then
-				Notify.WarningToPlayer(Player, "Cannot set thickness", "This is not a primitive entity.")
+				Notify.WarningToPlayer(Player, "Cannot set thickness", "Thickness can only be set on a primitive entity.")
 				return false
 			end
 

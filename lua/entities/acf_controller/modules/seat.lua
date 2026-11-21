@@ -1,9 +1,6 @@
 local RecacheBindOutput = ENT.RecacheBindOutput
 local RecacheBindState  = ENT.RecacheBindState
-
-local function Init(Entity)
-	Entity.Seat = nil  -- The single seat
-end
+local TrackDriver       = ENT.TrackDriver
 
 local IN_ENUM_TO_WIRE_OUTPUT = {}
 for _, Binding in ipairs(ACF.ControllerKeyBindings) do
@@ -17,6 +14,8 @@ local function OnActiveChanged(Controller, Ply, Active)
 	-- Reset all key states and outputs when getting in or out of the vehicle
 	Controller.KeyStates = {}
 	Controller.ActionStates = {}
+	Controller.ActionLatches = {}
+	Controller.ActionMask = 0
 	for Key, Output in pairs(IN_ENUM_TO_WIRE_OUTPUT) do
 		RecacheBindOutput(Controller, SelfTbl, Output, 0)
 		RecacheBindState(SelfTbl, Key, false)
@@ -30,9 +29,10 @@ local function OnActiveChanged(Controller, Ply, Active)
 
 	Controller.Active = Active
 	Controller.Driver = Active and Ply or NULL
+	TrackDriver(Ply, Active and Controller or nil)
 	if Active then Controller:AnalyzeCams() end -- Recalculate filter for the cameras
 
-	for Turret in pairs(Controller.Turrets) do
+	for Turret in pairs(Controller:ACF_GetUserVar("Turrets")) do
 		if IsValid(Turret) then Turret:TriggerInput("Active", Active and not Controller.TurretLocked) end
 	end
 
@@ -40,7 +40,7 @@ local function OnActiveChanged(Controller, Ply, Active)
 		if IsValid(Engine) then Engine:TriggerInput("Active", Active) end
 	end
 
-	if IsValid(Controller.Gearbox) then Controller.Gearbox:TriggerInput("Gear", Active and 1 or 0) end
+	if IsValid(Controller:ACF_GetUserVar("Gearbox")) then Controller:ACF_GetUserVar("Gearbox"):TriggerInput("Gear", Active and 1 or 0) end
 
 	for Gearbox in pairs(Controller.GearboxEnds) do
 		if IsValid(Gearbox) then Gearbox:TriggerInput("Gear", Active and 1 or 0) end
@@ -130,6 +130,9 @@ local function OnLinkedSeat(Controller, Target)
 end
 
 local function OnUnlinkedSeat(Controller)
+	local Driver = Controller.Driver
+	if Controller.Active and IsValid(Driver) then OnActiveChanged(Controller, Driver, false) end
+
 	-- Remove the hooks when the seat is unlinked
 	hook.Remove("PlayerEnteredVehicle", "ACFControllerSeatEnter" .. Controller:EntIndex())
 	hook.Remove("PlayerLeaveVehicle", "ACFControllerSeatExit" .. Controller:EntIndex())
@@ -144,4 +147,3 @@ ACF.RegisterControllerLink("prop_vehicle_prisoner_pod", {
 	OnUnlinked = function(Controller, _) OnUnlinkedSeat(Controller) end,
 })
 
-return Init

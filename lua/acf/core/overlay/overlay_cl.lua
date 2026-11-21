@@ -547,6 +547,33 @@ do
     end
 
 
+    --- The overlay's box behind its content, for anything else drawn in its style
+    function Overlay.DrawFrameBackground(BoxX, BoxY, BoxW, BoxH)
+        surface.SetDrawColor(COLOR_PRIMARY_BACKGROUND)
+        surface.DrawRect(BoxX, BoxY, BoxW, BoxH)
+    end
+
+    --- The overlay's border and drop shadow, drawn over the content
+    function Overlay.DrawFrameBorder(BoxX, BoxY, BoxW, BoxH)
+        local BORDER_SIZE = 2
+        surface.SetDrawColor(COLOR_BORDER_LIGHT_COLOR)
+        surface.DrawRect(BoxX, BoxY, BoxW, BORDER_SIZE)
+        surface.DrawRect(BoxX, BoxY, BORDER_SIZE, BoxH)
+        surface.SetDrawColor(COLOR_TERTIARY_COLOR)
+        surface.DrawRect(BoxX + BORDER_SIZE, BoxY + BoxH - BORDER_SIZE, BoxW - BORDER_SIZE, BORDER_SIZE)
+        surface.DrawRect(BoxX + BoxW - BORDER_SIZE, BoxY + BORDER_SIZE, BORDER_SIZE, BoxH - BORDER_SIZE)
+
+        -- This kinda sucks... todo
+        surface.DrawRect(BoxX + BORDER_SIZE - 1, BoxY + BoxH - 1, BoxW - BORDER_SIZE, 1)
+        surface.DrawRect(BoxX + BoxW - 1, BoxY + BORDER_SIZE - 1, 1, BoxH - BORDER_SIZE)
+
+        -- Draw a drop shadow
+        surface.SetDrawColor(COLOR_DROP_SHADOW)
+        local DROP_SHADOW_SIZE = 4
+        surface.DrawRect(BoxX + BoxW, BoxY + DROP_SHADOW_SIZE, DROP_SHADOW_SIZE, BoxH)
+        surface.DrawRect(BoxX + DROP_SHADOW_SIZE, BoxY + BoxH, BoxW - DROP_SHADOW_SIZE, DROP_SHADOW_SIZE)
+    end
+
     local Overlays = Overlay.ActiveOverlays or {}
     Overlay.ActiveOverlays = Overlays
 
@@ -668,10 +695,8 @@ do
         OverlayMatrix:Scale(OverlayScale)
         Overlay.PlacePageArrows(XScale, YScale)
 
-        -- Draw background
-        surface.SetDrawColor(COLOR_PRIMARY_BACKGROUND)
         local BoxX, BoxY, BoxW, BoxH = TargetX - (TotalW / (2 / XScale)), TargetY - (TotalH / (2 / YScale)), TotalW * XScale, TotalH * YScale
-        surface.DrawRect(BoxX, BoxY, BoxW, BoxH)
+        Overlay.DrawFrameBackground(BoxX, BoxY, BoxW, BoxH)
 
         cam.PushModelMatrix(OverlayMatrix)
         -- Draw all cached calls.
@@ -681,23 +706,7 @@ do
         end
         cam.PopModelMatrix()
 
-        local BORDER_SIZE = 2
-        surface.SetDrawColor(COLOR_BORDER_LIGHT_COLOR)
-        surface.DrawRect(BoxX, BoxY, BoxW, BORDER_SIZE)
-        surface.DrawRect(BoxX, BoxY, BORDER_SIZE, BoxH)
-        surface.SetDrawColor(COLOR_TERTIARY_COLOR)
-        surface.DrawRect(BoxX + BORDER_SIZE, BoxY + BoxH - BORDER_SIZE, BoxW - BORDER_SIZE, BORDER_SIZE)
-        surface.DrawRect(BoxX + BoxW - BORDER_SIZE, BoxY + BORDER_SIZE, BORDER_SIZE, BoxH - BORDER_SIZE)
-
-        -- This kinda sucks... todo
-        surface.DrawRect(BoxX + BORDER_SIZE - 1, BoxY + BoxH - 1, BoxW - BORDER_SIZE, 1)
-        surface.DrawRect(BoxX + BoxW - 1, BoxY + BORDER_SIZE - 1, 1, BoxH - BORDER_SIZE)
-
-        -- Draw a drop shadow
-        surface.SetDrawColor(COLOR_DROP_SHADOW)
-        local DROP_SHADOW_SIZE = 4
-        surface.DrawRect(BoxX + BoxW, BoxY + DROP_SHADOW_SIZE, DROP_SHADOW_SIZE, BoxH)
-        surface.DrawRect(BoxX + DROP_SHADOW_SIZE, BoxY + BoxH, BoxW - DROP_SHADOW_SIZE, DROP_SHADOW_SIZE)
+        Overlay.DrawFrameBorder(BoxX, BoxY, BoxW, BoxH)
 
         DisableClipping(Clipping)
         surface.SetAlphaMultiplier(Alpha)

@@ -9,13 +9,13 @@ Classes.DefineClass("ACF.Ammunition.APFSDS", "ACF.Ammunition.AP", function(CLASS
 	-- Only this type lets the rod bore back into the propellant, gating TelescopeRatio in UpdateRoundSpecs
 	CLASS.CanTelescope = true
 
-	MENU_FIELD("Number", "TelescopeRatio", {Default = 0})
-	MENU_FIELD("Number", "TelescopeScale", {Default = -1}) -- Negative until derived from TelescopeRatio
+	MENU_FIELD("Number", "TelescopeRatio", {Title = "#acf.menu.fields.ammunition.telescope_ratio", Default = 0})
+	MENU_FIELD("Number", "TelescopeScale", {Title = "#acf.menu.fields.ammunition.telescope_scale", Default = -1}) -- Negative until derived from TelescopeRatio
 	-- Most telescoping allowed, M829A1's real geometry needs 0.474
 	CLASS.MaxTelescopeRatio = 0.474
 
 	-- Rod diameter from thinnest to thickest real rod, thickest by default
-	MENU_FIELD("Number", "RodScale", {Default = 1})
+	MENU_FIELD("Number", "RodScale", {Title = "#acf.menu.fields.ammunition.rod_scale", Default = 1})
 
 	-- Rod over bore diameter of Cold War rounds, DM33 to 3BM9
 	local RealMinDiameterRatio, RealMaxDiameterRatio = 0.233, 0.352

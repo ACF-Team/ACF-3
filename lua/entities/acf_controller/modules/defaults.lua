@@ -26,6 +26,9 @@ do
         BrakeStrength = 300,
         SpeedTop = 60,
 
+        SteerLow = 30,
+        SteerTop = 30,
+
         ShiftTime = 100,
     }
     return Defaults

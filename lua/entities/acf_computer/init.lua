@@ -11,11 +11,13 @@ local Utilities = ACF.Utilities
 local Clock     = Utilities.Clock
 
 ACF.RegisterClassLink("acf_computer", "acf_rack", function(Computer, Target)
-	if Computer.Weapons[Target] then return false, "This rack is already linked to this computer!" end
-	if Target.Computer == Computer then return false, "This rack is already linked to this computer!" end
+	local Weapons = Computer:ACF_GetUserVar("Weapons")
 
-	Computer.Weapons[Target] = true
-	Target.Computer = Computer
+	if Weapons[Target] then return false, "This rack is already linked to this computer!" end
+	if Target:ACF_GetUserVar("Computer") == Computer then return false, "This rack is already linked to this computer!" end
+
+	Weapons[Target] = true
+	Target:ACF_SetUserVar("Computer", Computer)
 
 	Computer:UpdateOverlay()
 	Target:UpdateOverlay()
@@ -24,9 +26,11 @@ ACF.RegisterClassLink("acf_computer", "acf_rack", function(Computer, Target)
 end)
 
 ACF.RegisterClassUnlink("acf_computer", "acf_rack", function(Computer, Target)
-	if Computer.Weapons[Target] or Target.Computer == Computer then
-		Computer.Weapons[Target] = nil
-		Target.Computer = nil
+	local Weapons = Computer:ACF_GetUserVar("Weapons")
+
+	if Weapons[Target] or Target:ACF_GetUserVar("Computer") == Computer then
+		Weapons[Target] = nil
+		Target:ACF_SetUserVar("Computer", nil)
 
 		Computer:UpdateOverlay()
 		Target:UpdateOverlay()
@@ -38,11 +42,13 @@ ACF.RegisterClassUnlink("acf_computer", "acf_rack", function(Computer, Target)
 end)
 
 ACF.RegisterClassLink("acf_computer", "acf_gun", function(Computer, Target)
-	if Computer.Weapons[Target] then return false, "This computer is already linked to this weapon!" end
-	if Target.Computer == Computer then return false, "This computer is already linked to this weapon!" end
+	local Weapons = Computer:ACF_GetUserVar("Weapons")
 
-	Computer.Weapons[Target] = true
-	Target.Computer = Computer
+	if Weapons[Target] then return false, "This computer is already linked to this weapon!" end
+	if Target:ACF_GetUserVar("Computer") == Computer then return false, "This computer is already linked to this weapon!" end
+
+	Weapons[Target] = true
+	Target:ACF_SetUserVar("Computer", Computer)
 
 	Computer:UpdateOverlay()
 	Target:UpdateOverlay()
@@ -51,9 +57,11 @@ ACF.RegisterClassLink("acf_computer", "acf_gun", function(Computer, Target)
 end)
 
 ACF.RegisterClassUnlink("acf_computer", "acf_gun", function(Computer, Target)
-	if Computer.Weapons[Target] or Target.Computer == Computer then
-		Computer.Weapons[Target] = nil
-		Target.Computer = nil
+	local Weapons = Computer:ACF_GetUserVar("Weapons")
+
+	if Weapons[Target] or Target:ACF_GetUserVar("Computer") == Computer then
+		Weapons[Target] = nil
+		Target:ACF_SetUserVar("Computer", nil)
 
 		Computer:UpdateOverlay()
 		Target:UpdateOverlay()
@@ -178,8 +186,7 @@ do -- Spawn and update function
 	end
 
 	function ENT:ACF_PreSpawn()
-		self.ACF     = {}
-		self.Weapons = {}
+		self.ACF = {}
 
 		duplicator.ClearEntityModifier(self, "mass")
 	end
@@ -200,7 +207,7 @@ do -- Spawn and update function
 		if Class and Class.OnSpawn then Class.OnSpawn(self, nil, Class, Computer) end
 	end
 
-	ACF.RegisterLinkSource("acf_computer", "Weapons")
+	ACF.RegisterLinkSource("acf_computer", "Weapons", nil, true)
 end
 
 function ENT:ACF_OnDamage(DmgResult, DmgInfo)
@@ -260,42 +267,4 @@ function ENT:Think()
 	self:NextThink(Clock.CurTime)
 
 	return true
-end
-
-function ENT:PreEntityCopy()
-	if next(self.Weapons) then
-		local Entities = {}
-
-		for Weapon in pairs(self.Weapons) do
-			Entities[#Entities + 1] = Weapon:EntIndex()
-		end
-
-		duplicator.StoreEntityModifier(self, "ACFWeapons", Entities)
-	end
-
-	-- AutoRegisterV2 wraps this as the original PreEntityCopy and handles the wire/base dupe info.
-end
-
-function ENT:PostEntityPaste(_, Ent, CreatedEntities)
-	local EntMods = Ent.EntityMods
-
-	if EntMods.ACFWeapons then
-		for _, EntID in pairs(EntMods.ACFWeapons) do
-			self:Link(CreatedEntities[EntID])
-		end
-
-		EntMods.ACFWeapons = nil
-	end
-
-	-- AutoRegisterV2 wraps this as the original PostEntityPaste and handles the wire/base dupe info.
-end
-
--- Remove-only teardown. Captured by AutoRegisterV2 as OrigOnRemove; the generated OnRemove runs
--- ACF_OnEntityLast (which fires the component's OnLast) + WireLib cleanup around this.
-function ENT:OnRemove(IsFullUpdate)
-	if IsFullUpdate then return end
-
-	for Weapon in pairs(self.Weapons) do
-		self:Unlink(Weapon)
-	end
 end

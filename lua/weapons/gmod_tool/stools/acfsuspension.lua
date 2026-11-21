@@ -254,6 +254,8 @@ elseif SERVER then -- Serverside-only stuff
 		local Action = net.ReadString()
 		local Tool = ply:GetTool("acfsuspension")
 
+		if not Tool then return end
+
 		if Action == "Create" then Tool:CreateSuspension()
 		elseif Action == "Clear" then Tool:ClearSuspension()
 		end

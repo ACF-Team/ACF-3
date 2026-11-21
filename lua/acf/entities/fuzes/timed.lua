@@ -1,11 +1,12 @@
 
 local Classes = ACF.Classes
+local Clock   = ACF.Utilities.Clock
 Classes.DefineClass("ACF.Missiles.Fuze.Timed", "ACF.Missiles.Fuze.Contact", function(CLASS, BASE)
 	CLASS.Name = "Timed"
 	CLASS.MinTime = 1
 	CLASS.MaxTime = 30
 
-	MENU_FIELD("Number", "FuzeTimer", {Default = 0})
+	MENU_FIELD("Number", "FuzeTimer", {Title = "#acf.menu.fields.fuzes.fuze_timer", Default = 0})
 
 	function CLASS:OnFirst(Entity)
 		BASE.OnFirst(self, Entity)

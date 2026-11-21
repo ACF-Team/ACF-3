@@ -127,6 +127,7 @@ local CheckType = instance.CheckType
 local acf_library = instance.Libraries.acf
 local owrap, ounwrap = instance.WrapObject, instance.UnwrapObject
 local ents_methods, wrap, unwrap = instance.Types.Entity.Methods, instance.Types.Entity.Wrap, instance.Types.Entity.Unwrap
+local ents_metatable = instance.Types.Entity
 local ang_meta, aunwrap = instance.Types.Angle, instance.Types.Angle.Unwrap
 local vec_meta, vunwrap = instance.Types.Vector, instance.Types.Vector.Unwrap
 
@@ -1234,6 +1235,7 @@ if SERVER then
 
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return 0 end
+		if not This.IsACFEngine then return 0 end
 
 		local Idle = This.IdleRPM
 		local Redline = This.LimitRPM
@@ -1258,6 +1260,7 @@ if SERVER then
 
 		if not IsACFEntity(This) then SF.Throw("Entity is not valid", 2) end
 		if RestrictInfo(This) then return 0 end
+		if not This.IsACFEngine then return 0 end
 
 		local Idle = This.IdleRPM
 		local Redline = This.LimitRPM
@@ -1333,7 +1336,7 @@ if SERVER then
 
 		if This.IsElectric then
 			PowerbandMin = This.IdleRPM
-			PowerbandMax = floor((This.LimitRPM or 0) * 0.5)
+			PowerbandMax = math.floor((This.LimitRPM or 0) * 0.5)
 		else
 			PowerbandMin = This.PeakMinRPM
 			PowerbandMax = This.PeakMaxRPM
@@ -2420,7 +2423,7 @@ if SERVER then
 		local DisplayData = AmmoType:GetDisplayData(BulletData)
 		local MaxPen      = DisplayData and DisplayData.MaxPen
 
-		return MaxPen and Round(MaxPen, 2) or 0
+		return MaxPen and math.Round(MaxPen, 2) or 0
 	end
 
 	--- Returns the blast radius of an HE, APHE, or HEAT round
@@ -2444,7 +2447,7 @@ if SERVER then
 		local DisplayData = AmmoType:GetDisplayData(BulletData)
 		local Radius      = DisplayData and DisplayData.BlastRadius
 
-		return Radius and Round(Radius, 2) or 0
+		return Radius and math.Round(Radius, 2) or 0
 	end
 
 	--- Returns the number of rounds in active ammo crates linked to an ACF weapon
@@ -2561,7 +2564,9 @@ if SERVER then
 
 		CheckPerms(instance, This, "entities.acf")
 
-		return IsValid(This.Gyro) and wrap(This.Gyro) or nil
+		local Gyro = This:ACF_GetUserVar("Gyro")
+
+		return IsValid(Gyro) and wrap(Gyro) or nil
 	end
 
 	--- Returns the motor linked to the turret
@@ -2577,7 +2582,9 @@ if SERVER then
 
 		CheckPerms(instance, This, "entities.acf")
 
-		return IsValid(This.Motor) and wrap(This.Motor) or nil
+		local Motor = This:ACF_GetUserVar("Motor")
+
+		return IsValid(Motor) and wrap(Motor) or nil
 	end
 
 	--- Returns the turret's current loaded mass, in kg
@@ -2711,8 +2718,8 @@ if SERVER then
 			TotalMass		= td.TotalMass,
 			LocalMassCenter	= IsValid(This.Rotator) and This:WorldToLocal(This.Rotator:LocalToWorld(This.TurretData.LocalCoM)) or Vector(),
 
-			Motor			= IsValid(This.Motor) and wrap(This.Motor) or nil,
-			Gyro			= IsValid(This.Gyro) and wrap(This.Gyro) or nil,
+			Motor			= IsValid(This:ACF_GetUserVar("Motor")) and wrap(This:ACF_GetUserVar("Motor")) or nil,
+			Gyro			= IsValid(This:ACF_GetUserVar("Gyro")) and wrap(This:ACF_GetUserVar("Gyro")) or nil,
 		}
 
 		return Data

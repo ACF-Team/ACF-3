@@ -77,6 +77,7 @@ local function Build(Menu, Contexts)
 	local MissileInfo    = MissileBase:AddLabel()
 
 	Menu:AddTitle("Rack Settings")
+	Menu:AddPresets(Rack)
 
 	local RackList = Menu:AddComboBox()
 
@@ -163,6 +164,14 @@ local function Build(Menu, Contexts)
 	ACF.Menu.LoadClassCombo(MissileTypes, Entries, "ID", "Model", PAGE, "group")
 end
 
+--- Whether serialized ammo crate data is for a missile
+function ACF.Menu.IsMissileAmmo(Data)
+	local Weapon = Data.Weapon
+	local Type   = Classes.GetTypeByName(istable(Weapon) and Weapon.Type or Weapon)
+
+	return Type ~= nil and Classes.IsAssignableTo(Type, Classes.GetTypeByName(MISSILE_BASE))
+end
+
 ACF.Menu.RegisterPage({
 	ID       = "acf_rack",
 	Category = "#acf.menu.entities",
@@ -172,9 +181,23 @@ ACF.Menu.RegisterPage({
 
 	Contexts = { Rack = "acf_rack", Ammo = "acf_ammo" },
 
+	AcceptsCopy = function(ClassName, Data)
+		return ClassName ~= "acf_ammo" or ACF.Menu.IsMissileAmmo(Data)
+	end,
+
+	-- Missile crates remember their ammo per missile group
+	PrepareCopy = function(Name, Data, Context)
+		if Name ~= "Ammo" then return end
+
+		local Weapon  = Data.Weapon
+		local Missile = Classes.GetTypeByName(istable(Weapon) and Weapon.Type or Weapon)
+
+		if Missile then ACF.AmmoMenu.SetScope(Context, Classes.GetBaseClass(Missile)) end
+	end,
+
 	Actions = {
 		{ Bind = "left",       Context = "Rack", Preview = true, Desc = "Spawn a new missile rack, or update the one you're aiming at." },
-		{ Bind = "shift+left", Context = "Ammo", Preview = true, Desc = "Spawn a new ammo crate, or update the one you're aiming at." },
+		{ Bind = "shift+left", Context = "Ammo", Preview = true, Send = function(...) ACF.AmmoMenu.SendCrate(...) end, Desc = "Spawn a new ammo crate, or update the one you're aiming at." },
 		{ Bind = "right",      Commit = "link", Desc = "Select entities, then a rack/crate, to link them (hold R to unlink)." },
 	},
 

@@ -16,11 +16,28 @@ local function CanLinkGun(_, Gun)
 	return true, "Crew linked."
 end
 
+--- A linked weapon only claims a share of focus while it's being loaded
+local function CountTasks(Crew)
+	local Count = 0
+
+	for Target in pairs(Crew:ACF_GetUserVar("Targets") or {}) do
+		local Idle = IsValid(Target) and Target.IsCrewLoading and not Target:IsCrewLoading()
+		if not Idle then Count = Count + 1 end
+	end
+
+	return Count
+end
+
+--- Cramped space only hinders a crew while it's loading
+local function LoadingSpaceEff(Crew)
+	return Crew.IsLoading and Crew.SpaceEff or 1
+end
+
 --- Checks if the number of targets of the class for the crew exceeds the count
 --- Default count is 1
 local function CheckCount(Crew, Class, Count)
 	if not Class then
-		return table.Count(Crew.Targets) >= (Count or 1)
+		return table.Count(Crew:ACF_GetUserVar("Targets") or {}) >= (Count or 1)
 	end
 	local Targets = Crew.TargetsByType[Class]
 	return (Targets and table.Count(Targets) or 0) >= (Count or 1)
@@ -33,8 +50,8 @@ local function FindLongestBullet(Crew)
 	local LongestBullet = nil
 	for Gun in pairs(Crew.TargetsByType["acf_gun"] or Crew.TargetsByType["acf_rack"] or table_empty) do
 		if not IsValid(Gun) then continue end
-		for Crate in pairs(Gun.Crates) do
-			local BulletData = Crate.BulletData
+		for Crate in pairs(Gun:ACF_GetUserVar("Crates") or {}) do
+			local BulletData = Crate.SlotBulletData or Crate.BulletData
 			local Length = BulletData.RoundLength or (BulletData.PropLength + BulletData.ProjLength)
 			if Length > LongestLength then
 				LongestLength = Length
@@ -72,7 +89,7 @@ Classes.DefineClass("ACF.CrewTypes.Loader", "ACF.CrewTypes.BaseCrewType", functi
 	CLASS.Name        = "Loader"
 	CLASS.Icon		= "icon16/wand.png"
 	CLASS.Description = "Loaders affect the reload rate of your weapons. Link them to ACF Guns or Missile Racks. They prefer standing poses."
-	CLASS.ExtraNotes 	= "Loaders can link to multiple ACF Guns or Missile Racks at once, but this will spread their focus between what they're linked to. Viewing loaders with the ACF Menu tool will visualize the space they need for peak performance in purple."
+	CLASS.ExtraNotes 	= "Loaders can link to multiple ACF Guns or Missile Racks at once, but this will spread their focus between the ones they're loading at the same time. Viewing loaders with the ACF Menu tool will visualize the space they need for peak performance in purple."
 	CLASS.Cost	= 1
 	CLASS.LimitConVar	= {			-- ConVar to limit the number of crew members of this type a player can have
 		Name	= "_acf_crew_loader",
@@ -83,6 +100,7 @@ Classes.DefineClass("ACF.CrewTypes.Loader", "ACF.CrewTypes.BaseCrewType", functi
 	CLASS.LeanInfo = {			-- Specifying this table enables leaning efficiency calculations (deviation from world up)
 		Min = 15,			-- Best efficiency before this angle (Degs)
 		Max = 90,			-- Worst efficiency after this angle (Degs)
+		WorldUp = true,		-- Measure against world up instead, since loading fights gravity
 	}
 	CLASS.GForceInfo = {
 		Efficiencies = {	-- Specifying this table enables G-force efficiency calculations
@@ -110,12 +128,12 @@ Classes.DefineClass("ACF.CrewTypes.Loader", "ACF.CrewTypes.BaseCrewType", functi
 	}
 	CLASS.UpdateLowFreq = FindLongestBullet
 	CLASS.UpdateEfficiency = function(Crew, Commander)
-		local MyEff = Crew.ModelEff * Crew.LeanEff * Crew.SpaceEff * Crew.MoveEff * Crew.HealthEff * Crew.Focus
+		local MyEff = Crew.ModelEff * Crew.LeanEff * LoadingSpaceEff(Crew) * Crew.MoveEff * Crew.HealthEff * Crew.Focus
 		local CommanderEff = Commander and Commander.TotalEff or 0
 		Crew.TotalEff = math.Clamp(CommanderEff * ACF.CrewCommanderCoef + MyEff * ACF.CrewSelfCoef, ACF.CrewFallbackCoef, 1)
 	end
 	CLASS.UpdateFocus = function(Crew) -- Represents the fraction of efficiency a crew can give to its linked entities
-		local Count = table.Count(Crew.Targets)
+		local Count = CountTasks(Crew)
 		Crew.Focus = (Count > 0) and (1 / Count) or 1
 	end
 	CLASS.EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, ACF.Classes.GetTypeByName("ACF.Baseplates.GroundVehicle")) end
@@ -125,7 +143,7 @@ Classes.DefineClass("ACF.CrewTypes.Gunner", "ACF.CrewTypes.BaseCrewType", functi
 	CLASS.Name        = "Gunner"
 	CLASS.Icon		= "icon16/gun.png"
 	CLASS.Description = "Gunners provide control over weaponized turrets, letting them update their aim freely. Link them to ACF Horizontal Turrets. They prefer sitting poses."
-	CLASS.ExtraNotes	= "Gunners can only be linked to one turret, but can additionally be linked to ACF Guns or Missile Racks to serve as Loaders. Their control benefit can propagate to Vertical turrets which are parented to the Horizontal turret if the cumulative mass of the Horizontal turret is less than 250kg, the Gunner is directly parented to the Horizontal turret, or if the Gunner is also linked to a Remote Turret Controller."
+	CLASS.ExtraNotes	= "Gunners can only be linked to one turret, but can additionally be linked to ACF Guns or Missile Racks to serve as Loaders, which only takes their focus while one is being reloaded. Their control benefit can propagate to Vertical turrets which are parented to the Horizontal turret if the cumulative mass of the Horizontal turret is less than 250kg, the Gunner is directly parented to the Horizontal turret, or if the Gunner is also linked to a Remote Turret Controller."
 	CLASS.Cost	= 1
 	CLASS.LimitConVar	= {
 		Name	= "_acf_crew_gunner",
@@ -133,7 +151,7 @@ Classes.DefineClass("ACF.CrewTypes.Gunner", "ACF.CrewTypes.BaseCrewType", functi
 		Text	= "Maximum number of gunners a player can have."
 	}
 	CLASS.Mass = 80
-	CLASS.LeanInfo = {			-- Specifying this table enables leaning efficiency calculations (deviation from world up)
+	CLASS.LeanInfo = {			-- Specifying this table enables leaning efficiency calculations (deviation from the baseplate's up, or world up while loading a gun/rack)
 		Min = 15,			-- Best efficiency before this angle (Degs)
 		Max = 90,			-- Worst efficiency after this angle (Degs)
 	}
@@ -142,7 +160,7 @@ Classes.DefineClass("ACF.CrewTypes.Gunner", "ACF.CrewTypes.BaseCrewType", functi
 			Min = 1,	-- Best efficiency before this (Gs)
 			Max = 4,	-- Worst efficiency after this (Gs)
 		},
-		-- Used instead of Efficiencies while linked to a gun/rack, since loading duty is
+		-- Used instead of Efficiencies while loading a gun/rack, since loading duty is
 		-- as sensitive to movement as an actual Loader's, regardless of Gunner's usual tolerance
 		LoaderEfficiencies = {
 			Min = 0.5,		-- Best efficiency before this (Gs)
@@ -176,12 +194,12 @@ Classes.DefineClass("ACF.CrewTypes.Gunner", "ACF.CrewTypes.BaseCrewType", functi
 	}
 	CLASS.UpdateLowFreq = FindLongestBullet
 	CLASS.UpdateEfficiency = function(Crew, Commander)
-		local MyEff = Crew.ModelEff * Crew.LeanEff * Crew.SpaceEff * Crew.MoveEff * Crew.HealthEff * Crew.Focus
+		local MyEff = Crew.ModelEff * Crew.LeanEff * LoadingSpaceEff(Crew) * Crew.MoveEff * Crew.HealthEff * Crew.Focus
 		local CommanderEff = Commander and Commander.TotalEff or 0
 		Crew.TotalEff = math.Clamp(CommanderEff * ACF.CrewCommanderCoef + MyEff * ACF.CrewSelfCoef, ACF.CrewFallbackCoef, 1)
 	end
 	CLASS.UpdateFocus = function(Crew)
-		local Count = table.Count(Crew.Targets)
+		local Count = CountTasks(Crew)
 		Crew.Focus = (Count > 0) and (1 / Count) or 1
 	end
 	CLASS.EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, ACF.Classes.GetTypeByName("ACF.Baseplates.GroundVehicle")) end
@@ -199,7 +217,7 @@ Classes.DefineClass("ACF.CrewTypes.Driver", "ACF.CrewTypes.BaseCrewType", functi
 		Text	= "Maximum number of drivers a player can have."
 	}
 	CLASS.Mass = 80
-	CLASS.LeanInfo = {			-- Specifying this table enables leaning efficiency calculations (deviation from world up)
+	CLASS.LeanInfo = {			-- Specifying this table enables leaning efficiency calculations (deviation from the baseplate's up)
 		Min = 60,			-- Best efficiency before this angle (Degs)
 		Max = 90,			-- Worst efficiency after this angle (Degs)
 	}
@@ -245,7 +263,7 @@ Classes.DefineClass("ACF.CrewTypes.Commander", "ACF.CrewTypes.BaseCrewType", fun
 	CLASS.Name        = "Commander"
 	CLASS.Icon		= "icon16/medal_gold_1.png"
 	CLASS.Description = "Commanders coordinate the crew, providing an efficiency bonus, which works without linking. They prefer sitting poses."
-	CLASS.ExtraNotes 	= "Commanders can additionally be linked to ACF Horizontal Turrets to serve as Gunners, or to ACF Guns or Missile Racks to serve as Loaders. However, more tasks reduces their focus to put towards each individual task, and their ability to coordinate other crew members."
+	CLASS.ExtraNotes 	= "Commanders can additionally be linked to ACF Horizontal Turrets to serve as Gunners, or to ACF Guns or Missile Racks to serve as Loaders. However, more tasks reduces their focus to put towards each individual task, and their ability to coordinate other crew members. Guns and racks only take focus while being reloaded."
 	CLASS.Cost	= 2
 	CLASS.LimitConVar	= {
 		Name	= "_acf_crew_commander",
@@ -253,7 +271,7 @@ Classes.DefineClass("ACF.CrewTypes.Commander", "ACF.CrewTypes.BaseCrewType", fun
 		Text	= "Maximum number of commanders a player can have."
 	}
 	CLASS.Mass = 80
-	CLASS.LeanInfo = {			-- Specifying this table enables leaning efficiency calculations (deviation from world up)
+	CLASS.LeanInfo = {			-- Specifying this table enables leaning efficiency calculations (deviation from the baseplate's up, or world up while loading a gun/rack)
 		Min = 15,			-- Best efficiency before this angle (Degs)
 		Max = 90,			-- Worst efficiency after this angle (Degs)
 	}
@@ -262,7 +280,7 @@ Classes.DefineClass("ACF.CrewTypes.Commander", "ACF.CrewTypes.BaseCrewType", fun
 			Min = 1,		-- Best efficiency before this (Gs)
 			Max = 4,		-- Worst efficiency after this (Gs)
 		},
-		-- Used instead of Efficiencies while linked to a gun/rack, since loading duty is
+		-- Used instead of Efficiencies while loading a gun/rack, since loading duty is
 		-- as sensitive to movement as an actual Loader's, regardless of Commander's usual tolerance
 		LoaderEfficiencies = {
 			Min = 0.5,		-- Best efficiency before this (Gs)
@@ -301,11 +319,11 @@ Classes.DefineClass("ACF.CrewTypes.Commander", "ACF.CrewTypes.BaseCrewType", fun
 	}
 	CLASS.UpdateLowFreq = FindLongestBullet
 	CLASS.UpdateEfficiency = function(Crew)
-		local MyEff = Crew.ModelEff * Crew.LeanEff * Crew.SpaceEff * Crew.MoveEff * Crew.HealthEff * Crew.Focus
+		local MyEff = Crew.ModelEff * Crew.LeanEff * LoadingSpaceEff(Crew) * Crew.MoveEff * Crew.HealthEff * Crew.Focus
 		Crew.TotalEff = math.Clamp(MyEff, ACF.CrewFallbackCoef, 1)
 	end
 	CLASS.UpdateFocus = function(Crew) -- Represents the fraction of efficiency a crew can give to its linked entities
-		local Count = table.Count(Crew.Targets) -- 1 to each target
+		local Count = CountTasks(Crew) -- 1 to each task in hand
 		Crew.Focus = (Count > 0) and math.min(1 / Count, 1) or 1
 	end
 	CLASS.EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, ACF.Classes.GetTypeByName("ACF.Baseplates.GroundVehicle")) end
@@ -349,7 +367,7 @@ Classes.DefineClass("ACF.CrewTypes.Pilot", "ACF.CrewTypes.BaseCrewType", functio
 		Crew.TotalEff = math.Clamp(MyEff, ACF.CrewFallbackCoef, 1)
 	end
 	CLASS.UpdateFocus = function(Crew) -- Represents the fraction of efficiency a crew can give to its linked entities
-		local Count = table.Count(Crew.Targets)
+		local Count = table.Count(Crew:ACF_GetUserVar("Targets") or {})
 		Crew.Focus = (Count > 0) and (1 / Count) or 1
 	end
 	CLASS.EnforceLimits = function(Crew) ACF.EnforceBaseplateType(Crew, ACF.Classes.GetTypeByName("ACF.Baseplates.Aircraft")) end

@@ -12,12 +12,11 @@ function ACF.Menu.SendSpawn(ClassName, Data)
 	net.SendToServer()
 end
 
---- Sends a context's data to add one of its rounds to the aimed entity.
-function ACF.Menu.SendOverride(ClassName, Data)
+--- Asks for the aimed entity's settings. Pick opens the window to choose which ones go into the menu
+function ACF.Menu.RequestCopy(Pick)
 	net.Start("ACF_MenuCommit")
-		net.WriteString("override")
-		net.WriteString(ClassName)
-		net.WriteTable(Data or {})
+		net.WriteString("copy")
+		net.WriteBool(Pick or false)
 	net.SendToServer()
 end
 
@@ -69,11 +68,11 @@ function ACF.Menu.SendLinkClear()
 	net.SendToServer()
 end
 
--- Server -> client entity config push, used to hydrate a page's context from an existing entity
--- (the future "copy" feature). Scaffolded now; the request UX is a follow-up.
+-- An entity's settings, copied with alt+click
 net.Receive("ACF_MenuCopy", function()
 	local ClassName = net.ReadString()
 	local Data      = net.ReadTable()
+	local Pick      = net.ReadBool()
 
-	hook.Run("ACF_OnMenuCopy", ClassName, Data)
+	hook.Run("ACF_OnMenuCopy", ClassName, Data, Pick)
 end)

@@ -2,9 +2,11 @@ DEFINE_BASECLASS("acf_base_simple")
 
 ACF.Entities.AutoRegister(2026091001, function()
 	MENU_FIELD("ACF.Turrets.Computer", "Computer", {
+		Title                     = "#acf.menu.fields.acf_turret_computer.computer",
 		InstantiateTypeForDefault = "ACF.Turrets.Computer.Direct",
 		OnlyAllowSubtypes         = true,
 	})
+	LINKED_ENTITY_FIELD("Gun", {AcceptableClasses = {acf_gun = true}})
 end, "Ballistic Computer")
 
 ENT.ACF_StaticWireInputs = {

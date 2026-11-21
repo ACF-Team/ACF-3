@@ -31,7 +31,7 @@ Classes.DefineClass("ACF.Missiles.Guidance.RadioMCLOS", "ACF.Missiles.Guidance.D
 
 			if not IsValid(Source) then return end
 
-			local Computer = Source.Computer
+			local Computer = Source.ACF_GetUserVar and Source:ACF_GetUserVar("Computer")
 
 			if not IsValid(Computer) then return end
 			if Computer.Disabled then return end

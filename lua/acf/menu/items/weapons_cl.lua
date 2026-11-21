@@ -204,6 +204,8 @@ local function Build(Menu, Contexts)
 
 	local WeaponBase = Menu:AddCollapsible("#acf.menu.weapons.weapon_info", true, "icon16/monitor_edit.png")
 
+	WeaponBase:AddPresets(Gun)
+
 	local ClassList   = WeaponBase:AddComboBox()
 	local ClassBase   = WeaponBase:AddPanel("ACF_Panel")
 	local EntName     = WeaponBase:AddTitle()
@@ -294,10 +296,33 @@ ACF.Menu.RegisterPage({
 
 	Contexts = { Gun = "acf_gun", Ammo = "acf_ammo" },
 
+	AcceptsCopy = function(ClassName, Data)
+		return ClassName ~= "acf_ammo" or not ACF.Menu.IsMissileAmmo(Data)
+	end,
+
+	-- Open on the copied caliber, not the one remembered for the class
+	PrepareCopy = function(Name, Data, Context)
+		local Weapon = istable(Data.Weapon) and Data.Weapon
+		local Class  = Weapon and Classes.GetTypeByName(Weapon.Type)
+
+		if not (Class and Class.IsWeapon) then return end
+
+		local WeaponClass = Class.IsWeaponOption and Classes.GetBaseClass(Class) or Class
+		local Caliber     = istable(Weapon.Data) and Weapon.Data.Caliber
+
+		if Name == "Ammo" then ACF.AmmoMenu.SetScope(Context, WeaponClass) end
+
+		if not (Class.IsScalable and Caliber) then return end
+
+		Current.Class   = Class
+		Current.Caliber = Caliber
+
+		SaveCaliber(Class, Caliber)
+	end,
+
 	Actions = {
 		{ Bind = "left",       Context = "Gun",  Preview = true, Desc = "Spawn a new weapon, or update the one you're aiming at." },
-		{ Bind = "shift+left", Context = "Ammo", Preview = true, Desc = "Spawn a new ammo crate, or update the one you're aiming at." },
-		{ Bind = "alt+left",   Context = "Ammo", Send = function(...) ACF.Menu.SendOverride(...) end, Desc = "Add a round of this ammo type to the crate you're aiming at." },
+		{ Bind = "shift+left", Context = "Ammo", Preview = true, Send = function(...) ACF.AmmoMenu.SendCrate(...) end, Desc = "Spawn a new ammo crate with the round list, or update the one you're aiming at." },
 		{ Bind = "right",      Commit = "link", Desc = "Select entities, then a weapon/crate, to link them (hold R to unlink)." },
 	},
 

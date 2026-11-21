@@ -9,6 +9,28 @@ Classes.DefineClass("base_scalable",      "base_wire_entity", function() end)
 Classes.DefineClass("acf_base_simple",    "base_wire_entity", function() end)
 Classes.DefineClass("acf_base_scalable",  "base_scalable",    function() end)
 
+Entities.BaseOnlyClasses = Entities.BaseOnlyClasses or {}
+
+local BaseOnlyClasses = Entities.BaseOnlyClasses
+
+-- ENT.ACF_IsBaseClass = only meant to be inherited from
+hook.Add("PreRegisterSENT", "ACF_BaseOnlyClasses", function(ENT, Class)
+    if not ENT.ACF_IsBaseClass then return end
+
+    BaseOnlyClasses[Class] = true
+
+    ENT.Spawnable      = false
+    ENT.AdminSpawnable = false
+
+    if SERVER then duplicator.RegisterEntityClass(Class, function() end) end
+end)
+
+if SERVER then
+    hook.Add("PlayerSpawnSENT", "ACF_BaseOnlyClasses", function(_, Class)
+        if BaseOnlyClasses[Class] then return false end
+    end)
+end
+
 -- Same as the rack's, Player:AddCount has no counterpart
 local function RemoveCount(Player, Str, Entity)
     local Key = Player:UniqueID()
@@ -234,6 +256,8 @@ local function PrepareSpawnFunctions(ENT, ClassName)
     end
 
     local function DoSpawn(Player, Pos, Angle, ClientData, _, IsMenuSpawn)
+        if not istable(ClientData) then ClientData = {} end
+
         Serialization.SanitizeClassFields(ClassDef, ClientData)
 
         if IsValid(Player) then
@@ -264,6 +288,8 @@ local function PrepareSpawnFunctions(ENT, ClassName)
 
         return Result, InitReason
     end
+
+    if ENT.ACF_IsBaseClass then return end
 
     Entities.SpawnFuncs[ClassName] = DoSpawn
 
@@ -312,7 +338,7 @@ local function PrepareSerializationFunctions(ENT, ClassName)
         -- Resolve entity references ONCE, at the leaf class only (the leaf ClassDef covers every inherited
         -- field). Mirrors the leaf-only guard in PreEntityCopy so base autoreg methods don't redo it.
         if self:GetClass() == ClassName and self.ACF_LiveData then
-            local Data = Ent.ACF_UserData or {}
+            local Data = ACF.DupeTable(Ent.ACF_UserData)
             ACF.Classes.Serialization.ResolveEntities(ClassDef, self.ACF_LiveData, Data, CreatedEntities, self)
         end
         if OrigPostEntityPaste then OrigPostEntityPaste(self, Player, Ent, CreatedEntities) end
@@ -328,6 +354,7 @@ local function PrepareSerializationFunctions(ENT, ClassName)
 
         if OrigOnRemove then OrigOnRemove(self, IsFullUpdate) end
         if SERVER then
+            ACF.Classes.Serialization.UnlinkEntities(ClassDef, self.ACF_LiveData, self)
             WireLib.Remove(self)
         end
     end

@@ -25,3 +25,7 @@ ACF.Entities.RegisterCompatPatch("acf_computer", 2026062801, function(Data)
 		Computer = {Type = ComponentFQN(ID), Data = {}},
 	}
 end)
+
+ACF.Entities.RegisterCompatPatch("acf_computer", 2026111801, function(Data)
+	ACF.Entities.MoveLinkModToUserData(Data, "ACFWeapons", "Weapons")
+end)

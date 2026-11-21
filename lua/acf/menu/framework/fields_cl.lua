@@ -79,6 +79,18 @@ end
 --- wrong type (rebuilding sub-controls, clamping values) and SaveClassCombo would overwrite the saved
 --- selection before RestoreClassCombo could read it. We suppress OnSelect across population, then fire
 --- it exactly once for the restored (or, first-time, the first) choice.
+-- The choice matching a type loaded into the page (see ACF.Menu.OpenPageWith), a parent class counts too
+local function GetPreferredChoice(Choices)
+	local Preferred = ACF.Menu.PreferredTypes
+	if not Preferred then return end
+
+	for I, Data in ipairs(Choices) do
+		for _, Type in ipairs(Preferred) do
+			if Classes.IsAssignableTo(Type, Data) then return I end
+		end
+	end
+end
+
 function ACF.Menu.LoadClassCombo(Combo, List, Member, IconMember, PageID, Key)
 	local Saved = ACF.Menu.GetUIState(PageID, Key)
 
@@ -87,7 +99,14 @@ function ACF.Menu.LoadClassCombo(Combo, List, Member, IconMember, PageID, Key)
 	local Choices = Combo.ListData and Combo.ListData.Choices
 	if not (Choices and Choices[1] ~= nil) then return end
 
-	local Target = 1
+	local Target = GetPreferredChoice(Choices)
+
+	if Target then
+		Combo:ChooseOptionID(Target)
+		return
+	end
+
+	Target = 1
 	if Saved ~= nil then
 		for I, Data in ipairs(Choices) do
 			if Classes.GetTypeName(Data) == Saved then
@@ -106,9 +125,9 @@ end
 -- =============================================================================================
 
 local function AddNumber(Menu, Context, Field, Options, Title, Overrides)
-	local Min = Options.Min or 0
-	local Max = Options.Max or 100
-	local Dec = Options.Decimals or 0
+	local Min = Overrides.Min or Options.Min or 0
+	local Max = Overrides.Max or Options.Max or 100
+	local Dec = Overrides.Decimals or Options.Decimals or 0
 
 	local Panel
 	if Overrides.wang then
@@ -254,21 +273,46 @@ end
 -- the generalization of the old ACF.Classes.CreateTypeSelector, writing into ctx:Set instead of
 -- ClientData. Classes that expose a custom CLASS.CreateMenu get it (compat escape hatch); otherwise
 -- the subtype's own menu fields are rendered automatically via a sub-context.
-local function AddClassField(Menu, Context, Field, FieldDef)
+-- Overrides.BuildFields(SubPanel, SubContext, TypeObj) replaces both.
+
+-- The types a class field can be set to, by the same rules as the deserializer
+local function GetTypeChoices(BaseName, Options)
+	local Choices = {}
+	local Base    = Classes.GetTypeByName(BaseName)
+
+	if Base and not Options.OnlyAllowSubtypes then Choices[BaseName] = Base end
+
+	for Name, Type in pairs(Classes.GetSubtypes(BaseName)) do
+		if not Options.OnlyAllowLeafTypes or next(Classes.GetChildren(Type)) == nil then
+			Choices[Name] = Type
+		end
+	end
+
+	-- Groups without a name are only there to be inherited from
+	for Name, Type in pairs(Choices) do
+		if not Type.Name then Choices[Name] = nil end
+	end
+
+	return Choices
+end
+
+local function AddClassField(Menu, Context, Field, FieldDef, Overrides)
 	local Options  = FieldDef.Options or {}
 	local BaseName = BaseType(FieldDef.Type)
-	local SubTypes = Classes.GetSubtypes(BaseName)
 
 	local Combo    = Menu:AddComboBox()
 	local SubPanel = Menu:AddPanel("ACF_Panel")
 	local Handle   = { ComboBox = Combo, SubPanel = SubPanel, OnTypeChanged = nil }
 
-	ACF.LoadSortedList(Combo, SubTypes, "Name", "Icon")
+	ACF.LoadSortedList(Combo, GetTypeChoices(BaseName, Options), "Name", "Icon")
 
 	local function BuildSub(TypeObj, Instance)
 		SubPanel:ClearAll()
 
-		if TypeObj.CreateMenu then
+		if Overrides.BuildFields then
+			local Sub = ACF.Menu.SubContext(Context, Field)
+			if Sub then Overrides.BuildFields(SubPanel, Sub, TypeObj) end
+		elseif TypeObj.CreateMenu then
 			-- Legacy per-type menu: (Panel, DataBag, Push). The live instance doubles as the data bag;
 			-- Push notifies the owning context so persistence + cross-field callbacks fire.
 			TypeObj.CreateMenu(SubPanel, Instance, function() Context:Set(Field, Instance) end)
@@ -326,10 +370,16 @@ local function AddClassField(Menu, Context, Field, FieldDef)
 			end
 		end
 
-		Combo.Selected = Selected or CurType
-		Combo:ChooseOptionID(SelectIdx)
+		if Selected then
+			Combo.Selected = Selected
+			Combo:ChooseOptionID(SelectIdx)
+		else
+			-- Not one of the choices, show it as it is instead of swapping it out
+			Combo.Selected = CurType
+			Combo:SetValue(CurType.Name or WantName)
+		end
 
-		if Selected then BuildSub(Selected, CurInst) end
+		BuildSub(CurType, CurInst)
 	end
 
 	return Handle
@@ -340,7 +390,8 @@ end
 -- =============================================================================================
 
 --- Builds and binds a control for `FieldName` on `Context`, dispatched from the field's metadata.
---- Overrides: { Title = "#phrase", wang = true, Choices = {...} }.
+--- Overrides: { Title = "#phrase", wang = true, Choices = {...}, Min/Max/Decimals = number, BuildFields = function }.
+--- The title falls back to the field's Options.Title, then its name.
 --- Returns the created panel/handle so callers can further customize it.
 function ACF.Menu.AddField(Menu, Context, FieldName, Overrides)
 	Overrides = Overrides or {}
@@ -354,7 +405,7 @@ function ACF.Menu.AddField(Menu, Context, FieldName, Overrides)
 
 	local ElemType = BaseType(FieldDef.Type)
 	local Options  = FieldDef.Options or {}
-	local Title    = Overrides.Title or FieldName
+	local Title    = Overrides.Title or Options.Title or FieldName
 
 	if ElemType == "Number" then
 		return AddNumber(Menu, Context, FieldName, Options, Title, Overrides)
@@ -367,7 +418,7 @@ function ACF.Menu.AddField(Menu, Context, FieldName, Overrides)
 	elseif ElemType == "Angle" then
 		return AddVectorLike(Menu, Context, FieldName, Options, Title, true)
 	elseif Classes.GetTypeByName(ElemType) then
-		return AddClassField(Menu, Context, FieldName, FieldDef)
+		return AddClassField(Menu, Context, FieldName, FieldDef, Overrides)
 	end
 
 	ErrorNoHaltWithStack("ACF.Menu.AddField: unsupported field type '" .. tostring(FieldDef.Type) ..
