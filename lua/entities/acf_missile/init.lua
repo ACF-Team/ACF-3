@@ -60,8 +60,8 @@ local function Dud(Missile)
 	end)
 end
 
-local MIN_BOUNDS = -math.pow(2, 14)
-local MAX_BOUNDS = math.pow(2, 14)
+local MIN_BOUNDS = MIN_COORD_FLOAT or -math.pow(2, 14)
+local MAX_BOUNDS = MAX_COORD_FLOAT or math.pow(2, 14)
 
 hook.Add("CanDrive", "acf_missile_CanDrive", function(_, Entity)
 	if Missiles.IsActive(Entity) then return false end
