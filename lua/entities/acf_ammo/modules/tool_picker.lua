@@ -21,9 +21,7 @@ do
 	end
 
 	local function GetColor(Crate, Target)
-		local Getter = Target.Which == "Smoke" and ACF.GetSmokeColor or ACF.GetTracerColor
-
-		return Getter(Crate, Target.Index - 1)
+		return ACF.GetKindColor(Crate, Target.Index - 1, Target.Which)
 	end
 
 	ACF.ToolPicker.Register("colour", "acf_ammo", {
@@ -37,10 +35,10 @@ do
 			local Rows = { { Text = "Crate", Swatch = Crate:GetColor() } }
 
 			for _, Target in ipairs(GetTargets(Crate)) do
-				local Kind     = Kinds[Target.Index]
-				local Smoke    = Target.Which == "Smoke"
-				local Inherits = Crate:GetNW2Int(Target.Which .. "Color" .. ACF.GetCrateNWSuffix(Target.Index - 1), -1) < 0
-				local Text     = Kind.Name
+				local Kind       = Kinds[Target.Index]
+				local Smoke      = Target.Which == "Smoke"
+				local Col, IsOwn = GetColor(Crate, Target)
+				local Text       = Kind.Name
 
 				if Smoke or ACF.KindHasSmokeColor(Crate, Target.Index - 1) then
 					Text = Text .. " " .. Target.Which
@@ -50,8 +48,8 @@ do
 					Text   = Text,
 					Icon   = Kind.Icon ~= "" and Kind.Icon or nil,
 					Stripe = ACF.GetRoundKindColor(Target.Index),
-					Swatch = GetColor(Crate, Target),
-					Note   = Inherits and (Smoke and "Tracer" or "Crate") or nil,
+					Swatch = Col,
+					Note   = not IsOwn and (Smoke and "Tracer" or "Crate") or nil,
 				}
 			end
 

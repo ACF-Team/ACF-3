@@ -143,7 +143,15 @@ local function Rebind()
 	BulletData  = Ammo:ClientConvert()
 end
 
-ACF.AmmoMenu.Rebind = function() if AmmoCtx then Rebind() end end
+local ROW_FIELDS = { "KindName", "OverrideTracerColor", "TracerColor", "OverrideSmokeColor", "SmokeColor", "TwoPiece" }
+
+local function GetRowFields(Round)
+	local Fields = {}
+
+	for _, Name in ipairs(ROW_FIELDS) do Fields[Name] = Round[Name] end
+
+	return Fields
+end
 
 -- Picking another ammo type makes a new instance, it takes the row's place and keeps the row's name and color
 local function SyncSelectedRound(Ctx)
@@ -153,19 +161,11 @@ local function SyncSelectedRound(Ctx)
 
 	if not Old or Old == Current or not (Current and Current.GetType) then return end
 
-	Current.KindName            = Old.KindName
-	Current.OverrideTracerColor = Old.OverrideTracerColor
-	Current.TracerColor         = Old.TracerColor
-	Locks[Current]              = Locks[Old]
-
-	if ACF.HasSmokeColor(Current:GetType()) and ACF.HasSmokeColor(Old:GetType()) then
-		Current.OverrideSmokeColor = Old.OverrideSmokeColor
-		Current.SmokeColor         = Old.SmokeColor
+	for Name, Value in pairs(GetRowFields(Old)) do
+		if Classes.GetTypeFieldByName(Current:GetType(), Name) then Current[Name] = Value end
 	end
 
-	if Old.TwoPiece ~= nil and Classes.GetTypeFieldByName(Current:GetType(), "TwoPiece") then
-		Current.TwoPiece = Old.TwoPiece
-	end
+	Locks[Current] = Locks[Old]
 
 	Rounds[Ctx.RoundSelected or 1] = Current
 end
@@ -259,17 +259,7 @@ local function ScopeAmmo(WeaponType)
 		local Rows = {}
 
 		for _, Round in ipairs(GetRounds() or {}) do
-			Rows[#Rows + 1] = {
-				Type = Classes.GetTypeName(Round:GetType()),
-				Data = {
-					KindName            = Round.KindName,
-					OverrideTracerColor = Round.OverrideTracerColor,
-					TracerColor         = Round.TracerColor,
-					OverrideSmokeColor  = Round.OverrideSmokeColor,
-					SmokeColor          = Round.SmokeColor,
-					TwoPiece            = Round.TwoPiece,
-				},
-			}
+			Rows[#Rows + 1] = { Type = Classes.GetTypeName(Round:GetType()), Data = GetRowFields(Round) }
 		end
 
 		if Rows[1] then AmmoCtx:Set("Rounds", Rows, true) end
@@ -453,25 +443,36 @@ local function GetSlotBullet()
 	return List[1] and ACF.GetSlotBulletData(List) or BulletData
 end
 
--- Rows as the round list shows them, named the way the crate will name them
-local function GetListKinds()
-	local Fitted = GetFittedCounts()
-	local Kinds  = {}
-	local Seen   = {}
+-- Named the way the crate will name them, only the rows it holds count
+local function GetAutoNames(Rounds, Fitted)
+	local Names, Held, CustomNames, AutoNames = {}, {}, {}, {}
 
-	for Index, Round in ipairs(GetRounds()) do
-		local AutoName = ACF.GetLegacyStyleClassName(Classes.GetTypeName(Round:GetType())) .. (Round.Tracer and "-T" or "")
-		local Custom   = string.Trim(Round.KindName or "")
+	for Index, Round in ipairs(Rounds) do
+		Names[Index] = ACF.GetLegacyStyleClassName(Classes.GetTypeName(Round:GetType())) .. (Round.Tracer and "-T" or "")
 
-		if Custom == "" then
-			Seen[AutoName] = (Seen[AutoName] or 0) + 1
-
-			if Seen[AutoName] > 1 then AutoName = AutoName .. " (" .. Seen[AutoName] .. ")" end
+		if Fitted[Index] > 0 then
+			Held[#Held + 1]               = Index
+			CustomNames[#CustomNames + 1] = Round.KindName
+			AutoNames[#AutoNames + 1]     = Names[Index]
 		end
+	end
 
+	for Position, Name in ipairs(ACF.NameRoundKinds(CustomNames, AutoNames)) do Names[Held[Position]] = Name end
+
+	return Names
+end
+
+-- Rows as the round list shows them
+local function GetListKinds()
+	local Rounds    = GetRounds()
+	local Fitted    = GetFittedCounts()
+	local AutoNames = GetAutoNames(Rounds, Fitted)
+	local Kinds     = {}
+
+	for Index, Round in ipairs(Rounds) do
 		Kinds[Index] = {
 			Name                = Round.KindName or "",
-			AutoName            = AutoName,
+			AutoName            = AutoNames[Index],
 			Icon                = Round.SpawnIcon or "",
 			Count               = Fitted[Index],
 			OverrideTracerColor = Round.OverrideTracerColor,
@@ -1121,6 +1122,29 @@ local function MergeCounts(Shown)
 	return Counts
 end
 
+-- Up to Wanted rounds for a new row out of the unlocked rows, in their proportions. Nil when they can't spare any
+local function TakeFromUnlocked(Rounds, Counts, Wanted)
+	local Rows, Shown, Pool = {}, {}, 0
+
+	for Index, Round in ipairs(Rounds) do
+		if not IsLocked(Round) and not GetInvalidReason(Round) then
+			Rows[#Rows + 1]   = Index
+			Shown[#Shown + 1] = Counts[Index]
+			Pool              = Pool + Counts[Index]
+		end
+	end
+
+	if Pool <= #Rows then return end
+
+	Shown[#Shown + 1] = 0
+
+	local Split = ACF.SetRoundCount(Shown, #Shown, math.min(Wanted, Pool - #Rows), Pool)
+
+	for Slot, Row in ipairs(Rows) do Counts[Row] = Split[Slot] end
+
+	return Split[#Split]
+end
+
 local function SetupRoundList(Menu, Panel)
 	local Serialization = Classes.Serialization
 
@@ -1142,40 +1166,21 @@ local function SetupRoundList(Menu, Panel)
 		local Type   = Source:GetType()
 		local Copy   = Serialization.DeserializePartial(Type, Serialization.Serialize(Type, Source))
 		local Counts = MergeCounts(GetFittedCounts())
-		local Half   = math.max(1, math.floor((Counts[DupeOf] or 2) * 0.5))
+		local Own    = Counts[DupeOf] or 2
+		local Half   = math.max(1, math.floor(Own * 0.5))
+
+		-- Locked, so the unlocked rows pay for the copy instead
+		local Taken = IsLocked(Source) and not GetInvalidReason(Source) and TakeFromUnlocked(Rounds, Counts, Half)
+
+		if not Taken then
+			Counts[DupeOf] = math.max(1, Own - Half)
+			Taken          = Half
+		end
 
 		Copy.KindName = ""
 
-		-- Locked, so the unlocked rows pay for the copy instead
-		if IsLocked(Source) and not GetInvalidReason(Source) then
-			local Rows, Shown, Pool = {}, {}, 0
-
-			for Index, Round in ipairs(Rounds) do
-				if not IsLocked(Round) and not GetInvalidReason(Round) then
-					Rows[#Rows + 1]   = Index
-					Shown[#Shown + 1] = Counts[Index]
-					Pool              = Pool + Counts[Index]
-				end
-			end
-
-			if Pool > #Rows then
-				Shown[#Shown + 1] = 0
-
-				local Split = ACF.SetRoundCount(Shown, #Shown, math.min(Half, Pool - #Rows), Pool)
-
-				for Slot, Row in ipairs(Rows) do Counts[Row] = Split[Slot] end
-
-				table.insert(Rounds, DupeOf + 1, Copy)
-				table.insert(Counts, DupeOf + 1, Split[#Split])
-
-				return SetRows(Menu, Rounds, Counts, DupeOf + 1)
-			end
-		end
-
-		Counts[DupeOf] = math.max(1, (Counts[DupeOf] or 2) - Half)
-
 		table.insert(Rounds, DupeOf + 1, Copy)
-		table.insert(Counts, DupeOf + 1, Half)
+		table.insert(Counts, DupeOf + 1, Taken)
 
 		SetRows(Menu, Rounds, Counts, DupeOf + 1)
 	end

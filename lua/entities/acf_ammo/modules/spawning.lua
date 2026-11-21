@@ -284,19 +284,13 @@ do -- Spawn/Update/Remove
 					net.WriteBool(ExtraData.HexPacking)
 					net.WriteBool(ExtraData.IsCassette)
 
-					-- Each kind of round top first, with what the overlay shows of it
-					net.WriteUInt(Entity.RoundMixVersion, Entity.MixVersionBits)
+					-- Each kind of round top first, with what the client draws and the tool picker lists
 					net.WriteUInt(#Entity.RoundKinds - 1, ACF.ProfileBits)
 
 					for _, Kind in ipairs(Entity.RoundKinds) do
-						local BulletData = Kind.BulletData
-
 						net.WriteUInt(Kind.Bodygroup, 4)
-						net.WriteUInt(Kind.Target, Entity.CountBits)
 						net.WriteString(Kind.Name)
 						net.WriteString(Kind.Ammo.SpawnIcon or "")
-						net.WriteFloat(BulletData.ProjMass)
-						net.WriteFloat((BulletData.MuzzleVel or 0) * ACF.Scale)
 					end
 				end
 
@@ -431,7 +425,6 @@ do -- Spawn/Update/Remove
 		self.Weapons         = {}
 		self.IsExplosive     = true
 		self.RoundSelect     = 0
-		self.RoundMixVersion = 0
 		self.ProfileKeys     = {} -- Network keys each round profile's last round wrote
 
 		local ShapeClass = Classes.GetTypeByName(ClientData.Shape)

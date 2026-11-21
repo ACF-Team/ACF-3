@@ -1,4 +1,5 @@
 local ACF     = ACF
+local Classes = ACF.Classes
 local Overlay = ACF.Overlay
 
 local ROW_HEIGHT   = 24
@@ -6,7 +7,6 @@ local GAP          = 4
 local BAR_HEIGHT   = 30
 local SWATCH_WIDTH = 8
 local COUNT_WIDTH  = 56
-local MAX_NAME     = 24 -- Same as the KindName field
 local DIVIDER_GRAB = 6 -- Pixels either side of a divider that pick it up
 local NUMBER_FONT  = "DermaDefault"
 local ENTRY_FONT   = "ACF_Control"
@@ -14,6 +14,7 @@ local BAR_BACKDROP = Color(30, 30, 30)
 local ROW_FILL     = Color(0, 0, 0, 14)
 local ROW_SELECTED = Color(60, 130, 220, 70)
 local ROW_INVALID  = Color(220, 60, 60, 60)
+local INHERIT_ICON = Material("icon16/color_wheel.png")
 
 -- A crate's kinds of rounds as a list, with a bar to split the crate between them by dragging dividers.
 -- Only shows and reports, whoever owns it decides what an edit does.
@@ -26,13 +27,14 @@ local ROW_INVALID  = Color(220, 60, 60, 60)
 local PANEL = {}
 
 function PANEL:Init()
-	self.Kinds    = {}
-	self.Rows     = {}
-	self.Capacity = 1
-	self.Selected = 1
-	self.MaxKinds = ACF.MaxRoundKinds
-	self.CanAdd   = true
-	self.BarData  = {}
+	self.Kinds     = {}
+	self.ValidRows = {}
+	self.Rows      = {}
+	self.Capacity  = 1
+	self.Selected  = 1
+	self.MaxKinds  = ACF.MaxRoundKinds
+	self.CanAdd    = true
+	self.BarData   = {}
 
 	self:CreateBar()
 
@@ -51,13 +53,7 @@ end
 
 -- The rows that take part in the bar, invalid ones don't
 function PANEL:GetValidRows()
-	local Valid = {}
-
-	for Index, Kind in ipairs(self.Kinds) do
-		if not Kind.Invalid then Valid[#Valid + 1] = Index end
-	end
-
-	return Valid
+	return self.ValidRows
 end
 
 function PANEL:GetBarHeight()
@@ -179,22 +175,11 @@ do -- MARK: Bar
 end
 
 do -- MARK: Rows
-	-- Characters, not bytes. gmod's utf8.offset doesn't count like Lua 5.3's
+	-- Same limits as the server's
 	local function CutName(Value)
-		Value = Value:gsub("%c", "")
+		local Field = Classes.GetTypeFieldByName(Classes.GetTypeByName("ACF.Ammunition.BaseAmmo"), "KindName")
 
-		if #Value <= MAX_NAME then return Value end
-		if not utf8.len(Value) then return Value:sub(1, MAX_NAME) end
-
-		local Count = 0
-
-		for Position in utf8.codes(Value) do
-			Count = Count + 1
-
-			if Count > MAX_NAME then return Value:sub(1, Position - 1) end
-		end
-
-		return Value
+		return Classes.Serialization.LimitString(Value, Field.Options)
 	end
 
 	local function SquareButton(Row, Icon, Tooltip, OnClick)
@@ -383,7 +368,7 @@ do -- MARK: Rows
 
 				if not (Tracer or Smoke) then
 					surface.SetDrawColor(255, 255, 255)
-					surface.SetMaterial(List.InheritIcon)
+					surface.SetMaterial(INHERIT_ICON)
 					surface.DrawTexturedRect(W * 0.5 - 8, H * 0.5 - 8, 16, 16)
 
 					return
@@ -404,17 +389,18 @@ do -- MARK: Rows
 
 			function ColorButton.DoClick() OpenColorPicker(List, Index, ColorButton) end
 
-			Row.Icon   = Icon
-			Row.Name   = Name
-			Row.Lock   = Lock
-			Row.Count  = Count
-			Row.Buttons = {
-				ColorButton,
-				SquareButton(Row, "icon16/page_copy.png", "Copy this round", function() if List.OnAddRound then List:OnAddRound(Index) end end),
-				SquareButton(Row, "icon16/arrow_up.png", "Move up", function() if List.OnMoveRound then List:OnMoveRound(Index, -1) end end),
-				SquareButton(Row, "icon16/arrow_down.png", "Move down", function() if List.OnMoveRound then List:OnMoveRound(Index, 1) end end),
-				SquareButton(Row, "icon16/cross.png", "Remove", function() if List.OnRemoveRound then List:OnRemoveRound(Index) end end),
-			}
+			Row.Icon         = Icon
+			Row.Name         = Name
+			Row.Lock         = Lock
+			Row.Count        = Count
+			Row.ColorButton  = ColorButton
+			Row.CopyButton   = SquareButton(Row, "icon16/page_copy.png", "Copy this round", function() if List.OnAddRound then List:OnAddRound(Index) end end)
+			Row.UpButton     = SquareButton(Row, "icon16/arrow_up.png", "Move up", function() if List.OnMoveRound then List:OnMoveRound(Index, -1) end end)
+			Row.DownButton   = SquareButton(Row, "icon16/arrow_down.png", "Move down", function() if List.OnMoveRound then List:OnMoveRound(Index, 1) end end)
+			Row.RemoveButton = SquareButton(Row, "icon16/cross.png", "Remove", function() if List.OnRemoveRound then List:OnRemoveRound(Index) end end)
+
+			-- Left to right
+			Row.Buttons = { Row.ColorButton, Row.CopyButton, Row.UpButton, Row.DownButton, Row.RemoveButton }
 
 			self.Rows[Index] = Row
 		end
@@ -444,20 +430,17 @@ do -- MARK: Rows
 			Lock:SetAlpha(not Lock:IsEnabled() and 60 or Kind.Locked and 255 or 130)
 			Lock:SetVisible(self.CanAdd)
 
-			local Buttons = Row.Buttons
+			Row.ColorButton:SetTooltip(Kind.HasSmoke and "Tracer and smoke color" or "Tracer color")
+			Row.CopyButton:SetEnabled(self.CanAdd and Amount < self.MaxKinds)
+			Row.UpButton:SetEnabled(Index > 1)
+			Row.DownButton:SetEnabled(Index < Amount)
+			Row.RemoveButton:SetEnabled(Amount > 1)
 
-			Buttons[1]:SetTooltip(Kind.HasSmoke and "Tracer and smoke color" or "Tracer color")
-			Buttons[2]:SetEnabled(self.CanAdd and Amount < self.MaxKinds)
-			Buttons[3]:SetEnabled(Index > 1)
-			Buttons[4]:SetEnabled(Index < Amount)
-			Buttons[5]:SetEnabled(Amount > 1)
+			for _, Button in ipairs(Row.Buttons) do
+				Button:SetAlpha(Button:IsEnabled() and 255 or 60)
 
-			for _, Button in ipairs(Buttons) do Button:SetAlpha(Button:IsEnabled() and 255 or 60) end
-
-			Buttons[2]:SetVisible(self.CanAdd)
-			Buttons[3]:SetVisible(self.CanAdd)
-			Buttons[4]:SetVisible(self.CanAdd)
-			Buttons[5]:SetVisible(self.CanAdd)
+				if Button ~= Row.ColorButton then Button:SetVisible(self.CanAdd) end
+			end
 		end
 	end
 end
@@ -498,8 +481,14 @@ end
 
 function PANEL:SetKinds(Kinds)
 	local Rebuild = #Kinds ~= #self.Rows
+	local Valid   = {}
 
-	self.Kinds = Kinds
+	for Index, Kind in ipairs(Kinds) do
+		if not Kind.Invalid then Valid[#Valid + 1] = Index end
+	end
+
+	self.Kinds     = Kinds
+	self.ValidRows = Valid
 
 	if Rebuild then self:BuildRows() end
 
@@ -580,7 +569,5 @@ function PANEL:PerformLayout(W)
 	self.AddButton:SetSize(W, ROW_HEIGHT)
 	self.AddButton:SetVisible(self.CanAdd and #self.Rows < self.MaxKinds)
 end
-
-PANEL.InheritIcon = Material("icon16/color_wheel.png")
 
 derma.DefineControl("ACF_RoundList", "List of a crate's kinds of rounds", PANEL, "Panel")

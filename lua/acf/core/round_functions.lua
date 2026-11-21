@@ -372,15 +372,37 @@ do -- MARK: Mixed crates
 		return BulletData.RoundLength or (BulletData.PropLength + BulletData.ProjLength)
 	end
 
-	--- Bullet data a crate's slots are sized for, the longest and widest of the kinds it holds.
-	--- Only RoundLength, CaseScale and CaseDiameter change, the rest is the first kind's
-	function ACF.GetSlotBulletData(List)
-		local Slot = {}
+	-- Fields every kind has the same value for. Type specific ones like HEAT's standoff drop out
+	local function GetSharedFields(List)
+		local Shared = {}
 
-		for Key, Value in pairs(List[1]) do Slot[Key] = Value end
+		for Key, Value in pairs(List[1]) do
+			local Same = true
+
+			for Index = 2, #List do
+				if List[Index][Key] ~= Value then Same = false break end
+			end
+
+			if Same then Shared[Key] = Value end
+		end
+
+		return Shared
+	end
+
+	--- Bullet data a crate's slots are sized for, the longest and widest of the kinds it holds.
+	--- Has what every kind shares and their biggest RoundLength, CaseScale and CaseDiameter, nothing type specific
+	function ACF.GetSlotBulletData(List)
+		local First = List[1]
+		local Slot  = GetSharedFields(List)
+
+		-- The crate's, not the kind's
+		Slot.Caliber     = First.Caliber
+		Slot.TwoPiece    = First.TwoPiece
+		Slot.CaseScale   = First.CaseScale
+		Slot.RoundLength = 0
 
 		for _, BulletData in ipairs(List) do
-			Slot.RoundLength = math.max(Slot.RoundLength or GetLength(Slot), GetLength(BulletData))
+			Slot.RoundLength = math.max(Slot.RoundLength, GetLength(BulletData))
 
 			-- No CaseScale means the class' widest case
 			if Slot.CaseScale and BulletData.CaseScale then
@@ -491,22 +513,52 @@ do -- MARK: Mixed crates
 		return Color(bit.band(bit.rshift(Packed, 16), 255), bit.band(bit.rshift(Packed, 8), 255), bit.band(Packed, 255))
 	end
 
+	-- The color each one follows, the crate's own if it isn't here
+	local InheritedColor = { Smoke = "Tracer" }
+
+	--- "Tracer" or "Smoke" color of a crate's kind of round, and whether the kind overrides it
+	function ACF.GetKindColor(Entity, Profile, Which)
+		local Packed = Entity:GetNW2Int(Which .. "Color" .. ACF.GetCrateNWSuffix(Profile), -1)
+
+		if Packed >= 0 then return ACF.UnpackColor(Packed), true end
+
+		local Inherited = InheritedColor[Which]
+
+		return Inherited and ACF.GetKindColor(Entity, Profile, Inherited) or Entity:GetColor(), false
+	end
+
 	--- Tracer color of a crate's kind of round, the crate's own color unless the kind overrides it
 	function ACF.GetTracerColor(Entity, Profile)
-		local Packed = Entity:GetNW2Int("TracerColor" .. ACF.GetCrateNWSuffix(Profile), -1)
+		local Col = ACF.GetKindColor(Entity, Profile, "Tracer")
 
-		if Packed < 0 then return Entity:GetColor() end
-
-		return ACF.UnpackColor(Packed)
+		return Col
 	end
 
 	--- Smoke color of a crate's kind of round, its tracer color unless the kind overrides it
 	function ACF.GetSmokeColor(Entity, Profile)
-		local Packed = Entity:GetNW2Int("SmokeColor" .. ACF.GetCrateNWSuffix(Profile), -1)
+		local Col = ACF.GetKindColor(Entity, Profile, "Smoke")
 
-		if Packed < 0 then return ACF.GetTracerColor(Entity, Profile) end
+		return Col
+	end
 
-		return ACF.UnpackColor(Packed)
+	--- What a crate calls each kind of round. Custom names stay as they are, the same auto name twice gets a number
+	function ACF.NameRoundKinds(CustomNames, AutoNames)
+		local Names, Seen = {}, {}
+
+		for Index, AutoName in ipairs(AutoNames) do
+			local Custom = string.Trim(CustomNames[Index] or "")
+
+			if Custom ~= "" then
+				Names[Index] = Custom
+			else
+				local Count = (Seen[AutoName] or 0) + 1
+
+				Seen[AutoName] = Count
+				Names[Index]   = Count > 1 and AutoName .. " (" .. Count .. ")" or AutoName
+			end
+		end
+
+		return Names
 	end
 
 	--- Whether an ammo type has a "Tracer" or "Smoke" color you can pick

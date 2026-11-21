@@ -40,9 +40,4 @@ ENT.ACF_StaticWireOutputs = {
 	"Entity (The ammo crate itself.) [ENTITY]",
 }
 
--- Bits of the count of changes to a crate's mix
-local MIX_VERSION_BITS = 16
-local COUNT_BITS       = 25 -- Bits of a networked round count, above any crate's capacity
-
-ENT.MixVersionBits = MIX_VERSION_BITS
-ENT.CountBits      = COUNT_BITS
+ENT.CountBits = 25 -- Bits of a networked round count, above any crate's capacity

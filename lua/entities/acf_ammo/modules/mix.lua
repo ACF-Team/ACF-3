@@ -111,26 +111,18 @@ do -- MARK: Building
 		end
 	end
 
-	-- Custom names stay as they are, the same auto name twice gets a number
 	local function NameKinds(Kinds)
-		local Seen = {}
+		local CustomNames, AutoNames = {}, {}
 
-		for _, Kind in ipairs(Kinds) do
-			local Custom = string.Trim(Kind.Ammo.KindName or "")
-
-			if Custom ~= "" then
-				Kind.Name = Custom
-			else
-				local Name  = RoundName(Kind.BulletData)
-				local Count = (Seen[Name] or 0) + 1
-
-				Seen[Name] = Count
-				Kind.Name  = Count > 1 and Name .. " (" .. Count .. ")" or Name
-			end
+		for Index, Kind in ipairs(Kinds) do
+			CustomNames[Index] = Kind.Ammo.KindName
+			AutoNames[Index]   = RoundName(Kind.BulletData)
 		end
+
+		for Index, Name in ipairs(ACF.NameRoundKinds(CustomNames, AutoNames)) do Kinds[Index].Name = Name end
 	end
 
-	-- Read by ACF.GetTracerColor and ACF.GetSmokeColor, -1 follows the color under it
+	-- Read by ACF.GetKindColor, -1 follows the color under it
 	local function NetworkKindColor(Entity, Index, Ammo)
 		local Suffix = ACF.GetCrateNWSuffix(Index - 1)
 
@@ -196,9 +188,8 @@ do -- MARK: Building
 		FitCounts(Kinds, self.Capacity or 0)
 		PrepareKinds(self, Kinds)
 
-		self.RoundKinds      = Kinds
-		self.CycleKind       = 1
-		self.RoundMixVersion = (self.RoundMixVersion + 1) % 2 ^ self.MixVersionBits
+		self.RoundKinds = Kinds
+		self.CycleKind  = 1
 
 		local AmmoList, Counts = self:GetMix() -- Stored back so the user vars match what the crate holds
 

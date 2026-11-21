@@ -92,6 +92,8 @@ local function LimitString(Value, Options)
     return Value
 end
 
+Serialization.LimitString = LimitString
+
 local function ValidateString(Value, Options)
     local ValueType = type(Value)
     if ValueType == "string" then return LimitString(Value, Options) end
