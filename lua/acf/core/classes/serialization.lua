@@ -71,10 +71,33 @@ local function ValidateBoolean(Value, Options)
     return Options.Default
 end
 
+-- MaxLength counts characters, not bytes
+local function LimitString(Value, Options)
+    if Options.SingleLine then Value = Value:gsub("%c", "") end
+
+    local MaxLength = Options.MaxLength
+
+    if not MaxLength or #Value <= MaxLength then return Value end
+    if not utf8.len(Value) then return Value:sub(1, MaxLength) end -- not valid utf8
+
+    -- gmod's utf8.offset doesn't count like Lua 5.3's
+    local Count = 0
+
+    for Position in utf8.codes(Value) do
+        Count = Count + 1
+
+        if Count > MaxLength then return Value:sub(1, Position - 1) end
+    end
+
+    return Value
+end
+
+Serialization.LimitString = LimitString
+
 local function ValidateString(Value, Options)
     local ValueType = type(Value)
-    if ValueType == "string" then return Value end
-    if ValueType == "number" or ValueType == "boolean" then return tostring(Value) end
+    if ValueType == "string" then return LimitString(Value, Options) end
+    if ValueType == "number" or ValueType == "boolean" then return LimitString(tostring(Value), Options) end
     return Options.Default
 end
 

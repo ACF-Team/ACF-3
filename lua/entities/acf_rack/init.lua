@@ -856,7 +856,7 @@ do -- Loading ----------------------------------
 			Parent    = Rack,
 			Hidden    = Rack.HideMissile,
 			Protected = Rack.ProtectMissile,
-			Color     = Crate:GetColor(),
+			Color     = ACF.GetTracerColor(Crate, 0), -- Missile crates hold one kind of round
 			Model     = Rack.MissileModel,
 		})
 		if not Missile then return end

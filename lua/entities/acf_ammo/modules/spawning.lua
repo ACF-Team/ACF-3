@@ -80,10 +80,8 @@ function ENT:IsHexPacked()
 end
 
 do -- Spawn/Update/Remove
-	local function UpdateCrateSize(Entity, Data, Class, _, Ammo)
-		-- Convert the ammo instance once to get projectile geometry
-		local Bullet = Ammo:ServerConvert()
-
+	-- Bullet is the slot round, sized for the biggest kind the crate holds
+	local function UpdateCrateSize(Entity, Data, Class, Bullet)
 		-- The shape picks the drum layout; nil means this is a plain box crate
 		local Shape      = Entity:ACF_GetUserVar("Shape")
 		local Layout     = ACF.GetDrumLayout(Shape)
@@ -186,9 +184,12 @@ do -- Spawn/Update/Remove
 			local Round = Weapon and Weapon.Round or Class.Round
 			local RoundLength, RoundDiameter = ACF.GetModelDimensions(Round)
 
+			-- The grid is drawn with the slot round, as the crate was sized
 			if not RoundLength then
-				RoundDiameter = Caliber * (BulletData.CaseScale or ACF.GetMaxCaseScale(Class, Weapon)) * 0.1
-				RoundLength = BulletData.RoundLength or (BulletData.PropLength + BulletData.ProjLength)
+				local Slot = Entity.SlotBulletData or BulletData
+
+				RoundDiameter = Caliber * (Slot.CaseScale or ACF.GetMaxCaseScale(Class, Weapon)) * 0.1
+				RoundLength = Slot.RoundLength or (Slot.PropLength + Slot.ProjLength)
 				RoundLength = RoundLength / ACF.InchToCm
 				RoundDiameter = RoundDiameter / ACF.InchToCm
 			end
@@ -283,19 +284,13 @@ do -- Spawn/Update/Remove
 					net.WriteBool(ExtraData.HexPacking)
 					net.WriteBool(ExtraData.IsCassette)
 
-					-- Each kind of round top first, with what the round counts window lists it by
-					net.WriteUInt(Entity.RoundMixVersion, Entity.MixVersionBits)
+					-- Each kind of round top first, with what the client draws and the tool picker lists
 					net.WriteUInt(#Entity.RoundKinds - 1, ACF.ProfileBits)
 
 					for _, Kind in ipairs(Entity.RoundKinds) do
-						local BulletData = Kind.BulletData
-
 						net.WriteUInt(Kind.Bodygroup, 4)
-						net.WriteUInt(Kind.Target, Entity.CountBits)
 						net.WriteString(Kind.Name)
 						net.WriteString(Kind.Ammo.SpawnIcon or "")
-						net.WriteFloat(BulletData.ProjMass)
-						net.WriteFloat((BulletData.MuzzleVel or 0) * ACF.Scale)
 					end
 				end
 
@@ -329,7 +324,6 @@ do -- Spawn/Update/Remove
 		local Caliber     = Scalable and Data.Caliber or Weapon.Caliber
 		local WeaponName  = Scalable and Caliber .. "mm " .. Class.Name or Weapon.Name
 		local WeaponShort = Scalable and Caliber .. "mm" .. Class.ID or Weapon.ID
-		local Rounds      = UpdateCrateSize(Entity, Data, Class, Weapon, Ammo)
 		local OldAmmo     = Entity.RoundData
 
 		if OldAmmo then
@@ -350,11 +344,8 @@ do -- Spawn/Update/Remove
 
 		HookRun("ACF_OnAmmoFirst", Ammo, Entity)
 
-		Entity.Weapon            = Data.Weapon
-		Entity.AmmoType          = Data.AmmoType
-		Entity.CrateProjectilesX = Data.CrateProjectilesX
-		Entity.CrateProjectilesY = Data.CrateProjectilesY
-		Entity.CrateProjectilesZ = Data.CrateProjectilesZ
+		Entity.Weapon   = Data.Weapon
+		Entity.AmmoType = Data.AmmoType
 
 		-- Short shape name ("Cylinder"), which is what the drum layout registry is keyed on and what
 		-- gets networked to the client. The user var itself holds the ContainerShapes class instance.
@@ -381,9 +372,22 @@ do -- Spawn/Update/Remove
 		local Percentage = (Entity.Capacity or 0) > 0 and Entity.Amount / Entity.Capacity or 1
 		local MagSize    = ACF.GetWeaponValue("MagSize", Caliber, Class, Weapon) or 0
 
-		Entity.Capacity = Rounds
+		-- The slots fit the biggest kind, so the kinds come first
+		local Kinds = Entity:ReadKinds()
+		local Slots = { Entity.BulletData }
+
+		for _, Kind in ipairs(Kinds) do Slots[#Slots + 1] = Kind.BulletData end
+
+		Entity.SlotBulletData = ACF.GetSlotBulletData(Slots)
+
+		Entity.Capacity = UpdateCrateSize(Entity, Data, Class, Entity.SlotBulletData)
 		Entity.MagSize  = MagSize
-		Entity:BuildRounds()
+
+		-- Clamped to what fits by UpdateCrateSize
+		Entity.CrateProjectilesX = Data.CrateProjectilesX
+		Entity.CrateProjectilesY = Data.CrateProjectilesY
+		Entity.CrateProjectilesZ = Data.CrateProjectilesZ
+		Entity:BuildRounds(Kinds)
 		Entity:SetAmount(math.floor(Entity.Capacity * Percentage))
 		Entity:SetNWInt("Ammo", Entity.Amount)
 
@@ -421,7 +425,6 @@ do -- Spawn/Update/Remove
 		self.Weapons         = {}
 		self.IsExplosive     = true
 		self.RoundSelect     = 0
-		self.RoundMixVersion = 0
 		self.ProfileKeys     = {} -- Network keys each round profile's last round wrote
 
 		local ShapeClass = Classes.GetTypeByName(ClientData.Shape)

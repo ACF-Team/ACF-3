@@ -112,7 +112,7 @@ ACF.RegisterClassLinkCheck("acf_autoloader", "acf_ammo", function(This, Ammo)
 	if Ammo:GetPos():DistToSqr(This:GetPos()) > MaxDistance then return false, "This crate is too far from the autoloader." end
 	if not ACF.AllowArbitraryParents and Ammo:GetParent() ~= This:GetParent() then return false, "Autoloader and ammo must share the same parent." end
 
-	local BulletData = Ammo.BulletData
+	local BulletData = Ammo.SlotBulletData or Ammo.BulletData -- The biggest kind of round in the crate
 	local Caliber = BulletData.CaseDiameter -- Necked cases are wider than their bore, so the case is what has to fit
 	local Length = BulletData.RoundLength or (BulletData.ProjLength + BulletData.PropLength)
 	if Ammo.IsMissileAmmo then

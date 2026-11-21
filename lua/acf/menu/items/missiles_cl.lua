@@ -197,7 +197,7 @@ ACF.Menu.RegisterPage({
 
 	Actions = {
 		{ Bind = "left",       Context = "Rack", Preview = true, Desc = "Spawn a new missile rack, or update the one you're aiming at." },
-		{ Bind = "shift+left", Context = "Ammo", Preview = true, Desc = "Spawn a new ammo crate, or update the one you're aiming at." },
+		{ Bind = "shift+left", Context = "Ammo", Preview = true, Send = function(...) ACF.AmmoMenu.SendCrate(...) end, Desc = "Spawn a new ammo crate, or update the one you're aiming at." },
 		{ Bind = "right",      Commit = "link", Desc = "Select entities, then a rack/crate, to link them (hold R to unlink)." },
 	},
 
