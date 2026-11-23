@@ -101,10 +101,18 @@ function Contraption.GetEnts(EntOrSet)
 	end
 
 	local AllFamilyChildren = {}
+	local SeenFamilies      = {}
 
+	-- Every member of a family returns the same set of its children, so each family is walked once
 	for K in pairs(EntsSet) do
-		for Child in pairs(K:GetFamilyChildren()) do
-			AllFamilyChildren[Child] = true
+		local Family = K:GetFamily()
+
+		if not Family or not SeenFamilies[Family] then
+			if Family then SeenFamilies[Family] = true end
+
+			for Child in pairs(K:GetFamilyChildren()) do
+				AllFamilyChildren[Child] = true
+			end
 		end
 	end
 

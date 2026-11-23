@@ -8,6 +8,7 @@ local Contraption = ACF.Contraption
 local TimerCreate = timer.Create
 local TimerExists = timer.Exists
 local Clamp       = math.Clamp
+local ENTITY      = FindMetaTable("Entity")
 
 ENT.WireAmountName = "Amount" -- Default wire output name for amount (Can be aliased to "Fuel" or "Ammo" or whatever)
 
@@ -16,37 +17,44 @@ function ENT:GetUnitMass()
 	return self.UnitMass or 1
 end
 
-function ENT:SetAmount(Amount)
-	local Cap = self.Capacity or 0
+-- SelfTbl, where given, is the entity's table, for callers that run every tick: each field read on the
+-- entity itself goes through its metatable
+
+function ENT:SetAmount(Amount, SelfTbl)
+	SelfTbl = SelfTbl or ENTITY.GetTable(self)
+
+	local Cap = SelfTbl.Capacity or 0
 	local New = Clamp(Amount or 0, 0, Cap)
 
-	self.Amount = New
+	SelfTbl.Amount = New
 
-	local TimeCheck = CurTime() - (self.LastInfoUpdate or 0) > 0.1
-	local ValueCheck = math.abs((self.LastInfoAmount or 0) - New) > 0.001
+	local TimeCheck = CurTime() - (SelfTbl.LastInfoUpdate or 0) > 0.1
+	local ValueCheck = math.abs((SelfTbl.LastInfoAmount or 0) - New) > 0.001
 	if TimeCheck and ValueCheck then
 		if WireLib then
-			WireLib.TriggerOutput(self, self.WireAmountName, New)
+			WireLib.TriggerOutput(self, SelfTbl.WireAmountName, New)
 		end
 
 		self:UpdateMass()
-		if self.UpdateOverlay then self:UpdateOverlay() end
-		self.LastInfoUpdate = CurTime()
-		self.LastInfoAmount = New
+		if SelfTbl.UpdateOverlay then self:UpdateOverlay() end
+		SelfTbl.LastInfoUpdate = CurTime()
+		SelfTbl.LastInfoAmount = New
 	end
 end
 
-function ENT:Consume(Amount)
-	local New = self.Amount - Amount
+function ENT:Consume(Amount, SelfTbl)
+	SelfTbl = SelfTbl or ENTITY.GetTable(self)
 
-	self:SetAmount(New)
+	SelfTbl.SetAmount(self, SelfTbl.Amount - Amount, SelfTbl)
 end
 
-function ENT:CanConsume()
-	if not ACF.IsOperational(self) then return false end
-	if not self.Active then return false end
+function ENT:CanConsume(SelfTbl)
+	SelfTbl = SelfTbl or ENTITY.GetTable(self)
 
-	return self.Amount > 0
+	if not ACF.IsOperational(self, SelfTbl) then return false end
+	if not SelfTbl.Active then return false end
+
+	return SelfTbl.Amount > 0
 end
 
 function ENT:UpdateMass(Instant)
