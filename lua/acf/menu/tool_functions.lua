@@ -20,9 +20,21 @@ do -- Ghost entity handling
 	}
 	ACF.GhostEntityData = ACF.GhostEntityData or GhostData
 
+	-- Pages can switch from a paint hook, and Entity:Remove errors while rendering
+	local function ReleaseGhost(Tool)
+		local Ghost = Tool.GhostEntity
+
+		Tool.GhostEntity = nil
+
+		if not IsValid(Ghost) then return end
+
+		Ghost:SetNoDraw(true)
+		SafeRemoveEntityDelayed(Ghost, 0)
+	end
+
 	local function MakeGhostEntity(Tool, Model, Position, Angles)
 		-- Release the old ghost entity
-		Tool:ReleaseGhostEntity()
+		ReleaseGhost(Tool)
 
 		-- Don't allow ragdolls/effects to be ghosts
 		if not util.IsValidProp(Model) then return end
@@ -211,7 +223,7 @@ do -- Ghost entity handling
 	function ACF.ReleaseGhostEntity(Tool)
 		if not ShouldRun then return end
 
-		Tool:ReleaseGhostEntity()
+		ReleaseGhost(Tool)
 	end
 
 	function ACF.GetGhostEntity()
