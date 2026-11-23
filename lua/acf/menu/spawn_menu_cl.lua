@@ -14,34 +14,39 @@ do -- Menu population functions
 		Menu:AddLabel("#acf.menu.default_action_desc")
 	end
 
-	function ACF.AddMenuOption(Index, Name, Icon, Enabled)
+	--- Adds a group to the menu tree. Parent is the name of the group it goes in, nil for the top level.
+	--- The parent doesn't need to exist yet, the tree is put together when the menu gets built.
+	function ACF.AddMenuGroup(Index, Parent, Name, Icon, Enabled)
 		if not Index then return end
 		if not Name then return end
 		if not isfunction(Enabled) then Enabled = nil end
 
-		if not Lookup[Name] then
+		local Group = Lookup[Name]
+
+		if not Group then
 			local Count = ACF.MenuCount + 1
 
-			Options[Count] = {
-				Icon = "icon16/" .. (Icon or "plugin") .. ".png",
-				IsEnabled = Enabled,
-				Index = Index,
+			Group = {
 				Name = Name,
 				Lookup = {},
 				List = {},
 				Count = 0,
 			}
 
-			Lookup[Name] = Options[Count]
+			Options[Count] = Group
+			Lookup[Name]   = Group
 
 			ACF.MenuCount = Count
-		else
-			local Option = Lookup[Name]
-
-			Option.Icon = "icon16/" .. (Icon or "plugin") .. ".png"
-			Option.IsEnabled = Enabled
-			Option.Index = Index
 		end
+
+		Group.Icon = "icon16/" .. (Icon or "plugin") .. ".png"
+		Group.IsEnabled = Enabled
+		Group.Parent = Parent
+		Group.Index = Index
+	end
+
+	function ACF.AddMenuOption(Index, Name, Icon, Enabled)
+		ACF.AddMenuGroup(Index, nil, Name, Icon, Enabled)
 	end
 
 	function ACF.GetMenuItem(Option, Name)
@@ -88,21 +93,14 @@ do -- Menu population functions
 	ACF.AddMenuOption(201, "#acf.menu.entities", "brick")
 	ACF.AddMenuOption(9999, "#acf.menu.fun", "bricks")
 	ACF.AddMenuOption(100000, "Tools", "wrench_orange")
+
+	ACF.AddMenuGroup(1, "#acf.menu.entities", "#acf.menu.weaponry", "bomb")
+	ACF.AddMenuGroup(201, "#acf.menu.entities", "#acf.menu.mobility", "lorry")
 end
 
 
 do -- ACF Menu context panel
-	local function GetSortedList(List)
-		local Result = {}
-
-		for K, V in ipairs(List) do
-			Result[K] = V
-		end
-
-		table.SortByMember(Result, "Index", true)
-
-		return Result
-	end
+	local Indent = 20
 
 	local function AllowOption(Option)
 		if Option.IsEnabled and not Option:IsEnabled() then return false end
@@ -120,21 +118,101 @@ do -- ACF Menu context panel
 		return Allow
 	end
 
-	local function UpdateTree(Tree, Old, New)
-		local OldParent = Old and Old.Parent
-		local NewParent = New.Parent
+	-- Groups and items of every group, sorted together
+	local function GetEntries()
+		local Roots, Entries = {}, {}
 
-		if OldParent == NewParent then return end
+		for _, Group in ipairs(Options) do
+			local List = {}
 
-		if OldParent then
-			OldParent.AllowExpand = true
-			OldParent:SetExpanded(false)
+			for K, Item in ipairs(Group.List) do
+				List[K] = Item
+			end
+
+			Entries[Group] = List
 		end
 
-		NewParent.AllowExpand = true
-		NewParent:SetExpanded(true)
+		for _, Group in ipairs(Options) do
+			local Parent = Group.Parent
 
-		Tree:SetHeight(Tree:GetLineHeight() * (Tree.BaseHeight + NewParent.Count))
+			if not Parent then
+				Roots[#Roots + 1] = Group
+			elseif Lookup[Parent] then
+				local List = Entries[Lookup[Parent]]
+
+				List[#List + 1] = Group
+			end
+		end
+
+		table.SortByMember(Roots, "Index", true)
+
+		for _, List in pairs(Entries) do
+			table.SortByMember(List, "Index", true)
+		end
+
+		return Roots, Entries
+	end
+
+	-- Leaves out anything disabled and groups with nothing left in them
+	local function GetAllowed(List, Entries)
+		local Result = {}
+
+		for _, Entry in ipairs(List) do
+			if Entry.List then
+				if not AllowOption(Entry) then continue end
+
+				local Children = GetAllowed(Entries[Entry], Entries)
+
+				if Children[1] then
+					Result[#Result + 1] = { Group = Entry, Children = Children }
+				end
+			elseif AllowItem(Entry) then
+				Result[#Result + 1] = { Item = Entry }
+			end
+		end
+
+		return Result
+	end
+
+	-- Opens the groups on the path to the selected page and closes the rest
+	-- Returns how many rows are showing under Parent
+	local function SetBranches(Parent, Path, Animate)
+		local Rows = 0
+
+		for _, Node in ipairs(Parent:GetChildNodes()) do
+			Rows = Rows + 1
+
+			if not Node.Master then continue end
+
+			local Open    = Path[Node] or false
+			local WasOpen = Node:GetExpanded() or false
+
+			if Open then
+				-- inner groups settle before this one animates
+				Rows = Rows + SetBranches(Node, Path, Animate and WasOpen)
+			end
+
+			if Open ~= WasOpen then
+				Node.AllowExpand = true
+				Node:SetExpanded(Open, not Animate)
+			end
+		end
+
+		return Rows
+	end
+
+	local function UpdateTree(Tree, New)
+		local Path  = {}
+		local Group = New:GetParentNode()
+
+		while Group.Master do
+			Path[Group] = true
+			Group = Group:GetParentNode()
+		end
+
+		local Rows = SetBranches(Tree:Root(), Path, true)
+
+		Tree:SetHeight(Tree:GetLineHeight() * (0.5 + Rows))
 	end
 
 	local function FixStupidNodeCutoffTextIssue(Node)
@@ -181,7 +259,8 @@ do -- ACF Menu context panel
 
 			self.Icon:SetVisible(true)
 			self.Icon:SetPos(self.Expander.x + self.Expander:GetWide() + 4, (LineHeight - self.Icon:GetTall()) * 0.5)
-			self.Label:SetTextInset(self.Icon.x + self.Icon:GetWide() + 4, 0)
+			self.Label.TextInset = self.Icon.x + self.Icon:GetWide() + 4
+			self.Label:SetTextInset(self.Label.TextInset, 0)
 
 			if not IsValid(self.ChildNodes) or not self.ChildNodes:IsVisible() then
 				self:SetTall(LineHeight)
@@ -191,7 +270,7 @@ do -- ACF Menu context panel
 			self.ChildNodes:SizeToContents()
 			self:SetTall(LineHeight + self.ChildNodes:GetTall())
 
-			self.ChildNodes:StretchToParent(7, LineHeight, 0, 0)
+			self.ChildNodes:StretchToParent(Indent, LineHeight, 0, 0)
 
 			self:DoChildrenOrder()
 		end
@@ -200,70 +279,70 @@ do -- ACF Menu context panel
 		Node.animSlide = Derma_Anim("Anim", Node, Node.AnimSlide)
 	end
 
+	-- The skin draws the selection at a fixed x
+	local function PulseLabel(self, _, h)
+		if not self.m_bSelected then return end
+
+		local Skin = self:GetSkin()
+		local Wide = self:GetTextSize()
+
+		surface.SetAlphaMultiplier(math.Remap(math.sin(CurTime() * 7), -1, 1, 0.6, 1))
+		Skin.tex.Selection((self.TextInset or 41) - 3, 0, Wide + 6, h)
+		surface.SetAlphaMultiplier(1)
+	end
+
+	local function AddNodes(Parent, List, Wanted, Found)
+		for _, Entry in ipairs(List) do
+			local Data = Entry.Group or Entry.Item
+			local Node = Parent:AddNode(Data.Name, Data.Icon)
+
+			FixStupidNodeCutoffTextIssue(Node)
+
+			if Entry.Group then
+				local SetExpanded = Node.SetExpanded
+
+				Node.Master = true
+
+				function Node:SetExpanded(Bool, Instant)
+					if not self.AllowExpand then return end
+
+					SetExpanded(self, Bool, Instant)
+
+					self.AllowExpand = nil
+				end
+
+				AddNodes(Node, Entry.Children, Wanted, Found)
+
+				local First = Node:GetChildNode(0)
+
+				Node.Selected = First.Master and First.Selected or First
+			else
+				Node.Action = Data.Action
+				Node.Item   = Data
+
+				Node.Label.Paint = PulseLabel
+
+				if Wanted and Data.Option == Wanted.Option and Data.Name == Wanted.Name then Found.Open = Node end
+				if not Found.First then Found.First = Node end
+			end
+		end
+	end
+
 	local function PopulateTree(Tree)
-		local OptionList = GetSortedList(Options)
-		local Wanted     = ACF.MenuItemToOpen
-		local First, Open
+		local Roots, Entries = GetEntries()
+		local Wanted = ACF.MenuItemToOpen
+		local Found  = {}
 
 		ACF.MenuItemToOpen = nil
 
-		Tree.BaseHeight = 0.5
 		Tree.VBar:SetSize(0, 0)
 		Tree:SetLineHeight(19)
 
-		for _, Option in ipairs(OptionList) do
-			if not AllowOption(Option) then continue end
+		AddNodes(Tree, GetAllowed(Roots, Entries), Wanted, Found)
 
-			local Parent = Tree:AddNode(Option.Name, Option.Icon)
-			local SetExpanded = Parent.SetExpanded
+		local Open = Found.Open or Found.First
 
-			FixStupidNodeCutoffTextIssue(Parent)
-
-			Parent.Action = Option.Action
-			Parent.Master = true
-			Parent.Count = 0
-
-			function Parent:SetExpanded(Bool)
-				if not self.AllowExpand then return end
-
-				SetExpanded(self, Bool)
-
-				self.AllowExpand = nil
-			end
-
-			Tree.BaseHeight = Tree.BaseHeight + 1
-
-			local ItemList = GetSortedList(Option.List)
-			for _, Item in ipairs(ItemList) do
-				if not AllowItem(Item) then continue end
-
-				local Child = Parent:AddNode(Item.Name, Item.Icon)
-				Child.Action = Item.Action
-				Child.Parent = Parent
-				Child.Item   = Item
-
-				if Wanted and Item.Option == Wanted.Option and Item.Name == Wanted.Name then Open = Child end
-
-				Parent.Count = Parent.Count + 1
-
-				function Child.Label:Paint(w, h)
-					local Skin = self:GetSkin()
-					surface.SetAlphaMultiplier(math.Remap(math.sin(CurTime() * 7), -1, 1, 0.6, 1))
-					Skin:PaintTreeNodeButton(self, w, h)
-					surface.SetAlphaMultiplier(1)
-				end
-
-				if not Parent.Selected then
-					Parent.Selected = Child
-
-					if not First then
-						First = Child
-					end
-				end
-			end
-		end
-
-		Tree:SetSelectedItem(Open or First)
+		if Open then Tree:SetSelectedItem(Open) end
 	end
 
 	local function SetupMenuTree(Menu, Tree)
@@ -279,9 +358,15 @@ do -- ACF Menu context panel
 				return
 			end
 
-			UpdateTree(self, self.Selected, Node)
+			UpdateTree(self, Node)
 
-			Node.Parent.Selected = Node
+			local Group = Node:GetParentNode()
+
+			while Group.Master do
+				Group.Selected = Node
+				Group = Group:GetParentNode()
+			end
+
 			self.Selected = Node
 
 			-- Reset new-framework tool state; a new-style page's Action re-sets it below.
@@ -319,6 +404,20 @@ do -- ACF Menu context panel
 
 	ACF.SetupMenuTree = SetupMenuTree
 
+	local function FindItemNode(Parent, Option, Name)
+		for _, Node in ipairs(Parent:GetChildNodes()) do
+			local Item = Node.Item
+
+			if Item and Item.Option == Option and Item.Name == Name then return Node end
+
+			if Node.Master then
+				local Found = FindItemNode(Node, Option, Name)
+
+				if Found then return Found end
+			end
+		end
+	end
+
 	--- Opens an item of the main menu, rebuilding it if it's already open.
 	--- If the menu isn't built yet it opens on that item once it is
 	function ACF.OpenMenuItem(Option, Name)
@@ -330,20 +429,14 @@ do -- ACF Menu context panel
 			return false
 		end
 
-		for _, Parent in ipairs(Tree:Root():GetChildNodes()) do
-			for _, Child in ipairs(Parent:GetChildNodes()) do
-				local Item = Child.Item
+		local Node = FindItemNode(Tree:Root(), Option, Name)
 
-				if Item and Item.Option == Option and Item.Name == Name then
-					Tree.Reopen = true
-					Tree:SetSelectedItem(Child)
+		if not Node then return false end
 
-					return true
-				end
-			end
-		end
+		Tree.Reopen = true
+		Tree:SetSelectedItem(Node)
 
-		return false
+		return true
 	end
 end
 

@@ -40,7 +40,7 @@ Chapter:AddInstruction("PlacePanel", {
 
 Chapter:AddInstruction("ACF.CreateMenuCPanel", {Name = "MainMenuCPanel", Label = "ACF Menu"}):DelayByLength()
 Chapter:AddInstruction("ACF.InitializeMainMenu", {Name = "MainMenuCPanel"}):DelayByLength()
-Chapter:AddInstruction("ACF.SelectMenuTreeNode", {Name = "MainMenuCPanel", Select = "#acf.menu.weapons"}):DelayByLength()
+Chapter:AddInstruction("ACF.SelectMenuTreeNode", {Name = "MainMenuCPanel", Select = "#acf.menu.guns"}):DelayByLength()
 Chapter:AddInstruction("ACF.ScrollToMenuPanel", {Name = "MainMenuCPanel", Scroll = "#acf.menu.weapons.weapon_info"}):DelayByLength()
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "The primary way to destroy other vehicles is through the use of weapons. Here we will look at guns."}))

@@ -243,7 +243,7 @@ end
 
 ACF.Menu.RegisterPage({
 	ID       = "acf_engine",
-	Category = "#acf.menu.entities",
+	Category = "#acf.menu.mobility",
 	Name     = "#acf.menu.engines",
 	Icon     = "car",
 	Order    = 201,

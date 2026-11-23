@@ -174,7 +174,7 @@ end
 
 ACF.Menu.RegisterPage({
 	ID       = "acf_rack",
-	Category = "#acf.menu.entities",
+	Category = "#acf.menu.weaponry",
 	Name     = "Missiles",
 	Icon     = "wand",
 	Order    = 101,

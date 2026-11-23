@@ -289,8 +289,8 @@ end
 
 ACF.Menu.RegisterPage({
 	ID       = "acf_gun",
-	Category = "#acf.menu.entities",
-	Name     = "#acf.menu.weapons",
+	Category = "#acf.menu.weaponry",
+	Name     = "#acf.menu.guns",
 	Icon     = "gun",
 	Order    = 1,
 

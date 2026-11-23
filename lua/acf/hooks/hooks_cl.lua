@@ -8,7 +8,7 @@ Hooks.Add("ACF_Base_Client", function(Gamemode)
 	function Gamemode:ACF_OnFetchRepository()
 	end
 
-	--- Called when a new option is about to be added to the menu.  
+	--- Called when a new option or group is about to be added to the menu.  
 	--- This hook won't be called if the option object has  
 	--- an IsEnabled method defined and said method returns false.
 	--- @param Name string The name of the option object.

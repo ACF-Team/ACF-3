@@ -165,7 +165,7 @@ end
 
 ACF.Menu.RegisterPage({
 	ID       = "acf_gearbox",
-	Category = "#acf.menu.entities",
+	Category = "#acf.menu.mobility",
 	Name     = "#acf.menu.gearboxes",
 	Icon     = "cog",
 	Order    = 301,
