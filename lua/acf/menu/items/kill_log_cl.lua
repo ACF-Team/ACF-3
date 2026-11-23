@@ -301,4 +301,4 @@ local function CreateMenu(Menu)
     RequestSessions()
 end
 
-ACF.AddMenuItem(402, "Tools", "Kill Log", "chart_bar", CreateMenu)
+ACF.AddMenuItem(401, nil, "Kill Log", "chart_bar", CreateMenu)

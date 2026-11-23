@@ -38,9 +38,8 @@ Chapter:AddInstruction("PlacePanel", {
 
 Chapter:AddInstruction("ACF.CreateMenuCPanel", {Name = "MainMenuCPanel", Label = "ACF Menu"}):DelayByLength()
 Chapter:AddInstruction("ACF.InitializeMainMenu", {Name = "MainMenuCPanel"}):DelayByLength()
-Chapter:AddInstruction("ACF.SelectMenuTreeNode", {Name = "MainMenuCPanel", Select = "#acf.menu.turrets"}):DelayByLength()
+Chapter:AddInstruction("ACF.SelectMenuTreeNode", {Name = "MainMenuCPanel", Select = "#acf.menu.turrets.rings"}):DelayByLength()
 Chapter:AddInstruction("ACF.ScrollToMenuPanel", {Name = "MainMenuCPanel", Scroll = "#acf.menu.turrets.components"}):DelayByLength()
-Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", Choice = "Turrets"}):DelayByLength()
 Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", Choice = "Horizontal Turret"}):DelayByLength()
 
 Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Ring diameters determine how large of a turret you can mount. For this example, set the ring diameter to 96."}))

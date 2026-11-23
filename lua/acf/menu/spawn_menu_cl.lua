@@ -1,12 +1,14 @@
 local hook = hook
 local ACF  = ACF
 
-ACF.MenuOptions = ACF.MenuOptions or {}
-ACF.MenuLookup  = ACF.MenuLookup or {}
-ACF.MenuCount   = ACF.MenuCount or 0
+ACF.MenuOptions   = ACF.MenuOptions or {}
+ACF.MenuLookup    = ACF.MenuLookup or {}
+ACF.MenuCount     = ACF.MenuCount or 0
+ACF.MenuRootItems = ACF.MenuRootItems or { Lookup = {}, List = {}, Count = 0 }
 
-local Options = ACF.MenuOptions
-local Lookup  = ACF.MenuLookup
+local Options   = ACF.MenuOptions
+local Lookup    = ACF.MenuLookup
+local RootItems = ACF.MenuRootItems
 
 do -- Menu population functions
 	local function DefaultAction(Menu)
@@ -50,17 +52,17 @@ do -- Menu population functions
 	end
 
 	function ACF.GetMenuItem(Option, Name)
-		return Lookup[Option].Lookup[Name]
+		return (Option and Lookup[Option] or RootItems).Lookup[Name]
 	end
 
+	--- Adds a page to a group, or to the top level if Option is nil.
 	function ACF.AddMenuItem(Index, Option, Name, Icon, Action, Enabled)
 		if not Index then return end
-		if not Option then return end
 		if not Name then return end
-		if not Lookup[Option] then return end
+		if Option and not Lookup[Option] then return end
 		if not isfunction(Enabled) then Enabled = nil end
 
-		local Items = Lookup[Option]
+		local Items = Option and Lookup[Option] or RootItems
 		local Item = Items.Lookup[Name]
 
 		if not Item then
@@ -88,11 +90,11 @@ do -- Menu population functions
 
 	ACF.AddMenuOption(1, "#acf.menu.about", "information")
 	ACF.AddMenuOption(101, "#acf.menu.entities", "brick")
-	ACF.AddMenuOption(201, "Tools", "wrench_orange")
 	ACF.AddMenuOption(301, "#acf.menu.settings", "wrench")
 	ACF.AddMenuOption(9999, "#acf.menu.fun", "bricks")
 
 	ACF.AddMenuGroup(1, "#acf.menu.entities", "#acf.menu.weaponry", "bomb")
+	ACF.AddMenuGroup(11, "#acf.menu.entities", "#acf.menu.turrets", "shape_align_center")
 	ACF.AddMenuGroup(201, "#acf.menu.entities", "#acf.menu.mobility", "lorry")
 	ACF.AddMenuGroup(401, "#acf.menu.entities", "#acf.menu.sensors", "transmit")
 	ACF.AddMenuGroup(501, "#acf.menu.entities", "#acf.menu.support", "box")
@@ -122,6 +124,10 @@ do -- ACF Menu context panel
 	-- Groups and items of every group, sorted together
 	local function GetEntries()
 		local Roots, Entries = {}, {}
+
+		for K, Item in ipairs(RootItems.List) do
+			Roots[K] = Item
+		end
 
 		for _, Group in ipairs(Options) do
 			local List = {}
