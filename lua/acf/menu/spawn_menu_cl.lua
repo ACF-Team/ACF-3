@@ -276,6 +276,7 @@ do -- ACF Menu context panel
 		end
 
 		Node:SetHideExpander(true)
+		Node:SetDrawLines(false)
 		Node.animSlide = Derma_Anim("Anim", Node, Node.AnimSlide)
 	end
 
