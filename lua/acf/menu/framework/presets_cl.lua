@@ -1,4 +1,5 @@
 local ACF           = ACF
+local Classes       = ACF.Classes
 local Folder        = "acf/presets"
 local MaxNameLength = 48
 local Gap           = 4
@@ -15,6 +16,40 @@ end
 
 local function GetFile(Name)
 	return (Name:lower():gsub("%s", "_")) .. ".json"
+end
+
+local Settable = {} -- [Class] = whether a preset would keep anything
+
+-- Menu fields other than picking a type, including the ones inside any type it can pick
+local function HasSettings(Class, Depth)
+	if Depth > 6 then return false end
+
+	for _, Field in ipairs(Classes.GetTypeFields(Class)) do
+		if not Field.Menu then continue end
+
+		local Type = Classes.GetTypeByName(Field.Type:gsub("%[%]$", ""))
+
+		if not Type then return true end
+		if HasSettings(Type, Depth + 1) then return true end
+
+		for _, Subtype in pairs(Classes.GetSubtypes(Classes.GetTypeName(Type))) do
+			if HasSettings(Subtype, Depth + 1) then return true end
+		end
+	end
+
+	return false
+end
+
+--- Whether an entity class has settings worth saving as a preset
+function ACF.Menu.HasPresetSettings(Class)
+	local Has = Settable[Class]
+
+	if Has == nil then
+		Has = HasSettings(Class, 0)
+		Settable[Class] = Has
+	end
+
+	return Has
 end
 
 --- Strips a preset name down to something safe to use as a file name, nil if nothing's left
@@ -107,7 +142,7 @@ local function MakeButton(Icon, Tooltip, DoClick)
 	return Button
 end
 
---- Adds a row to load, save and delete presets of a context's entity.
+--- Adds a row to load, save and delete presets of a context's entity. Hidden while it has nothing to save.
 --- Options.Group() names the group presets are listed and saved under, nil to list none.
 --- Options.Keep lists fields that stay as the menu has them when a preset loads, or is a function returning that list
 function ACF.Menu.AddPresets(Menu, Context, Options)
@@ -129,6 +164,13 @@ function ACF.Menu.AddPresets(Menu, Context, Options)
 	end
 
 	function Row:Refresh()
+		local Show = ACF.Menu.HasPresetSettings(Context.Class)
+
+		if self:IsVisible() ~= Show then
+			self:SetVisible(Show)
+			self:InvalidateParent()
+		end
+
 		local Group = GetGroup()
 		local Names = Group ~= false and ACF.Menu.GetPresets(Context.ClassName, Group) or {}
 		local Last  = LastLoaded[GetFolder(Context.ClassName, Group or nil)]
