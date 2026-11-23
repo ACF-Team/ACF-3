@@ -424,6 +424,8 @@ function PANEL:AddNumberWang(Label, Min, Max, Decimals)
 	Wang:SetMinMax(Min, Max)
 	Wang:SetTall(20)
 	Wang:Dock(RIGHT)
+	-- Focusing the wang moves it after the label, which would dock the label first and squash the wang
+	Wang:SetZPos(-1)
 
 	local Text = Base:Add("DLabel")
 	Text:SetText(Label or "Text")

@@ -73,50 +73,73 @@ do -- Ghost entity handling
 		return Tool.GhostEntity
 	end
 
-	local function GetModelDimensions(EntData)
+	-- PhysicsInitMultiConvex costs ~15 ms on a detailed hull, so slider drags only rebuild once they settle
+	local PHYSICS_DELAY = 0.15
+
+	local function GetGhostScale(EntData)
 		local Scale = EntData.Scale
 		local ModelSize = ModelData.GetModelSize(EntData.Model)
-		if not ModelSize then return Vector(0, 0, 0), Vector(0, 0, 0), Vector(0, 0, 0) end
+		if not ModelSize then return Vector(0, 0, 0), Vector(0, 0, 0) end
 
 		if Scale and not Scale:IsEqualTol(DefaultScale, 0) and not EntData.AbsoluteScale then
 			Scale = Scale / ModelSize
 		end
 
-		local ModelMesh = ModelData.GetModelMesh(EntData.Model, Scale)
-
-		return ModelMesh, ModelSize, Scale
+		return ModelSize, Scale
 	end
 
-	local function ModifyGhostEntity(GhostEnt, EntKey)
+	local function ApplyGhostLook(GhostEnt, EntKey)
 		local EntData = GhostData[EntKey]
-		GhostEnt:SetModel(EntData.Model)
 
-		GhostEnt.ModelMesh, GhostEnt.ModelSize, GhostEnt.Scale = GetModelDimensions(EntData)
-		local ModelMesh, Scale = GhostEnt.ModelMesh, GhostEnt.Scale
+		if GhostEnt:GetModel() ~= EntData.Model then GhostEnt:SetModel(EntData.Model) end
+
+		GhostEnt.ModelSize, GhostEnt.Scale = GetGhostScale(EntData)
+		local Scale = GhostEnt.Scale
 
 		if Scale then
 			local ScaleMatrix = Matrix()
 			ScaleMatrix:Scale(Scale)
 			GhostEnt:EnableMatrix("RenderMultiply", ScaleMatrix)
 
-			if ModelMesh then
-				GhostEnt:PhysicsInitMultiConvex(ModelMesh, nil, GhostEnt.ACF_MassCenterOverride or nil)
-				GhostEnt:EnableCustomCollisions(true)
-				GhostEnt:SetRenderBounds(GhostEnt:GetCollisionBounds())
-				GhostEnt:DrawShadow(false)
-
-				local PhysObj = GhostEnt:GetPhysicsObject()
-
-				if IsValid(PhysObj) then
-					PhysObj:EnableMotion(false)
-					PhysObj:Sleep()
-				end
-			end
+			local Mins, Maxs = GhostEnt:GetModelBounds()
+			GhostEnt:SetRenderBounds(Mins * Scale, Maxs * Scale)
+			GhostEnt:DrawShadow(false)
 		end
 
 		if EntData.Material then
 			GhostEnt:SetMaterial(EntData.Material)
 		end
+	end
+
+	local function ApplyGhostPhysics(GhostEnt, EntKey)
+		local Scale = GhostEnt.Scale
+		if not Scale then return end
+
+		local ModelMesh = ModelData.GetModelMesh(GhostData[EntKey].Model, Scale)
+		GhostEnt.ModelMesh = ModelMesh
+
+		if not ModelMesh then return end
+
+		GhostEnt:PhysicsInitMultiConvex(ModelMesh, nil, GhostEnt.ACF_MassCenterOverride or nil)
+		GhostEnt:EnableCustomCollisions(true)
+
+		local PhysObj = GhostEnt:GetPhysicsObject()
+
+		if IsValid(PhysObj) then
+			PhysObj:EnableMotion(false)
+			PhysObj:Sleep()
+		end
+	end
+
+	local function ModifyGhostEntity(GhostEnt, EntKey)
+		ApplyGhostLook(GhostEnt, EntKey)
+		ApplyGhostPhysics(GhostEnt, EntKey)
+	end
+
+	local function RebuildGhostPhysics()
+		if not (ToolEnt and IsValid(ToolEnt.GhostEntity)) then return end
+
+		ApplyGhostPhysics(ToolEnt.GhostEntity, DrawingSecondary and "Secondary" or "Primary")
 	end
 
 	function ACF.CreateGhostEntity(Tool)
@@ -163,11 +186,14 @@ do -- Ghost entity handling
 
 		timer.Simple(0, function()
 			local EntKey = DrawingSecondary and "Secondary" or "Primary"
+			-- The hidden ghost's data is applied when it's switched to
+			if not NewGhostData[EntKey] then return end
 			if not ToolEnt then return end
 
 			if not IsValid(ToolEnt.GhostEntity) then return end
 
-			ModifyGhostEntity(ToolEnt.GhostEntity, EntKey)
+			ApplyGhostLook(ToolEnt.GhostEntity, EntKey)
+			timer.Create("ACF_GhostPhysics", PHYSICS_DELAY, 1, RebuildGhostPhysics)
 		end)
 	end
 
