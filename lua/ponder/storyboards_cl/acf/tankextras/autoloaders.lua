@@ -86,10 +86,9 @@ Chapter:AddDelay(0.8)
 
 -------------------------------------------------------------------------------------------------
 local Chapter = Storyboard:Chapter("Fitting the Autoloader")
-Chapter:AddInstruction("ACF.SelectMenuTreeNode", {Name = "MainMenuCPanel", Select = "#acf.menu.components"}):DelayByLength()
-Chapter:AddInstruction("ACF.SetPanelComboBox", {Name = "MainMenuCPanel", Choice = "Autoloader"}):DelayByLength()
+Chapter:AddInstruction("ACF.SelectMenuTreeNode", {Name = "MainMenuCPanel", Select = "#acf.menu.components.autoloaders"}):DelayByLength()
 
-Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Under Components, pick Autoloader and size it to the longest round in the carousel. Bigger autoloaders weigh more, so don't oversize it."}))
+Chapter:AddDelay(Chapter:AddInstruction("Caption", {Text = "Under Weaponry, open Autoloaders and size it to the longest round in the carousel. Bigger autoloaders weigh more, so don't oversize it."}))
 Chapter:AddInstruction("ACF.ScrollToMenuPanel", {Name = "MainMenuCPanel", Scroll = "Max Caliber (mm)"}):DelayByLength()
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "Max Caliber (mm)", Value = 125}):DelayByLength()
 Chapter:AddInstruction("ACF.SetPanelSlider", {Name = "MainMenuCPanel", SliderName = "Length (cm)", Value = 45}):DelayByLength()

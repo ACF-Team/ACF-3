@@ -87,10 +87,10 @@ end
 
 ACF.Menu.RegisterPage({
 	ID       = "acf_turret",
-	Category = "#acf.menu.entities",
+	Category = "#acf.menu.weaponry",
 	Name     = "#acf.menu.turrets",
 	Icon     = "shape_align_center",
-	Order    = 51,
+	Order    = 401,
 
 	Contexts = {
 		Drive      = "acf_turret",

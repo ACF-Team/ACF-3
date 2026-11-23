@@ -87,15 +87,16 @@ do -- Menu population functions
 	end
 
 	ACF.AddMenuOption(1, "#acf.menu.about", "information")
-	ACF.AddMenuOption(2, "#acf.menu.dupe", "arrow_down")
-	ACF.AddMenuOption(101, "#acf.menu.settings", "wrench")
-	ACF.AddMenuOption(102, "#acf.menu.permissions", "gun")
-	ACF.AddMenuOption(201, "#acf.menu.entities", "brick")
+	ACF.AddMenuOption(101, "#acf.menu.entities", "brick")
+	ACF.AddMenuOption(201, "Tools", "wrench_orange")
+	ACF.AddMenuOption(301, "#acf.menu.settings", "wrench")
 	ACF.AddMenuOption(9999, "#acf.menu.fun", "bricks")
-	ACF.AddMenuOption(100000, "Tools", "wrench_orange")
 
 	ACF.AddMenuGroup(1, "#acf.menu.entities", "#acf.menu.weaponry", "bomb")
 	ACF.AddMenuGroup(201, "#acf.menu.entities", "#acf.menu.mobility", "lorry")
+	ACF.AddMenuGroup(401, "#acf.menu.entities", "#acf.menu.sensors", "transmit")
+	ACF.AddMenuGroup(501, "#acf.menu.entities", "#acf.menu.support", "box")
+	ACF.AddMenuGroup(201, "#acf.menu.settings", "#acf.menu.permissions", "gun")
 end
 
 

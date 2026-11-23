@@ -325,7 +325,7 @@ local function CreateMenu(Menu)
 end
 
 ACF.Menu.RegisterPage({
-	Category = "#acf.menu.dupe",
+	Category = "Tools",
 	Name     = "#acf.menu.dupe",
 	Icon     = "arrow_down",
 	Order    = 3,
