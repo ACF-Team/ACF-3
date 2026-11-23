@@ -19,6 +19,8 @@ if CLIENT then
 	local ArrowCount  = 3
 	local ArrowArc    = math.rad(70)
 	local ArrowSpeed  = math.rad(150)
+	-- The engine still calls HUD hooks and DrawHUD with the HUD hidden
+	local DrawHUD     = GetConVar("cl_drawhud")
 
 	-- The axis a link would give this wheel, as the gearbox would apply it: the one in the player's facing
 	-- when holding ALT, else the wheel's defined one, else the one snapped from the selected gearboxes
@@ -120,18 +122,35 @@ if CLIENT then
 		-- New framework's instruction HUD for the active new-style page (drawn before the entity
 		-- overlay early-returns so it shows regardless of what you're aiming at). Swaps to the linking
 		-- instruction set while the player has entities selected.
+		if not DrawHUD:GetBool() then return end
+
 		if ACF.Menu and ACF.Menu.GetHUDInstructions then
 			local Instructions = ACF.Menu.GetHUDInstructions()
 			if Instructions then ACF.Menu.DrawInstructions(Instructions) end
 		end
+	end
 
-		local Trace = LocalPlayer():GetEyeTrace()
+	-- Drawn before the HUDPaint hook rather than from DrawHUD, which the engine calls after it, so link lines
+	-- and labels don't cover the info bubble. A HUD hook draws only the player's own view, not every render
+	-- target and reflection
+	hook.Add("HUDPaintBackground", "ACF_Menu_DrawAimOverlay", function()
+		if not DrawHUD:GetBool() then return end
+
+		local Player = LocalPlayer()
+		local Weapon = Player:GetActiveWeapon()
+
+		if not IsValid(Weapon) or Weapon:GetClass() ~= "gmod_tool" or Weapon:GetMode() ~= "acf_menu" then
+			return
+		end
+		if IsValid(Player:GetVehicle()) and not Player:GetAllowWeaponsInVehicle() then return end
+
+		local Trace = Player:GetEyeTrace()
 		local Distance = Trace.StartPos:DistToSqr(Trace.HitPos)
 		local Entity = Trace.Entity
 
 		-- Unlinking (R) doesn't use the axis, so there's nothing to preview then
-		if next(ACF.Menu.LinkGearboxes) and not LocalPlayer():KeyDown(IN_RELOAD) and ACF.CanSetWheelAxis(Entity) then
-			DrawWheelAxis(Entity, LocalPlayer():GetAimVector(), LocalPlayer():KeyDown(IN_WALK))
+		if next(ACF.Menu.LinkGearboxes) and not Player:KeyDown(IN_RELOAD) and ACF.CanSetWheelAxis(Entity) then
+			DrawWheelAxis(Entity, Player:GetAimVector(), Player:KeyDown(IN_WALK))
 		end
 
 		if not IsValid(Entity) then return end
@@ -146,7 +165,7 @@ if CLIENT then
 
 			cam.End3D()
 		end
-	end
+	end)
 
 	TOOL.BuildCPanel = ACF.CreateSpawnMenu
 
