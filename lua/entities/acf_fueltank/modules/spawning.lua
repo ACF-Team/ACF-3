@@ -3,6 +3,7 @@ local Classes     = ACF.Classes
 local WireLib     = WireLib
 local ActiveTanks = ACF.FuelTanks
 local Fuel        = ACF.Mobility.Fuel
+local ENTITY      = FindMetaTable("Entity")
 
 local TANK_MATERIAL = "models/props_canal/metalcrate001d"
 
@@ -112,12 +113,14 @@ ACF.AddInputAction("acf_fueltank", "Active", function(Entity, Value)
 	if Entity.Active then Fuel.Notify(Entity) end
 end)
 
-function ENT:SetAmount(Amount)
-	local WasEmpty = (self.Amount or 0) <= 0
+function ENT:SetAmount(Amount, SelfTbl)
+	SelfTbl = SelfTbl or ENTITY.GetTable(self)
 
-	self.BaseClass.SetAmount(self, Amount)
+	local WasEmpty = (SelfTbl.Amount or 0) <= 0
 
-	if WasEmpty and self.Amount > 0 then Fuel.Notify(self) end
+	SelfTbl.BaseClass.SetAmount(self, Amount, SelfTbl)
+
+	if WasEmpty and SelfTbl.Amount > 0 then Fuel.Notify(self) end
 end
 
 function ENT:Enable()

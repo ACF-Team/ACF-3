@@ -49,12 +49,15 @@ function ENT:ACF_PostSpawn(Owner, _, _, ClientData)
 
 	local Baseplate = self
 	timer.Create("ACFPhysicalChecks" .. self:EntIndex(), 3, 0, function()
+		-- Only some baseplate types react to collisions, and sorting the contraption's parts for the rest
+		-- finds nothing to do
+		local BPTypeInst = IsValid(Baseplate) and Baseplate:ACF_GetUserVar("BaseplateType")
+		if not BPTypeInst or not BPTypeInst.PhysicsCollide then return end
+
 		local Physical, _, _ = Con.GetEnts(Baseplate)
 		for Ent in pairs(Physical) do
 			if not IsValid(Ent) then continue end
 			if Ent.ACF_ReplacedPhysicsCollide then continue end
-			local BPTypeInst = IsValid(Baseplate) and Baseplate:ACF_GetUserVar("BaseplateType")
-			if not BPTypeInst or not BPTypeInst.PhysicsCollide then continue end
 			Ent.PhysicsCollide = function(_, Data)
 				local Current = IsValid(Baseplate) and Baseplate:ACF_GetUserVar("BaseplateType")
 				if Current and Current.PhysicsCollide then

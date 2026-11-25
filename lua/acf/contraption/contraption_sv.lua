@@ -101,10 +101,18 @@ function Contraption.GetEnts(EntOrSet)
 	end
 
 	local AllFamilyChildren = {}
+	local SeenFamilies      = {}
 
+	-- Every member of a family returns the same set of its children, so each family is walked once
 	for K in pairs(EntsSet) do
-		for Child in pairs(K:GetFamilyChildren()) do
-			AllFamilyChildren[Child] = true
+		local Family = K:GetFamily()
+
+		if not Family or not SeenFamilies[Family] then
+			if Family then SeenFamilies[Family] = true end
+
+			for Child in pairs(K:GetFamilyChildren()) do
+				AllFamilyChildren[Child] = true
+			end
 		end
 	end
 
@@ -377,13 +385,16 @@ do -- ASSUMING DIRECT CONTROL
 
 			-- Convenience functions that will set the Mass/Model variables in the ACF table for the entity
 			function Contraption.SetMass(Entity, Mass)
+				local PhysObj = Entity:GetPhysicsObject()
+
 				Entity.ACF.Mass	=	 Mass
 
 				if Entity.ACF_OnMassChange then
-					Entity:ACF_OnMassChange(Entity:GetPhysicsObject():GetMass(), Mass)
+					Entity:ACF_OnMassChange(PhysObj:GetMass(), Mass)
 				end
 
-				SetMass(Entity:GetPhysicsObject(), Mass)
+				-- The entity spares CFW's mass tracking a PhysObj:GetEntity call, which costs several microseconds
+				SetMass(PhysObj, Mass, Entity)
 			end
 
 			function Contraption.SetModel(Entity, Model)
@@ -405,7 +416,7 @@ do -- ASSUMING DIRECT CONTROL
 					end
 
 					if HasNonDefault then
-						SetMass(self, Ent.ACF_Volumetric_Mesh.TotalMass)
+						SetMass(self, Ent.ACF_Volumetric_Mesh.TotalMass, Ent)
 						return
 					end
 				end
@@ -414,7 +425,7 @@ do -- ASSUMING DIRECT CONTROL
 					Ent:ACF_OnMassChange(self:GetMass(), Mass)
 				end
 
-				SetMass(self, Mass)
+				SetMass(self, Mass, Ent)
 			end
 
 			function ENT:SetModel(Model)
