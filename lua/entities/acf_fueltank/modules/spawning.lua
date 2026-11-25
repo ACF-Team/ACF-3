@@ -123,18 +123,6 @@ function ENT:SetAmount(Amount, SelfTbl)
 	if WasEmpty and SelfTbl.Amount > 0 then Fuel.Notify(self) end
 end
 
---- A tank weighs what it does full, whatever is left in it: fuel is a small share of a vehicle's mass, a
---- drained tank still serves as armor, and following the fuel down took a physics mass update every few
---- ticks.
---- @param Instant boolean? # Set it even if unchanged, as after a resize, whose new physics object starts at 1 kg
-function ENT:UpdateMass(Instant)
-	local Mass = math.max(ACF.MinimumMass, self.Capacity * self:GetUnitMass())
-
-	if not Instant and self.ACF.Mass == Mass then return end
-
-	ACF.Contraption.SetMass(self, Mass)
-end
-
 function ENT:Enable()
 	self.BaseClass.Enable(self)
 

@@ -66,6 +66,7 @@ do -- Updating
 		-- fresh and duped crates spawn full (matches the legacy behaviour).
 		local Percentage = (OldCapacity and self.Amount) and (self.Amount / OldCapacity) or 1
 		self:SetAmount(Percentage * Capacity)
+		self:UpdateMass(true)
 
 		self:ACF_SetEntityName("ACF Supply Crate")
 
