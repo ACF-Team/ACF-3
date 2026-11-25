@@ -253,6 +253,7 @@ do -- ACF global vars
 
 		phys_bone_follower    = true,
 		prop_dynamic          = true,
+		prop_physics_multiplayer = true,
 		prop_ragdoll          = true,
 		prop_vehicle_crane    = true,
 
@@ -264,6 +265,8 @@ do -- ACF global vars
 		starfall_hologram     = true,
 		starfall_screen       = true,
 		starfall_processor    = true,
+
+		trigger_vphysics_motion = true,
 	}
 
 	-- THESE ENTITIES ARE FILTERED BUT CAN STILL BE ARMORED, FOR BACKWARDS COMPATIBILITY
