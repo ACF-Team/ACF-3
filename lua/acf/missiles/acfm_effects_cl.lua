@@ -1,18 +1,21 @@
 local ACF   = ACF
 local Clock = ACF.Utilities.Clock
 
+local MIN_BOUNDS = MIN_COORD_FLOAT or -16000
+local MAX_BOUNDS = MAX_COORD_FLOAT or 16000
+
 local Overrides =
 {
 	["ACF.Ammunition.FLR"] = function(Effect, Bullet)
 		local Position = Bullet.SimPos
 
-		if math.abs(Position.x) > 16000 or math.abs(Position.y) > 16000 or Position.z < -16000 then
+		if Position.x < MIN_BOUNDS or Position.x > MAX_BOUNDS or Position.y < MIN_BOUNDS or Position.y > MAX_BOUNDS or Position.z < MIN_BOUNDS then
 			Effect.Kill = true
 
 			return
 		end
 
-		if Position.z < 16000 then
+		if Position.z < MAX_BOUNDS then
 			Effect:SetPos(Position) --Moving the effect to the calculated position
 			Effect:SetAngles(Bullet.SimFlight:Angle())
 		end

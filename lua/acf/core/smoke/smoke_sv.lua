@@ -9,7 +9,7 @@ local CarryShare  = 0.2 -- Share of an airbursting round's velocity its cloud ca
 local ImpactShare = 0.05 -- Share of an impacting round's velocity, along the surface it hit, its cloud carries
 local MaxCarry    = 16000 -- Stays inside net.WriteVector's coordinate range
 local CoastLift   = 32 -- Height above the surface the coast of a cloud is traced at, so bumps in the ground don't stop it
-local FloorDepth  = 32768
+local MIN_BOUNDS  = MIN_COORD_FLOAT or -math.pow(2, 14)
 local ImpactID   = 0
 
 util.AddNetworkString("ACF_SmokeImpact")
@@ -105,7 +105,7 @@ function ACF.CreateSmokeScreen(Origin, FillerMass, WPMass, Color, Velocity, HitN
 		local Rest = Origin + ACF.GetSmokeCarryDistance(Base.Carry)
 
 		TraceData.start  = Rest
-		TraceData.endpos = Rest - Up * FloorDepth
+		TraceData.endpos = Vector(Rest.x, Rest.y, MIN_BOUNDS)
 
 		Base.FloorZ = util.TraceLine(TraceData).HitPos.z
 	end

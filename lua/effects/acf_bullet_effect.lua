@@ -4,6 +4,9 @@ local Classes   = ACF.Classes
 local Bullets   = ACF.BulletEffect
 local Clock     = ACF.Utilities.Clock
 
+local MIN_BOUNDS = MIN_COORD_FLOAT or -16380
+local MAX_BOUNDS = MAX_COORD_FLOAT or 16380
+
 local White = Vector(255, 255, 255)
 
 -- Tracer -> bullet, every tracer that hasn't been destroyed yet
@@ -278,13 +281,13 @@ end
 
 function EFFECT:ApplyMovement(Bullet)
 	local Position = Bullet.SimPos
-	if math.abs(Position.x) > 16380 or math.abs(Position.y) > 16380 or Position.z < -16380 then
+	if Position.x < MIN_BOUNDS or Position.x > MAX_BOUNDS or Position.y < MIN_BOUNDS or Position.y > MAX_BOUNDS or Position.z < MIN_BOUNDS then
 		self.Kill = true
 		return
 	end
 
 	--Moving the effect to the calculated position
-	if Position.z < 16380 then
+	if Position.z < MAX_BOUNDS then
 		self:SetPos(Position)
 		self:SetAngles(Bullet.SimFlight:Angle())
 	end
